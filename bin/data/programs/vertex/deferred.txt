@@ -1,0 +1,42 @@
+cbuffer ENGINEBUFFER                    : register(b0)
+{
+    float4x4 gs_nViewMatrix;
+    float4x4 gs_nProjectionMatrix;
+    float4x4 gs_nTransformMatrix;
+    float4   gs_nCameraPosition;
+	float    gs_nCameraViewDistance;
+	float    gs_nCameraInverseViewDistance;
+	float2   gs_nCameraView;
+};
+
+struct VERTEX
+{
+    float4   position                   : POSITION;
+    float2   texcoord                   : TEXCOORD0;
+    float3x3 texbasis                   : TEXCOORD1;
+    float4   color                      : COLOR;
+};
+
+struct OUTPUT
+{
+    float4   position                   : SV_POSITION;
+    float2   texcoord                   : TEXCOORD0;
+    float4   worldposition              : TEXCOORD1;
+    float3x3 texbasis                   : TEXCOORD2;
+    float4   color                      : COLOR;
+};
+
+_INSERT_WORLD_PROGRAM
+
+OUTPUT MainVertexProgram(SOURCEVERTEX kSource)
+{
+    VERTEX kVertex = SourceVertexProgram(kSource);
+
+    OUTPUT kOutput;
+    kOutput.position      = mul(gs_nTransformMatrix, kVertex.position);
+    kOutput.color         = kVertex.color;
+    kOutput.texcoord      = kVertex.texcoord;
+    kOutput.worldposition = kVertex.position;
+    kOutput.texbasis      = kVertex.texbasis;
+    return kOutput;
+}

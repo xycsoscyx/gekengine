@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<filter>
+    <targets format="RGBA_UINT8" scale="0.5">
+        <target name="Ambient" />
+    </targets>
+    <textures>
+        <texture source="Deferred.Albedo" />
+        <texture source="Deferred.World" />
+        <texture source="Deferred.Info" />
+        <texture data="%root%\data\textures\random.dds" />
+    </textures>
+    <shader>
+        <![CDATA[
+            Texture2D     gs_pAlbedoBuffer          : register(t0);
+            Texture2D     gs_pWorldBuffer           : register(t1);
+            Texture2D     gs_pInfoBuffer            : register(t2); // Roughness, Specular, 0, 0
+            Texture2D     gs_pRandomMap             : register(t3);
+
+            static const float gs_nContrast = 2.0f;
+            static const float gs_nBrightness = 2.0f;
+            static const float gs_nSampleRadius = 0.02f;
+            static const int gs_nKernelSize = 16;
+            static const float3 gs_aKernelOffsets[gs_nKernelSize] = 
+            {
+                float3(0.064171, 0.028123, 0.071352),
+                float3(-0.002624, -0.091130, 0.049030),
+                float3(-0.103684, 0.039205, 0.026885),
+                float3(0.041034, -0.109509, 0.060442),
+                float3(-0.008815, -0.130935, 0.084807),
+                float3(-0.057811, 0.131786, 0.120802),
+                float3(0.121322, 0.055887, 0.182998),
+                float3(0.016811, 0.039633, 0.268840),
+                float3(0.176160, -0.206903, 0.178280),
+                float3(0.189422, 0.213562, 0.257982),
+                float3(0.234230, -0.229385, 0.310528),
+                float3(-0.367306, -0.344664, 0.149425),
+                float3(0.329652, -0.503043, 0.076269),
+                float3(-0.436293, 0.052148, 0.537364),
+                float3(-0.261795, -0.735105, 0.117065),
+                float3(-0.702385, -0.186397, 0.515578),
+            };
+            
+            float4 MainPixelProgram(INPUT kInput) : SV_TARGET
+            {
+	            float4 nPixelInfo = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                float nPixelDepth = nPixelInfo.w;
+                float nLinearPixelDepth = (nPixelInfo.w * gs_nCameraInverseViewDistance);
+	            float3 nPixelPosition = (nPixelDepth * kInput.view);
+	            float3 nPixelNormal = nPixelInfo.xyz;
+
+                float2 nNoiseSize;
+                float2 nScreenSize;
+                gs_pRandomMap.GetDimensions(nNoiseSize.x, nNoiseSize.y);
+                gs_pWorldBuffer.GetDimensions(nScreenSize.x, nScreenSize.y);
+
+	            float2 nNoiseTexCoord = (kInput.texcoord * (nScreenSize / nNoiseSize));
+	            float3 nNoiseVector = ((gs_pRandomMap.Sample(gs_pLinearSampler, nNoiseTexCoord).xyz * 2.0f) - 1.0f);
+
+	            float3 nTangent = normalize(nNoiseVector - (nPixelNormal * dot(nNoiseVector, nPixelNormal)));
+	            float3 nBiTangent = cross(nTangent, nPixelNormal);
+	            float3x3 nKernelBasis = float3x3(nTangent, nBiTangent, nPixelNormal);
+	
+	            float nOcclusion = 0.0;
+	            for(int nSample = 0; nSample < gs_nKernelSize; ++nSample)
+                {
+		            float3 nSampleRay = mul(gs_aKernelOffsets[nSample], nKernelBasis) / nLinearPixelDepth;
+		            float3 nSamplePosition = ((nSampleRay * gs_nSampleRadius) + nPixelPosition);
+		            float4 nSampleOffset = mul(gs_nProjectionMatrix, float4(nSamplePosition, 1.0f));
+		            nSampleOffset.xy = ((((nSampleOffset.xy * float2(1.0f, -1.0f)) / nSampleOffset.w) * 0.5f) + 0.5f);
+		
+                    float4 nSampleColor = gs_pAlbedoBuffer.Sample(gs_pPointSampler, nSampleOffset.xy);
+		            float4 nSampleInfo = gs_pWorldBuffer.Sample(gs_pPointSampler, nSampleOffset.xy);
+                    float nSampleDepth = nSampleInfo.w;
+		            
+                    float nRangeCheck = smoothstep(0.0f, 0.1f, (gs_nSampleRadius / abs(nPixelPosition.z - nSampleDepth)));
+                    nOcclusion += (nRangeCheck * step(nSampleDepth, nSamplePosition.z));
+	            }
+	
+	            nOcclusion = (1.0f - (nOcclusion / float(gs_nKernelSize)));
+	            nOcclusion = saturate(pow(nOcclusion, gs_nBrightness));
+                nOcclusion = (((nOcclusion - 0.5f) * max(gs_nContrast, 0.0f)) + 0.5f);
+                return nOcclusion;
+            }
+        ]]>
+    </shader>
+</filter>

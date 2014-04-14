@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<filter>
+    <targets format="RGBA_UINT8" scale="0.5">
+        <target name="Ambient" />
+    </targets>
+    <textures>
+        <texture source="SSAO.Ambient" />
+        <texture source="Deferred.World" />
+    </textures>
+    <shader>
+        <![CDATA[
+            Texture2D     gs_pAmbientBuffer         : register(t0);
+            Texture2D     gs_pWorldBuffer           : register(t1);
+
+            static const float gs_nDomainSigma = 18.0f;
+            static const float gs_nRangeSigma = 0.07f;
+            static const float gs_nPI = 3.14159f;
+            static const int gs_nBiLaterialSize = 2;
+
+            float4 MainPixelProgram(INPUT kInput) : SV_TARGET
+            {
+                float2 nSize;
+                gs_pAmbientBuffer.GetDimensions(nSize.x, nSize.y);
+                nSize = (1.0f / nSize);                
+
+                float nDomainSigmaSquared = (gs_nDomainSigma * gs_nDomainSigma);
+                float nRangeSigmaSquared = (gs_nRangeSigma * gs_nRangeSigma);
+
+                float3 nResult = 0.0f;
+                float nIntensitySum = 0.0f;
+                float nCurrentDepth = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord).w;
+                for(float nXPos = -gs_nBiLaterialSize; nXPos <= gs_nBiLaterialSize; nXPos += 1.0f)
+                {
+                    float nXCoord = (kInput.texcoord.x + (nXPos * nSize.x));
+                    for(float nYPos = -gs_nBiLaterialSize; nYPos <= gs_nBiLaterialSize; nYPos += 1.0f)
+                    {
+                        float nYCoord = (kInput.texcoord.y + (nYPos * nSize.y));
+                        float nSampleDepth = gs_pWorldBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord)).w;
+                        float3 nSampleColor = gs_pAmbientBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord)).rgb;
+
+                        float nDistance = (float(nXPos * nXPos) + float(nYPos * nYPos));
+                        float nIntensity = exp((-1.0 * nDistance / (2.0 * nDomainSigmaSquared))) / ( 2.0f * gs_nPI *  nDomainSigmaSquared) *
+                                           exp((-1.0 * (nCurrentDepth - nSampleDepth) * (nCurrentDepth - nSampleDepth) / (nRangeSigmaSquared)));
+                        nIntensitySum += nIntensity;
+                        nResult += (nIntensity * nSampleColor);
+                    }
+                }
+
+                return float4((nResult / nIntensitySum), 1.0f);
+            }
+        ]]>
+    </shader>
+</filter>

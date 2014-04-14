@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!DOCTYPE filter [
+    <!ENTITY LightingShader PUBLIC "%root%/data/filters/Shared/Lighting.xml" "">
+]>
+<filter>
+    <targets format="RGBA_UINT8">
+        <target name="Diffuse" clear="0,0,0,0" />
+        <target name="Specular" clear="0,0,0,0" />
+    </targets>
+    <textures>
+        <texture source="Opaque/Deferred.World" />
+        <texture source="Opaque/Deferred.Info" />
+    </textures>
+    <blend>
+        <color source="one" destination="one" operation="add" />
+        <alpha source="one" destination="one" operation="add" />
+    </blend>
+    <shader mode="lighting">
+        &LightingShader;
+    </shader>
+</filter>

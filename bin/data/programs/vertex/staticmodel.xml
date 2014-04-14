@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<program>
+    <layout>
+		<element type="xyz_float" name="POSITION" index="0" class="vertex" slot="0" />
+		<element type="xy_float" name="TEXCOORD" index="0" class="vertex" slot="1" />
+		<element type="xyz_float" name="TEXCOORD" index="1" class="vertex" slot="2" />
+		<element type="xyz_float" name="TEXCOORD" index="2" class="vertex" slot="2" />
+		<element type="xyz_float" name="TEXCOORD" index="3" class="vertex" slot="2" />
+		<element type="xyzw_float" name="TEXCOORD" index="4" class="instance" slot="3" />
+		<element type="xyzw_float" name="TEXCOORD" index="5" class="instance" slot="3" />
+		<element type="xyzw_float" name="TEXCOORD" index="6" class="instance" slot="3" />
+		<element type="xyzw_float" name="TEXCOORD" index="7" class="instance" slot="3" />
+    </layout>
+    <shader>
+        <![CDATA[
+			struct SOURCEVERTEX
+			{
+				float3 position                     : POSITION;
+				float2 texcoord                     : TEXCOORD0;
+				float3 tangent                      : TEXCOORD1;
+				float3 bitangent                    : TEXCOORD2;
+				float3 normal                       : TEXCOORD3;
+				float4x4 object                     : TEXCOORD4;
+			};
+
+			VERTEX SourceVertexProgram(SOURCEVERTEX kSource)
+			{
+				VERTEX kVertex;
+				float3x3 nBasis  = transpose(kSource.object);
+				kVertex.position = mul(kSource.object, float4(kSource.position, 1.0f));
+                kVertex.color    = float4(1.0f, 1.0f, 1.0f, 0.0f);
+				kVertex.texcoord = kSource.texcoord;
+				kVertex.texbasis = float3x3(kSource.tangent, kSource.bitangent, kSource.normal);
+				kVertex.texbasis = mul(kVertex.texbasis, nBasis);
+				return kVertex;
+			}
+        ]]>
+    </shader>
+</program>

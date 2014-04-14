@@ -1,0 +1,35 @@
+<![CDATA[
+    Texture2D     gs_pAlbedoMap             : register(t0);
+    Texture2D     gs_pNormalMap             : register(t1);
+    Texture2D     gs_pInfoMap               : register(t2);
+
+    struct OUTPUT
+    {
+        float4 albedo                       : SV_TARGET0;
+        float4 world                        : SV_TARGET1;
+        float4 info                         : SV_TARGET2;
+    };
+
+    OUTPUT MainPixelProgram(INPUT kInput)
+    {
+        float4 nViewPosition = mul(gs_nViewMatrix, kInput.worldposition);
+
+        float4 nAlbedo = gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord);
+        //clip(nAlbedo.a - gs_nAlphaTest);
+
+        float3 nNormal = gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xyz;
+        nNormal = normalize((nNormal * 2.0f) - 1.0f);
+        nNormal = mul(nNormal, kInput.texbasis);
+        nNormal = mul((float3x3)gs_nViewMatrix, nNormal);
+
+        float4 nInfo = gs_pInfoMap.Sample(gs_pLinearSampler, kInput.texcoord);
+
+        OUTPUT kOutput;
+        kOutput.albedo    = float4(nAlbedo.xyz, 1.0f) * kInput.color;
+        kOutput.world.xyz = nNormal.xyz;
+        kOutput.world.w   = nViewPosition.z;
+        kOutput.info.xyz  = nInfo.xyz;
+        kOutput.info.w    = nAlbedo.w;
+        return kOutput;
+    }
+]]>

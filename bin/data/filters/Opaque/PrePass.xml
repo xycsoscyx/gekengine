@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<filter>
+    <render cullmode="back" />
+    <targets>
+        <depth format="D24S8" comparison="lessequal" writemask="all" clear="1" />
+    </targets>
+    <blend writemask="" />
+    <shader mode="forward" vertexattributes="position">
+        <![CDATA[
+            float4 MainPixelProgram(INPUT kInput) : SV_TARGET
+            {
+                return 0.0f;
+            }
+        ]]>
+    </shader>
+</filter>

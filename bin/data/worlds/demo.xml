@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<world name="Demo" source="demo">
+	<population>
+		<entity name="worldspawn_0" class="worldspawn">
+			<component type="transform" position="0.000000, 0.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+		</entity>
+		<entity name="info_player_start_1" class="info_player_start" flags="input">
+			<component type="transform" position="-7.200000, -3.200000, 0.000000" rotation="0.000000, 1.5707963, 0.000000" />
+		</entity>
+
+        <entity name="light00" class="light">
+			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="transform" position="2.000000, -4.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
+		</entity>
+		<entity name="sphere00" class="mesh">
+			<component type="transform" position="5.000000, -4.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="sphere" params="" />
+			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
+		</entity>
+
+        <entity name="light01" class="light">
+			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="transform" position="2.000000, -1.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
+		</entity>
+		<entity name="sphere01" class="mesh">
+			<component type="transform" position="5.000000, -1.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="sphere" params="" />
+			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
+		</entity>
+
+        <entity name="light02" class="light">
+			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="transform" position="2.000000, 2.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
+		</entity>
+		<entity name="sphere02" class="mesh">
+			<component type="transform" position="5.000000, 2.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="sphere" params="" />
+			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
+		</entity>
+
+        <entity name="light10" class="light">
+			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="transform" position="2.000000, -4.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
+		</entity>
+		<entity name="sphere10" class="mesh">
+			<component type="transform" position="5.000000, -4.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="sphere" params="" />
+			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
+		</entity>
+
+        <entity name="light11" class="light">
+			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="transform" position="2.000000, -1.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
+		</entity>
+		<entity name="sphere11" class="mesh">
+			<component type="transform" position="5.000000, -1.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="sphere" params="" />
+			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
+		</entity>
+
+        <entity name="light12" class="light">
+			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="transform" position="2.000000, 2.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
+		</entity>
+		<entity name="sphere12" class="mesh">
+			<component type="transform" position="5.000000, 2.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="sphere" params="" />
+			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
+		</entity>
+
+        <entity name="light20" class="light">
+			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="transform" position="2.000000, -4.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
+		</entity>
+		<entity name="sphere20" class="mesh">
+			<component type="transform" position="5.000000, -4.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="sphere" params="" />
+			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
+		</entity>
+
+        <entity name="light21" class="light">
+			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="transform" position="2.000000, -1.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
+		</entity>
+		<entity name="sphere21" class="mesh">
+			<component type="transform" position="5.000000, -1.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="sphere" params="" />
+			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
+		</entity>
+
+        <entity name="light22" class="light">
+			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="transform" position="2.000000, 2.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
+		</entity>
+		<entity name="sphere22" class="mesh">
+			<component type="transform" position="5.000000, 2.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="sphere" params="" />
+			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
+		</entity>
+
+    </population>
+</world>

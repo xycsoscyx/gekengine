@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<material pass="Opaque">
+    <albedo source="walls/rock.albedo.dds" />
+    <normal source="walls/rock.normal.dds" />
+    <info source="walls/rock.info.dds" />
+</material>

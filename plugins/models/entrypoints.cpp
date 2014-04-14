@@ -1,0 +1,20 @@
+#include <initguid.h>
+#include <cguid.h>
+
+#include "GEKContext.h"
+#include "GEKEngineCLSIDs.h"
+
+DECLARE_REGISTERED_CLASS(CGEKStaticModel)
+DECLARE_REGISTERED_CLASS(CGEKFactory)
+
+// {CCD6D33D-53F6-4F40-9D12-7B31A4157BEA}
+DEFINE_GUID(CLSID_GEKStaticModel, 0xccd6d33d, 0x53f6, 0x4f40, 0x9d, 0x12, 0x7b, 0x31, 0xa4, 0x15, 0x7b, 0xea);
+
+// {4D9F96CE-1C68-4E5F-A17F-C8B159A6923D}
+DEFINE_GUID(CLSID_GEKFactory, 0x4d9f96ce, 0x1c68, 0x4e5f, 0xa1, 0x7f, 0xc8, 0xb1, 0x59, 0xa6, 0x92, 0x3d);
+
+DECLARE_CONTEXT_SOURCE(Models)
+    ADD_CONTEXT_CLASS(CLSID_GEKStaticModel, CGEKStaticModel)
+    ADD_CONTEXT_CLASS(CLSID_GEKFactory, CGEKFactory)
+        ADD_CLASS_TYPE(CLSID_GEKFactoryType)
+END_CONTEXT_SOURCE

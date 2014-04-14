@@ -1,0 +1,38 @@
+cbuffer ENGINEBUFFER                    : register(b0)
+{
+    float4x4 gs_nViewMatrix;
+    float4x4 gs_nProjectionMatrix;
+    float4x4 gs_nTransformMatrix;
+    float4   gs_nCameraPosition;
+	float    gs_nCameraViewDistance;
+	float    gs_nCameraInverseViewDistance;
+	float2   gs_nCameraView;
+};
+
+cbuffer ORTHOBUFFER                     : register(b1)
+{
+    float4x4 gs_nOrthoMatrix;
+};
+
+struct VERTEX
+{
+    float4 position                     : POSITION;
+	float2 view							: TEXCOORD0;
+};
+
+struct PIXEL
+{
+    float4 position                     : SV_POSITION;
+    float2 texcoord                     : TEXCOORD0;
+	float3 view							: TEXCOORD1;
+};
+
+PIXEL MainVertexProgram(VERTEX kVertex)
+{
+    PIXEL kPixel;
+    kPixel.position = mul(gs_nOrthoMatrix, kVertex.position);
+    kPixel.texcoord = kVertex.position.xy;
+	kPixel.view.xy = (kVertex.view * gs_nCameraView);
+	kPixel.view.z = 1.0f;
+    return kPixel;
+}

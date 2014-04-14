@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<browser size="%video.xsize%,%video.ysize%">
+    <source url="asset://Engine/pages/mainmenu.html" />
+    <flags javascript="1" transparent="1" gui="1" />
+</browser>

@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<filter>
+    <targets format="RGBA_UINT8">
+        <target source="Screen" />
+        <target name="Buffer" />
+    </targets>
+    <textures>
+        <texture source="Opaque/Deferred.Albedo" />
+        <texture source="Opaque/Lighting.Diffuse" />
+        <texture source="Opaque/Lighting.Specular" />
+    </textures>
+    <shader>
+        <![CDATA[
+            Texture2D     gs_pAlbedoBuffer          : register(t0);
+            Texture2D     gs_pDiffuseBuffer         : register(t1);
+            Texture2D     gs_pSpecularBuffer        : register(t2);
+
+            struct OUTPUT
+            {
+                float4 screen                       : SV_TARGET0;
+                float4 buffer                       : SV_TARGET1;
+            };
+
+            OUTPUT MainPixelProgram(INPUT kInput)
+            {
+                float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                float4 nDiffuse = gs_pDiffuseBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                float4 nSpecular = gs_pSpecularBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                
+                OUTPUT kOutput;
+                nDiffuse += 0.05f;
+                kOutput.screen = kOutput.buffer = nDiffuse;//((nAlbedo * nDiffuse) + nSpecular);
+                return kOutput;
+            }
+        ]]>
+    </shader>
+</filter>

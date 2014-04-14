@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<material pass="Opaque">
+    <albedo source="walls/brick1.albedo.dds" />
+    <normal source="walls/brick1.normal.dds" detail="detail.dds" />
+    <info source="walls/brick1.info.dds" />
+</material>

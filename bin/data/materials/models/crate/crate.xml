@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<material pass="Opaque">
+    <albedo source="models/crate/albedo.dds" />
+    <normal source="models/crate/normal.dds" detail="detail2.dds" />
+    <info source="models/crate/info.dds" />
+</material>
