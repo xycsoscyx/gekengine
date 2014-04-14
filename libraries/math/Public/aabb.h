@@ -82,23 +82,24 @@ public:
         return (minimum + (GetSize() / TYPE(2)));
     }
 
-    bool Contains(const tvector4<TYPE> &nPoint) const
+    int GetPosition(const tplane<TYPE> &nPlane) const
     {
-        return false;
-    }
+        tvector3<TYPE> nMinimum((nPlane.normal.x > TYPE(0) ? maximum.x : minimum.x),
+                                (nPlane.normal.y > TYPE(0) ? maximum.y : minimum.y),
+                                (nPlane.normal.z > TYPE(0) ? maximum.z : minimum.z));
+        if (nPlane.Distance(nMinimum) < TYPE(0))
+        {
+            return -1;
+        }
 
-    bool Contains(const tsphere<TYPE> &nSphere) const
-    {
-        return false;
-    }
+        tvector3<TYPE> nMaximum((nPlane.normal.x < TYPE(0) ? maximum.x : minimum.x),
+                                (nPlane.normal.y < TYPE(0) ? maximum.y : minimum.y),
+                                (nPlane.normal.z < TYPE(0) ? maximum.z : minimum.z));
+        if (nPlane.Distance(nMaximum) < TYPE(0))
+        {
+            return 0;
+        }
 
-    bool Contains(const taabb<TYPE> &nBox) const
-    {
-        return false;
-    }
-
-    bool Contains(const tobb<TYPE> &nBox) const
-    {
-        return false;
+        return 1;
     }
 };

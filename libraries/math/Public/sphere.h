@@ -1,15 +1,6 @@
 #pragma once
 
 template <typename TYPE>
-struct taabb;
-
-template <typename TYPE>
-struct tobb;
-
-template <typename TYPE>
-struct tplane;
-
-template <typename TYPE>
 struct tsphere
 {
 public:
@@ -41,23 +32,20 @@ public:
         return (*this);
     }
 
-    bool Contains(const tvector4<TYPE> &nPoint) const
+    int GetPosition(const tplane<TYPE> &nPlane) const
     {
-        return ((nPoint - position).GetLength() <= radius);
-    }
-
-    bool Contains(const tsphere<TYPE> &nSphere) const
-    {
-        return ((nSphere.position - position).GetLength() <= (nSphere.radius + radius));
-    }
-
-    bool Contains(const taabb<TYPE> &nBox) const
-    {
-        return false;
-    }
-
-    bool Contains(const tobb<TYPE> &nBox) const
-    {
-        return false;
+        TYPE nDistance = nPlane.Distance(position);
+        if (nDistance < -radius)
+        {
+            return -1;
+        }
+        else if (nDistance > radius)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
     }
 };

@@ -32,11 +32,11 @@ const float _INV_PI             = 0.31830988618379069122f;
 #include "Public\Vector4.h"
 #include "Public\Quaternion.h"
 #include "Public\Matrix4x4.h"
+#include "Public\Plane.h"
 #include "Public\Sphere.h"
 #include "Public\AABB.h"
 #include "Public\OBB.h"
 #include "Public\Ray.h"
-#include "Public\Plane.h"
 #include "Public\Frustum.h"
 
 typedef tvector2<float> float2;

@@ -104,6 +104,8 @@ float lerp(float nX, float nY, float nS)
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR strCommandLine, int nCmdShow)
 {
+    UINT32 nSize = sizeof(aabb);
+
     const UINT32 nNumSamples = 16;
 
     std::random_device kRandomDevice;

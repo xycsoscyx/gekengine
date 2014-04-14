@@ -9,7 +9,7 @@
 		</entity>
 
         <entity name="light00" class="light">
-			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="15.000000" />
 			<component type="transform" position="2.000000, -4.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
             <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
 		</entity>
@@ -20,7 +20,7 @@
 		</entity>
 
         <entity name="light01" class="light">
-			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="15.000000" />
 			<component type="transform" position="2.000000, -1.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
             <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
 		</entity>
@@ -31,7 +31,7 @@
 		</entity>
 
         <entity name="light02" class="light">
-			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="15.000000" />
 			<component type="transform" position="2.000000, 2.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
             <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
 		</entity>
@@ -42,7 +42,7 @@
 		</entity>
 
         <entity name="light10" class="light">
-			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="15.000000" />
 			<component type="transform" position="2.000000, -4.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
             <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
 		</entity>
@@ -53,7 +53,7 @@
 		</entity>
 
         <entity name="light11" class="light">
-			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="15.000000" />
 			<component type="transform" position="2.000000, -1.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
             <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
 		</entity>
@@ -64,7 +64,7 @@
 		</entity>
 
         <entity name="light12" class="light">
-			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="15.000000" />
 			<component type="transform" position="2.000000, 2.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
             <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
 		</entity>
@@ -75,7 +75,7 @@
 		</entity>
 
         <entity name="light20" class="light">
-			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="15.000000" />
 			<component type="transform" position="2.000000, -4.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
             <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
 		</entity>
@@ -86,7 +86,7 @@
 		</entity>
 
         <entity name="light21" class="light">
-			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="15.000000" />
 			<component type="transform" position="2.000000, -1.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
             <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
 		</entity>
@@ -97,7 +97,7 @@
 		</entity>
 
         <entity name="light22" class="light">
-			<component type="light" color="rand(0.5:1), rand(0.5:1), rand(0.5:1)" range="15.000000" />
+			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="15.000000" />
 			<component type="transform" position="2.000000, 2.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
             <component type="script" source="flicker" params="5:9999999730379730379995005909090000999999999" />
 		</entity>

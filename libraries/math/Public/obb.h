@@ -42,23 +42,25 @@ public:
         return (*this);
     }
 
-    bool Contains(const tvector4<TYPE> &nPoint) const
+    int GetPosition(const tplane<TYPE> &nPlane) const
     {
-        return false;
-    }
-
-    bool Contains(const tsphere<TYPE> &nSphere) const
-    {
-        return false;
-    }
-
-    bool Contains(const taabb<TYPE> &nBox) const
-    {
-        return false;
-    }
-
-    bool Contains(const tobb<TYPE> &nBox) const
-    {
-        return false;
+        tmatrix4x4<TYPE> nRotation(rotation);
+        TYPE nDistance = nPlane.Distance(position);
+        TYPE nRadiusX = fabs(nRotation.rx.Dot(nPlane.normal) * (size.x / TYPE(2)));
+        TYPE nRadiusY = fabs(nRotation.ry.Dot(nPlane.normal) * (size.y / TYPE(2)));
+        TYPE nRadiusZ = fabs(nRotation.rz.Dot(nPlane.normal) * (size.z / TYPE(2)));
+        TYPE nRadius = (nRadiusX + nRadiusY + nRadiusZ);
+        if (nDistance < -nRadius)
+        {
+            return -1;
+        }
+        else if (nDistance > nRadius)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
     }
 };
