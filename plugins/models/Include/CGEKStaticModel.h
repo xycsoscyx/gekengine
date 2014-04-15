@@ -3,11 +3,13 @@
 #include "GEKContext.h"
 #include "GEKSystem.h"
 #include "GEKAPI.h"
+#include "IGEKStaticFactory.h"
 
 class CGEKStaticModel : public CGEKUnknown
                       , public CGEKVideoSystemUser
                       , public CGEKProgramManagerUser
                       , public CGEKMaterialManagerUser
+                      , public CGEKStaticFactoryUser
                       , public IGEKModel
 {
 private:
@@ -20,13 +22,11 @@ private:
 
 private:
     aabb m_nAABB;
-    CComPtr<IUnknown> m_spVertexProgram;
     CComPtr<IGEKVideoVertexBuffer> m_spPositionBuffer;
     CComPtr<IGEKVideoVertexBuffer> m_spTexCoordBuffer;
     CComPtr<IGEKVideoVertexBuffer> m_spBasisBuffer;
     CComPtr<IGEKVideoIndexBuffer> m_spIndexBuffer;
     std::map<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
-    CComPtr<IGEKVideoVertexBuffer> m_spInstanceBuffer;
 
 public:
     CGEKStaticModel(void);

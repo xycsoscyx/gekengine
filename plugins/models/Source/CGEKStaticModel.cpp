@@ -5,6 +5,7 @@ BEGIN_INTERFACE_LIST(CGEKStaticModel)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoSystemUser)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKMaterialManagerUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKStaticFactoryUser)
     INTERFACE_LIST_ENTRY_COM(IGEKModel)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -21,88 +22,80 @@ CGEKStaticModel::~CGEKStaticModel(void)
 STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 {
     REQUIRE_RETURN(pBuffer, E_INVALIDARG);
-    HRESULT hRetVal = GetProgramManager()->LoadProgram(L"staticmodel", &m_spVertexProgram);
-    if (SUCCEEDED(hRetVal))
+
+    UINT32 nGEKX = *((UINT32 *)pBuffer);
+    pBuffer += sizeof(UINT32);
+
+    UINT16 nType = *((UINT16 *)pBuffer);
+    pBuffer += sizeof(UINT16);
+
+    UINT16 nVersion = *((UINT16 *)pBuffer);
+    pBuffer += sizeof(UINT16);
+
+    HRESULT hRetVal = E_INVALIDARG;
+    if (nGEKX == *(UINT32 *)"GEKX" && nType == 0 && nVersion == 2)
     {
-        UINT32 nGEKX = *((UINT32 *)pBuffer);
+        m_nAABB = *(aabb *)pBuffer;
+        pBuffer += sizeof(aabb);
+
+        UINT32 nNumMaterials = *((UINT32 *)pBuffer);
         pBuffer += sizeof(UINT32);
 
-        UINT16 nType = *((UINT16 *)pBuffer);
-        pBuffer += sizeof(UINT16);
-
-        UINT16 nVersion = *((UINT16 *)pBuffer);
-        pBuffer += sizeof(UINT16);
-
-        hRetVal = E_INVALIDARG;
-        if (nGEKX == *(UINT32 *)"GEKX" && nType == 0 && nVersion == 2)
+        for (UINT32 nMaterial = 0; nMaterial < nNumMaterials; nMaterial++)
         {
-            m_nAABB = *(aabb *)pBuffer;
-            pBuffer += sizeof(aabb);
+            CStringA strMaterialUTF8 = pBuffer;
+            pBuffer += (strMaterialUTF8.GetLength() + 1);
+            CStringW strMaterial = CA2W(strMaterialUTF8, CP_UTF8);
 
-            UINT32 nNumMaterials = *((UINT32 *)pBuffer);
-            pBuffer += sizeof(UINT32);
-
-            for (UINT32 nMaterial = 0; nMaterial < nNumMaterials; nMaterial++)
-            {
-                CStringA strMaterialUTF8 = pBuffer;
-                pBuffer += (strMaterialUTF8.GetLength() + 1);
-                CStringW strMaterial = CA2W(strMaterialUTF8, CP_UTF8);
-
-                CComPtr<IUnknown> spMaterial;
-                hRetVal = GetMaterialManager()->LoadMaterial(strMaterial, &spMaterial);
-                if (SUCCEEDED(hRetVal))
-                {
-                    MATERIAL &kMaterial = m_aMaterials[spMaterial];
-                    kMaterial.m_nFirstVertex = *((UINT32 *)pBuffer);
-                    pBuffer += sizeof(UINT32);
-
-                    kMaterial.m_nFirstIndex = *((UINT32 *)pBuffer);
-                    pBuffer += sizeof(UINT32);
-
-                    kMaterial.m_nNumIndices = *((UINT32 *)pBuffer);
-                    pBuffer += sizeof(UINT32);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            UINT32 nNumVertices = *((UINT32 *)pBuffer);
-            pBuffer += sizeof(UINT32);
-
+            CComPtr<IUnknown> spMaterial;
+            hRetVal = GetMaterialManager()->LoadMaterial(strMaterial, &spMaterial);
             if (SUCCEEDED(hRetVal))
             {
-                hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, sizeof(float3), nNumVertices, &m_spPositionBuffer);
-                pBuffer += (sizeof(float3) * nNumVertices);
-            }
-
-            if (SUCCEEDED(hRetVal))
-            {
-                hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, sizeof(float2), nNumVertices, &m_spTexCoordBuffer);
-                pBuffer += (sizeof(float2) * nNumVertices);
-            }
-
-            if (SUCCEEDED(hRetVal))
-            {
-                hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, (sizeof(float3)* 3), nNumVertices, &m_spBasisBuffer);
-                pBuffer += (sizeof(float3) * 3 * nNumVertices);
-            }
-
-            if (SUCCEEDED(hRetVal))
-            {
-                UINT32 nNumIndices = *((UINT32 *)pBuffer);
+                MATERIAL &kMaterial = m_aMaterials[spMaterial];
+                kMaterial.m_nFirstVertex = *((UINT32 *)pBuffer);
                 pBuffer += sizeof(UINT32);
 
-                hRetVal = GetVideoSystem()->CreateIndexBuffer(pBuffer, GEKVIDEO::DATA::UINT16, nNumIndices, &m_spIndexBuffer);
-                pBuffer += (sizeof(UINT16)* nNumIndices);
+                kMaterial.m_nFirstIndex = *((UINT32 *)pBuffer);
+                pBuffer += sizeof(UINT32);
+
+                kMaterial.m_nNumIndices = *((UINT32 *)pBuffer);
+                pBuffer += sizeof(UINT32);
+            }
+            else
+            {
+                break;
             }
         }
-    }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(INSTANCE), 20, &m_spInstanceBuffer);
+        UINT32 nNumVertices = *((UINT32 *)pBuffer);
+        pBuffer += sizeof(UINT32);
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, sizeof(float3), nNumVertices, &m_spPositionBuffer);
+            pBuffer += (sizeof(float3) * nNumVertices);
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, sizeof(float2), nNumVertices, &m_spTexCoordBuffer);
+            pBuffer += (sizeof(float2) * nNumVertices);
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, (sizeof(float3)* 3), nNumVertices, &m_spBasisBuffer);
+            pBuffer += (sizeof(float3) * 3 * nNumVertices);
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            UINT32 nNumIndices = *((UINT32 *)pBuffer);
+            pBuffer += sizeof(UINT32);
+
+            hRetVal = GetVideoSystem()->CreateIndexBuffer(pBuffer, GEKVIDEO::DATA::UINT16, nNumIndices, &m_spIndexBuffer);
+            pBuffer += (sizeof(UINT16)* nNumIndices);
+        }
     }
 
     return hRetVal;
@@ -130,7 +123,7 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
         return;
     }
 
-    GetProgramManager()->EnableProgram(m_spVertexProgram);
+    GetProgramManager()->EnableProgram(GetStaticFactory()->GetVertexProgram());
     GetVideoSystem()->GetDefaultContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     if (nVertexAttributes & GEK_VERTEX_POSITION)
     {
@@ -147,16 +140,16 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
         GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(2, 0, m_spBasisBuffer);
     }
 
-    GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(3, 0, m_spInstanceBuffer);
+    GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(3, 0, GetStaticFactory()->GetInstanceBuffer());
     GetVideoSystem()->GetDefaultContext()->SetIndexBuffer(0, m_spIndexBuffer);
     for(UINT32 nPass = 0; nPass < aInstances.size(); nPass += 20)
     {
         UINT32 nNumInstances = min(20, (aInstances.size() - nPass));
         
         unsigned char *pInstances = nullptr;
-        m_spInstanceBuffer->Lock((LPVOID FAR *)&pInstances);
+        GetStaticFactory()->GetInstanceBuffer()->Lock((LPVOID FAR *)&pInstances);
         memcpy(pInstances, &aInstances[nPass], (nNumInstances * sizeof(INSTANCE)));
-        m_spInstanceBuffer->Unlock();
+        GetStaticFactory()->GetInstanceBuffer()->Unlock();
 
         for (auto &kPair : m_aMaterials)
         {

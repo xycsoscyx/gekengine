@@ -33,5 +33,8 @@
     <ClInclude Include="Include\CGEKFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\IGEKStaticFactory.h">
+      <Filter>Interface Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
