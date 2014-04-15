@@ -11,7 +11,7 @@
 DECLARE_INTERFACE_IID_(IGEKWebSurface, IUnknown, "47015E42-8CFD-43BD-A10A-737A778A5122")
 {
     STDMETHOD_(IGEKVideoTexture *, GetTexture)  (THIS) PURE;
-    STDMETHOD_(void, Update)                    (THIS)PURE;
+    STDMETHOD_(void, Update)                    (THIS) PURE;
 };
 
 class CGEKWebSurface : public CGEKUnknown
@@ -1115,6 +1115,11 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         hRetVal = GetContext()->CreateInstance(CLSID_GEKMaterial, IID_PPV_ARGS(&spMaterial));
                         if (spMaterial != nullptr)
                         {
+                            if (kMaterial.HasAttribute(L"params"))
+                            {
+                                spMaterial->SetParams(StrToFloat4(kMaterial.GetAttribute(L"params")));
+                            }
+
                             spMaterial->SetPass(strPass);
                             spMaterial->SetAlbedoMap(spAlbedoMap);
                             spMaterial->SetNormalMap(spNormalMap);

@@ -9,5 +9,5 @@ DECLARE_INTERFACE_IID_(IGEKComponentSystem, IUnknown, "81A24012-F085-42D0-B931-9
 {
     STDMETHOD(Create)           (THIS_ const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent) PURE;
     STDMETHOD(Destroy)          (THIS_ IGEKEntity *pEntity) PURE;
-    STDMETHOD_(void, Clear)     (THIS)PURE;
+    STDMETHOD_(void, Clear)     (THIS) PURE;
 };
