@@ -97,7 +97,7 @@ HRESULT GEKOptimizeMesh(const VERTEX *pInputVertices, UINT32 nNumVertices, const
                             {
                                 CComPtr<ID3DXMesh> spFinalMesh;
                                 hRetVal = D3DXComputeTangentFrameEx(spMesh, D3DDECLUSAGE_TEXCOORD, 0, D3DDECLUSAGE_TANGENT, 0, D3DDECLUSAGE_BINORMAL, 0,
-                                    D3DDECLUSAGE_NORMAL, 0, D3DXTANGENT_CALCULATE_NORMALS,
+                                    D3DDECLUSAGE_NORMAL, 0, D3DXTANGENT_WRAP_UV | D3DXTANGENT_CALCULATE_NORMALS | D3DXTANGENT_WEIGHT_BY_AREA,
                                     &aOptimizedAdjacency[0], nPartialEdgeThreshold, nSingularPointThreshold, nNormalEdgeThreshold, &spFinalMesh, nullptr);
                                 if (spFinalMesh)
                                 {

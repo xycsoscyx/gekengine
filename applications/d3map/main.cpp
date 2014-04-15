@@ -401,9 +401,15 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                                 aIndices[nIndex] = nVertexIndex;
 		                    }
 
+                            float nFaceEpsilon = 0.0833333f;
+                            float nPartialEdgeThreshold = -1.01f;
+                            float nSingularPointThreshold = -0.01f;
+                            float nNormalEdgeThreshold = -1.01f;
+
                             std::vector<VERTEX> aOutputVertices;
                             std::vector<UINT16> aOutputIndices;
-                            if (FAILED(GEKOptimizeMesh(&aVertices[0], aVertices.size(), &aIndices[0], aIndices.size(), aOutputVertices, aOutputIndices)))
+                            if (FAILED(GEKOptimizeMesh(&aVertices[0], aVertices.size(), &aIndices[0], aIndices.size(), aOutputVertices, aOutputIndices, 
+                                nFaceEpsilon, nPartialEdgeThreshold, nSingularPointThreshold, nNormalEdgeThreshold)))
                             {
                                 throw CMyException(__LINE__, L"Unable to optimize mesh data");
                             }

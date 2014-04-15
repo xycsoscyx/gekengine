@@ -538,7 +538,6 @@ STDMETHODIMP_(void) CGEKRenderManager::BeginLoad(void)
     m_aGUIViews.clear();
     m_aTextures.clear();
     m_aMaterials.clear();
-    m_aPrograms.clear();
     m_aModels.clear();
     m_aFilters.clear();
     m_aPasses.clear();
