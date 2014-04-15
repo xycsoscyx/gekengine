@@ -34,6 +34,7 @@ SimpleState["OnUpdate"] = function(pEntity, nGameTime, nFrameTime)
     end
 
     if nForce:GetLength() > 0 then
+        nForce = nForce * 2
         local nPosition = pEntity:GetProperty("transform", "position")
         nPosition = (nPosition + (nForce * nFrameTime))
         pEntity:SetProperty("transform", "position", nPosition)

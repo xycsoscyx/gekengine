@@ -14,7 +14,7 @@ struct VERTEX
     float4   position                   : POSITION;
     float2   texcoord                   : TEXCOORD0;
     float3x3 texbasis                   : TEXCOORD1;
-    float4   params                     : TEXCOORD4;
+    float4   params                     : COLOR0;
 };
 
 struct OUTPUT
@@ -23,7 +23,7 @@ struct OUTPUT
     float2   texcoord                   : TEXCOORD0;
     float4   worldposition              : TEXCOORD1;
     float3x3 texbasis                   : TEXCOORD2;
-    float4   params                     : TEXCOORD5;
+    float4   params                     : COLOR0;
 };
 
 _INSERT_WORLD_PROGRAM

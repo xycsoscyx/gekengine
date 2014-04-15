@@ -20,26 +20,27 @@
     float2 GetBRDF(float3 nPixelNormal, float3 nLightNormal, float3 nViewNormal, float4 nInfo)
     {
         const float gs_nPI = 3.14159265358979323846;
+        const float gs_nReciprocalPI = (1.0f / gs_nPI);
 
         float nColor = 1;
-        float nSpecular = .1;
-        float nRoughness = 0.2;
+        float nRoughness = nInfo.x;
+        float nSpecular = nInfo.y;
         float nRetroflective = 0;
 
-        float nMetalness = saturate(nSpecular*2-1);
-        float nNonMetallicSpecular = float(saturate(nSpecular*2))*0.2;
+        float nMetalness = saturate(nSpecular * 2 - 1);
+        float nNonMetallicSpecular = (saturate(nSpecular * 2) * 0.2);
 
         float Ks = lerp(nNonMetallicSpecular, nColor, nMetalness);
         float Kd = lerp(nColor, 0, nMetalness);
         float Fd = 1.0 - Ks;
 
         float nNormalViewAngle = dot(nPixelNormal, nViewNormal);
-        float nNormalViewAngleSquared = nNormalViewAngle * nNormalViewAngle;
-        float nInvNormalViewAngleSquared = 1.0 - nNormalViewAngleSquared;
+        float nNormalViewAngleSquared = (nNormalViewAngle * nNormalViewAngle);
+        float nInvNormalViewAngleSquared = (1.0 - nNormalViewAngleSquared);
 
         float nRoughnessMod = nRoughness;
-        nRoughnessMod = nRoughnessMod*nRoughnessMod*4;
-        float nRoughnessModSquared = nRoughnessMod * nRoughnessMod;
+        nRoughnessMod = (nRoughnessMod * nRoughnessMod * 4);
+        float nRoughnessModSquared = (nRoughnessMod * nRoughnessMod);
 
         float3 nHalfVector = normalize(nLightNormal + nViewNormal);
         float nNormalLightAngle = saturate(dot(nPixelNormal, nLightNormal));
@@ -49,40 +50,38 @@
         float LdotV = dot(nLightNormal, nViewNormal);
         nNormalHalfAngle = lerp(nNormalHalfAngle,  LdotV, saturate(nRetroflective));
 
-        float nNormalLightAngleSquared = nNormalLightAngle * nNormalLightAngle;
-        float nNormalHalfAngleSquared = nNormalHalfAngle * nNormalHalfAngle;
-        float nInvNormalLightAngleSquared = 1.0 - nNormalLightAngleSquared;
+        float nNormalLightAngleSquared = (nNormalLightAngle * nNormalLightAngle);
+        float nNormalHalfAngleSquared = (nNormalHalfAngle * nNormalHalfAngle);
+        float nInvNormalLightAngleSquared = (1.0 - nNormalLightAngleSquared);
 
-        float nFinalDiffuse = Kd * Fd * 1/gs_nPI * saturate((1-nRoughnessMod)*0.5+0.5+nRoughnessModSquared*(8-nRoughnessMod)*0.023);
+        float nFinalDiffuse = (Kd * Fd * gs_nReciprocalPI * saturate((1 - nRoughnessMod) * 0.5 + 0.5 + nRoughnessModSquared * (8 - nRoughnessMod) * 0.023));
 
-        float D = pow(nRoughnessMod/(nNormalHalfAngleSquared * (nRoughnessModSquared + (1-nNormalHalfAngleSquared)/nNormalHalfAngleSquared)), 2)/gs_nPI;
+        float D = (pow(nRoughnessMod/(nNormalHalfAngleSquared * (nRoughnessModSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
 
-        nNormalViewAngle = nNormalViewAngle*0.5+0.5;
-        nNormalLightAngle = nNormalLightAngle*0.5+0.5;
-        nNormalLightAngleSquared = nNormalLightAngle * nNormalLightAngle;
-        nNormalViewAngleSquared = nNormalViewAngle * nNormalViewAngle;
-        nInvNormalLightAngleSquared = 1.0 - nNormalLightAngleSquared;
-        nInvNormalViewAngleSquared = 1.0 - nNormalViewAngleSquared;
+        nNormalViewAngle = (nNormalViewAngle * 0.5 + 0.5);
+        nNormalLightAngle = (nNormalLightAngle * 0.5 + 0.5);
+        nNormalLightAngleSquared = (nNormalLightAngle * nNormalLightAngle);
+        nNormalViewAngleSquared = (nNormalViewAngle * nNormalViewAngle);
+        nInvNormalLightAngleSquared = (1.0 - nNormalLightAngleSquared);
+        nInvNormalViewAngleSquared = (1.0 - nNormalViewAngleSquared);
 
-        float nDiffuseFactor1 = pow(1-nNormalLightAngle, 4);
-        float nDiffuseFactor2 = pow(1-nNormalViewAngle, 4);
-        float nDiffuseDelta = lerp((1/(0.1+nRoughnessMod)), -nRoughnessModSquared*2, saturate(nRoughnessMod));
-        nDiffuseFactor1 = 1-(nDiffuseFactor1 * nDiffuseDelta);
-        nDiffuseFactor2 = 1-(nDiffuseFactor2 * nDiffuseDelta);
-        nFinalDiffuse *= nDiffuseFactor1 * nDiffuseFactor2;
+        float nDiffuseDelta = lerp((1 / (0.1 + nRoughnessMod)), (-nRoughnessModSquared * 2), saturate(nRoughnessMod));
+        float nDiffuseLightAngle = (1 - (pow(1 - nNormalLightAngle, 4) * nDiffuseDelta));
+        float nDiffuseViewAngle = (1 - (pow(1 - nNormalViewAngle, 4) * nDiffuseDelta));
+        nFinalDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle);
 
-        float Fs = Ks + Fd * pow(1-nLightHalfAngle, 5);
+        float Fs = (Ks + Fd * pow((1 - nLightHalfAngle), 5));
 
-        float nGeometric1 = 1.0 + sqrt(1.0 + nRoughnessModSquared * (nInvNormalLightAngleSquared / nNormalLightAngleSquared));
-        float nGeometric2 = 1.0 + sqrt(1.0 + nRoughnessModSquared * (nInvNormalViewAngleSquared / nNormalViewAngleSquared));
-        float nGeometric = ((2/nGeometric1) * (2/nGeometric2))/(4 * nNormalViewAngle * nNormalLightAngle + 0.1);
+        float nGeometric1 = (1.0 + sqrt(1.0 + nRoughnessModSquared * (nInvNormalLightAngleSquared / nNormalLightAngleSquared)));
+        float nGeometric2 = (1.0 + sqrt(1.0 + nRoughnessModSquared * (nInvNormalViewAngleSquared / nNormalViewAngleSquared)));
+        float nGeometric = (((2 / nGeometric1) * (2 / nGeometric2)) / (4 * nNormalViewAngle * nNormalLightAngle + 0.1));
 
-        float nGeometricRetroreflective = nNormalViewAngleSquared * nNormalLightAngle;
+        float nGeometricRetroreflective = (nNormalViewAngleSquared * nNormalLightAngle);
         nGeometric = lerp(nGeometric, nGeometricRetroreflective, nRetroflective);
 
-        float nFinalSpecular = Fs * D * nGeometric;
+        float nFinalSpecular = (Fs * D * nGeometric);
 
-        return float2(nFinalDiffuse, nFinalSpecular) * saturate(dot(nPixelNormal, nLightNormal));
+        return (float2(nFinalDiffuse, nFinalSpecular) * saturate(dot(nPixelNormal, nLightNormal)));
     }
     
     OUTPUT MainPixelProgram(INPUT kInput)

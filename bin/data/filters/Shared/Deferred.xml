@@ -23,14 +23,13 @@
         nNormal = mul((float3x3)gs_nViewMatrix, nNormal);
 
         float4 nInfo = gs_pInfoMap.Sample(gs_pLinearSampler, kInput.texcoord);
-        nInfo *= kInput.params;
+        nInfo = kInput.params;
 
         OUTPUT kOutput;
-        kOutput.albedo    = float4(nAlbedo.xyz, 1.0f);
+        kOutput.albedo    = nAlbedo;
         kOutput.world.xyz = nNormal.xyz;
         kOutput.world.w   = nViewPosition.z;
-        kOutput.info.xyz  = nInfo.xyz;
-        kOutput.info.w    = nAlbedo.w;
+        kOutput.info      = nInfo;
         return kOutput;
     }
 ]]>

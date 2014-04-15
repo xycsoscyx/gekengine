@@ -10,7 +10,7 @@
 		<element type="xyzw_float" name="TEXCOORD" index="5" class="instance" slot="3" />
 		<element type="xyzw_float" name="TEXCOORD" index="6" class="instance" slot="3" />
 		<element type="xyzw_float" name="TEXCOORD" index="7" class="instance" slot="3" />
-		<element type="xyzw_float" name="TEXCOORD" index="8" class="instance" slot="3" />
+		<element type="xyzw_float" name="COLOR" index="0" class="instance" slot="3" />
     </layout>
     <shader>
         <![CDATA[
@@ -22,7 +22,7 @@
 				float3 bitangent                    : TEXCOORD2;
 				float3 normal                       : TEXCOORD3;
 				float4x4 object                     : TEXCOORD4;
-                float4 params                       : TEXCOORD8;
+                float4 params                       : COLOR0;
 			};
 
 			VERTEX SourceVertexProgram(SOURCEVERTEX kSource)

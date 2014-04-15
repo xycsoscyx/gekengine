@@ -8,12 +8,14 @@
         <texture source="Opaque/Deferred.Albedo" />
         <texture source="Opaque/Lighting.Diffuse" />
         <texture source="Opaque/Lighting.Specular" />
+        <texture source="Opaque/Deferred.Info" />
     </textures>
     <shader>
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t0);
             Texture2D     gs_pDiffuseBuffer         : register(t1);
             Texture2D     gs_pSpecularBuffer        : register(t2);
+            Texture2D     gs_pInfoBuffer            : register(t3); // Roughness, Specular, Height, 0
 
             struct OUTPUT
             {
@@ -26,10 +28,10 @@
                 float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 float4 nDiffuse = gs_pDiffuseBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 float4 nSpecular = gs_pSpecularBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                float4 nInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 
                 OUTPUT kOutput;
-                nDiffuse += 0.05f;
-                kOutput.screen = kOutput.buffer = nSpecular;//((nAlbedo * nDiffuse) + nSpecular);
+                kOutput.screen = kOutput.buffer = nDiffuse + nSpecular;//((nAlbedo * nDiffuse) + nSpecular);
                 return kOutput;
             }
         ]]>

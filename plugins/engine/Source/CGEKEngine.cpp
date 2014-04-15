@@ -208,8 +208,8 @@ STDMETHODIMP CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, 
         {
             INT32 nXPos = GET_X_LPARAM(lParam);
             INT32 nYPos = GET_Y_LPARAM(lParam);
-            INT32 nCursorMoveX = (nXPos - m_nLastCursorX);
-            INT32 nCursorMoveY = (nYPos - m_nLastCursorY);
+            INT32 nCursorMoveX = ((nXPos - m_nLastCursorX) / 2);
+            INT32 nCursorMoveY = ((nYPos - m_nLastCursorY) / 2);
             m_nLastCursorX = nXPos;
             m_nLastCursorY = nYPos;
             CheckInput(WM_MOUSEMOVE, float2(float(nCursorMoveX), float(nCursorMoveY)));
@@ -222,7 +222,7 @@ STDMETHODIMP CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, 
         if (true)
         {
             INT32 nDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-            CheckInput(WM_MOUSEWHEEL, (float(nDelta) / float(WHEEL_DELTA)));
+            CheckInput(WM_MOUSEWHEEL, ((float(nDelta) / float(WHEEL_DELTA)) * 4));
         }
 
         nResult = 1;
