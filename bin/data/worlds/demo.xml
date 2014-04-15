@@ -26,7 +26,7 @@
 		</entity>
 		<entity name="sphere01" class="mesh">
 			<component type="transform" position="5.000000, -1.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-            <component type="model" model="sphere" params="" />
+            <component type="model" model="sphere" params="" materialparams="0,0,0,0" />
 			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
 		</entity>
 

@@ -710,10 +710,10 @@ HRESULT CGEKRenderManager::CreateThread(void)
                         for (auto &kPair : m_spRenderFrame->m_aModels)
                         {
                             IGEKModel *pModel = kPair.first;
-                            float4x4 &nMatrix = kPair.second;
-                            if (m_spWorld->IsVisible(obb(pModel->GetAABB(), nMatrix)))
+                            IGEKModel::INSTANCE &kInstance = kPair.second;
+                            if (m_spWorld->IsVisible(obb(pModel->GetAABB(), kInstance.m_nMatrix)))
                             {
-                                m_spRenderFrame->m_aCulledModels[pModel].push_back(nMatrix);
+                                m_spRenderFrame->m_aCulledModels[pModel].push_back(kInstance);
                             }
                         }
 
@@ -1356,7 +1356,7 @@ STDMETHODIMP CGEKRenderManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnkno
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::DrawModel(IGEKEntity *pEntity, IUnknown *pModel, const float4 *pParams)
+STDMETHODIMP_(void) CGEKRenderManager::DrawModel(IGEKEntity *pEntity, IUnknown *pModel, const float4 &nParams)
 {
     REQUIRE_VOID_RETURN(pEntity);
     REQUIRE_VOID_RETURN(pModel);
@@ -1378,7 +1378,10 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawModel(IGEKEntity *pEntity, IUnknown *
                 nMatrix.t = kPosition.GetFloat3();
                 if (m_spUpdateFrame->m_kFrustum.IsVisible(obb(spModel->GetAABB(), nMatrix)))
                 {
-                    m_spUpdateFrame->m_aModels.insert(std::make_pair(spModel, nMatrix));
+                    IGEKModel::INSTANCE kInstance;
+                    kInstance.m_nMatrix = nMatrix;
+                    kInstance.m_nParams = nParams;
+                    m_spUpdateFrame->m_aModels.insert(std::make_pair(spModel, kInstance));
                 }
             }
         }
@@ -1465,7 +1468,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
     for (auto &kPair : m_spRenderFrame->m_aCulledModels)
     {
         IGEKModel *pModel = kPair.first;
-        std::vector<float4x4> &aInstances = kPair.second;
+        std::vector<IGEKModel::INSTANCE> &aInstances = kPair.second;
         pModel->Draw(m_pCurrentFilter->GetVertexAttributes(), aInstances);
     }
 }

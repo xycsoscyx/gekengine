@@ -6,10 +6,12 @@
 BEGIN_INTERFACE_LIST(CGEKComponentModel)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
     INTERFACE_LIST_ENTRY_COM(IGEKModelManagerUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKViewManagerUser)
 END_INTERFACE_LIST_UNKNOWN
 
 CGEKComponentModel::CGEKComponentModel(IGEKEntity *pEntity)
     : CGEKComponent(pEntity)
+    , m_nMaterialParams(1.0f, 1.0f, 1.0f, 1.0f)
 {
 }
 
@@ -17,9 +19,12 @@ CGEKComponentModel::~CGEKComponentModel(void)
 {
 }
 
-IUnknown *CGEKComponentModel::GetModel(void) const
+void CGEKComponentModel::OnRender(void)
 {
-    return m_spModel;
+    if (m_spModel)
+    {
+        GetViewManager()->DrawModel(GetEntity(), m_spModel, m_nMaterialParams);
+    }
 }
 
 STDMETHODIMP_(LPCWSTR) CGEKComponentModel::GetType(void) const
@@ -31,10 +36,12 @@ STDMETHODIMP_(void) CGEKComponentModel::ListProperties(std::function<void(LPCWST
 {
     OnProperty(L"model", m_strModel.GetString());
     OnProperty(L"params", m_strParams.GetString());
+    OnProperty(L"materialparams", m_nMaterialParams);
 }
 
 static GEKHASH gs_nModel(L"model");
 static GEKHASH gs_nParams(L"params");
+static GEKHASH gs_nMaterialParams(L"materialparams");
 STDMETHODIMP_(bool) CGEKComponentModel::GetProperty(LPCWSTR pName, GEKVALUE &kValue) const
 {
     GEKHASH nHash(pName);
@@ -46,6 +53,11 @@ STDMETHODIMP_(bool) CGEKComponentModel::GetProperty(LPCWSTR pName, GEKVALUE &kVa
     else if (nHash == gs_nParams)
     {
         kValue = m_strParams.GetString();
+        return true;
+    }
+    else if (nHash == gs_nMaterialParams)
+    {
+        kValue = m_nMaterialParams;
         return true;
     }
 
@@ -63,6 +75,11 @@ STDMETHODIMP_(bool) CGEKComponentModel::SetProperty(LPCWSTR pName, const GEKVALU
     else if (nHash == gs_nParams)
     {
         m_strParams = kValue.GetString();
+        return true;
+    }
+    else if (nHash == gs_nMaterialParams)
+    {
+        m_nMaterialParams = kValue.GetFloat4();
         return true;
     }
 
@@ -166,10 +183,7 @@ STDMETHODIMP CGEKComponentSystemModel::OnRender(void)
 {
     concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentModel>>::value_type &kPair) -> void
     {
-        if (kPair.second->GetModel())
-        {
-            GetViewManager()->DrawModel(kPair.first, kPair.second->GetModel());
-        }
+        kPair.second->OnRender();
     });
 
     return S_OK;

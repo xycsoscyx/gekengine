@@ -37,5 +37,5 @@ public:
     STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, LPCWSTR pParams);
     STDMETHOD_(aabb, GetAABB)       (THIS);
     STDMETHOD_(void, Prepare)       (THIS);
-    STDMETHOD_(void, Draw)          (THIS_ UINT32 nVertexAttributes, const std::vector<float4x4> &aInstances);
+    STDMETHOD_(void, Draw)          (THIS_ UINT32 nVertexAttributes, const std::vector<IGEKModel::INSTANCE> &aInstances);
 };

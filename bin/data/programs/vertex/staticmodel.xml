@@ -10,6 +10,7 @@
 		<element type="xyzw_float" name="TEXCOORD" index="5" class="instance" slot="3" />
 		<element type="xyzw_float" name="TEXCOORD" index="6" class="instance" slot="3" />
 		<element type="xyzw_float" name="TEXCOORD" index="7" class="instance" slot="3" />
+		<element type="xyzw_float" name="TEXCOORD" index="8" class="instance" slot="3" />
     </layout>
     <shader>
         <![CDATA[
@@ -21,6 +22,7 @@
 				float3 bitangent                    : TEXCOORD2;
 				float3 normal                       : TEXCOORD3;
 				float4x4 object                     : TEXCOORD4;
+                float4 params                       : TEXCOORD8;
 			};
 
 			VERTEX SourceVertexProgram(SOURCEVERTEX kSource)
@@ -28,7 +30,7 @@
 				VERTEX kVertex;
 				float3x3 nBasis  = transpose(kSource.object);
 				kVertex.position = mul(kSource.object, float4(kSource.position, 1.0f));
-                kVertex.color    = float4(1.0f, 1.0f, 1.0f, 0.0f);
+                kVertex.params   = kSource.params;
 				kVertex.texcoord = kSource.texcoord;
 				kVertex.texbasis = float3x3(kSource.tangent, kSource.bitangent, kSource.normal);
 				kVertex.texbasis = mul(kVertex.texbasis, nBasis);

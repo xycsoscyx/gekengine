@@ -102,7 +102,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(float4x4), 20, &m_spInstanceBuffer);
+        hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(INSTANCE), 20, &m_spInstanceBuffer);
     }
 
     return hRetVal;
@@ -121,7 +121,7 @@ STDMETHODIMP_(void) CGEKStaticModel::Prepare(void)
     }
 }
 
-STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::vector<float4x4> &aInstances)
+STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::vector<IGEKModel::INSTANCE> &aInstances)
 {
     if (!(nVertexAttributes & GEK_VERTEX_POSITION) &&
         !(nVertexAttributes & GEK_VERTEX_TEXCOORD) &&
@@ -155,7 +155,7 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
         
         unsigned char *pInstances = nullptr;
         m_spInstanceBuffer->Lock((LPVOID FAR *)&pInstances);
-        memcpy(pInstances, &aInstances[nPass], (nNumInstances * sizeof(float4x4)));
+        memcpy(pInstances, &aInstances[nPass], (nNumInstances * sizeof(INSTANCE)));
         m_spInstanceBuffer->Unlock();
 
         for (auto &kPair : m_aMaterials)

@@ -14,7 +14,7 @@ struct VERTEX
     float4   position                   : POSITION;
     float2   texcoord                   : TEXCOORD0;
     float3x3 texbasis                   : TEXCOORD1;
-    float4   color                      : COLOR;
+    float4   params                     : TEXCOORD4;
 };
 
 struct OUTPUT
@@ -23,7 +23,7 @@ struct OUTPUT
     float2   texcoord                   : TEXCOORD0;
     float4   worldposition              : TEXCOORD1;
     float3x3 texbasis                   : TEXCOORD2;
-    float4   color                      : COLOR;
+    float4   params                     : TEXCOORD5;
 };
 
 _INSERT_WORLD_PROGRAM
@@ -34,7 +34,7 @@ OUTPUT MainVertexProgram(SOURCEVERTEX kSource)
 
     OUTPUT kOutput;
     kOutput.position      = mul(gs_nTransformMatrix, kVertex.position);
-    kOutput.color         = kVertex.color;
+    kOutput.params        = kVertex.params;
     kOutput.texcoord      = kVertex.texcoord;
     kOutput.worldposition = kVertex.position;
     kOutput.texbasis      = kVertex.texbasis;

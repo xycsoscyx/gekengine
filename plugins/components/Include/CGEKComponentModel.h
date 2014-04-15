@@ -9,21 +9,23 @@
 class CGEKComponentModel : public CGEKUnknown
                          , public CGEKComponent
                          , public CGEKModelManagerUser
+                         , public CGEKViewManagerUser
 {
 private:
     CComPtr<IUnknown> m_spModel;
     CStringW m_strModel;
     CStringW m_strParams;
+    float4 m_nMaterialParams;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentModel)
     CGEKComponentModel(IGEKEntity *pEntity);
     ~CGEKComponentModel(void);
 
-    IUnknown *GetModel(void) const;
+    void OnRender(void);
 
     // IGEKComponent
-    STDMETHOD_(LPCWSTR, GetType)    (THIS) const;
+    STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
     STDMETHOD_(void, ListProperties)        (THIS_ std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty);
     STDMETHOD_(bool, GetProperty)           (THIS_ LPCWSTR pName, GEKVALUE &kValue) const;
     STDMETHOD_(bool, SetProperty)           (THIS_ LPCWSTR pName, const GEKVALUE &kValue);

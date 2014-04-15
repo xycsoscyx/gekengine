@@ -22,7 +22,7 @@
 			{
 				VERTEX kVertex;
 				kVertex.position = float4(kSource.position, 1.0f);
-                kVertex.color    = float4(1.0f, 1.0f, 1.0f, 0.0f);
+                kVertex.params   = float4(1.0f, 1.0f, 1.0f, 0.0f);
 				kVertex.texcoord = kSource.texcoord;
 				kVertex.texbasis = float3x3(kSource.tangent, kSource.bitangent, kSource.normal);
 				return kVertex;

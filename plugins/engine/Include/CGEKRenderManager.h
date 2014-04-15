@@ -69,10 +69,10 @@ public:
 
         std::map<PASS *, UINT32> m_aPasses;
 
-        concurrency::concurrent_unordered_multimap<IGEKModel *, float4x4> m_aModels;
+        concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> m_aModels;
         concurrency::concurrent_vector<LIGHTBUFFER> m_aLights;
 
-        std::map<IGEKModel *, std::vector<float4x4>> m_aCulledModels;
+        std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aCulledModels;
         std::vector<LIGHTBUFFER> m_aCulledLights;
     };
 
@@ -155,7 +155,7 @@ public:
     STDMETHOD(SetViewer)                (THIS_ IGEKEntity *pEntity);
     STDMETHOD_(IGEKEntity *, GetViewer) (THIS);
     STDMETHOD_(void, DrawLight)         (THIS_ IGEKEntity *pEntity, const GEKLIGHT &kLight);
-    STDMETHOD_(void, DrawModel)         (THIS_ IGEKEntity *pEntity, IUnknown *pModel, const float4 *pParams = nullptr);
+    STDMETHOD_(void, DrawModel)         (THIS_ IGEKEntity *pEntity, IUnknown *pModel, const float4 &nParams = float4(1.0f, 1.0f, 1.0f, 1.0f));
     STDMETHOD(EnablePass)               (THIS_ LPCWSTR pName);
 
     // IGEKRenderManager
