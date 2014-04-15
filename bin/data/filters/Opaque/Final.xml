@@ -29,7 +29,7 @@
                 
                 OUTPUT kOutput;
                 nDiffuse += 0.05f;
-                kOutput.screen = kOutput.buffer = nDiffuse;//((nAlbedo * nDiffuse) + nSpecular);
+                kOutput.screen = kOutput.buffer = nSpecular;//((nAlbedo * nDiffuse) + nSpecular);
                 return kOutput;
             }
         ]]>
