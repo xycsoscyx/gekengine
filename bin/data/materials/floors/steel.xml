@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<material pass="Opaque">
-    <albedo source="floors/steel.albedo.dds" />
-    <normal source="floors/steel.normal.dds" />
-    <info source="floors/steel.info.dds" />
-</material>

@@ -2,7 +2,7 @@ mapProcFile003
 
 model { /* name = */ "_area0" /* numSurfaces = */ 3
 
-/* surface 0 */ { "walls/brick1" /* numVerts = */ 16 /* numIndexes = */ 24
+/* surface 0 */ { "walls/house/CrackedPlaster" /* numVerts = */ 16 /* numIndexes = */ 24
 ( 256 -192 96 6 0 -1 0 0 ) ( 256 192 -96 -1 4 -1 0 0 ) ( 256 192 96 -1 0 -1 0 0 ) 
 ( 256 -192 -96 6 4 -1 0 0 ) ( -256 -192 96 0 0 1 0 0 ) ( -256 192 96 7 0 1 0 0 ) 
 ( -256 192 -96 7 4 1 0 0 ) ( -256 -192 -96 0 4 1 0 0 ) ( -256 192 96 -4 0 0 -1 0 ) 
@@ -13,13 +13,13 @@ model { /* name = */ "_area0" /* numSurfaces = */ 3
 12 13 14 15 13 12 
 }
 
-/* surface 1 */ { "walls/rock" /* numVerts = */ 4 /* numIndexes = */ 6
+/* surface 1 */ { "floors/concrete/CrustyConcrete" /* numVerts = */ 4 /* numIndexes = */ 6
 ( -256 192 96 -5.0 5 0 0 -1 ) ( 256 -192 96 7 -5 0 0 -1 ) ( 256 192 96 7 5 0 0 -1 ) 
 ( -256 -192 96 -5.0 -5 0 0 -1 ) 
 0 1 2 3 1 0 
 }
 
-/* surface 2 */ { "floors/brick" /* numVerts = */ 4 /* numIndexes = */ 6
+/* surface 2 */ { "floors/brick/OrangeBrick" /* numVerts = */ 4 /* numIndexes = */ 6
 ( -256 192 -96 -5.0 -5.0 0 0 1 ) ( 256 192 -96 7.0 -5.0 0 0 1 ) ( 256 -192 -96 7.0 5.0 0 0 1 ) 
 ( -256 -192 -96 -5.0 5.0 0 0 1 ) 
 0 1 2 3 0 2 

@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<material pass="Opaque">
-    <albedo source="trim/hazard.albedo.dds" />
-    <normal source="trim/hazard.normal.dds" />
-    <info source="trim/hazard.info.dds" />
-</material>

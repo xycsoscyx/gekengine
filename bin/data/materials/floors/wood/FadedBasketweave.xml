@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<material pass="Opaque" params="1,1,1,1">
+    <albedo source="%material%-ColorMap.png" />
+    <normal source="%material%-NormalMap.png" />
+    <info source="*color:0.5,0,0,0" />
+</material>

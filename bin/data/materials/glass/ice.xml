@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<material pass="Glass">
-    <albedo source="glass/ice.albedo.dds" />
-    <normal source="glass/ice.normal.dds" />
-    <info source="glass/ice.info.dds" />
-</material>
