@@ -38,6 +38,7 @@ class CGEKRenderManager : public CGEKUnknown
 public:
     struct PASS
     {
+        INT32 m_nPriority;
         std::vector<PASS *> m_aRequiredPasses;
         std::vector<IGEKRenderFilter *> m_aFilters;
     };

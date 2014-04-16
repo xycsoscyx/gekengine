@@ -568,6 +568,15 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
             {
                 hRetVal = S_OK;
                 PASS &kPassData = m_aPasses[pName];
+                if (kPassNode.HasAttribute(L"priority"))
+                {
+                    kPassData.m_nPriority = StrToINT32(kPassNode.GetAttribute(L"priority"));
+                }
+                else
+                {
+                    kPassData.m_nPriority = 1;
+                }
+
                 CLibXMLNode kRequires = kPassNode.FirstChildElement(L"requires");
                 if (kRequires)
                 {
@@ -1431,11 +1440,7 @@ STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName)
         auto pIterator = m_aPasses.find(pName);
         if (pIterator != m_aPasses.end())
         {
-            m_spUpdateFrame->m_aPasses[&(*pIterator).second] = 1;
-            if (_wcsicmp(pName, L"MainMenu") == 0)
-            {
-                m_spUpdateFrame->m_aPasses[&(*pIterator).second] = -10;
-            }
+            m_spUpdateFrame->m_aPasses[&(*pIterator).second] = ((*pIterator).second).m_nPriority;
         }
     }
 
