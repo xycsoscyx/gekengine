@@ -184,10 +184,10 @@ static GEKVIDEO::INPUT::SOURCE GetElementClass(LPCWSTR pValue)
 
 BEGIN_INTERFACE_LIST(CGEKRenderManager)
     INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemUser)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoSystemUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
+    INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKEngineUser)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderManager)
@@ -1432,10 +1432,19 @@ STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName)
         if (pIterator != m_aPasses.end())
         {
             m_spUpdateFrame->m_aPasses[&(*pIterator).second] = 1;
+            if (_wcsicmp(pName, L"MainMenu") == 0)
+            {
+                m_spUpdateFrame->m_aPasses[&(*pIterator).second] = -10;
+            }
         }
     }
 
     return hRetVal;
+}
+
+STDMETHODIMP_(void) CGEKRenderManager::CaptureMouse(bool bCapture)
+{
+    GetEngine()->CaptureMouse(bCapture);
 }
 
 STDMETHODIMP CGEKRenderManager::SetViewer(IGEKEntity *pEntity)

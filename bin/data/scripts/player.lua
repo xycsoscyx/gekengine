@@ -51,6 +51,7 @@ SimpleState["OnEvent"] = function(pEntity, strAction, kParamA, kParamB)
     if strAction == "input" then
         if kParamA == "escape" and kParamB then
             pEntity:GetState()["GUI"] = not pEntity:GetState()["GUI"]
+            pEntity:CaptureMouse(not pEntity:GetState()["GUI"])
         elseif not pEntity:GetState()["GUI"] then
             pEntity:GetState()["Actions"][kParamA] = kParamB
         end
@@ -61,4 +62,5 @@ function Initialize(pEntity, strParams)
     pEntity:SetState(SimpleState)
     pEntity:GetState()["Actions"] = {}
     pEntity:GetState()["GUI"] = false
+    pEntity:CaptureMouse(not pEntity:GetState()["GUI"])
 end

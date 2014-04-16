@@ -23,6 +23,7 @@ DECLARE_INTERFACE_IID_(IGEKViewManager, IUnknown, "585D122C-2488-4EEE-9FED-A7B0A
     STDMETHOD_(void, DrawModel)         (THIS_ IGEKEntity *pEntity, IUnknown *pModel, const float4 &nParams = float4(1.0f, 1.0f, 1.0f, 1.0f)) PURE;
 
     STDMETHOD(EnablePass)               (THIS_ LPCWSTR pName) PURE;
+    STDMETHOD_(void, CaptureMouse)      (THIS_ bool bCapture) PURE;
 };
 
 SYSTEM_USER(ViewManager, "F79841C5-A70D-4A1E-BF11-666887A4DB78");

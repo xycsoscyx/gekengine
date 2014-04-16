@@ -21,9 +21,9 @@ class CGEKRenderManager : public CGEKUnknown
                         , public CGEKContextUser
                         , public CGEKSystemUser
                         , public CGEKVideoSystemUser
-                        , public IGEKVideoObserver
                         , public CGEKEngineUser
                         , public IGEKContextObserver
+                        , public IGEKVideoObserver
                         , public IGEKSystemObserver
                         , public IGEKRenderManager
                         , public IGEKProgramManager
@@ -157,6 +157,7 @@ public:
     STDMETHOD_(void, DrawLight)         (THIS_ IGEKEntity *pEntity, const GEKLIGHT &kLight);
     STDMETHOD_(void, DrawModel)         (THIS_ IGEKEntity *pEntity, IUnknown *pModel, const float4 &nParams = float4(1.0f, 1.0f, 1.0f, 1.0f));
     STDMETHOD(EnablePass)               (THIS_ LPCWSTR pName);
+    STDMETHOD_(void, CaptureMouse)      (THIS_ bool bCapture);
 
     // IGEKRenderManager
     STDMETHOD_(void, BeginLoad)         (THIS);

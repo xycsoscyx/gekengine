@@ -26,8 +26,7 @@ private:
     CGEKTimer m_kTimer;
     double m_nTotalTime;
     double m_nTimeAccumulator;
-    INT32 m_nLastCursorX;
-    INT32 m_nLastCursorY;
+    bool m_bCaptureMouse;
 
     std::map<UINT32, CStringW> m_aInputBindings;
     CComPtr<IGEKPopulationManager> m_spPopulationManager;
@@ -60,5 +59,6 @@ public:
     STDMETHOD_(void, Run)               (THIS);
 
     // IGEKEngine
+    STDMETHOD_(void, CaptureMouse)      (THIS_ bool bCapture);
     STDMETHOD_(void, OnCommand)         (THIS_ LPCWSTR pCommand, LPCWSTR *pParams, UINT32 nNumParams);
 };

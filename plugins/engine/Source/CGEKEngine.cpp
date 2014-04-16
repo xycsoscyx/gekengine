@@ -27,6 +27,7 @@ CGEKEngine::CGEKEngine(void)
     : m_nTotalTime(0.0)
     , m_nTimeAccumulator(0.0)
     , m_bWindowActive(false)
+    , m_bCaptureMouse(false)
 {
 }
 
@@ -80,11 +81,6 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
         return pReturn;
     });
-
-    POINT kCursor;
-    GetCursorPos(&kCursor);
-    m_nLastCursorX = kCursor.x;
-    m_nLastCursorY = kCursor.y;
 
     m_aInputBindings[VK_UP] = L"forward";
     m_aInputBindings[VK_DOWN] = L"backward";
@@ -157,16 +153,8 @@ STDMETHODIMP CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, 
             {
             case WA_ACTIVE:
             case WA_CLICKACTIVE:
-                if (true)
-                {
-                    POINT kCursor;
-                    GetCursorPos(&kCursor);
-                    m_nLastCursorX = kCursor.x;
-                    m_nLastCursorY = kCursor.y;
-                    m_bWindowActive = true;
-                    m_kTimer.Pause(false);
-                }
-
+                m_bWindowActive = true;
+                m_kTimer.Pause(false);
                 break;
 
             case WA_INACTIVE:
@@ -200,21 +188,6 @@ STDMETHODIMP CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, 
     case WM_RBUTTONUP:
     case WM_MBUTTONUP:
         CheckInput(nMessage, false);
-        nResult = 1;
-        break;
-
-    case WM_MOUSEMOVE:
-        if (true)
-        {
-            INT32 nXPos = GET_X_LPARAM(lParam);
-            INT32 nYPos = GET_Y_LPARAM(lParam);
-            INT32 nCursorMoveX = ((nXPos - m_nLastCursorX) / 2);
-            INT32 nCursorMoveY = ((nYPos - m_nLastCursorY) / 2);
-            m_nLastCursorX = nXPos;
-            m_nLastCursorY = nYPos;
-            CheckInput(WM_MOUSEMOVE, float2(float(nCursorMoveX), float(nCursorMoveY)));
-        }
-
         nResult = 1;
         break;
 
@@ -252,6 +225,25 @@ STDMETHODIMP CGEKEngine::OnStep(void)
 {
     if (m_bWindowActive)
     {
+        if (m_bCaptureMouse)
+        {
+            POINT kCursor;
+            GetCursorPos(&kCursor);
+
+            RECT kWindow;
+            GetWindowRect(m_spSystem->GetWindow(), &kWindow);
+            INT32 nCenterX = (kWindow.left + ((kWindow.right - kWindow.left) / 2));
+            INT32 nCenterY = (kWindow.top + ((kWindow.bottom - kWindow.top) / 2));
+            SetCursorPos(nCenterX, nCenterY);
+
+            INT32 nCursorMoveX = ((kCursor.x - nCenterX) / 2);
+            INT32 nCursorMoveY = ((kCursor.y - nCenterY) / 2);
+            if (nCursorMoveX != 0 || nCursorMoveY != 0)
+            {
+                CheckInput(WM_MOUSEMOVE, float2(float(nCursorMoveX), float(nCursorMoveY)));
+            }
+        }
+
         m_kTimer.Update();
         m_nTimeAccumulator += m_kTimer.GetUpdateTime();
         while (m_nTimeAccumulator > (1.0 / 30.0))
@@ -275,6 +267,11 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
 {
     REQUIRE_VOID_RETURN(m_spSystem);
     m_spSystem->Run();
+}
+
+STDMETHODIMP_(void) CGEKEngine::CaptureMouse(bool bCapture)
+{
+    m_bCaptureMouse = bCapture;
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnCommand(LPCWSTR pCommand, LPCWSTR *pParams, UINT32 nNumParams)

@@ -252,6 +252,16 @@ namespace Entity
         }
     }
 
+    void CaptureMouse(IGEKEntity *pEntity, bool bCapture)
+    {
+        REQUIRE_VOID_RETURN(pEntity);
+        CGEKComponentScript *pScript = dynamic_cast<CGEKComponentScript *>(pEntity->GetComponent(L"script"));
+        if (pScript)
+        {
+            pScript->GetViewManager()->CaptureMouse(bCapture);
+        }
+    }
+
     void SetState(IGEKEntity *pEntity, const luabind::object &kState)
     {
         REQUIRE_VOID_RETURN(pEntity);
@@ -422,6 +432,7 @@ STDMETHODIMP CGEKComponentSystemScript::Initialize(void)
         [
             luabind::class_<IGEKEntity>("Entity")
             .def("EnablePass", &Entity::EnablePass)
+            .def("CaptureMouse", &Entity::CaptureMouse)
             .def("SetState", &Entity::SetState)
             .def("GetState", &Entity::GetState)
             .def("GetProperty", &Entity::GetProperty)
