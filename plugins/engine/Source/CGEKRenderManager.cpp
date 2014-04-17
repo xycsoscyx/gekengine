@@ -698,21 +698,18 @@ HRESULT CGEKRenderManager::CreateThread(void)
                         pTransform->GetProperty(L"position", kPosition);
                         pTransform->GetProperty(L"rotation", kRotation);
 
-                        m_spRenderFrame->m_kBuffer.m_nViewMatrix = kRotation.GetQuaternion();
-                        m_spRenderFrame->m_kBuffer.m_nViewMatrix.t = kPosition.GetFloat3();
-                        m_spRenderFrame->m_kBuffer.m_nViewMatrix.Invert();
+                        float4x4 nCameraMatrix;
+                        nCameraMatrix = kRotation.GetQuaternion();
+                        nCameraMatrix.t = kPosition.GetFloat3();
 
                         float nXSize = float(GetSystem()->GetXSize());
                         float nYSize = float(GetSystem()->GetYSize());
                         float nAspect = (nXSize / nYSize);
 
-                        m_spRenderFrame->m_kBuffer.m_nProjectionMatrix.SetPerspective(kFieldOfView.GetFloat(), nAspect,
-                            kMinViewDistance.GetFloat(),
-                            kMaxViewDistance.GetFloat());
-
+                        m_spRenderFrame->m_kBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
+                        m_spRenderFrame->m_kBuffer.m_nProjectionMatrix.SetPerspective(kFieldOfView.GetFloat(), nAspect, kMinViewDistance.GetFloat(), kMaxViewDistance.GetFloat());
                         m_spRenderFrame->m_kBuffer.m_nTransformMatrix = (m_spRenderFrame->m_kBuffer.m_nViewMatrix * m_spRenderFrame->m_kBuffer.m_nProjectionMatrix);
-
-                        m_spRenderFrame->m_kFrustum.Create(m_spRenderFrame->m_kBuffer.m_nTransformMatrix);
+                        m_spRenderFrame->m_kFrustum.Create(nCameraMatrix, m_spRenderFrame->m_kBuffer.m_nProjectionMatrix);
 
                         m_spWorld->Prepare(m_spRenderFrame->m_kFrustum);
                         for (auto &kPair : m_spRenderFrame->m_aModels)

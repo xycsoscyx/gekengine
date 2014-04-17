@@ -8,16 +8,12 @@
 
 struct MATERIAL
 {
-    UINT32 m_nFirstVertex;
-    UINT32 m_nFirstIndex;
-    UINT32 m_nNumIndices;
+    std::vector<VERTEX> m_aVertices;
 };
 
 struct MODEL : public aabb
 {
     std::map<CStringA, MATERIAL> m_aMaterials;
-    std::vector<VERTEX> m_aVertices;
-    std::vector<UINT16> m_aIndices;
 };
 
 struct NODE : public plane
@@ -328,20 +324,15 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                                 strMaterialName = strMaterialName.Mid(7);
                             }
                             
-                            MATERIAL kSurface;
-                            kSurface.m_nFirstVertex = kModel.m_aVertices.size();
-                            kSurface.m_nFirstIndex = kModel.m_aIndices.size();
-
 		                    kParser.NextToken();
 	                        UINT32 nNumVertices = StrToUINT32(kParser.GetToken());
 
 		                    kParser.NextToken();
 	                        UINT32 nNumIndices = StrToUINT32(kParser.GetToken());
-                            kSurface.m_nNumIndices = nNumIndices;
 
                             printf("-> Surface: %s, %d vertices, %d indices\r\n", strMaterialName.GetString(), nNumVertices, nNumIndices);
                             
-                            std::vector<VERTEX> aVertices(nNumVertices);
+                            std::vector<VERTEX> aIndexedVertices(nNumVertices);
 		                    for(UINT32 nVertex = 0; nVertex < nNumVertices; nVertex++)
 		                    {
 			                    kParser.NextToken();
@@ -350,7 +341,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                                     throw CMyException(__LINE__, L"Invalid Vertex Section");
 			                    }
 
-                                VERTEX &kVertex = aVertices[nVertex];
+                                VERTEX &kVertex = aIndexedVertices[nVertex];
 
                                 kParser.NextToken();
                                 kVertex.position.x = StrToFloat(kParser.GetToken());
@@ -360,10 +351,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
                                 kParser.NextToken();
                                 kVertex.position.y = StrToFloat(kParser.GetToken());
-
                                 kVertex.position *= nScale;
-                                kModel.Extend(kVertex.position);
-                                nAABB.Extend(kVertex.position);
 
                                 kParser.NextToken();
                                 kVertex.texcoord.u = StrToFloat(kParser.GetToken());
@@ -385,10 +373,13 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 			                    {
                                     throw CMyException(__LINE__, L"Invalid Vertex Section");
 			                    }
-		                    }
+                            
+                                kModel.Extend(kVertex.position);
+                                nAABB.Extend(kVertex.position);
+                            }
 
-                            std::vector<UINT16> aIndices(nNumIndices);
-		                    for(UINT32 nIndex = 0; nIndex < nNumIndices; nIndex++)
+                            std::vector<VERTEX> aFlatVertices;
+                            for (UINT32 nIndex = 0; nIndex < nNumIndices; nIndex++)
 		                    {
 			                    kParser.NextToken();
                                 UINT32 nVertexIndex = StrToUINT32(kParser.GetToken());
@@ -398,28 +389,12 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                                     nVertexIndex = 0;
                                 }
 
-                                aIndices[nIndex] = nVertexIndex;
+                                aFlatVertices.push_back(aIndexedVertices[nVertexIndex]);
 		                    }
 
                             if (strMaterialName.Left(6).CompareNoCase("common") != 0)
                             {
-                                kModel.m_aMaterials[strMaterialName] = kSurface;
-
-                                float nFaceEpsilon = 0.05f;
-                                float nPartialEdgeThreshold = 0.01f;
-                                float nSingularPointThreshold = 0.25f;
-                                float nNormalEdgeThreshold = 0.01f;
-
-                                std::vector<VERTEX> aOutputVertices;
-                                std::vector<UINT16> aOutputIndices;
-                                if (FAILED(GEKOptimizeMesh(&aVertices[0], aVertices.size(), &aIndices[0], aIndices.size(), aOutputVertices, aOutputIndices,
-                                    nFaceEpsilon, nPartialEdgeThreshold, nSingularPointThreshold, nNormalEdgeThreshold)))
-                                {
-                                    throw CMyException(__LINE__, L"Unable to optimize mesh data");
-                                }
-
-                                kModel.m_aVertices.insert(kModel.m_aVertices.end(), aOutputVertices.begin(), aOutputVertices.end());
-                                kModel.m_aIndices.insert(kModel.m_aIndices.end(), aOutputIndices.begin(), aOutputIndices.end());
+                                kModel.m_aMaterials[strMaterialName].m_aVertices.insert(kModel.m_aMaterials[strMaterialName].m_aVertices.end(), aFlatVertices.begin(), aFlatVertices.end());
                             }
 
 		                    kParser.NextToken();
@@ -467,17 +442,16 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                             NODE &kNode = aNodes[nNode];
 
                             kParser.NextToken();
-                            kNode.normal.x = StrToFloat(kParser.GetToken());
+                            kNode.normal.x = -StrToFloat(kParser.GetToken());
 
                             kParser.NextToken();
-                            kNode.normal.z = StrToFloat(kParser.GetToken());
+                            kNode.normal.z = -StrToFloat(kParser.GetToken());
 
                             kParser.NextToken();
-                            kNode.normal.y = StrToFloat(kParser.GetToken());
+                            kNode.normal.y = -StrToFloat(kParser.GetToken());
 
                             kParser.NextToken();
-                            kNode.distance = -StrToFloat(kParser.GetToken());
-
+                            kNode.distance = StrToFloat(kParser.GetToken());
                             kNode.distance *= nScale;
 
                             kParser.NextToken();
@@ -550,7 +524,6 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
 			                    kParser.NextToken();
                                 nCoordinate.y = StrToFloat(kParser.GetToken());
-
                                 nCoordinate *= nScale;
 
                                 kParser.NextToken();
@@ -594,49 +567,75 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
                 fwrite(&nAABB, sizeof(aabb), 1, pFile);
 
+                std::vector<VERTEX> aVertices;
+                std::vector<UINT16> aIndices;
+
                 UINT32 nNumAreas = aAreas.size();
                 fwrite(&nNumAreas, sizeof(UINT32), 1, pFile);
                 for (auto &kPair : aAreas)
                 {
                     UINT32 nNumMaterials = kPair.second->m_aMaterials.size();
+                    printf("-> Area %d: %d materials\r\n", kPair.first, nNumMaterials);
                     fwrite(&nNumMaterials, sizeof(UINT32), 1, pFile);
                     for (auto &kMaterial : kPair.second->m_aMaterials)
                     {
                         CStringA strMaterial = (strGame + kMaterial.first);
                         fwrite(strMaterial.GetString(), (strMaterial.GetLength() + 1), 1, pFile);
-                        fwrite(&kMaterial.second, sizeof(MATERIAL), 1, pFile);
-                    }
 
-                    UINT32 nNumVertices = kPair.second->m_aVertices.size();
-                    fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
-                    if (nNumVertices > 0)
+                        float nFaceEpsilon = 0.05f;
+                        float nPartialEdgeThreshold = 0.01f;
+                        float nSingularPointThreshold = 0.25f;
+                        float nNormalEdgeThreshold = 0.01f;
+
+                        std::vector<VERTEX> aOutputVertices;
+                        std::vector<UINT16> aOutputIndices;
+                        if (FAILED(GEKOptimizeMesh(&kMaterial.second.m_aVertices[0], kMaterial.second.m_aVertices.size(), NULL, 0, aOutputVertices, aOutputIndices,
+                            false, nFaceEpsilon, nPartialEdgeThreshold, nSingularPointThreshold, nNormalEdgeThreshold)))
+                        {
+                            throw CMyException(__LINE__, L"Unable to optimize mesh data");
+                        }
+
+                        UINT32 nFirstVertex = aVertices.size();
+                        fwrite(&nFirstVertex, sizeof(UINT32), 1, pFile);
+
+                        UINT32 nFirstIndex = aIndices.size();
+                        fwrite(&nFirstIndex, sizeof(UINT32), 1, pFile);
+
+                        UINT32 nNumIndices = aOutputIndices.size();
+                        fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
+
+                        aVertices.insert(aVertices.end(), aOutputVertices.begin(), aOutputVertices.end());
+                        aIndices.insert(aIndices.end(), aOutputIndices.begin(), aOutputIndices.end());
+                    }
+                }
+
+                UINT32 nNumVertices = aVertices.size();
+                fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
+                if (nNumVertices > 0)
+                {
+                    for (UINT32 nVertex = 0; nVertex < nNumVertices; nVertex++)
                     {
-                        for (UINT32 nVertex = 0; nVertex < nNumVertices; nVertex++)
-                        {
-                            fwrite(&kPair.second->m_aVertices[nVertex].position, sizeof(float3), 1, pFile);
-                        }
-
-                        for (UINT32 nVertex = 0; nVertex < nNumVertices; nVertex++)
-                        {
-                            fwrite(&kPair.second->m_aVertices[nVertex].texcoord, sizeof(float2), 1, pFile);
-                        }
-
-                        for (UINT32 nVertex = 0; nVertex < nNumVertices; nVertex++)
-                        {
-                            fwrite(&kPair.second->m_aVertices[nVertex].tangent, sizeof(float3), 1, pFile);
-                            fwrite(&kPair.second->m_aVertices[nVertex].bitangent, sizeof(float3), 1, pFile);
-                            fwrite(&kPair.second->m_aVertices[nVertex].normal, sizeof(float3), 1, pFile);
-                        }
+                        fwrite(&aVertices[nVertex].position, sizeof(float3), 1, pFile);
                     }
 
-                    UINT32 nNumIndices = kPair.second->m_aIndices.size();
-                    fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
-                    if (nNumIndices > 0)
+                    for (UINT32 nVertex = 0; nVertex < nNumVertices; nVertex++)
                     {
-                        fwrite(&kPair.second->m_aIndices[0], sizeof(UINT16), nNumIndices, pFile);
+                        fwrite(&aVertices[nVertex].texcoord, sizeof(float2), 1, pFile);
                     }
 
-                    printf("-> Area %d: %d materials, %d vertices, %d indices\r\n", kPair.first, nNumMaterials, nNumVertices, nNumIndices);
+                    for (UINT32 nVertex = 0; nVertex < nNumVertices; nVertex++)
+                    {
+                        fwrite(&aVertices[nVertex].tangent, sizeof(float3), 1, pFile);
+                        fwrite(&aVertices[nVertex].bitangent, sizeof(float3), 1, pFile);
+                        fwrite(&aVertices[nVertex].normal, sizeof(float3), 1, pFile);
+                    }
+                }
+
+                UINT32 nNumIndices = aIndices.size();
+                fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
+                if (nNumIndices > 0)
+                {
+                    fwrite(&aIndices[0], sizeof(UINT16), nNumIndices, pFile);
                 }
 
                 UINT32 nNumNodes = aNodes.size();

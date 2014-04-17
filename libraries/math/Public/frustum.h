@@ -12,11 +12,14 @@ public:
     {
     }
 
-    void Create(const tmatrix4x4<TYPE> &nTransform)
+    void Create(const tmatrix4x4<TYPE> &nMatrix, const tmatrix4x4<TYPE> &nProjection)
     {
         // Extract the origin;
-        origin = nTransform.t;
+        origin = -nMatrix.t;
 
+        tmatrix4x4<TYPE> nView = nMatrix.GetInverse();
+        tmatrix4x4<TYPE> nTransform = (nView * nProjection);
+        
         // Extract the near plane
         planes[0].normal.x = nTransform._13;
         planes[0].normal.y = nTransform._23;

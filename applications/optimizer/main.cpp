@@ -238,7 +238,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             }
 
             VERTEX *pVertices = (VERTEX *)pBuffer;
-            pBuffer += (sizeof(VERTEX)* nNumVertices);
+            pBuffer += (sizeof(VERTEX) * nNumVertices);
             if (pBuffer >= pBufferEnd)
             {
                 throw CMyException(__LINE__, L"End of File Encountered");
@@ -253,7 +253,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             }
 
             UINT16 *pIndices = (UINT16 *)pBuffer;
-            pBuffer += (sizeof(UINT16)* nNumIndices);
+            pBuffer += (sizeof(UINT16) * nNumIndices);
             if (pBuffer != pBufferEnd)
             {
                 throw CMyException(__LINE__, L"End of File Encountered");
@@ -309,7 +309,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
                 std::vector<VERTEX> aOutputVertices;
                 std::vector<UINT16> aOutputIndices;
-                if (FAILED(GEKOptimizeMesh(&aVertices[0], aVertices.size(), nullptr, 0, aOutputVertices, aOutputIndices, nFaceEpsilon, nPartialEdgeThreshold, nSingularPointThreshold, nNormalEdgeThreshold)))
+                if (FAILED(GEKOptimizeMesh(&aVertices[0], aVertices.size(), nullptr, 0, aOutputVertices, aOutputIndices, true, nFaceEpsilon, nPartialEdgeThreshold, nSingularPointThreshold, nNormalEdgeThreshold)))
                 {
                     throw CMyException(__LINE__, L"Unable to optimize mesh data");
                 }

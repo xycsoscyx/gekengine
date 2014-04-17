@@ -7,7 +7,7 @@
 
 HRESULT GEKOptimizeMesh(const VERTEX *pInputVertices, UINT32 nNumVertices, const UINT16 *pInputIndices, UINT32 nNumIndices,
                         std::vector<VERTEX> &aOutputVertices, std::vector<UINT16> &aOutputIndices,
-                        float nFaceEpsilon, float nPartialEdgeThreshold, float nSingularPointThreshold, float nNormalEdgeThreshold)
+                        bool bGenerateNormals, float nFaceEpsilon, float nPartialEdgeThreshold, float nSingularPointThreshold, float nNormalEdgeThreshold)
 {
     REQUIRE_RETURN(pInputVertices, E_INVALIDARG);
     REQUIRE_RETURN(nNumVertices > 0, E_INVALIDARG);
@@ -97,7 +97,7 @@ HRESULT GEKOptimizeMesh(const VERTEX *pInputVertices, UINT32 nNumVertices, const
                             {
                                 CComPtr<ID3DXMesh> spFinalMesh;
                                 hRetVal = D3DXComputeTangentFrameEx(spMesh, D3DDECLUSAGE_TEXCOORD, 0, D3DDECLUSAGE_TANGENT, 0, D3DDECLUSAGE_BINORMAL, 0,
-                                    D3DDECLUSAGE_NORMAL, 0, D3DXTANGENT_CALCULATE_NORMALS,
+                                    D3DDECLUSAGE_NORMAL, 0, (bGenerateNormals ? D3DXTANGENT_CALCULATE_NORMALS : 0),
                                     &aOptimizedAdjacency[0], nPartialEdgeThreshold, nSingularPointThreshold, nNormalEdgeThreshold, &spFinalMesh, nullptr);
                                 if (spFinalMesh)
                                 {

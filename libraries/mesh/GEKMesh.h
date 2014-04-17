@@ -15,6 +15,7 @@ struct VERTEX
 
 HRESULT GEKOptimizeMesh(const VERTEX *pInputVertices, UINT32 nNumVertices, const UINT16 *pInputIndices, UINT32 nNumIndices, 
                         std::vector<VERTEX> &aOutputVertices, std::vector<UINT16> &aOutputIndices,
+                        bool bGenerateNormals = true,
                         float nFaceEpsilon = 0.021f,
                         float nPartialEdgeThreshold = 0.01f,
                         float nSingularPointThreshold = 0.25f,

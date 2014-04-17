@@ -22,12 +22,7 @@ private:
 
     struct AREA
     {
-        bool m_bRenderData;
         std::multimap<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
-        CComPtr<IGEKVideoVertexBuffer> m_spPositionBuffer;
-        CComPtr<IGEKVideoVertexBuffer> m_spTexCoordBuffer;
-        CComPtr<IGEKVideoVertexBuffer> m_spBasisBuffer;
-        CComPtr<IGEKVideoIndexBuffer> m_spIndexBuffer;
     };
 
     struct NODE : public plane
@@ -48,6 +43,10 @@ private:
     aabb m_nAABB;
     CComPtr<IUnknown> m_spVertexProgram;
     std::vector<AREA> m_aAreas;
+    CComPtr<IGEKVideoVertexBuffer> m_spPositionBuffer;
+    CComPtr<IGEKVideoVertexBuffer> m_spTexCoordBuffer;
+    CComPtr<IGEKVideoVertexBuffer> m_spBasisBuffer;
+    CComPtr<IGEKVideoIndexBuffer> m_spIndexBuffer;
     std::vector<NODE> m_aNodes;
     std::vector<float3> m_aPortalEdges;
     std::vector<PORTAL> m_aPortals;

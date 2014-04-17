@@ -26,7 +26,7 @@ private:
     CComPtr<IGEKVideoVertexBuffer> m_spTexCoordBuffer;
     CComPtr<IGEKVideoVertexBuffer> m_spBasisBuffer;
     CComPtr<IGEKVideoIndexBuffer> m_spIndexBuffer;
-    std::map<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
+    std::multimap<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
 
 public:
     CGEKStaticModel(void);

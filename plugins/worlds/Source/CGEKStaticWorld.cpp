@@ -48,8 +48,6 @@ STDMETHODIMP CGEKStaticWorld::Load(const UINT8 *pBuffer, std::function<HRESULT(f
             for (UINT32 nArea = 0; nArea < nNumAreas; nArea++)
             {
                 AREA &kArea = m_aAreas[nArea];
-                kArea.m_bRenderData = false;
-
                 UINT32 nNumMaterials = *((UINT32 *)pBuffer);
                 pBuffer += sizeof(UINT32);
 
@@ -80,67 +78,61 @@ STDMETHODIMP CGEKStaticWorld::Load(const UINT8 *pBuffer, std::function<HRESULT(f
                         break;
                     }
                 }
+            }
+
+            UINT32 nNumVertices = *((UINT32 *)pBuffer);
+            pBuffer += sizeof(UINT32);
+
+            float3 *pPositionBuffer = (float3 *)pBuffer;
+            pBuffer += (sizeof(float3) * nNumVertices);
+            float3 *pTexCoordBuffer = (float3 *)pBuffer;
+            pBuffer += (sizeof(float2) * nNumVertices);
+            float3 *pBasisBuffer = (float3 *)pBuffer;
+            pBuffer += (sizeof(float3) * 3 * nNumVertices);
+
+            UINT32 nNumIndices = *((UINT32 *)pBuffer);
+            pBuffer += sizeof(UINT32);
+
+            UINT16 *pIndices = (UINT16 *)pBuffer;
+            pBuffer += (sizeof(UINT16) * nNumIndices);
+
+            if (SUCCEEDED(hRetVal) && nNumVertices > 0 && nNumIndices > 0)
+            {
+                hRetVal = GetVideoSystem()->CreateVertexBuffer(pPositionBuffer, sizeof(float3), nNumVertices, &m_spPositionBuffer);
+                if (SUCCEEDED(hRetVal))
+                {
+                    hRetVal = GetVideoSystem()->CreateVertexBuffer(pTexCoordBuffer, sizeof(float2), nNumVertices, &m_spTexCoordBuffer);
+                }
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    UINT32 nNumVertices = *((UINT32 *)pBuffer);
-                    pBuffer += sizeof(UINT32);
+                    hRetVal = GetVideoSystem()->CreateVertexBuffer(pBasisBuffer, (sizeof(float3) * 3), nNumVertices, &m_spBasisBuffer);
+                }
 
-                    float3 *pPositionBuffer = (float3 *)pBuffer;
-                    pBuffer += (sizeof(float3) * nNumVertices);
-                    float3 *pTexCoordBuffer = (float3 *)pBuffer;
-                    pBuffer += (sizeof(float2) * nNumVertices);
-                    float3 *pBasisBuffer = (float3 *)pBuffer;
-                    pBuffer += (sizeof(float3) * 3 * nNumVertices);
+                if (SUCCEEDED(hRetVal))
+                {
+                    hRetVal = GetVideoSystem()->CreateIndexBuffer(pIndices, GEKVIDEO::DATA::UINT16, nNumIndices, &m_spIndexBuffer);
+                }
 
-                    UINT32 nNumIndices = *((UINT32 *)pBuffer);
-                    pBuffer += sizeof(UINT32);
-
-                    UINT16 *pIndices = (UINT16 *)pBuffer;
-                    pBuffer += (sizeof(UINT16) * nNumIndices);
-
-                    if (nNumVertices > 0 && nNumIndices > 0)
+                if (SUCCEEDED(hRetVal))
+                {
+                    for (auto &kArea : m_aAreas)
                     {
-                        kArea.m_bRenderData = true;
-                        hRetVal = GetVideoSystem()->CreateVertexBuffer(pPositionBuffer, sizeof(float3), nNumVertices, &kArea.m_spPositionBuffer);
-                        if (SUCCEEDED(hRetVal))
+                        for (auto &kPair : kArea.m_aMaterials)
                         {
-                            hRetVal = GetVideoSystem()->CreateVertexBuffer(pTexCoordBuffer, sizeof(float2), nNumVertices, &kArea.m_spTexCoordBuffer);
-                        }
-
-                        if (SUCCEEDED(hRetVal))
-                        {
-                            hRetVal = GetVideoSystem()->CreateVertexBuffer(pBasisBuffer, (sizeof(float3)* 3), nNumVertices, &kArea.m_spBasisBuffer);
-                        }
-
-                        if (SUCCEEDED(hRetVal))
-                        {
-                            hRetVal = GetVideoSystem()->CreateIndexBuffer(pIndices, GEKVIDEO::DATA::UINT16, nNumIndices, &kArea.m_spIndexBuffer);
-                        }
-
-                        if (SUCCEEDED(hRetVal))
-                        {
-                            for (auto &kPair : kArea.m_aMaterials)
+                            for (UINT32 nFace = 0; nFace < kPair.second.m_nNumIndices; nFace += 3)
                             {
-                                for (UINT32 nFace = 0; nFace < kPair.second.m_nNumIndices; nFace += 3)
+                                float3 aFace[3] =
                                 {
-                                    float3 aFace[3] =
-                                    {
-                                        pPositionBuffer[kPair.second.m_nFirstVertex + pIndices[kPair.second.m_nFirstIndex + nFace + 0]],
-                                        pPositionBuffer[kPair.second.m_nFirstVertex + pIndices[kPair.second.m_nFirstIndex + nFace + 1]],
-                                        pPositionBuffer[kPair.second.m_nFirstVertex + pIndices[kPair.second.m_nFirstIndex + nFace + 2]],
-                                    };
+                                    pPositionBuffer[kPair.second.m_nFirstVertex + pIndices[kPair.second.m_nFirstIndex + nFace + 0]],
+                                    pPositionBuffer[kPair.second.m_nFirstVertex + pIndices[kPair.second.m_nFirstIndex + nFace + 1]],
+                                    pPositionBuffer[kPair.second.m_nFirstVertex + pIndices[kPair.second.m_nFirstIndex + nFace + 2]],
+                                };
 
-                                    OnStaticFace(aFace, kPair.first);
-                                }
+                                OnStaticFace(aFace, kPair.first);
                             }
                         }
                     }
-                }
-
-                if (FAILED(hRetVal))
-                {
-                    break;
                 }
             }
 
@@ -152,8 +144,8 @@ STDMETHODIMP CGEKStaticWorld::Load(const UINT8 *pBuffer, std::function<HRESULT(f
                 if (nNumNodes > 0)
                 {
                     m_aNodes.resize(nNumNodes);
-                    memcpy(&m_aNodes[0], pBuffer, (sizeof(NODE)* nNumNodes));
-                    pBuffer += (sizeof(NODE)* nNumNodes);
+                    memcpy(&m_aNodes[0], pBuffer, (sizeof(NODE) * nNumNodes));
+                    pBuffer += (sizeof(NODE) * nNumNodes);
                 }
 
                 // Portal Edges
@@ -162,8 +154,8 @@ STDMETHODIMP CGEKStaticWorld::Load(const UINT8 *pBuffer, std::function<HRESULT(f
                 if (nNumPortalEdges > 0)
                 {
                     m_aPortalEdges.resize(nNumPortalEdges);
-                    memcpy(&m_aPortalEdges[0], pBuffer, (sizeof(float3)* nNumPortalEdges));
-                    pBuffer += (sizeof(float3)* nNumPortalEdges);
+                    memcpy(&m_aPortalEdges[0], pBuffer, (sizeof(float3) * nNumPortalEdges));
+                    pBuffer += (sizeof(float3) * nNumPortalEdges);
                 }
 
                 // Portals
@@ -172,8 +164,8 @@ STDMETHODIMP CGEKStaticWorld::Load(const UINT8 *pBuffer, std::function<HRESULT(f
                 if (nNumPortals > 0)
                 {
                     m_aPortals.resize(nNumPortals);
-                    memcpy(&m_aPortals[0], pBuffer, (sizeof(PORTAL)* nNumPortals));
-                    pBuffer += (sizeof(PORTAL)* nNumPortals);
+                    memcpy(&m_aPortals[0], pBuffer, (sizeof(PORTAL) * nNumPortals));
+                    pBuffer += (sizeof(PORTAL) * nNumPortals);
                 }
             }
         }
@@ -192,53 +184,64 @@ STDMETHODIMP_(void) CGEKStaticWorld::Prepare(const frustum &nFrustum)
     m_nArea = GetArea(nFrustum.origin);
     for (auto &kArea : m_aAreas)
     {
-        if (kArea.m_bRenderData)
+        for (auto &kPair : kArea.m_aMaterials)
         {
-            for (auto &kPair : kArea.m_aMaterials)
-            {
-                GetMaterialManager()->PrepareMaterial(kPair.first);
-            }
+            GetMaterialManager()->PrepareMaterial(kPair.first);
         }
     }
 }
 
 int CGEKStaticWorld::GetArea(const float3 &nPoint)
 {
-    INT32 nNode = 0;
-    if (m_aNodes.size() > 0)
+    INT32 nNode = 1;
+    while (nNode > 0 && nNode < m_aNodes.size())
     {
-        do
+        float nDistance = m_aNodes[nNode].Distance(nPoint);
+        if (nDistance >= 0.0f)
         {
-            if (m_aNodes[nNode].Distance(nPoint) >= 0.0f)
-            {
-                nNode = m_aNodes[nNode].m_nPositiveChild;
-            }
-            else
-            {
-                nNode = m_aNodes[nNode].m_nNegativeChild;
-            }
-        } while (nNode > 0);
-    }
+            nNode = m_aNodes[nNode].m_nPositiveChild;
+        }
+        else
+        {
+            nNode = m_aNodes[nNode].m_nNegativeChild;
+        }
+    };
     
-    return (nNode == 0 ? 0 : (-nNode - 1));
+    return (nNode < 0 ? (-1 - nNode) : -1);
 }
 
 STDMETHODIMP_(bool) CGEKStaticWorld::IsVisible(const aabb &nBox)
 {
-    return true;
-    return (m_nArea < 0 ? false : (GetArea(nBox.GetCenter()) == m_nArea));
+    bool bVisible = true;
+    if (m_nArea >= 0)
+    {
+        bVisible = (GetArea(nBox.GetCenter()) == m_nArea);
+    }
+
+    return bVisible;
 }
 
 STDMETHODIMP_(bool) CGEKStaticWorld::IsVisible(const obb &nBox)
 {
-    return true;
-    return (m_nArea < 0 ? false : (GetArea(nBox.position) == m_nArea));
+    bool bVisible = true;
+    if (m_nArea >= 0)
+    {
+        bVisible = (GetArea(nBox.position) == m_nArea);
+    }
+
+    return bVisible;
 }
 
 STDMETHODIMP_(bool) CGEKStaticWorld::IsVisible(const sphere &nSphere)
 {
     return true;
-    return (m_nArea < 0 ? false : (GetArea(nSphere.position) == m_nArea));
+    bool bVisible = true;
+    if (m_nArea >= 0)
+    {
+        bVisible = (GetArea(nSphere.position) == m_nArea);
+    }
+
+    return bVisible;
 }
 
 STDMETHODIMP_(void) CGEKStaticWorld::Draw(UINT32 nVertexAttributes)
@@ -252,32 +255,44 @@ STDMETHODIMP_(void) CGEKStaticWorld::Draw(UINT32 nVertexAttributes)
 
     GetProgramManager()->EnableProgram(m_spVertexProgram);
     GetVideoSystem()->GetDefaultContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
-    for (auto &kArea : m_aAreas)
+    if (nVertexAttributes & GEK_VERTEX_POSITION)
     {
-        if (kArea.m_bRenderData)
+        GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(0, 0, m_spPositionBuffer);
+    }
+
+    if (nVertexAttributes & GEK_VERTEX_TEXCOORD)
+    {
+        GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(1, 0, m_spTexCoordBuffer);
+    }
+
+    if (nVertexAttributes & GEK_VERTEX_BASIS)
+    {
+        GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(2, 0, m_spBasisBuffer);
+    }
+
+    GetVideoSystem()->GetDefaultContext()->SetIndexBuffer(0, m_spIndexBuffer);
+
+    if (m_nArea < 0)
+    {
+        for (auto &kArea : m_aAreas)
         {
-            if (nVertexAttributes & GEK_VERTEX_POSITION)
-            {
-                GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(0, 0, kArea.m_spPositionBuffer);
-            }
-
-            if (nVertexAttributes & GEK_VERTEX_TEXCOORD)
-            {
-                GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(1, 0, kArea.m_spTexCoordBuffer);
-            }
-
-            if (nVertexAttributes & GEK_VERTEX_BASIS)
-            {
-                GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(2, 0, kArea.m_spBasisBuffer);
-            }
-
-            GetVideoSystem()->GetDefaultContext()->SetIndexBuffer(0, kArea.m_spIndexBuffer);
             for (auto &kPair : kArea.m_aMaterials)
             {
-                if (GetMaterialManager()->EnableMaterial(kPair.first))
+                if (kPair.second.m_nNumIndices > 0 && GetMaterialManager()->EnableMaterial(kPair.first))
                 {
                     GetVideoSystem()->GetDefaultContext()->DrawIndexedPrimitive(kPair.second.m_nNumIndices, kPair.second.m_nFirstIndex, kPair.second.m_nFirstVertex);
                 }
+            }
+        }
+    }
+    else
+    {
+        const AREA &kArea = m_aAreas[m_nArea];
+        for (auto &kPair : kArea.m_aMaterials)
+        {
+            if (kPair.second.m_nNumIndices > 0 && GetMaterialManager()->EnableMaterial(kPair.first))
+            {
+                GetVideoSystem()->GetDefaultContext()->DrawIndexedPrimitive(kPair.second.m_nNumIndices, kPair.second.m_nFirstIndex, kPair.second.m_nFirstVertex);
             }
         }
     }

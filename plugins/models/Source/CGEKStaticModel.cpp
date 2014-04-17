@@ -51,7 +51,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
             hRetVal = GetMaterialManager()->LoadMaterial(strMaterial, &spMaterial);
             if (SUCCEEDED(hRetVal))
             {
-                MATERIAL &kMaterial = m_aMaterials[spMaterial];
+                MATERIAL kMaterial;
                 kMaterial.m_nFirstVertex = *((UINT32 *)pBuffer);
                 pBuffer += sizeof(UINT32);
 
@@ -60,6 +60,8 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 
                 kMaterial.m_nNumIndices = *((UINT32 *)pBuffer);
                 pBuffer += sizeof(UINT32);
+
+                m_aMaterials.insert(std::make_pair(spMaterial, kMaterial));
             }
             else
             {
@@ -84,7 +86,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, (sizeof(float3)* 3), nNumVertices, &m_spBasisBuffer);
+            hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, (sizeof(float3) * 3), nNumVertices, &m_spBasisBuffer);
             pBuffer += (sizeof(float3) * 3 * nNumVertices);
         }
 
@@ -94,7 +96,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
             pBuffer += sizeof(UINT32);
 
             hRetVal = GetVideoSystem()->CreateIndexBuffer(pBuffer, GEKVIDEO::DATA::UINT16, nNumIndices, &m_spIndexBuffer);
-            pBuffer += (sizeof(UINT16)* nNumIndices);
+            pBuffer += (sizeof(UINT16) * nNumIndices);
         }
     }
 
