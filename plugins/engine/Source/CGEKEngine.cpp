@@ -207,7 +207,7 @@ STDMETHODIMP CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, 
 
 STDMETHODIMP CGEKEngine::OnRun(void)
 {
-    m_spPopulationManager->LoadScene(L"q3dm1", L"info_player_start_1");
+    m_spPopulationManager->LoadScene(L"demo", L"info_player_start_1");
     m_nTotalTime = 0.0;
     m_kTimer.Reset();
     return S_OK;

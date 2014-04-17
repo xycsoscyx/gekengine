@@ -328,7 +328,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                                 strMaterialName = strMaterialName.Mid(7);
                             }
                             
-                            MATERIAL &kSurface = kModel.m_aMaterials[strMaterialName];
+                            MATERIAL kSurface;
                             kSurface.m_nFirstVertex = kModel.m_aVertices.size();
                             kSurface.m_nFirstIndex = kModel.m_aIndices.size();
 
@@ -401,21 +401,26 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                                 aIndices[nIndex] = nVertexIndex;
 		                    }
 
-                            float nFaceEpsilon = 0.0833333f;
-                            float nPartialEdgeThreshold = -1.01f;
-                            float nSingularPointThreshold = -0.01f;
-                            float nNormalEdgeThreshold = -1.01f;
-
-                            std::vector<VERTEX> aOutputVertices;
-                            std::vector<UINT16> aOutputIndices;
-                            if (FAILED(GEKOptimizeMesh(&aVertices[0], aVertices.size(), &aIndices[0], aIndices.size(), aOutputVertices, aOutputIndices, 
-                                nFaceEpsilon, nPartialEdgeThreshold, nSingularPointThreshold, nNormalEdgeThreshold)))
+                            if (strMaterialName.Left(6).CompareNoCase("common") != 0)
                             {
-                                throw CMyException(__LINE__, L"Unable to optimize mesh data");
-                            }
+                                kModel.m_aMaterials[strMaterialName] = kSurface;
 
-                            kModel.m_aVertices.insert(kModel.m_aVertices.end(), aOutputVertices.begin(), aOutputVertices.end());
-                            kModel.m_aIndices.insert(kModel.m_aIndices.end(), aOutputIndices.begin(), aOutputIndices.end());
+                                float nFaceEpsilon = 0.05f;
+                                float nPartialEdgeThreshold = 0.01f;
+                                float nSingularPointThreshold = 0.25f;
+                                float nNormalEdgeThreshold = 0.01f;
+
+                                std::vector<VERTEX> aOutputVertices;
+                                std::vector<UINT16> aOutputIndices;
+                                if (FAILED(GEKOptimizeMesh(&aVertices[0], aVertices.size(), &aIndices[0], aIndices.size(), aOutputVertices, aOutputIndices,
+                                    nFaceEpsilon, nPartialEdgeThreshold, nSingularPointThreshold, nNormalEdgeThreshold)))
+                                {
+                                    throw CMyException(__LINE__, L"Unable to optimize mesh data");
+                                }
+
+                                kModel.m_aVertices.insert(kModel.m_aVertices.end(), aOutputVertices.begin(), aOutputVertices.end());
+                                kModel.m_aIndices.insert(kModel.m_aIndices.end(), aOutputIndices.begin(), aOutputIndices.end());
+                            }
 
 		                    kParser.NextToken();
 		                    if (kParser.GetToken()[0] != '}')

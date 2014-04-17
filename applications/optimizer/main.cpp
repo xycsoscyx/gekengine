@@ -34,10 +34,10 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
     CStringW strInput;
     CStringW strOutput;
-    float nFaceEpsilon = 0.021f;
-    float nPartialEdgeThreshold = -1.01f;
-    float nSingularPointThreshold = -0.01f;
-    float nNormalEdgeThreshold = -1.01f;
+    float nFaceEpsilon = 0.025f;
+    float nPartialEdgeThreshold = 0.01f;
+    float nSingularPointThreshold = 0.25f;
+    float nNormalEdgeThreshold = 0.01f;
     for (int nArgument = 1; nArgument < nNumArguments; nArgument++)
     {
         CStringW strArgument = astrArguments[nArgument];
