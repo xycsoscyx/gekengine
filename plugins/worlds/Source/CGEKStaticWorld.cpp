@@ -63,7 +63,7 @@ STDMETHODIMP CGEKStaticWorld::Load(const UINT8 *pBuffer, std::function<HRESULT(f
                     hRetVal = GetMaterialManager()->LoadMaterial(strMaterial, &spMaterial);
                     if (SUCCEEDED(hRetVal))
                     {
-                        MATERIAL &kMaterial = kArea.m_aMaterials[spMaterial];
+                        MATERIAL kMaterial;
                         kMaterial.m_nFirstVertex = *((UINT32 *)pBuffer);
                         pBuffer += sizeof(UINT32);
 
@@ -72,6 +72,8 @@ STDMETHODIMP CGEKStaticWorld::Load(const UINT8 *pBuffer, std::function<HRESULT(f
 
                         kMaterial.m_nNumIndices = *((UINT32 *)pBuffer);
                         pBuffer += sizeof(UINT32);
+
+                        kArea.m_aMaterials.insert(std::make_pair(spMaterial, kMaterial));
                     }
                     else
                     {

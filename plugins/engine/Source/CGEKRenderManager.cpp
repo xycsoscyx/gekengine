@@ -872,6 +872,7 @@ STDMETHODIMP CGEKRenderManager::LoadTexture(LPCWSTR pName, IUnknown **ppTexture)
     }
     else
     {
+        CComPtr<IUnknown> spTexture;
         if (pName[0] == L'*')
         {
             int nPosition = 0;
@@ -943,13 +944,11 @@ STDMETHODIMP CGEKRenderManager::LoadTexture(LPCWSTR pName, IUnknown **ppTexture)
                                 if (spWebView)
                                 {
                                     m_aWebViews[pName] = pView;
-                                    spWebView->QueryInterface(IID_PPV_ARGS(&m_aTextures[pName]));
+                                    hRetVal = spWebView->QueryInterface(IID_PPV_ARGS(&spTexture));
                                     if (bGUI)
                                     {
                                         m_aGUIViews.push_back(pView);
                                     }
-
-                                    hRetVal = spWebView->QueryInterface(IID_PPV_ARGS(ppTexture));
                                 }
                             }
                         }
@@ -961,30 +960,41 @@ STDMETHODIMP CGEKRenderManager::LoadTexture(LPCWSTR pName, IUnknown **ppTexture)
                 CStringW strColor = strName.Tokenize(L":", nPosition);
                 float4 nColor = StrToFloat4(strColor);
 
-                CComPtr<IGEKVideoTexture> spTexture;
-                hRetVal = GetVideoSystem()->CreateTexture(1, 1, GEKVIDEO::DATA::RGBA_UINT8, nColor, &spTexture);
-                if (spTexture != nullptr)
+                CComPtr<IGEKVideoTexture> spColorTexture;
+                hRetVal = GetVideoSystem()->CreateTexture(1, 1, GEKVIDEO::DATA::RGBA_UINT8, nColor, &spColorTexture);
+                if (spColorTexture)
                 {
-                    m_aTextures[pName] = spTexture;
-                    hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
+                    spTexture = spColorTexture;
                 }
+                else
+                {
+                    OutputDebugStringW(FormatString(L"-> Unable to create texture: %s\r\n", pName));
+                }
+            }
+            else
+            {
+                OutputDebugStringW(FormatString(L"-> Unknown texture specifier: %s\r\n", pName));
             }
         }
         else
         {
-            CComPtr<IGEKVideoTexture> spTexture;
-            hRetVal = GetVideoSystem()->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spTexture);
-            if (spTexture != nullptr)
+            CComPtr<IGEKVideoTexture> spFileTexture;
+            hRetVal = GetVideoSystem()->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spFileTexture);
+            if (spFileTexture)
             {
-                m_aTextures[pName] = spTexture;
-                hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
+                spTexture = spFileTexture;
+            }
+            else
+            {
+                OutputDebugStringW(FormatString(L"-> Unable to load texture: %s\r\n", pName));
             }
         }
-    }
 
-    if (FAILED(hRetVal))
-    {
-        OutputDebugStringW(FormatString(L"-> Unable to load texture: %s\r\n", pName));
+        if (spTexture != nullptr)
+        {
+            m_aTextures[pName] = spTexture;
+            hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
+        }
     }
 
     return hRetVal;
@@ -1080,7 +1090,6 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
     }
     else
     {
-        bool bDefault = false;
         CLibXMLDoc kDocument;
         hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\materials\\%s.xml", pName));
         if (SUCCEEDED(hRetVal))
@@ -1146,22 +1155,26 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                 }
             }
         }
+    }
 
-        if (!(*ppMaterial))
+    if (!(*ppMaterial))
+    {
+        OutputDebugStringW(FormatString(L"> Unable to load material: %s\r\n", pName));
+        auto pIterator = m_aMaterials.find(L"*default");
+        if (pIterator != m_aMaterials.end())
         {
-            OutputDebugStringW(FormatString(L"> Unable to load material: %s\r\n", pName));
-            auto pIterator = m_aMaterials.find(L"*default");
-            if (pIterator != m_aMaterials.end())
-            {
-                hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppMaterial));
-            }
-            else
+            hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppMaterial));
+        }
+        else
+        {
+            hRetVal = LoadPass(L"Opaque");
+            if (SUCCEEDED(hRetVal))
             {
                 CComPtr<IUnknown> spAlbedoMap;
                 LoadTexture(L"*color:1,1,1,1", &spAlbedoMap);
 
                 CComPtr<IUnknown> spNormalMap;
-                LoadTexture(L"*color:0.5,0.5,1,0", &spNormalMap);
+                LoadTexture(L"*color:0.5,0.5,1,1", &spNormalMap);
 
                 CComPtr<IUnknown> spInfoMap;
                 LoadTexture(L"*color:0.5,0,0,0", &spInfoMap);
@@ -1177,10 +1190,6 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
 
                     m_aMaterials[L"*default"] = spMaterial;
                     hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
-                    if (SUCCEEDED(hRetVal))
-                    {
-                        hRetVal = LoadPass(L"Opaque");
-                    }
                 }
             }
         }

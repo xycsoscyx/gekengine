@@ -81,10 +81,10 @@ STDMETHODIMP CGEKComponentLogic::OnEntityCreated(void)
         if (m_hModule)
         {
             typedef HRESULT(*GEINITIALIZELOGIC)(IGEKEntity *,
-                std::function<void(IGEKEntity *)>,
-                std::function<void(IGEKEntity *)>,
-                std::function<void(IGEKEntity *, float, float)>,
-                std::function<void(IGEKEntity *, LPCWSTR, const GEKVALUE &, const GEKVALUE &)>);
+                std::function<void(IGEKEntity *)> &,
+                std::function<void(IGEKEntity *)> &,
+                std::function<void(IGEKEntity *, float, float)> &,
+                std::function<void(IGEKEntity *, LPCWSTR, const GEKVALUE &, const GEKVALUE &)> &);
             GEINITIALIZELOGIC Initialize = (GEINITIALIZELOGIC)GetProcAddress(m_hModule, CW2A(m_strFunction, CP_UTF8));
             if (Initialize)
             {

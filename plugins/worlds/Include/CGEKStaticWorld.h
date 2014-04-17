@@ -23,7 +23,7 @@ private:
     struct AREA
     {
         bool m_bRenderData;
-        std::map<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
+        std::multimap<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
         CComPtr<IGEKVideoVertexBuffer> m_spPositionBuffer;
         CComPtr<IGEKVideoVertexBuffer> m_spTexCoordBuffer;
         CComPtr<IGEKVideoVertexBuffer> m_spBasisBuffer;
