@@ -4,6 +4,11 @@
 #include <algorithm>
 #include <map>
 
+#include <assimp/cimport.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#pragma comment(lib, "assimp.lib")
+
 struct MATERIAL
 {
     UINT32 m_nFirstVertex;
@@ -27,6 +32,98 @@ public:
         va_end(pArgs);
     }
 };
+
+void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nParentTransform, std::map<CStringA, std::vector<VERTEX>> &aMaterials, aabb &nAABB)
+{
+    if (pNode == nullptr)
+    {
+        throw CMyException(__LINE__, L"Invalid node encountered");
+    }
+
+    float4x4 nTransform = *(float4x4 *)&pNode->mTransformation * nParentTransform;
+    if (pNode->mNumMeshes > 0)
+    {
+        if (pNode->mMeshes == nullptr)
+        {
+            throw CMyException(__LINE__, L"Invalid node mesh data");
+        }
+
+        for (UINT32 nMesh = 0; nMesh < pNode->mNumMeshes; nMesh++)
+        {
+            UINT32 nMeshIndex = pNode->mMeshes[nMesh];
+            if (nMeshIndex >= pScene->mNumMeshes)
+            {
+                throw CMyException(__LINE__, L"Invalid mesh index encountered: %d (of %d)", nMeshIndex, pScene->mNumMeshes);
+            }
+
+            const aiMesh *pMesh = pScene->mMeshes[nMeshIndex];
+            if (pMesh->mNumFaces > 0)
+            {
+                if (pMesh->mFaces == nullptr)
+                {
+                    throw CMyException(__LINE__, L"Invalid mesh face data");
+                }
+
+                if (pMesh->mVertices == nullptr)
+                {
+                    throw CMyException(__LINE__, L"Invalid mesh vertex data");
+                }
+
+                CStringA strMaterial;
+                if (pScene->mMaterials)
+                {
+                    const aiMaterial *pMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
+                    if (pMaterial)
+                    {
+                        aiString strPath;
+                        pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &strPath);
+                        strMaterial = strPath.C_Str();
+                    }
+                }
+
+                std::vector<VERTEX> &aVertices = aMaterials[strMaterial];
+                for (UINT32 nFace = 0; nFace < pMesh->mNumFaces; nFace++)
+                {
+                    const aiFace &kFace = pMesh->mFaces[nFace];
+                    for (UINT32 nTriangle = 0; nTriangle < (kFace.mNumIndices - 2); nTriangle++)
+                    {
+                        for (UINT32 nEdge = 0; nEdge < 3; nEdge++)
+                        {
+                            UINT32 nIndex = kFace.mIndices[nTriangle + nEdge];
+
+                            VERTEX kVertex;
+                            kVertex.position.x = pMesh->mVertices[nIndex].x;
+                            kVertex.position.y = pMesh->mVertices[nIndex].y;
+                            kVertex.position.z = pMesh->mVertices[nIndex].z;
+                            kVertex.position = (nTransform * float4(kVertex.position, 1.0f));
+                            nAABB.Extend(kVertex.position);
+                            if (pMesh->mTextureCoords)
+                            {
+                                kVertex.texcoord.x = pMesh->mTextureCoords[0][nIndex].x;
+                                kVertex.texcoord.y = pMesh->mTextureCoords[0][nIndex].y;
+                            }
+
+                            aVertices.push_back(kVertex);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (pNode->mNumChildren > 0)
+    {
+        if (pNode->mChildren == nullptr)
+        {
+            throw CMyException(__LINE__, L"Invalid node children data");
+        }
+
+        for (UINT32 nChild = 0; nChild < pNode->mNumChildren; nChild++)
+        {
+            GetMeshes(pScene, pNode->mChildren[nChild], nTransform, aMaterials, nAABB);
+        }
+    }
+}
 
 int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentVariables)
 {
@@ -90,193 +187,20 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
     try
     {
-        std::vector<UINT8> aBuffer;
-        if (FAILED(GEKLoadFromFile(strInput, aBuffer)))
+        const aiScene *pScene = aiImportFile(CW2A(strInput, CP_UTF8), 0);
+        if (pScene == nullptr)
         {
             throw CMyException(__LINE__, L"Unable to Load Input: %s", strInput.GetString());
         }
 
-        char *pBuffer = (char *)&aBuffer[0];
-        char *pBufferEnd = (pBuffer + aBuffer.size());
-
-        UINT32 nGEKX = *((UINT32 *)pBuffer);
-        pBuffer += sizeof(UINT32);
-        if (pBuffer >= pBufferEnd)
+        if (pScene->mMeshes == nullptr)
         {
-            throw CMyException(__LINE__, L"End of File Encountered");
-        }
-
-        if (nGEKX != *(UINT32 *)"GEKX")
-        {
-            throw CMyException(__LINE__, L"Invalid magic header encountered (0x%08X): %s", nGEKX, strInput.GetString());
-        }
-
-        UINT32 nVersion = *((UINT32 *)pBuffer);
-        pBuffer += sizeof(UINT32);
-        if (pBuffer >= pBufferEnd)
-        {
-            throw CMyException(__LINE__, L"End of File Encountered");
+            throw CMyException(__LINE__, L"No meshes found in scene: %s", strInput.GetString());
         }
 
         aabb nAABB;
         std::map<CStringA, std::vector<VERTEX>> aMaterials;
-        if (nVersion == 1)
-        {
-            printf("> Version 1 Model Detected\r\n");
-
-            UINT32 nNumMaterials = *((UINT32 *)pBuffer);
-            pBuffer += sizeof(UINT32);
-
-            printf("> Num. Materials: %d\r\n", nNumMaterials);
-
-            for(UINT32 nMaterial = 0; nMaterial < nNumMaterials; nMaterial++)
-            {
-                CStringA strMaterial = pBuffer;
-                printf("-> Material: %s\r\n", strMaterial.GetString());
-                pBuffer += (strMaterial.GetLength() + 1);
-                if (pBuffer >= pBufferEnd)
-                {
-                    throw CMyException(__LINE__, L"End of File Encountered");
-                }
-
-                UINT32 nNumVertices = *((UINT32 *)pBuffer);
-                printf("-->  Num. Vertices: %d\r\n", nNumVertices);
-                pBuffer += sizeof(UINT32);
-                if (pBuffer >= pBufferEnd)
-                {
-                    throw CMyException(__LINE__, L"End of File Encountered");
-                }
-
-                VERTEX *pVertices = (VERTEX *)pBuffer;
-                pBuffer += (sizeof(VERTEX) * nNumVertices);
-                if (pBuffer >= pBufferEnd)
-                {
-                    throw CMyException(__LINE__, L"End of File Encountered");
-                }
-
-                UINT32 nNumIndices = *((UINT32 *)pBuffer);
-                printf("---> Num. Indices: %d\r\n", nNumIndices);
-                pBuffer += sizeof(UINT32);
-                if (pBuffer >= pBufferEnd)
-                {
-                    throw CMyException(__LINE__, L"End of File Encountered");
-                }
-
-                UINT16 *pIndices = (UINT16 *)pBuffer;
-                pBuffer += (sizeof(UINT16) * nNumIndices);
-                if (pBuffer >= pBufferEnd)
-                {
-                    throw CMyException(__LINE__, L"End of File Encountered");
-                }
-
-                std::vector<VERTEX> &aVertices = aMaterials[strMaterial];
-                for(UINT32 nIndex = 0; nIndex < nNumIndices; nIndex++)
-                {
-                    UINT32 nVertex = pIndices[nIndex];
-                    aVertices.push_back(pVertices[nVertex]);
-                    nAABB.Extend(pVertices[nVertex].position);
-                }
-            }
-        }
-        else if (nVersion == 2)
-        {
-            printf("> Version 2 Model Detected\r\n");
-
-            pBuffer += sizeof(aabb);
-            if (pBuffer >= pBufferEnd)
-            {
-                throw CMyException(__LINE__, L"End of File Encountered");
-            }
-
-            UINT32 nNumMaterials = *((UINT32 *)pBuffer);
-            pBuffer += sizeof(UINT32);
-
-            printf("> Num. Materials: %d\r\n", nNumMaterials);
-
-            std::map<CStringA, MATERIAL> aMaterialGroups;
-            for(UINT32 nMaterial = 0; nMaterial < nNumMaterials; nMaterial++)
-            {
-                CStringA strMaterial = pBuffer;
-                printf("-> Material: %s\r\n", strMaterial.GetString());
-                pBuffer += (strMaterial.GetLength() + 1);
-                if (pBuffer >= pBufferEnd)
-                {
-                    throw CMyException(__LINE__, L"End of File Encountered");
-                }
-
-                MATERIAL &kMaterial = aMaterialGroups[strMaterial];
-                kMaterial.m_nFirstVertex = *((UINT32 *)pBuffer);
-                printf("--> First Vertex: %d\r\n", kMaterial.m_nFirstVertex);
-                pBuffer += sizeof(UINT32);
-                if (pBuffer >= pBufferEnd)
-                {
-                    throw CMyException(__LINE__, L"End of File Encountered");
-                }
-
-                kMaterial.m_nFirstIndex = *((UINT32 *)pBuffer);
-                printf("--> First Index: %d\r\n", kMaterial.m_nFirstIndex);
-                if (pBuffer >= pBufferEnd)
-                {
-                    throw CMyException(__LINE__, L"End of File Encountered");
-                }
-
-                kMaterial.m_nNumIndices = *((UINT32 *)pBuffer);
-                printf("--> Num. Indices: %d\r\n", kMaterial.m_nNumIndices);
-                pBuffer += sizeof(UINT32);
-                if (pBuffer >= pBufferEnd)
-                {
-                    throw CMyException(__LINE__, L"End of File Encountered");
-                }
-            }
-
-            UINT32 nNumVertices = *((UINT32 *)pBuffer);
-            printf("-> Num. Vertices: %d\r\n", nNumVertices);
-            pBuffer += sizeof(UINT32);
-            if (pBuffer >= pBufferEnd)
-            {
-                throw CMyException(__LINE__, L"End of File Encountered");
-            }
-
-            VERTEX *pVertices = (VERTEX *)pBuffer;
-            pBuffer += (sizeof(VERTEX) * nNumVertices);
-            if (pBuffer >= pBufferEnd)
-            {
-                throw CMyException(__LINE__, L"End of File Encountered");
-            }
-
-            UINT32 nNumIndices = *((UINT32 *)pBuffer);
-            printf("-> Num. Indices: %d\r\n", nNumIndices);
-            pBuffer += sizeof(UINT32);
-            if (pBuffer >= pBufferEnd)
-            {
-                throw CMyException(__LINE__, L"End of File Encountered");
-            }
-
-            UINT16 *pIndices = (UINT16 *)pBuffer;
-            pBuffer += (sizeof(UINT16) * nNumIndices);
-            if (pBuffer != pBufferEnd)
-            {
-                throw CMyException(__LINE__, L"End of File Encountered");
-                return -5;
-            }
-
-            for (auto &kPair : aMaterialGroups)
-            {
-                std::vector<VERTEX> &aVertices = aMaterials[kPair.first];
-                aVertices.resize(kPair.second.m_nNumIndices);
-
-                for (UINT32 nIndex = 0; nIndex < kPair.second.m_nNumIndices; nIndex++)
-                {
-                    UINT32 nVertex = (kPair.second.m_nFirstVertex + pIndices[kPair.second.m_nFirstIndex + nIndex]);
-                    aVertices[nIndex] = pVertices[nVertex];
-                    nAABB.Extend(pVertices[nVertex].position);
-                }
-            }
-        }
-        else
-        {
-            throw CMyException(__LINE__, L"Invalid header version encountered (%d): %S", nVersion, strInput.GetString());
-        }
+        GetMeshes(pScene, pScene->mRootNode, float4x4(), aMaterials, nAABB);
 
         printf("< Num. Simplified Materials: %d\r\n", aMaterials.size());
 
