@@ -20,9 +20,19 @@ private:
         UINT32 m_nNumIndices;
     };
 
+    struct PORTAL
+    {
+        UINT32 m_nFirstEdge;
+        UINT32 m_nNumEdges;
+        INT32 m_nPositiveArea;
+        INT32 m_nNegativeArea;
+    };
+
     struct AREA
     {
+        UINT32 m_nFrame;
         std::multimap<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
+        std::vector<PORTAL *> m_aPortals;
     };
 
     struct NODE : public plane
@@ -31,27 +41,21 @@ private:
         INT32 m_nNegativeChild;
     };
 
-    struct PORTAL : public plane
-    {
-        UINT32 m_nFirstEdge;
-        UINT32 m_nNumEdges;
-        INT32 m_nPositiveArea;
-        INT32 m_nNegativeArea;
-    };
-
 private:
-    aabb m_nAABB;
     CComPtr<IUnknown> m_spVertexProgram;
-    std::vector<AREA> m_aAreas;
     CComPtr<IGEKVideoVertexBuffer> m_spPositionBuffer;
     CComPtr<IGEKVideoVertexBuffer> m_spTexCoordBuffer;
     CComPtr<IGEKVideoVertexBuffer> m_spBasisBuffer;
     CComPtr<IGEKVideoIndexBuffer> m_spIndexBuffer;
-    std::vector<NODE> m_aNodes;
+
+    aabb m_nAABB;
+    std::vector<AREA> m_aAreas;
     std::vector<float3> m_aPortalEdges;
     std::vector<PORTAL> m_aPortals;
+    std::vector<NODE> m_aNodes;
 
-    int m_nArea;
+    int m_nCurrentArea;
+    UINT32 m_nFrame;
 
 private:
     int GetArea(const float3 &nPoint);

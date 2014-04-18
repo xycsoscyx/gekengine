@@ -22,7 +22,7 @@ struct NODE : public plane
     INT32 m_nNegativeChild;
 };
 
-struct PORTAL : public plane
+struct PORTAL
 {
     UINT32 m_nFirstEdge;
     UINT32 m_nNumEdges;

@@ -13,7 +13,8 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKStaticWorld)
 
 CGEKStaticWorld::CGEKStaticWorld(void)
-    : m_nArea(0)
+    : m_nCurrentArea(0)
+    , m_nFrame(0)
 {
 }
 
@@ -166,6 +167,15 @@ STDMETHODIMP CGEKStaticWorld::Load(const UINT8 *pBuffer, std::function<HRESULT(f
                     m_aPortals.resize(nNumPortals);
                     memcpy(&m_aPortals[0], pBuffer, (sizeof(PORTAL) * nNumPortals));
                     pBuffer += (sizeof(PORTAL) * nNumPortals);
+
+                    for (auto &kPortal : m_aPortals)
+                    {
+                        AREA &kPositiveArea = m_aAreas[kPortal.m_nPositiveArea];
+                        kPositiveArea.m_aPortals.push_back(&kPortal);
+
+                        AREA &kNegativeArea = m_aAreas[kPortal.m_nNegativeArea];
+                        kNegativeArea.m_aPortals.push_back(&kPortal);
+                    }
                 }
             }
         }
@@ -181,12 +191,43 @@ STDMETHODIMP_(aabb) CGEKStaticWorld::GetAABB(void)
 
 STDMETHODIMP_(void) CGEKStaticWorld::Prepare(const frustum &nFrustum)
 {
-    m_nArea = GetArea(nFrustum.origin);
+    m_nFrame++;
+    m_nCurrentArea = GetArea(nFrustum.origin);
+    if (m_nCurrentArea < 0)
+    {
+        for (auto &kArea : m_aAreas)
+        {
+            kArea.m_nFrame = m_nFrame;
+        }
+    }
+    else
+    {
+        AREA &kArea = m_aAreas[m_nCurrentArea];
+        kArea.m_nFrame = m_nFrame;
+
+        for (auto &pPortal : kArea.m_aPortals)
+        {
+            if (pPortal->m_nPositiveArea == m_nCurrentArea)
+            {
+                AREA &kOtherArea = m_aAreas[pPortal->m_nNegativeArea];
+                kOtherArea.m_nFrame = m_nFrame;
+            }
+            else
+            {
+                AREA &kOtherArea = m_aAreas[pPortal->m_nPositiveArea];
+                kOtherArea.m_nFrame = m_nFrame;
+            }
+        }
+    }
+
     for (auto &kArea : m_aAreas)
     {
-        for (auto &kPair : kArea.m_aMaterials)
+        if (kArea.m_nFrame == m_nFrame)
         {
-            GetMaterialManager()->PrepareMaterial(kPair.first);
+            for (auto &kPair : kArea.m_aMaterials)
+            {
+                GetMaterialManager()->PrepareMaterial(kPair.first);
+            }
         }
     }
 }
@@ -194,7 +235,7 @@ STDMETHODIMP_(void) CGEKStaticWorld::Prepare(const frustum &nFrustum)
 int CGEKStaticWorld::GetArea(const float3 &nPoint)
 {
     INT32 nNode = 1;
-    while (nNode > 0 && nNode < m_aNodes.size())
+    while (nNode > 0 && nNode < INT32(m_aNodes.size()))
     {
         float nDistance = m_aNodes[nNode].Distance(nPoint);
         if (nDistance >= 0.0f)
@@ -207,15 +248,16 @@ int CGEKStaticWorld::GetArea(const float3 &nPoint)
         }
     };
     
-    return (nNode < 0 ? (-1 - nNode) : -1);
+    return (nNode < 0 ? (- 1 - nNode) : -1);
 }
 
 STDMETHODIMP_(bool) CGEKStaticWorld::IsVisible(const aabb &nBox)
 {
-    bool bVisible = true;
-    if (m_nArea >= 0)
+    bool bVisible = false;
+    int nArea = GetArea(nBox.GetCenter());
+    if (nArea >= 0)
     {
-        bVisible = (GetArea(nBox.GetCenter()) == m_nArea);
+        bVisible = (m_aAreas[nArea].m_nFrame == m_nFrame);
     }
 
     return bVisible;
@@ -224,9 +266,10 @@ STDMETHODIMP_(bool) CGEKStaticWorld::IsVisible(const aabb &nBox)
 STDMETHODIMP_(bool) CGEKStaticWorld::IsVisible(const obb &nBox)
 {
     bool bVisible = true;
-    if (m_nArea >= 0)
+    int nArea = GetArea(nBox.position);
+    if (nArea >= 0)
     {
-        bVisible = (GetArea(nBox.position) == m_nArea);
+        bVisible = (m_aAreas[nArea].m_nFrame == m_nFrame);
     }
 
     return bVisible;
@@ -234,11 +277,11 @@ STDMETHODIMP_(bool) CGEKStaticWorld::IsVisible(const obb &nBox)
 
 STDMETHODIMP_(bool) CGEKStaticWorld::IsVisible(const sphere &nSphere)
 {
-    return true;
     bool bVisible = true;
-    if (m_nArea >= 0)
+    int nArea = GetArea(nSphere.position);
+    if (nArea >= 0)
     {
-        bVisible = (GetArea(nSphere.position) == m_nArea);
+        bVisible = (m_aAreas[nArea].m_nFrame == m_nFrame);
     }
 
     return bVisible;
@@ -272,9 +315,9 @@ STDMETHODIMP_(void) CGEKStaticWorld::Draw(UINT32 nVertexAttributes)
 
     GetVideoSystem()->GetDefaultContext()->SetIndexBuffer(0, m_spIndexBuffer);
 
-    if (m_nArea < 0)
+    for (auto &kArea : m_aAreas)
     {
-        for (auto &kArea : m_aAreas)
+        if (kArea.m_nFrame == m_nFrame)
         {
             for (auto &kPair : kArea.m_aMaterials)
             {
@@ -282,17 +325,6 @@ STDMETHODIMP_(void) CGEKStaticWorld::Draw(UINT32 nVertexAttributes)
                 {
                     GetVideoSystem()->GetDefaultContext()->DrawIndexedPrimitive(kPair.second.m_nNumIndices, kPair.second.m_nFirstIndex, kPair.second.m_nFirstVertex);
                 }
-            }
-        }
-    }
-    else
-    {
-        const AREA &kArea = m_aAreas[m_nArea];
-        for (auto &kPair : kArea.m_aMaterials)
-        {
-            if (kPair.second.m_nNumIndices > 0 && GetMaterialManager()->EnableMaterial(kPair.first))
-            {
-                GetVideoSystem()->GetDefaultContext()->DrawIndexedPrimitive(kPair.second.m_nNumIndices, kPair.second.m_nFirstIndex, kPair.second.m_nFirstVertex);
             }
         }
     }
