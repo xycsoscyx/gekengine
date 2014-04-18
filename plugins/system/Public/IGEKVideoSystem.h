@@ -484,7 +484,7 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
 
 DECLARE_INTERFACE_IID_(IGEKVideoObserver, IGEKObserver, "2FE17A37-9B0B-4D12-95C9-F5CC5173B565")
 {
-    STDMETHOD(OnPreReset)                               (THIS) PURE;
+    STDMETHOD_(void, OnPreReset)                        (THIS) PURE;
     STDMETHOD(OnPostReset)                              (THIS) PURE;
 };
 

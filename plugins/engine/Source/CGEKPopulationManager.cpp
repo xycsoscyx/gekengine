@@ -77,9 +77,9 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
         CLibXMLNode &kWorld = kDocument.GetRoot();
         if (kWorld.GetType().CompareNoCase(L"world") == 0)
         {
-            hRetVal = GetRenderManager()->LoadWorld(kWorld.GetAttribute(L"source"), [&](float3 *pFace, IUnknown *pMaterial) -> HRESULT
+            hRetVal = GetRenderManager()->LoadWorld(kWorld.GetAttribute(L"source"), [&](float3 *pFace, IUnknown *pMaterial) -> void
             {
-                return CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnStaticFace, std::placeholders::_1, pFace, pMaterial)));
+                CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnStaticFace, std::placeholders::_1, pFace, pMaterial)));
             });
 
             if (SUCCEEDED(hRetVal))
@@ -176,9 +176,7 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
     }
 
     GetRenderManager()->EndLoad(hRetVal);
-    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
-
-    return hRetVal;
+    return CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
 }
 
 STDMETHODIMP_(void) CGEKPopulationManager::FreeScene(void)
@@ -198,16 +196,12 @@ STDMETHODIMP_(void) CGEKPopulationManager::FreeScene(void)
     }
 }
 
-STDMETHODIMP CGEKPopulationManager::OnInputEvent(LPCWSTR pName, const GEKVALUE &kValue)
+STDMETHODIMP_(void) CGEKPopulationManager::OnInputEvent(LPCWSTR pName, const GEKVALUE &kValue)
 {
-    HRESULT hRetVal = S_OK;
-    std::find_if(m_aInputHandlers.begin(), m_aInputHandlers.end(), [&](IGEKEntity *pEntity) -> bool
+    for (auto &pEntity : m_aInputHandlers)
     {
-        hRetVal = pEntity->OnEvent(L"input", pName, kValue);
-        return FAILED(hRetVal);
-    });
-
-    return hRetVal;
+        pEntity->OnEvent(L"input", pName, kValue);
+    };
 }
 
 STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameTime)

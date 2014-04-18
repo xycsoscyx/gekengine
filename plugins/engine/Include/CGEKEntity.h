@@ -19,12 +19,12 @@ public:
     DECLARE_UNKNOWN(CGEKEntity)
 
     HRESULT OnEntityCreated(void);
-    HRESULT OnEntityDestroyed(void);
+    void OnEntityDestroyed(void);
     HRESULT AddComponent(IGEKComponent *pComponent);
     LPCWSTR GetFlags(void);
 
     // IGEKEntity
     STDMETHOD_(void, ListComponents)            (THIS_ std::function<void(IGEKComponent *)> OnComponent);
     STDMETHOD_(IGEKComponent *, GetComponent)   (THIS_ LPCWSTR pName);
-    STDMETHOD(OnEvent)                          (THIS_ LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB);
+    STDMETHOD_(void, OnEvent)                   (THIS_ LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB);
 };

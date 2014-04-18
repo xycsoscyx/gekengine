@@ -96,14 +96,12 @@ STDMETHODIMP CGEKComponentLogic::OnEntityCreated(void)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKComponentLogic::OnEvent(LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB)
+STDMETHODIMP_(void) CGEKComponentLogic::OnEvent(LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB)
 {
     if (m_kCurrentState.OnEvent)
     {
         m_kCurrentState.OnEvent(GetEntity(), pAction, kParamA, kParamB);
     }
-
-    return S_OK;
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemLogic)
@@ -187,7 +185,7 @@ STDMETHODIMP CGEKComponentSystemLogic::Destroy(IGEKEntity *pEntity)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKComponentSystemLogic::OnPreUpdate(float nGameTime, float nFrameTime)
+STDMETHODIMP_(void) CGEKComponentSystemLogic::OnPreUpdate(float nGameTime, float nFrameTime)
 {
     for (auto &kPair : m_aComponents)
     {
@@ -196,6 +194,4 @@ STDMETHODIMP CGEKComponentSystemLogic::OnPreUpdate(float nGameTime, float nFrame
             kPair.second->GetCurrentState().OnUpdate(kPair.first, nGameTime, nFrameTime);
         }
     }
-
-    return S_OK;
 }

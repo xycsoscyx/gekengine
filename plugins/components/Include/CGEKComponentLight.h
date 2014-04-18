@@ -44,14 +44,14 @@ public:
     ~CGEKComponentSystemLight(void);
 
     // IGEKUnknown
-    STDMETHOD(Initialize)       (THIS);
-    STDMETHOD_(void, Destroy)   (THIS);
+    STDMETHOD(Initialize)               (THIS);
+    STDMETHOD_(void, Destroy)           (THIS);
 
     // IGEKComponentSystem
-    STDMETHOD_(void, Clear)     (THIS);
-    STDMETHOD(Destroy)          (THIS_ IGEKEntity *pEntity);
-    STDMETHOD(Create)           (THIS_ const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
+    STDMETHOD_(void, Clear)             (THIS);
+    STDMETHOD(Destroy)                  (THIS_ IGEKEntity *pEntity);
+    STDMETHOD(Create)                   (THIS_ const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
 
     // IGEKSceneObserver
-    STDMETHOD(OnRender)         (THIS);
+    STDMETHOD_(void, OnRender)          (THIS);
 };

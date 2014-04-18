@@ -179,13 +179,11 @@ STDMETHODIMP CGEKComponentSystemModel::Destroy(IGEKEntity *pEntity)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKComponentSystemModel::OnRender(void)
+STDMETHODIMP_(void) CGEKComponentSystemModel::OnRender(void)
 {
     for (auto &kPair : m_aComponents)
 //    concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentModel>>::value_type &kPair) -> void
     {
         kPair.second->OnRender();
     }
-
-    return S_OK;
 }

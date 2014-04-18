@@ -132,7 +132,7 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
     xmlCleanupParser();
 }
 
-STDMETHODIMP CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
+STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
 {
     switch (nMessage)
     {
@@ -201,27 +201,23 @@ STDMETHODIMP CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, 
         nResult = 1;
         break;
     };
-
-    return S_OK;
 }
 
-STDMETHODIMP CGEKEngine::OnRun(void)
+STDMETHODIMP_(void) CGEKEngine::OnRun(void)
 {
     m_spPopulationManager->LoadScene(L"q3dm1", L"info_player_start_1");
     m_nTotalTime = 0.0;
     m_kTimer.Reset();
-    return S_OK;
 }
 
-STDMETHODIMP CGEKEngine::OnStop(void)
+STDMETHODIMP_(void) CGEKEngine::OnStop(void)
 {
     m_bWindowActive = false;
     m_spRenderManager->FreeWorld();
     m_spPopulationManager->FreeScene();
-    return S_OK;
 }
 
-STDMETHODIMP CGEKEngine::OnStep(void)
+STDMETHODIMP_(void) CGEKEngine::OnStep(void)
 {
     if (m_bWindowActive)
     {
@@ -259,8 +255,6 @@ STDMETHODIMP CGEKEngine::OnStep(void)
             m_spRenderManager->EndFrame();
         }
     }
-
-    return S_OK;
 }
 
 STDMETHODIMP_(void) CGEKEngine::Run(void)

@@ -60,8 +60,8 @@ public:
     STDMETHOD(Create)                   (THIS_ const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
 
     // IGEKSceneObserver
-    STDMETHOD(OnLoadBegin)              (THIS_ void);
-    STDMETHOD(OnStaticFace)             (THIS_ float3 *pFace, IUnknown *pMaterial);
+    STDMETHOD_(void, OnLoadBegin)       (THIS);
+    STDMETHOD_(void, OnStaticFace)      (THIS_ float3 *pFace, IUnknown *pMaterial);
     STDMETHOD(OnLoadEnd)                (THIS_ HRESULT hRetVal);
-    STDMETHOD(OnUpdate)                 (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD_(void, OnUpdate)          (THIS_ float nGameTime, float nFrameTime);
 };

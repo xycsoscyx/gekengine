@@ -38,7 +38,7 @@ public:
     // IGEKPopulationManager
     STDMETHOD(LoadScene)                (THIS_ LPCWSTR pName, LPCWSTR pEntry);
     STDMETHOD_(void, FreeScene)         (THIS);
-    STDMETHOD(OnInputEvent)             (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
+    STDMETHOD_(void, OnInputEvent)      (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);
     STDMETHOD_(void, Render)            (THIS);
 

@@ -78,38 +78,52 @@ public:
     }
 };
 
+template <typename RESULT>
 class CGEKEvent
 {
 public:
-    CGEKEvent(void)
-    {
-    }
-
     virtual ~CGEKEvent(void)
     {
     }
 
-    virtual HRESULT operator() (IGEKObserver *pObserver) const = 0;
+    virtual RESULT operator () (IGEKObserver *pObserver) const = 0;
 };
 
 template <typename INTERFACE>
-class TGEKEvent : public CGEKEvent
+class TGEKEvent : public CGEKEvent<void>
 {
 private:
-    std::function<HRESULT (INTERFACE *)> OnEvent;
+    std::function<void(INTERFACE *)> OnEvent;
 
 public:
-    TGEKEvent(std::function<HRESULT (INTERFACE *)> const &DoOnEvent) :
+    TGEKEvent(std::function<void(INTERFACE *)> const &DoOnEvent) :
         OnEvent(DoOnEvent)
     {
     }
 
-    TGEKEvent(TGEKEvent &kEvent)
+    virtual void operator () (IGEKObserver *pObserver) const
     {
-        OnEvent = kEvent.OnEvent;
+        CComQIPtr<INTERFACE> spObserver(pObserver);
+        if (spObserver)
+        {
+            OnEvent(spObserver);
+        }
+    }
+};
+
+template <typename INTERFACE>
+class TGEKCheck : public CGEKEvent<HRESULT>
+{
+private:
+    std::function<HRESULT(INTERFACE *)> OnEvent;
+
+public:
+    TGEKCheck(std::function<HRESULT(INTERFACE *)> const &DoOnEvent) :
+        OnEvent(DoOnEvent)
+    {
     }
 
-    virtual HRESULT operator() (IGEKObserver *pObserver) const
+    virtual HRESULT operator () (IGEKObserver *pObserver) const
     {
         CComQIPtr<INTERFACE> spObserver(pObserver);
         if (spObserver)
@@ -117,7 +131,7 @@ public:
             return OnEvent(spObserver);
         }
 
-        return S_OK;
+        return E_FAIL;
     }
 };
 
@@ -159,13 +173,25 @@ public:
         return E_FAIL;
     }
 
-    STDMETHOD(SendEvent)        (THIS_ const CGEKEvent &kEvent)
+    void SendEvent(const CGEKEvent<void> &kEvent)
+    {
+        for (auto &pIterator = m_aObservers.begin(); pIterator != m_aObservers.end();)
+        {
+            IGEKObserver *pObserver = (*pIterator);
+            ++pIterator;
+
+            kEvent(pObserver);
+        }
+    }
+
+    HRESULT CheckEvent(const CGEKEvent<HRESULT> &kEvent)
     {
         HRESULT hRetVal = S_OK;
         for (auto &pIterator = m_aObservers.begin(); pIterator != m_aObservers.end() && SUCCEEDED(hRetVal);)
         {
             IGEKObserver *pObserver = (*pIterator);
             ++pIterator;
+
             hRetVal = kEvent(pObserver);
         }
 

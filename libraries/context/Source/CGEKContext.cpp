@@ -149,17 +149,19 @@ STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRES
     auto pIterator = m_aTypedClasses.find(kTypeCLSID);
     if (pIterator != m_aTypedClasses.end())
     {
-        std::find_if (((*pIterator).second).begin(), ((*pIterator).second).end(), [&] (REFCLSID kCLSID) -> bool
+        for (auto &kCLSID : (*pIterator).second)
         {
             CComPtr<IUnknown> spObject;
             hRetVal = CreateInstance(kCLSID, IID_PPV_ARGS(&spObject));
             if (spObject != nullptr)
             {
                 hRetVal = OnCreate(spObject);
+                if (FAILED(hRetVal))
+                {
+                    break;
+                }
             }
-
-            return FAILED(hRetVal);
-        } );
+        };
     }
 
     return hRetVal;
@@ -176,7 +178,7 @@ STDMETHODIMP CGEKContext::RegisterInstance(IUnknown *pObject)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::SendEvent(TGEKEvent<IGEKContextObserver>(std::bind(&IGEKContextObserver::OnRegistration, std::placeholders::_1, pObject)));
+        hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEKContextObserver>(std::bind(&IGEKContextObserver::OnRegistration, std::placeholders::_1, pObject)));
     }
 
     if (SUCCEEDED(hRetVal))

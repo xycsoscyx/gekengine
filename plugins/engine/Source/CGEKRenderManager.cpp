@@ -262,7 +262,7 @@ STDMETHODIMP CGEKRenderManager::OnRegistration(IUnknown *pObject)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderManager::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
+STDMETHODIMP_(void) CGEKRenderManager::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
 {
     switch (nMessage)
     {
@@ -356,11 +356,9 @@ STDMETHODIMP CGEKRenderManager::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
         nResult = 1;
         break;
     };
-
-    return S_OK;
 }
 
-STDMETHODIMP CGEKRenderManager::OnPreReset(void)
+STDMETHODIMP_(void) CGEKRenderManager::OnPreReset(void)
 {
     m_bRunThread = false;
     if (m_spRenderThread)
@@ -375,7 +373,6 @@ STDMETHODIMP CGEKRenderManager::OnPreReset(void)
     }
 
     m_aFrames.clear();
-    return S_OK;
 }
 
 STDMETHODIMP CGEKRenderManager::OnPostReset(void)
@@ -803,7 +800,7 @@ HRESULT CGEKRenderManager::CreateThread(void)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderManager::LoadWorld(LPCWSTR pName, std::function<HRESULT(float3 *, IUnknown *)> OnStaticFace)
+STDMETHODIMP CGEKRenderManager::LoadWorld(LPCWSTR pName, std::function<void(float3 *, IUnknown *)> OnStaticFace)
 {
     FreeWorld();
     std::vector<UINT8> aBuffer;

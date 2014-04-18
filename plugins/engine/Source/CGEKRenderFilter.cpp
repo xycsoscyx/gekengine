@@ -156,7 +156,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Destroy(void)
     CGEKObservable::RemoveObserver(GetVideoSystem(), this);
 }
 
-STDMETHODIMP CGEKRenderFilter::OnPreReset(void)
+STDMETHODIMP_(void) CGEKRenderFilter::OnPreReset(void)
 {
     for (auto &kTarget : m_aTargetList)
     {
@@ -164,7 +164,6 @@ STDMETHODIMP CGEKRenderFilter::OnPreReset(void)
     }
 
     m_spDepthBuffer = nullptr;
-    return S_OK;
 }
 
 STDMETHODIMP CGEKRenderFilter::OnPostReset(void)

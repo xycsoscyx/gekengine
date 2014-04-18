@@ -31,12 +31,12 @@ public:
     luabind::object &GetCurrentState(void);
 
     // IGEKComponent
-    STDMETHOD_(LPCWSTR, GetType)    (THIS) const;
+    STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
     STDMETHOD_(void, ListProperties)        (THIS_ std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty);
     STDMETHOD_(bool, GetProperty)           (THIS_ LPCWSTR pName, GEKVALUE &kValue) const;
     STDMETHOD_(bool, SetProperty)           (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
     STDMETHOD(OnEntityCreated)              (THIS);
-    STDMETHOD(OnEvent)                      (THIS_ LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB);
+    STDMETHOD_(void, OnEvent)               (THIS_ LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB);
 };
 
 class CGEKComponentSystemScript : public CGEKUnknown
@@ -55,15 +55,15 @@ public:
     ~CGEKComponentSystemScript(void);
 
     // IGEKUnknown
-    STDMETHOD(Initialize)       (THIS);
-    STDMETHOD_(void, Destroy)   (THIS);
+    STDMETHOD(Initialize)               (THIS);
+    STDMETHOD_(void, Destroy)           (THIS);
 
     // IGEKComponentSystem
-    STDMETHOD_(void, Clear)     (THIS);
-    STDMETHOD(Destroy)          (THIS_ IGEKEntity *pEntity);
-    STDMETHOD(Create)           (THIS_ const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
+    STDMETHOD_(void, Clear)             (THIS);
+    STDMETHOD(Destroy)                  (THIS_ IGEKEntity *pEntity);
+    STDMETHOD(Create)                   (THIS_ const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
 
     // IGEKSceneObserver
-    STDMETHOD(OnPreUpdate)      (THIS_ float nGameTime, float nFrameTime);
-    STDMETHOD(OnRender)         (THIS);
+    STDMETHOD_(void, OnPreUpdate)       (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD_(void, OnRender)          (THIS);
 };

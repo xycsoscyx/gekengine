@@ -4,7 +4,7 @@
 
 DECLARE_INTERFACE_IID_(IGEKWorld, IUnknown, "086E00C2-EFA3-41FF-B3AA-ABCF10A28A99")
 {
-    STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, std::function<HRESULT(float3 *, IUnknown *)> OnStaticFace) PURE;
+    STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, std::function<void(float3 *, IUnknown *)> OnStaticFace) PURE;
 
     STDMETHOD_(aabb, GetAABB)       (THIS) PURE;
 

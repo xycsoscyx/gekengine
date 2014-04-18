@@ -211,15 +211,13 @@ STDMETHODIMP CGEKComponentScript::OnEntityCreated(void)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKComponentScript::OnEvent(LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB)
+STDMETHODIMP_(void) CGEKComponentScript::OnEvent(LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB)
 {
     if (m_kCurrentState.is_valid())
     {
         CStringA strActionUTF8 = CW2A(pAction, CP_UTF8);
         m_kCurrentState["OnEvent"](GetEntity(), strActionUTF8.GetString(), GetObjectFromValue(m_pState, kParamA), GetObjectFromValue(m_pState, kParamB));
     }
-
-    return S_OK;
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemScript)
@@ -627,7 +625,7 @@ STDMETHODIMP CGEKComponentSystemScript::Destroy(IGEKEntity *pEntity)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKComponentSystemScript::OnPreUpdate(float nGameTime, float nFrameTime)
+STDMETHODIMP_(void) CGEKComponentSystemScript::OnPreUpdate(float nGameTime, float nFrameTime)
 {
     for (auto &kPair : m_aComponents)
     {
@@ -636,11 +634,9 @@ STDMETHODIMP CGEKComponentSystemScript::OnPreUpdate(float nGameTime, float nFram
             kPair.second->GetCurrentState()["OnUpdate"](kPair.first, nGameTime, nFrameTime);
         }
     }
-
-    return S_OK;
 }
 
-STDMETHODIMP CGEKComponentSystemScript::OnRender(void)
+STDMETHODIMP_(void) CGEKComponentSystemScript::OnRender(void)
 {
     for (auto &kPair : m_aComponents)
     {
@@ -649,6 +645,4 @@ STDMETHODIMP CGEKComponentSystemScript::OnRender(void)
             kPair.second->GetCurrentState()["OnRender"](kPair.first);
         }
     }
-
-    return S_OK;
 }

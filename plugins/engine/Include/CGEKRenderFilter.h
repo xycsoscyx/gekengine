@@ -90,7 +90,7 @@ public:
     STDMETHOD_(void, Destroy)               (THIS);
 
     // IGEKVideoObserver
-    STDMETHOD(OnPreReset)                   (THIS);
+    STDMETHOD_(void, OnPreReset)            (THIS);
     STDMETHOD(OnPostReset)                  (THIS);
 
     // IGEKRenderFilter

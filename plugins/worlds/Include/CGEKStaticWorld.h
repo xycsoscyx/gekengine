@@ -66,7 +66,7 @@ public:
     DECLARE_UNKNOWN(CGEKStaticWorld);
 
     // IGEKWorld
-    STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, std::function<HRESULT(float3 *, IUnknown *)> OnStaticFace);
+    STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, std::function<void(float3 *, IUnknown *)> OnStaticFace);
     STDMETHOD_(aabb, GetAABB)       (THIS);
     STDMETHOD_(void, Prepare)       (THIS_ const frustum &nFrustum);
     STDMETHOD_(bool, IsVisible)     (THIS_ const aabb &nBox);

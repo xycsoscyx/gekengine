@@ -22,7 +22,7 @@ CGEKStaticWorld::~CGEKStaticWorld(void)
 {
 }
 
-STDMETHODIMP CGEKStaticWorld::Load(const UINT8 *pBuffer, std::function<HRESULT(float3 *, IUnknown *)> OnStaticFace)
+STDMETHODIMP CGEKStaticWorld::Load(const UINT8 *pBuffer, std::function<void(float3 *, IUnknown *)> OnStaticFace)
 {
     HRESULT hRetVal = GetProgramManager()->LoadProgram(L"staticworld", &m_spVertexProgram);
     if (SUCCEEDED(hRetVal))

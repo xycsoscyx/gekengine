@@ -20,10 +20,10 @@ DECLARE_INTERFACE_IID_(IGEKSystem, IUnknown, "5BA2B424-8708-4703-A731-B585F4F437
 
 DECLARE_INTERFACE_IID_(IGEKSystemObserver, IGEKObserver, "61B9B274-F0CA-4F9B-A284-48790FC3AB81")
 {
-    STDMETHOD(OnEvent)                              (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult) { return S_OK; };
-    STDMETHOD(OnRun)                                (THIS) { return S_OK; };
-    STDMETHOD(OnStop)                               (THIS) { return S_OK; };
-    STDMETHOD(OnStep)                               (THIS) { return S_OK; };
+    STDMETHOD_(void, OnEvent)           (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult) { };
+    STDMETHOD_(void, OnRun)             (THIS) { };
+    STDMETHOD_(void, OnStop)            (THIS) { };
+    STDMETHOD_(void, OnStep)            (THIS) { };
 };
 
 SYSTEM_USER(System, "71F36891-7A82-4A07-9471-FAEB94E37B03");

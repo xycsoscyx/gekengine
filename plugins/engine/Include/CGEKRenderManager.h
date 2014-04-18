@@ -130,10 +130,10 @@ public:
     STDMETHOD(OnRegistration)           (THIS_ IUnknown *pObject);
 
     // IGEKSystemObserver
-    STDMETHOD(OnEvent)                  (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
+    STDMETHOD_(void, OnEvent)           (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
 
     // IGEKVideoObserver
-    STDMETHOD(OnPreReset)               (THIS);
+    STDMETHOD_(void, OnPreReset)        (THIS);
     STDMETHOD(OnPostReset)              (THIS);
 
     // IGEKUnknown
@@ -163,7 +163,7 @@ public:
     // IGEKRenderManager
     STDMETHOD_(void, BeginLoad)         (THIS);
     STDMETHOD_(void, EndLoad)           (THIS_ HRESULT hRetVal);
-    STDMETHOD(LoadWorld)                (THIS_ LPCWSTR pName, std::function<HRESULT(float3 *, IUnknown *)> OnStaticFace);
+    STDMETHOD(LoadWorld)                (THIS_ LPCWSTR pName, std::function<void(float3 *, IUnknown *)> OnStaticFace);
     STDMETHOD_(void, FreeWorld)         (THIS);
     STDMETHOD(LoadTexture)              (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD_(void, SetTexture)        (THIS_ UINT32 nStage, IUnknown *pTexture);

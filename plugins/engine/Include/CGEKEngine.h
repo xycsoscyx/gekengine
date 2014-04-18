@@ -50,10 +50,10 @@ public:
     STDMETHOD_(void, Destroy)           (THIS);
 
     // IGEKSystemObserver
-    STDMETHOD(OnEvent)                  (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
-    STDMETHOD(OnRun)                    (THIS);
-    STDMETHOD(OnStop)                   (THIS);
-    STDMETHOD(OnStep)                   (THIS);
+    STDMETHOD_(void, OnEvent)           (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
+    STDMETHOD_(void, OnRun)             (THIS);
+    STDMETHOD_(void, OnStop)            (THIS);
+    STDMETHOD_(void, OnStep)            (THIS);
 
     // IGEKGameApplication
     STDMETHOD_(void, Run)               (THIS);

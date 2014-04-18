@@ -868,7 +868,7 @@ STDMETHODIMP CGEKVideoSystem::Reset(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::SendEvent(TGEKEvent<IGEKVideoObserver>(std::bind(&IGEKVideoObserver::OnPostReset, std::placeholders::_1)));
+        hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEKVideoObserver>(std::bind(&IGEKVideoObserver::OnPostReset, std::placeholders::_1)));
     }
 
     return hRetVal;

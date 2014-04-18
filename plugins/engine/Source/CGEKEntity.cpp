@@ -18,23 +18,24 @@ CGEKEntity::~CGEKEntity(void)
 HRESULT CGEKEntity::OnEntityCreated(void)
 {
     HRESULT hRetVal = S_OK;
-    std::find_if(m_aComponents.begin(), m_aComponents.end(), [&](std::map<GEKHASH, CComPtr<IGEKComponent>>::value_type &kPair) -> bool
+    for (auto &kPair : m_aComponents)
     {
         hRetVal = kPair.second->OnEntityCreated();
-        return FAILED(hRetVal);
-    });
+        if (FAILED(hRetVal))
+        {
+            break;
+        }
+    }
 
     return hRetVal;
 }
 
-HRESULT CGEKEntity::OnEntityDestroyed(void)
+void CGEKEntity::OnEntityDestroyed(void)
 {
     for (auto &kPair : m_aComponents)
     {
         kPair.second->OnEntityDestroyed();
     }
-
-    return S_OK;
 }
 
 HRESULT CGEKEntity::AddComponent(IGEKComponent *pComponent)
@@ -59,30 +60,21 @@ LPCWSTR CGEKEntity::GetFlags(void)
 
 STDMETHODIMP_(IGEKComponent *) CGEKEntity::GetComponent(LPCWSTR pName)
 {
-    GEKHASH nHash(pName);
-    auto pIterator = std::find_if(m_aComponents.begin(), m_aComponents.end(), [nHash](std::map<GEKHASH, CComPtr<IGEKComponent>>::value_type &kPair) -> bool
-    {
-        return (kPair.first == nHash);
-    } );
-
-    if (pIterator == m_aComponents.end())
-    {
-        return nullptr;
-    }
-    else
+    auto pIterator = m_aComponents.find(pName);
+    if (pIterator != m_aComponents.end())
     {
         return ((*pIterator).second);
     }
+    else
+    {
+        return nullptr;
+    }
 }
 
-STDMETHODIMP CGEKEntity::OnEvent(LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB)
+STDMETHODIMP_(void) CGEKEntity::OnEvent(LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB)
 {
-    HRESULT hRetVal = S_OK;
-    std::find_if(m_aComponents.begin(), m_aComponents.end(), [&](std::map<GEKHASH, CComPtr<IGEKComponent>>::value_type &kPair) -> bool
+    for (auto &kPair : m_aComponents)
     {
-        hRetVal = kPair.second->OnEvent(pAction, kParamA, kParamB);
-        return FAILED(hRetVal);
-    });
-
-    return hRetVal;
+        kPair.second->OnEvent(pAction, kParamA, kParamB);
+    }
 }

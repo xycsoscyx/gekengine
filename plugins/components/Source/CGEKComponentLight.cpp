@@ -151,12 +151,10 @@ STDMETHODIMP CGEKComponentSystemLight::Destroy(IGEKEntity *pEntity)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKComponentSystemLight::OnRender(void)
+STDMETHODIMP_(void) CGEKComponentSystemLight::OnRender(void)
 {
     concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLight>>::value_type &kPair) -> void
     {
         kPair.second->OnRender();
     });
-
-    return S_OK;
 }
