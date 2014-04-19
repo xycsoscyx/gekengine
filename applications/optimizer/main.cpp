@@ -1,6 +1,7 @@
 #include "GEKMath.h"
 #include "GEKUtility.h"
 #include "GEKMesh.h"
+#include <atlpath.h>
 #include <algorithm>
 #include <map>
 
@@ -40,7 +41,10 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
         throw CMyException(__LINE__, L"Invalid node encountered");
     }
 
-    float4x4 nTransform = *(float4x4 *)&pNode->mTransformation * nParentTransform;
+    float4x4 nLocalTransform = *(float4x4 *)&pNode->mTransformation;
+    nLocalTransform.Transpose();
+
+    float4x4 nTransform = (nLocalTransform * nParentTransform);
     if (pNode->mNumMeshes > 0)
     {
         if (pNode->mMeshes == nullptr)
@@ -77,7 +81,15 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                     {
                         aiString strPath;
                         pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &strPath);
-                        strMaterial = strPath.C_Str();
+                        
+                        CPathA kPath = strPath.C_Str();
+                        kPath.RemoveExtension();
+                        strMaterial = kPath.m_strPath;
+                        int nTexturesRoot = strMaterial.Find("/textures/");
+                        if (nTexturesRoot >= 0)
+                        {
+                            strMaterial = strMaterial.Mid(nTexturesRoot + 10);
+                        }
                     }
                 }
 
@@ -97,10 +109,32 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                             kVertex.position.z = pMesh->mVertices[nIndex].z;
                             kVertex.position = (nTransform * float4(kVertex.position, 1.0f));
                             nAABB.Extend(kVertex.position);
+
                             if (pMesh->mTextureCoords)
                             {
                                 kVertex.texcoord.x = pMesh->mTextureCoords[0][nIndex].x;
                                 kVertex.texcoord.y = pMesh->mTextureCoords[0][nIndex].y;
+                            }
+
+                            if (pMesh->mTangents)
+                            {
+                                kVertex.tangent.x = pMesh->mTangents[nIndex].x;
+                                kVertex.tangent.y = pMesh->mTangents[nIndex].y;
+                                kVertex.tangent.z = pMesh->mTangents[nIndex].z;
+                            }
+
+                            if (pMesh->mBitangents)
+                            {
+                                kVertex.bitangent.x = pMesh->mBitangents[nIndex].x;
+                                kVertex.bitangent.y = pMesh->mBitangents[nIndex].y;
+                                kVertex.bitangent.z = pMesh->mBitangents[nIndex].z;
+                            }
+
+                            if (pMesh->mNormals)
+                            {
+                                kVertex.normal.x = pMesh->mNormals[nIndex].x;
+                                kVertex.normal.y = pMesh->mNormals[nIndex].y;
+                                kVertex.normal.z = pMesh->mNormals[nIndex].z;
                             }
 
                             aVertices.push_back(kVertex);
@@ -187,7 +221,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
     try
     {
-        const aiScene *pScene = aiImportFile(CW2A(strInput, CP_UTF8), 0);
+        const aiScene *pScene = aiImportFile(CW2A(strInput, CP_UTF8), aiProcessPreset_TargetRealtime_Quality | aiProcess_TransformUVCoords);
         if (pScene == nullptr)
         {
             throw CMyException(__LINE__, L"Unable to Load Input: %s", strInput.GetString());
