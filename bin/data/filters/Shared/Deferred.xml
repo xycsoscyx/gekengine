@@ -18,8 +18,7 @@
         //clip(nAlbedo.a - gs_nAlphaTest);
 
         float3 nNormal = gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xyz;
-        nNormal = normalize((nNormal * 2.0f) - 1.0f);
-        nNormal = mul(nNormal, kInput.texbasis);
+        nNormal = mul(((nNormal * 2.0f) - 1.0f), kInput.texbasis);
         nNormal = mul((float3x3)gs_nViewMatrix, nNormal);
 
         float4 nInfo = gs_pInfoMap.Sample(gs_pLinearSampler, kInput.texcoord);

@@ -6,9 +6,9 @@
       <authoring_tool>OpenCOLLADA for 3ds Max;  ;  </authoring_tool>
       <source_data>file:///E:/GEK%20Engine/bin/data/models/crate.max</source_data>
     </contributor>
-    <created>2014-04-19T16:00:56</created>
-    <modified>2014-04-19T16:00:56</modified>
-    <unit name="feet" meter="0.3048"/>
+    <created>2014-04-20T10:23:32</created>
+    <modified>2014-04-20T10:23:32</modified>
+    <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
   <library_effects>

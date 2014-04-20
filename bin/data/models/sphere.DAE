@@ -6,9 +6,9 @@
       <authoring_tool>OpenCOLLADA for 3ds Max;  ;  </authoring_tool>
       <source_data>file:///E:/GEK%20Engine/bin/data/models/sphere.max</source_data>
     </contributor>
-    <created>2014-04-19T15:42:12</created>
-    <modified>2014-04-19T15:42:12</modified>
-    <unit name="feet" meter="0.3048"/>
+    <created>2014-04-20T10:22:19</created>
+    <modified>2014-04-20T10:22:19</modified>
+    <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
   <library_effects>
@@ -181,7 +181,6 @@
         <instance_light url="#EnvironmentAmbientLight"/>
       </node>
       <node id="node-GeoSphere001" name="GeoSphere001">
-        <matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
         <instance_geometry url="#geom-GeoSphere001">
           <bind_material>
             <technique_common>
