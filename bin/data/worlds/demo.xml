@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<world name="Demo" source="demo">
+<world name="Demo">
 	<population>
 		<entity name="worldspawn_0" class="worldspawn">
 			<component type="transform" position="0.000000, 0.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
