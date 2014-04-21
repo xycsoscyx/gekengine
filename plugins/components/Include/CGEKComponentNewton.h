@@ -43,7 +43,6 @@ class CGEKComponentSystemNewton : public CGEKUnknown
 private:
     NewtonWorld *m_pWorld;
     std::map<IGEKEntity *, CComPtr<CGEKComponentNewton>> m_aComponents;
-    NewtonCollision *m_pStatic;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemNewton)
@@ -61,7 +60,6 @@ public:
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnLoadBegin)       (THIS);
-    STDMETHOD_(void, OnStaticFace)      (THIS_ float3 *pFace, IUnknown *pMaterial);
     STDMETHOD(OnLoadEnd)                (THIS_ HRESULT hRetVal);
     STDMETHOD_(void, OnUpdate)          (THIS_ float nGameTime, float nFrameTime);
 };

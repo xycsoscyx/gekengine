@@ -336,40 +336,11 @@ STDMETHODIMP CGEKComponentSystemNewton::Destroy(IGEKEntity *pEntity)
 
 STDMETHODIMP_(void) CGEKComponentSystemNewton::OnLoadBegin(void)
 {
-    REQUIRE_VOID_RETURN(m_pWorld);
-    
-    m_pStatic = NewtonCreateTreeCollision(m_pWorld, int(GetTickCount()));
-    if (m_pStatic)
-    {
-        NewtonTreeCollisionBeginBuild(m_pStatic);
-    }
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemNewton::OnStaticFace(float3 *pFace, IUnknown *pMaterial)
-{
-    REQUIRE_VOID_RETURN(m_pStatic);
-    NewtonTreeCollisionAddFace(m_pStatic, 3, &pFace->x, sizeof(float3), int(pMaterial));
 }
 
 STDMETHODIMP CGEKComponentSystemNewton::OnLoadEnd(HRESULT hRetVal)
 {
-    REQUIRE_RETURN(m_pStatic, E_INVALID);
-    REQUIRE_RETURN(m_pWorld, E_INVALID);
-
-    if (SUCCEEDED(hRetVal))
-    {
-        NewtonTreeCollisionEndBuild(m_pStatic, 1);
-
-        float4x4 nMatrix;
-        NewtonBody *pBody = NewtonCreateDynamicBody(m_pWorld, m_pStatic, nMatrix.data);
-        if (pBody != nullptr)
-        {
-            hRetVal = S_OK;
-        }
-    }
-
-    NewtonDestroyCollision(m_pStatic);
-    return hRetVal;
+    return S_OK;
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemNewton::OnUpdate(float nGameTime, float nFrameTime)

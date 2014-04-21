@@ -16,7 +16,6 @@ DECLARE_INTERFACE_IID_(IGEKSceneManager, IUnknown, "43DF2FD7-3BE2-4333-86ED-CB12
 DECLARE_INTERFACE_IID_(IGEKSceneObserver, IGEKObserver, "51D6E5E6-2AD3-4D61-A704-8E6515F024F9")
 {
     STDMETHOD_(void, OnLoadBegin)       (THIS) { };
-    STDMETHOD_(void, OnStaticFace)      (THIS_ float3 *pFace, IUnknown *pMaterial) { };
     STDMETHOD(OnLoadEnd)                (THIS_ HRESULT hRetVal) { return S_OK; };
 
     STDMETHOD_(void, OnEntityAdded)     (THIS_ IGEKEntity *pEntity) { };

@@ -510,7 +510,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 {
-    FreeWorld();
+    Free();
     CGEKObservable::RemoveObserver(GetVideoSystem(), (IGEKVideoObserver *)this);
     CGEKObservable::RemoveObserver(GetSystem(), (IGEKSystemObserver *)this);
     CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
@@ -542,6 +542,8 @@ STDMETHODIMP_(void) CGEKRenderManager::BeginLoad(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::EndLoad(HRESULT hRetVal)
 {
+    m_bRunThread = true;
+    CreateThread();
 }
 
 HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
@@ -708,32 +710,19 @@ HRESULT CGEKRenderManager::CreateThread(void)
                         m_spRenderFrame->m_kBuffer.m_nTransformMatrix = (m_spRenderFrame->m_kBuffer.m_nViewMatrix * m_spRenderFrame->m_kBuffer.m_nProjectionMatrix);
                         m_spRenderFrame->m_kFrustum.Create(nCameraMatrix, m_spRenderFrame->m_kBuffer.m_nProjectionMatrix);
 
-                        m_spWorld->Prepare(m_spRenderFrame->m_kFrustum);
-                        for (auto &kPair : m_spRenderFrame->m_aModels)
-                        {
-                            IGEKModel *pModel = kPair.first;
-                            IGEKModel::INSTANCE &kInstance = kPair.second;
-                            if (m_spWorld->IsVisible(obb(pModel->GetAABB(), kInstance.m_nMatrix)))
-                            {
-                                m_spRenderFrame->m_aCulledModels[pModel].push_back(kInstance);
-                            }
-                        }
-
-                        m_spRenderFrame->m_aModels.clear();
                         for (auto &kLight : m_spRenderFrame->m_aLights)
                         {
-                            if (m_spWorld->IsVisible(sphere(kLight.m_nMatrix.t, kLight.m_nRange)))
-                            {
-                                kLight.m_nMatrix = kLight.m_nMatrix * m_spRenderFrame->m_kBuffer.m_nViewMatrix;
-                                m_spRenderFrame->m_aCulledLights.push_back(kLight);
-                            }
+                            kLight.m_nMatrix = (kLight.m_nMatrix * m_spRenderFrame->m_kBuffer.m_nViewMatrix);
                         }
 
-                        m_spRenderFrame->m_aLights.clear();
-                        for (auto &kPair : m_spRenderFrame->m_aCulledModels)
+                        for (auto &kPair : m_spRenderFrame->m_aModels)
                         {
-                            IGEKModel *pModel = kPair.first;
-                            pModel->Prepare();
+                            m_spRenderFrame->m_aModelMap[kPair.first].push_back(kPair.second);
+                        }
+
+                        for (auto &kPair : m_spRenderFrame->m_aModelMap)
+                        {
+                            kPair.first->Prepare();
                         }
 
                         m_spRenderFrame->m_kBuffer.m_nCameraPosition = kPosition.GetFloat3();
@@ -800,43 +789,7 @@ HRESULT CGEKRenderManager::CreateThread(void)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderManager::LoadWorld(LPCWSTR pName, std::function<void(float3 *, IUnknown *)> OnStaticFace)
-{
-    FreeWorld();
-    std::vector<UINT8> aBuffer;
-    HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\worlds\\%s.gek", pName), aBuffer);
-    if (SUCCEEDED(hRetVal))
-    {
-        for (auto &spFactory : m_aFactories)
-        {
-            CComPtr<IGEKWorld> spWorld;
-            hRetVal = spFactory->Create(&aBuffer[0], IID_PPV_ARGS(&spWorld));
-            if (spWorld)
-            {
-                hRetVal = spWorld->Load(&aBuffer[0], OnStaticFace);
-                if (SUCCEEDED(hRetVal))
-                {
-                    m_spWorld = spWorld;
-                    break;
-                }
-            }
-        }
-    }
-
-    if (FAILED(hRetVal))
-    {
-        m_spWorld = nullptr;
-    }
-    else
-    {
-        m_bRunThread = true;
-        hRetVal = CreateThread();
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP_(void) CGEKRenderManager::FreeWorld(void)
+STDMETHODIMP_(void) CGEKRenderManager::Free(void)
 {
     m_bRunThread = false;
     if (m_spRenderThread)
@@ -848,7 +801,6 @@ STDMETHODIMP_(void) CGEKRenderManager::FreeWorld(void)
     m_spUpdateFrame = nullptr;
     m_spRenderFrame = nullptr;
     m_aFrames.clear();
-    m_spWorld = nullptr;
     m_pViewer = nullptr;
     m_pCurrentPass = nullptr;
 }
@@ -1336,9 +1288,46 @@ STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
     }
 }
 
+STDMETHODIMP CGEKRenderManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IGEKCollision **ppCollision)
+{
+    REQUIRE_RETURN(ppCollision, E_INVALIDARG);
+    REQUIRE_RETURN(pName, E_INVALIDARG);
+    REQUIRE_RETURN(pParams, E_INVALIDARG);
+
+    std::vector<UINT8> aBuffer;
+    HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pName), aBuffer);
+    if (SUCCEEDED(hRetVal))
+    {
+        for (auto &spFactory : m_aFactories)
+        {
+            hRetVal = spFactory->Create(&aBuffer[0], IID_PPV_ARGS(ppCollision));
+            if (*ppCollision)
+            {
+                CComQIPtr<IGEKResource> spResource(*ppCollision);
+                if (spResource)
+                {
+                    hRetVal = spResource->Load(&aBuffer[0], pParams);
+                    if (SUCCEEDED(hRetVal))
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    hRetVal = E_INVALID;
+                }
+            }
+        }
+    }
+
+    return hRetVal;
+}
+
 STDMETHODIMP CGEKRenderManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel)
 {
     REQUIRE_RETURN(ppModel, E_INVALIDARG);
+    REQUIRE_RETURN(pName, E_INVALIDARG);
+    REQUIRE_RETURN(pParams, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aModels.find(FormatString(L"%s|%s", pName, pParams));
@@ -1358,12 +1347,20 @@ STDMETHODIMP CGEKRenderManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnkno
                 hRetVal = spFactory->Create(&aBuffer[0], IID_PPV_ARGS(&spModel));
                 if (spModel)
                 {
-                    hRetVal = spModel->Load(&aBuffer[0], pParams);
-                    if (SUCCEEDED(hRetVal))
+                    CComQIPtr<IGEKResource> spResource(spModel);
+                    if (spResource)
                     {
-                        m_aModels[FormatString(L"%s|%s", pName, pParams)] = spModel;
-                        hRetVal = spModel->QueryInterface(IID_PPV_ARGS(ppModel));
-                        break;
+                        hRetVal = spResource->Load(&aBuffer[0], pParams);
+                        if (SUCCEEDED(hRetVal))
+                        {
+                            m_aModels[FormatString(L"%s|%s", pName, pParams)] = spModel;
+                            hRetVal = spModel->QueryInterface(IID_PPV_ARGS(ppModel));
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        hRetVal = E_INVALID;
                     }
                 }
             }
@@ -1484,14 +1481,10 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
     REQUIRE_VOID_RETURN(m_spRenderFrame);
     REQUIRE_VOID_RETURN(m_pCurrentPass);
     REQUIRE_VOID_RETURN(m_pCurrentFilter);
-    REQUIRE_VOID_RETURN(m_spWorld);
 
-    m_spWorld->Draw(m_pCurrentFilter->GetVertexAttributes());
-    for (auto &kPair : m_spRenderFrame->m_aCulledModels)
+    for (auto &kPair : m_spRenderFrame->m_aModelMap)
     {
-        IGEKModel *pModel = kPair.first;
-        std::vector<IGEKModel::INSTANCE> &aInstances = kPair.second;
-        pModel->Draw(m_pCurrentFilter->GetVertexAttributes(), aInstances);
+        kPair.first->Draw(m_pCurrentFilter->GetVertexAttributes(), kPair.second);
     }
 }
 
@@ -1508,7 +1501,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
     if (bPerLight)
     {
         GetVideoSystem()->GetDefaultContext()->SetPixelConstantBuffer(1, m_spLightBuffer);
-        for (auto &kLight : m_spRenderFrame->m_aCulledLights)
+        for (auto &kLight : m_spRenderFrame->m_aLights)
         {
             m_spLightBuffer->Update((void *)&kLight);
             GetVideoSystem()->GetDefaultContext()->DrawIndexedPrimitive(6, 0, 0);

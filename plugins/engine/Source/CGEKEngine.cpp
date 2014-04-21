@@ -213,8 +213,8 @@ STDMETHODIMP_(void) CGEKEngine::OnRun(void)
 STDMETHODIMP_(void) CGEKEngine::OnStop(void)
 {
     m_bWindowActive = false;
-    m_spRenderManager->FreeWorld();
-    m_spPopulationManager->FreeScene();
+    m_spRenderManager->Free();
+    m_spPopulationManager->Free();
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnStep(void)

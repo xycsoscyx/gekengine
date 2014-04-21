@@ -70,11 +70,9 @@ public:
 
         std::map<PASS *, UINT32> m_aPasses;
 
+        std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aModelMap;
         concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> m_aModels;
         concurrency::concurrent_vector<LIGHTBUFFER> m_aLights;
-
-        std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aCulledModels;
-        std::vector<LIGHTBUFFER> m_aCulledLights;
     };
 
 private:
@@ -90,8 +88,6 @@ private:
     CComPtr<IGEKVideoConstantBuffer> m_spOrthoBuffer;
     CComPtr<IGEKVideoConstantBuffer> m_spEngineBuffer;
     CComPtr<IGEKVideoConstantBuffer> m_spLightBuffer;
-
-    CComPtr<IGEKWorld> m_spWorld;
 
     Awesomium::WebCore *m_pWebCore;
     Awesomium::WebSession *m_pWebSession;
@@ -150,6 +146,7 @@ public:
     STDMETHOD_(void, EnableProgram)     (THIS_ IUnknown *pProgram);
 
     // IGEKModelManager
+    STDMETHOD(LoadCollision)            (THIS_ LPCWSTR pName, LPCWSTR pParams, IGEKCollision **ppCollision);
     STDMETHOD(LoadModel)                (THIS_ LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel);
 
     // IGEKViewManager
@@ -163,8 +160,7 @@ public:
     // IGEKRenderManager
     STDMETHOD_(void, BeginLoad)         (THIS);
     STDMETHOD_(void, EndLoad)           (THIS_ HRESULT hRetVal);
-    STDMETHOD(LoadWorld)                (THIS_ LPCWSTR pName, std::function<void(float3 *, IUnknown *)> OnStaticFace);
-    STDMETHOD_(void, FreeWorld)         (THIS);
+    STDMETHOD_(void, Free)              (THIS);
     STDMETHOD(LoadTexture)              (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD_(void, SetTexture)        (THIS_ UINT32 nStage, IUnknown *pTexture);
     STDMETHOD(GetBuffer)                (THIS_ LPCWSTR pName, IUnknown **ppTexture);

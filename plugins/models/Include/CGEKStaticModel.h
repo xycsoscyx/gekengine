@@ -10,6 +10,7 @@ class CGEKStaticModel : public CGEKUnknown
                       , public CGEKProgramManagerUser
                       , public CGEKMaterialManagerUser
                       , public CGEKStaticFactoryUser
+                      , public IGEKResource
                       , public IGEKModel
 {
 private:
@@ -33,8 +34,10 @@ public:
     virtual ~CGEKStaticModel(void);
     DECLARE_UNKNOWN(CGEKStaticModel);
 
-    // IGEKModel
+    // IGEKResource
     STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, LPCWSTR pParams);
+
+    // IGEKModel
     STDMETHOD_(aabb, GetAABB)       (THIS);
     STDMETHOD_(void, Prepare)       (THIS);
     STDMETHOD_(void, Draw)          (THIS_ UINT32 nVertexAttributes, const std::vector<IGEKModel::INSTANCE> &aInstances);

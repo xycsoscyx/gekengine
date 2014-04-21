@@ -59,14 +59,14 @@ STDMETHODIMP CGEKPopulationManager::Initialize(void)
 
 STDMETHODIMP_(void) CGEKPopulationManager::Destroy(void)
 {
-    FreeScene();
+    Free();
     m_aComponentSystems.clear();
     CGEKObservable::RemoveObserver(GetContext(), this);
 }
 
 STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
 {
-    FreeScene();
+    Free();
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
     GetRenderManager()->BeginLoad();
 
@@ -77,34 +77,26 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
         CLibXMLNode &kWorld = kDocument.GetRoot();
         if (kWorld.GetType().CompareNoCase(L"world") == 0)
         {
-            hRetVal = GetRenderManager()->LoadWorld(kWorld.GetAttribute(L"source"), [&](float3 *pFace, IUnknown *pMaterial) -> void
+            CLibXMLNode &kPopulation = kWorld.FirstChildElement(L"population");
+            if (kPopulation)
             {
-                CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnStaticFace, std::placeholders::_1, pFace, pMaterial)));
-            });
-
-            if (SUCCEEDED(hRetVal))
-            {
-                CLibXMLNode &kPopulation = kWorld.FirstChildElement(L"population");
-                if (kPopulation)
+                CLibXMLNode &kEntity = kPopulation.FirstChildElement(L"entity");
+                while (kEntity)
                 {
-                    CLibXMLNode &kEntity = kPopulation.FirstChildElement(L"entity");
-                    while (kEntity)
+                    hRetVal = AddEntity(kEntity);
+                    if (SUCCEEDED(hRetVal))
                     {
-                        hRetVal = AddEntity(kEntity);
-                        if (SUCCEEDED(hRetVal))
-                        {
-                            kEntity = kEntity.NextSiblingElement(L"entity");
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    };
-                }
-                else
-                {
-                    hRetVal = E_INVALID;
-                }
+                        kEntity = kEntity.NextSiblingElement(L"entity");
+                    }
+                    else
+                    {
+                        break;
+                    }
+                };
+            }
+            else
+            {
+                hRetVal = E_INVALID;
             }
         }
         else
@@ -179,12 +171,12 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
     return CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
 }
 
-STDMETHODIMP_(void) CGEKPopulationManager::FreeScene(void)
+STDMETHODIMP_(void) CGEKPopulationManager::Free(void)
 {
     if (m_bLevelLoaded)
     {
         m_bLevelLoaded = false;
-        GetRenderManager()->FreeWorld();
+        GetRenderManager()->Free();
         m_aInputHandlers.clear();
         m_aPopulation.clear();
         m_aHitList.clear();
