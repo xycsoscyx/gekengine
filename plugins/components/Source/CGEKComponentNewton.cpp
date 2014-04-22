@@ -6,12 +6,11 @@
 BEGIN_INTERFACE_LIST(CGEKComponentNewton)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKModelManagerUser)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentNewton::CGEKComponentNewton(IGEKEntity *pEntity, NewtonWorld *pWorld)
+CGEKComponentNewton::CGEKComponentNewton(IGEKEntity *pEntity, CGEKComponentSystemNewton *pSystem)
     : CGEKComponent(pEntity)
-    , m_pWorld(pWorld)
+    , m_pSystem(pSystem)
     , m_pBody(nullptr)
     , m_nMass(0.0f)
 {
@@ -98,90 +97,7 @@ STDMETHODIMP CGEKComponentNewton::OnEntityCreated(void)
         IGEKComponent *pTransform = GetEntity()->GetComponent(L"transform");
         if (pTransform)
         {
-            float4x4 nIdentityMatrix;
-            NewtonCollision *pCollision = nullptr;
-            if (m_strShape.CompareNoCase(L"cube") == 0)
-            {
-                float3 nSize = StrToFloat3(m_strParams);
-                pCollision = NewtonCreateBox(m_pWorld, nSize.x, nSize.y, nSize.z, int(this), nIdentityMatrix.data);
-            }
-            else if (m_strShape.CompareNoCase(L"sphere") == 0)
-            {
-                float nSize = StrToFloat(m_strParams);
-                pCollision = NewtonCreateSphere(m_pWorld, nSize, int(this), nIdentityMatrix.data);
-            }
-            else if (m_strShape.CompareNoCase(L"cone") == 0)
-            {
-                float2 nSize = StrToFloat2(m_strParams);
-                pCollision = NewtonCreateCone(m_pWorld, nSize.x, nSize.y, int(this), nIdentityMatrix.data);
-            }
-            else if (m_strShape.CompareNoCase(L"capsule") == 0)
-            {
-                float2 nSize = StrToFloat2(m_strParams);
-                pCollision = NewtonCreateCapsule(m_pWorld, nSize.x, nSize.y, int(this), nIdentityMatrix.data);
-            }
-            else if (m_strShape.CompareNoCase(L"cylinder") == 0)
-            {
-                float2 nSize = StrToFloat2(m_strParams);
-                pCollision = NewtonCreateCylinder(m_pWorld, nSize.x, nSize.y, int(this), nIdentityMatrix.data);
-            }
-            else if (m_strShape.CompareNoCase(L"tapered_capsule") == 0)
-            {
-                float3 nSize = StrToFloat3(m_strParams);
-                pCollision = NewtonCreateTaperedCapsule(m_pWorld, nSize.x, nSize.y, nSize.z, int(this), nIdentityMatrix.data);
-            }
-            else if (m_strShape.CompareNoCase(L"tapered_cylinder") == 0)
-            {
-                float3 nSize = StrToFloat3(m_strParams);
-                pCollision = NewtonCreateTaperedCylinder(m_pWorld, nSize.x, nSize.y, nSize.z, int(this), nIdentityMatrix.data);
-            }
-            else if (m_strShape.CompareNoCase(L"chamfer_cylinder") == 0)
-            {
-                float2 nSize = StrToFloat2(m_strParams);
-                pCollision = NewtonCreateChamferCylinder(m_pWorld, nSize.x, nSize.y, int(this), nIdentityMatrix.data);
-            }
-            else if (m_strShape.CompareNoCase(L"convex_hull") == 0)
-            {
-                CComPtr<IGEKCollision> spCollision;
-                hRetVal = GetModelManager()->LoadCollision(m_strParams, L"", &spCollision);
-                if (spCollision)
-                {
-                    std::vector<float3> aCloud(spCollision->GetNumIndices());
-                    for (UINT32 nIndex = 0; nIndex < spCollision->GetNumIndices(); nIndex++)
-                    {
-                        aCloud[nIndex] = spCollision->GetVertices()[spCollision->GetIndices()[nIndex]];
-                    }
-
-                    pCollision = NewtonCreateConvexHull(m_pWorld, aCloud.size(), aCloud[0].xyz, sizeof(float3), 0.025f, int(this), nIdentityMatrix.data);
-                }
-            }
-            else if (m_strShape.CompareNoCase(L"tree") == 0)
-            {
-                CComPtr<IGEKCollision> spCollision;
-                hRetVal = GetModelManager()->LoadCollision(m_strParams, L"", &spCollision);
-                if (spCollision)
-                {
-                    pCollision = NewtonCreateTreeCollision(m_pWorld, int(this));
-                    if (pCollision)
-                    {
-                        NewtonTreeCollisionBeginBuild(pCollision);
-                        for (UINT32 nIndex = 0; nIndex < spCollision->GetNumIndices(); nIndex += 3)
-                        {
-                            float3 aFace[3] =
-                            {
-                                spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 0]],
-                                spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 1]],
-                                spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 2]],
-                            };
-
-                            NewtonTreeCollisionAddFace(pCollision, 3, aFace[0].xyz, sizeof(float3), 0);
-                        }
-
-                        NewtonTreeCollisionEndBuild(pCollision, true);
-                    }
-                }
-            }
-
+            NewtonCollision *pCollision = m_pSystem->LoadCollision(m_strShape, m_strParams);
             if (pCollision)
             {
                 GEKVALUE kPosition;
@@ -193,7 +109,7 @@ STDMETHODIMP CGEKComponentNewton::OnEntityCreated(void)
                 nMatrix = kRotation.GetQuaternion();
                 nMatrix.t = kPosition.GetFloat3();
 
-                m_pBody = NewtonCreateDynamicBody(m_pWorld, pCollision, nMatrix.data);
+                m_pBody = NewtonCreateDynamicBody(m_pSystem->GetWorld(), pCollision, nMatrix.data);
                 if (m_pBody != nullptr)
                 {
                     NewtonBodySetMassProperties(m_pBody, m_nMass, pCollision);
@@ -214,8 +130,6 @@ STDMETHODIMP CGEKComponentNewton::OnEntityCreated(void)
 
                     hRetVal = S_OK;
                 }
-
-                NewtonDestroyCollision(pCollision);
             }
         }
     }
@@ -226,6 +140,7 @@ STDMETHODIMP CGEKComponentNewton::OnEntityCreated(void)
 BEGIN_INTERFACE_LIST(CGEKComponentSystemNewton)
     INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKModelManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
@@ -239,6 +154,123 @@ CGEKComponentSystemNewton::CGEKComponentSystemNewton(void)
 
 CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
 {
+}
+
+NewtonWorld *CGEKComponentSystemNewton::GetWorld(void)
+{
+    return m_pWorld;
+}
+
+static GEKHASH gs_nShapeCube(L"cube");
+static GEKHASH gs_nShapeSphere(L"sphere");
+static GEKHASH gs_nShapeCone(L"cone");
+static GEKHASH gs_nShapeCapsule(L"capsule");
+static GEKHASH gs_nShapeCylinder(L"cylinder");
+static GEKHASH gs_nShapeTaperedCapsule(L"tapered_capsule");
+static GEKHASH gs_nShapeTaperedCylinder(L"tapered_cylinder");
+static GEKHASH gs_nShapeChamferCylinder(L"chamfer_cylinder");
+static GEKHASH gs_nShapeConvexHull(L"convex_hull");
+static GEKHASH gs_nShapeTree(L"tree");
+NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWSTR pParams)
+{
+    GEKHASH nFullHash(FormatString(L"%s|%s", pShape, pParams));
+    auto pIterator = m_aCollisions.find(nFullHash);
+    if (pIterator != m_aCollisions.end())
+    {
+        return ((*pIterator).second);
+    }
+
+    GEKHASH nHash(pShape);
+    float4x4 nIdentityMatrix;
+    NewtonCollision *pCollision = nullptr;
+    if (nHash == gs_nShapeCube)
+    {
+        float3 nSize = StrToFloat3(pParams);
+        pCollision = NewtonCreateBox(m_pWorld, nSize.x, nSize.y, nSize.z, nHash.GetHash(), nIdentityMatrix.data);
+    }
+    else if (nHash == gs_nShapeSphere)
+    {
+        float nSize = StrToFloat(pParams);
+        pCollision = NewtonCreateSphere(m_pWorld, nSize, nHash.GetHash(), nIdentityMatrix.data);
+    }
+    else if (nHash == gs_nShapeCone)
+    {
+        float2 nSize = StrToFloat2(pParams);
+        pCollision = NewtonCreateCone(m_pWorld, nSize.x, nSize.y, nHash.GetHash(), nIdentityMatrix.data);
+    }
+    else if (nHash == gs_nShapeCapsule)
+    {
+        float2 nSize = StrToFloat2(pParams);
+        pCollision = NewtonCreateCapsule(m_pWorld, nSize.x, nSize.y, nHash.GetHash(), nIdentityMatrix.data);
+    }
+    else if (nHash == gs_nShapeCylinder)
+    {
+        float2 nSize = StrToFloat2(pParams);
+        pCollision = NewtonCreateCylinder(m_pWorld, nSize.x, nSize.y, nHash.GetHash(), nIdentityMatrix.data);
+    }
+    else if (nHash == gs_nShapeTaperedCapsule)
+    {
+        float3 nSize = StrToFloat3(pParams);
+        pCollision = NewtonCreateTaperedCapsule(m_pWorld, nSize.x, nSize.y, nSize.z, nHash.GetHash(), nIdentityMatrix.data);
+    }
+    else if (nHash == gs_nShapeTaperedCylinder)
+    {
+        float3 nSize = StrToFloat3(pParams);
+        pCollision = NewtonCreateTaperedCylinder(m_pWorld, nSize.x, nSize.y, nSize.z, nHash.GetHash(), nIdentityMatrix.data);
+    }
+    else if (nHash == gs_nShapeChamferCylinder)
+    {
+        float2 nSize = StrToFloat2(pParams);
+        pCollision = NewtonCreateChamferCylinder(m_pWorld, nSize.x, nSize.y, nHash.GetHash(), nIdentityMatrix.data);
+    }
+    else if (nHash == gs_nShapeConvexHull)
+    {
+        CComPtr<IGEKCollision> spCollision;
+        GetModelManager()->LoadCollision(pParams, L"", &spCollision);
+        if (spCollision)
+        {
+            std::vector<float3> aCloud(spCollision->GetNumIndices());
+            for (UINT32 nIndex = 0; nIndex < spCollision->GetNumIndices(); nIndex++)
+            {
+                aCloud[nIndex] = spCollision->GetVertices()[spCollision->GetIndices()[nIndex]];
+            }
+
+            pCollision = NewtonCreateConvexHull(m_pWorld, aCloud.size(), aCloud[0].xyz, sizeof(float3), 0.025f, nHash.GetHash(), nIdentityMatrix.data);
+        }
+    }
+    else if (nHash == gs_nShapeTree)
+    {
+        CComPtr<IGEKCollision> spCollision;
+        GetModelManager()->LoadCollision(pParams, L"", &spCollision);
+        if (spCollision)
+        {
+            pCollision = NewtonCreateTreeCollision(m_pWorld, nHash.GetHash());
+            if (pCollision)
+            {
+                NewtonTreeCollisionBeginBuild(pCollision);
+                for (UINT32 nIndex = 0; nIndex < spCollision->GetNumIndices(); nIndex += 3)
+                {
+                    float3 aFace[3] =
+                    {
+                        spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 0]],
+                        spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 1]],
+                        spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 2]],
+                    };
+
+                    NewtonTreeCollisionAddFace(pCollision, 3, aFace[0].xyz, sizeof(float3), 0);
+                }
+
+                NewtonTreeCollisionEndBuild(pCollision, true);
+            }
+        }
+    }
+    
+    if (pCollision)
+    {
+        m_aCollisions[nFullHash] = pCollision;
+    }
+
+    return pCollision;
 }
 
 int GEKNewtonOnAABBOverlap(const NewtonMaterial *pMaterial, const NewtonBody *pBody0, const NewtonBody *pBody1, int nThreadID)
@@ -315,6 +347,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::Clear(void)
 {
     NewtonDestroyAllBodies(m_pWorld);
     m_aComponents.clear();
+    m_aCollisions.clear();
 }
 
 STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
@@ -323,7 +356,7 @@ STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kNode, IGEKEnt
     if (kNode.HasAttribute(L"type") && kNode.GetAttribute(L"type").CompareNoCase(L"newton") == 0)
     {
         hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKComponentNewton> spComponent(new CGEKComponentNewton(pEntity, m_pWorld));
+        CComPtr<CGEKComponentNewton> spComponent(new CGEKComponentNewton(pEntity, this));
         if (spComponent)
         {
             CComPtr<IUnknown> spComponentUnknown;

@@ -57,6 +57,8 @@ public:
     GEKHASH(LPCWSTR pString);
     GEKHASH(const CStringW &strString);
 
+    UINT32 GetHash(void) const;
+
     GEKHASH operator = (LPCWSTR pString);
     GEKHASH operator = (const CStringW &strString);
 

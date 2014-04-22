@@ -7,13 +7,14 @@
 #include <Newton.h>
 #include <list>
 
+class CGEKComponentSystemNewton;
+
 class CGEKComponentNewton : public CGEKUnknown
                           , public CGEKComponent
                           , public CGEKSceneManagerUser
-                          , public CGEKModelManagerUser
 {
 private:
-    NewtonWorld *m_pWorld;
+    CGEKComponentSystemNewton *m_pSystem;
     NewtonBody *m_pBody;
     CStringW m_strShape;
     CStringW m_strParams;
@@ -21,7 +22,7 @@ private:
 
 public:
     DECLARE_UNKNOWN(CGEKComponentNewton)
-    CGEKComponentNewton(IGEKEntity *pEntity, NewtonWorld *pWorld);
+    CGEKComponentNewton(IGEKEntity *pEntity, CGEKComponentSystemNewton *pSystem);
     ~CGEKComponentNewton(void);
 
     float GetMass(void) const;
@@ -38,17 +39,22 @@ public:
 class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public CGEKContextUser
                                 , public CGEKSceneManagerUser
+                                , public CGEKModelManagerUser
                                 , public IGEKSceneObserver
                                 , public IGEKComponentSystem
 {
 private:
     NewtonWorld *m_pWorld;
     std::map<IGEKEntity *, CComPtr<CGEKComponentNewton>> m_aComponents;
+    std::map<GEKHASH, NewtonCollision *> m_aCollisions;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemNewton)
     CGEKComponentSystemNewton(void);
     ~CGEKComponentSystemNewton(void);
+
+    NewtonWorld *GetWorld(void);
+    NewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
 
     // IGEKUnknown
     STDMETHOD(Initialize)               (THIS);

@@ -85,6 +85,11 @@ GEKHASH::GEKHASH(const CStringW &strString)
 {
 }
 
+UINT32 GEKHASH::GetHash(void) const
+{
+    return UINT32(m_nHash);
+}
+
 GEKHASH GEKHASH::operator = (LPCWSTR pString)
 {
     m_nHash = gs_nHash(pString);
