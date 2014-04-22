@@ -6,6 +6,7 @@
 BEGIN_INTERFACE_LIST(CGEKComponentNewton)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKModelManagerUser)
 END_INTERFACE_LIST_UNKNOWN
 
 CGEKComponentNewton::CGEKComponentNewton(IGEKEntity *pEntity, NewtonWorld *pWorld)
@@ -141,8 +142,44 @@ STDMETHODIMP CGEKComponentNewton::OnEntityCreated(void)
             }
             else if (m_strShape.CompareNoCase(L"convex_hull") == 0)
             {
-                //pCollision = NewtonCreateConvexHull(pWorld, StrToFloat(m_strParams), int(this), nIdentityMatrix.data);
-                //NEWTON_API NewtonCollision* NewtonCreateConvexHull (const NewtonWorld* const newtonWorld, int count, const dFloat* const vertexCloud, int strideInBytes, dFloat tolerance, int shapeID, const dFloat* const offsetMatrix);
+                CComPtr<IGEKCollision> spCollision;
+                hRetVal = GetModelManager()->LoadCollision(m_strParams, L"", &spCollision);
+                if (spCollision)
+                {
+                    std::vector<float3> aCloud(spCollision->GetNumIndices());
+                    for (UINT32 nIndex = 0; nIndex < spCollision->GetNumIndices(); nIndex++)
+                    {
+                        aCloud[nIndex] = spCollision->GetVertices()[spCollision->GetIndices()[nIndex]];
+                    }
+
+                    pCollision = NewtonCreateConvexHull(m_pWorld, aCloud.size(), aCloud[0].xyz, sizeof(float3), 0.025f, int(this), nIdentityMatrix.data);
+                }
+            }
+            else if (m_strShape.CompareNoCase(L"tree") == 0)
+            {
+                CComPtr<IGEKCollision> spCollision;
+                hRetVal = GetModelManager()->LoadCollision(m_strParams, L"", &spCollision);
+                if (spCollision)
+                {
+                    pCollision = NewtonCreateTreeCollision(m_pWorld, int(this));
+                    if (pCollision)
+                    {
+                        NewtonTreeCollisionBeginBuild(pCollision);
+                        for (UINT32 nIndex = 0; nIndex < spCollision->GetNumIndices(); nIndex += 3)
+                        {
+                            float3 aFace[3] =
+                            {
+                                spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 0]],
+                                spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 1]],
+                                spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 2]],
+                            };
+
+                            NewtonTreeCollisionAddFace(pCollision, 3, aFace[0].xyz, sizeof(float3), 0);
+                        }
+
+                        NewtonTreeCollisionEndBuild(pCollision, true);
+                    }
+                }
             }
 
             if (pCollision)

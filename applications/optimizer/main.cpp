@@ -164,7 +164,6 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
     printf("GEK Mesh Optimizer\r\n");
 
     CStringW strInput;
-    CStringW strOutput;
     float nFaceEpsilon = 0.025f;
     float nPartialEdgeThreshold = 0.01f;
     float nSingularPointThreshold = 0.25f;
@@ -175,10 +174,6 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         if (strArgument.CompareNoCase(L"-input") == 0 && nArgument < (nNumArguments - 1))
         {
             strInput = astrArguments[++nArgument];
-        }
-        else if (strArgument.CompareNoCase(L"-output") == 0 && nArgument < (nNumArguments - 1))
-        {
-            strOutput = astrArguments[++nArgument];
         }
         else if (strArgument.CompareNoCase(L"-epsilon") == 0 && nArgument < (nNumArguments - 1))
         {
@@ -198,11 +193,10 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         }
     }
 
-    if (strInput.IsEmpty() || strOutput.IsEmpty())
+    if (strInput.IsEmpty())
     {
         printf("Arguments:\r\n");
         printf("-input <input filename>\r\n");
-        printf("-output <output filename>\r\n");
         printf("-epsilon <face epsilon>\r\n");
         printf("-edge <partial edge threshold>\r\n");
         printf("-point <singular point threshold>\r\n");
@@ -212,7 +206,6 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
     else
     {
         printf("Input: %S\r\n", strInput.GetString());
-        printf("Output: %S\r\n", strOutput.GetString());
         printf("Face Epsilon: %f\r\n", nFaceEpsilon);
         printf("Partial Edge Threshold: %f\r\n", nPartialEdgeThreshold);
         printf("Singular Point Threshold: %f\r\n", nSingularPointThreshold);
@@ -238,7 +231,11 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
         printf("< Num. Simplified Materials: %d\r\n", aMaterials.size());
 
+        CPathW kPath = strInput;
+        kPath.RemoveExtension();
+
         FILE *pFile = nullptr;
+        CStringW strOutput = (kPath.m_strPath + ".model.gek");
         _wfopen_s(&pFile, strOutput, L"wb");
         if (pFile != nullptr)
         {
@@ -262,7 +259,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                 printf("-< Material: %s\r\n", strMaterial.GetString());
 
                 std::vector<VERTEX> &aVertices = (kPair.second);
-                printf("--< Num. Base Faces: %d\r\n", aVertices.size());
+                printf("--< Num. Base Faces: %d\r\n", (aVertices.size() / 3));
                 printf("--< Optimizing and Generating Tangent Frame\r\n");
 
                 std::vector<VERTEX> aOutputVertices;
@@ -309,7 +306,56 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             printf("-< Num. Total Indices: %d\r\n", aTotalIndices.size());
 
             fclose(pFile);
-            printf("< Output Saved: %S\r\n", strOutput.GetString());
+            pFile = nullptr;
+            printf("< Output Model Saved: %S\r\n", strOutput.GetString());
+        }
+        else
+        {
+            throw CMyException(__LINE__, L"! Unable to Save Output: %S\r\n", strOutput.GetString());
+        }
+
+        strOutput = (kPath.m_strPath + ".collision.gek");
+        _wfopen_s(&pFile, strOutput, L"wb");
+        if (pFile != nullptr)
+        {
+            UINT32 nGEKX = *(UINT32 *)"GEKX";
+            UINT16 nType = 1;
+            UINT16 nVersion = 2;
+            fwrite(&nGEKX, sizeof(UINT32), 1, pFile);
+            fwrite(&nType, sizeof(UINT16), 1, pFile);
+            fwrite(&nVersion, sizeof(UINT16), 1, pFile);
+            fwrite(&nAABB, sizeof(aabb), 1, pFile);
+
+            std::vector<float3> aTotalVertices;
+            for (auto &kPair : aMaterials)
+            {
+                std::vector<VERTEX> &aVertices = (kPair.second);
+                for (auto &kVertex : aVertices)
+                {
+                    aTotalVertices.push_back(kVertex.position);
+                }
+            }
+
+            std::vector<float3> aOutputVertices;
+            std::vector<UINT16> aOutputIndices;
+            printf("--< Optimizing Collision Data\r\n");
+            if (FAILED(GEKOptimizeMesh(&aTotalVertices[0], aTotalVertices.size(), nullptr, 0, aOutputVertices, aOutputIndices, nFaceEpsilon)))
+            {
+                throw CMyException(__LINE__, L"Unable to optimize collision data");
+            }
+
+            UINT32 nNumVertices = aOutputVertices.size();
+            fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
+            printf("-< Num. Collision Vertices: %d\r\n", aOutputVertices.size());
+            fwrite(&aOutputVertices[0], sizeof(float3), aOutputVertices.size(), pFile);
+
+            UINT32 nNumIndices = aOutputIndices.size();
+            fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
+            printf("-< Num. Collision Indices: %d\r\n", aOutputIndices.size());
+            fwrite(&aOutputIndices[0], sizeof(UINT16), aOutputIndices.size(), pFile);
+
+            fclose(pFile);
+            printf("< Output Collision Saved: %S\r\n", strOutput.GetString());
         }
         else
         {

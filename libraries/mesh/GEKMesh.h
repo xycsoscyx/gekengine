@@ -20,3 +20,7 @@ HRESULT GEKOptimizeMesh(const VERTEX *pInputVertices, UINT32 nNumVertices, const
                         float nPartialEdgeThreshold = 0.01f,
                         float nSingularPointThreshold = 0.25f,
                         float nNormalEdgeThreshold = 0.01f);
+
+HRESULT GEKOptimizeMesh(const float3 *pInputVertices, UINT32 nNumVertices, const UINT16 *pInputIndices, UINT32 nNumIndices, 
+                        std::vector<float3> &aOutputVertices, std::vector<UINT16> &aOutputIndices,
+                        float nFaceEpsilon = 0.021f);

@@ -720,6 +720,7 @@ HRESULT CGEKRenderManager::CreateThread(void)
                             m_spRenderFrame->m_aModelMap[kPair.first].push_back(kPair.second);
                         }
 
+                        m_aModels.clear();
                         for (auto &kPair : m_spRenderFrame->m_aModelMap)
                         {
                             kPair.first->Prepare();
@@ -1295,7 +1296,7 @@ STDMETHODIMP CGEKRenderManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IG
     REQUIRE_RETURN(pParams, E_INVALIDARG);
 
     std::vector<UINT8> aBuffer;
-    HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pName), aBuffer);
+    HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.collision.gek", pName), aBuffer);
     if (SUCCEEDED(hRetVal))
     {
         for (auto &spFactory : m_aFactories)
@@ -1338,7 +1339,7 @@ STDMETHODIMP CGEKRenderManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnkno
     else
     {
         std::vector<UINT8> aBuffer;
-        hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pName), aBuffer);
+        hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.model.gek", pName), aBuffer);
         if (SUCCEEDED(hRetVal))
         {
             for (auto &spFactory : m_aFactories)

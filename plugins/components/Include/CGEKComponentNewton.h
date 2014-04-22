@@ -10,6 +10,7 @@
 class CGEKComponentNewton : public CGEKUnknown
                           , public CGEKComponent
                           , public CGEKSceneManagerUser
+                          , public CGEKModelManagerUser
 {
 private:
     NewtonWorld *m_pWorld;

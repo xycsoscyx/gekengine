@@ -1,7 +1,5 @@
 ﻿#include "CGEKFactory.h"
-
-// {CCD6D33D-53F6-4F40-9D12-7B31A4157BEA}
-DEFINE_GUID(CLSID_GEKStaticModel, 0xccd6d33d, 0x53f6, 0x4f40, 0x9d, 0x12, 0x7b, 0x31, 0xa4, 0x15, 0x7b, 0xea);
+#include "GEKModels.h"
 
 BEGIN_INTERFACE_LIST(CGEKFactory)
     INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
@@ -69,6 +67,10 @@ STDMETHODIMP CGEKFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *
     if (nGEKX == *(UINT32 *)"GEKX" && nType == 0 && nVersion == 2)
     {
         hRetVal = GetContext()->CreateInstance(CLSID_GEKStaticModel, rIID, ppObject);
+    }
+    else  if (nGEKX == *(UINT32 *)"GEKX" && nType == 1 && nVersion == 2)
+    {
+        hRetVal = GetContext()->CreateInstance(CLSID_GEKStaticCollision, rIID, ppObject);
     }
 
     return hRetVal;

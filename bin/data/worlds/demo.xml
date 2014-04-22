@@ -16,7 +16,7 @@
 		<entity name="sphere00" class="mesh">
 			<component type="transform" position="5.000000, -4.000000, -8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
             <component type="model" model="sphere" materialparams="0,0,0,0" />
-			<!--component type="newton" shape="chamfer_cylinder" params="1, 1.25" mass="75" /-->
+			<component type="newton" shape="tree" params="sphere" mass="75" />
 		</entity>
         <entity name="light01" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="15.000000" />

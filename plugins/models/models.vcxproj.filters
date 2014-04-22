@@ -8,6 +8,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Source\CGEKStaticCollision.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
@@ -34,6 +37,13 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\IGEKStaticFactory.h">
+      <Filter>Interface Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKStaticCollision.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEKModels.h" />
+    <ClInclude Include="..\..\api\IGEKModelManager.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
   </ItemGroup>
