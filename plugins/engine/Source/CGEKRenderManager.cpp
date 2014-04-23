@@ -420,7 +420,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         std::vector<GEKVIDEO::INPUTELEMENT> aLayout;
         aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::XY_FLOAT, "POSITION", 0));
         aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::XY_FLOAT, "TEXCOORD", 0));
-        hRetVal = GetVideoSystem()->LoadVertexShader(L"%root%\\data\\programs\\vertex\\overlay.txt", "MainVertexProgram", aLayout, &m_spVertexProgram);
+        hRetVal = GetVideoSystem()->LoadVertexProgram(L"%root%\\data\\programs\\vertex\\overlay.txt", "MainVertexProgram", aLayout, &m_spVertexProgram);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -1204,11 +1204,11 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
     }
     else
     {
-        CStringA strDeferredShader;
-        hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\vertex\\deferred.txt", strDeferredShader);
+        CStringA strDeferredProgram;
+        hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\vertex\\deferred.txt", strDeferredProgram);
         if (SUCCEEDED(hRetVal))
         {
-            if (strDeferredShader.Find("_INSERT_WORLD_PROGRAM") < 0)
+            if (strDeferredProgram.Find("_INSERT_WORLD_PROGRAM") < 0)
             {
                 hRetVal = E_INVALID;
             }
@@ -1257,13 +1257,13 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                                 kElement = kElement.NextSiblingElement(L"element");
                             };
 
-                            CLibXMLNode kShader = kProgram.FirstChildElement(L"shader");
-                            if (kShader)
+                            CLibXMLNode kProgram = kProgram.FirstChildElement(L"program");
+                            if (kProgram)
                             {
                                 CComPtr<IGEKVideoProgram> spProgram;
-                                CStringA strProgram = kShader.GetText();
-                                strDeferredShader.Replace("_INSERT_WORLD_PROGRAM", (strProgram + "\r\n"));
-                                hRetVal = GetVideoSystem()->CompileVertexShader(strDeferredShader, "MainVertexProgram", aLayout, &spProgram);
+                                CStringA strProgram = kProgram.GetText();
+                                strDeferredProgram.Replace("_INSERT_WORLD_PROGRAM", (strProgram + "\r\n"));
+                                hRetVal = GetVideoSystem()->CompileVertexProgram(strDeferredProgram, "MainVertexProgram", aLayout, &spProgram);
                                 if (spProgram != nullptr)
                                 {
                                     m_aPrograms[pName] = spProgram;

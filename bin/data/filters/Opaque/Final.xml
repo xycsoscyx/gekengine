@@ -10,7 +10,7 @@
         <texture source="Opaque/Lighting.Specular" />
         <texture source="Opaque/Deferred.Info" />
     </textures>
-    <shader>
+    <program>
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t0);
             Texture2D     gs_pDiffuseBuffer         : register(t1);
@@ -35,5 +35,5 @@
                 return kOutput;
             }
         ]]>
-    </shader>
+    </program>
 </filter>

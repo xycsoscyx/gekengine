@@ -17,7 +17,7 @@
         <texture source="Opaque/Final.Buffer" />
         <texture source="Opaque/Deferred.World" />
     </textures>
-    <shader>
+    <program>
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer         : register(t0);
             Texture2D     gs_pWorldBuffer          : register(t1);
@@ -45,5 +45,5 @@
                 return (lerp(nOpaque, (nAlbedo * nDiffuse), nFactor) + nSpecular);
             }
         ]]>
-    </shader>
+    </program>
 </filter>

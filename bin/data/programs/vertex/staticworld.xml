@@ -7,7 +7,7 @@
 		<element type="xyz_float" name="TEXCOORD" index="2" class="vertex" slot="2" />
 		<element type="xyz_float" name="TEXCOORD" index="3" class="vertex" slot="2" />
     </layout>
-    <shader>
+    <program>
         <![CDATA[
 			struct SOURCEVERTEX
 			{
@@ -28,5 +28,5 @@
 				return kVertex;
 			}
         ]]>
-    </shader>
+    </program>
 </program>

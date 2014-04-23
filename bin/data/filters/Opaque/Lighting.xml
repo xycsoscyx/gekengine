@@ -17,5 +17,5 @@
     </blend>
     <shader mode="lighting">
         &LightingShader;
-    </shader>
+    </program>
 </filter>

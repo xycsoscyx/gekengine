@@ -120,6 +120,24 @@ public:
     }
 };
 
+class CGEKVideoGeometryProgram : public CGEKUnknown
+                               , public IGEKVideoProgram
+{
+private:
+    CComPtr<ID3D11GeometryShader> m_spShader;
+
+public:
+    DECLARE_UNKNOWN(CGEKVideoGeometryProgram);
+    CGEKVideoGeometryProgram(ID3D11GeometryShader *pShader)
+        : m_spShader(pShader)
+    {
+    }
+
+    virtual ~CGEKVideoGeometryProgram(void)
+    {
+    }
+};
+
 class CGEKVideoPixelProgram : public CGEKUnknown
                             , public IGEKVideoProgram
 {
@@ -347,6 +365,11 @@ BEGIN_INTERFACE_LIST(CGEKVideoVertexProgram)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoProgram)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11VertexShader, m_spShader)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11InputLayout, m_spLayout)
+END_INTERFACE_LIST_UNKNOWN
+
+BEGIN_INTERFACE_LIST(CGEKVideoGeometryProgram)
+    INTERFACE_LIST_ENTRY_COM(IGEKVideoProgram)
+    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11GeometryShader, m_spShader)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoPixelProgram)
@@ -589,27 +612,45 @@ STDMETHODIMP_(void) CGEKVideoContext::SetPixelConstantBuffer(UINT32 nIndex, IGEK
 STDMETHODIMP_(void) CGEKVideoContext::SetVertexProgram(IGEKVideoProgram *pProgram)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
-    REQUIRE_VOID_RETURN(pProgram);
-
     CComQIPtr<ID3D11VertexShader> spD3DShader(pProgram);
     CComQIPtr<ID3D11InputLayout> spD3DLayout(pProgram);
     if (spD3DShader != nullptr &&
-       spD3DLayout != nullptr)
+        spD3DLayout != nullptr)
     {
         m_spDeviceContext->VSSetShader(spD3DShader, nullptr, 0);
         m_spDeviceContext->IASetInputLayout(spD3DLayout);
+    }
+    else
+    {
+        m_spDeviceContext->VSSetShader(nullptr, nullptr, 0);
+    }
+}
+
+STDMETHODIMP_(void) CGEKVideoContext::SetGeometryProgram(IGEKVideoProgram *pProgram)
+{
+    REQUIRE_VOID_RETURN(m_spDeviceContext);
+    CComQIPtr<ID3D11GeometryShader> spD3DShader(pProgram);
+    if (spD3DShader != nullptr)
+    {
+        m_spDeviceContext->GSSetShader(spD3DShader, nullptr, 0);
+    }
+    else
+    {
+        m_spDeviceContext->GSSetShader(nullptr, nullptr, 0);
     }
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::SetPixelProgram(IGEKVideoProgram *pProgram)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
-    REQUIRE_VOID_RETURN(pProgram);
-
     CComQIPtr<ID3D11PixelShader> spD3DShader(pProgram);
     if (spD3DShader != nullptr)
     {
         m_spDeviceContext->PSSetShader(spD3DShader, nullptr, 0);
+    }
+    else
+    {
+        m_spDeviceContext->PSSetShader(nullptr, nullptr, 0);
     }
 }
 
@@ -1422,7 +1463,7 @@ STDMETHODIMP CGEKVideoSystem::CreateConstantBuffer(UINT32 nSize, IGEKVideoConsta
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileVertexShader(LPCSTR pShader, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1435,12 +1476,12 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexShader(LPCSTR pShader, LPCSTR pEntry,
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DX11CompileFromMemory(pShader, (strlen(pShader) + 1), nullptr, nullptr, nullptr, pEntry, "vs_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
+    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, nullptr, nullptr, pEntry, "vs_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
     if (spBlob != nullptr)
     {
-        CComPtr<ID3D11VertexShader> spShader;
-        hRetVal = m_spDevice->CreateVertexShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spShader);
-        if (spShader != nullptr)
+        CComPtr<ID3D11VertexShader> spProgram;
+        hRetVal = m_spDevice->CreateVertexShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
+        if (spProgram != nullptr)
         {
             GEKVIDEO::INPUT::SOURCE eLastClass = GEKVIDEO::INPUT::UNKNOWN;
             std::vector<D3D11_INPUT_ELEMENT_DESC> aLayoutDesc(aLayout.size());
@@ -1520,7 +1561,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexShader(LPCSTR pShader, LPCSTR pEntry,
                 if (spLayout != nullptr)
                 {
                     hRetVal = E_OUTOFMEMORY;
-                    CComPtr<CGEKVideoVertexProgram> spProgram(new CGEKVideoVertexProgram(spShader, spLayout));
+                    CComPtr<CGEKVideoVertexProgram> spProgram(new CGEKVideoVertexProgram(spProgram, spLayout));
                     if (spProgram != nullptr)
                     {
                         hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -1538,7 +1579,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexShader(LPCSTR pShader, LPCSTR pEntry,
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompilePixelShader(LPCSTR pShader, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1551,15 +1592,15 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelShader(LPCSTR pShader, LPCSTR pEntry, 
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DX11CompileFromMemory(pShader, (strlen(pShader) + 1), nullptr, nullptr, nullptr, pEntry, "ps_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
+    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, nullptr, nullptr, pEntry, "gs_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
     if (spBlob != nullptr)
     {
-        CComPtr<ID3D11PixelShader> spShader;
-        hRetVal = m_spDevice->CreatePixelShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spShader);
-        if (spShader != nullptr)
+        CComPtr<ID3D11GeometryShader> spProgram;
+        hRetVal = m_spDevice->CreateGeometryShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
+        if (spProgram != nullptr)
         {
             hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoPixelProgram> spProgram(new CGEKVideoPixelProgram(spShader));
+            CComPtr<CGEKVideoGeometryProgram> spProgram(new CGEKVideoGeometryProgram(spProgram));
             if (spProgram != nullptr)
             {
                 hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -1575,22 +1616,44 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelShader(LPCSTR pShader, LPCSTR pEntry, 
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadVertexShader(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
-    CStringA strShader;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, strShader);
-    if (SUCCEEDED(hRetVal))
+#ifdef _DEBUG
+    DWORD nFlags = D3DCOMPILE_DEBUG;
+#else
+    DWORD nFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+#endif
+
+    CComPtr<ID3DBlob> spBlob;
+    CComPtr<ID3DBlob> spErrors;
+    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, nullptr, nullptr, pEntry, "ps_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
+    if (spBlob != nullptr)
     {
-        hRetVal = CompileVertexShader(strShader, pEntry, aLayout, ppProgram);
+        CComPtr<ID3D11PixelShader> spProgram;
+        hRetVal = m_spDevice->CreatePixelShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
+        if (spProgram != nullptr)
+        {
+            hRetVal = E_OUTOFMEMORY;
+            CComPtr<CGEKVideoPixelProgram> spProgram(new CGEKVideoPixelProgram(spProgram));
+            if (spProgram != nullptr)
+            {
+                hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
+            }
+        }
+    }
+    else if (spErrors != nullptr)
+    {
+        const char *strErrors = (const char *)spErrors->GetBufferPointer();
+        _ASSERTE(FALSE && "Unable to compile pixel shader");
     }
 
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadPixelShader(LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1599,7 +1662,37 @@ STDMETHODIMP CGEKVideoSystem::LoadPixelShader(LPCWSTR pFileName, LPCSTR pEntry, 
     HRESULT hRetVal = GEKLoadFromFile(pFileName, strShader);
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CompilePixelShader(strShader, pEntry, ppProgram);
+        hRetVal = CompileVertexProgram(strShader, pEntry, aLayout, ppProgram);
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
+{
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
+    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+
+    CStringA strShader;
+    HRESULT hRetVal = GEKLoadFromFile(pFileName, strShader);
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = CompileGeometryProgram(strShader, pEntry, ppProgram);
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
+{
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
+    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+
+    CStringA strShader;
+    HRESULT hRetVal = GEKLoadFromFile(pFileName, strShader);
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = CompilePixelProgram(strShader, pEntry, ppProgram);
     }
 
     return hRetVal;

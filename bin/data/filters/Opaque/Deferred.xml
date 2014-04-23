@@ -12,5 +12,5 @@
     </targets>
     <shader mode="forward">
         &DeferredShader;
-    </shader>
+    </program>
 </filter>

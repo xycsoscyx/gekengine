@@ -522,10 +522,10 @@ HRESULT CGEKRenderFilter::LoadBlendStates(CLibXMLNode &kFilter)
 HRESULT CGEKRenderFilter::LoadShader(CLibXMLNode &kFilter)
 {
     HRESULT hRetVal = E_INVALIDARG;
-    CLibXMLNode kShader = kFilter.FirstChildElement(L"shader");
-    if (kShader)
+    CLibXMLNode kProgram = kFilter.FirstChildElement(L"program");
+    if (kProgram)
     {
-        CStringW strVertexAttributes = kShader.GetAttribute(L"vertexattributes");
+        CStringW strVertexAttributes = kProgram.GetAttribute(L"vertexattributes");
         if (!strVertexAttributes.IsEmpty())
         {
             m_nVertexAttributes = 0;
@@ -555,7 +555,7 @@ HRESULT CGEKRenderFilter::LoadShader(CLibXMLNode &kFilter)
             m_nVertexAttributes = 0xFFFFFFFF;
         }
 
-        CStringW strMode = kShader.GetAttribute(L"mode");
+        CStringW strMode = kProgram.GetAttribute(L"mode");
         if (strMode.CompareNoCase(L"forward") == 0)
         {
             m_eMode = FORWARD;
@@ -569,33 +569,33 @@ HRESULT CGEKRenderFilter::LoadShader(CLibXMLNode &kFilter)
             hRetVal = E_INVALIDARG;
         }
 
-        CStringA strShader;
+        CStringA strProgram;
         switch (m_eMode)
         {
         case FORWARD:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\forward.txt", strShader);
+            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\forward.txt", strProgram);
             break;
 
         case LIGHTING:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\lighting.txt", strShader);
+            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\lighting.txt", strProgram);
             break;
 
         default:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\default.txt", strShader);
+            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\default.txt", strProgram);
             break;
         };
 
         if (SUCCEEDED(hRetVal))
         {
-            if (strShader.Find("_INSERT_PIXEL_PROGRAM") < 0)
+            if (strProgram.Find("_INSERT_PIXEL_PROGRAM") < 0)
             {
                 hRetVal = E_INVALIDARG;
             }
             else
             {
-                CStringA strCoreShader = kShader.GetText();
-                strShader.Replace("_INSERT_PIXEL_PROGRAM", strCoreShader);
-                hRetVal = GetVideoSystem()->CompilePixelShader(strShader, "MainPixelProgram", &m_spPixelProgram);
+                CStringA strCoreProgram = kProgram.GetText();
+                strProgram.Replace("_INSERT_PIXEL_PROGRAM", strCoreProgram);
+                hRetVal = GetVideoSystem()->CompilePixelProgram(strProgram, "MainPixelProgram", &m_spPixelProgram);
             }
         }
     }

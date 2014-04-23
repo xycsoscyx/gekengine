@@ -7,7 +7,7 @@
         <color source="one" destination="one" operation="add" />
         <alpha source="one" destination="one" operation="add" />
     </blend>
-    <shader>
+    <program>
         <![CDATA[
             Texture2D     gs_pBrowser               : register(t0);
 
@@ -16,5 +16,5 @@
 	            return gs_pBrowser.Sample(gs_pPointSampler, kInput.texcoord);
             }
         ]]>
-    </shader>
+    </program>
 </filter>

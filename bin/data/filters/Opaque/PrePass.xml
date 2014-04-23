@@ -12,5 +12,5 @@
                 return 0.0f;
             }
         ]]>
-    </shader>
+    </program>
 </filter>

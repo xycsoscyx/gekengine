@@ -35,6 +35,7 @@ public:
     STDMETHOD_(void, SetVertexConstantBuffer)           (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer);
     STDMETHOD_(void, SetPixelConstantBuffer)            (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer);
     STDMETHOD_(void, SetVertexProgram)                  (THIS_ IGEKVideoProgram *pProgram);
+    STDMETHOD_(void, SetGeometryProgram)                (THIS_ IGEKVideoProgram *pProgram);
     STDMETHOD_(void, SetPixelProgram)                   (THIS_ IGEKVideoProgram *pProgram);
     STDMETHOD_(void, SetVertexBuffer)                   (THIS_ UINT32 nSlot, UINT32 nOffset, IGEKVideoVertexBuffer *pBuffer);
     STDMETHOD_(void, SetIndexBuffer)                    (THIS_ UINT32 nOffset, IGEKVideoIndexBuffer *pBuffer);
@@ -87,10 +88,12 @@ public:
     STDMETHOD(CreateRenderTarget)                       (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IGEKVideoTexture **ppTarget);
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget);
     STDMETHOD(CreateConstantBuffer)                     (THIS_ UINT32 nSize, IGEKVideoConstantBuffer **ppBuffer);
-    STDMETHOD(CompileVertexShader)                      (THIS_ LPCSTR pShader, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram);
-    STDMETHOD(CompilePixelShader)                       (THIS_ LPCSTR pShader, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
-    STDMETHOD(LoadVertexShader)                         (THIS_ LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram);
-    STDMETHOD(LoadPixelShader)                          (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
+    STDMETHOD(CompileVertexProgram)                     (THIS_ LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram);
+    STDMETHOD(CompileGeometryProgram)                   (THIS_ LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
+    STDMETHOD(CompilePixelProgram)                      (THIS_ LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
+    STDMETHOD(LoadVertexProgram)                        (THIS_ LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram);
+    STDMETHOD(LoadGeometryProgram)                      (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
+    STDMETHOD(LoadPixelProgram)                         (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
     STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, const float4 &nColor, IGEKVideoTexture **ppTexture);
     STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEKVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT &nDestRect);
     STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, IGEKVideoTexture **ppTexture);
