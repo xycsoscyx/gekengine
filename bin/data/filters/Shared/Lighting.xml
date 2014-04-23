@@ -2,11 +2,18 @@
     Texture2D     gs_pWorldBuffer           : register(t0);
     Texture2D     gs_pInfoBuffer            : register(t1); // Roughness, Specular, Height, 0
 
+    struct LIGHT
+    {
+        float4x4 m_nMatrix;
+        float3   m_nColor;
+        float    m_nRange;
+    };
+
     cbuffer LIGHTDATA                       : register(b1)
     {
-        float4x4 gs_nLightMatrix;
-        float3   gs_nLightColor;
-        float    gs_nLightRange;
+        LIGHT    gs_aLights[10];
+        uint     gs_nNumLights;
+        uint     gs_aLightBuffer[3];
     };
 
     struct OUTPUT
@@ -95,18 +102,25 @@
 	    float3 nPixelPosition = (nPixelDepth * kInput.view);
 	    float3 nPixelNormal = nWorld.xyz;
 
-        float3 nLightVector = (gs_nLightMatrix._14_24_34 - nPixelPosition);
-        float nDistance = length(nLightVector);
-        float3 nLightNormal = normalize(nLightVector);
+        OUTPUT kOutput = (OUTPUT)0;
+        for(uint nLight = 0; nLight < gs_nNumLights; nLight++)
+        {
+            float3 nLightVector = (gs_aLights[nLight].m_nMatrix._14_24_34 - nPixelPosition);
+            float nDistance = length(nLightVector);
+            float3 nLightNormal = normalize(nLightVector);
 	
-        float nAttenuation = (1.0f - saturate(nDistance / gs_nLightRange));
+            float nAttenuation = (1.0f - saturate(nDistance / gs_aLights[nLight].m_nRange));
 
-        float2 nLighting = GetBRDF(nPixelNormal, nLightNormal, nViewNormal, nPixelInfo);
-        nLighting.x *= nAttenuation;
+            float2 nLighting = GetBRDF(nPixelNormal, nLightNormal, nViewNormal, nPixelInfo);
+            nLighting.x *= nAttenuation;
+
+            kOutput.diffuse.xyz += saturate(gs_aLights[nLight].m_nColor * nLighting.x);
+            kOutput.specular.xyz += saturate(gs_aLights[nLight].m_nColor * nLighting.y);
+        }
         
-        OUTPUT kOutput;
-        kOutput.diffuse = float4((gs_nLightColor * nLighting.x), 0.0f);
-        kOutput.specular = float4((gs_nLightColor * nLighting.y), 0.0f);
+        kOutput.diffuse.xyz = saturate(kOutput.diffuse.xyz);
+        kOutput.specular.xyz = saturate(kOutput.specular.xyz);
+        
         return kOutput;
     }
 ]]>

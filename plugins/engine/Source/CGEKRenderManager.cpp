@@ -710,7 +710,10 @@ HRESULT CGEKRenderManager::CreateThread(void)
                         m_spRenderFrame->m_kBuffer.m_nTransformMatrix = (m_spRenderFrame->m_kBuffer.m_nViewMatrix * m_spRenderFrame->m_kBuffer.m_nProjectionMatrix);
                         m_spRenderFrame->m_kFrustum.Create(nCameraMatrix, m_spRenderFrame->m_kBuffer.m_nProjectionMatrix);
 
-                        for (auto &kLight : m_spRenderFrame->m_aLights)
+                        m_spRenderFrame->m_aLightVector.assign(m_spRenderFrame->m_aLights.begin(), m_spRenderFrame->m_aLights.end());
+                        m_spRenderFrame->m_aLights.clear();
+
+                        for (auto &kLight : m_spRenderFrame->m_aLightVector)
                         {
                             kLight.m_nMatrix = (kLight.m_nMatrix * m_spRenderFrame->m_kBuffer.m_nViewMatrix);
                         }
@@ -1419,12 +1422,12 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLight(IGEKEntity *pEntity, const GEKL
                 GEKVALUE kRotation;
                 pTransform->GetProperty(L"rotation", kRotation);
 
-                LIGHTBUFFER kBuffer;
-                kBuffer.m_nMatrix = kRotation.GetQuaternion();
-                kBuffer.m_nMatrix.t = kPosition.GetFloat3();
-                kBuffer.m_nColor = kLight.m_nColor;
-                kBuffer.m_nRange = kLight.m_nRange;
-                m_spUpdateFrame->m_aLights.push_back(kBuffer);
+                LIGHT kData;
+                kData.m_nMatrix = kRotation.GetQuaternion();
+                kData.m_nMatrix.t = kPosition.GetFloat3();
+                kData.m_nColor = kLight.m_nColor;
+                kData.m_nRange = kLight.m_nRange;
+                m_spUpdateFrame->m_aLights.push_back(kData);
             }
         }
     }
@@ -1502,9 +1505,14 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
     if (bPerLight)
     {
         GetVideoSystem()->GetDefaultContext()->SetPixelConstantBuffer(1, m_spLightBuffer);
-        for (auto &kLight : m_spRenderFrame->m_aLights)
+
+        LIGHTBUFFER kBuffer;
+        for (UINT32 nPass = 0; nPass < m_spRenderFrame->m_aLightVector.size(); nPass += 10)
         {
-            m_spLightBuffer->Update((void *)&kLight);
+            kBuffer.m_nNumLights = min(10, (m_spRenderFrame->m_aLightVector.size() - nPass));
+            memcpy(&kBuffer.m_aData[0], &m_spRenderFrame->m_aLightVector[nPass], (sizeof(LIGHT) * kBuffer.m_nNumLights));
+            m_spLightBuffer->Update((void *)&kBuffer);
+
             GetVideoSystem()->GetDefaultContext()->DrawIndexedPrimitive(6, 0, 0);
         }
     }

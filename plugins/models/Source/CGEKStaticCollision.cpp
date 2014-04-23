@@ -46,7 +46,7 @@ STDMETHODIMP CGEKStaticCollision::Load(const UINT8 *pBuffer, LPCWSTR pParams)
             UINT32 nNumIndices = *((UINT32 *)pBuffer);
             pBuffer += sizeof(UINT32);
             UINT16 *pIndices = (UINT16 *)pBuffer;
-            pBuffer += (sizeof(UINT16)* nNumIndices);
+            pBuffer += (sizeof(UINT16) * nNumIndices);
             if (nNumVertices > 0)
             {
                 m_aIndices.assign(pIndices, (UINT16 *)pBuffer);

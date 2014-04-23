@@ -43,11 +43,18 @@ public:
         std::vector<IGEKRenderFilter *> m_aFilters;
     };
 
-    struct LIGHTBUFFER
+    struct LIGHT
     {
         float4x4 m_nMatrix;
         float3 m_nColor;
         float m_nRange;
+    };
+
+    struct LIGHTBUFFER
+    {
+        LIGHT m_aData[10];
+        UINT32 m_nNumLights;
+        UINT32 m_nBuffer[3];
     };
 
     struct ENGINEBUFFER
@@ -70,9 +77,11 @@ public:
 
         std::map<PASS *, UINT32> m_aPasses;
 
-        std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aModelMap;
         concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> m_aModels;
-        concurrency::concurrent_vector<LIGHTBUFFER> m_aLights;
+        concurrency::concurrent_vector<LIGHT> m_aLights;
+
+        std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aModelMap;
+        std::vector<LIGHT> m_aLightVector;
     };
 
 private:
