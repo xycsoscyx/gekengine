@@ -95,9 +95,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\libraries\mesh\mesh.vcxproj">
-      <Project>{2d99e213-0b52-4682-9bc8-655b0a2b693f}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\libraries\utility\utility.vcxproj">
       <Project>{be4f1e7f-e045-4d30-aed6-02a60c83bd97}</Project>
     </ProjectReference>

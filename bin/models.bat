@@ -1,6 +1,6 @@
-.\debug\optimizer.debug -input data\models\sphere.dae
-.\debug\optimizer.debug -input data\models\barrel.dae
-.\debug\optimizer.debug -input data\models\crate.dae
-.\debug\optimizer.debug -input data\models\ice.dae
+.\debug\optimizer.debug data\models\sphere.dae
+.\debug\optimizer.debug data\models\barrel.dae
+.\debug\optimizer.debug data\models\crate.dae
+.\debug\optimizer.debug data\models\ice.dae
 
 pause

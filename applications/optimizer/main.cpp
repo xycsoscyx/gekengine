@@ -1,6 +1,5 @@
 #include "GEKMath.h"
 #include "GEKUtility.h"
-#include "GEKMesh.h"
 #include <atlpath.h>
 #include <algorithm>
 #include <map>
@@ -10,17 +9,12 @@
 #include <assimp/postprocess.h>
 #pragma comment(lib, "assimp.lib")
 
-struct MATERIAL
-{
-    UINT32 m_nFirstVertex;
-    UINT32 m_nFirstIndex;
-    UINT32 m_nNumIndices;
-};
-
 struct MODEL
 {
     std::vector<UINT16> m_aIndices;
-    std::vector<VERTEX> m_aVertices;
+    std::vector<float3> m_aVertices;
+    std::vector<float2> m_aTexCoords;
+    std::vector<float3> m_aBasis;
 };
 
 class CMyException
@@ -71,12 +65,32 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
             {
                 if (pMesh->mFaces == nullptr)
                 {
-                    throw CMyException(__LINE__, L"Invalid mesh face data");
+                    throw CMyException(__LINE__, L"Mesh missing face information");
                 }
 
                 if (pMesh->mVertices == nullptr)
                 {
-                    throw CMyException(__LINE__, L"Invalid mesh vertex data");
+                    throw CMyException(__LINE__, L"Mesh missing vertex information");
+                }
+
+                if (pMesh->mTextureCoords == nullptr || pMesh->mTextureCoords[0] == nullptr)
+                {
+                    throw CMyException(__LINE__, L"Mesh missing texcoord0 information");
+                }
+
+                if (pMesh->mTangents == nullptr)
+                {
+                    throw CMyException(__LINE__, L"Mesh missing tangent information");
+                }
+
+                if (pMesh->mBitangents == nullptr)
+                {
+                    throw CMyException(__LINE__, L"Mesh missing bitangent information");
+                }
+
+                if (pMesh->mNormals == nullptr)
+                {
+                    throw CMyException(__LINE__, L"Mesh missing normal information");
                 }
 
                 CStringA strMaterial;
@@ -113,44 +127,39 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
 
                 for (UINT32 nVertex = 0; nVertex < pMesh->mNumVertices; nVertex++)
                 {
-                    VERTEX kVertex;
-                    kVertex.position.x = pMesh->mVertices[nVertex].x;
-                    kVertex.position.y = pMesh->mVertices[nVertex].y;
-                    kVertex.position.z = pMesh->mVertices[nVertex].z;
-                    kVertex.position = (nTransform * float4(kVertex.position, 1.0f));
-                    nAABB.Extend(kVertex.position);
+                    float3 nPosition;
+                    nPosition.x = pMesh->mVertices[nVertex].x;
+                    nPosition.y = pMesh->mVertices[nVertex].y;
+                    nPosition.z = pMesh->mVertices[nVertex].z;
+                    nPosition = (nTransform * float4(nPosition, 1.0f));
+                    kModel.m_aVertices.push_back(nPosition);
+                    nAABB.Extend(nPosition);
 
-                    if (pMesh->mTextureCoords && pMesh->mTextureCoords[0])
-                    {
-                        kVertex.texcoord.x = pMesh->mTextureCoords[0][nVertex].x;
-                        kVertex.texcoord.y = pMesh->mTextureCoords[0][nVertex].y;
-                    }
+                    float2 nTexCoord;
+                    nTexCoord.x = pMesh->mTextureCoords[0][nVertex].x;
+                    nTexCoord.y = pMesh->mTextureCoords[0][nVertex].y;
+                    kModel.m_aTexCoords.push_back(nTexCoord);
 
-                    if (pMesh->mTangents)
-                    {
-                        kVertex.tangent.x = pMesh->mTangents[nVertex].x;
-                        kVertex.tangent.y = pMesh->mTangents[nVertex].y;
-                        kVertex.tangent.z = pMesh->mTangents[nVertex].z;
-                        kVertex.tangent = (nTransform * kVertex.tangent);
-                    }
+                    float3 nTangent;
+                    nTangent.x = pMesh->mTangents[nVertex].x;
+                    nTangent.y = pMesh->mTangents[nVertex].y;
+                    nTangent.z = pMesh->mTangents[nVertex].z;
+                    nTangent = (nTransform * nTangent);
+                    kModel.m_aBasis.push_back(nTangent);
 
-                    if (pMesh->mBitangents)
-                    {
-                        kVertex.bitangent.x = pMesh->mBitangents[nVertex].x;
-                        kVertex.bitangent.y = pMesh->mBitangents[nVertex].y;
-                        kVertex.bitangent.z = pMesh->mBitangents[nVertex].z;
-                        kVertex.bitangent = (nTransform * kVertex.bitangent);
-                    }
+                    float3 nBiTangent;
+                    nBiTangent.x = pMesh->mBitangents[nVertex].x;
+                    nBiTangent.y = pMesh->mBitangents[nVertex].y;
+                    nBiTangent.z = pMesh->mBitangents[nVertex].z;
+                    nBiTangent = (nTransform * nBiTangent);
+                    kModel.m_aBasis.push_back(nBiTangent);
 
-                    if (pMesh->mNormals)
-                    {
-                        kVertex.normal.x = pMesh->mNormals[nVertex].x;
-                        kVertex.normal.y = pMesh->mNormals[nVertex].y;
-                        kVertex.normal.z = pMesh->mNormals[nVertex].z;
-                        kVertex.normal = (nTransform * kVertex.normal);
-                    }
-
-                    kModel.m_aVertices.push_back(kVertex);
+                    float3 nNormal;
+                    nNormal.x = pMesh->mNormals[nVertex].x;
+                    nNormal.y = pMesh->mNormals[nVertex].y;
+                    nNormal.z = pMesh->mNormals[nVertex].z;
+                    nNormal = (nTransform * nNormal);
+                    kModel.m_aBasis.push_back(nNormal);
                 }
 
                 aModels.insert(std::make_pair(strMaterial, kModel));
@@ -176,55 +185,13 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 {
     printf("GEK Mesh Optimizer\r\n");
 
-    CStringW strInput;
-    float nFaceEpsilon = 0.025f;
-    float nPartialEdgeThreshold = 0.01f;
-    float nSingularPointThreshold = 0.25f;
-    float nNormalEdgeThreshold = 0.01f;
-    for (int nArgument = 1; nArgument < nNumArguments; nArgument++)
+    if (nNumArguments < 1)
     {
-        CStringW strArgument = astrArguments[nArgument];
-        if (strArgument.CompareNoCase(L"-input") == 0 && nArgument < (nNumArguments - 1))
-        {
-            strInput = astrArguments[++nArgument];
-        }
-        else if (strArgument.CompareNoCase(L"-epsilon") == 0 && nArgument < (nNumArguments - 1))
-        {
-            nFaceEpsilon = StrToFloat(astrArguments[++nArgument]);
-        }
-        else if (strArgument.CompareNoCase(L"-edge") == 0 && nArgument < (nNumArguments - 1))
-        {
-            nPartialEdgeThreshold = StrToFloat(astrArguments[++nArgument]);
-        }
-        else if (strArgument.CompareNoCase(L"-point") == 0 && nArgument < (nNumArguments - 1))
-        {
-            nSingularPointThreshold = StrToFloat(astrArguments[++nArgument]);
-        }
-        else if (strArgument.CompareNoCase(L"-normal") == 0 && nArgument < (nNumArguments - 1))
-        {
-            nNormalEdgeThreshold = StrToFloat(astrArguments[++nArgument]);
-        }
-    }
-
-    if (strInput.IsEmpty())
-    {
-        printf("Arguments:\r\n");
-        printf("-input <input filename>\r\n");
-        printf("-epsilon <face epsilon>\r\n");
-        printf("-edge <partial edge threshold>\r\n");
-        printf("-point <singular point threshold>\r\n");
-        printf("-normal <normal edge threshold>\r\n");
+        printf("optimizer <filename>\r\n");
         return -1;
     }
-    else
-    {
-        printf("Input: %S\r\n", strInput.GetString());
-        printf("Face Epsilon: %f\r\n", nFaceEpsilon);
-        printf("Partial Edge Threshold: %f\r\n", nPartialEdgeThreshold);
-        printf("Singular Point Threshold: %f\r\n", nSingularPointThreshold);
-        printf("Normal Edge Threshold: %f\r\n", nNormalEdgeThreshold);
-    }
 
+    CStringW strInput = astrArguments[1];
     try
     {
         const aiScene *pScene = aiImportFile(CW2A(strInput, CP_UTF8), aiProcessPreset_TargetRealtime_Quality | aiProcess_TransformUVCoords);
@@ -266,6 +233,8 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                 }
 
                 kModel.m_aVertices.insert(kModel.m_aVertices.end(), kPair.second.m_aVertices.begin(), kPair.second.m_aVertices.end());
+                kModel.m_aTexCoords.insert(kModel.m_aTexCoords.end(), kPair.second.m_aTexCoords.begin(), kPair.second.m_aTexCoords.end());
+                kModel.m_aBasis.insert(kModel.m_aBasis.end(), kPair.second.m_aBasis.begin(), kPair.second.m_aBasis.end());
             }
         }
 
@@ -287,53 +256,40 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             fwrite(&nAABB, sizeof(aabb), 1, pFile);
             fwrite(&nNumMaterials, sizeof(UINT32), 1, pFile);
 
-            std::vector<UINT16> aTotalIndices;
-            std::vector<VERTEX> aTotalVertices;
+            MODEL kFinal;
             for (auto &kPair : aMaterials)
             {
                 CStringA strMaterial = (kPair.first);
                 fwrite(strMaterial.GetBuffer(), (strMaterial.GetLength() + 1), 1, pFile);
 
                 printf("-< Material: %s\r\n", strMaterial.GetString());
+                printf("--< Num. Vertices: %d\r\n", kPair.second.m_aVertices.size());
+                printf("--< Num. Indices: %d\r\n", kPair.second.m_aIndices.size());
 
-                printf("--< Num. Base Faces: %d\r\n", (kPair.second.m_aIndices.size() / 3));
-                printf("--< Optimizing and Generating Tangent Frame\r\n");
-
-                UINT32 nFirstVertex = aTotalVertices.size();
-                UINT32 nFirstIndex = aTotalIndices.size();
+                UINT32 nFirstVertex = kFinal.m_aVertices.size();
+                UINT32 nFirstIndex = kFinal.m_aIndices.size();
                 UINT32 nNumIndices = kPair.second.m_aIndices.size();
                 fwrite(&nFirstVertex, sizeof(UINT32), 1, pFile);
                 fwrite(&nFirstIndex, sizeof(UINT32), 1, pFile);
                 fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
 
-                aTotalVertices.insert(aTotalVertices.end(), kPair.second.m_aVertices.begin(), kPair.second.m_aVertices.end());
-                aTotalIndices.insert(aTotalIndices.end(), kPair.second.m_aIndices.begin(), kPair.second.m_aIndices.end());
+                kFinal.m_aVertices.insert(kFinal.m_aVertices.end(), kPair.second.m_aVertices.begin(), kPair.second.m_aVertices.end());
+                kFinal.m_aTexCoords.insert(kFinal.m_aTexCoords.end(), kPair.second.m_aTexCoords.begin(), kPair.second.m_aTexCoords.end());
+                kFinal.m_aBasis.insert(kFinal.m_aBasis.end(), kPair.second.m_aBasis.begin(), kPair.second.m_aBasis.end());
+                kFinal.m_aIndices.insert(kFinal.m_aIndices.end(), kPair.second.m_aIndices.begin(), kPair.second.m_aIndices.end());
             }
 
-            UINT32 nNumVertices = aTotalVertices.size();
+            UINT32 nNumVertices = kFinal.m_aVertices.size();
             fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
-            printf("-< Num. Total Vertices: %d\r\n", aTotalVertices.size());
-            for (UINT32 nVertex = 0; nVertex < nNumVertices; nVertex++)
-            {
-                fwrite(&aTotalVertices[nVertex].position, sizeof(float3), 1, pFile);
-            }
+            printf("-< Num. Total Vertices: %d\r\n", kFinal.m_aVertices.size());
+            fwrite(&kFinal.m_aVertices[0], sizeof(float3), kFinal.m_aVertices.size(), pFile);
+            fwrite(&kFinal.m_aTexCoords[0], sizeof(float2), kFinal.m_aTexCoords.size(), pFile);
+            fwrite(&kFinal.m_aBasis[0], sizeof(float3), kFinal.m_aBasis.size(), pFile);
 
-            for (UINT32 nVertex = 0; nVertex < nNumVertices; nVertex++)
-            {
-                fwrite(&aTotalVertices[nVertex].texcoord, sizeof(float2), 1, pFile);
-            }
-
-            for (UINT32 nVertex = 0; nVertex < nNumVertices; nVertex++)
-            {
-                fwrite(&aTotalVertices[nVertex].tangent, sizeof(float3), 1, pFile);
-                fwrite(&aTotalVertices[nVertex].bitangent, sizeof(float3), 1, pFile);
-                fwrite(&aTotalVertices[nVertex].normal, sizeof(float3), 1, pFile);
-            }
-
-            UINT32 nNumIndices = aTotalIndices.size();
+            UINT32 nNumIndices = kFinal.m_aIndices.size();
             fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
-            fwrite(&aTotalIndices[0], sizeof(UINT16), aTotalIndices.size(), pFile);
-            printf("-< Num. Total Indices: %d\r\n", aTotalIndices.size());
+            printf("-< Num. Total Indices: %d\r\n", kFinal.m_aIndices.size());
+            fwrite(&kFinal.m_aIndices[0], sizeof(UINT16), kFinal.m_aIndices.size(), pFile);
 
             fclose(pFile);
             pFile = nullptr;
@@ -358,31 +314,15 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                 fwrite(&nVersion, sizeof(UINT16), 1, pFile);
                 fwrite(&nAABB, sizeof(aabb), 1, pFile);
 
-                std::vector<float3> aVertices;
-                for (auto &kVertex : pCollision->m_aVertices)
-                {
-                    aVertices.push_back(kVertex.position);
-                }
-
-                std::vector<float3> aOutputVertices;
-                std::vector<UINT16> aOutputIndices;
-                printf("--< Optimizing Collision Data\r\n");
-                if (FAILED(GEKOptimizeMesh(&aVertices[0], aVertices.size(),
-                                           &pCollision->m_aIndices[0], pCollision->m_aIndices.size(),
-                                           aOutputVertices, aOutputIndices, nFaceEpsilon)))
-                {
-                    throw CMyException(__LINE__, L"Unable to optimize collision data");
-                }
-
-                UINT32 nNumVertices = aOutputVertices.size();
+                UINT32 nNumVertices = pCollision->m_aVertices.size();
                 fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
-                printf("-< Num. Collision Vertices: %d\r\n", aOutputVertices.size());
-                fwrite(&aOutputVertices[0], sizeof(float3), aOutputVertices.size(), pFile);
+                printf("-< Num. Collision Vertices: %d\r\n", pCollision->m_aVertices.size());
+                fwrite(&pCollision->m_aVertices[0], sizeof(float3), pCollision->m_aVertices.size(), pFile);
 
-                UINT32 nNumIndices = aOutputIndices.size();
+                UINT32 nNumIndices = pCollision->m_aIndices.size();
                 fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
-                printf("-< Num. Collision Indices: %d\r\n", aOutputIndices.size());
-                fwrite(&aOutputIndices[0], sizeof(UINT16), aOutputIndices.size(), pFile);
+                printf("-< Num. Collision Indices: %d\r\n", pCollision->m_aIndices.size());
+                fwrite(&pCollision->m_aIndices[0], sizeof(UINT16), pCollision->m_aIndices.size(), pFile);
 
                 fclose(pFile);
                 printf("< Output Collision Saved: %S\r\n", strOutput.GetString());
@@ -404,38 +344,22 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             if (pFile != nullptr)
             {
                 UINT32 nGEKX = *(UINT32 *)"GEKX";
-                UINT16 nType = 1;
+                UINT16 nType = 2;
                 UINT16 nVersion = 2;
                 fwrite(&nGEKX, sizeof(UINT32), 1, pFile);
                 fwrite(&nType, sizeof(UINT16), 1, pFile);
                 fwrite(&nVersion, sizeof(UINT16), 1, pFile);
                 fwrite(&nAABB, sizeof(aabb), 1, pFile);
 
-                std::vector<float3> aVertices;
-                for (auto &kVertex : pOcclusion->m_aVertices)
-                {
-                    aVertices.push_back(kVertex.position);
-                }
-
-                std::vector<float3> aOutputVertices;
-                std::vector<UINT16> aOutputIndices;
-                printf("--< Optimizing Occlusion Data\r\n");
-                if (FAILED(GEKOptimizeMesh(&aVertices[0], aVertices.size(),
-                                           &pOcclusion->m_aIndices[0], pOcclusion->m_aIndices.size(),
-                                           aOutputVertices, aOutputIndices, nFaceEpsilon)))
-                {
-                    throw CMyException(__LINE__, L"Unable to optimize occlusion data");
-                }
-
-                UINT32 nNumVertices = aOutputVertices.size();
+                UINT32 nNumVertices = pOcclusion->m_aVertices.size();
                 fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
-                printf("-< Num. Occlusion Vertices: %d\r\n", aOutputVertices.size());
-                fwrite(&aOutputVertices[0], sizeof(float3), aOutputVertices.size(), pFile);
+                printf("-< Num. Collision Vertices: %d\r\n", pOcclusion->m_aVertices.size());
+                fwrite(&pOcclusion->m_aVertices[0], sizeof(float3), pOcclusion->m_aVertices.size(), pFile);
 
-                UINT32 nNumIndices = aOutputIndices.size();
+                UINT32 nNumIndices = pOcclusion->m_aIndices.size();
                 fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
-                printf("-< Num. Occlusion Indices: %d\r\n", aOutputIndices.size());
-                fwrite(&aOutputIndices[0], sizeof(UINT16), aOutputIndices.size(), pFile);
+                printf("-< Num. Collision Indices: %d\r\n", pOcclusion->m_aIndices.size());
+                fwrite(&pOcclusion->m_aIndices[0], sizeof(UINT16), pOcclusion->m_aIndices.size(), pFile);
 
                 fclose(pFile);
                 printf("< Output Collision Saved: %S\r\n", strOutput.GetString());
