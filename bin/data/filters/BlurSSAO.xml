@@ -7,7 +7,7 @@
         <texture source="SSAO.Ambient" />
         <texture source="Deferred.World" />
     </textures>
-    <program>
+    <pixel>
         <![CDATA[
             Texture2D     gs_pAmbientBuffer         : register(t0);
             Texture2D     gs_pWorldBuffer           : register(t1);
@@ -49,5 +49,5 @@
                 return float4((nResult / nIntensitySum), 1.0f);
             }
         ]]>
-    </program>
+    </pixel>
 </filter>

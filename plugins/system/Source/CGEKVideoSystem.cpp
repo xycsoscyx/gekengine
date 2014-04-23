@@ -1658,11 +1658,11 @@ STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
-    CStringA strShader;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, strShader);
+    CStringA strProgram;
+    HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CompileVertexProgram(strShader, pEntry, aLayout, ppProgram);
+        hRetVal = CompileVertexProgram(strProgram, pEntry, aLayout, ppProgram);
     }
 
     return hRetVal;
@@ -1673,11 +1673,11 @@ STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEnt
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
-    CStringA strShader;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, strShader);
+    CStringA strProgram;
+    HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CompileGeometryProgram(strShader, pEntry, ppProgram);
+        hRetVal = CompileGeometryProgram(strProgram, pEntry, ppProgram);
     }
 
     return hRetVal;
@@ -1688,11 +1688,11 @@ STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry,
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
-    CStringA strShader;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, strShader);
+    CStringA strProgram;
+    HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CompilePixelProgram(strShader, pEntry, ppProgram);
+        hRetVal = CompilePixelProgram(strProgram, pEntry, ppProgram);
     }
 
     return hRetVal;

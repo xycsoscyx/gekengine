@@ -9,7 +9,7 @@
         <texture source="Deferred.Info" />
         <texture data="%root%\data\textures\random.dds" />
     </textures>
-    <program>
+    <pixel>
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t0);
             Texture2D     gs_pWorldBuffer           : register(t1);
@@ -82,5 +82,5 @@
                 return nOcclusion;
             }
         ]]>
-    </program>
+    </pixel>
 </filter>

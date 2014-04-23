@@ -15,7 +15,7 @@
         <color source="one" destination="one" operation="add" />
         <alpha source="one" destination="one" operation="add" />
     </blend>
-    <shader mode="lighting">
+    <pixel mode="lighting">
         &LightingShader;
-    </program>
+    </pixel>
 </filter>

@@ -78,7 +78,7 @@ private:
     HRESULT LoadTextures(CLibXMLNode &kFilter);
     HRESULT LoadRenderStates(CLibXMLNode &kFilter);
     HRESULT LoadBlendStates(CLibXMLNode &kFilter);
-    HRESULT LoadShader(CLibXMLNode &kFilter);
+    HRESULT LoadProgram(CLibXMLNode &kFilter);
 
 public:
     CGEKRenderFilter(void);

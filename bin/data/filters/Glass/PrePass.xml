@@ -10,12 +10,12 @@
         </depth>
     </targets>
     <blend writemask="" />
-    <shader mode="forward" vertexattributes="position">
+    <pixel mode="forward" vertexattributes="position">
         <![CDATA[
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
                 return 0.0f;
             }
         ]]>
-    </program>
+    </pixel>
 </filter>

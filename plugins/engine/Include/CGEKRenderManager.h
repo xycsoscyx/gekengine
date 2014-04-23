@@ -107,7 +107,7 @@ private:
 
     std::map<GEKHASH, CComPtr<IUnknown>> m_aTextures;
     std::map<GEKHASH, CComPtr<IUnknown>> m_aMaterials;
-    std::map<GEKHASH, CComPtr<IGEKVideoProgram>> m_aPrograms;
+    std::map<GEKHASH, CComPtr<IUnknown>> m_aPrograms;
     std::map<GEKHASH, CComPtr<IGEKModel>> m_aModels;
     std::map<GEKHASH, CComPtr<IGEKRenderFilter>> m_aFilters;
     std::map<GEKHASH, PASS> m_aPasses;

@@ -519,13 +519,13 @@ HRESULT CGEKRenderFilter::LoadBlendStates(CLibXMLNode &kFilter)
     return hRetVal;
 }
 
-HRESULT CGEKRenderFilter::LoadShader(CLibXMLNode &kFilter)
+HRESULT CGEKRenderFilter::LoadProgram(CLibXMLNode &kFilter)
 {
     HRESULT hRetVal = E_INVALIDARG;
-    CLibXMLNode kProgram = kFilter.FirstChildElement(L"program");
-    if (kProgram)
+    CLibXMLNode kPixel = kFilter.FirstChildElement(L"pixel");
+    if (kPixel)
     {
-        CStringW strVertexAttributes = kProgram.GetAttribute(L"vertexattributes");
+        CStringW strVertexAttributes = kPixel.GetAttribute(L"vertexattributes");
         if (!strVertexAttributes.IsEmpty())
         {
             m_nVertexAttributes = 0;
@@ -555,7 +555,7 @@ HRESULT CGEKRenderFilter::LoadShader(CLibXMLNode &kFilter)
             m_nVertexAttributes = 0xFFFFFFFF;
         }
 
-        CStringW strMode = kProgram.GetAttribute(L"mode");
+        CStringW strMode = kPixel.GetAttribute(L"mode");
         if (strMode.CompareNoCase(L"forward") == 0)
         {
             m_eMode = FORWARD;
@@ -593,7 +593,7 @@ HRESULT CGEKRenderFilter::LoadShader(CLibXMLNode &kFilter)
             }
             else
             {
-                CStringA strCoreProgram = kProgram.GetText();
+                CStringA strCoreProgram = kPixel.GetText();
                 strProgram.Replace("_INSERT_PIXEL_PROGRAM", strCoreProgram);
                 hRetVal = GetVideoSystem()->CompilePixelProgram(strProgram, "MainPixelProgram", &m_spPixelProgram);
             }
@@ -630,7 +630,7 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName)
                 
             if (SUCCEEDED(hRetVal))
             {
-                hRetVal = LoadShader(kFilter);
+                hRetVal = LoadProgram(kFilter);
             }
 
             if (SUCCEEDED(hRetVal) && !m_spDepthStates)

@@ -8,10 +8,50 @@
 #include "GEKEngineCLSIDs.h"
 #include "GEKSystemCLSIDs.h"
 
+DECLARE_INTERFACE_IID_(IGEKProgram, IUnknown, "0387E446-E858-4F3C-9E19-1F0E36D914E3")
+{
+    STDMETHOD_(IGEKVideoProgram *, GetVertexProgram)    (THIS) PURE;
+    STDMETHOD_(IGEKVideoProgram *, GetGeometryProgram)  (THIS) PURE;
+};
+
+class CGEKProgram : public CGEKUnknown
+                  , public IGEKProgram
+{
+private:
+    CComPtr<IGEKVideoProgram> m_spVertexProgram;
+    CComPtr<IGEKVideoProgram> m_spGeometryProgram;
+
+public:
+    DECLARE_UNKNOWN(CGEKProgram);
+    CGEKProgram(IGEKVideoProgram *pVertexProgram, IGEKVideoProgram *pGeometryProgram)
+        : m_spVertexProgram(pVertexProgram)
+        , m_spGeometryProgram(pGeometryProgram)
+    {
+    }
+
+    ~CGEKProgram(void)
+    {
+    }
+
+    STDMETHODIMP_(IGEKVideoProgram *) GetVertexProgram(void)
+    {
+        return m_spVertexProgram;
+    }
+
+    STDMETHODIMP_(IGEKVideoProgram *) GetGeometryProgram(void)
+    {
+        return (m_spGeometryProgram ? m_spGeometryProgram : nullptr);
+    }
+};
+
+BEGIN_INTERFACE_LIST(CGEKProgram)
+    INTERFACE_LIST_ENTRY_COM(IGEKProgram)
+END_INTERFACE_LIST_UNKNOWN
+
 DECLARE_INTERFACE_IID_(IGEKWebSurface, IUnknown, "47015E42-8CFD-43BD-A10A-737A778A5122")
 {
-    STDMETHOD_(IGEKVideoTexture *, GetTexture)  (THIS) PURE;
-    STDMETHOD_(void, Update)                    (THIS) PURE;
+    STDMETHOD_(IGEKVideoTexture *, GetTexture)          (THIS) PURE;
+    STDMETHOD_(void, Update)                            (THIS) PURE;
 };
 
 class CGEKWebSurface : public CGEKUnknown
@@ -383,6 +423,9 @@ STDMETHODIMP CGEKRenderManager::OnPostReset(void)
 
 STDMETHODIMP CGEKRenderManager::Initialize(void)
 {
+    CComPtr<IGEKVideoProgram> spProgram;
+    GetVideoSystem()->LoadGeometryProgram(L"%root%\\test.gs", "Main", &spProgram);
+
     HRESULT hRetVal = S_OK;
     m_pWebCore = Awesomium::WebCore::Initialize(Awesomium::WebConfig());
     if (m_pWebCore)
@@ -1257,17 +1300,25 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                                 kElement = kElement.NextSiblingElement(L"element");
                             };
 
-                            CLibXMLNode kProgram = kProgram.FirstChildElement(L"program");
-                            if (kProgram)
+                            CLibXMLNode kVertex = kProgram.FirstChildElement(L"vertex");
+                            if (kVertex)
                             {
-                                CComPtr<IGEKVideoProgram> spProgram;
-                                CStringA strProgram = kProgram.GetText();
-                                strDeferredProgram.Replace("_INSERT_WORLD_PROGRAM", (strProgram + "\r\n"));
-                                hRetVal = GetVideoSystem()->CompileVertexProgram(strDeferredProgram, "MainVertexProgram", aLayout, &spProgram);
-                                if (spProgram != nullptr)
+                                CStringA strVertexProgram = kVertex.GetText();
+                                strDeferredProgram.Replace("_INSERT_WORLD_PROGRAM", (strVertexProgram + "\r\n"));
+
+                                CComPtr<IGEKVideoProgram> spVertexProgram;
+                                hRetVal = GetVideoSystem()->CompileVertexProgram(strDeferredProgram, "MainVertexProgram", aLayout, &spVertexProgram);
+                                if (spVertexProgram != nullptr)
                                 {
-                                    m_aPrograms[pName] = spProgram;
-                                    hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
+                                    CComPtr<CGEKProgram> spProgram(new CGEKProgram(spVertexProgram, nullptr));
+                                    if (spProgram)
+                                    {
+                                        hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
+                                        if (*ppProgram)
+                                        {
+                                            m_aPrograms[pName] = (*ppProgram);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1282,13 +1333,14 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
 
 STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
 {
-    REQUIRE_VOID_RETURN(pProgram);
     REQUIRE_VOID_RETURN(GetVideoSystem());
+    REQUIRE_VOID_RETURN(pProgram);
 
-    CComQIPtr<IGEKVideoProgram> spProgram(pProgram);
+    CComQIPtr<IGEKProgram> spProgram(pProgram);
     if (spProgram != nullptr)
     {
-        GetVideoSystem()->GetDefaultContext()->SetVertexProgram(spProgram);
+        GetVideoSystem()->GetDefaultContext()->SetVertexProgram(spProgram->GetVertexProgram());
+        GetVideoSystem()->GetDefaultContext()->SetGeometryProgram(spProgram->GetGeometryProgram());
     }
 }
 

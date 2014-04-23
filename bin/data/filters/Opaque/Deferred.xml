@@ -10,7 +10,7 @@
         <target name="Info" />
         <depth source="Opaque/PrePass" comparison="lessequal" writemask="none" />
     </targets>
-    <shader mode="forward">
+    <pixel mode="forward">
         &DeferredShader;
-    </program>
+    </pixel>
 </filter>

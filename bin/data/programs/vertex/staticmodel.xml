@@ -12,7 +12,7 @@
 		<element type="xyzw_float" name="TEXCOORD" index="7" class="instance" slot="3" />
 		<element type="xyzw_float" name="COLOR" index="0" class="instance" slot="3" />
     </layout>
-    <program>
+    <vertex>
         <![CDATA[
 			struct SOURCEVERTEX
 			{
@@ -37,5 +37,5 @@
 				return kVertex;
 			}
         ]]>
-    </program>
+    </vertex>
 </program>
