@@ -99,16 +99,31 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                     const aiMaterial *pMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
                     if (pMaterial)
                     {
-                        aiString strPath;
-                        pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &strPath);
-                        
-                        CPathA kPath = strPath.C_Str();
-                        kPath.RemoveExtension();
-                        strMaterial = kPath.m_strPath;
-                        int nTexturesRoot = strMaterial.Find("/textures/");
-                        if (nTexturesRoot >= 0)
+                        aiString strName;
+                        pMaterial->Get(AI_MATKEY_NAME, strName);
+                        CStringA strNameString = strName.C_Str();
+                        strNameString.MakeLower();
+                        if (strNameString.Find("collision") >= 0)
                         {
-                            strMaterial = strMaterial.Mid(nTexturesRoot + 10);
+                            strMaterial = strNameString;
+                        }
+                        else
+                        {
+                            aiString strDiffuse;
+                            pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &strDiffuse);
+                            CStringA strDiffuseString = strDiffuse.C_Str();
+                            if (!strDiffuseString.IsEmpty())
+                            {
+                                CPathA kPath = strDiffuseString;
+                                kPath.RemoveExtension();
+
+                                strMaterial = kPath.m_strPath;
+                                int nTexturesRoot = strMaterial.Find("/textures/");
+                                if (nTexturesRoot >= 0)
+                                {
+                                    strMaterial = strMaterial.Mid(nTexturesRoot + 10);
+                                }
+                            }
                         }
                     }
                 }
@@ -216,11 +231,11 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         std::map<CStringA, MODEL> aMaterials;
         for (auto &kPair : aScene)
         {
-            if (kPair.first.CompareNoCase("*collision") == 0)
+            if (kPair.first.Find("collision") >= 0)
             {
                 pCollision = &kPair.second;
             }
-            else if (kPair.first.CompareNoCase("*occlusion") == 0)
+            else if (kPair.first.Find("occlusion") >= 0)
             {
                 pOcclusion = &kPair.second;
             }
