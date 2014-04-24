@@ -1,0 +1,19 @@
+struct INPUT
+{
+    float4 lightposition                : POSITION;
+    float4 lightdata                    : TEXCOORD0;
+};
+
+struct OUTPUT
+{
+    float4 lightposition                : SV_POSITION;
+    float4 lightdata                    : TEXCOORD0;
+};
+
+OUTPUT MainVertexProgram(INPUT kInput)
+{
+    OUTPUT kOutput;
+    kOutput.lightposition   = kInput.lightposition;
+    kOutput.lightdata       = kInput.lightdata;
+    return kOutput;
+}

@@ -45,16 +45,9 @@ public:
 
     struct LIGHT
     {
-        float4x4 m_nMatrix;
+        float4 m_nPosition;
         float3 m_nColor;
         float m_nRange;
-    };
-
-    struct LIGHTBUFFER
-    {
-        LIGHT m_aData[10];
-        UINT32 m_nNumLights;
-        UINT32 m_nBuffer[3];
     };
 
     struct ENGINEBUFFER
@@ -62,10 +55,10 @@ public:
         float4x4 m_nViewMatrix;
         float4x4 m_nProjectionMatrix;
         float4x4 m_nTransformMatrix;
-        float4 m_nCameraPosition;
+        float3 m_nCameraPosition;
         float m_nCameraViewDistance;
-        float m_nCameraInverseViewDistance;
         float2 m_nCameraView;
+        float2 m_nPadding;
     };
 
     struct FRAME
@@ -91,12 +84,15 @@ private:
     CComPtr<IGEKVideoVertexBuffer> m_spVertexBuffer;
     CComPtr<IGEKVideoIndexBuffer> m_spIndexBuffer;
 
+    CComPtr<IGEKVideoProgram> m_spLightVertexProgram;
+    CComPtr<IGEKVideoProgram> m_spLightGeometryProgram;
+    CComPtr<IGEKVideoVertexBuffer> m_spLightVertexBuffer;
+
     CComPtr<IGEKVideoSamplerStates> m_spPointSampler;
     CComPtr<IGEKVideoSamplerStates> m_spLinearSampler;
 
     CComPtr<IGEKVideoConstantBuffer> m_spOrthoBuffer;
     CComPtr<IGEKVideoConstantBuffer> m_spEngineBuffer;
-    CComPtr<IGEKVideoConstantBuffer> m_spLightBuffer;
 
     Awesomium::WebCore *m_pWebCore;
     Awesomium::WebSession *m_pWebSession;

@@ -6,17 +6,19 @@ cbuffer ENGINEBUFFER                    : register(b0)
     float4x4 gs_nViewMatrix;
     float4x4 gs_nProjectionMatrix;
     float4x4 gs_nTransformMatrix;
-    float4   gs_nCameraPosition;
+    float3   gs_nCameraPosition;
 	float    gs_nCameraViewDistance;
-	float    gs_nCameraInverseViewDistance;
 	float2   gs_nCameraView;
+	float2   gs_nPadding;
 };
        
 struct INPUT
 {
-    float4   position                   : SV_POSITION;
-    float2   texcoord                   : TEXCOORD0;
-    float3   view                       : TEXCOORD1;
+    float4 position                     : SV_POSITION;
+    float2 texcoord                     : TEXCOORD0;
+    float3 view                         : TEXCOORD1;
+    float3 lightposition                : TEXCOORD2;
+    float4 lightdata                    : TEXCOORD3;
 };
 
 _INSERT_PIXEL_PROGRAM
