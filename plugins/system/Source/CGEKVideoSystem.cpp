@@ -596,6 +596,19 @@ STDMETHODIMP_(void) CGEKVideoContext::SetVertexConstantBuffer(UINT32 nIndex, IGE
     }
 }
 
+STDMETHODIMP_(void) CGEKVideoContext::SetGeometryConstantBuffer(UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer)
+{
+    REQUIRE_VOID_RETURN(m_spDeviceContext);
+    REQUIRE_VOID_RETURN(pBuffer);
+
+    CComQIPtr<ID3D11Buffer> spD3DBuffer(pBuffer);
+    if (spD3DBuffer != nullptr)
+    {
+        ID3D11Buffer *pD3DBuffer = spD3DBuffer;
+        m_spDeviceContext->GSSetConstantBuffers(nIndex, 1, &pD3DBuffer);
+    }
+}
+
 STDMETHODIMP_(void) CGEKVideoContext::SetPixelConstantBuffer(UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
@@ -1610,7 +1623,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
     else if (spErrors != nullptr)
     {
         const char *strErrors = (const char *)spErrors->GetBufferPointer();
-        _ASSERTE(FALSE && "Unable to compile pixel shader");
+        _ASSERTE(FALSE && "Unable to compile geometry shader");
     }
 
     return hRetVal;
