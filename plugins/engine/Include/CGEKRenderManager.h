@@ -87,6 +87,7 @@ private:
     CComPtr<IGEKVideoProgram> m_spLightVertexProgram;
     CComPtr<IGEKVideoProgram> m_spLightGeometryProgram;
     CComPtr<IGEKVideoVertexBuffer> m_spLightVertexBuffer;
+    UINT32 m_nNumLights;
 
     CComPtr<IGEKVideoSamplerStates> m_spPointSampler;
     CComPtr<IGEKVideoSamplerStates> m_spLinearSampler;

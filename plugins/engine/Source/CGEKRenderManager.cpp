@@ -247,6 +247,7 @@ CGEKRenderManager::CGEKRenderManager(void)
     , m_pCurrentFilter(nullptr)
     , m_bRunThread(false)
     , m_bDrawing(false)
+    , m_nNumLights(50)
 {
 }
 
@@ -501,7 +502,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(LIGHT), 10, &m_spLightVertexBuffer);
+        hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(LIGHT), m_nNumLights, &m_spLightVertexBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -1575,9 +1576,9 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
         GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(0, 0, m_spLightVertexBuffer);
         GetVideoSystem()->GetDefaultContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::POINTLIST);
 
-        for (UINT32 nPass = 0; nPass < m_spRenderFrame->m_aLightVector.size(); nPass += 10)
+        for (UINT32 nPass = 0; nPass < m_spRenderFrame->m_aLightVector.size(); nPass += m_nNumLights)
         {
-            UINT32 nNumLights = min(10, (m_spRenderFrame->m_aLightVector.size() - nPass));
+            UINT32 nNumLights = min(m_nNumLights, (m_spRenderFrame->m_aLightVector.size() - nPass));
 
             LIGHT *pVertices = nullptr;
             m_spLightVertexBuffer->Lock((LPVOID *)&pVertices);

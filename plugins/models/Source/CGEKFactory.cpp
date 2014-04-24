@@ -13,6 +13,7 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKFactory)
 
 CGEKFactory::CGEKFactory(void)
+    : m_nNumInstances(50)
 {
 }
 
@@ -30,7 +31,7 @@ STDMETHODIMP CGEKFactory::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(IGEKModel::INSTANCE), 20, &m_spInstanceBuffer);
+        hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(IGEKModel::INSTANCE), m_nNumInstances, &m_spInstanceBuffer);
     }
 
     return hRetVal;
@@ -76,12 +77,17 @@ STDMETHODIMP CGEKFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *
     return hRetVal;
 }
 
-IUnknown *CGEKFactory::GetVertexProgram(void)
+STDMETHODIMP_(IUnknown *) CGEKFactory::GetVertexProgram(void)
 {
     return m_spVertexProgram;
 }
 
-IGEKVideoVertexBuffer *CGEKFactory::GetInstanceBuffer(void)
+STDMETHODIMP_(IGEKVideoVertexBuffer *) CGEKFactory::GetInstanceBuffer(void)
 {
     return m_spInstanceBuffer;
+}
+
+STDMETHODIMP_(UINT32) CGEKFactory::GetNumInstances(void)
+{
+    return m_nNumInstances;
 }

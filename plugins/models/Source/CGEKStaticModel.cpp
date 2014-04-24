@@ -145,11 +145,11 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
 
     GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(3, 0, GetStaticFactory()->GetInstanceBuffer());
     GetVideoSystem()->GetDefaultContext()->SetIndexBuffer(0, m_spIndexBuffer);
-    for(UINT32 nPass = 0; nPass < aInstances.size(); nPass += 20)
+    for (UINT32 nPass = 0; nPass < aInstances.size(); nPass += GetStaticFactory()->GetNumInstances())
     {
-        UINT32 nNumInstances = min(20, (aInstances.size() - nPass));
+        UINT32 nNumInstances = min(GetStaticFactory()->GetNumInstances(), (aInstances.size() - nPass));
         
-        unsigned char *pInstances = nullptr;
+        IGEKModel::INSTANCE *pInstances = nullptr;
         GetStaticFactory()->GetInstanceBuffer()->Lock((LPVOID FAR *)&pInstances);
         memcpy(pInstances, &aInstances[nPass], (nNumInstances * sizeof(INSTANCE)));
         GetStaticFactory()->GetInstanceBuffer()->Unlock();

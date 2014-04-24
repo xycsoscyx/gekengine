@@ -14,6 +14,7 @@ class CGEKFactory : public CGEKUnknown
                   , public IGEKStaticFactory
 {
 private:
+    UINT32 m_nNumInstances;
     CComPtr<IGEKVideoVertexBuffer> m_spInstanceBuffer;
     CComPtr<IUnknown> m_spVertexProgram;
 
@@ -35,4 +36,6 @@ public:
     // IGEKStaticFactory
     STDMETHOD_(IUnknown *, GetVertexProgram)                    (THIS);
     STDMETHOD_(IGEKVideoVertexBuffer *, GetInstanceBuffer)      (THIS);
+    STDMETHOD_(UINT32, GetNumInstances)                         (THIS)
+;
 };
