@@ -367,7 +367,7 @@ DECLARE_INTERFACE_IID_(IGEKVideoBlendStates, IUnknown, "8232160E-51F7-4000-A289-
 
 DECLARE_INTERFACE_IID_(IGEKVideoConstantBuffer, IUnknown, "3DBDB46D-FAAD-43EC-AD2D-1C2A24E55210")
 {
-    STDMETHOD_(void, Update)                            (THIS_ const void *pData) PURE;
+    STDMETHOD_(void, Update)                            (THIS_ const void *pData, UINT32 nSize = 0) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKVideoProgram, IUnknown, "21945D41-0C9E-4B81-B5C0-2FEA3A0292B2")
@@ -379,8 +379,7 @@ DECLARE_INTERFACE_IID_(IGEKVideoVertexBuffer, IUnknown, "6ABE21FD-05E2-458A-80D9
     STDMETHOD_(UINT32, GetStride)                       (THIS) PURE;
     STDMETHOD_(UINT32, GetCount)                        (THIS) PURE;
 
-    STDMETHOD(Lock)                                     (THIS_ LPVOID FAR *ppData) PURE;
-    STDMETHOD_(void, Unlock)                            (THIS) PURE;
+    STDMETHOD_(void, Update)                            (THIS_ const void *pData, UINT32 nSize = 0) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKVideoIndexBuffer, IUnknown, "409C6AC4-FA9C-455E-8711-7336F428962E")
@@ -388,8 +387,7 @@ DECLARE_INTERFACE_IID_(IGEKVideoIndexBuffer, IUnknown, "409C6AC4-FA9C-455E-8711-
     STDMETHOD_(GEKVIDEO::DATA::FORMAT, GetFormat)       (THIS) PURE;
     STDMETHOD_(UINT32, GetCount)                        (THIS) PURE;
 
-    STDMETHOD(Lock)                                     (THIS_ LPVOID FAR *ppData) PURE;
-    STDMETHOD_(void, Unlock)                            (THIS) PURE;
+    STDMETHOD_(void, Update)                            (THIS_ const void *pData, UINT32 nSize = 0) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKVideoSamplerStates, IUnknown, "302A7C5F-B162-4B95-A79E-7263D1C1A67F")

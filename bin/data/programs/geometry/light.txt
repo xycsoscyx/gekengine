@@ -32,9 +32,11 @@ struct OUTPUT
 [maxvertexcount(4)]
 void MainGeometryProgram(point INPUT aLight[1], inout TriangleStream<OUTPUT> aStream)
 {
+    float3 nLightPosition = mul(gs_nViewMatrix, aLight[0].lightposition).xyz;
+
     OUTPUT kOutput;
-	kOutput.view.z          = 1.0f;
-    kOutput.lightposition   = mul(gs_nViewMatrix, aLight[0].lightposition).xyz;
+    kOutput.view.z          = 1.0f;
+    kOutput.lightposition   = nLightPosition;
     kOutput.lightdata       = aLight[0].lightdata;
 
     kOutput.position        = mul(gs_nOrthoMatrix, float4(0.0f, 0.0f, 0.0f, 1.0f));

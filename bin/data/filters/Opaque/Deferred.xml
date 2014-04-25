@@ -5,9 +5,9 @@
 <filter>
     <render cullmode="back" />
     <targets format="RGBA_FLOAT">
-        <target name="Albedo" />
-        <target name="World" />
-        <target name="Info" />
+        <target name="Albedo" clear="0,0,0,0"/>
+        <target name="World" clear="0,0,0,0"/>
+        <target name="Info" clear="0,0,0,0"/>
         <depth source="Opaque/PrePass" comparison="lessequal" writemask="none" />
     </targets>
     <pixel mode="forward">

@@ -148,12 +148,7 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
     for (UINT32 nPass = 0; nPass < aInstances.size(); nPass += GetStaticFactory()->GetNumInstances())
     {
         UINT32 nNumInstances = min(GetStaticFactory()->GetNumInstances(), (aInstances.size() - nPass));
-        
-        IGEKModel::INSTANCE *pInstances = nullptr;
-        GetStaticFactory()->GetInstanceBuffer()->Lock((LPVOID FAR *)&pInstances);
-        memcpy(pInstances, &aInstances[nPass], (nNumInstances * sizeof(INSTANCE)));
-        GetStaticFactory()->GetInstanceBuffer()->Unlock();
-
+        GetStaticFactory()->GetInstanceBuffer()->Update(&aInstances[nPass], (sizeof(IGEKModel::INSTANCE) * nNumInstances));
         for (auto &kPair : m_aMaterials)
         {
             if (GetMaterialManager()->EnableMaterial(kPair.first))

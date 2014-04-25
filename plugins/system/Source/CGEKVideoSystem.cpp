@@ -93,10 +93,24 @@ public:
     {
     }
     
-    STDMETHODIMP_(void) Update(const void *pData)
+    STDMETHODIMP_(void) Update(const void *pData, UINT32 nSize)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext && m_spBuffer);
-        m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, nullptr, pData, 0, 0);
+        if (nSize > 0)
+        {
+            D3D11_BOX kBox;
+            kBox.left = 0;
+            kBox.right = nSize;
+            kBox.top = 0;
+            kBox.bottom = 1;
+            kBox.front = 0;
+            kBox.back = 1;
+            m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, &kBox, pData, 0, 0);
+        }
+        else
+        {
+            m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, nullptr, pData, 0, 0);
+        }
     }
 };
 
@@ -189,25 +203,24 @@ public:
         return m_nCount;
     }
 
-    STDMETHODIMP Lock(LPVOID FAR *ppData)
+    STDMETHODIMP_(void) Update(const void *pData, UINT32 nSize)
     {
-        REQUIRE_RETURN(m_pDeviceContext && m_spBuffer, E_FAIL);
-        REQUIRE_RETURN(ppData, E_INVALIDARG);
-
-        D3D11_MAPPED_SUBRESOURCE kResource;
-        HRESULT hRetVal = m_pDeviceContext->Map(m_spBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &kResource);
-        if (SUCCEEDED(hRetVal))
+        REQUIRE_VOID_RETURN(m_pDeviceContext && m_spBuffer);
+        if (nSize > 0)
         {
-            (*ppData) = kResource.pData;
+            D3D11_BOX kBox;
+            kBox.left = 0;
+            kBox.right = nSize;
+            kBox.top = 0;
+            kBox.bottom = 1;
+            kBox.front = 0;
+            kBox.back = 1;
+            m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, &kBox, pData, 0, 0);
         }
-
-        return hRetVal;
-    }
-    
-    STDMETHODIMP_(void) Unlock(void)
-    {
-        REQUIRE_VOID_RETURN(m_pDeviceContext);
-        m_pDeviceContext->Unmap(m_spBuffer, 0);
+        else
+        {
+            m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, nullptr, pData, 0, 0);
+        }
     }
 };
 
@@ -244,25 +257,24 @@ public:
         return m_nCount;
     }
 
-    STDMETHODIMP Lock(LPVOID FAR *ppData)
+    STDMETHODIMP_(void) Update(const void *pData, UINT32 nSize)
     {
-        REQUIRE_RETURN(m_pDeviceContext && m_spBuffer, E_FAIL);
-        REQUIRE_RETURN(ppData, E_INVALIDARG);
-
-        D3D11_MAPPED_SUBRESOURCE kResource;
-        HRESULT hRetVal = m_pDeviceContext->Map(m_spBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &kResource);
-        if (SUCCEEDED(hRetVal))
+        REQUIRE_VOID_RETURN(m_pDeviceContext && m_spBuffer);
+        if (nSize > 0)
         {
-            (*ppData) = kResource.pData;
+            D3D11_BOX kBox;
+            kBox.left = 0;
+            kBox.right = nSize;
+            kBox.top = 0;
+            kBox.bottom = 1;
+            kBox.front = 0;
+            kBox.back = 1;
+            m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, &kBox, pData, 0, 0);
         }
-
-        return hRetVal;
-    }
-    
-    STDMETHODIMP_(void) Unlock(void)
-    {
-        REQUIRE_VOID_RETURN(m_pDeviceContext);
-        m_pDeviceContext->Unmap(m_spBuffer, 0);
+        else
+        {
+            m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, nullptr, pData, 0, 0);
+        }
     }
 };
 
@@ -1605,7 +1617,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, nullptr, nullptr, pEntry, "gs_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
+    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, nullptr, nullptr, pEntry, "gs_4_1", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
     if (spBlob != nullptr)
     {
         CComPtr<ID3D11GeometryShader> spProgram;
@@ -2024,9 +2036,9 @@ STDMETHODIMP CGEKVideoSystem::CreateVertexBuffer(UINT32 nStride, UINT32 nCount, 
 
     D3D11_BUFFER_DESC kBufferDesc;
     kBufferDesc.ByteWidth = (nStride * nCount);
-    kBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    kBufferDesc.Usage = D3D11_USAGE_DEFAULT;
     kBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    kBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    kBufferDesc.CPUAccessFlags = 0;
     kBufferDesc.MiscFlags = 0;
     kBufferDesc.StructureByteStride = 0;
 

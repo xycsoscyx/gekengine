@@ -424,9 +424,6 @@ STDMETHODIMP CGEKRenderManager::OnPostReset(void)
 
 STDMETHODIMP CGEKRenderManager::Initialize(void)
 {
-    CComPtr<IGEKVideoProgram> spProgram;
-    GetVideoSystem()->LoadGeometryProgram(L"%root%\\test.gs", "Main", &spProgram);
-
     HRESULT hRetVal = S_OK;
     m_pWebCore = Awesomium::WebCore::Initialize(Awesomium::WebConfig());
     if (m_pWebCore)
@@ -1579,12 +1576,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
         for (UINT32 nPass = 0; nPass < m_spRenderFrame->m_aLightVector.size(); nPass += m_nNumLights)
         {
             UINT32 nNumLights = min(m_nNumLights, (m_spRenderFrame->m_aLightVector.size() - nPass));
-
-            LIGHT *pVertices = nullptr;
-            m_spLightVertexBuffer->Lock((LPVOID *)&pVertices);
-            memcpy(pVertices, &m_spRenderFrame->m_aLightVector[nPass], (sizeof(LIGHT)* nNumLights));
-            m_spLightVertexBuffer->Unlock();
-
+            m_spLightVertexBuffer->Update(&m_spRenderFrame->m_aLightVector[nPass], (sizeof(LIGHT) * nNumLights));
             GetVideoSystem()->GetDefaultContext()->DrawPrimitive(nNumLights, 0);
         }
     }

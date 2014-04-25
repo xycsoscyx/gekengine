@@ -79,13 +79,16 @@
     
     OUTPUT MainPixelProgram(INPUT kInput)
     {
+        OUTPUT kOutput = (OUTPUT)0;
+
         float3 nViewNormal = -kInput.view;
 
         float4 nPixelInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
 	    float4 nWorld = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
         float nPixelDepth = nWorld.w;
-	    float3 nPixelPosition = (nPixelDepth * kInput.view);
+
+        float3 nPixelPosition = (nPixelDepth * kInput.view);
 	    float3 nPixelNormal = nWorld.xyz;
 
         float3 nLightVector = (kInput.lightposition - nPixelPosition);
@@ -97,13 +100,9 @@
         float2 nLighting = GetBRDF(nPixelNormal, nLightNormal, nViewNormal, nPixelInfo);
         nLighting.x *= nAttenuation;
 
-        OUTPUT kOutput;
         kOutput.diffuse.xyz = (kInput.lightdata.xyz * nLighting.x);
-        kOutput.diffuse.w = 0.0f;
-        
         kOutput.specular.xyz = (kInput.lightdata.xyz * nLighting.y);
-        kOutput.specular.w = 0.0f;
-        
+
         return kOutput;
     }
 ]]>

@@ -350,14 +350,14 @@ double StrToDouble(LPCWSTR pValue)
             CStringW strMaximum = strRange.Tokenize(L":", nPosition);
             double nMinimum = wcstod(strMinimum, nullptr);
             double nMaximum = wcstod(strMaximum, nullptr);
-            std::normal_distribution<double> kRandom(nMinimum, nMaximum);
+            std::uniform_real_distribution<double> kRandom(nMinimum, nMaximum);
             double nValue = kRandom(kMersine);
             return nValue;
         }
         else
         {
             double nRange = wcstod(strRange, nullptr);
-            std::normal_distribution<double> kRandom(-nRange, nRange);
+            std::uniform_real_distribution<double> kRandom(-nRange, nRange);
             double nValue = kRandom(kMersine);
             return nValue;
         }
@@ -370,7 +370,35 @@ double StrToDouble(LPCWSTR pValue)
 
 float StrToFloat(LPCWSTR pValue)
 {
-    return float(StrToDouble(pValue));
+    if (_wcsnicmp(pValue, L"rand(", 5) == 0)
+    {
+        CStringW strRange = pValue;
+        strRange.Replace(L"rand", L"");
+        strRange.TrimLeft(L'(');
+        strRange.TrimRight(L')');
+        if (strRange.Find(L":") >= 0)
+        {
+            int nPosition = 0;
+            CStringW strMinimum = strRange.Tokenize(L":", nPosition);
+            CStringW strMaximum = strRange.Tokenize(L":", nPosition);
+            float nMinimum = wcstof(strMinimum, nullptr);
+            float nMaximum = wcstof(strMaximum, nullptr);
+            std::uniform_real_distribution<float> kRandom(nMinimum, nMaximum);
+            float nValue = kRandom(kMersine);
+            return nValue;
+        }
+        else
+        {
+            float nRange = wcstof(strRange, nullptr);
+            std::uniform_real_distribution<float> kRandom(-nRange, nRange);
+            float nValue = kRandom(kMersine);
+            return nValue;
+        }
+    }
+    else
+    {
+        return wcstof(pValue, nullptr);
+    }
 }
 
 
