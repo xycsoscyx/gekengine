@@ -50,6 +50,13 @@ public:
         float m_nRange;
     };
 
+    struct LIGHTBUFFER
+    {
+        UINT32 m_nNumLights;
+        UINT32 m_nBuffer[3];
+        LIGHT m_aLights[10];
+    };
+
     struct ENGINEBUFFER
     {
         float4x4 m_nViewMatrix;
@@ -84,16 +91,12 @@ private:
     CComPtr<IGEKVideoVertexBuffer> m_spVertexBuffer;
     CComPtr<IGEKVideoIndexBuffer> m_spIndexBuffer;
 
-    CComPtr<IGEKVideoProgram> m_spLightVertexProgram;
-    CComPtr<IGEKVideoProgram> m_spLightGeometryProgram;
-    CComPtr<IGEKVideoVertexBuffer> m_spLightVertexBuffer;
-    UINT32 m_nNumLights;
-
     CComPtr<IGEKVideoSamplerStates> m_spPointSampler;
     CComPtr<IGEKVideoSamplerStates> m_spLinearSampler;
 
     CComPtr<IGEKVideoConstantBuffer> m_spOrthoBuffer;
     CComPtr<IGEKVideoConstantBuffer> m_spEngineBuffer;
+    CComPtr<IGEKVideoConstantBuffer> m_spLightBuffer;
 
     Awesomium::WebCore *m_pWebCore;
     Awesomium::WebSession *m_pWebSession;

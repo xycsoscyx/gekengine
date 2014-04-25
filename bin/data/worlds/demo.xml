@@ -21,6 +21,7 @@
         <entity name="light01" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, -2.000000, -8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere01" class="mesh">
 			<component type="transform" position="5.000000, -2.000000, -8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -30,6 +31,7 @@
         <entity name="light02" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 0.000000, -8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere02" class="mesh">
 			<component type="transform" position="5.000000, 0.000000, -8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -39,6 +41,7 @@
         <entity name="light03" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 2.000000, -8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere03" class="mesh">
 			<component type="transform" position="5.000000, 2.000000, -8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -48,6 +51,7 @@
         <entity name="light04" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 4.000000, -8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere04" class="mesh">
 			<component type="transform" position="5.000000, 4.000000, -8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -58,6 +62,7 @@
         <entity name="light10" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, -4.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere10" class="mesh">
 			<component type="transform" position="5.000000, -4.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -67,6 +72,7 @@
         <entity name="light11" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, -2.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere11" class="mesh">
 			<component type="transform" position="5.000000, -2.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -76,6 +82,7 @@
         <entity name="light12" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 0.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere12" class="mesh">
 			<component type="transform" position="5.000000, 0.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -85,6 +92,7 @@
         <entity name="light13" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 2.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere13" class="mesh">
 			<component type="transform" position="5.000000, 2.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -94,6 +102,7 @@
         <entity name="light14" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 4.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere14" class="mesh">
 			<component type="transform" position="5.000000, 4.000000, -4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -104,6 +113,7 @@
         <entity name="light20" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, -4.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere20" class="mesh">
 			<component type="transform" position="5.000000, -4.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -113,6 +123,7 @@
         <entity name="light21" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, -2.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphert21" class="mesh">
 			<component type="transform" position="5.000000, -2.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -122,6 +133,7 @@
         <entity name="light22" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 0.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere22" class="mesh">
 			<component type="transform" position="5.000000, 0.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -131,6 +143,7 @@
         <entity name="light23" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 2.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere23" class="mesh">
 			<component type="transform" position="5.000000, 2.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -140,6 +153,7 @@
         <entity name="light24" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 4.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere24" class="mesh">
 			<component type="transform" position="5.000000, 4.000000, 0.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -150,6 +164,7 @@
         <entity name="light30" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, -4.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere30" class="mesh">
 			<component type="transform" position="5.000000, -4.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -159,6 +174,7 @@
         <entity name="light31" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, -2.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere31" class="mesh">
 			<component type="transform" position="5.000000, -2.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -168,6 +184,7 @@
         <entity name="light32" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 0.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere32" class="mesh">
 			<component type="transform" position="5.000000, 0.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -177,6 +194,7 @@
         <entity name="light33" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 2.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere33" class="mesh">
 			<component type="transform" position="5.000000, 2.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -186,6 +204,7 @@
         <entity name="light34" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 4.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere34" class="mesh">
 			<component type="transform" position="5.000000, 4.000000, 4.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -196,6 +215,7 @@
         <entity name="light40" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, -4.000000, 8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere40" class="mesh">
 			<component type="transform" position="5.000000, -4.000000, 8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -205,6 +225,7 @@
         <entity name="light41" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, -2.000000, 8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere41" class="mesh">
 			<component type="transform" position="5.000000, -2.000000, 8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -214,6 +235,7 @@
         <entity name="light42" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 0.000000, 8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere42" class="mesh">
 			<component type="transform" position="5.000000, 0.000000, 8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -223,6 +245,7 @@
         <entity name="light43" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 2.000000, 8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere43" class="mesh">
 			<component type="transform" position="5.000000, 2.000000, 8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -232,6 +255,7 @@
         <entity name="light44" class="light">
 			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
 			<component type="transform" position="2.000000, 4.000000, 8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
+            <component type="model" model="light" materialparams="0,0,0,0" />
 		</entity>
 		<entity name="sphere44" class="mesh">
 			<component type="transform" position="5.000000, 4.000000, 8.000000" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
@@ -239,538 +263,5 @@
 			<!--component type="newton" shape="sphere" params="1" mass="50" /-->
 		</entity>
 
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        <entity class="light">
-			<component type="light" color="rand(0.25:0.75), rand(0.25:0.75), rand(0.25:0.75)" range="5" />
-			<component type="transform" position="rand(6), rand(4), rand(8)" rotation="0.000000, 0.000000, 0.000000, 1.000000" />
-		</entity>
-        
     </population>
 </world>

@@ -247,7 +247,6 @@ CGEKRenderManager::CGEKRenderManager(void)
     , m_pCurrentFilter(nullptr)
     , m_bRunThread(false)
     , m_bDrawing(false)
-    , m_nNumLights(50)
 {
 }
 
@@ -486,24 +485,6 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        std::vector<GEKVIDEO::INPUTELEMENT> aLayout;
-        aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::XYZW_FLOAT, "POSITION", 0));
-        aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::XYZW_FLOAT, "TEXCOORD", 0));
-        hRetVal = GetVideoSystem()->LoadVertexProgram(L"%root%\\data\\programs\\vertex\\light.txt", "MainVertexProgram", aLayout, &m_spLightVertexProgram);
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetVideoSystem()->LoadGeometryProgram(L"%root%\\data\\programs\\geometry\\light.txt", "MainGeometryProgram", &m_spLightGeometryProgram);
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(LIGHT), m_nNumLights, &m_spLightVertexBuffer);
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
         hRetVal = GetVideoSystem()->CreateConstantBuffer(sizeof(float4x4), &m_spOrthoBuffer);
         if (m_spOrthoBuffer != nullptr)
         {
@@ -516,6 +497,11 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = GetVideoSystem()->CreateConstantBuffer(sizeof(ENGINEBUFFER), &m_spEngineBuffer);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = GetVideoSystem()->CreateConstantBuffer(sizeof(LIGHTBUFFER), &m_spLightBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -767,6 +753,11 @@ HRESULT CGEKRenderManager::CreateThread(void)
                         m_spRenderFrame->m_aLightVector.assign(m_spRenderFrame->m_aLights.begin(), m_spRenderFrame->m_aLights.end());
                         m_spRenderFrame->m_aLights.clear();
 
+                        for (auto &kLight : m_spRenderFrame->m_aLightVector)
+                        {
+                            kLight.m_nPosition = (m_spRenderFrame->m_kBuffer.m_nViewMatrix * kLight.m_nPosition);
+                        }
+
                         for (auto &kPair : m_spRenderFrame->m_aModels)
                         {
                             m_spRenderFrame->m_aModelMap[kPair.first].push_back(kPair.second);
@@ -786,8 +777,7 @@ HRESULT CGEKRenderManager::CreateThread(void)
                         m_spEngineBuffer->Update((void *)&m_spRenderFrame->m_kBuffer);
                         GetVideoSystem()->GetDefaultContext()->SetVertexConstantBuffer(0, m_spEngineBuffer);
                         GetVideoSystem()->GetDefaultContext()->SetPixelConstantBuffer(0, m_spEngineBuffer);
-                        GetVideoSystem()->GetDefaultContext()->SetGeometryConstantBuffer(0, m_spEngineBuffer);
-                        GetVideoSystem()->GetDefaultContext()->SetGeometryConstantBuffer(1, m_spOrthoBuffer);
+                        GetVideoSystem()->GetDefaultContext()->SetPixelConstantBuffer(1, m_spLightBuffer);
 
                         GetVideoSystem()->GetDefaultContext()->SetSamplerStates(0, m_spPointSampler);
                         GetVideoSystem()->GetDefaultContext()->SetSamplerStates(1, m_spLinearSampler);
@@ -1554,7 +1544,6 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
     REQUIRE_VOID_RETURN(m_pCurrentPass);
     REQUIRE_VOID_RETURN(m_pCurrentFilter);
 
-    GetVideoSystem()->GetDefaultContext()->SetGeometryProgram(nullptr);
     for (auto &kPair : m_spRenderFrame->m_aModelMap)
     {
         kPair.first->Draw(m_pCurrentFilter->GetVertexAttributes(), kPair.second);
@@ -1565,28 +1554,26 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
 {
     REQUIRE_VOID_RETURN(m_spRenderFrame);
 
+    GetVideoSystem()->GetDefaultContext()->SetVertexProgram(m_spVertexProgram);
+    GetVideoSystem()->GetDefaultContext()->SetGeometryProgram(nullptr);
     GetVideoSystem()->GetDefaultContext()->SetVertexConstantBuffer(1, m_spOrthoBuffer);
+    GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
+    GetVideoSystem()->GetDefaultContext()->SetIndexBuffer(0, m_spIndexBuffer);
+    GetVideoSystem()->GetDefaultContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     if (bPerLight)
     {
-        GetVideoSystem()->GetDefaultContext()->SetVertexProgram(m_spLightVertexProgram);
-        GetVideoSystem()->GetDefaultContext()->SetGeometryProgram(m_spLightGeometryProgram);
-        GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(0, 0, m_spLightVertexBuffer);
-        GetVideoSystem()->GetDefaultContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::POINTLIST);
-
-        for (UINT32 nPass = 0; nPass < m_spRenderFrame->m_aLightVector.size(); nPass += m_nNumLights)
+        LIGHTBUFFER kBuffer;
+        for (UINT32 nPass = 0; nPass < m_spRenderFrame->m_aLightVector.size(); nPass += 10)
         {
-            UINT32 nNumLights = min(m_nNumLights, (m_spRenderFrame->m_aLightVector.size() - nPass));
-            m_spLightVertexBuffer->Update(&m_spRenderFrame->m_aLightVector[nPass], (sizeof(LIGHT) * nNumLights));
-            GetVideoSystem()->GetDefaultContext()->DrawPrimitive(nNumLights, 0);
+            kBuffer.m_nNumLights = min(10, (m_spRenderFrame->m_aLightVector.size() - nPass));
+            memcpy(&kBuffer.m_aLights[0], &m_spRenderFrame->m_aLightVector[nPass], (sizeof(LIGHT) * kBuffer.m_nNumLights));
+            m_spLightBuffer->Update(&kBuffer);
+
+            GetVideoSystem()->GetDefaultContext()->DrawIndexedPrimitive(6, 0, 0);
         }
     }
     else
     {
-        GetVideoSystem()->GetDefaultContext()->SetVertexProgram(m_spVertexProgram);
-        GetVideoSystem()->GetDefaultContext()->SetGeometryProgram(nullptr);
-        GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
-        GetVideoSystem()->GetDefaultContext()->SetIndexBuffer(0, m_spIndexBuffer);
-        GetVideoSystem()->GetDefaultContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
         GetVideoSystem()->GetDefaultContext()->DrawIndexedPrimitive(6, 0, 0);
     }
 }

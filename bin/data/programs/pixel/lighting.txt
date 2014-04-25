@@ -17,8 +17,6 @@ struct INPUT
     float4 position                     : SV_POSITION;
     float2 texcoord                     : TEXCOORD0;
     float3 view                         : TEXCOORD1;
-    float3 lightposition                : TEXCOORD2;
-    float4 lightdata                    : TEXCOORD3;
 };
 
 _INSERT_PIXEL_PROGRAM
