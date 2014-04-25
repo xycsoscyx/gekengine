@@ -776,6 +776,7 @@ HRESULT CGEKRenderManager::CreateThread(void)
 
                         m_spEngineBuffer->Update((void *)&m_spRenderFrame->m_kBuffer);
                         GetVideoSystem()->GetDefaultContext()->SetVertexConstantBuffer(0, m_spEngineBuffer);
+                        GetVideoSystem()->GetDefaultContext()->SetGeometryConstantBuffer(0, m_spEngineBuffer);
                         GetVideoSystem()->GetDefaultContext()->SetPixelConstantBuffer(0, m_spEngineBuffer);
                         GetVideoSystem()->GetDefaultContext()->SetPixelConstantBuffer(1, m_spLightBuffer);
 
@@ -1482,7 +1483,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLight(IGEKEntity *pEntity, const GEKL
             if (m_spUpdateFrame->m_kFrustum.IsVisible(sphere(kPosition.GetFloat3(), kLight.m_nRange)))
             {
                 LIGHT kData;
-                kData.m_nPosition = kPosition.GetFloat3();
+                kData.m_nPosition = float4(kPosition.GetFloat3(), 1.0f);
                 kData.m_nColor = kLight.m_nColor;
                 kData.m_nRange = kLight.m_nRange;
                 m_spUpdateFrame->m_aLights.push_back(kData);
@@ -1563,9 +1564,10 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
     if (bPerLight)
     {
         LIGHTBUFFER kBuffer;
-        for (UINT32 nPass = 0; nPass < m_spRenderFrame->m_aLightVector.size(); nPass += 10)
+        UINT32 nMaxLights = (sizeof(kBuffer.m_aLights) / sizeof(LIGHT));
+        for (UINT32 nPass = 0; nPass < m_spRenderFrame->m_aLightVector.size(); nPass += nMaxLights)
         {
-            kBuffer.m_nNumLights = min(10, (m_spRenderFrame->m_aLightVector.size() - nPass));
+            kBuffer.m_nNumLights = min(nMaxLights, (m_spRenderFrame->m_aLightVector.size() - nPass));
             memcpy(&kBuffer.m_aLights[0], &m_spRenderFrame->m_aLightVector[nPass], (sizeof(LIGHT) * kBuffer.m_nNumLights));
             m_spLightBuffer->Update(&kBuffer);
 

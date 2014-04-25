@@ -16,7 +16,7 @@ cbuffer ORTHOBUFFER                     : register(b1)
 
 struct VERTEX
 {
-    float4 position                     : POSITION;
+    float2 position                     : POSITION;
 	float2 view							: TEXCOORD0;
 };
 
@@ -30,7 +30,7 @@ struct PIXEL
 PIXEL MainVertexProgram(VERTEX kVertex)
 {
     PIXEL kPixel;
-    kPixel.position = mul(gs_nOrthoMatrix, kVertex.position);
+    kPixel.position = mul(gs_nOrthoMatrix, float4(kVertex.position, 0.0f, 1.0f));
     kPixel.texcoord = kVertex.position.xy;
 	kPixel.view.xy = (kVertex.view * gs_nCameraView);
 	kPixel.view.z = 1.0f;

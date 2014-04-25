@@ -31,7 +31,7 @@
                 float4 nInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 
                 OUTPUT kOutput;
-                kOutput.screen = kOutput.buffer = nDiffuse;//((nAlbedo * nDiffuse) + nSpecular);
+                kOutput.screen = kOutput.buffer = ((nAlbedo * nDiffuse) + nSpecular);
                 return kOutput;
             }
         ]]>

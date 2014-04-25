@@ -54,7 +54,7 @@ public:
     {
         UINT32 m_nNumLights;
         UINT32 m_nBuffer[3];
-        LIGHT m_aLights[10];
+        LIGHT m_aLights[50];
     };
 
     struct ENGINEBUFFER

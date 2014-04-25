@@ -6,14 +6,14 @@
     {
         float4 m_nPosition;
         float3 m_nColor;
-        float m_nRange;
+        float  m_nRange;
     };
     
     cbuffer LIGHTBUFFER                     : register(b1)
     {
-        uint  gs_nNumLights;
-        uint  gs_nBuffer[3];
-        LIGHT gs_aLights[10];
+        uint   gs_nNumLights                : packoffset(c0);
+        float3 gs_nBuffer                   : packoffset(c0.y);
+        LIGHT  gs_aLights[10]               : packoffset(c1);
     }
     
     struct OUTPUT

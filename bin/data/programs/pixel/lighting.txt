@@ -11,7 +11,7 @@ cbuffer ENGINEBUFFER                    : register(b0)
 	float2   gs_nCameraView;
 	float2   gs_nPadding;
 };
-       
+
 struct INPUT
 {
     float4 position                     : SV_POSITION;
