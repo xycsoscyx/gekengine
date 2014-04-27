@@ -17,6 +17,13 @@ struct MODEL
     std::vector<float3> m_aBasis;
 };
 
+struct LIGHT
+{
+    float3 m_nPosition;
+    float3 m_nColor;
+    float m_nRange;
+};
+
 class CMyException
 {
 public:
@@ -45,6 +52,7 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
     nLocalTransform.Transpose();
 
     float4x4 nTransform = (nLocalTransform * nParentTransform);
+    float4x4 nInverseTransform = nTransform.GetInverse();
     if (pNode->mNumMeshes > 0)
     {
         if (pNode->mMeshes == nullptr)
@@ -103,7 +111,12 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                         pMaterial->Get(AI_MATKEY_NAME, strName);
                         CStringA strNameString = strName.C_Str();
                         strNameString.MakeLower();
+
                         if (strNameString.Find("collision") >= 0)
+                        {
+                            strMaterial = strNameString;
+                        }
+                        else if (strNameString.Find("occlusion") >= 0)
                         {
                             strMaterial = strNameString;
                         }
@@ -114,15 +127,7 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                             CStringA strDiffuseString = strDiffuse.C_Str();
                             if (!strDiffuseString.IsEmpty())
                             {
-                                CPathA kPath = strDiffuseString;
-                                kPath.RemoveExtension();
-
-                                strMaterial = kPath.m_strPath;
-                                int nTexturesRoot = strMaterial.Find("/textures/");
-                                if (nTexturesRoot >= 0)
-                                {
-                                    strMaterial = strMaterial.Mid(nTexturesRoot + 10);
-                                }
+                                strMaterial = strDiffuseString;
                             }
                         }
                     }
@@ -152,29 +157,27 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
 
                     float2 nTexCoord;
                     nTexCoord.x = pMesh->mTextureCoords[0][nVertex].x;
-                    nTexCoord.y = pMesh->mTextureCoords[0][nVertex].y;
+                    nTexCoord.y = 1.0f - pMesh->mTextureCoords[0][nVertex].y;
                     kModel.m_aTexCoords.push_back(nTexCoord);
 
-                    float3 nTangent;
-                    nTangent.x = pMesh->mTangents[nVertex].x;
-                    nTangent.y = pMesh->mTangents[nVertex].y;
-                    nTangent.z = pMesh->mTangents[nVertex].z;
-                    nTangent = (nTransform * nTangent);
-                    kModel.m_aBasis.push_back(nTangent);
+                    float4x4 nTexBasis;
+                    nTexBasis.rx.x = pMesh->mTangents[nVertex].x;
+                    nTexBasis.rx.y = pMesh->mTangents[nVertex].y;
+                    nTexBasis.rx.z = pMesh->mTangents[nVertex].z;
+                    nTexBasis.ry.x = pMesh->mBitangents[nVertex].x;
+                    nTexBasis.ry.y = pMesh->mBitangents[nVertex].y;
+                    nTexBasis.ry.z = pMesh->mBitangents[nVertex].z;
+                    nTexBasis.rz.x = pMesh->mNormals[nVertex].x;
+                    nTexBasis.rz.y = pMesh->mNormals[nVertex].y;
+                    nTexBasis.rz.z = pMesh->mNormals[nVertex].z;
+                    nTexBasis = (nTexBasis * nTransform);
+                    nTexBasis.rx.Normalize();
+                    nTexBasis.ry.Normalize();
+                    nTexBasis.rz.Normalize();
 
-                    float3 nBiTangent;
-                    nBiTangent.x = pMesh->mBitangents[nVertex].x;
-                    nBiTangent.y = pMesh->mBitangents[nVertex].y;
-                    nBiTangent.z = pMesh->mBitangents[nVertex].z;
-                    nBiTangent = (nTransform * nBiTangent);
-                    kModel.m_aBasis.push_back(nBiTangent);
-
-                    float3 nNormal;
-                    nNormal.x = pMesh->mNormals[nVertex].x;
-                    nNormal.y = pMesh->mNormals[nVertex].y;
-                    nNormal.z = pMesh->mNormals[nVertex].z;
-                    nNormal = (nTransform * nNormal);
-                    kModel.m_aBasis.push_back(nNormal);
+                    kModel.m_aBasis.push_back(nTexBasis.rx);
+                    kModel.m_aBasis.push_back(nTexBasis.ry);
+                    kModel.m_aBasis.push_back(nTexBasis.rz);
                 }
 
                 aModels.insert(std::make_pair(strMaterial, kModel));
@@ -209,6 +212,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
     CStringW strInput = astrArguments[1];
     try
     {
+        MessageBox(NULL, L"", L"", MB_OK);
         const aiScene *pScene = aiImportFile(CW2A(strInput, CP_UTF8), aiProcessPreset_TargetRealtime_Quality | aiProcess_TransformUVCoords);
         if (pScene == nullptr)
         {
@@ -223,7 +227,6 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         aabb nAABB;
         std::multimap<CStringA, MODEL> aScene;
         GetMeshes(pScene, pScene->mRootNode, float4x4(), aScene, nAABB);
-
         printf("< Num. Materials: %d\r\n", aScene.size());
 
         MODEL *pCollision = nullptr;
@@ -275,7 +278,24 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             for (auto &kPair : aMaterials)
             {
                 CStringA strMaterial = (kPair.first);
-                fwrite(strMaterial.GetBuffer(), (strMaterial.GetLength() + 1), 1, pFile);
+                strMaterial.Replace("/", "\\");
+
+                CPathA kPath = strMaterial;
+                kPath.RemoveExtension();
+                strMaterial = kPath.m_strPath;
+
+                int nTexturesRoot = strMaterial.Find("\\textures\\");
+                if (nTexturesRoot >= 0)
+                {
+                    strMaterial = strMaterial.Mid(nTexturesRoot + 10);
+                }
+                
+                if (strMaterial.Right(9).CompareNoCase(".colormap") == 0)
+                {
+                    strMaterial = strMaterial.Left(strMaterial.GetLength() - 9);
+                }
+
+                fwrite(strMaterial.GetString(), (strMaterial.GetLength() + 1), 1, pFile);
 
                 printf("-< Material: %s\r\n", strMaterial.GetString());
                 printf("--< Num. Vertices: %d\r\n", kPair.second.m_aVertices.size());
@@ -388,6 +408,23 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         {
             printf("< No Occlusion Data Found\r\n");
         }
+
+        if (pScene->HasLights())
+        {
+            for (UINT32 nLight = 0; nLight < pScene->mNumLights; nLight++)
+            {
+                const aiLight *pLight = pScene->mLights[nLight];
+                if (pLight->mType == aiLightSource_POINT)
+                {
+                }
+            }
+        }
+        else
+        {
+            printf("< No Light Data Found\r\n");
+        }
+
+        aiReleaseImport(pScene);
     }
     catch (CMyException kException)
     {

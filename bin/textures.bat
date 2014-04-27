@@ -1,10 +1,10 @@
 echo off
-For /R "data/textures" %%# in (*.png) Do (
+For /R "data/textures" %%# in (*.png,*.tga) Do (
     Echo %%~nx# | FIND /I "colormap" 1>NUL && (
-        nvdxt -file "%%~#" -output "%%~dpn#.dds" -quality_highest -rescale lo -dxt5
+        nvdxt -file "%%~#" -output "%%~dpn#.dds" -quality_production -dxt5
     )
     Echo %%~nx# | FIND /I "normalmap" 1>NUL && (
-        nvdxt -file "%%~#" -output "%%~dpn#.dds" -quality_highest -rescale lo -3Dc
+        nvdxt -file "%%~#" -output "%%~dpn#.dds" -quality_production -3Dc
     )
 )
 

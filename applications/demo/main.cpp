@@ -51,7 +51,7 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
 
                 CStringW strMode;
                 strMode.Format(L"%dx%d%s", kMode.xsize, kMode.ysize, strAspect.GetString());
-                int nID = SendDlgItemMessage(hDialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)strMode.GetBuffer(0));
+                int nID = SendDlgItemMessage(hDialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)strMode.GetString());
                 if (kMode.xsize == StrToUINT32(kConfig.GetValue(L"video", L"xsize", L"640")) &&
                     kMode.ysize == StrToUINT32(kConfig.GetValue(L"video", L"ysize", L"480")))
                 {
