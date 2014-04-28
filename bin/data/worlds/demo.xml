@@ -15,9 +15,1178 @@
             <component type="model" model="sponza" />
         </entity>
         
+        <entity class="light"> <!-- 0 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light"> <!-- 50 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+
+        <entity class="light"> <!-- 0 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light"> <!-- 50 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        
+        <entity class="light"> <!-- 0 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light"> <!-- 50 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+
+        <entity class="light"> <!-- 0 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light"> <!-- 50 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        
+        <entity class="light"> <!-- 0 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
         <entity class="light">
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
-			<component type="transform" position="rand(60),rand(10:50),rand(40)" rotation="0,0,0,1" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light"> <!-- 50 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+
+        <entity class="light"> <!-- 0 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
         <entity class="light">
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
@@ -44,6 +1213,15 @@
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
         <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light"> <!-- 50 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        
+        <entity class="light"> <!-- 0 -->
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
@@ -217,7 +1395,7 @@
 		</entity>
         <entity class="light">
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
-			<component type="transform" position="rand(60),rand(10:50),rand(40)" rotation="0,0,0,1" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
         <entity class="light">
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
@@ -236,6 +1414,15 @@
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
         <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light"> <!-- 50 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+
+        <entity class="light"> <!-- 0 -->
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
@@ -417,7 +1604,7 @@
 		</entity>
         <entity class="light">
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
-			<component type="transform" position="rand(60),rand(10:50),rand(40)" rotation="0,0,0,1" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
         <entity class="light">
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
@@ -428,9 +1615,18 @@
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
         <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light"> <!-- 50 -->
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
+        
+        <entity class="light"> <!-- 0 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
         <entity class="light">
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
@@ -617,12 +1813,21 @@
 		</entity>
         <entity class="light">
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
-			<component type="transform" position="rand(60),rand(10:50),rand(40)" rotation="0,0,0,1" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
         <entity class="light">
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
+        <entity class="light"> <!-- 50 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+
+        <entity class="light"> <!-- 0 -->
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
         <entity class="light">
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
@@ -812,6 +2017,10 @@
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
         <entity class="light">
+			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
+			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity class="light"> <!-- 50 -->
 			<component type="light" color="rand(0.5:1),rand(0.5:1),rand(0.5:1)" range="rand(25:50)" />
 			<component type="transform" position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
 		</entity>
