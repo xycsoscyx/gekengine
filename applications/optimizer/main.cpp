@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <map>
 
+#include <assimp/config.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -157,7 +158,7 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
 
                     float2 nTexCoord;
                     nTexCoord.x = pMesh->mTextureCoords[0][nVertex].x;
-                    nTexCoord.y = 1.0f - pMesh->mTextureCoords[0][nVertex].y;
+                    nTexCoord.y = pMesh->mTextureCoords[0][nVertex].y;
                     kModel.m_aTexCoords.push_back(nTexCoord);
 
                     float4x4 nTexBasis;
@@ -212,8 +213,9 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
     CStringW strInput = astrArguments[1];
     try
     {
-        MessageBox(NULL, L"", L"", MB_OK);
-        const aiScene *pScene = aiImportFile(CW2A(strInput, CP_UTF8), aiProcessPreset_TargetRealtime_Quality | aiProcess_TransformUVCoords);
+        aiPropertyStore *pPropertyStore = aiCreatePropertyStore();
+        aiSetImportPropertyInteger(pPropertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
+        const aiScene *pScene = aiImportFileExWithProperties(CW2A(strInput, CP_UTF8), aiProcess_RemoveComponent, nullptr, pPropertyStore);
         if (pScene == nullptr)
         {
             throw CMyException(__LINE__, L"Unable to Load Input: %s", strInput.GetString());
@@ -223,6 +225,11 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         {
             throw CMyException(__LINE__, L"No meshes found in scene: %s", strInput.GetString());
         }
+
+        aiApplyPostProcessing(pScene, aiProcess_FindInvalidData | aiProcess_Triangulate | aiProcess_RemoveRedundantMaterials | aiProcess_FlipUVs | aiProcess_TransformUVCoords);
+        aiApplyPostProcessing(pScene, aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
+        aiApplyPostProcessing(pScene, aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality);
+        aiReleasePropertyStore(pPropertyStore);
 
         aabb nAABB;
         std::multimap<CStringA, MODEL> aScene;

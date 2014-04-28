@@ -114,8 +114,8 @@
             float2 nLighting = GetBRDF(nPixelNormal, nLightNormal, nViewNormal, nPixelInfo);
             nLighting.x *= nAttenuation;
 
-            kOutput.diffuse.xyz += saturate(gs_aLights[nLight].m_nColor * nLighting.x);
-            kOutput.specular.xyz += saturate(gs_aLights[nLight].m_nColor * nLighting.y);
+            kOutput.diffuse.xyz += (gs_aLights[nLight].m_nColor * nLighting.x);
+            kOutput.specular.xyz += (gs_aLights[nLight].m_nColor * nLighting.y);
         }
 
         kOutput.diffuse.xyz = saturate(kOutput.diffuse.xyz);
