@@ -12,20 +12,22 @@
 
     OUTPUT MainPixelProgram(INPUT kInput)
     {
-        float4 nViewPosition = mul(gs_nViewMatrix, kInput.worldposition);
-
         float4 nAlbedo = gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord);
-        clip(nAlbedo.a < 0.1 ? -1 : 1);
+        if(nAlbedo.a < 0.5)
+        {
+            discard;
+        }
 
         float3 nNormal;
         nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xy * 2.0) - 1.0f);
         nNormal.z = sqrt(1.0 - dot(nNormal.xy, nNormal.xy));
         nNormal = mul(nNormal, kInput.texbasis);
         nNormal = mul((float3x3)gs_nViewMatrix, nNormal);
-        //nNormal = normalize(nNormal);
 
         float4 nInfo = gs_pInfoMap.Sample(gs_pLinearSampler, kInput.texcoord);
         nInfo *= kInput.params;
+
+        float4 nViewPosition = mul(gs_nViewMatrix, kInput.worldposition);
 
         OUTPUT kOutput;
         kOutput.albedo    = nAlbedo;

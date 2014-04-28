@@ -1122,7 +1122,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         LoadTexture(strInfo, &spInfoMap);
                         if (!spInfoMap)
                         {
-                            LoadTexture(L"*color:0.5,0,0,0", &spInfoMap);
+                                LoadTexture(L"*color:0.15,0.09,0,0", &spInfoMap);
                         }
 
                         CComPtr<IGEKMaterial> spMaterial;
@@ -1168,7 +1168,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                 LoadTexture(L"*color:0.5,0.5,1,1", &spNormalMap);
 
                 CComPtr<IUnknown> spInfoMap;
-                LoadTexture(L"*color:0.5,0,0,0", &spInfoMap);
+                LoadTexture(L"*color:0.15,0.09,0,0", &spInfoMap);
 
                 CComPtr<IGEKMaterial> spMaterial;
                 hRetVal = GetContext()->CreateInstance(CLSID_GEKMaterial, IID_PPV_ARGS(&spMaterial));
