@@ -29,8 +29,8 @@
         const float gs_nPI = 3.14159265358979323846;
         const float gs_nReciprocalPI = (1.0f / gs_nPI);
 
-        float nRoughness = 0.15;//nInfo.x;
-        float nSpecular = 0.09;//nInfo.y;
+        float nRoughness = nInfo.x;
+        float nSpecular = nInfo.y;
         float nRetroflective = 0;
 
         float nMetalness = saturate(nSpecular * 2 - 1);
@@ -111,7 +111,7 @@
             float nAttenuation = (1.0f - saturate(nDistance / gs_aLights[nLight].m_nRange));
 
             float2 nLighting = GetBRDF(nPixelNormal, nLightNormal, nViewNormal, nPixelInfo);
-            nLighting.x *= nAttenuation;
+            nLighting *= nAttenuation;
 
             kOutput.diffuse.xyz += saturate(gs_aLights[nLight].m_nColor * nLighting.x);
             kOutput.specular.xyz += saturate(gs_aLights[nLight].m_nColor * nLighting.y);
