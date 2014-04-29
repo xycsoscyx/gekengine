@@ -4,6 +4,7 @@
 #include "GEKSystem.h"
 #include "IGEKRenderManager.h"
 #include "IGEKRenderFilter.h"
+#include "CGEKProperties.h"
 #include <list>
 
 DECLARE_INTERFACE(IGEKVideoTexture);
@@ -18,6 +19,8 @@ class CGEKRenderFilter : public CGEKUnknown
                        , public IGEKVideoObserver
                        , public CGEKRenderManagerUser
                        , public IGEKRenderFilter
+                       , public CGEKRenderStates
+                       , public CGEKBlendStates
 {
 public:
     enum MODES
@@ -54,11 +57,8 @@ private:
     UINT32 m_nVertexAttributes;
 
     MODES m_eMode;
-    CComPtr<IGEKVideoRenderStates> m_spRenderStates;
     CComPtr<IGEKVideoDepthStates> m_spDepthStates;
-    CComPtr<IGEKVideoBlendStates> m_spBlendStates;
     CComPtr<IGEKVideoProgram> m_spPixelProgram;
-    float m_nBlendFactor;
 
     bool m_bClearDepth;
     bool m_bClearStencil;
@@ -86,17 +86,19 @@ public:
     DECLARE_UNKNOWN(CGEKRenderFilter);
 
     // IGEKUnknown
-    STDMETHOD(Initialize)                   (THIS);
-    STDMETHOD_(void, Destroy)               (THIS);
+    STDMETHOD(Initialize)                                   (THIS);
+    STDMETHOD_(void, Destroy)                               (THIS);
 
     // IGEKVideoObserver
-    STDMETHOD_(void, OnPreReset)            (THIS);
-    STDMETHOD(OnPostReset)                  (THIS);
+    STDMETHOD_(void, OnPreReset)                            (THIS);
+    STDMETHOD(OnPostReset)                                  (THIS);
 
     // IGEKRenderFilter
-    STDMETHOD(Load)                         (THIS_ LPCWSTR pFileName);
-    STDMETHOD_(UINT32, GetVertexAttributes) (THIS);
-    STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
-    STDMETHOD(GetDepthBuffer)               (THIS_ IUnknown **ppBuffer);
-    STDMETHOD_(void, Draw)                  (THIS);
+    STDMETHOD(Load)                                         (THIS_ LPCWSTR pFileName);
+    STDMETHOD_(UINT32, GetVertexAttributes)                 (THIS);
+    STDMETHOD(GetBuffer)                                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
+    STDMETHOD(GetDepthBuffer)                               (THIS_ IUnknown **ppBuffer);
+    STDMETHOD_(IGEKVideoRenderStates *, GetRenderStates)    (THIS);
+    STDMETHOD_(IGEKVideoBlendStates *, GetBlendStates)      (THIS);
+    STDMETHOD_(void, Draw)                                  (THIS);
 };

@@ -1,12 +1,63 @@
 ﻿#include "CGEKRenderManager.h"
 #include "IGEKRenderFilter.h"
-#include "IGEKMaterial.h"
+#include "CGEKProperties.h"
 #include <windowsx.h>
 #include <algorithm>
 #include <atlpath.h>
 
 #include "GEKEngineCLSIDs.h"
 #include "GEKSystemCLSIDs.h"
+
+DECLARE_INTERFACE_IID_(IGEKMaterial, IUnknown, "819CA201-F652-4183-B29D-BB71BB15810E")
+{
+    STDMETHOD_(LPCWSTR, GetPass)            (THIS) PURE;
+    STDMETHOD_(void, Enable)                (THIS_ CGEKRenderManager *pManager, IGEKVideoSystem *pSystem) PURE;
+};
+
+class CGEKMaterial : public CGEKUnknown
+                   , public IGEKMaterial
+                   , public CGEKRenderStates
+                   , public CGEKBlendStates
+{
+private:
+    CStringW m_strPass;
+    CComPtr<IUnknown> m_spAlbedoMap;
+    CComPtr<IUnknown> m_spNormalMap;
+    CComPtr<IUnknown> m_spInfoMap;
+
+public:
+    DECLARE_UNKNOWN(CGEKMaterial);
+    CGEKMaterial(LPCWSTR pPass, IUnknown *pAlbedoMap, IUnknown *pNormalMap, IUnknown *pInfoMap)
+        : m_strPass(pPass)
+        , m_spAlbedoMap(pAlbedoMap)
+        , m_spNormalMap(pNormalMap)
+        , m_spInfoMap(pInfoMap)
+    {
+    }
+
+    ~CGEKMaterial(void)
+    {
+    }
+
+    // IGEKMaterial
+    STDMETHODIMP_(LPCWSTR) GetPass(void)
+    {
+        return m_strPass.GetString();
+    }
+
+    STDMETHODIMP_(void) Enable(CGEKRenderManager *pManager, IGEKVideoSystem *pSystem)
+    {
+        pManager->SetTexture(0, m_spAlbedoMap);
+        pManager->SetTexture(1, m_spNormalMap);
+        pManager->SetTexture(2, m_spInfoMap);
+        CGEKRenderStates::Enable(pSystem);
+        CGEKBlendStates::Enable(pSystem);
+    }
+};
+
+BEGIN_INTERFACE_LIST(CGEKMaterial)
+    INTERFACE_LIST_ENTRY_COM(IGEKMaterial)
+END_INTERFACE_LIST_UNKNOWN
 
 DECLARE_INTERFACE_IID_(IGEKProgram, IUnknown, "0387E446-E858-4F3C-9E19-1F0E36D914E3")
 {
@@ -1122,24 +1173,15 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         LoadTexture(strInfo, &spInfoMap);
                         if (!spInfoMap)
                         {
-                                LoadTexture(L"*color:0.15,0.09,0,0", &spInfoMap);
+                            LoadTexture(L"*color:0.15,0.09,0,0", &spInfoMap);
                         }
 
-                        CComPtr<IGEKMaterial> spMaterial;
-                        hRetVal = GetContext()->CreateInstance(CLSID_GEKMaterial, IID_PPV_ARGS(&spMaterial));
+                        CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
                         if (spMaterial != nullptr)
                         {
-                            if (kMaterial.HasAttribute(L"params"))
-                            {
-                                spMaterial->SetParams(StrToFloat4(kMaterial.GetAttribute(L"params")));
-                            }
-
-                            spMaterial->SetPass(strPass);
-                            spMaterial->SetAlbedoMap(spAlbedoMap);
-                            spMaterial->SetNormalMap(spNormalMap);
-                            spMaterial->SetInfoMap(spInfoMap);
-
-                            m_aMaterials[pName] = spMaterial;
+                            spMaterial->CGEKRenderStates::Load(GetVideoSystem(), kMaterial.FirstChildElement(L"render"));
+                            spMaterial->CGEKBlendStates::Load(GetVideoSystem(), kMaterial.FirstChildElement(L"blend"));
+                            spMaterial->QueryInterface(IID_PPV_ARGS(&m_aMaterials[pName]));
                             hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
                         }
                     }
@@ -1170,16 +1212,13 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                 CComPtr<IUnknown> spInfoMap;
                 LoadTexture(L"*color:0.15,0.09,0,0", &spInfoMap);
 
-                CComPtr<IGEKMaterial> spMaterial;
-                hRetVal = GetContext()->CreateInstance(CLSID_GEKMaterial, IID_PPV_ARGS(&spMaterial));
+                CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(L"Opaque", spAlbedoMap, spNormalMap, spInfoMap));
                 if (spMaterial != nullptr)
                 {
-                    spMaterial->SetPass(L"Opaque");
-                    spMaterial->SetAlbedoMap(spAlbedoMap);
-                    spMaterial->SetNormalMap(spNormalMap);
-                    spMaterial->SetInfoMap(spInfoMap);
-
-                    m_aMaterials[L"*default"] = spMaterial;
+                    CLibXMLNode kBlank(nullptr);
+                    spMaterial->CGEKRenderStates::Load(GetVideoSystem(), kBlank);
+                    spMaterial->CGEKBlendStates::Load(GetVideoSystem(), kBlank);
+                    spMaterial->QueryInterface(IID_PPV_ARGS(&m_aMaterials[L"*default"]));
                     hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
                 }
             }
@@ -1223,9 +1262,7 @@ STDMETHODIMP_(bool) CGEKRenderManager::EnableMaterial(IUnknown *pMaterial)
             if (pIterator != m_aPasses.end() && m_pCurrentPass == &(*pIterator).second)
             {
                 bReturn = true;
-                SetTexture(0, spMaterial->GetAlbedoMap());
-                SetTexture(1, spMaterial->GetNormalMap());
-                SetTexture(2, spMaterial->GetInfoMap());
+                spMaterial->Enable(this, GetVideoSystem());
             }
         }
     }

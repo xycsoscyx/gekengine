@@ -13,15 +13,11 @@
     OUTPUT MainPixelProgram(INPUT kInput)
     {
         float4 nAlbedo = gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord);
-        if(nAlbedo.a < 0.5)
-        {
-            discard;
-        }
 
         float3 nNormal;
         nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xy * 2.0) - 1.0f);
         nNormal.z = sqrt(1.0 - dot(nNormal.xy, nNormal.xy));
-        nNormal = mul(nNormal, kInput.texbasis);
+        nNormal = (mul(nNormal, kInput.texbasis) * (kInput.frontface ? 1 : -1));
         nNormal = mul((float3x3)gs_nViewMatrix, nNormal);
 
         float4 nInfo = gs_pInfoMap.Sample(gs_pLinearSampler, kInput.texcoord);

@@ -15,21 +15,6 @@ GEKVIDEO::DATA::FORMAT GetTargetFormat(LPCWSTR pValue)
     else return GEKVIDEO::DATA::UNKNOWN;
 }
 
-GEKVIDEO::FILL::MODE GetFillMode(LPCWSTR pValue)
-{
-    if (_wcsicmp(pValue, L"solid") == 0) return GEKVIDEO::FILL::SOLID;
-    else if (_wcsicmp(pValue, L"wire") == 0) return GEKVIDEO::FILL::WIREFRAME;
-    else return GEKVIDEO::FILL::SOLID;
-}
-
-GEKVIDEO::CULL::MODE GetCullMode(LPCWSTR pValue)
-{
-    if (_wcsicmp(pValue, L"none") == 0) return GEKVIDEO::CULL::NONE;
-    else if (_wcsicmp(pValue, L"front") == 0) return GEKVIDEO::CULL::FRONT;
-    else if (_wcsicmp(pValue, L"back") == 0) return GEKVIDEO::CULL::BACK;
-    else return GEKVIDEO::CULL::NONE;
-}
-
 GEKVIDEO::DEPTHWRITE::MASK GetDepthWriteMask(LPCWSTR pValue)
 {
     if (_wcsicmp(pValue, L"zero") == 0) return GEKVIDEO::DEPTHWRITE::ZERO;
@@ -48,38 +33,6 @@ GEKVIDEO::COMPARISON::FUNCTION GetComparisonFunction(LPCWSTR pValue)
     else if (_wcsicmp(pValue, L"greater") == 0) return GEKVIDEO::COMPARISON::GREATER;
     else if (_wcsicmp(pValue, L"greaterequal") == 0) return GEKVIDEO::COMPARISON::GREATER_EQUAL;
     else return GEKVIDEO::COMPARISON::ALWAYS;
-}
-
-GEKVIDEO::BLEND::FACTOR::SOURCE GetBlendFactor(LPCWSTR pValue)
-{
-    if (_wcsicmp(pValue, L"zero") == 0) return GEKVIDEO::BLEND::FACTOR::ZERO;
-    else if (_wcsicmp(pValue, L"one") == 0) return GEKVIDEO::BLEND::FACTOR::ONE;
-    else if (_wcsicmp(pValue, L"blend_factor") == 0) return GEKVIDEO::BLEND::FACTOR::BLENDFACTOR;
-    else if (_wcsicmp(pValue, L"inverse_blend_factor") == 0) return GEKVIDEO::BLEND::FACTOR::INVERSE_BLENDFACTOR;
-    else if (_wcsicmp(pValue, L"source_color") == 0) return GEKVIDEO::BLEND::FACTOR::SOURCE_COLOR;
-    else if (_wcsicmp(pValue, L"inverse_source_color") == 0) return GEKVIDEO::BLEND::FACTOR::INVERSE_SOURCE_COLOR;
-    else if (_wcsicmp(pValue, L"source_alpha") == 0) return GEKVIDEO::BLEND::FACTOR::SOURCE_ALPHA;
-    else if (_wcsicmp(pValue, L"inverse_source_alpha") == 0) return GEKVIDEO::BLEND::FACTOR::INVERSE_SOURCE_ALPHA;
-    else if (_wcsicmp(pValue, L"source_alpha_saturate") == 0) return GEKVIDEO::BLEND::FACTOR::SOURCE_ALPHA_SATURATE;
-    else if (_wcsicmp(pValue, L"destination_color") == 0) return GEKVIDEO::BLEND::FACTOR::DESTINATION_COLOR;
-    else if (_wcsicmp(pValue, L"inverse_destination_color") == 0) return GEKVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_COLOR;
-    else if (_wcsicmp(pValue, L"destination_alpha") == 0) return GEKVIDEO::BLEND::FACTOR::DESTINATION_ALPHA;
-    else if (_wcsicmp(pValue, L"inverse_destination_alpha") == 0) return GEKVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_ALPHA;
-    else if (_wcsicmp(pValue, L"secondary_source_color") == 0) return GEKVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_COLOR;
-    else if (_wcsicmp(pValue, L"inverse_secondary_source_color") == 0) return GEKVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_COLOR;
-    else if (_wcsicmp(pValue, L"secondary_source_alpha") == 0) return GEKVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_ALPHA;
-    else if (_wcsicmp(pValue, L"inverse_secondary_source_alpha") == 0) return GEKVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_ALPHA;
-    else return GEKVIDEO::BLEND::FACTOR::ZERO;
-}
-
-GEKVIDEO::BLEND::OPERATION GetBlendOperation(LPCWSTR pValue)
-{
-    if (_wcsicmp(pValue, L"add") == 0) return GEKVIDEO::BLEND::ADD;
-    else if (_wcsicmp(pValue, L"subtract") == 0) return GEKVIDEO::BLEND::SUBTRACT;
-    else if (_wcsicmp(pValue, L"reverse_subtract") == 0) return GEKVIDEO::BLEND::REVERSE_SUBTRACT;
-    else if (_wcsicmp(pValue, L"minimum") == 0) return GEKVIDEO::BLEND::MINIMUM;
-    else if (_wcsicmp(pValue, L"maximum") == 0) return GEKVIDEO::BLEND::MAXIMUM;
-    else return GEKVIDEO::BLEND::ADD;
 }
 
 GEKVIDEO::STENCIL::OPERATION GetStencilOperation(LPCWSTR pValue)
@@ -133,7 +86,6 @@ CGEKRenderFilter::CGEKRenderFilter(void)
     , m_eDepthFormat(GEKVIDEO::DATA::UNKNOWN)
     , m_nVertexAttributes(0xFFFFFFFF)
     , m_eMode(STANDARD)
-    , m_nBlendFactor(1.0f)
     , m_bClearDepth(false)
     , m_bClearStencil(false)
     , m_nClearDepth(0.0f)
@@ -406,117 +358,12 @@ HRESULT CGEKRenderFilter::LoadTextures(CLibXMLNode &kFilter)
 
 HRESULT CGEKRenderFilter::LoadRenderStates(CLibXMLNode &kFilter)
 {
-    HRESULT hRetVal = S_OK;
-    GEKVIDEO::RENDERSTATES kRenderStates;
-    CLibXMLNode kStates = kFilter.FirstChildElement(L"render");
-    if (kStates)
-    {
-        if (kStates.HasAttribute(L"fillmode"))
-        {
-            kRenderStates.m_eFillMode = GetFillMode(kStates.GetAttribute(L"fillmode"));
-        }
-
-        if (kStates.HasAttribute(L"cullmode"))
-        {
-            kRenderStates.m_eCullMode = GetCullMode(kStates.GetAttribute(L"cullmode"));
-        }
-
-        if (kStates.HasAttribute(L"frontcounterclockwize"))
-        {
-            kRenderStates.m_bFrontCounterClockwise = StrToBoolean(kStates.GetAttribute(L"frontcounterclockwize"));
-        }
-
-        if (kStates.HasAttribute(L"depthbias"))
-        {
-            kRenderStates.m_nDepthBias = StrToUINT32(kStates.GetAttribute(L"depthbias"));
-        }
-
-        if (kStates.HasAttribute(L"depthbiasclamp"))
-        {
-            kRenderStates.m_nDepthBiasClamp = StrToFloat(kStates.GetAttribute(L"depthbiasclamp"));
-        }
-
-        if (kStates.HasAttribute(L"slopescaleddepthbias"))
-        {
-            kRenderStates.m_nSlopeScaledDepthBias = StrToFloat(kStates.GetAttribute(L"slopescaleddepthbias"));
-        }
-
-        if (kStates.HasAttribute(L"depthclip"))
-        {
-            kRenderStates.m_bDepthClipEnable = StrToBoolean(kStates.GetAttribute(L"depthclip"));
-        }
-
-        if (kStates.HasAttribute(L"multisample"))
-        {
-            kRenderStates.m_bMultisampleEnable = StrToBoolean(kStates.GetAttribute(L"multisample"));
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetVideoSystem()->CreateRenderStates(kRenderStates, &m_spRenderStates);
-    }
-
-    return hRetVal;
+    return CGEKRenderStates::Load(GetVideoSystem(), kFilter.FirstChildElement(L"render"));
 }
 
 HRESULT CGEKRenderFilter::LoadBlendStates(CLibXMLNode &kFilter)
 {
-    HRESULT hRetVal = S_OK;
-    GEKVIDEO::UNIFIEDBLENDSTATES kBlendStates;
-    CLibXMLNode kBlend = kFilter.FirstChildElement(L"blend");
-    if (kBlend)
-    {
-        if (kBlend.HasAttribute(L"factor"))
-        {
-            m_nBlendFactor = StrToFloat(kBlend.GetAttribute(L"factor"));
-        }
-
-        if (kBlend.HasAttribute(L"writemask"))
-        {
-            kBlendStates.m_bEnable = true;
-            CStringW strMask(kBlend.GetAttribute(L"writemask"));
-            strMask.MakeLower();
-
-            kBlendStates.m_nWriteMask = 0;
-            if (strMask.Find(L"r") >= 0) kBlendStates.m_nWriteMask |= GEKVIDEO::COLOR::R;
-            if (strMask.Find(L"g") >= 0) kBlendStates.m_nWriteMask |= GEKVIDEO::COLOR::G;
-            if (strMask.Find(L"b") >= 0) kBlendStates.m_nWriteMask |= GEKVIDEO::COLOR::B;
-            if (strMask.Find(L"a") >= 0) kBlendStates.m_nWriteMask |= GEKVIDEO::COLOR::A;
-        }
-        else
-        {
-            kBlendStates.m_nWriteMask = GEKVIDEO::COLOR::RGBA;
-        }
-
-        CLibXMLNode kColor = kBlend.FirstChildElement(L"color");
-        CLibXMLNode kAlpha = kBlend.FirstChildElement(L"alpha");
-        if (kColor && kAlpha)
-        {
-            if (kColor.HasAttribute(L"source") && kColor.HasAttribute(L"destination") && kColor.HasAttribute(L"operation") &&
-                kAlpha.HasAttribute(L"source") && kAlpha.HasAttribute(L"destination") && kAlpha.HasAttribute(L"operation"))
-            {
-                kBlendStates.m_bEnable = true;
-                kBlendStates.m_eColorSource = GetBlendFactor(kColor.GetAttribute(L"source"));
-                kBlendStates.m_eColorDestination = GetBlendFactor(kColor.GetAttribute(L"destination"));
-                kBlendStates.m_eColorOperation = GetBlendOperation(kColor.GetAttribute(L"operation"));
-                kBlendStates.m_eAlphaSource = GetBlendFactor(kAlpha.GetAttribute(L"source"));
-                kBlendStates.m_eAlphaDestination = GetBlendFactor(kAlpha.GetAttribute(L"destination"));
-                kBlendStates.m_eAlphaOperation = GetBlendOperation(kAlpha.GetAttribute(L"operation"));
-            }
-            else
-            {
-                hRetVal = E_INVALIDARG;
-            }
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetVideoSystem()->CreateBlendStates(kBlendStates, &m_spBlendStates);
-    }
-
-    return hRetVal;
+    return CGEKBlendStates::Load(GetVideoSystem(), kFilter.FirstChildElement(L"blend"));
 }
 
 HRESULT CGEKRenderFilter::LoadProgram(CLibXMLNode &kFilter)
@@ -674,6 +521,16 @@ STDMETHODIMP CGEKRenderFilter::GetDepthBuffer(IUnknown **ppBuffer)
     return hRetVal;
 }
 
+STDMETHODIMP_(IGEKVideoRenderStates *) CGEKRenderFilter::GetRenderStates(void)
+{
+    return m_spRenderStates;
+}
+
+STDMETHODIMP_(IGEKVideoBlendStates *) CGEKRenderFilter::GetBlendStates(void)
+{
+    return m_spBlendStates;
+}
+
 STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
 {
     CComPtr<IUnknown> spDepthBuffer;
@@ -763,8 +620,8 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         nStage++;
     }
     
-    GetVideoSystem()->GetDefaultContext()->SetRenderStates(m_spRenderStates);
-    GetVideoSystem()->GetDefaultContext()->SetBlendStates(m_nBlendFactor, 0xFFFFFFFF, m_spBlendStates);
+    CGEKRenderStates::Enable(GetVideoSystem());
+    CGEKBlendStates::Enable(GetVideoSystem());
     GetVideoSystem()->GetDefaultContext()->SetDepthStates(m_nStencilReference, m_spDepthStates);
     GetVideoSystem()->GetDefaultContext()->SetPixelProgram(m_spPixelProgram);
     if (m_eMode == FORWARD)

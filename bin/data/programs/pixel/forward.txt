@@ -24,6 +24,7 @@ struct INPUT
     float4   worldposition              : TEXCOORD1;
     float3x3 texbasis                   : TEXCOORD2;
     float4   params                     : COLOR0;
+    bool     frontface                  : SV_ISFRONTFACE;
 };
 
 _INSERT_PIXEL_PROGRAM

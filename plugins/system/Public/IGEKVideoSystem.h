@@ -202,7 +202,7 @@ namespace GEKVIDEO
 
         RENDERSTATES(void)
             : m_eFillMode(FILL::SOLID)
-            , m_eCullMode(CULL::NONE)
+            , m_eCullMode(CULL::BACK)
             , m_bFrontCounterClockwise(false)
             , m_nDepthBias(0)
             , m_nDepthBiasClamp(0.0f)
