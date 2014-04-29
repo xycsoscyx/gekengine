@@ -80,8 +80,8 @@ public:
         concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> m_aModels;
         concurrency::concurrent_vector<LIGHT> m_aLights;
 
-        std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aModelMap;
-        std::vector<LIGHT> m_aLightVector;
+        std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aCulledModels;
+        std::vector<LIGHT> m_aCulledLights;
     };
 
 private:
