@@ -65,5 +65,5 @@ public:
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnPreUpdate)       (THIS_ float nGameTime, float nFrameTime);
-    STDMETHOD_(void, OnRender)          (THIS);
+    STDMETHOD_(void, OnRender)          (THIS_ const frustum &kFrustum);
 };

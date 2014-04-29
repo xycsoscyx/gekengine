@@ -636,7 +636,7 @@ STDMETHODIMP_(void) CGEKComponentSystemScript::OnPreUpdate(float nGameTime, floa
     }
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemScript::OnRender(void)
+STDMETHODIMP_(void) CGEKComponentSystemScript::OnRender(const frustum &kFrustum)
 {
     for (auto &kPair : m_aComponents)
     {

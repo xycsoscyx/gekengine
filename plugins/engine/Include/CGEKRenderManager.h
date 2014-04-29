@@ -132,52 +132,53 @@ public:
     DECLARE_UNKNOWN(CGEKRenderManager);
 
     // IGEKContextObserver
-    STDMETHOD(OnRegistration)           (THIS_ IUnknown *pObject);
+    STDMETHOD(OnRegistration)               (THIS_ IUnknown *pObject);
 
     // IGEKSystemObserver
-    STDMETHOD_(void, OnEvent)           (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
+    STDMETHOD_(void, OnEvent)               (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
 
     // IGEKVideoObserver
-    STDMETHOD_(void, OnPreReset)        (THIS);
-    STDMETHOD(OnPostReset)              (THIS);
+    STDMETHOD_(void, OnPreReset)            (THIS);
+    STDMETHOD(OnPostReset)                  (THIS);
 
     // IGEKUnknown
-    STDMETHOD(Initialize)               (THIS);
-    STDMETHOD_(void, Destroy)           (THIS);
+    STDMETHOD(Initialize)                   (THIS);
+    STDMETHOD_(void, Destroy)               (THIS);
 
     // IGEKMaterialManager
-    STDMETHOD(LoadMaterial)             (THIS_ LPCWSTR pName, IUnknown **ppMaterial);
-    STDMETHOD(PrepareMaterial)          (THIS_ IUnknown *pMaterial);
-    STDMETHOD_(bool, EnableMaterial)    (THIS_ IUnknown *pMaterial);
+    STDMETHOD(LoadMaterial)                 (THIS_ LPCWSTR pName, IUnknown **ppMaterial);
+    STDMETHOD(PrepareMaterial)              (THIS_ IUnknown *pMaterial);
+    STDMETHOD_(bool, EnableMaterial)        (THIS_ IUnknown *pMaterial);
 
     // IGEKProgramManager
-    STDMETHOD(LoadProgram)              (THIS_ LPCWSTR pName, IUnknown **ppProgram);
-    STDMETHOD_(void, EnableProgram)     (THIS_ IUnknown *pProgram);
+    STDMETHOD(LoadProgram)                  (THIS_ LPCWSTR pName, IUnknown **ppProgram);
+    STDMETHOD_(void, EnableProgram)         (THIS_ IUnknown *pProgram);
 
     // IGEKModelManager
-    STDMETHOD(LoadCollision)            (THIS_ LPCWSTR pName, LPCWSTR pParams, IGEKCollision **ppCollision);
-    STDMETHOD(LoadModel)                (THIS_ LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel);
+    STDMETHOD(LoadCollision)                (THIS_ LPCWSTR pName, LPCWSTR pParams, IGEKCollision **ppCollision);
+    STDMETHOD(LoadModel)                    (THIS_ LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel);
 
     // IGEKViewManager
-    STDMETHOD(SetViewer)                (THIS_ IGEKEntity *pEntity);
-    STDMETHOD_(IGEKEntity *, GetViewer) (THIS);
-    STDMETHOD_(void, DrawLight)         (THIS_ IGEKEntity *pEntity, const GEKLIGHT &kLight);
-    STDMETHOD_(void, DrawModel)         (THIS_ IGEKEntity *pEntity, IUnknown *pModel, const float4 &nParams = float4(1.0f, 1.0f, 1.0f, 1.0f));
-    STDMETHOD(EnablePass)               (THIS_ LPCWSTR pName);
-    STDMETHOD_(void, CaptureMouse)      (THIS_ bool bCapture);
+    STDMETHOD(SetViewer)                    (THIS_ IGEKEntity *pEntity);
+    STDMETHOD_(IGEKEntity *, GetViewer)     (THIS);
+    STDMETHOD_(void, DrawLight)             (THIS_ IGEKEntity *pEntity, const GEKLIGHT &kLight);
+    STDMETHOD_(void, DrawModel)             (THIS_ IGEKEntity *pEntity, IUnknown *pModel, const float4 &nParams = float4(1.0f, 1.0f, 1.0f, 1.0f));
+    STDMETHOD(EnablePass)                   (THIS_ LPCWSTR pName);
+    STDMETHOD_(void, CaptureMouse)          (THIS_ bool bCapture);
 
     // IGEKRenderManager
-    STDMETHOD_(void, BeginLoad)         (THIS);
-    STDMETHOD_(void, EndLoad)           (THIS_ HRESULT hRetVal);
-    STDMETHOD_(void, Free)              (THIS);
-    STDMETHOD(LoadTexture)              (THIS_ LPCWSTR pName, IUnknown **ppTexture);
-    STDMETHOD_(void, SetTexture)        (THIS_ UINT32 nStage, IUnknown *pTexture);
-    STDMETHOD(GetBuffer)                (THIS_ LPCWSTR pName, IUnknown **ppTexture);
-    STDMETHOD(GetDepthBuffer)           (THIS_ LPCWSTR pSource, IUnknown **ppBuffer);
-    STDMETHOD_(void, DrawScene)         (THIS_ UINT32 nAttributes);
-    STDMETHOD_(void, DrawOverlay)       (THIS_ bool bPerLight);
-    STDMETHOD(BeginFrame)               (THIS);
-    STDMETHOD_(void, EndFrame)          (THIS);
+    STDMETHOD_(void, BeginLoad)             (THIS);
+    STDMETHOD_(void, EndLoad)               (THIS_ HRESULT hRetVal);
+    STDMETHOD_(void, Free)                  (THIS);
+    STDMETHOD(LoadTexture)                  (THIS_ LPCWSTR pName, IUnknown **ppTexture);
+    STDMETHOD_(void, SetTexture)            (THIS_ UINT32 nStage, IUnknown *pTexture);
+    STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
+    STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppBuffer);
+    STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes);
+    STDMETHOD_(void, DrawOverlay)           (THIS_ bool bPerLight);
+    STDMETHOD(BeginFrame)                   (THIS);
+    STDMETHOD_(const frustum &, GetFrustum) (THIS);
+    STDMETHOD_(void, EndFrame)              (THIS);
 
     // Awesomium::DataSource
     void OnRequest(int nRequestID, const Awesomium::ResourceRequest &kRequest, const Awesomium::WebString &kPath);

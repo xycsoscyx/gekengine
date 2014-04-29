@@ -236,7 +236,7 @@ STDMETHODIMP_(void) CGEKPopulationManager::Render(void)
 {
     if (m_bLevelLoaded)
     {
-        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnRender, std::placeholders::_1)));
+        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnRender, std::placeholders::_1, GetRenderManager()->GetFrustum())));
     }
 }
 

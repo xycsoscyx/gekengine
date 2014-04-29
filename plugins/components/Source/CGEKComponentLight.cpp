@@ -151,7 +151,7 @@ STDMETHODIMP CGEKComponentSystemLight::Destroy(IGEKEntity *pEntity)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemLight::OnRender(void)
+STDMETHODIMP_(void) CGEKComponentSystemLight::OnRender(const frustum &kFrustum)
 {
     concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLight>>::value_type &kPair) -> void
     {

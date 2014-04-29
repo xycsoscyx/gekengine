@@ -57,5 +57,5 @@ public:
     STDMETHOD(Create)                   (THIS_ const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
 
     // IGEKSceneObserver
-    STDMETHOD_(void, OnRender)          (THIS);
+    STDMETHOD_(void, OnRender)          (THIS_ const frustum &kFrustum);
 };

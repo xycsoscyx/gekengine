@@ -1621,24 +1621,33 @@ STDMETHODIMP CGEKRenderManager::BeginFrame(void)
     return hRetVal;
 }
 
+STDMETHODIMP_(const frustum &) CGEKRenderManager::GetFrustum(void)
+{
+    REQUIRE_RETURN(m_spUpdateFrame, frustum());
+    return m_spUpdateFrame->m_kFrustum;
+}
+
 STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
 {
     REQUIRE_VOID_RETURN(m_pWebCore);
+    REQUIRE_VOID_RETURN(m_spUpdateFrame);
 
-    if (m_spUpdateFrame)
+    m_spUpdateFrame->m_aCulledLights.assign(m_spUpdateFrame->m_aLights.begin(), m_spUpdateFrame->m_aLights.end());
+    for (auto &kLight : m_spUpdateFrame->m_aCulledLights)
     {
-        m_spUpdateFrame->m_aCulledLights.assign(m_spUpdateFrame->m_aLights.begin(), m_spUpdateFrame->m_aLights.end());
-        m_spUpdateFrame->m_aLights.clear();
-
-        for (auto &kPair : m_spUpdateFrame->m_aModels)
-        {
-            m_spUpdateFrame->m_aCulledModels[kPair.first].push_back(kPair.second);
-        }
-
-        m_spUpdateFrame->m_aModels.clear();
-        m_aFrames.push(m_spUpdateFrame);
-        m_spUpdateFrame = nullptr;
+        kLight.m_nPosition = (m_spUpdateFrame->m_kBuffer.m_nViewMatrix * kLight.m_nPosition);
     }
+
+    m_spUpdateFrame->m_aLights.clear();
+
+    for (auto &kPair : m_spUpdateFrame->m_aModels)
+    {
+        m_spUpdateFrame->m_aCulledModels[kPair.first].push_back(kPair.second);
+    }
+
+    m_spUpdateFrame->m_aModels.clear();
+    m_aFrames.push(m_spUpdateFrame);
+    m_spUpdateFrame = nullptr;
 }
 
 void CGEKRenderManager::OnRequest(int nRequestID, const Awesomium::ResourceRequest &kRequest, const Awesomium::WebString &kPath)
