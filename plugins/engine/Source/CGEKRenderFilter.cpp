@@ -260,10 +260,11 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilter)
             hRetVal = LoadDepthStates(kTargets, nXSize, nYSize);
         }
 
-        GEKVIDEO::DATA::FORMAT eFormat = GetTargetFormat(kTargets.GetAttribute(L"format"));
         CLibXMLNode kTarget = kTargets.FirstChildElement(L"target");
         while (kTarget)
         {
+            GEKVIDEO::DATA::FORMAT eFormat = GetTargetFormat(kTarget.GetAttribute(L"format"));
+
             TARGET kData;
             if (kTarget.HasAttribute(L"clear"))
             {

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <filter>
-    <targets format="RGBA_UINT8" scale="0.5">
-        <target name="Ambient" />
+    <targets scale="0.5">
+        <target name="Ambient" format="RGBA_UINT8" />
     </targets>
     <textures>
         <texture source="Deferred.Albedo" />

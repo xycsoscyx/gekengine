@@ -4,9 +4,9 @@
 ]>
 <filter>
     <render cullmode="back" />
-    <targets format="RGBA_FLOAT">
+    <targets>
         <target source="Opaque/Deferred.Albedo" />
-        <target name="World" />
+        <target name="World" format="RGBA_FLOAT" />
         <target source="Opaque/Deferred.Info" />
         <depth source="Opaque/PrePass" comparison="lessequal" writemask="none" />
     </targets>

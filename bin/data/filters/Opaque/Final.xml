@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <filter>
-    <targets format="RGBA_UINT8">
+    <targets>
         <target source="Screen" />
-        <target name="Buffer" />
+        <target name="Buffer" format="RGBA_UINT8" />
     </targets>
     <textures>
         <texture source="Opaque/Deferred.Albedo" />

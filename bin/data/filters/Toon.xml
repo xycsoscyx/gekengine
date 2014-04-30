@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <filter>
-    <targets format="RGBA_UINT8">
-        <target name="Edge" />
+    <targets>
+        <target name="Edge" format="RGBA_UINT8" />
     </targets>
     <textures>
         <texture source="Deferred.Albedo" />

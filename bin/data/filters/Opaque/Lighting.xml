@@ -3,9 +3,9 @@
     <!ENTITY LightingShader PUBLIC "%root%/data/filters/Shared/Lighting.xml" "">
 ]>
 <filter>
-    <targets format="RGBA_UINT8">
-        <target name="Diffuse" clear="0,0,0,0" />
-        <target name="Specular" clear="0,0,0,0" />
+    <targets>
+        <target name="Diffuse" format="RGBA_UINT8" clear="0,0,0,0" />
+        <target name="Specular" format="RGBA_UINT8" clear="0,0,0,0" />
     </targets>
     <textures>
         <texture source="Opaque/Deferred.World" />
