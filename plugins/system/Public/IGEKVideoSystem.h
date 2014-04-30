@@ -420,6 +420,7 @@ DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819
     STDMETHOD_(void, SetVertexConstantBuffer)           (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer) PURE;
     STDMETHOD_(void, SetGeometryConstantBuffer)         (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer) PURE;
     STDMETHOD_(void, SetPixelConstantBuffer)            (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer) PURE;
+    STDMETHOD_(void, SetComputeProgram)                 (THIS_ IGEKVideoProgram *pProgram) PURE;
     STDMETHOD_(void, SetVertexProgram)                  (THIS_ IGEKVideoProgram *pProgram) PURE;
     STDMETHOD_(void, SetGeometryProgram)                (THIS_ IGEKVideoProgram *pProgram) PURE;
     STDMETHOD_(void, SetPixelProgram)                   (THIS_ IGEKVideoProgram *pProgram) PURE;
@@ -455,9 +456,16 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget) PURE;
 
     STDMETHOD(CreateConstantBuffer)                     (THIS_ UINT32 nSize, IGEKVideoConstantBuffer **ppBuffer) PURE;
+    STDMETHOD(CreateVertexBuffer)                       (THIS_ UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer) PURE;
+    STDMETHOD(CreateVertexBuffer)                       (THIS_ const void *pData, UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer) PURE;
+    STDMETHOD(CreateIndexBuffer)                        (THIS_ GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer) PURE;
+    STDMETHOD(CreateIndexBuffer)                        (THIS_ const void *pData, GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer) PURE;
+
+    STDMETHOD(CompileComputeProgram)                    (THIS_ LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram) PURE;
     STDMETHOD(CompileVertexProgram)                     (THIS_ LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram) PURE;
     STDMETHOD(CompileGeometryProgram)                   (THIS_ LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram) PURE;
     STDMETHOD(CompilePixelProgram)                      (THIS_ LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram) PURE;
+    STDMETHOD(LoadComputeProgram)                       (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram) PURE;
     STDMETHOD(LoadVertexProgram)                        (THIS_ LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram) PURE;
     STDMETHOD(LoadGeometryProgram)                      (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram) PURE;
     STDMETHOD(LoadPixelProgram)                         (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram) PURE;
@@ -466,11 +474,6 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEKVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT &nDestRect) PURE;
     STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, IGEKVideoTexture **ppTexture) PURE;
     STDMETHOD(CreateSamplerStates)                      (THIS_ const GEKVIDEO::SAMPLERSTATES &kStates, IGEKVideoSamplerStates **ppStates) PURE;
-
-    STDMETHOD(CreateVertexBuffer)                       (THIS_ UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer) PURE;
-    STDMETHOD(CreateVertexBuffer)                       (THIS_ const void *pData, UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer) PURE;
-    STDMETHOD(CreateIndexBuffer)                        (THIS_ GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer) PURE;
-    STDMETHOD(CreateIndexBuffer)                        (THIS_ const void *pData, GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer) PURE;
 
     STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor) PURE;
     STDMETHOD_(void, ClearDefaultDepthStencilTarget)    (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;

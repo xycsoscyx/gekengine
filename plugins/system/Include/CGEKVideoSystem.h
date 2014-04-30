@@ -35,6 +35,7 @@ public:
     STDMETHOD_(void, SetVertexConstantBuffer)           (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer);
     STDMETHOD_(void, SetGeometryConstantBuffer)         (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer);
     STDMETHOD_(void, SetPixelConstantBuffer)            (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer);
+    STDMETHOD_(void, SetComputeProgram)                 (THIS_ IGEKVideoProgram *pProgram);
     STDMETHOD_(void, SetVertexProgram)                  (THIS_ IGEKVideoProgram *pProgram);
     STDMETHOD_(void, SetGeometryProgram)                (THIS_ IGEKVideoProgram *pProgram);
     STDMETHOD_(void, SetPixelProgram)                   (THIS_ IGEKVideoProgram *pProgram);
@@ -89,9 +90,15 @@ public:
     STDMETHOD(CreateRenderTarget)                       (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IGEKVideoTexture **ppTarget);
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget);
     STDMETHOD(CreateConstantBuffer)                     (THIS_ UINT32 nSize, IGEKVideoConstantBuffer **ppBuffer);
+    STDMETHOD(CreateVertexBuffer)                       (THIS_ UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer);
+    STDMETHOD(CreateVertexBuffer)                       (THIS_ const void *pData, UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer);
+    STDMETHOD(CreateIndexBuffer)                        (THIS_ GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer);
+    STDMETHOD(CreateIndexBuffer)                        (THIS_ const void *pData, GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer);
+    STDMETHOD(CompileComputeProgram)                    (THIS_ LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
     STDMETHOD(CompileVertexProgram)                     (THIS_ LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram);
     STDMETHOD(CompileGeometryProgram)                   (THIS_ LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
     STDMETHOD(CompilePixelProgram)                      (THIS_ LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
+    STDMETHOD(LoadComputeProgram)                       (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
     STDMETHOD(LoadVertexProgram)                        (THIS_ LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram);
     STDMETHOD(LoadGeometryProgram)                      (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
     STDMETHOD(LoadPixelProgram)                         (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram);
@@ -99,10 +106,6 @@ public:
     STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEKVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT &nDestRect);
     STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, IGEKVideoTexture **ppTexture);
     STDMETHOD(CreateSamplerStates)                      (THIS_ const GEKVIDEO::SAMPLERSTATES &kStates, IGEKVideoSamplerStates **ppStates);
-    STDMETHOD(CreateVertexBuffer)                       (THIS_ UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer);
-    STDMETHOD(CreateVertexBuffer)                       (THIS_ const void *pData, UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer);
-    STDMETHOD(CreateIndexBuffer)                        (THIS_ GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer);
-    STDMETHOD(CreateIndexBuffer)                        (THIS_ const void *pData, GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer);
     STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor);
     STDMETHOD_(void, ClearDefaultDepthStencilTarget)    (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil);
     STDMETHOD_(void, SetDefaultTargets)                 (THIS_ IGEKVideoContext *pContext = nullptr, IUnknown *pDepth = nullptr);
