@@ -530,8 +530,8 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
             0, 2, 3,
         };
 
-        hRetVal = GetVideoSystem()->CreateVertexBuffer(aVertices, (sizeof(float2) * 2), 4, &m_spVertexBuffer);
-        hRetVal = GetVideoSystem()->CreateIndexBuffer(aIndices, GEKVIDEO::DATA::UINT16, 6, &m_spIndexBuffer);
+        hRetVal = GetVideoSystem()->CreateVertexBuffer((sizeof(float2) * 2), 4, &m_spVertexBuffer, aVertices);
+        hRetVal = GetVideoSystem()->CreateIndexBuffer(GEKVIDEO::DATA::UINT16, 6, &m_spIndexBuffer, aIndices);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -778,13 +778,13 @@ HRESULT CGEKRenderManager::CreateThread(void)
                     }
 
                     m_spEngineBuffer->Update((void *)&m_spRenderFrame->m_kBuffer);
-                    GetVideoSystem()->GetDefaultContext()->SetVertexConstantBuffer(0, m_spEngineBuffer);
-                    GetVideoSystem()->GetDefaultContext()->SetGeometryConstantBuffer(0, m_spEngineBuffer);
-                    GetVideoSystem()->GetDefaultContext()->SetPixelConstantBuffer(0, m_spEngineBuffer);
-                    GetVideoSystem()->GetDefaultContext()->SetPixelConstantBuffer(1, m_spLightBuffer);
+                    GetVideoSystem()->GetImmediateContext()->SetVertexConstantBuffer(0, m_spEngineBuffer);
+                    GetVideoSystem()->GetImmediateContext()->SetGeometryConstantBuffer(0, m_spEngineBuffer);
+                    GetVideoSystem()->GetImmediateContext()->SetPixelConstantBuffer(0, m_spEngineBuffer);
+                    GetVideoSystem()->GetImmediateContext()->SetPixelConstantBuffer(1, m_spLightBuffer);
 
-                    GetVideoSystem()->GetDefaultContext()->SetSamplerStates(0, m_spPointSampler);
-                    GetVideoSystem()->GetDefaultContext()->SetSamplerStates(1, m_spLinearSampler);
+                    GetVideoSystem()->GetImmediateContext()->SetSamplerStates(0, m_spPointSampler);
+                    GetVideoSystem()->GetImmediateContext()->SetSamplerStates(1, m_spLinearSampler);
 
                     for (auto &kPair : m_spRenderFrame->m_aPasses)
                     {
@@ -813,7 +813,7 @@ HRESULT CGEKRenderManager::CreateThread(void)
                     });
 
                     m_pCurrentPass = nullptr;
-                    GetVideoSystem()->GetDefaultContext()->ClearResources();
+                    GetVideoSystem()->GetImmediateContext()->ClearResources();
                     GetVideoSystem()->Present(true);
                     m_bDrawing = false;
                 }
@@ -1014,7 +1014,7 @@ STDMETHODIMP_(void) CGEKRenderManager::SetTexture(UINT32 nStage, IUnknown *pText
 
     if (spTexture)
     {
-        GetVideoSystem()->GetDefaultContext()->SetTexture(nStage, spTexture);
+        GetVideoSystem()->GetImmediateContext()->SetTexture(nStage, spTexture);
     }
 }
 
@@ -1343,8 +1343,8 @@ STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
     CComQIPtr<IGEKProgram> spProgram(pProgram);
     if (spProgram != nullptr)
     {
-        GetVideoSystem()->GetDefaultContext()->SetVertexProgram(spProgram->GetVertexProgram());
-        GetVideoSystem()->GetDefaultContext()->SetGeometryProgram(spProgram->GetGeometryProgram());
+        GetVideoSystem()->GetImmediateContext()->SetVertexProgram(spProgram->GetVertexProgram());
+        GetVideoSystem()->GetImmediateContext()->SetGeometryProgram(spProgram->GetGeometryProgram());
     }
 }
 
@@ -1546,12 +1546,12 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
 {
     REQUIRE_VOID_RETURN(m_spRenderFrame);
 
-    GetVideoSystem()->GetDefaultContext()->SetVertexProgram(m_spVertexProgram);
-    GetVideoSystem()->GetDefaultContext()->SetGeometryProgram(nullptr);
-    GetVideoSystem()->GetDefaultContext()->SetVertexConstantBuffer(1, m_spOrthoBuffer);
-    GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
-    GetVideoSystem()->GetDefaultContext()->SetIndexBuffer(0, m_spIndexBuffer);
-    GetVideoSystem()->GetDefaultContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    GetVideoSystem()->GetImmediateContext()->SetVertexProgram(m_spVertexProgram);
+    GetVideoSystem()->GetImmediateContext()->SetGeometryProgram(nullptr);
+    GetVideoSystem()->GetImmediateContext()->SetVertexConstantBuffer(1, m_spOrthoBuffer);
+    GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
+    GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
+    GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     if (bPerLight)
     {
         LIGHTBUFFER kBuffer;
@@ -1562,12 +1562,12 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
             memcpy(&kBuffer.m_aLights[0], &m_spRenderFrame->m_aCulledLights[nPass], (sizeof(LIGHT) * kBuffer.m_nNumLights));
             m_spLightBuffer->Update(&kBuffer);
 
-            GetVideoSystem()->GetDefaultContext()->DrawIndexedPrimitive(6, 0, 0);
+            GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
         }
     }
     else
     {
-        GetVideoSystem()->GetDefaultContext()->DrawIndexedPrimitive(6, 0, 0);
+        GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
     }
 }
 

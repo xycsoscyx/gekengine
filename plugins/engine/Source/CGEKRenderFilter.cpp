@@ -559,7 +559,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
 
         if (nFlags > 0)
         {
-            GetVideoSystem()->GetDefaultContext()->ClearDepthStencilTarget(spDepthBuffer, nFlags, m_nClearDepth, m_nClearStencil);
+            GetVideoSystem()->GetImmediateContext()->ClearDepthStencilTarget(spDepthBuffer, nFlags, m_nClearDepth, m_nClearStencil);
         }
     }
 
@@ -587,14 +587,14 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             {
                 if (kTarget.m_bClear)
                 {
-                    GetVideoSystem()->GetDefaultContext()->ClearRenderTarget(spTarget, kTarget.m_nClearColor);
+                    GetVideoSystem()->GetImmediateContext()->ClearRenderTarget(spTarget, kTarget.m_nClearColor);
                 }
 
                 aTargets.push_back(spTarget);
             }
         }
 
-        GetVideoSystem()->GetDefaultContext()->SetRenderTargets(aTargets, (spDepthBuffer ? spDepthBuffer : nullptr));
+        GetVideoSystem()->GetImmediateContext()->SetRenderTargets(aTargets, (spDepthBuffer ? spDepthBuffer : nullptr));
     }
     else
     {
@@ -623,8 +623,8 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     
     CGEKRenderStates::Enable(GetVideoSystem());
     CGEKBlendStates::Enable(GetVideoSystem());
-    GetVideoSystem()->GetDefaultContext()->SetDepthStates(m_nStencilReference, m_spDepthStates);
-    GetVideoSystem()->GetDefaultContext()->SetPixelProgram(m_spPixelProgram);
+    GetVideoSystem()->GetImmediateContext()->SetDepthStates(m_nStencilReference, m_spDepthStates);
+    GetVideoSystem()->GetImmediateContext()->SetPixelProgram(m_spPixelProgram);
     if (m_eMode == FORWARD)
     {
         GetRenderManager()->DrawScene(0xFFFFFFFF);

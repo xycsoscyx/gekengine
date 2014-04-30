@@ -227,9 +227,9 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         }
 
         aiApplyPostProcessing(pScene, aiProcess_FindInvalidData | aiProcess_Triangulate | aiProcess_RemoveRedundantMaterials);
-        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, _DEGTORAD(22.5f));
+        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, _DEGTORAD(45.0f));
         aiApplyPostProcessing(pScene, aiProcess_GenSmoothNormals);
-        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, _DEGTORAD(22.5f));
+        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, _DEGTORAD(45.0f));
         aiApplyPostProcessing(pScene, aiProcess_CalcTangentSpace);
         aiApplyPostProcessing(pScene, aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices);
         aiReleasePropertyStore(pPropertyStore);
@@ -417,21 +417,6 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         else
         {
             printf("< No Occlusion Data Found\r\n");
-        }
-
-        if (pScene->HasLights())
-        {
-            for (UINT32 nLight = 0; nLight < pScene->mNumLights; nLight++)
-            {
-                const aiLight *pLight = pScene->mLights[nLight];
-                if (pLight->mType == aiLightSource_POINT)
-                {
-                }
-            }
-        }
-        else
-        {
-            printf("< No Light Data Found\r\n");
         }
 
         aiReleaseImport(pScene);

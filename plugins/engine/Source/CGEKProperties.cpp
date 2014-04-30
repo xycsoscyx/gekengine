@@ -101,7 +101,7 @@ HRESULT CGEKRenderStates::Load(IGEKVideoSystem *pSystem, CLibXMLNode &kStates)
 
 void CGEKRenderStates::Enable(IGEKVideoSystem *pSystem)
 {
-    pSystem->GetDefaultContext()->SetRenderStates(m_spRenderStates);
+    pSystem->GetImmediateContext()->SetRenderStates(m_spRenderStates);
 }
 
 CGEKBlendStates::~CGEKBlendStates(void)
@@ -187,5 +187,5 @@ HRESULT CGEKBlendStates::Load(IGEKVideoSystem *pSystem, CLibXMLNode &kBlend)
 
 void CGEKBlendStates::Enable(IGEKVideoSystem *pSystem)
 {
-    pSystem->GetDefaultContext()->SetBlendStates(m_nBlendFactor, 0xFFFFFFFF, m_spBlendStates);
+    pSystem->GetImmediateContext()->SetBlendStates(m_nBlendFactor, 0xFFFFFFFF, m_spBlendStates);
 }

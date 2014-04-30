@@ -175,11 +175,8 @@ public:
 
     void SendEvent(const CGEKEvent<void> &kEvent)
     {
-        for (auto &pIterator = m_aObservers.begin(); pIterator != m_aObservers.end();)
+        for (auto &pObserver : m_aObservers)
         {
-            IGEKObserver *pObserver = (*pIterator);
-            ++pIterator;
-
             kEvent(pObserver);
         }
     }
@@ -187,12 +184,13 @@ public:
     HRESULT CheckEvent(const CGEKEvent<HRESULT> &kEvent)
     {
         HRESULT hRetVal = S_OK;
-        for (auto &pIterator = m_aObservers.begin(); pIterator != m_aObservers.end() && SUCCEEDED(hRetVal);)
+        for (auto &pObserver : m_aObservers)
         {
-            IGEKObserver *pObserver = (*pIterator);
-            ++pIterator;
-
             hRetVal = kEvent(pObserver);
+            if (FAILED(hRetVal))
+            {
+                break;
+            }
         }
 
         return hRetVal;

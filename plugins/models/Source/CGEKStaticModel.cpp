@@ -75,19 +75,19 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, sizeof(float3), nNumVertices, &m_spPositionBuffer);
+            hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(float3), nNumVertices, &m_spPositionBuffer, pBuffer);
             pBuffer += (sizeof(float3) * nNumVertices);
         }
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, sizeof(float2), nNumVertices, &m_spTexCoordBuffer);
+            hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(float2), nNumVertices, &m_spTexCoordBuffer, pBuffer);
             pBuffer += (sizeof(float2) * nNumVertices);
         }
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateVertexBuffer(pBuffer, (sizeof(float3) * 3), nNumVertices, &m_spBasisBuffer);
+            hRetVal = GetVideoSystem()->CreateVertexBuffer((sizeof(float3)* 3), nNumVertices, &m_spBasisBuffer, pBuffer);
             pBuffer += (sizeof(float3) * 3 * nNumVertices);
         }
 
@@ -96,7 +96,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
             UINT32 nNumIndices = *((UINT32 *)pBuffer);
             pBuffer += sizeof(UINT32);
 
-            hRetVal = GetVideoSystem()->CreateIndexBuffer(pBuffer, GEKVIDEO::DATA::UINT16, nNumIndices, &m_spIndexBuffer);
+            hRetVal = GetVideoSystem()->CreateIndexBuffer(GEKVIDEO::DATA::UINT16, nNumIndices, &m_spIndexBuffer, pBuffer);
             pBuffer += (sizeof(UINT16) * nNumIndices);
         }
     }
@@ -127,24 +127,24 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
     }
 
     GetProgramManager()->EnableProgram(GetStaticFactory()->GetVertexProgram());
-    GetVideoSystem()->GetDefaultContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     if (nVertexAttributes & GEK_VERTEX_POSITION)
     {
-        GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(0, 0, m_spPositionBuffer);
+        GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(0, 0, m_spPositionBuffer);
     }
 
     if (nVertexAttributes & GEK_VERTEX_TEXCOORD)
     {
-        GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(1, 0, m_spTexCoordBuffer);
+        GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(1, 0, m_spTexCoordBuffer);
     }
 
     if (nVertexAttributes & GEK_VERTEX_BASIS)
     { 
-        GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(2, 0, m_spBasisBuffer);
+        GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(2, 0, m_spBasisBuffer);
     }
 
-    GetVideoSystem()->GetDefaultContext()->SetVertexBuffer(3, 0, GetStaticFactory()->GetInstanceBuffer());
-    GetVideoSystem()->GetDefaultContext()->SetIndexBuffer(0, m_spIndexBuffer);
+    GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(3, 0, GetStaticFactory()->GetInstanceBuffer());
+    GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
     for (UINT32 nPass = 0; nPass < aInstances.size(); nPass += GetStaticFactory()->GetNumInstances())
     {
         UINT32 nNumInstances = min(GetStaticFactory()->GetNumInstances(), (aInstances.size() - nPass));
@@ -153,7 +153,7 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
         {
             if (GetMaterialManager()->EnableMaterial(kPair.first))
             {
-                GetVideoSystem()->GetDefaultContext()->DrawInstancedIndexedPrimitive(kPair.second.m_nNumIndices, nNumInstances, kPair.second.m_nFirstIndex, kPair.second.m_nFirstVertex, 0);
+                GetVideoSystem()->GetImmediateContext()->DrawInstancedIndexedPrimitive(kPair.second.m_nNumIndices, nNumInstances, kPair.second.m_nFirstIndex, kPair.second.m_nFirstVertex, 0);
             }
         }
     }
