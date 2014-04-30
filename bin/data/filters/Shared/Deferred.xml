@@ -21,7 +21,6 @@
         nNormal = mul((float3x3)gs_nViewMatrix, nNormal);
 
         float4 nInfo = gs_pInfoMap.Sample(gs_pLinearSampler, kInput.texcoord);
-        nInfo *= kInput.params;
 
         float4 nViewPosition = mul(gs_nViewMatrix, kInput.worldposition);
 

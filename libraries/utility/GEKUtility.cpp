@@ -337,6 +337,7 @@ static std::random_device kRandomDevice;
 static std::mt19937 kMersine(kRandomDevice());
 double StrToDouble(LPCWSTR pValue)
 {
+    static std::uniform_real_distribution<double> kRandom(0.0, 1.0);
     if (_wcsnicmp(pValue, L"rand(", 5) == 0)
     {
         CStringW strRange = pValue;
@@ -350,16 +351,14 @@ double StrToDouble(LPCWSTR pValue)
             CStringW strMaximum = strRange.Tokenize(L":", nPosition);
             double nMinimum = wcstod(strMinimum, nullptr);
             double nMaximum = wcstod(strMaximum, nullptr);
-            std::uniform_real_distribution<double> kRandom(nMinimum, nMaximum);
             double nValue = kRandom(kMersine);
-            return nValue;
+            return ((nValue * (nMaximum - nMinimum)) + nMinimum);
         }
         else
         {
             double nRange = wcstod(strRange, nullptr);
-            std::uniform_real_distribution<double> kRandom(-nRange, nRange);
             double nValue = kRandom(kMersine);
-            return nValue;
+            return ((nValue * nRange * 2.0) - nRange);
         }
     }
     else
@@ -370,6 +369,7 @@ double StrToDouble(LPCWSTR pValue)
 
 float StrToFloat(LPCWSTR pValue)
 {
+    static std::uniform_real_distribution<float> kRandom(0.0f, 1.0f);
     if (_wcsnicmp(pValue, L"rand(", 5) == 0)
     {
         CStringW strRange = pValue;
@@ -383,16 +383,14 @@ float StrToFloat(LPCWSTR pValue)
             CStringW strMaximum = strRange.Tokenize(L":", nPosition);
             float nMinimum = wcstof(strMinimum, nullptr);
             float nMaximum = wcstof(strMaximum, nullptr);
-            std::uniform_real_distribution<float> kRandom(nMinimum, nMaximum);
             float nValue = kRandom(kMersine);
-            return nValue;
+            return ((nValue * (nMaximum - nMinimum)) + nMinimum);
         }
         else
         {
             float nRange = wcstof(strRange, nullptr);
-            std::uniform_real_distribution<float> kRandom(-nRange, nRange);
             float nValue = kRandom(kMersine);
-            return nValue;
+            return ((nValue * nRange * 2.0f) - nRange);
         }
     }
     else

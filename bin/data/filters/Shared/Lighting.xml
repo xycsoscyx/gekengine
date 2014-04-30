@@ -1,6 +1,6 @@
 <![CDATA[
     Texture2D     gs_pWorldBuffer           : register(t0);
-    Texture2D     gs_pInfoBuffer            : register(t1); // Roughness, Specular, Height, 0
+    Texture2D     gs_pInfoBuffer            : register(t1);
 
     struct LIGHT
     {
@@ -29,24 +29,19 @@
         const float gs_nPI = 3.14159265358979323846;
         const float gs_nReciprocalPI = (1.0f / gs_nPI);
 
-        float nRoughness = nInfo.x;
+        float nRoughness = (nInfo.x * nInfo.x * 4);
+        float nRoughnessSquared = (nRoughness * nRoughness);
         float nSpecular = nInfo.y;
+        float nMetalness = nInfo.z;
         float nRetroflective = 0;
 
-        float nMetalness = saturate(nSpecular * 2 - 1);
-        float nNonMetallicSpecular = (saturate(nSpecular * 2) * 0.2);
-
-        float Ks = lerp(nNonMetallicSpecular, 1, nMetalness);
+        float Ks = lerp(nSpecular, 1, nMetalness);
         float Kd = lerp(1, 0, nMetalness);
         float Fd = 1.0 - Ks;
 
         float nNormalViewAngle = dot(nPixelNormal, nViewNormal);
         float nNormalViewAngleSquared = (nNormalViewAngle * nNormalViewAngle);
         float nInvNormalViewAngleSquared = (1.0 - nNormalViewAngleSquared);
-
-        float nRoughnessMod = nRoughness;
-        nRoughnessMod = (nRoughnessMod * nRoughnessMod * 4);
-        float nRoughnessModSquared = (nRoughnessMod * nRoughnessMod);
 
         float3 nHalfVector = normalize(nLightNormal + nViewNormal);
         float nNormalLightAngle = saturate(dot(nPixelNormal, nLightNormal));
@@ -60,9 +55,9 @@
         float nNormalHalfAngleSquared = (nNormalHalfAngle * nNormalHalfAngle);
         float nInvNormalLightAngleSquared = (1.0 - nNormalLightAngleSquared);
 
-        float nFinalDiffuse = (Kd * Fd * gs_nReciprocalPI * saturate((1 - nRoughnessMod) * 0.5 + 0.5 + nRoughnessModSquared * (8 - nRoughnessMod) * 0.023));
+        float nFinalDiffuse = (Kd * Fd * gs_nReciprocalPI * saturate((1 - nRoughness) * 0.5 + 0.5 + nRoughnessSquared * (8 - nRoughness) * 0.023));
 
-        float D = (pow(nRoughnessMod/(nNormalHalfAngleSquared * (nRoughnessModSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
+        float D = (pow(nRoughness/(nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
 
         nNormalViewAngle = (nNormalViewAngle * 0.5 + 0.5);
         nNormalLightAngle = (nNormalLightAngle * 0.5 + 0.5);
@@ -71,15 +66,15 @@
         nInvNormalLightAngleSquared = (1.0 - nNormalLightAngleSquared);
         nInvNormalViewAngleSquared = (1.0 - nNormalViewAngleSquared);
 
-        float nDiffuseDelta = lerp((1 / (0.1 + nRoughnessMod)), (-nRoughnessModSquared * 2), saturate(nRoughnessMod));
+        float nDiffuseDelta = lerp((1 / (0.1 + nRoughness)), (-nRoughnessSquared * 2), saturate(nRoughness));
         float nDiffuseLightAngle = (1 - (pow(1 - nNormalLightAngle, 4) * nDiffuseDelta));
         float nDiffuseViewAngle = (1 - (pow(1 - nNormalViewAngle, 4) * nDiffuseDelta));
         nFinalDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle);
 
         float Fs = (Ks + Fd * pow((1 - nLightHalfAngle), 5));
 
-        float nGeometric1 = (1.0 + sqrt(1.0 + nRoughnessModSquared * (nInvNormalLightAngleSquared / nNormalLightAngleSquared)));
-        float nGeometric2 = (1.0 + sqrt(1.0 + nRoughnessModSquared * (nInvNormalViewAngleSquared / nNormalViewAngleSquared)));
+        float nGeometric1 = (1.0 + sqrt(1.0 + nRoughnessSquared * (nInvNormalLightAngleSquared / nNormalLightAngleSquared)));
+        float nGeometric2 = (1.0 + sqrt(1.0 + nRoughnessSquared * (nInvNormalViewAngleSquared / nNormalViewAngleSquared)));
         float nGeometric = (((2 / nGeometric1) * (2 / nGeometric2)) / (4 * nNormalViewAngle * nNormalLightAngle + 0.1));
 
         float nGeometricRetroreflective = (nNormalViewAngleSquared * nNormalLightAngle);
@@ -92,14 +87,14 @@
     
     OUTPUT MainPixelProgram(INPUT kInput)
     {
-        float3 nViewNormal = -kInput.view;
-
         float4 nPixelInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
 	    float4 nWorld = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
         float nPixelDepth = nWorld.w;
         float3 nPixelPosition = (nPixelDepth * kInput.view);
 	    float3 nPixelNormal = nWorld.xyz;
+
+        float3 nViewNormal = -kInput.view;
 
         OUTPUT kOutput = (OUTPUT)0;
         for(uint nLight = 0; nLight < gs_nNumLights; nLight++)

@@ -15,7 +15,6 @@ private:
     CComPtr<IUnknown> m_spModel;
     CStringW m_strModel;
     CStringW m_strParams;
-    float4 m_nMaterialParams;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentModel)

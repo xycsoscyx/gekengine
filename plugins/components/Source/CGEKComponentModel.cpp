@@ -11,7 +11,6 @@ END_INTERFACE_LIST_UNKNOWN
 
 CGEKComponentModel::CGEKComponentModel(IGEKEntity *pEntity)
     : CGEKComponent(pEntity)
-    , m_nMaterialParams(1.0f, 1.0f, 1.0f, 1.0f)
 {
 }
 
@@ -23,7 +22,7 @@ void CGEKComponentModel::OnRender(void)
 {
     if (m_spModel)
     {
-        GetViewManager()->DrawModel(GetEntity(), m_spModel, m_nMaterialParams);
+        GetViewManager()->DrawModel(GetEntity(), m_spModel);
     }
 }
 
@@ -36,12 +35,10 @@ STDMETHODIMP_(void) CGEKComponentModel::ListProperties(std::function<void(LPCWST
 {
     OnProperty(L"model", m_strModel.GetString());
     OnProperty(L"params", m_strParams.GetString());
-    OnProperty(L"materialparams", m_nMaterialParams);
 }
 
 static GEKHASH gs_nModel(L"model");
 static GEKHASH gs_nParams(L"params");
-static GEKHASH gs_nMaterialParams(L"materialparams");
 STDMETHODIMP_(bool) CGEKComponentModel::GetProperty(LPCWSTR pName, GEKVALUE &kValue) const
 {
     GEKHASH nHash(pName);
@@ -53,11 +50,6 @@ STDMETHODIMP_(bool) CGEKComponentModel::GetProperty(LPCWSTR pName, GEKVALUE &kVa
     else if (nHash == gs_nParams)
     {
         kValue = m_strParams.GetString();
-        return true;
-    }
-    else if (nHash == gs_nMaterialParams)
-    {
-        kValue = m_nMaterialParams;
         return true;
     }
 
@@ -75,11 +67,6 @@ STDMETHODIMP_(bool) CGEKComponentModel::SetProperty(LPCWSTR pName, const GEKVALU
     else if (nHash == gs_nParams)
     {
         m_strParams = kValue.GetString();
-        return true;
-    }
-    else if (nHash == gs_nMaterialParams)
-    {
-        m_nMaterialParams = kValue.GetFloat4();
         return true;
     }
 

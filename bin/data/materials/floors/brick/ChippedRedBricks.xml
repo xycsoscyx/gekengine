@@ -2,5 +2,5 @@
 <material pass="Opaque" params="1,1,1,1">
     <albedo source="%material%-ColorMap.dds" />
     <normal source="%material%-NormalMap.dds" />
-    <info source="*color:0.4,0.001,0,0" />
+    <info source="*color:0.5,0,0,0" />
 </material>

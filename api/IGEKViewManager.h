@@ -20,7 +20,7 @@ DECLARE_INTERFACE_IID_(IGEKViewManager, IUnknown, "585D122C-2488-4EEE-9FED-A7B0A
     STDMETHOD_(IGEKEntity *, GetViewer) (THIS) PURE;
 
     STDMETHOD_(void, DrawLight)         (THIS_ IGEKEntity *pEntity, const GEKLIGHT &kLight) PURE;
-    STDMETHOD_(void, DrawModel)         (THIS_ IGEKEntity *pEntity, IUnknown *pModel, const float4 &nParams = float4(1.0f, 1.0f, 1.0f, 1.0f)) PURE;
+    STDMETHOD_(void, DrawModel)         (THIS_ IGEKEntity *pEntity, IUnknown *pModel) PURE;
 
     STDMETHOD(EnablePass)               (THIS_ LPCWSTR pName) PURE;
     STDMETHOD_(void, CaptureMouse)      (THIS_ bool bCapture) PURE;

@@ -1096,10 +1096,14 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                     hRetVal = LoadPass(strPass);
                     if (SUCCEEDED(hRetVal))
                     {
+                        CPathW kName(pName);
+                        kName.RemoveFileSpec();
+
                         CComPtr<IUnknown> spAlbedoMap;
                         CLibXMLNode kAlbedo = kMaterial.FirstChildElement(L"albedo");
                         CStringW strAlbedo = kAlbedo.GetAttribute(L"source");
                         strAlbedo.Replace(L"%material%", pName);
+                        strAlbedo.Replace(L"%directory%", kName.m_strPath.GetString());
                         LoadTexture(strAlbedo, &spAlbedoMap);
                         if (!spAlbedoMap)
                         {
@@ -1110,6 +1114,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CLibXMLNode kNormal = kMaterial.FirstChildElement(L"normal");
                         CStringW strNormal = kNormal.GetAttribute(L"source");
                         strNormal.Replace(L"%material%", pName);
+                        strNormal.Replace(L"%directory%", kName.m_strPath.GetString());
                         LoadTexture(strNormal, &spNormalMap);
                         if (!spNormalMap)
                         {
@@ -1120,10 +1125,11 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CLibXMLNode kInfo = kMaterial.FirstChildElement(L"info");
                         CStringW strInfo = kInfo.GetAttribute(L"source");
                         strInfo.Replace(L"%material%", pName);
+                        strInfo.Replace(L"%directory%", kName.m_strPath.GetString());
                         LoadTexture(strInfo, &spInfoMap);
                         if (!spInfoMap)
                         {
-                            LoadTexture(L"*color:0.15,0.09,0,0", &spInfoMap);
+                            LoadTexture(L"*color:0.5,0,0,0", &spInfoMap);
                         }
 
                         CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
@@ -1160,7 +1166,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                 LoadTexture(L"*color:0.5,0.5,1,1", &spNormalMap);
 
                 CComPtr<IUnknown> spInfoMap;
-                LoadTexture(L"*color:0.15,0.09,0,0", &spInfoMap);
+                LoadTexture(L"*color:0.5,0,0,0", &spInfoMap);
 
                 CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(L"Opaque", spAlbedoMap, spNormalMap, spInfoMap));
                 if (spMaterial != nullptr)
@@ -1424,7 +1430,7 @@ STDMETHODIMP CGEKRenderManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnkno
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::DrawModel(IGEKEntity *pEntity, IUnknown *pModel, const float4 &nParams)
+STDMETHODIMP_(void) CGEKRenderManager::DrawModel(IGEKEntity *pEntity, IUnknown *pModel)
 {
     REQUIRE_VOID_RETURN(pEntity);
     REQUIRE_VOID_RETURN(pModel);
@@ -1444,7 +1450,6 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawModel(IGEKEntity *pEntity, IUnknown *
                 IGEKModel::INSTANCE kInstance;
                 kInstance.m_nMatrix = kRotation.GetQuaternion();
                 kInstance.m_nMatrix.t = kPosition.GetFloat3();
-                kInstance.m_nParams = nParams;
                 if (m_spUpdateFrame->m_kFrustum.IsVisible(obb(spModel->GetAABB(), kInstance.m_nMatrix)))
                 {
                     m_spUpdateFrame->m_aModels.insert(std::make_pair(spModel, kInstance));
@@ -1623,7 +1628,8 @@ STDMETHODIMP CGEKRenderManager::BeginFrame(void)
 
 STDMETHODIMP_(const frustum &) CGEKRenderManager::GetFrustum(void)
 {
-    REQUIRE_RETURN(m_spUpdateFrame, frustum());
+    static frustum kBlank;
+    REQUIRE_RETURN(m_spUpdateFrame, kBlank);
     return m_spUpdateFrame->m_kFrustum;
 }
 

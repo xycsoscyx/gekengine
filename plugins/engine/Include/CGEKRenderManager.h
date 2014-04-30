@@ -162,7 +162,7 @@ public:
     STDMETHOD(SetViewer)                    (THIS_ IGEKEntity *pEntity);
     STDMETHOD_(IGEKEntity *, GetViewer)     (THIS);
     STDMETHOD_(void, DrawLight)             (THIS_ IGEKEntity *pEntity, const GEKLIGHT &kLight);
-    STDMETHOD_(void, DrawModel)             (THIS_ IGEKEntity *pEntity, IUnknown *pModel, const float4 &nParams = float4(1.0f, 1.0f, 1.0f, 1.0f));
+    STDMETHOD_(void, DrawModel)             (THIS_ IGEKEntity *pEntity, IUnknown *pModel);
     STDMETHOD(EnablePass)                   (THIS_ LPCWSTR pName);
     STDMETHOD_(void, CaptureMouse)          (THIS_ bool bCapture);
 

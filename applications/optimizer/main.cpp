@@ -215,7 +215,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
     {
         aiPropertyStore *pPropertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(pPropertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
-        const aiScene *pScene = aiImportFileExWithProperties(CW2A(strInput, CP_UTF8), aiProcess_RemoveComponent, nullptr, pPropertyStore);
+        const aiScene *pScene = aiImportFileExWithProperties(CW2A(strInput, CP_UTF8), aiProcess_RemoveComponent | aiProcess_FlipUVs | aiProcess_TransformUVCoords, nullptr, pPropertyStore);
         if (pScene == nullptr)
         {
             throw CMyException(__LINE__, L"Unable to Load Input: %s", strInput.GetString());
@@ -226,9 +226,12 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             throw CMyException(__LINE__, L"No meshes found in scene: %s", strInput.GetString());
         }
 
-        aiApplyPostProcessing(pScene, aiProcess_FindInvalidData | aiProcess_Triangulate | aiProcess_RemoveRedundantMaterials | aiProcess_FlipUVs | aiProcess_TransformUVCoords);
-        aiApplyPostProcessing(pScene, aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
-        aiApplyPostProcessing(pScene, aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality);
+        aiApplyPostProcessing(pScene, aiProcess_FindInvalidData | aiProcess_Triangulate | aiProcess_RemoveRedundantMaterials);
+        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, _DEGTORAD(30.0f));
+        aiApplyPostProcessing(pScene, aiProcess_GenSmoothNormals);
+        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, _DEGTORAD(30.0f));
+        aiApplyPostProcessing(pScene, aiProcess_CalcTangentSpace);
+        aiApplyPostProcessing(pScene, aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices);
         aiReleasePropertyStore(pPropertyStore);
 
         aabb nAABB;
