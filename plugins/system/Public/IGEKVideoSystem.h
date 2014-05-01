@@ -11,7 +11,7 @@ namespace GEKVIDEO
     {
         enum FORMAT
         {
-            UNKNOWN = 0,
+            UNKNOWN                         = 0,
 
             // Vertex Data Formats
             X_FLOAT,
@@ -42,7 +42,7 @@ namespace GEKVIDEO
     {
         enum SOURCE
         {
-            UNKNOWN = 0,
+            UNKNOWN                         = 0,
             VERTEX,
             INSTANCE,
         };
@@ -52,7 +52,7 @@ namespace GEKVIDEO
     {
         enum MODE
         {
-            WIREFRAME = 0,
+            WIREFRAME                       = 0,
             SOLID,
         };
     };
@@ -61,7 +61,7 @@ namespace GEKVIDEO
     {
         enum MODE
         {
-            NONE = 0,
+            NONE                            = 0,
             FRONT,
             BACK,
         };
@@ -71,7 +71,7 @@ namespace GEKVIDEO
     {
         enum MASK
         {
-            ZERO = 0,
+            ZERO                            = 0,
             ALL,
         };
     };
@@ -80,7 +80,7 @@ namespace GEKVIDEO
     {
         enum FUNCTION
         {
-            ALWAYS = 0,
+            ALWAYS                          = 0,
             NEVER,
             EQUAL,
             NOT_EQUAL,
@@ -95,7 +95,7 @@ namespace GEKVIDEO
     {
         enum OPERATION
         {
-            ZERO = 0,
+            ZERO                            = 0,
             KEEP,
             REPLACE,
             INVERT,
@@ -112,7 +112,7 @@ namespace GEKVIDEO
         {
             enum SOURCE
             {
-                ZERO = 0,
+                ZERO                        = 0,
                 ONE,
                 BLENDFACTOR,
                 INVERSE_BLENDFACTOR,
@@ -134,7 +134,7 @@ namespace GEKVIDEO
 
         enum OPERATION
         {
-            ADD = 0,
+            ADD                             = 0,
             SUBTRACT,
             REVERSE_SUBTRACT,
             MINIMUM,
@@ -146,12 +146,12 @@ namespace GEKVIDEO
     {
         enum MASK
         {
-            R = 1 << 0,
-            G = 1 << 1,
-            B = 1 << 2,
-            A = 1 << 3,
-            RGB = (R | G | B),
-            RGBA = (R | G | B | A),
+            R                               = 1 << 0,
+            G                               = 1 << 1,
+            B                               = 1 << 2,
+            A                               = 1 << 3,
+            RGB                             = (R | G | B),
+            RGBA                            = (R | G | B | A),
         };
     };
 
@@ -159,7 +159,7 @@ namespace GEKVIDEO
     {
         enum TYPE
         {
-            POINTLIST = 0,
+            POINTLIST                       = 0,
             LINELIST,
             LINESTRIP,
             TRIANGLELIST,
@@ -171,7 +171,7 @@ namespace GEKVIDEO
     {
         enum MODE
         {
-            MIN_MAG_MIP_POINT = 0,
+            MIN_MAG_MIP_POINT               = 0,
             MIN_MAG_POINT_MIP_LINEAR,
             MIN_POINT_MAG_LINEAR_MIP_POINT,
             MIN_POINT_MAG_MIP_LINEAR,
@@ -199,13 +199,13 @@ namespace GEKVIDEO
     {
         enum FLAGS
         {
-            VERTEX_BUFFER = 1 << 0,
-            INDEX_BUFFER = 1 << 1,
-            CONSTANT_BUFFER = 1 << 2,
-            STRUCTURED_BUFFER = 1 << 3,
-            RESOURCE = 1 << 4,
-            UNORDERED_ACCESS = 1 << 5,
-            STATIC = 1 << 6,
+            VERTEX_BUFFER                   = 1 << 0,
+            INDEX_BUFFER                    = 1 << 1,
+            CONSTANT_BUFFER                 = 1 << 2,
+            STRUCTURED_BUFFER               = 1 << 3,
+            RESOURCE                        = 1 << 4,
+            UNORDERED_ACCESS                = 1 << 5,
+            STATIC                          = 1 << 6,
         };
     };
 
@@ -213,8 +213,8 @@ namespace GEKVIDEO
     {
         enum MASK
         {
-            DEPTH = 1 << 0,
-            STENCIL = 1 << 1,
+            DEPTH                           = 1 << 0,
+            STENCIL                         = 1 << 1,
         };
     };
 

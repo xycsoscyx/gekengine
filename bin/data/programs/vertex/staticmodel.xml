@@ -9,17 +9,17 @@
     </layout>
     <vertex>
         <![CDATA[
+            StructuredBuffer<float4x4> gs_aInstances    : register(t0);
+
 			struct SOURCEVERTEX
 			{
-				float3 position                     : POSITION;
-				float2 texcoord                     : TEXCOORD0;
-				float3 tangent                      : TEXCOORD1;
-				float3 bitangent                    : TEXCOORD2;
-				float3 normal                       : TEXCOORD3;
-                uint instance                       : SV_InstanceId;
+				float3 position                         : POSITION;
+				float2 texcoord                         : TEXCOORD0;
+				float3 tangent                          : TEXCOORD1;
+				float3 bitangent                        : TEXCOORD2;
+				float3 normal                           : TEXCOORD3;
+                uint instance                           : SV_InstanceId;
 			};
-
-            StructuredBuffer<float4x4> gs_aInstances          : register(t0);
 
 			VERTEX SourceVertexProgram(SOURCEVERTEX kSource)
 			{

@@ -13,9 +13,7 @@
     <ClCompile Include="Source\CGEKVideoSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="entrypoints.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClCompile Include="entrypoints.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKSystem.h" />
