@@ -1580,7 +1580,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
     }
     else if (nFlags & GEKVIDEO::BUFFER::INDEX_BUFFER)
     {
-        kBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        kBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     }
     else if (nFlags & GEKVIDEO::BUFFER::CONSTANT_BUFFER)
     {
