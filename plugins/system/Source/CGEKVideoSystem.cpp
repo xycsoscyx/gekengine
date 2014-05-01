@@ -70,16 +70,16 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetTexture(UINT32 nStage, IGEKVideoTexture *pTexture)
+    STDMETHODIMP_(void) SetResource(UINT32 nStage, IUnknown *pResource)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pTexture);
+        REQUIRE_VOID_RETURN(pResource);
 
-        CComQIPtr<ID3D11ShaderResourceView> spD3DView(pTexture);
-        if (spD3DView != nullptr)
+        CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
+        if (spView != nullptr)
         {
-            ID3D11ShaderResourceView *pD3DView = spD3DView;
-            m_pDeviceContext->CSSetShaderResources(nStage, 1, &pD3DView);
+            ID3D11ShaderResourceView *pView = spView;
+            m_pDeviceContext->CSSetShaderResources(nStage, 1, &pView);
         }
     }
 };
@@ -138,16 +138,16 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetTexture(UINT32 nStage, IGEKVideoTexture *pTexture)
+    STDMETHODIMP_(void) SetResource(UINT32 nStage, IUnknown *pResource)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pTexture);
+        REQUIRE_VOID_RETURN(pResource);
 
-        CComQIPtr<ID3D11ShaderResourceView> spD3DView(pTexture);
-        if (spD3DView != nullptr)
+        CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
+        if (spView != nullptr)
         {
-            ID3D11ShaderResourceView *pD3DView = spD3DView;
-            m_pDeviceContext->VSSetShaderResources(nStage, 1, &pD3DView);
+            ID3D11ShaderResourceView *pView = spView;
+            m_pDeviceContext->VSSetShaderResources(nStage, 1, &pView);
         }
     }
 };
@@ -203,16 +203,16 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetTexture(UINT32 nStage, IGEKVideoTexture *pTexture)
+    STDMETHODIMP_(void) SetResource(UINT32 nStage, IUnknown *pResource)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pTexture);
+        REQUIRE_VOID_RETURN(pResource);
 
-        CComQIPtr<ID3D11ShaderResourceView> spD3DView(pTexture);
-        if (spD3DView != nullptr)
+        CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
+        if (spView != nullptr)
         {
-            ID3D11ShaderResourceView *pD3DView = spD3DView;
-            m_pDeviceContext->GSSetShaderResources(nStage, 1, &pD3DView);
+            ID3D11ShaderResourceView *pView = spView;
+            m_pDeviceContext->GSSetShaderResources(nStage, 1, &pView);
         }
     }
 };
@@ -268,16 +268,16 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetTexture(UINT32 nStage, IGEKVideoTexture *pTexture)
+    STDMETHODIMP_(void) SetResource(UINT32 nStage, IUnknown *pResource)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pTexture);
+        REQUIRE_VOID_RETURN(pResource);
 
-        CComQIPtr<ID3D11ShaderResourceView> spD3DView(pTexture);
-        if (spD3DView != nullptr)
+        CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
+        if (spView != nullptr)
         {
-            ID3D11ShaderResourceView *pD3DView = spD3DView;
-            m_pDeviceContext->PSSetShaderResources(nStage, 1, &pD3DView);
+            ID3D11ShaderResourceView *pView = spView;
+            m_pDeviceContext->PSSetShaderResources(nStage, 1, &pView);
         }
     }
 };
@@ -447,6 +447,29 @@ public:
         {
             m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, nullptr, pData, 0, 0);
         }
+    }
+};
+
+class CGEKVideoStructuredBuffer : public CGEKVideoBuffer
+{
+private:
+    CComPtr<ID3D11ShaderResourceView> m_spShaderView;
+
+public:
+    DECLARE_UNKNOWN(CGEKVideoStructuredBuffer);
+    CGEKVideoStructuredBuffer(ID3D11DeviceContext *pDeviceContext, ID3D11Buffer *pBuffer, ID3D11ShaderResourceView *pView)
+        : CGEKVideoBuffer(pDeviceContext, pBuffer)
+        , m_spShaderView(pView)
+    {
+    }
+
+    virtual ~CGEKVideoStructuredBuffer(void)
+    {
+    }
+
+    STDMETHODIMP_(void) Update(const void *pData, UINT32 nSize)
+    {
+        CGEKVideoBuffer::Update(pData, nSize);
     }
 };
 
@@ -637,6 +660,10 @@ BEGIN_INTERFACE_LIST(CGEKVideoBuffer)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Buffer, m_spBuffer)
 END_INTERFACE_LIST_UNKNOWN
+
+BEGIN_INTERFACE_LIST(CGEKVideoStructuredBuffer)
+    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, m_spShaderView)
+END_INTERFACE_LIST_BASE(CGEKVideoBuffer)
 
 BEGIN_INTERFACE_LIST(CGEKVideoVertexBuffer)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoVertexBuffer)
@@ -1472,7 +1499,7 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 	kTextureDesc.SampleDesc.Count = 1;
     kTextureDesc.SampleDesc.Quality = 0;
 	kTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-	kTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    kTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	kTextureDesc.CPUAccessFlags = 0;
 	kTextureDesc.MiscFlags = 0;
 
@@ -2112,8 +2139,12 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **
     HRESULT hRetVal = GEKLoadFromFile(pFileName, aBuffer);
     if (SUCCEEDED(hRetVal))
     {
+        D3DX11_IMAGE_LOAD_INFO kInfo;
+        memset(&kInfo, 0, sizeof(D3DX11_IMAGE_LOAD_INFO));
+        kInfo.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+
         CComPtr<ID3D11ShaderResourceView> spResourceView;
-        hRetVal = D3DX11CreateShaderResourceViewFromMemory(m_spDevice, &aBuffer[0], aBuffer.size(), nullptr, nullptr, &spResourceView, nullptr);
+        hRetVal = D3DX11CreateShaderResourceViewFromMemory(m_spDevice, &aBuffer[0], aBuffer.size(), &kInfo, nullptr, &spResourceView, nullptr);
         if (FAILED(hRetVal))
         {
             unsigned int nImageID = 0;

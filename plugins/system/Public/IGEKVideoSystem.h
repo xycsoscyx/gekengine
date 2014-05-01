@@ -402,7 +402,7 @@ DECLARE_INTERFACE(IGEKVideoContextSystem)
     STDMETHOD_(void, SetProgram)                        (THIS_ IGEKVideoProgram *pProgram) PURE;
     STDMETHOD_(void, SetConstantBuffer)                 (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer) PURE;
     STDMETHOD_(void, SetSamplerStates)                  (THIS_ UINT32 nStage, IGEKVideoSamplerStates *pStates) PURE;
-    STDMETHOD_(void, SetTexture)                        (THIS_ UINT32 nStage, IGEKVideoTexture *pTexture) PURE;
+    STDMETHOD_(void, SetResource)                       (THIS_ UINT32 nIndex, IUnknown *pResource) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819E68B372E")

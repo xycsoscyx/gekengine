@@ -1014,7 +1014,7 @@ STDMETHODIMP_(void) CGEKRenderManager::SetTexture(UINT32 nStage, IUnknown *pText
 
     if (spTexture)
     {
-        GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetTexture(nStage, spTexture);
+        GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(nStage, spTexture);
     }
 }
 
