@@ -143,8 +143,8 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
         GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(2, 0, m_spBasisBuffer);
     }
 
-    GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(3, 0, GetStaticFactory()->GetInstanceBuffer());
     GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
+    GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetResource(0, GetStaticFactory()->GetInstanceBuffer());
     for (UINT32 nPass = 0; nPass < aInstances.size(); nPass += GetStaticFactory()->GetNumInstances())
     {
         UINT32 nNumInstances = min(GetStaticFactory()->GetNumInstances(), (aInstances.size() - nPass));

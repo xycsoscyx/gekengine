@@ -260,7 +260,7 @@ public:
         }
 
 #define INTERFACE_LIST_ENTRY_MEMBER(INTERFACE_IID, OBJECT)                          \
-        if (IsEqualIID(INTERFACE_IID, rIID) && (OBJECT))                            \
+        if ((OBJECT) && IsEqualIID(INTERFACE_IID, rIID))                            \
         {                                                                           \
             return (OBJECT)->QueryInterface(rIID, ppObject);                        \
         }
@@ -284,7 +284,7 @@ public:
         }
 
 #define END_INTERFACE_LIST                                                          \
-        (*ppObject) = nullptr;                                                         \
+        (*ppObject) = nullptr;                                                      \
         return E_INVALIDARG;                                                        \
     }
 
@@ -307,7 +307,7 @@ HRESULT GEKCreateInstanceOf##CLASS##(IUnknown **ppObject)                       
                                                                                     \
     HRESULT hRetVal = E_OUTOFMEMORY;                                                \
     CComPtr<CLASS> spObject(new CLASS());                                           \
-    if (spObject != nullptr)                                                           \
+    if (spObject != nullptr)                                                        \
     {                                                                               \
         hRetVal = spObject->QueryInterface(IID_PPV_ARGS(ppObject));                 \
     }                                                                               \
@@ -368,7 +368,7 @@ private:                                                                        
                                                                                     \
 public:                                                                             \
     CGEK##CLASS##User(void)                                                         \
-        : m_pSystem(nullptr)                                                           \
+        : m_pSystem(nullptr)                                                        \
     {                                                                               \
     }                                                                               \
                                                                                     \
@@ -385,7 +385,7 @@ public:                                                                         
                                                                                     \
     STDMETHOD_(IGEK##CLASS## *, Get##CLASS##)(void) const                           \
     {                                                                               \
-        REQUIRE_RETURN(m_pSystem, nullptr);                                            \
+        REQUIRE_RETURN(m_pSystem, nullptr);                                         \
         return m_pSystem;                                                           \
     }                                                                               \
 };

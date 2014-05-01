@@ -7,114 +7,138 @@
 
 namespace GEKVIDEO
 {
-    namespace DATA { enum FORMAT
+    namespace DATA
     {
-        UNKNOWN                                     = 0,
+        enum FORMAT
+        {
+            UNKNOWN = 0,
 
-        // Vertex Data Formats
-        X_FLOAT,
-        XY_FLOAT,
-        XYZ_FLOAT,
-        XYZW_FLOAT,
-        X_UINT32,
-        XY_UINT32,
-        XYZ_UINT32,
-        XYZW_UINT32,
+            // Vertex Data Formats
+            X_FLOAT,
+            XY_FLOAT,
+            XYZ_FLOAT,
+            XYZW_FLOAT,
+            X_UINT32,
+            XY_UINT32,
+            XYZ_UINT32,
+            XYZW_UINT32,
 
-        // Index Buffer Formats
-        UINT16,
-        UINT32,
+            // Index Buffer Formats
+            UINT16,
+            UINT32,
 
-        // Render Target Formats
-        R_FLOAT,
-        RG_FLOAT,
-        RGB_FLOAT,
-        RGBA_FLOAT,
-        RGBA_UINT8,
-        BGRA_UINT8,
+            // Render Target Formats
+            R_FLOAT,
+            RG_FLOAT,
+            RGB_FLOAT,
+            RGBA_FLOAT,
+            RGBA_UINT8,
+            BGRA_UINT8,
 
-        // Depth Target Formats
-        D16,
-        D32,
-        D24_S8,
-    }; };
+            // Depth Target Formats
+            D16,
+            D32,
+            D24_S8,
+        };
+    };
 
-    namespace INPUT { enum SOURCE
+    namespace INPUT
     {
-        UNKNOWN                                     = 0,
-        VERTEX,
-        INSTANCE,
-    }; };
+        enum SOURCE
+        {
+            UNKNOWN = 0,
+            VERTEX,
+            INSTANCE,
+        };
+    };
 
-    namespace FILL { enum MODE
+    namespace FILL
     {
-        WIREFRAME                                   = 0,
-        SOLID,
-    }; };
+        enum MODE
+        {
+            WIREFRAME = 0,
+            SOLID,
+        };
+    };
 
-    namespace CULL { enum MODE
+    namespace CULL
     {
-        NONE                                        = 0,
-        FRONT,
-        BACK,
-    }; };
+        enum MODE
+        {
+            NONE = 0,
+            FRONT,
+            BACK,
+        };
+    };
 
-    namespace DEPTHWRITE { enum MASK
+    namespace DEPTHWRITE
     {
-        ZERO                                        = 0,
-        ALL,
-    }; };
+        enum MASK
+        {
+            ZERO = 0,
+            ALL,
+        };
+    };
 
-    namespace COMPARISON { enum FUNCTION
+    namespace COMPARISON
     {
-        ALWAYS                                      = 0,
-        NEVER,
-        EQUAL,
-        NOT_EQUAL,
-        LESS,
-        LESS_EQUAL,
-        GREATER,
-        GREATER_EQUAL,
-    }; };
+        enum FUNCTION
+        {
+            ALWAYS = 0,
+            NEVER,
+            EQUAL,
+            NOT_EQUAL,
+            LESS,
+            LESS_EQUAL,
+            GREATER,
+            GREATER_EQUAL,
+        };
+    };
 
-    namespace STENCIL { enum OPERATION
+    namespace STENCIL
     {
-        ZERO                                        = 0,
-        KEEP,
-        REPLACE,
-        INVERT,
-        INCREASE,
-        INCREASE_SATURATED,
-        DECREASE,
-        DECREASE_SATURATED,
-    }; };
+        enum OPERATION
+        {
+            ZERO = 0,
+            KEEP,
+            REPLACE,
+            INVERT,
+            INCREASE,
+            INCREASE_SATURATED,
+            DECREASE,
+            DECREASE_SATURATED,
+        };
+    };
 
     namespace BLEND
     {
-        namespace FACTOR { enum SOURCE
+        namespace FACTOR
         {
-            ZERO                                    = 0,
-            ONE,
-            BLENDFACTOR,
-            INVERSE_BLENDFACTOR,
-            SOURCE_COLOR,
-            INVERSE_SOURCE_COLOR,
-            SOURCE_ALPHA,
-            INVERSE_SOURCE_ALPHA,
-            SOURCE_ALPHA_SATURATE,
-            DESTINATION_COLOR,
-            INVERSE_DESTINATION_COLOR,
-            DESTINATION_ALPHA,
-            INVERSE_DESTINATION_ALPHA,
-            SECONRARY_SOURCE_COLOR,
-            INVERSE_SECONRARY_SOURCE_COLOR,
-            SECONRARY_SOURCE_ALPHA,
-            INVERSE_SECONRARY_SOURCE_ALPHA,
-        }; };
+            enum SOURCE
+            {
+                ZERO = 0,
+                ONE,
+                BLENDFACTOR,
+                INVERSE_BLENDFACTOR,
+                SOURCE_COLOR,
+                INVERSE_SOURCE_COLOR,
+                SOURCE_ALPHA,
+                INVERSE_SOURCE_ALPHA,
+                SOURCE_ALPHA_SATURATE,
+                DESTINATION_COLOR,
+                INVERSE_DESTINATION_COLOR,
+                DESTINATION_ALPHA,
+                INVERSE_DESTINATION_ALPHA,
+                SECONRARY_SOURCE_COLOR,
+                INVERSE_SECONRARY_SOURCE_COLOR,
+                SECONRARY_SOURCE_ALPHA,
+                INVERSE_SECONRARY_SOURCE_ALPHA,
+            };
+        };
 
         enum OPERATION
         {
-            ADD                                     = 0,
+            ADD = 0,
             SUBTRACT,
             REVERSE_SUBTRACT,
             MINIMUM,
@@ -122,52 +146,81 @@ namespace GEKVIDEO
         };
     };
 
-    namespace COLOR { enum MASK
+    namespace COLOR
     {
-        R                                           = 1 << 0,
-        G                                           = 1 << 1,
-        B                                           = 1 << 2,
-        A                                           = 1 << 3,
-        RGB                                         = (R | G | B),
-        RGBA                                        = (R | G | B | A),
-    }; };
+        enum MASK
+        {
+            R = 1 << 0,
+            G = 1 << 1,
+            B = 1 << 2,
+            A = 1 << 3,
+            RGB = (R | G | B),
+            RGBA = (R | G | B | A),
+        };
+    };
 
-    namespace PRIMITIVE { enum TYPE
+    namespace PRIMITIVE
     {
-        POINTLIST                                   = 0,
-        LINELIST,
-        LINESTRIP,
-        TRIANGLELIST,
-        TRIANGLESTRIP,
-    }; };
+        enum TYPE
+        {
+            POINTLIST = 0,
+            LINELIST,
+            LINESTRIP,
+            TRIANGLELIST,
+            TRIANGLESTRIP,
+        };
+    };
 
-    namespace FILTER { enum MODE
+    namespace FILTER
     {
-        MIN_MAG_MIP_POINT                           = 0,
-        MIN_MAG_POINT_MIP_LINEAR,
-        MIN_POINT_MAG_LINEAR_MIP_POINT,
-        MIN_POINT_MAG_MIP_LINEAR,
-        MIN_LINEAR_MAG_MIP_POINT,
-        MIN_LINEAR_MAG_POINT_MIP_LINEAR,
-        MIN_MAG_LINEAR_MIP_POINT,
-        MIN_MAG_MIP_LINEAR,
-        ANISOTROPIC,
-    }; };
+        enum MODE
+        {
+            MIN_MAG_MIP_POINT = 0,
+            MIN_MAG_POINT_MIP_LINEAR,
+            MIN_POINT_MAG_LINEAR_MIP_POINT,
+            MIN_POINT_MAG_MIP_LINEAR,
+            MIN_LINEAR_MAG_MIP_POINT,
+            MIN_LINEAR_MAG_POINT_MIP_LINEAR,
+            MIN_MAG_LINEAR_MIP_POINT,
+            MIN_MAG_MIP_LINEAR,
+            ANISOTROPIC,
+        };
+    };
 
-    namespace ADDRESS { enum MODE
+    namespace ADDRESS
     {
-        CLAMP                                       = 0,
-        WRAP,
-        MIRROR,
-        MIRROR_ONCE,
-        BORDER,
-    }; };
+        enum MODE
+        {
+            CLAMP = 0,
+            WRAP,
+            MIRROR,
+            MIRROR_ONCE,
+            BORDER,
+        };
+    };
 
-    namespace CLEAR { enum MASK
+    namespace BUFFER
     {
-        DEPTH                                       = 1 << 0,
-        STENCIL                                     = 1 << 1,
-    }; };
+        enum FLAGS
+        {
+            VERTEX_BUFFER = 1 << 0,
+            INDEX_BUFFER = 1 << 1,
+            CONSTANT_BUFFER = 1 << 2,
+            STRUCTURED_BUFFER = 1 << 3,
+            RESOURCE = 1 << 4,
+            UNORDERED_ACCESS = 1 << 5,
+            STATIC = 1 << 6,
+        };
+    };
+
+    namespace CLEAR
+    {
+        enum MASK
+        {
+            DEPTH = 1 << 0,
+            STENCIL = 1 << 1,
+        };
+    };
 
     struct VIEWPORT
     {
@@ -347,7 +400,7 @@ namespace GEKVIDEO
             , m_eComparison(COMPARISON::NEVER)
             , m_nBorderColor(0.0f, 0.0f, 0.0f, 1.0f)
             , m_nMinLOD(-FLT_MAX)
-            , m_nMaxLOD( FLT_MAX)
+            , m_nMaxLOD(FLT_MAX)
         {
         }
     };
@@ -451,6 +504,7 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD(CreateRenderTarget)                       (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IGEKVideoTexture **ppTarget) PURE;
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget) PURE;
 
+    STDMETHOD(CreateBuffer)                             (THIS_ UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData = nullptr) PURE;
     STDMETHOD(CreateConstantBuffer)                     (THIS_ UINT32 nSize, IGEKVideoBuffer **ppBuffer) PURE;
     STDMETHOD(CreateVertexBuffer)                       (THIS_ UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer, const void *pData = nullptr) PURE;
     STDMETHOD(CreateIndexBuffer)                        (THIS_ GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer, const void *pData = nullptr) PURE;

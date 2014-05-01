@@ -416,12 +416,14 @@ class CGEKVideoBuffer : public CGEKUnknown
 private:
     ID3D11DeviceContext *m_pDeviceContext;
     CComPtr<ID3D11Buffer> m_spBuffer;
+    CComPtr<ID3D11ShaderResourceView> m_spShaderView;
 
 public:
     DECLARE_UNKNOWN(CGEKVideoBuffer);
-    CGEKVideoBuffer(ID3D11DeviceContext *pDeviceContext, ID3D11Buffer *pBuffer)
+    CGEKVideoBuffer(ID3D11DeviceContext *pDeviceContext, ID3D11Buffer *pBuffer, ID3D11ShaderResourceView *pShaderView)
         : m_pDeviceContext(pDeviceContext)
         , m_spBuffer(pBuffer)
+        , m_spShaderView(pShaderView)
     {
     }
 
@@ -450,29 +452,6 @@ public:
     }
 };
 
-class CGEKVideoStructuredBuffer : public CGEKVideoBuffer
-{
-private:
-    CComPtr<ID3D11ShaderResourceView> m_spShaderView;
-
-public:
-    DECLARE_UNKNOWN(CGEKVideoStructuredBuffer);
-    CGEKVideoStructuredBuffer(ID3D11DeviceContext *pDeviceContext, ID3D11Buffer *pBuffer, ID3D11ShaderResourceView *pView)
-        : CGEKVideoBuffer(pDeviceContext, pBuffer)
-        , m_spShaderView(pView)
-    {
-    }
-
-    virtual ~CGEKVideoStructuredBuffer(void)
-    {
-    }
-
-    STDMETHODIMP_(void) Update(const void *pData, UINT32 nSize)
-    {
-        CGEKVideoBuffer::Update(pData, nSize);
-    }
-};
-
 class CGEKVideoVertexBuffer : public CGEKVideoBuffer
                             , public IGEKVideoVertexBuffer
 {
@@ -483,7 +462,7 @@ private:
 public:
     DECLARE_UNKNOWN(CGEKVideoVertexBuffer);
     CGEKVideoVertexBuffer(ID3D11DeviceContext *pDeviceContext, ID3D11Buffer *pBuffer, UINT32 nStride, UINT32 nCount)
-        : CGEKVideoBuffer(pDeviceContext, pBuffer)
+        : CGEKVideoBuffer(pDeviceContext, pBuffer, nullptr)
         , m_nStride(nStride)
         , m_nCount(nCount)
     {
@@ -519,7 +498,7 @@ private:
 public:
     DECLARE_UNKNOWN(CGEKVideoIndexBuffer);
     CGEKVideoIndexBuffer(ID3D11DeviceContext *pDeviceContext, ID3D11Buffer *pBuffer, GEKVIDEO::DATA::FORMAT eFormat, UINT32 nCount)
-        : CGEKVideoBuffer(pDeviceContext, pBuffer)
+        : CGEKVideoBuffer(pDeviceContext, pBuffer, nullptr)
         , m_eFormat(eFormat)
         , m_nCount(nCount)
     {
@@ -659,11 +638,8 @@ END_INTERFACE_LIST_UNKNOWN
 BEGIN_INTERFACE_LIST(CGEKVideoBuffer)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Buffer, m_spBuffer)
-END_INTERFACE_LIST_UNKNOWN
-
-BEGIN_INTERFACE_LIST(CGEKVideoStructuredBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, m_spShaderView)
-END_INTERFACE_LIST_BASE(CGEKVideoBuffer)
+END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoVertexBuffer)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoVertexBuffer)
@@ -1631,6 +1607,123 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GE
     return hRetVal;
 }
 
+STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData)
+{
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
+    REQUIRE_RETURN(nStride > 0 && nCount > 0 && ppBuffer, E_INVALIDARG);
+
+    D3D11_BUFFER_DESC kBufferDesc;
+    kBufferDesc.ByteWidth = (nStride * nCount);
+    if (nFlags & GEKVIDEO::BUFFER::STATIC)
+    {
+        if (pData == NULL)
+        {
+            return E_INVALIDARG;
+        }
+
+        kBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+    }
+    else
+    {
+        kBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    }
+
+    if (nFlags & GEKVIDEO::BUFFER::VERTEX_BUFFER)
+    {
+        kBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    }
+    else if (nFlags & GEKVIDEO::BUFFER::INDEX_BUFFER)
+    {
+        kBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    }
+    else if (nFlags & GEKVIDEO::BUFFER::CONSTANT_BUFFER)
+    {
+        kBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    }
+    else
+    {
+        kBufferDesc.BindFlags = 0;
+    }
+
+    if (nFlags & GEKVIDEO::BUFFER::RESOURCE)
+    {
+        kBufferDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+    }
+
+    if (nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
+    {
+        kBufferDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
+    }
+
+    kBufferDesc.CPUAccessFlags = 0;
+    if (nFlags & GEKVIDEO::BUFFER::STRUCTURED_BUFFER)
+    {
+        kBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+        kBufferDesc.StructureByteStride = nStride;
+    }
+    else
+    {
+        kBufferDesc.MiscFlags = 0;
+        kBufferDesc.StructureByteStride = 0;
+    }
+
+    HRESULT hRetVal = E_FAIL;
+    CComPtr<ID3D11Buffer> spBuffer;
+    if (pData == nullptr)
+    {
+        hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, nullptr, &spBuffer);
+    }
+    else
+    {
+        D3D11_SUBRESOURCE_DATA kData;
+        kData.pSysMem = pData;
+        kData.SysMemPitch = 0;
+        kData.SysMemSlicePitch = 0;
+        hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, &kData, &spBuffer);
+    }
+
+    if (spBuffer != nullptr)
+    {
+        CComPtr<ID3D11ShaderResourceView> spShaderView;
+        if (nFlags & GEKVIDEO::BUFFER::RESOURCE)
+        {
+            D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
+            kViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+            kViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+            kViewDesc.BufferEx.FirstElement = 0;
+            kViewDesc.BufferEx.NumElements = nCount;
+            kViewDesc.BufferEx.Flags = 0;
+
+            hRetVal = m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
+        }
+
+        CComPtr<ID3D11UnorderedAccessView> spUnderedView;
+        if (SUCCEEDED(hRetVal) && nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
+        {
+            D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
+            kViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+            kViewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+            kViewDesc.Buffer.FirstElement = 0;
+            kViewDesc.Buffer.NumElements = nCount;
+            kViewDesc.Buffer.Flags = 0;
+
+            hRetVal = m_spDevice->CreateUnorderedAccessView(spBuffer, &kViewDesc, &spUnderedView);
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = E_OUTOFMEMORY;
+            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView));
+            if (spBuffer != nullptr)
+            {
+                hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
+            }
+        }
+    }
+
+    return hRetVal;
+}
+
 STDMETHODIMP CGEKVideoSystem::CreateConstantBuffer(UINT32 nSize, IGEKVideoBuffer **ppBuffer)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -1649,7 +1742,7 @@ STDMETHODIMP CGEKVideoSystem::CreateConstantBuffer(UINT32 nSize, IGEKVideoBuffer
     if (spBuffer != nullptr)
     {
         hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKVideoBuffer> spConstantBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer));
+        CComPtr<CGEKVideoBuffer> spConstantBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, nullptr));
         if (spConstantBuffer != nullptr)
         {
             hRetVal = spConstantBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));

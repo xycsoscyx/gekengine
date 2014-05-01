@@ -88,6 +88,7 @@ public:
     STDMETHOD(CreateBlendStates)                        (THIS_ const GEKVIDEO::INDEPENDENTBLENDSTATES &kStates, IGEKVideoBlendStates **ppStates);
     STDMETHOD(CreateRenderTarget)                       (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IGEKVideoTexture **ppTarget);
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget);
+    STDMETHOD(CreateBuffer)                             (THIS_ UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData = nullptr);
     STDMETHOD(CreateConstantBuffer)                     (THIS_ UINT32 nSize, IGEKVideoBuffer **ppBuffer);
     STDMETHOD(CreateVertexBuffer)                       (THIS_ UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer, const void *pData);
     STDMETHOD(CreateIndexBuffer)                        (THIS_ GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer, const void *pData);

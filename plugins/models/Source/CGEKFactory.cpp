@@ -31,7 +31,7 @@ STDMETHODIMP CGEKFactory::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(IGEKModel::INSTANCE), m_nNumInstances, &m_spInstanceBuffer);
+        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(IGEKModel::INSTANCE), m_nNumInstances, GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
     }
 
     return hRetVal;
@@ -82,7 +82,7 @@ STDMETHODIMP_(IUnknown *) CGEKFactory::GetVertexProgram(void)
     return m_spVertexProgram;
 }
 
-STDMETHODIMP_(IGEKVideoVertexBuffer *) CGEKFactory::GetInstanceBuffer(void)
+STDMETHODIMP_(IGEKVideoBuffer *) CGEKFactory::GetInstanceBuffer(void)
 {
     return m_spInstanceBuffer;
 }
