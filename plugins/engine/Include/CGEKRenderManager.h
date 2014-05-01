@@ -88,8 +88,8 @@ private:
     std::list<CComPtr<IGEKFactory>> m_aFactories;
 
     CComPtr<IGEKVideoProgram> m_spVertexProgram;
-    CComPtr<IGEKVideoVertexBuffer> m_spVertexBuffer;
-    CComPtr<IGEKVideoIndexBuffer> m_spIndexBuffer;
+    CComPtr<IGEKVideoBuffer> m_spVertexBuffer;
+    CComPtr<IGEKVideoBuffer> m_spIndexBuffer;
 
     CComPtr<IGEKVideoSamplerStates> m_spPointSampler;
     CComPtr<IGEKVideoSamplerStates> m_spLinearSampler;

@@ -23,10 +23,6 @@ namespace GEKVIDEO
             XYZ_UINT32,
             XYZW_UINT32,
 
-            // Index Buffer Formats
-            UINT16,
-            UINT32,
-
             // Render Target Formats
             R_FLOAT,
             RG_FLOAT,
@@ -424,19 +420,10 @@ DECLARE_INTERFACE_IID_(IGEKVideoProgram, IUnknown, "21945D41-0C9E-4B81-B5C0-2FEA
 
 DECLARE_INTERFACE_IID_(IGEKVideoBuffer, IUnknown, "8542B213-0F5E-4BF7-88E2-80DE06A40D45")
 {
-    STDMETHOD_(void, Update)                            (THIS_ const void *pData, UINT32 nSize = 0) PURE;
-};
-
-DECLARE_INTERFACE_IID_(IGEKVideoVertexBuffer, IGEKVideoBuffer, "6ABE21FD-05E2-458A-80D9-E7D7030D2BA0")
-{
     STDMETHOD_(UINT32, GetStride)                       (THIS) PURE;
     STDMETHOD_(UINT32, GetCount)                        (THIS) PURE;
-};
 
-DECLARE_INTERFACE_IID_(IGEKVideoIndexBuffer, IGEKVideoBuffer, "409C6AC4-FA9C-455E-8711-7336F428962E")
-{
-    STDMETHOD_(GEKVIDEO::DATA::FORMAT, GetFormat)       (THIS) PURE;
-    STDMETHOD_(UINT32, GetCount)                        (THIS) PURE;
+    STDMETHOD_(void, Update)                            (THIS_ const void *pData, UINT32 nSize = 0) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKVideoSamplerStates, IUnknown, "302A7C5F-B162-4B95-A79E-7263D1C1A67F")
@@ -478,8 +465,8 @@ DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819
     STDMETHOD_(IGEKVideoContextSystem *, GetGeometrySystem) (THIS) PURE;
     STDMETHOD_(IGEKVideoContextSystem *, GetPixelSystem)    (THIS) PURE;
 
-    STDMETHOD_(void, SetVertexBuffer)                   (THIS_ UINT32 nSlot, UINT32 nOffset, IGEKVideoVertexBuffer *pBuffer) PURE;
-    STDMETHOD_(void, SetIndexBuffer)                    (THIS_ UINT32 nOffset, IGEKVideoIndexBuffer *pBuffer) PURE;
+    STDMETHOD_(void, SetVertexBuffer)                   (THIS_ UINT32 nSlot, UINT32 nOffset, IGEKVideoBuffer *pBuffer) PURE;
+    STDMETHOD_(void, SetIndexBuffer)                    (THIS_ UINT32 nOffset, IGEKVideoBuffer *pBuffer) PURE;
     STDMETHOD_(void, SetPrimitiveType)                  (THIS_ GEKVIDEO::PRIMITIVE::TYPE eType) PURE;
     STDMETHOD_(void, DrawIndexedPrimitive)              (THIS_ UINT32 nNumIndices, UINT32 nStartIndex, UINT32 nBaseVertex) PURE;
     STDMETHOD_(void, DrawPrimitive)                     (THIS_ UINT32 nNumVertices, UINT32 nStartVertex) PURE;
@@ -505,9 +492,6 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget) PURE;
 
     STDMETHOD(CreateBuffer)                             (THIS_ UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData = nullptr) PURE;
-    STDMETHOD(CreateConstantBuffer)                     (THIS_ UINT32 nSize, IGEKVideoBuffer **ppBuffer) PURE;
-    STDMETHOD(CreateVertexBuffer)                       (THIS_ UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer, const void *pData = nullptr) PURE;
-    STDMETHOD(CreateIndexBuffer)                        (THIS_ GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer, const void *pData = nullptr) PURE;
 
     STDMETHOD(CompileComputeProgram)                    (THIS_ LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram) PURE;
     STDMETHOD(CompileVertexProgram)                     (THIS_ LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram) PURE;

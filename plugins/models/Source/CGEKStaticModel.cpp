@@ -75,19 +75,19 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(float3), nNumVertices, &m_spPositionBuffer, pBuffer);
+            hRetVal = GetVideoSystem()->CreateBuffer(sizeof(float3), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spPositionBuffer, pBuffer);
             pBuffer += (sizeof(float3) * nNumVertices);
         }
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateVertexBuffer(sizeof(float2), nNumVertices, &m_spTexCoordBuffer, pBuffer);
+            hRetVal = GetVideoSystem()->CreateBuffer(sizeof(float2), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spTexCoordBuffer, pBuffer);
             pBuffer += (sizeof(float2) * nNumVertices);
         }
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateVertexBuffer((sizeof(float3)* 3), nNumVertices, &m_spBasisBuffer, pBuffer);
+            hRetVal = GetVideoSystem()->CreateBuffer((sizeof(float3)* 3), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spBasisBuffer, pBuffer);
             pBuffer += (sizeof(float3) * 3 * nNumVertices);
         }
 
@@ -96,7 +96,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
             UINT32 nNumIndices = *((UINT32 *)pBuffer);
             pBuffer += sizeof(UINT32);
 
-            hRetVal = GetVideoSystem()->CreateIndexBuffer(GEKVIDEO::DATA::UINT16, nNumIndices, &m_spIndexBuffer, pBuffer);
+            hRetVal = GetVideoSystem()->CreateBuffer(sizeof(UINT16), nNumIndices, GEKVIDEO::BUFFER::INDEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spIndexBuffer, pBuffer);
             pBuffer += (sizeof(UINT16) * nNumIndices);
         }
     }

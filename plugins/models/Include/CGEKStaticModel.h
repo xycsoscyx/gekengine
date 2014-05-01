@@ -23,10 +23,10 @@ private:
 
 private:
     aabb m_nAABB;
-    CComPtr<IGEKVideoVertexBuffer> m_spPositionBuffer;
-    CComPtr<IGEKVideoVertexBuffer> m_spTexCoordBuffer;
-    CComPtr<IGEKVideoVertexBuffer> m_spBasisBuffer;
-    CComPtr<IGEKVideoIndexBuffer> m_spIndexBuffer;
+    CComPtr<IGEKVideoBuffer> m_spPositionBuffer;
+    CComPtr<IGEKVideoBuffer> m_spTexCoordBuffer;
+    CComPtr<IGEKVideoBuffer> m_spBasisBuffer;
+    CComPtr<IGEKVideoBuffer> m_spIndexBuffer;
     std::multimap<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
 
 public:

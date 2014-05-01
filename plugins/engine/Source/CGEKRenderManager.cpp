@@ -530,13 +530,13 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
             0, 2, 3,
         };
 
-        hRetVal = GetVideoSystem()->CreateVertexBuffer((sizeof(float2) * 2), 4, &m_spVertexBuffer, aVertices);
-        hRetVal = GetVideoSystem()->CreateIndexBuffer(GEKVIDEO::DATA::UINT16, 6, &m_spIndexBuffer, aIndices);
+        hRetVal = GetVideoSystem()->CreateBuffer((sizeof(float2) * 2), 4, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
+        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(UINT16), 6, GEKVIDEO::BUFFER::INDEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateConstantBuffer(sizeof(float4x4), &m_spOrthoBuffer);
+        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(float4x4), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spOrthoBuffer);
         if (m_spOrthoBuffer != nullptr)
         {
             float4x4 nOverlayMatrix;
@@ -547,12 +547,12 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateConstantBuffer(sizeof(ENGINEBUFFER), &m_spEngineBuffer);
+        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(ENGINEBUFFER), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spEngineBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateConstantBuffer(sizeof(LIGHTBUFFER), &m_spLightBuffer);
+        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(LIGHTBUFFER), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spLightBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
