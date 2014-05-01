@@ -30,7 +30,7 @@ public:
     {
     }
 
-    STDMETHODIMP_(void) SetProgram(IGEKVideoProgram *pProgram)
+    STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         CComQIPtr<ID3D11ComputeShader> spD3DShader(pProgram);
@@ -57,7 +57,7 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IGEKVideoSamplerStates *pStates)
+    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IUnknown *pStates)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pStates);
@@ -82,6 +82,19 @@ public:
             m_pDeviceContext->CSSetShaderResources(nStage, 1, &pView);
         }
     }
+
+    STDMETHODIMP_(void) SetUnorderedAccess(UINT32 nStage, IUnknown *pResource)
+    {
+        REQUIRE_VOID_RETURN(m_pDeviceContext);
+        REQUIRE_VOID_RETURN(pResource);
+
+        CComQIPtr<ID3D11UnorderedAccessView> spView(pResource);
+        if (spView != nullptr)
+        {
+            ID3D11UnorderedAccessView *pView = spView;
+            m_pDeviceContext->CSSetUnorderedAccessViews(nStage, 1, &pView, nullptr);
+        }
+    }
 };
 
 class CGEKVideoVertexContextSystem : public IGEKVideoContextSystem
@@ -95,7 +108,7 @@ public:
     {
     }
 
-    STDMETHODIMP_(void) SetProgram(IGEKVideoProgram *pProgram)
+    STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         CComQIPtr<ID3D11VertexShader> spD3DShader(pProgram);
@@ -125,7 +138,7 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IGEKVideoSamplerStates *pStates)
+    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IUnknown *pStates)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pStates);
@@ -163,7 +176,7 @@ public:
     {
     }
 
-    STDMETHODIMP_(void) SetProgram(IGEKVideoProgram *pProgram)
+    STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         CComQIPtr<ID3D11GeometryShader> spD3DShader(pProgram);
@@ -190,7 +203,7 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IGEKVideoSamplerStates *pStates)
+    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IUnknown *pStates)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pStates);
@@ -228,7 +241,7 @@ public:
     {
     }
 
-    STDMETHODIMP_(void) SetProgram(IGEKVideoProgram *pProgram)
+    STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         CComQIPtr<ID3D11PixelShader> spD3DShader(pProgram);
@@ -255,7 +268,7 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IGEKVideoSamplerStates *pStates)
+    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IUnknown *pStates)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pStates);
@@ -283,7 +296,6 @@ public:
 };
 
 class CGEKVideoRenderStates : public CGEKUnknown
-                            , public IGEKVideoRenderStates
 {
 private:
     CComPtr<ID3D11RasterizerState> m_spStates;
@@ -301,7 +313,6 @@ public:
 };
 
 class CGEKVideoDepthStates : public CGEKUnknown
-                           , public IGEKVideoDepthStates
 {
 private:
     CComPtr<ID3D11DepthStencilState> m_spStates;
@@ -319,7 +330,6 @@ public:
 };
 
 class CGEKVideoBlendStates : public CGEKUnknown
-                           , public IGEKVideoBlendStates
 {
 private:
     CComPtr<ID3D11BlendState> m_spStates;
@@ -336,8 +346,24 @@ public:
     }
 };
 
+class CGEKVideoSamplerStates : public CGEKUnknown
+{
+private:
+    CComPtr<ID3D11SamplerState> m_spStates;
+
+public:
+    DECLARE_UNKNOWN(CGEKVideoSamplerStates);
+    CGEKVideoSamplerStates(ID3D11SamplerState *pStates)
+        : m_spStates(pStates)
+    {
+    }
+
+    virtual ~CGEKVideoSamplerStates(void)
+    {
+    }
+};
+
 class CGEKVideoComputeProgram : public CGEKUnknown
-                              , public IGEKVideoProgram
 {
 private:
     CComPtr<ID3D11ComputeShader> m_spShader;
@@ -355,7 +381,6 @@ public:
 };
 
 class CGEKVideoVertexProgram : public CGEKUnknown
-                             , public IGEKVideoProgram
 {
 private:
     CComPtr<ID3D11VertexShader> m_spShader;
@@ -375,7 +400,6 @@ public:
 };
 
 class CGEKVideoGeometryProgram : public CGEKUnknown
-                               , public IGEKVideoProgram
 {
 private:
     CComPtr<ID3D11GeometryShader> m_spShader;
@@ -393,7 +417,6 @@ public:
 };
 
 class CGEKVideoPixelProgram : public CGEKUnknown
-                            , public IGEKVideoProgram
 {
 private:
     CComPtr<ID3D11PixelShader> m_spShader;
@@ -467,24 +490,6 @@ public:
     }
 };
 
-class CGEKVideoSamplerStates : public CGEKUnknown
-                             , public IGEKVideoSamplerStates
-{
-private:
-    CComPtr<ID3D11SamplerState> m_spStates;
-
-public:
-    DECLARE_UNKNOWN(CGEKVideoSamplerStates);
-    CGEKVideoSamplerStates(ID3D11SamplerState *pStates)
-        : m_spStates(pStates)
-    {
-    }
-
-    virtual ~CGEKVideoSamplerStates(void)
-    {
-    }
-};
-
 class CGEKVideoTexture : public CGEKUnknown
                        , public IGEKVideoTexture
 {
@@ -543,38 +548,38 @@ public:
 };
 
 BEGIN_INTERFACE_LIST(CGEKVideoRenderStates)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoRenderStates)
+    INTERFACE_LIST_ENTRY_COM(IUnknown)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11RasterizerState, m_spStates)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoDepthStates)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoDepthStates)
+    INTERFACE_LIST_ENTRY_COM(IUnknown)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DepthStencilState, m_spStates)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoBlendStates)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoBlendStates)
+    INTERFACE_LIST_ENTRY_COM(IUnknown)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11BlendState, m_spStates)
 END_INTERFACE_LIST_UNKNOWN
 
+BEGIN_INTERFACE_LIST(CGEKVideoSamplerStates)
+    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11SamplerState, m_spStates)
+END_INTERFACE_LIST_UNKNOWN
+
 BEGIN_INTERFACE_LIST(CGEKVideoComputeProgram)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoProgram)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ComputeShader, m_spShader)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoVertexProgram)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoProgram)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11VertexShader, m_spShader)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11InputLayout, m_spLayout)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoGeometryProgram)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoProgram)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11GeometryShader, m_spShader)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoPixelProgram)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoProgram)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11PixelShader, m_spShader)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -582,11 +587,6 @@ BEGIN_INTERFACE_LIST(CGEKVideoBuffer)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Buffer, m_spBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, m_spShaderView)
-END_INTERFACE_LIST_UNKNOWN
-
-BEGIN_INTERFACE_LIST(CGEKVideoSamplerStates)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoSamplerStates)
-    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11SamplerState, m_spStates)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoTexture)
@@ -723,7 +723,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEKVid
     m_spDeviceContext->RSSetViewports(aViewports.size(), &aViewports[0]);
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(IGEKVideoRenderStates *pStates)
+STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(IUnknown *pStates)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pStates);
@@ -735,7 +735,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(IGEKVideoRenderStates *pSt
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(UINT32 nStencilReference, IGEKVideoDepthStates *pStates)
+STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(UINT32 nStencilReference, IUnknown *pStates)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pStates);
@@ -747,7 +747,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(UINT32 nStencilReference, I
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &kBlendFactor, UINT32 nMask, IGEKVideoBlendStates *pStates)
+STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &kBlendFactor, UINT32 nMask, IUnknown *pStates)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pStates);
@@ -1056,7 +1056,7 @@ STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEKVideoContext **ppContext
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &kStates, IGEKVideoRenderStates **ppStates)
+STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &kStates, IUnknown **ppStates)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
@@ -1175,7 +1175,7 @@ static D3D11_STENCIL_OP GetStencilOperation(GEKVIDEO::STENCIL::OPERATION eOperat
     };
 };
 
-STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEKVIDEO::DEPTHSTATES &kStates, IGEKVideoDepthStates **ppStates)
+STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEKVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
@@ -1301,7 +1301,7 @@ static D3D11_BLEND_OP GetBlendOperation(GEKVIDEO::BLEND::OPERATION eOperation)
     };
 };
 
-STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::UNIFIEDBLENDSTATES &kStates, IGEKVideoBlendStates **ppStates)
+STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
@@ -1352,7 +1352,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::UNIFIEDBLENDSTAT
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::INDEPENDENTBLENDSTATES &kStates, IGEKVideoBlendStates **ppStates)
+STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::INDEPENDENTBLENDSTATES &kStates, IUnknown **ppStates)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
@@ -1668,7 +1668,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1705,7 +1705,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1821,7 +1821,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1858,7 +1858,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1895,7 +1895,7 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1910,7 +1910,7 @@ STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntr
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1925,7 +1925,7 @@ STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1940,7 +1940,7 @@ STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEnt
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, IGEKVideoProgram **ppProgram)
+STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -2192,7 +2192,7 @@ static D3D11_TEXTURE_ADDRESS_MODE GetAddressMode(GEKVIDEO::ADDRESS::MODE eMode)
     };
 };
 
-STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEKVIDEO::SAMPLERSTATES &kStates, IGEKVideoSamplerStates **ppStates)
+STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEKVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);

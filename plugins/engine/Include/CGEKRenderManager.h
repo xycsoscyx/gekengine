@@ -87,12 +87,12 @@ public:
 private:
     std::list<CComPtr<IGEKFactory>> m_aFactories;
 
-    CComPtr<IGEKVideoProgram> m_spVertexProgram;
+    CComPtr<IUnknown> m_spVertexProgram;
     CComPtr<IGEKVideoBuffer> m_spVertexBuffer;
     CComPtr<IGEKVideoBuffer> m_spIndexBuffer;
 
-    CComPtr<IGEKVideoSamplerStates> m_spPointSampler;
-    CComPtr<IGEKVideoSamplerStates> m_spLinearSampler;
+    CComPtr<IUnknown> m_spPointSampler;
+    CComPtr<IUnknown> m_spLinearSampler;
 
     CComPtr<IGEKVideoBuffer> m_spOrthoBuffer;
     CComPtr<IGEKVideoBuffer> m_spEngineBuffer;

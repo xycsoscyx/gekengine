@@ -522,12 +522,12 @@ STDMETHODIMP CGEKRenderFilter::GetDepthBuffer(IUnknown **ppBuffer)
     return hRetVal;
 }
 
-STDMETHODIMP_(IGEKVideoRenderStates *) CGEKRenderFilter::GetRenderStates(void)
+STDMETHODIMP_(IUnknown *) CGEKRenderFilter::GetRenderStates(void)
 {
     return m_spRenderStates;
 }
 
-STDMETHODIMP_(IGEKVideoBlendStates *) CGEKRenderFilter::GetBlendStates(void)
+STDMETHODIMP_(IUnknown *) CGEKRenderFilter::GetBlendStates(void)
 {
     return m_spBlendStates;
 }

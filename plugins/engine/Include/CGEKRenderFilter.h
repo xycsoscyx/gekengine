@@ -8,10 +8,10 @@
 #include <list>
 
 DECLARE_INTERFACE(IGEKVideoTexture);
-DECLARE_INTERFACE(IGEKVideoRenderStates);
-DECLARE_INTERFACE(IGEKVideoDepthStates);
-DECLARE_INTERFACE(IGEKVideoBlendStates);
-DECLARE_INTERFACE(IGEKVideoProgram);
+DECLARE_INTERFACE(IUnknown);
+DECLARE_INTERFACE(IUnknown);
+DECLARE_INTERFACE(IUnknown);
+DECLARE_INTERFACE(IUnknown);
 
 class CGEKRenderFilter : public CGEKUnknown
                        , public CGEKSystemUser
@@ -57,8 +57,8 @@ private:
     UINT32 m_nVertexAttributes;
 
     MODES m_eMode;
-    CComPtr<IGEKVideoDepthStates> m_spDepthStates;
-    CComPtr<IGEKVideoProgram> m_spPixelProgram;
+    CComPtr<IUnknown> m_spDepthStates;
+    CComPtr<IUnknown> m_spPixelProgram;
 
     bool m_bClearDepth;
     bool m_bClearStencil;
@@ -98,7 +98,7 @@ public:
     STDMETHOD_(UINT32, GetVertexAttributes)                 (THIS);
     STDMETHOD(GetBuffer)                                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)                               (THIS_ IUnknown **ppBuffer);
-    STDMETHOD_(IGEKVideoRenderStates *, GetRenderStates)    (THIS);
-    STDMETHOD_(IGEKVideoBlendStates *, GetBlendStates)      (THIS);
+    STDMETHOD_(IUnknown *, GetRenderStates)    (THIS);
+    STDMETHOD_(IUnknown *, GetBlendStates)      (THIS);
     STDMETHOD_(void, Draw)                                  (THIS);
 };

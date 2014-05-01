@@ -14,8 +14,8 @@ DECLARE_INTERFACE_IID_(IGEKRenderFilter, IUnknown, "9A3945DA-2E02-49A1-8107-FA08
     STDMETHOD(GetBuffer)                                    (THIS_ LPCWSTR pName, IUnknown **ppTexture) PURE;
     STDMETHOD(GetDepthBuffer)                               (THIS_ IUnknown **ppBuffer) PURE;
 
-    STDMETHOD_(IGEKVideoRenderStates *, GetRenderStates)    (THIS) PURE;
-    STDMETHOD_(IGEKVideoBlendStates *, GetBlendStates)      (THIS) PURE;
+    STDMETHOD_(IUnknown *, GetRenderStates)    (THIS) PURE;
+    STDMETHOD_(IUnknown *, GetBlendStates)      (THIS) PURE;
 
     STDMETHOD_(void, Draw)                                  (THIS) PURE;
 };

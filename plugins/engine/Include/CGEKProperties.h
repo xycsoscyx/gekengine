@@ -5,13 +5,13 @@
 #include "IGEKRenderManager.h"
 #include "IGEKRenderFilter.h"
 
-DECLARE_INTERFACE(IGEKVideoRenderStates);
-DECLARE_INTERFACE(IGEKVideoBlendStates);
+DECLARE_INTERFACE(IUnknown);
+DECLARE_INTERFACE(IUnknown);
 
 class CGEKRenderStates
 {
 protected:
-    CComPtr<IGEKVideoRenderStates> m_spRenderStates;
+    CComPtr<IUnknown> m_spRenderStates;
 
 public:
     virtual ~CGEKRenderStates(void);
@@ -24,7 +24,7 @@ class CGEKBlendStates
 {
 protected:
     float4 m_nBlendFactor;
-    CComPtr<IGEKVideoBlendStates> m_spBlendStates;
+    CComPtr<IUnknown> m_spBlendStates;
 
 public:
     virtual ~CGEKBlendStates(void);

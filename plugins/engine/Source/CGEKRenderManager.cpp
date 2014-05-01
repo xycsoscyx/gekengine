@@ -61,20 +61,20 @@ END_INTERFACE_LIST_UNKNOWN
 
 DECLARE_INTERFACE_IID_(IGEKProgram, IUnknown, "0387E446-E858-4F3C-9E19-1F0E36D914E3")
 {
-    STDMETHOD_(IGEKVideoProgram *, GetVertexProgram)    (THIS) PURE;
-    STDMETHOD_(IGEKVideoProgram *, GetGeometryProgram)  (THIS) PURE;
+    STDMETHOD_(IUnknown *, GetVertexProgram)    (THIS) PURE;
+    STDMETHOD_(IUnknown *, GetGeometryProgram)  (THIS) PURE;
 };
 
 class CGEKProgram : public CGEKUnknown
                   , public IGEKProgram
 {
 private:
-    CComPtr<IGEKVideoProgram> m_spVertexProgram;
-    CComPtr<IGEKVideoProgram> m_spGeometryProgram;
+    CComPtr<IUnknown> m_spVertexProgram;
+    CComPtr<IUnknown> m_spGeometryProgram;
 
 public:
     DECLARE_UNKNOWN(CGEKProgram);
-    CGEKProgram(IGEKVideoProgram *pVertexProgram, IGEKVideoProgram *pGeometryProgram)
+    CGEKProgram(IUnknown *pVertexProgram, IUnknown *pGeometryProgram)
         : m_spVertexProgram(pVertexProgram)
         , m_spGeometryProgram(pGeometryProgram)
     {
@@ -84,12 +84,12 @@ public:
     {
     }
 
-    STDMETHODIMP_(IGEKVideoProgram *) GetVertexProgram(void)
+    STDMETHODIMP_(IUnknown *) GetVertexProgram(void)
     {
         return m_spVertexProgram;
     }
 
-    STDMETHODIMP_(IGEKVideoProgram *) GetGeometryProgram(void)
+    STDMETHODIMP_(IUnknown *) GetGeometryProgram(void)
     {
         return (m_spGeometryProgram ? m_spGeometryProgram : nullptr);
     }
@@ -1292,7 +1292,7 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                             };
 
                             hRetVal = S_OK;
-                            CComPtr<IGEKVideoProgram> spGeometryProgram;
+                            CComPtr<IUnknown> spGeometryProgram;
                             CLibXMLNode kGeometry = kProgram.FirstChildElement(L"geometry");
                             if (kGeometry)
                             {
@@ -1309,7 +1309,7 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                                     CStringA strVertexProgram = kVertex.GetText();
                                     strDeferredProgram.Replace("_INSERT_WORLD_PROGRAM", (strVertexProgram + "\r\n"));
 
-                                    CComPtr<IGEKVideoProgram> spVertexProgram;
+                                    CComPtr<IUnknown> spVertexProgram;
                                     hRetVal = GetVideoSystem()->CompileVertexProgram(strDeferredProgram, "MainVertexProgram", aLayout, &spVertexProgram);
                                     if (spVertexProgram != nullptr)
                                     {
