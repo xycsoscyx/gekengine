@@ -397,6 +397,14 @@ DECLARE_INTERFACE_IID_(IGEKVideoTexture, IUnknown, "9477396F-28D6-414B-81A3-A44A
     STDMETHOD_(UINT32, GetZSize)                        (THIS) PURE;
 };
 
+DECLARE_INTERFACE(IGEKVideoContextSystem)
+{
+    STDMETHOD_(void, SetProgram)                        (THIS_ IGEKVideoProgram *pProgram) PURE;
+    STDMETHOD_(void, SetConstantBuffer)                 (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer) PURE;
+    STDMETHOD_(void, SetSamplerStates)                  (THIS_ UINT32 nStage, IGEKVideoSamplerStates *pStates) PURE;
+    STDMETHOD_(void, SetTexture)                        (THIS_ UINT32 nStage, IGEKVideoTexture *pTexture) PURE;
+};
+
 DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819E68B372E")
 {
     STDMETHOD_(void, ClearResources)                    (THIS) PURE;
@@ -408,28 +416,20 @@ DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819
     STDMETHOD_(void, ClearDepthStencilTarget)           (THIS_ IUnknown *pTarget, UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;
     STDMETHOD_(void, SetRenderTargets)                  (THIS_ const std::vector<IGEKVideoTexture *> &aTargets, IUnknown *pDepth) PURE;
 
-    STDMETHOD_(void, GetDepthStates)                    (THIS_ UINT32 *pStencilReference, IGEKVideoDepthStates **ppStates) PURE;
-
     STDMETHOD_(void, SetRenderStates)                   (THIS_ IGEKVideoRenderStates *pStates) PURE;
     STDMETHOD_(void, SetDepthStates)                    (THIS_ UINT32 nStencilReference, IGEKVideoDepthStates *pStates) PURE;
     STDMETHOD_(void, SetBlendStates)                    (THIS_ const float4 &kBlendFactor, UINT32 nMask, IGEKVideoBlendStates *pStates) PURE;
-    STDMETHOD_(void, SetVertexConstantBuffer)           (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer) PURE;
-    STDMETHOD_(void, SetGeometryConstantBuffer)         (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer) PURE;
-    STDMETHOD_(void, SetPixelConstantBuffer)            (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer) PURE;
-    STDMETHOD_(void, SetComputeProgram)                 (THIS_ IGEKVideoProgram *pProgram) PURE;
-    STDMETHOD_(void, SetVertexProgram)                  (THIS_ IGEKVideoProgram *pProgram) PURE;
-    STDMETHOD_(void, SetGeometryProgram)                (THIS_ IGEKVideoProgram *pProgram) PURE;
-    STDMETHOD_(void, SetPixelProgram)                   (THIS_ IGEKVideoProgram *pProgram) PURE;
+
+    STDMETHOD_(IGEKVideoContextSystem *, GetComputeSystem)  (THIS) PURE;
+    STDMETHOD_(IGEKVideoContextSystem *, GetVertexSystem)   (THIS) PURE;
+    STDMETHOD_(IGEKVideoContextSystem *, GetGeometrySystem) (THIS) PURE;
+    STDMETHOD_(IGEKVideoContextSystem *, GetPixelSystem)    (THIS) PURE;
+
     STDMETHOD_(void, SetVertexBuffer)                   (THIS_ UINT32 nSlot, UINT32 nOffset, IGEKVideoVertexBuffer *pBuffer) PURE;
     STDMETHOD_(void, SetIndexBuffer)                    (THIS_ UINT32 nOffset, IGEKVideoIndexBuffer *pBuffer) PURE;
-    STDMETHOD_(void, SetSamplerStates)                  (THIS_ UINT32 nStage, IGEKVideoSamplerStates *pStates) PURE;
-    STDMETHOD_(void, SetTexture)                        (THIS_ UINT32 nStage, IGEKVideoTexture *pTexture) PURE;
-
     STDMETHOD_(void, SetPrimitiveType)                  (THIS_ GEKVIDEO::PRIMITIVE::TYPE eType) PURE;
-
     STDMETHOD_(void, DrawIndexedPrimitive)              (THIS_ UINT32 nNumIndices, UINT32 nStartIndex, UINT32 nBaseVertex) PURE;
     STDMETHOD_(void, DrawPrimitive)                     (THIS_ UINT32 nNumVertices, UINT32 nStartVertex) PURE;
-
     STDMETHOD_(void, DrawInstancedIndexedPrimitive)     (THIS_ UINT32 nNumIndices, UINT32 nNumInstances, UINT32 nStartIndex, UINT32 nBaseVertex, UINT32 nStartInstance) PURE;
     STDMETHOD_(void, DrawInstancedPrimitive)            (THIS_ UINT32 nNumVertices, UINT32 nNumInstances, UINT32 nStartVertex, UINT32 nStartInstance) PURE;
 

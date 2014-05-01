@@ -624,7 +624,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     CGEKRenderStates::Enable(GetVideoSystem());
     CGEKBlendStates::Enable(GetVideoSystem());
     GetVideoSystem()->GetImmediateContext()->SetDepthStates(m_nStencilReference, m_spDepthStates);
-    GetVideoSystem()->GetImmediateContext()->SetPixelProgram(m_spPixelProgram);
+    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetProgram(m_spPixelProgram);
     if (m_eMode == FORWARD)
     {
         GetRenderManager()->DrawScene(0xFFFFFFFF);
