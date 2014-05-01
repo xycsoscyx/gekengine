@@ -443,15 +443,16 @@ private:
 
     CComPtr<ID3D11Buffer> m_spBuffer;
     CComPtr<ID3D11ShaderResourceView> m_spShaderView;
-
+    CComPtr<ID3D11UnorderedAccessView> m_spUnorderedView;
 public:
     DECLARE_UNKNOWN(CGEKVideoBuffer);
-    CGEKVideoBuffer(ID3D11DeviceContext *pDeviceContext, UINT32 nStride, UINT32 nCount, ID3D11Buffer *pBuffer, ID3D11ShaderResourceView *pShaderView)
+    CGEKVideoBuffer(ID3D11DeviceContext *pDeviceContext, UINT32 nStride, UINT32 nCount, ID3D11Buffer *pBuffer, ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView)
         : m_pDeviceContext(pDeviceContext)
         , m_nStride(nStride)
         , m_nCount(nCount)
         , m_spBuffer(pBuffer)
         , m_spShaderView(pShaderView)
+        , m_spUnorderedView(pUnorderedView)
     {
     }
 
@@ -587,6 +588,7 @@ BEGIN_INTERFACE_LIST(CGEKVideoBuffer)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Buffer, m_spBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, m_spShaderView)
+    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, m_spUnorderedView)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoTexture)
@@ -1657,7 +1659,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, nStride, nCount, spBuffer, spShaderView));
+            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, nStride, nCount, spBuffer, spShaderView, spUnderedView));
             if (spBuffer != nullptr)
             {
                 hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
