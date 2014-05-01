@@ -365,29 +365,25 @@ DECLARE_INTERFACE_IID_(IGEKVideoBlendStates, IUnknown, "8232160E-51F7-4000-A289-
 {
 };
 
-DECLARE_INTERFACE_IID_(IGEKVideoConstantBuffer, IUnknown, "3DBDB46D-FAAD-43EC-AD2D-1C2A24E55210")
-{
-    STDMETHOD_(void, Update)                            (THIS_ const void *pData, UINT32 nSize = 0) PURE;
-};
-
 DECLARE_INTERFACE_IID_(IGEKVideoProgram, IUnknown, "21945D41-0C9E-4B81-B5C0-2FEA3A0292B2")
 {
 };
 
-DECLARE_INTERFACE_IID_(IGEKVideoVertexBuffer, IUnknown, "6ABE21FD-05E2-458A-80D9-E7D7030D2BA0")
+DECLARE_INTERFACE_IID_(IGEKVideoBuffer, IUnknown, "8542B213-0F5E-4BF7-88E2-80DE06A40D45")
 {
-    STDMETHOD_(UINT32, GetStride)                       (THIS) PURE;
-    STDMETHOD_(UINT32, GetCount)                        (THIS) PURE;
-
     STDMETHOD_(void, Update)                            (THIS_ const void *pData, UINT32 nSize = 0) PURE;
 };
 
-DECLARE_INTERFACE_IID_(IGEKVideoIndexBuffer, IUnknown, "409C6AC4-FA9C-455E-8711-7336F428962E")
+DECLARE_INTERFACE_IID_(IGEKVideoVertexBuffer, IGEKVideoBuffer, "6ABE21FD-05E2-458A-80D9-E7D7030D2BA0")
+{
+    STDMETHOD_(UINT32, GetStride)                       (THIS) PURE;
+    STDMETHOD_(UINT32, GetCount)                        (THIS) PURE;
+};
+
+DECLARE_INTERFACE_IID_(IGEKVideoIndexBuffer, IGEKVideoBuffer, "409C6AC4-FA9C-455E-8711-7336F428962E")
 {
     STDMETHOD_(GEKVIDEO::DATA::FORMAT, GetFormat)       (THIS) PURE;
     STDMETHOD_(UINT32, GetCount)                        (THIS) PURE;
-
-    STDMETHOD_(void, Update)                            (THIS_ const void *pData, UINT32 nSize = 0) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKVideoSamplerStates, IUnknown, "302A7C5F-B162-4B95-A79E-7263D1C1A67F")
@@ -417,9 +413,9 @@ DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819
     STDMETHOD_(void, SetRenderStates)                   (THIS_ IGEKVideoRenderStates *pStates) PURE;
     STDMETHOD_(void, SetDepthStates)                    (THIS_ UINT32 nStencilReference, IGEKVideoDepthStates *pStates) PURE;
     STDMETHOD_(void, SetBlendStates)                    (THIS_ const float4 &kBlendFactor, UINT32 nMask, IGEKVideoBlendStates *pStates) PURE;
-    STDMETHOD_(void, SetVertexConstantBuffer)           (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer) PURE;
-    STDMETHOD_(void, SetGeometryConstantBuffer)         (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer) PURE;
-    STDMETHOD_(void, SetPixelConstantBuffer)            (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer) PURE;
+    STDMETHOD_(void, SetVertexConstantBuffer)           (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer) PURE;
+    STDMETHOD_(void, SetGeometryConstantBuffer)         (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer) PURE;
+    STDMETHOD_(void, SetPixelConstantBuffer)            (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer) PURE;
     STDMETHOD_(void, SetComputeProgram)                 (THIS_ IGEKVideoProgram *pProgram) PURE;
     STDMETHOD_(void, SetVertexProgram)                  (THIS_ IGEKVideoProgram *pProgram) PURE;
     STDMETHOD_(void, SetGeometryProgram)                (THIS_ IGEKVideoProgram *pProgram) PURE;
@@ -455,7 +451,7 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD(CreateRenderTarget)                       (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IGEKVideoTexture **ppTarget) PURE;
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget) PURE;
 
-    STDMETHOD(CreateConstantBuffer)                     (THIS_ UINT32 nSize, IGEKVideoConstantBuffer **ppBuffer) PURE;
+    STDMETHOD(CreateConstantBuffer)                     (THIS_ UINT32 nSize, IGEKVideoBuffer **ppBuffer) PURE;
     STDMETHOD(CreateVertexBuffer)                       (THIS_ UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer, const void *pData = nullptr) PURE;
     STDMETHOD(CreateIndexBuffer)                        (THIS_ GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer, const void *pData = nullptr) PURE;
 

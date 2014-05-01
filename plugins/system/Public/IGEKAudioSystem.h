@@ -12,13 +12,13 @@ DECLARE_INTERFACE_IID_(IGEKAudioSample, IUnknown, "35560CF2-6972-44A3-9489-9CA0A
     STDMETHOD_(void, SetVolume)         (THIS_ float nVolume) PURE;
 };
 
-DECLARE_INTERFACE_IID_(IGEKAudioEffect, IUnknown, "19ED8F1F-D117-4D9A-9AC0-7DC229D478D6")
+DECLARE_INTERFACE_IID_(IGEKAudioEffect, IGEKAudioSample, "19ED8F1F-D117-4D9A-9AC0-7DC229D478D6")
 {
     STDMETHOD_(void, SetPan)            (THIS_ float fPan) PURE;
     STDMETHOD_(void, Play)              (THIS_ bool bLoop) PURE;
 };
 
-DECLARE_INTERFACE_IID_(IGEKAudioSound, IUnknown, "7C3C561D-669B-4559-A1DD-6350AE7A14C0")
+DECLARE_INTERFACE_IID_(IGEKAudioSound, IGEKAudioSample, "7C3C561D-669B-4559-A1DD-6350AE7A14C0")
 {
     STDMETHOD_(void, SetDistance)       (THIS_ float nMin, float nMax) PURE;
     STDMETHOD_(void, Play)              (THIS_ const float3 &kOrigin, bool bLoop) PURE;

@@ -32,9 +32,9 @@ public:
     STDMETHOD_(void, SetRenderStates)                   (THIS_ IGEKVideoRenderStates *pStates);
     STDMETHOD_(void, SetDepthStates)                    (THIS_ UINT32 nStencilReference, IGEKVideoDepthStates *pStates);
     STDMETHOD_(void, SetBlendStates)                    (THIS_ const float4 &kBlendFactor, UINT32 nMask, IGEKVideoBlendStates *pStates);
-    STDMETHOD_(void, SetVertexConstantBuffer)           (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer);
-    STDMETHOD_(void, SetGeometryConstantBuffer)         (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer);
-    STDMETHOD_(void, SetPixelConstantBuffer)            (THIS_ UINT32 nIndex, IGEKVideoConstantBuffer *pBuffer);
+    STDMETHOD_(void, SetVertexConstantBuffer)           (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer);
+    STDMETHOD_(void, SetGeometryConstantBuffer)         (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer);
+    STDMETHOD_(void, SetPixelConstantBuffer)            (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer);
     STDMETHOD_(void, SetComputeProgram)                 (THIS_ IGEKVideoProgram *pProgram);
     STDMETHOD_(void, SetVertexProgram)                  (THIS_ IGEKVideoProgram *pProgram);
     STDMETHOD_(void, SetGeometryProgram)                (THIS_ IGEKVideoProgram *pProgram);
@@ -89,7 +89,7 @@ public:
     STDMETHOD(CreateBlendStates)                        (THIS_ const GEKVIDEO::INDEPENDENTBLENDSTATES &kStates, IGEKVideoBlendStates **ppStates);
     STDMETHOD(CreateRenderTarget)                       (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IGEKVideoTexture **ppTarget);
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget);
-    STDMETHOD(CreateConstantBuffer)                     (THIS_ UINT32 nSize, IGEKVideoConstantBuffer **ppBuffer);
+    STDMETHOD(CreateConstantBuffer)                     (THIS_ UINT32 nSize, IGEKVideoBuffer **ppBuffer);
     STDMETHOD(CreateVertexBuffer)                       (THIS_ UINT32 nStride, UINT32 nCount, IGEKVideoVertexBuffer **ppBuffer, const void *pData);
     STDMETHOD(CreateIndexBuffer)                        (THIS_ GEKVIDEO::DATA::FORMAT eType, UINT32 nCount, IGEKVideoIndexBuffer **ppBuffer, const void *pData);
     STDMETHOD(CompileComputeProgram)                    (THIS_ LPCSTR pProgram, LPCSTR pEntry, IGEKVideoProgram **ppProgram);

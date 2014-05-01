@@ -50,26 +50,7 @@ public:
         REQUIRE_VOID_RETURN(m_spBuffer);
         m_spBuffer->SetVolume(UINT32((DSBVOLUME_MAX - DSBVOLUME_MIN) * nVolume) + DSBVOLUME_MIN);
     }
-
-    STDMETHODIMP_(bool) IsPlaying(void)
-    {
-        REQUIRE_RETURN(m_spBuffer, false);
-
-        DWORD dwStatus = 0;
-        m_spBuffer->GetStatus(&dwStatus);
-        return (dwStatus & DSBSTATUS_PLAYING);
-    }
-
-    STDMETHODIMP_(void) Stop(void)
-    {
-        REQUIRE_VOID_RETURN(m_spBuffer);
-        m_spBuffer->Stop();
-    }
 };
-
-BEGIN_INTERFACE_LIST(CGEKAudioSample)
-    INTERFACE_LIST_ENTRY_COM(IGEKAudioSample)
-END_INTERFACE_LIST_UNKNOWN
 
 class CGEKAudioEffect : public CGEKAudioSample
                       , public IGEKAudioEffect
@@ -103,11 +84,22 @@ public:
             m_spBuffer->Play(0, 0, (bLoop ? DSBPLAY_LOOPING : 0));
         }
     }
-};
 
-BEGIN_INTERFACE_LIST(CGEKAudioEffect)
-    INTERFACE_LIST_ENTRY_COM(IGEKAudioEffect)
-END_INTERFACE_LIST_BASE(CGEKAudioSample)
+    STDMETHODIMP_(void *) GetBuffer(void)
+    {
+        return CGEKAudioSample::GetBuffer();
+    }
+
+    STDMETHODIMP_(void) SetFrequency(UINT32 nFrequency)
+    {
+        CGEKAudioSample::SetFrequency(nFrequency);
+    }
+
+    STDMETHODIMP_(void) SetVolume(float nVolume)
+    {
+        CGEKAudioSample::SetVolume(nVolume);
+    }
+};
 
 class CGEKAudioSound : public CGEKAudioSample
                      , public IGEKAudioSound
@@ -148,7 +140,30 @@ public:
             m_spBuffer->Play(0, 0, (bLoop ? DSBPLAY_LOOPING : 0));
         }
     }
+
+    STDMETHODIMP_(void *) GetBuffer(void)
+    {
+        return CGEKAudioSample::GetBuffer();
+    }
+
+    STDMETHODIMP_(void) SetFrequency(UINT32 nFrequency)
+    {
+        CGEKAudioSample::SetFrequency(nFrequency);
+    }
+
+    STDMETHODIMP_(void) SetVolume(float nVolume)
+    {
+        CGEKAudioSample::SetVolume(nVolume);
+    }
 };
+
+BEGIN_INTERFACE_LIST(CGEKAudioSample)
+    INTERFACE_LIST_ENTRY_COM(IGEKAudioSample)
+END_INTERFACE_LIST_UNKNOWN
+
+BEGIN_INTERFACE_LIST(CGEKAudioEffect)
+    INTERFACE_LIST_ENTRY_COM(IGEKAudioEffect)
+END_INTERFACE_LIST_BASE(CGEKAudioSample)
 
 BEGIN_INTERFACE_LIST(CGEKAudioSound)
     INTERFACE_LIST_ENTRY_COM(IGEKAudioSound)

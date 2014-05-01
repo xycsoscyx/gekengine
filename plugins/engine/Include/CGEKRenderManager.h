@@ -94,9 +94,9 @@ private:
     CComPtr<IGEKVideoSamplerStates> m_spPointSampler;
     CComPtr<IGEKVideoSamplerStates> m_spLinearSampler;
 
-    CComPtr<IGEKVideoConstantBuffer> m_spOrthoBuffer;
-    CComPtr<IGEKVideoConstantBuffer> m_spEngineBuffer;
-    CComPtr<IGEKVideoConstantBuffer> m_spLightBuffer;
+    CComPtr<IGEKVideoBuffer> m_spOrthoBuffer;
+    CComPtr<IGEKVideoBuffer> m_spEngineBuffer;
+    CComPtr<IGEKVideoBuffer> m_spLightBuffer;
 
     Awesomium::WebCore *m_pWebCore;
     Awesomium::WebSession *m_pWebSession;
