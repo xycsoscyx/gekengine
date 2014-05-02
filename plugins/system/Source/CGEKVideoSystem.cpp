@@ -1085,8 +1085,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::SetEvent(IUnknown *pEvent)
     CComQIPtr<ID3D11Query> spEvent(pEvent);
     if (spEvent)
     {
-        m_spDeviceContext->Begin(spEvent);
-        m_spDeviceContext->Begin(spEvent);
+        m_spDeviceContext->End(spEvent);
     }
 }
 
@@ -1095,14 +1094,14 @@ STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(IUnknown *pEvent)
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, false);
     REQUIRE_RETURN(pEvent, false);
 
-    bool bIsSet = false;
+    UINT32 bIsSet = 0;
     CComQIPtr<ID3D11Query> spEvent(pEvent);
     if (spEvent)
     {
-        m_spDeviceContext->GetData(spEvent, (LPVOID)&bIsSet, sizeof(bool), TRUE);
+        m_spDeviceContext->GetData(spEvent, (LPVOID)&bIsSet, sizeof(UINT32), TRUE);
     }
 
-    return bIsSet;
+    return (bIsSet == 1 ? true : false);
 }
 
 STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &kStates, IUnknown **ppStates)
@@ -1682,10 +1681,9 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         {
             D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
             kViewDesc.Format = DXGI_FORMAT_UNKNOWN;
-            kViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-            kViewDesc.BufferEx.FirstElement = 0;
-            kViewDesc.BufferEx.NumElements = nCount;
-            kViewDesc.BufferEx.Flags = 0;
+            kViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+            kViewDesc.Buffer.FirstElement = 0;
+            kViewDesc.Buffer.NumElements = nCount;
 
             hRetVal = m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
         }

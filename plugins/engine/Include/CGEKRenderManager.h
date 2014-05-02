@@ -70,22 +70,12 @@ public:
 
     struct FRAME
     {
-        IGEKEntity *m_pViewer;
-        frustum m_kFrustum;
-
-        ENGINEBUFFER m_kBuffer;
-
-        std::map<PASS *, UINT32> m_aPasses;
-
-        concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> m_aModels;
-        concurrency::concurrent_vector<LIGHT> m_aLights;
-
-        std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aCulledModels;
-        std::vector<LIGHT> m_aCulledLights;
     };
 
 private:
     std::list<CComPtr<IGEKFactory>> m_aFactories;
+
+    CComPtr<IUnknown> m_spFrameEvent;
 
     CComPtr<IUnknown> m_spVertexProgram;
     CComPtr<IGEKVideoBuffer> m_spVertexBuffer;
@@ -114,18 +104,21 @@ private:
     std::map<GEKHASH, PASS> m_aPasses;
 
     IGEKEntity *m_pViewer;
+    frustum m_kFrustum;
+    ENGINEBUFFER m_kEngineBuffer;
+
     PASS *m_pCurrentPass;
     IGEKRenderFilter *m_pCurrentFilter;
-    std::shared_ptr<FRAME> m_spUpdateFrame;
-    std::shared_ptr<FRAME> m_spRenderFrame;
-    concurrency::concurrent_queue<std::shared_ptr<FRAME>> m_aFrames;
-    std::unique_ptr<std::thread> m_spRenderThread;
-    bool m_bRunThread;
-    bool m_bDrawing;
+    std::map<PASS *, UINT32> m_aCurrentPasses;
+
+    concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> m_aCurrentModels;
+    concurrency::concurrent_vector<LIGHT> m_aCurrentLights;
+
+    std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aCulledModels;
+    std::vector<LIGHT> m_aCulledLights;
 
 private:
     HRESULT LoadPass(LPCWSTR pName);
-    HRESULT CreateThread(void);
 
 public:
     CGEKRenderManager(void);
