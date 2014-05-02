@@ -593,6 +593,14 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
     CComPtr<IUnknown> spComputeTest;
     GetVideoSystem()->LoadComputeProgram(L"%root%\\data\\programs\\compute\\test.txt", "MainComputeProgram", &spComputeTest);
 
+    CComPtr<IGEKVideoTexture> spTexture;
+    GetVideoSystem()->CreateTexture(1024, 1024, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::UNORDERED_ACCESS, &spTexture);
+
+    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(0, spTexture);
+    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetProgram(spComputeTest);
+    GetVideoSystem()->GetImmediateContext()->Dispatch(32, 32, 1);
+
+
     return hRetVal;
 }
 
