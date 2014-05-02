@@ -4,6 +4,5 @@
         <filter source="Opaque/PrePass" />
         <filter source="Opaque/Deferred" />
         <filter source="Opaque/Lighting" />
-        <filter source="Opaque/Final" />
     </filters>
 </pass>

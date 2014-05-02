@@ -4,10 +4,11 @@
 ]>
 <filter>
     <targets>
-        <target name="Diffuse" format="RGBA_UINT8" clear="0,0,0,0" />
-        <target name="Specular" format="RGBA_UINT8" clear="0,0,0,0" />
+        <target source="Screen" />
+        <target name="Buffer" format="RGBA_UINT8" />
     </targets>
     <textures>
+        <texture source="Opaque/Deferred.Albedo" />
         <texture source="Opaque/Deferred.World" />
         <texture source="Opaque/Deferred.Info" />
     </textures>

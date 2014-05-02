@@ -298,6 +298,7 @@ CGEKRenderManager::CGEKRenderManager(void)
     , m_pCurrentFilter(nullptr)
     , m_bRunThread(false)
     , m_bDrawing(false)
+    , m_nNumLightInstances(50)
 {
 }
 
@@ -552,7 +553,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(LIGHTBUFFER), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spLightBuffer);
+        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(LIGHT), (m_nNumLightInstances + 1), GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -781,8 +782,6 @@ HRESULT CGEKRenderManager::CreateThread(void)
                     GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
                     GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
                     GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-                    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(1, m_spLightBuffer);
-
                     GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
                     GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
 
@@ -1554,14 +1553,11 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
     GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     if (bPerLight)
     {
-        LIGHTBUFFER kBuffer;
-        UINT32 nMaxLights = (sizeof(kBuffer.m_aLights) / sizeof(LIGHT));
-        for (UINT32 nPass = 0; nPass < m_spRenderFrame->m_aCulledLights.size(); nPass += nMaxLights)
+        GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(3, m_spLightBuffer);
+        for (UINT32 nPass = 0; nPass < m_spRenderFrame->m_aCulledLights.size(); nPass += (m_nNumLightInstances + 1))
         {
-            kBuffer.m_nNumLights = min(nMaxLights, (m_spRenderFrame->m_aCulledLights.size() - nPass));
-            memcpy(&kBuffer.m_aLights[0], &m_spRenderFrame->m_aCulledLights[nPass], (sizeof(LIGHT) * kBuffer.m_nNumLights));
-            m_spLightBuffer->Update(&kBuffer);
-
+            UINT32 nNumLights = min((m_nNumLightInstances + 1), (m_spRenderFrame->m_aCulledLights.size() - nPass));
+            m_spLightBuffer->Update(&m_spRenderFrame->m_aCulledLights[nPass], (sizeof(LIGHT) * nNumLights));
             GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
         }
     }
@@ -1638,12 +1634,22 @@ STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
     REQUIRE_VOID_RETURN(m_pWebCore);
     REQUIRE_VOID_RETURN(m_spUpdateFrame);
 
-    m_spUpdateFrame->m_aCulledLights.assign(m_spUpdateFrame->m_aLights.begin(), m_spUpdateFrame->m_aLights.end());
-    for (auto &kLight : m_spUpdateFrame->m_aCulledLights)
+    UINT32 nCounter = 0;
+    for (auto &kLight : m_spUpdateFrame->m_aLights)
     {
         kLight.m_nPosition = (m_spUpdateFrame->m_kBuffer.m_nViewMatrix * kLight.m_nPosition);
+        m_spUpdateFrame->m_aCulledLights.push_back(kLight);
+        if (++nCounter % m_nNumLightInstances == 0)
+        {
+            LIGHT kSentinel;
+            kSentinel.m_nRange = -1;
+            m_spUpdateFrame->m_aCulledLights.push_back(kSentinel);
+        }
     }
 
+    LIGHT kSentinel;
+    kSentinel.m_nRange = -1;
+    m_spUpdateFrame->m_aCulledLights.push_back(kSentinel);
     m_spUpdateFrame->m_aLights.clear();
 
     for (auto &kPair : m_spUpdateFrame->m_aModels)

@@ -4,10 +4,11 @@
 ]>
 <filter>
     <targets>
-        <target source="Opaque/Lighting.Diffuse" clear="0,0,0,0" />
-        <target source="Opaque/Lighting.Specular" clear="0,0,0,0" />
+        <target source="Screen" />
+        <target source="Opaque/Lighting.Buffer" />
     </targets>
     <textures>
+        <texture source="Opaque/Deferred.Albedo" />
         <texture source="Glass/Deferred.World" />
         <texture source="Opaque/Deferred.Info" />
     </textures>

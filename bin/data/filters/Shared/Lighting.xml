@@ -1,6 +1,7 @@
 <![CDATA[
-    Texture2D     gs_pWorldBuffer           : register(t0);
-    Texture2D     gs_pInfoBuffer            : register(t1);
+    Texture2D     gs_pAlbedoBuffer          : register(t0);
+    Texture2D     gs_pWorldBuffer           : register(t1);
+    Texture2D     gs_pInfoBuffer            : register(t2);
 
     struct LIGHT
     {
@@ -9,22 +10,17 @@
         float  m_nRange;
     };
     
-    cbuffer LIGHTBUFFER                     : register(b1)
-    {
-        uint   gs_nNumLights                : packoffset(c0);
-        float3 gs_nBuffer                   : packoffset(c0.y);
-        LIGHT  gs_aLights[10]               : packoffset(c1);
-    }
+    StructuredBuffer<LIGHT> gs_aLights      : register(t3);
     
     struct OUTPUT
     {
-        float4 diffuse                      : SV_TARGET0;
-        float4 specular                     : SV_TARGET1;
+        float4 screen                       : SV_TARGET0;
+        float4 buffer                       : SV_TARGET1;
     };
 
     // Diffuse & Specular Term
     // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
-    float2 GetBRDF(float3 nPixelNormal, float3 nLightNormal, float3 nViewNormal, float4 nInfo)
+    float3 GetBRDF(float3 nAlbedo, float3 nPixelNormal, float3 nLightNormal, float3 nViewNormal, float4 nInfo)
     {
         const float gs_nPI = 3.14159265358979323846;
         const float gs_nReciprocalPI = (1.0f / gs_nPI);
@@ -33,11 +29,10 @@
         float nRoughnessSquared = (nRoughness * nRoughness);
         float nSpecular = nInfo.y;
         float nMetalness = nInfo.z;
-        float nRetroflective = 0;
 
-        float Ks = lerp(nSpecular, 1, nMetalness);
-        float Kd = lerp(1, 0, nMetalness);
-        float Fd = 1.0 - Ks;
+        float3 Ks = lerp(nSpecular, nAlbedo, nMetalness);
+        float3 Kd = lerp(nAlbedo, 0, nMetalness);
+        float3 Fd = 1.0 - Ks;
 
         float nNormalViewAngle = dot(nPixelNormal, nViewNormal);
         float nNormalViewAngleSquared = (nNormalViewAngle * nNormalViewAngle);
@@ -48,16 +43,13 @@
         float nNormalHalfAngle = saturate(dot(nPixelNormal, nHalfVector));
         float nLightHalfAngle = saturate(dot(nLightNormal, nHalfVector));
 
-        float LdotV = dot(nLightNormal, nViewNormal);
-        nNormalHalfAngle = lerp(nNormalHalfAngle,  LdotV, saturate(nRetroflective));
-
         float nNormalLightAngleSquared = (nNormalLightAngle * nNormalLightAngle);
         float nNormalHalfAngleSquared = (nNormalHalfAngle * nNormalHalfAngle);
         float nInvNormalLightAngleSquared = (1.0 - nNormalLightAngleSquared);
 
-        float nFinalDiffuse = (Kd * Fd * gs_nReciprocalPI * saturate((1 - nRoughness) * 0.5 + 0.5 + nRoughnessSquared * (8 - nRoughness) * 0.023));
+        float3 nFinalDiffuse = (Kd * Fd * gs_nReciprocalPI * saturate((1 - nRoughness) * 0.5 + 0.5 + nRoughnessSquared * (8 - nRoughness) * 0.023));
 
-        float D = (pow(nRoughness/(nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
+        float3 D = (pow(nRoughness/(nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
 
         nNormalViewAngle = (nNormalViewAngle * 0.5 + 0.5);
         nNormalLightAngle = (nNormalLightAngle * 0.5 + 0.5);
@@ -71,22 +63,17 @@
         float nDiffuseViewAngle = (1 - (pow(1 - nNormalViewAngle, 4) * nDiffuseDelta));
         nFinalDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle);
 
-        float Fs = (Ks + Fd * pow((1 - nLightHalfAngle), 5));
+        float3 Fs = (Ks + Fd * pow((1 - nLightHalfAngle), 5));
 
-        float nGeometric1 = (1.0 + sqrt(1.0 + nRoughnessSquared * (nInvNormalLightAngleSquared / nNormalLightAngleSquared)));
-        float nGeometric2 = (1.0 + sqrt(1.0 + nRoughnessSquared * (nInvNormalViewAngleSquared / nNormalViewAngleSquared)));
-        float nGeometric = (((2 / nGeometric1) * (2 / nGeometric2)) / (4 * nNormalViewAngle * nNormalLightAngle + 0.1));
+        float3 nFinalSpecular = (Fs * D);
 
-        float nGeometricRetroreflective = (nNormalViewAngleSquared * nNormalLightAngle);
-        nGeometric = lerp(nGeometric, nGeometricRetroreflective, nRetroflective);
-
-        float nFinalSpecular = (Fs * D * nGeometric);
-
-        return (float2(nFinalDiffuse, nFinalSpecular) * saturate(dot(nPixelNormal, nLightNormal)));
+        return ((nFinalDiffuse + nFinalSpecular) * saturate(dot(nPixelNormal, nLightNormal)));
     }
     
     OUTPUT MainPixelProgram(INPUT kInput)
     {
+        float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+
         float4 nPixelInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
 	    float4 nWorld = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
@@ -97,7 +84,7 @@
         float3 nViewNormal = -kInput.view;
 
         OUTPUT kOutput = (OUTPUT)0;
-        for(uint nLight = 0; nLight < gs_nNumLights; nLight++)
+        for(uint nLight = 0; gs_aLights[nLight].m_nRange > 0.0f; nLight++)
         {
             float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nPixelPosition);
             float nDistance = length(nLightVector);
@@ -105,15 +92,13 @@
 	
             float nAttenuation = (1.0f - saturate(nDistance / gs_aLights[nLight].m_nRange));
 
-            float2 nLighting = GetBRDF(nPixelNormal, nLightNormal, nViewNormal, nPixelInfo);
+            float3 nLighting = GetBRDF(nAlbedo, nPixelNormal, nLightNormal, nViewNormal, nPixelInfo);
             nLighting *= nAttenuation;
 
-            kOutput.diffuse.xyz += saturate(gs_aLights[nLight].m_nColor * nLighting.x);
-            kOutput.specular.xyz += saturate(gs_aLights[nLight].m_nColor * nLighting.y);
+            kOutput.buffer.xyz += saturate(gs_aLights[nLight].m_nColor * nLighting);
         }
 
-        kOutput.diffuse.xyz = saturate(kOutput.diffuse.xyz);
-        kOutput.specular.xyz = saturate(kOutput.specular.xyz);
+        kOutput.screen.xyz = kOutput.buffer.xyz = saturate(kOutput.buffer.xyz);
         return kOutput;
     }
 ]]>

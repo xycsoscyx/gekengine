@@ -97,6 +97,7 @@ private:
     CComPtr<IGEKVideoBuffer> m_spOrthoBuffer;
     CComPtr<IGEKVideoBuffer> m_spEngineBuffer;
     CComPtr<IGEKVideoBuffer> m_spLightBuffer;
+    UINT32 m_nNumLightInstances;
 
     Awesomium::WebCore *m_pWebCore;
     Awesomium::WebSession *m_pWebSession;
