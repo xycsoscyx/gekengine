@@ -464,6 +464,10 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD_(IGEKVideoContext *, GetImmediateContext) (THIS) PURE;
     STDMETHOD(CreateDeferredContext)                    (THIS_ IGEKVideoContext **ppContext) PURE;
 
+    STDMETHOD(CreateEvent)                              (THIS_ IUnknown **ppEvent) PURE;
+    STDMETHOD_(void, SetEvent)                          (THIS_ IUnknown *pEvent) PURE;
+    STDMETHOD_(bool, IsEventSet)                        (THIS_ IUnknown *pEvent) PURE;
+
     STDMETHOD(CreateRenderStates)                       (THIS_ const GEKVIDEO::RENDERSTATES &kStates, IUnknown **ppStates) PURE;
     STDMETHOD(CreateDepthStates)                        (THIS_ const GEKVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates) PURE;
     STDMETHOD(CreateBlendStates)                        (THIS_ const GEKVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates) PURE;

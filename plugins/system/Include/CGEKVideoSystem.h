@@ -82,6 +82,9 @@ public:
     STDMETHOD(Reset)                                    (THIS);
     STDMETHOD_(IGEKVideoContext *, GetImmediateContext) (THIS);
     STDMETHOD(CreateDeferredContext)                    (THIS_ IGEKVideoContext **ppContext);
+    STDMETHOD(CreateEvent)                              (THIS_ IUnknown **ppEvent);
+    STDMETHOD_(void, SetEvent)                          (THIS_ IUnknown *pEvent);
+    STDMETHOD_(bool, IsEventSet)                        (THIS_ IUnknown *pEvent);
     STDMETHOD(CreateRenderStates)                       (THIS_ const GEKVIDEO::RENDERSTATES &kStates, IUnknown **ppStates);
     STDMETHOD(CreateDepthStates)                        (THIS_ const GEKVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates);
     STDMETHOD(CreateBlendStates)                        (THIS_ const GEKVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates);

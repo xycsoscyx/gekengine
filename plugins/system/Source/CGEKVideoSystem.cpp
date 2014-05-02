@@ -1058,6 +1058,53 @@ STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEKVideoContext **ppContext
     return hRetVal;
 }
 
+STDMETHODIMP CGEKVideoSystem::CreateEvent(IUnknown **ppEvent)
+{
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
+    REQUIRE_RETURN(ppEvent, E_INVALIDARG);
+
+    D3D11_QUERY_DESC kDesc;
+    kDesc.Query = D3D11_QUERY_EVENT;
+    kDesc.MiscFlags = 0;
+
+    CComPtr<ID3D11Query> spEvent;
+    HRESULT hRetVal = m_spDevice->CreateQuery(&kDesc, &spEvent);
+    if (spEvent)
+    {
+        hRetVal = spEvent->QueryInterface(IID_PPV_ARGS(ppEvent));
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP_(void) CGEKVideoSystem::SetEvent(IUnknown *pEvent)
+{
+    REQUIRE_VOID_RETURN(m_spDevice && m_spDeviceContext);
+    REQUIRE_VOID_RETURN(pEvent);
+
+    CComQIPtr<ID3D11Query> spEvent(pEvent);
+    if (spEvent)
+    {
+        m_spDeviceContext->Begin(spEvent);
+        m_spDeviceContext->Begin(spEvent);
+    }
+}
+
+STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(IUnknown *pEvent)
+{
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, false);
+    REQUIRE_RETURN(pEvent, false);
+
+    bool bIsSet = false;
+    CComQIPtr<ID3D11Query> spEvent(pEvent);
+    if (spEvent)
+    {
+        m_spDeviceContext->GetData(spEvent, (LPVOID)&bIsSet, sizeof(bool), TRUE);
+    }
+
+    return bIsSet;
+}
+
 STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &kStates, IUnknown **ppStates)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);

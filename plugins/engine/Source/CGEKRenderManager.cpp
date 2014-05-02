@@ -298,7 +298,7 @@ CGEKRenderManager::CGEKRenderManager(void)
     , m_pCurrentFilter(nullptr)
     , m_bRunThread(false)
     , m_bDrawing(false)
-    , m_nNumLightInstances(50)
+    , m_nNumLightInstances(255)
 {
 }
 
