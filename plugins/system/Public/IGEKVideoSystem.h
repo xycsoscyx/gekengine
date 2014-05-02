@@ -209,6 +209,15 @@ namespace GEKVIDEO
         };
     };
 
+    namespace TEXTURE
+    {
+        enum FLAGS
+        {
+            RESOURCE                        = 1 << 0,
+            UNORDERED_ACCESS                = 1 << 1,
+        };
+    };
+
     namespace CLEAR
     {
         enum MASK
@@ -487,8 +496,8 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD(LoadGeometryProgram)                      (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram) PURE;
     STDMETHOD(LoadPixelProgram)                         (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram) PURE;
 
-    STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, const float4 &nColor, IGEKVideoTexture **ppTexture) PURE;
-    STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEKVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT &nDestRect) PURE;
+    STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEKVideoTexture **ppTexture) PURE;
+    STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEKVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT *pDestRect = nullptr) PURE;
     STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, IGEKVideoTexture **ppTexture) PURE;
     STDMETHOD(CreateSamplerStates)                      (THIS_ const GEKVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates) PURE;
 

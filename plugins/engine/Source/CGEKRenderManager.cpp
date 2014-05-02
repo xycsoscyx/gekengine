@@ -128,7 +128,7 @@ public:
         , m_nPitch(nXSize * 4)
         , m_bDirty(false)
     {
-        m_pVideoSystem->CreateTexture(nXSize, nYSize, GEKVIDEO::DATA::BGRA_UINT8, float4(0.0f, 0.0f, 0.0f, 0.0f), &m_spTexture);
+        m_pVideoSystem->CreateTexture(nXSize, nYSize, GEKVIDEO::DATA::BGRA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &m_spTexture);
         m_aBuffer.resize(nXSize * nYSize * 4);
     }
 
@@ -151,7 +151,7 @@ public:
                 0, 0, m_nXSize, m_nYSize,
             };
 
-            m_pVideoSystem->UpdateTexture(m_spTexture, &m_aBuffer[0], m_nPitch, kRect);
+            m_pVideoSystem->UpdateTexture(m_spTexture, &m_aBuffer[0], m_nPitch, &kRect);
         }
     }
 
@@ -590,6 +590,9 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         });
     }
 
+    CComPtr<IUnknown> spComputeTest;
+    GetVideoSystem()->LoadComputeProgram(L"%root%\\data\\programs\\compute\\test.txt", "MainComputeProgram", &spComputeTest);
+
     return hRetVal;
 }
 
@@ -852,9 +855,14 @@ STDMETHODIMP CGEKRenderManager::LoadTexture(LPCWSTR pName, IUnknown **ppTexture)
                 float4 nColor = StrToFloat4(strColor);
 
                 CComPtr<IGEKVideoTexture> spColorTexture;
-                hRetVal = GetVideoSystem()->CreateTexture(1, 1, GEKVIDEO::DATA::RGBA_UINT8, nColor, &spColorTexture);
+                hRetVal = GetVideoSystem()->CreateTexture(1, 1, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &spColorTexture);
                 if (spColorTexture)
                 {
+                    UINT32 nColorValue = UINT32(UINT8(nColor.r * 255.0f)) |
+                                         UINT32(UINT8(nColor.g * 255.0f) << 8) |
+                                         UINT32(UINT8(nColor.b * 255.0f) << 16) |
+                                         UINT32(UINT8(nColor.a * 255.0f) << 24);
+                    GetVideoSystem()->UpdateTexture(spColorTexture, &nColorValue, 4);
                     spTexture = spColorTexture;
                 }
                 else

@@ -438,15 +438,15 @@ class CGEKVideoBuffer : public CGEKUnknown
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
-    UINT32 m_nStride;
-    UINT32 m_nCount;
-
     CComPtr<ID3D11Buffer> m_spBuffer;
     CComPtr<ID3D11ShaderResourceView> m_spShaderView;
     CComPtr<ID3D11UnorderedAccessView> m_spUnorderedView;
+    UINT32 m_nStride;
+    UINT32 m_nCount;
+
 public:
     DECLARE_UNKNOWN(CGEKVideoBuffer);
-    CGEKVideoBuffer(ID3D11DeviceContext *pDeviceContext, UINT32 nStride, UINT32 nCount, ID3D11Buffer *pBuffer, ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView)
+    CGEKVideoBuffer(ID3D11DeviceContext *pDeviceContext, ID3D11Buffer *pBuffer, ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView, UINT32 nStride, UINT32 nCount)
         : m_pDeviceContext(pDeviceContext)
         , m_nStride(nStride)
         , m_nCount(nCount)
@@ -495,15 +495,19 @@ class CGEKVideoTexture : public CGEKUnknown
                        , public IGEKVideoTexture
 {
 protected:
+    ID3D11DeviceContext *m_pDeviceContext;
     CComPtr<ID3D11ShaderResourceView> m_spShaderView;
+    CComPtr<ID3D11UnorderedAccessView> m_spUnorderedView;
     UINT32 m_nXSize;
     UINT32 m_nYSize;
     UINT32 m_nZSize;
 
 public:
     DECLARE_UNKNOWN(CGEKVideoTexture);
-    CGEKVideoTexture(ID3D11ShaderResourceView *pShaderView, UINT32 nXSize, UINT32 nYSize, UINT32 nZSize)
-        : m_spShaderView(pShaderView)
+    CGEKVideoTexture(ID3D11DeviceContext *pDeviceContext, ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView, UINT32 nXSize, UINT32 nYSize, UINT32 nZSize)
+        : m_pDeviceContext(pDeviceContext)
+        , m_spShaderView(pShaderView)
+        , m_spUnorderedView(pUnorderedView)
         , m_nXSize(nXSize)
         , m_nYSize(nYSize)
         , m_nZSize(nZSize)
@@ -537,8 +541,8 @@ private:
 
 public:
     DECLARE_UNKNOWN(CGEKVideoRenderTarget);
-    CGEKVideoRenderTarget(ID3D11ShaderResourceView *pShaderView, ID3D11RenderTargetView *pRenderView, UINT32 nXSize, UINT32 nYSize, UINT32 nZSize)
-        : CGEKVideoTexture(pShaderView, nXSize, nYSize, nZSize)
+    CGEKVideoRenderTarget(ID3D11DeviceContext *pDeviceContext, ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView, ID3D11RenderTargetView *pRenderView, UINT32 nXSize, UINT32 nYSize, UINT32 nZSize)
+        : CGEKVideoTexture(pDeviceContext, pShaderView, pUnorderedView, nXSize, nYSize, nZSize)
         , m_spRenderView(pRenderView)
     {
     }
@@ -594,6 +598,7 @@ END_INTERFACE_LIST_UNKNOWN
 BEGIN_INTERFACE_LIST(CGEKVideoTexture)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoTexture)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, m_spShaderView)
+    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, m_spUnorderedView)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoRenderTarget)
@@ -916,7 +921,7 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
         hRetVal = m_spDevice->CreateRenderTargetView(spBackBuffer, nullptr, &m_spRenderTargetView);
         if (m_spRenderTargetView != nullptr)
         {
-            m_spDefaultTarget = new CGEKVideoRenderTarget(nullptr, m_spRenderTargetView, GetSystem()->GetXSize(), GetSystem()->GetYSize(), 0);
+            m_spDefaultTarget = new CGEKVideoRenderTarget(m_spDeviceContext, nullptr, nullptr, m_spRenderTargetView, GetSystem()->GetXSize(), GetSystem()->GetYSize(), 0);
             if (m_spDefaultTarget != nullptr)
             {
                 CComPtr<IUnknown> spDepthView;
@@ -1525,7 +1530,7 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 	            if (spShaderView != nullptr)
 	            {
                     hRetVal = E_OUTOFMEMORY;
-                    CComPtr<CGEKVideoRenderTarget> spTexture(new CGEKVideoRenderTarget(spShaderView, spRenderView, nXSize, nYSize, 0));
+                    CComPtr<CGEKVideoRenderTarget> spTexture(new CGEKVideoRenderTarget(m_spDeviceContext, spShaderView, nullptr, spRenderView, nXSize, nYSize, 0));
                     if (spTexture != nullptr)
                     {
                         hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTarget));
@@ -1704,7 +1709,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, nStride, nCount, spBuffer, spShaderView, spUnderedView));
+            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, spUnderedView, nStride, nCount));
             if (spBuffer != nullptr)
             {
                 hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
@@ -2002,32 +2007,8 @@ STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry,
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, const float4 &nColor, IGEKVideoTexture **ppTexture)
+STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEKVideoTexture **ppTexture)
 {
-    UINT32 nColorValue = 0;
-    switch (eFormat)
-    {
-    case GEKVIDEO::DATA::RGBA_UINT8:
-        nColorValue = UINT32(UINT8(nColor.r * 255.0f)) |
-                      UINT32(UINT8(nColor.g * 255.0f) << 8) |
-                      UINT32(UINT8(nColor.b * 255.0f) << 16) |
-                      UINT32(UINT8(nColor.a * 255.0f) << 24);
-        break;
-
-    case GEKVIDEO::DATA::BGRA_UINT8:
-        nColorValue = UINT32(UINT8(nColor.b * 255.0f)) |
-                      UINT32(UINT8(nColor.g * 255.0f) << 8) |
-                      UINT32(UINT8(nColor.r * 255.0f) << 16) |
-                      UINT32(UINT8(nColor.a * 255.0f) << 24);
-        break;
-    };
-
-    std::vector<UINT32> aData(nXSize * nYSize);
-    for (UINT32 nPixel = 0; nPixel < (nXSize * nYSize); nPixel++)
-    {
-        aData[nPixel] = nColorValue;
-    }
-
     D3D11_TEXTURE2D_DESC kTextureDesc;
     kTextureDesc.Width = nXSize;
     kTextureDesc.Height = nYSize;
@@ -2035,6 +2016,22 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, GEKVID
     kTextureDesc.ArraySize = 1;
     switch (eFormat)
     {
+    case GEKVIDEO::DATA::R_FLOAT:
+        kTextureDesc.Format = DXGI_FORMAT_R32_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RG_FLOAT:
+        kTextureDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RGB_FLOAT:
+        kTextureDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RGBA_FLOAT:
+        kTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        break;
+
     case GEKVIDEO::DATA::RGBA_UINT8:
         kTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         break;
@@ -2047,25 +2044,46 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, GEKVID
     kTextureDesc.SampleDesc.Count = 1;
     kTextureDesc.SampleDesc.Quality = 0;
     kTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-    kTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    kTextureDesc.BindFlags = 0;
+
+    if (nFlags & GEKVIDEO::TEXTURE::RESOURCE)
+    {
+        kTextureDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+    }
+
+    if (nFlags & GEKVIDEO::TEXTURE::UNORDERED_ACCESS)
+    {
+        kTextureDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
+    }
+
     kTextureDesc.CPUAccessFlags = 0;
     kTextureDesc.MiscFlags = 0;
 
-    D3D11_SUBRESOURCE_DATA kResourceData;
-    kResourceData.pSysMem = &aData[0];
-    kResourceData.SysMemPitch = (nXSize * 4);
-    kResourceData.SysMemSlicePitch = 0;
-
     CComPtr<ID3D11Texture2D> spTexture;
-    HRESULT hRetVal = m_spDevice->CreateTexture2D(&kTextureDesc, &kResourceData, &spTexture);
+    HRESULT hRetVal = m_spDevice->CreateTexture2D(&kTextureDesc, nullptr, &spTexture);
     if (spTexture)
     {
         CComPtr<ID3D11ShaderResourceView> spResourceView;
-        hRetVal = m_spDevice->CreateShaderResourceView(spTexture, nullptr, &spResourceView);
-        if (spResourceView)
+        if (nFlags & GEKVIDEO::TEXTURE::RESOURCE)
+        {
+            hRetVal = m_spDevice->CreateShaderResourceView(spTexture, nullptr, &spResourceView);
+        }
+
+        CComPtr<ID3D11UnorderedAccessView> spUnderedView;
+        if (SUCCEEDED(hRetVal) && nFlags & GEKVIDEO::TEXTURE::UNORDERED_ACCESS)
+        {
+            D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
+            kViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+            kViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+            kViewDesc.Texture2D.MipSlice = 0;
+
+            hRetVal = m_spDevice->CreateUnorderedAccessView(spTexture, &kViewDesc, &spUnderedView);
+        }
+        
+        if (SUCCEEDED(hRetVal))
         {
             hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(spResourceView, nXSize, nYSize, 0));
+            CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, spUnderedView, nXSize, nYSize, 0));
             if (spTexture != nullptr)
             {
                 hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
@@ -2076,7 +2094,7 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, GEKVID
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEKVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT &nDestRect)
+STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEKVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT *pDestRect)
 {
     REQUIRE_VOID_RETURN(m_spDevice && m_spDeviceContext);
     REQUIRE_VOID_RETURN(pTexture);
@@ -2088,17 +2106,24 @@ STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEKVideoTexture *pTexture, v
         spD3DView->GetResource(&spResource);
         if (spResource != nullptr)
         {
-            D3D11_BOX nBox = 
+            if (pDestRect == nullptr)
             {
-                nDestRect.left,
-                nDestRect.top,
-                0,
-                nDestRect.right,
-                nDestRect.bottom,
-                1,
-            };
+                m_spDeviceContext->UpdateSubresource(spResource, 0, nullptr, pBuffer, nPitch, nPitch);
+            }
+            else
+            {
+                D3D11_BOX nBox =
+                {
+                    pDestRect->left,
+                    pDestRect->top,
+                    0,
+                    pDestRect->right,
+                    pDestRect->bottom,
+                    1,
+                };
 
-            m_spDeviceContext->UpdateSubresource(spResource, 0, &nBox, pBuffer, nPitch, nPitch);
+                m_spDeviceContext->UpdateSubresource(spResource, 0, &nBox, pBuffer, nPitch, nPitch);
+            }
         }
     }
 }
@@ -2205,7 +2230,7 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **
                 }
 
                 hRetVal = E_OUTOFMEMORY;
-                CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(spResourceView, nXSize, nYSize, nZSize));
+                CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, nullptr, nXSize, nYSize, nZSize));
                 if (spTexture != nullptr)
                 {
                     hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
