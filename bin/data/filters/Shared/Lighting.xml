@@ -12,15 +12,9 @@
     
     StructuredBuffer<LIGHT> gs_aLights      : register(t3);
     
-    struct OUTPUT
-    {
-        float4 screen                       : SV_TARGET0;
-        float4 buffer                       : SV_TARGET1;
-    };
-
     // Diffuse & Specular Term
     // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
-    float3 GetBRDF(float3 nAlbedo, float3 nPixelNormal, float3 nLightNormal, float3 nViewNormal, float4 nInfo)
+    void GetBRDF(out float3 nFinalDiffuse, out float3 nFinalSpecular, float4 nAlbedo, float3 nPixelNormal, float3 nLightNormal, float3 nViewNormal, float4 nInfo)
     {
         const float gs_nPI = 3.14159265358979323846;
         const float gs_nReciprocalPI = (1.0f / gs_nPI);
@@ -30,8 +24,8 @@
         float nSpecular = nInfo.y;
         float nMetalness = nInfo.z;
 
-        float3 Ks = lerp(nSpecular, nAlbedo, nMetalness);
-        float3 Kd = lerp(nAlbedo, 0, nMetalness);
+        float3 Ks = lerp(nSpecular, nAlbedo.xyz, nMetalness);
+        float3 Kd = lerp(nAlbedo.xyz, 0, nMetalness);
         float3 Fd = 1.0 - Ks;
 
         float nNormalViewAngle = dot(nPixelNormal, nViewNormal);
@@ -47,10 +41,11 @@
         float nNormalHalfAngleSquared = (nNormalHalfAngle * nNormalHalfAngle);
         float nInvNormalLightAngleSquared = (1.0 - nNormalLightAngleSquared);
 
-        float3 nFinalDiffuse = (Kd * Fd * gs_nReciprocalPI * saturate((1 - nRoughness) * 0.5 + 0.5 + nRoughnessSquared * (8 - nRoughness) * 0.023));
+        nFinalDiffuse = (Kd * Fd * gs_nReciprocalPI * saturate((1 - nRoughness) * 0.5 + 0.5 + nRoughnessSquared * (8 - nRoughness) * 0.023));
 
         float3 D = (pow(nRoughness/(nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
 
+        float nIntensity = nNormalLightAngle;
         nNormalViewAngle = (nNormalViewAngle * 0.5 + 0.5);
         nNormalLightAngle = (nNormalLightAngle * 0.5 + 0.5);
         nNormalLightAngleSquared = (nNormalLightAngle * nNormalLightAngle);
@@ -61,16 +56,14 @@
         float nDiffuseDelta = lerp((1 / (0.1 + nRoughness)), (-nRoughnessSquared * 2), saturate(nRoughness));
         float nDiffuseLightAngle = (1 - (pow(1 - nNormalLightAngle, 4) * nDiffuseDelta));
         float nDiffuseViewAngle = (1 - (pow(1 - nNormalViewAngle, 4) * nDiffuseDelta));
-        nFinalDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle);
+        nFinalDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle * nIntensity);
 
         float3 Fs = (Ks + Fd * pow((1 - nLightHalfAngle), 5));
 
-        float3 nFinalSpecular = (Fs * D);
-
-        return ((nFinalDiffuse + nFinalSpecular) * saturate(dot(nPixelNormal, nLightNormal)));
+        nFinalSpecular = (Fs * D * nIntensity);
     }
     
-    OUTPUT MainPixelProgram(INPUT kInput)
+    void GetLightingContribution(INPUT kInput, out float3 nTotalDiffuse, out float3 nTotalSpecular)
     {
         float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
@@ -83,7 +76,7 @@
 
         float3 nViewNormal = -kInput.view;
 
-        OUTPUT kOutput = (OUTPUT)0;
+        float3 nTotalContribution = 0.0f;
         for(uint nLight = 0; gs_aLights[nLight].m_nRange > 0.0f; nLight++)
         {
             float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nPixelPosition);
@@ -91,14 +84,17 @@
             float3 nLightNormal = normalize(nLightVector);
 	
             float nAttenuation = (1.0f - saturate(nDistance / gs_aLights[nLight].m_nRange));
-
-            float3 nLighting = GetBRDF(nAlbedo, nPixelNormal, nLightNormal, nViewNormal, nPixelInfo);
-            nLighting *= nAttenuation;
-
-            kOutput.buffer.xyz += saturate(gs_aLights[nLight].m_nColor * nLighting);
+            if(nAttenuation > 0.0f)
+            {
+                float3 nFinalDiffuse = 0.0f;
+                float3 nFinalSpecular = 0.0f;
+                GetBRDF(nFinalDiffuse, nFinalSpecular, nAlbedo, nPixelNormal, nLightNormal, nViewNormal, nPixelInfo);
+                nTotalDiffuse += saturate(gs_aLights[nLight].m_nColor * nFinalDiffuse * nAttenuation);
+                nTotalSpecular += saturate(gs_aLights[nLight].m_nColor * nFinalSpecular * nAttenuation);
+            }
         }
 
-        kOutput.screen.xyz = kOutput.buffer.xyz = saturate(kOutput.buffer.xyz);
-        return kOutput;
+        nTotalDiffuse = saturate(nTotalDiffuse);
+        nTotalSpecular = saturate(nTotalSpecular);
     }
 ]]>

@@ -5,7 +5,7 @@
 <filter>
     <targets>
         <target source="Screen" />
-        <target name="Buffer" format="RGBA_UINT8" />
+        <target name="Buffer" format="RGBA_UINT8" clear="0,0,0,0" />
     </targets>
     <textures>
         <texture source="Opaque/Deferred.Albedo" />
@@ -18,5 +18,23 @@
     </blend>
     <pixel mode="lighting">
         &LightingShader;
+        <![CDATA[
+            struct OUTPUT
+            {
+                float4 screen                       : SV_TARGET0;
+                float4 buffer                       : SV_TARGET1;
+            };
+
+            OUTPUT MainPixelProgram(INPUT kInput) : SV_TARGET0
+            {
+                float3 nTotalDiffuse = 0.0f;
+                float3 nTotalSpecular = 0.0f;
+                GetLightingContribution(kInput, nTotalDiffuse, nTotalSpecular);
+
+                OUTPUT kOutput;
+                kOutput.screen = kOutput.buffer = float4((nTotalDiffuse + nTotalSpecular), 1.0f);
+                return kOutput;
+            }
+        ]]>
     </pixel>
 </filter>

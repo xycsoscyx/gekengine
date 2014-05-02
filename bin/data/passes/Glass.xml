@@ -7,5 +7,6 @@
         <filter source="Glass/PrePass" />
         <filter source="Glass/Deferred" />
         <filter source="Glass/Lighting" />
+        <filter source="Glass/Combine" />
     </filters>
 </pass>
