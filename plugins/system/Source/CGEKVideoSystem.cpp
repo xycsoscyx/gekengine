@@ -1418,7 +1418,7 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 	kTextureDesc.Height = nYSize;
 	kTextureDesc.MipLevels = 1;
 	kTextureDesc.ArraySize = 1;
-	kTextureDesc.SampleDesc.Count = 1;
+    kTextureDesc.SampleDesc.Count = 1;
     kTextureDesc.SampleDesc.Quality = 0;
 	kTextureDesc.Usage = D3D11_USAGE_DEFAULT;
     kTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
