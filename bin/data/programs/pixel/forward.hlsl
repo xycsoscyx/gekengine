@@ -12,11 +12,6 @@ cbuffer ENGINEBUFFER                    : register(b0)
 	float2   gs_nPadding;
 };
 
-cbuffer VARIABLEBUFFER                  : register(b1)
-{
-    float    gs_nAlphaTest;
-}
-
 struct INPUT
 {
     float4   position                   : SV_POSITION;

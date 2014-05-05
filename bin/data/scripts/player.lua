@@ -23,6 +23,12 @@ SimpleState["OnUpdate"] = function(pEntity, nGameTime, nFrameTime)
     if pEntity:GetState()["Actions"]["strafe_right"] ~= nil and pEntity:GetState()["Actions"]["strafe_right"] then
         nForce = (nForce + float3(nMatrix.rx))
     end
+    if pEntity:GetState()["Actions"]["rise"] ~= nil and pEntity:GetState()["Actions"]["rise"] then
+        nForce = (nForce + float3(nMatrix.ry))
+    end
+    if pEntity:GetState()["Actions"]["fall"] ~= nil and pEntity:GetState()["Actions"]["fall"] then
+        nForce = (nForce - float3(nMatrix.ry))
+    end
     if pEntity:GetState()["Actions"]["height"] ~= nil then
         nForce = (nForce + (float3(nMatrix.ry) * pEntity:GetState()["Actions"]["height"]))
         pEntity:GetState()["Actions"]["height"] = nil;
@@ -34,7 +40,7 @@ SimpleState["OnUpdate"] = function(pEntity, nGameTime, nFrameTime)
     end
 
     if nForce:GetLength() > 0 then
-        nForce = nForce * 2
+        nForce = nForce * 4
         local nPosition = pEntity:GetProperty("transform", "position")
         nPosition = (nPosition + (nForce * nFrameTime))
         pEntity:SetProperty("transform", "position", nPosition)

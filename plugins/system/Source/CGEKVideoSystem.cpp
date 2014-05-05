@@ -1922,10 +1922,12 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
+    DWORD nFlags = D3DCOMPILE_PREFER_FLOW_CONTROL;
+
 #ifdef _DEBUG
-    DWORD nFlags = D3DCOMPILE_DEBUG;
+    nFlags |= D3DCOMPILE_DEBUG;
 #else
-    DWORD nFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+    nFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
     CComPtr<ID3DBlob> spBlob;

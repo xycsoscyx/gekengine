@@ -500,7 +500,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         std::vector<GEKVIDEO::INPUTELEMENT> aLayout;
         aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::XY_FLOAT, "POSITION", 0));
         aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::XY_FLOAT, "TEXCOORD", 0));
-        hRetVal = GetVideoSystem()->LoadVertexProgram(L"%root%\\data\\programs\\vertex\\overlay.txt", "MainVertexProgram", aLayout, &m_spVertexProgram);
+        hRetVal = GetVideoSystem()->LoadVertexProgram(L"%root%\\data\\programs\\vertex\\overlay.hlsl", "MainVertexProgram", aLayout, &m_spVertexProgram);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -590,16 +590,8 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         });
     }
 
-    CComPtr<IUnknown> spComputeTest;
-    GetVideoSystem()->LoadComputeProgram(L"%root%\\data\\programs\\compute\\test.txt", "MainComputeProgram", &spComputeTest);
-
-    CComPtr<IGEKVideoTexture> spTexture;
-    GetVideoSystem()->CreateTexture(1024, 1024, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::UNORDERED_ACCESS, &spTexture);
-
-    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(0, spTexture);
-    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetProgram(spComputeTest);
-    GetVideoSystem()->GetImmediateContext()->Dispatch(32, 32, 1);
-
+//    GetVideoSystem()->LoadComputeProgram(L"%root%\\data\\programs\\compute\\indexed.hlsl", "MainComputeProgram", &m_spLightCompute);
+//    GetVideoSystem()->CreateBuffer(sizeof(UINT32), (32 * 32 * 255), GEKVIDEO::BUFFER::UNORDERED_ACCESS, &m_spLightIndex);
 
     return hRetVal;
 }
@@ -1153,7 +1145,7 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
     else
     {
         CStringA strDeferredProgram;
-        hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\vertex\\deferred.txt", strDeferredProgram);
+        hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\vertex\\deferred.hlsl", strDeferredProgram);
         if (SUCCEEDED(hRetVal))
         {
             if (strDeferredProgram.Find("_INSERT_WORLD_PROGRAM") < 0)
@@ -1533,8 +1525,10 @@ STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
     m_aCulledLights.clear();
     for (auto &kLight : m_aCurrentLights)
     {
+        kLight.m_nRange = (1.0f / kLight.m_nRange);
         kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * kLight.m_nPosition);
         m_aCulledLights.push_back(kLight);
+
         if (++nCounter % m_nNumLightInstances == 0)
         {
             LIGHT kSentinel;

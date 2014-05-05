@@ -27,7 +27,7 @@
             Texture2D     gs_pGlassDiffuseBuffer            : register(t4);
             Texture2D     gs_pGlassSpecularBuffer           : register(t5);
 
-            float4 MainPixelProgram(INPUT kInput) : SV_TARGET
+            float4 MainPixelProgram(in INPUT kInput) : SV_TARGET
             {
                 float4 nOpaqueWorld = gs_pOpaqueWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 float4 nOpaqueInfo = gs_pOpaqueInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);

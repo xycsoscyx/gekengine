@@ -11,7 +11,6 @@
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
 #include <memory>
-#include <thread>
 #include <list>
 
 DECLARE_INTERFACE(IGEKRenderFilter);
@@ -68,10 +67,6 @@ public:
         float2 m_nPadding;
     };
 
-    struct FRAME
-    {
-    };
-
 private:
     std::list<CComPtr<IGEKFactory>> m_aFactories;
 
@@ -116,6 +111,9 @@ private:
 
     std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aCulledModels;
     std::vector<LIGHT> m_aCulledLights;
+
+    CComPtr<IUnknown> m_spLightCompute;
+    CComPtr<IGEKVideoBuffer> m_spLightIndex;
 
 private:
     HRESULT LoadPass(LPCWSTR pName);

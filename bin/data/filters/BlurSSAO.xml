@@ -21,7 +21,7 @@
             {
                 float2 nSize;
                 gs_pAmbientBuffer.GetDimensions(nSize.x, nSize.y);
-                nSize = (1.0f / nSize);                
+                nSize = rcp(nSize);                
 
                 float nDomainSigmaSquared = (gs_nDomainSigma * gs_nDomainSigma);
                 float nRangeSigmaSquared = (gs_nRangeSigma * gs_nRangeSigma);

@@ -4,11 +4,24 @@
     <targets>
         <depth format="D24S8" comparison="lessequal" writemask="all" clear="1" />
     </targets>
+    <targets>
+        <target name="Albedo" format="RGBA_UINT8"/>
+    </targets>
     <blend writemask="" />
     <pixel mode="forward" vertexattributes="position">
         <![CDATA[
-            float4 MainPixelProgram(INPUT kInput) : SV_TARGET
+            Texture2D     gs_pAlbedoMap             : register(t0);
+
+            float4 MainPixelProgram(in INPUT kInput) : SV_TARGET
             {
+                float4 nAlbedo = gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord);
+
+                [branch]
+                if(nAlbedo.a < 0.5f)
+                {
+                    discard;
+                }
+
                 return 0.0f;
             }
         ]]>

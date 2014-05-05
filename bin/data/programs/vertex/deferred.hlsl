@@ -26,7 +26,7 @@ struct OUTPUT
 
 _INSERT_WORLD_PROGRAM
 
-OUTPUT MainVertexProgram(SOURCEVERTEX kSource)
+OUTPUT MainVertexProgram(in SOURCEVERTEX kSource)
 {
     VERTEX kVertex = SourceVertexProgram(kSource);
 

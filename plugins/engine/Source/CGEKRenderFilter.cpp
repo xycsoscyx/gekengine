@@ -421,15 +421,15 @@ HRESULT CGEKRenderFilter::LoadProgram(CLibXMLNode &kFilter)
         switch (m_eMode)
         {
         case FORWARD:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\forward.txt", strProgram);
+            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\forward.hlsl", strProgram);
             break;
 
         case LIGHTING:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\lighting.txt", strProgram);
+            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\lighting.hlsl", strProgram);
             break;
 
         default:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\default.txt", strProgram);
+            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\default.hlsl", strProgram);
             break;
         };
 

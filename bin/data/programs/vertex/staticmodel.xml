@@ -21,7 +21,7 @@
                 uint instance                           : SV_InstanceId;
 			};
 
-			VERTEX SourceVertexProgram(SOURCEVERTEX kSource)
+			VERTEX SourceVertexProgram(in SOURCEVERTEX kSource)
 			{
                 float4x4 nObject = gs_aInstances[kSource.instance];
 				float3x3 nBasis  = transpose(nObject);

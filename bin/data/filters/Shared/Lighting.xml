@@ -7,19 +7,21 @@
     {
         float4 m_nPosition;
         float3 m_nColor;
-        float  m_nRange;
+        float  m_nInvRange;
     };
     
     StructuredBuffer<LIGHT> gs_aLights      : register(t3);
     
     static const float gs_nPI = 3.14159265358979323846;
-    static const float gs_nReciprocalPI = (1.0f / gs_nPI);
+    static const float gs_nReciprocalPI = rcp(gs_nPI);
     
     // Diffuse & Specular Term
     // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
-    bool GetBRDF(out float3 nFinalDiffuse, out float3 nFinalSpecular, float4 nAlbedo, float3 nPixelNormal, float3 nLightNormal, float3 nViewNormal, float4 nInfo)
+    bool GetBRDF(out float3 nFinalDiffuse, out float3 nFinalSpecular, in float4 nAlbedo, in float3 nPixelNormal, in float3 nLightNormal, in float3 nViewNormal, in float4 nInfo)
     {
         float nNormalLightAngle = saturate(dot(nPixelNormal, nLightNormal));
+
+        [branch]
         if(nNormalLightAngle <= 0.0f)
         {
             return false;
@@ -48,8 +50,6 @@
 
         nFinalDiffuse = (Kd * Fd * gs_nReciprocalPI * saturate((1 - nRoughness) * 0.5 + 0.5 + nRoughnessSquared * (8 - nRoughness) * 0.023));
 
-        float3 D = (pow(nRoughness/(nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
-
         float nCenteredNormalViewAngle = (nNormalViewAngle * 0.5 + 0.5);
         float nCenteredNormalLightAngle = (nNormalLightAngle * 0.5 + 0.5);
         nNormalViewAngleSquared = (nCenteredNormalViewAngle * nCenteredNormalViewAngle);
@@ -63,11 +63,12 @@
         nFinalDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle * nNormalLightAngle);
 
         float3 Fs = (Ks + Fd * pow((1 - nLightHalfAngle), 5));
+        float3 D = (pow(nRoughness / (nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
         nFinalSpecular = (Fs * D * nNormalLightAngle);
         return true;
     }
     
-    void GetLightingContribution(INPUT kInput, out float3 nTotalDiffuse, out float3 nTotalSpecular)
+    void GetLightingContribution(in INPUT kInput, out float3 nTotalDiffuse, out float3 nTotalSpecular)
     {
         float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
@@ -81,17 +82,23 @@
         float3 nViewNormal = -kInput.view;
 
         float3 nTotalContribution = 0.0f;
-        for(uint nLight = 0; gs_aLights[nLight].m_nRange > 0.0f; nLight++)
+        
+        [loop]
+        for(uint nLight = 0; gs_aLights[nLight].m_nInvRange > 0.0f; nLight++)
         {
             float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nPixelPosition);
             float nDistance = length(nLightVector);
             float3 nLightNormal = normalize(nLightVector);
 	
-            float nAttenuation = (1.0f - saturate(nDistance / gs_aLights[nLight].m_nRange));
+            float nAttenuation = (1.0f - saturate(nDistance * gs_aLights[nLight].m_nInvRange));
+            
+            [branch]
             if(nAttenuation > 0.0f)
             {
                 float3 nCurrentDiffuse = 0.0f;
                 float3 nCurrentSpecular = 0.0f;
+
+                [branch]
                 if(GetBRDF(nCurrentDiffuse, nCurrentSpecular, nAlbedo, nPixelNormal, nLightNormal, nViewNormal, nPixelInfo))
                 {
                     nTotalDiffuse += saturate(gs_aLights[nLight].m_nColor * nCurrentDiffuse * nAttenuation);

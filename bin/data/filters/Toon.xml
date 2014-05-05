@@ -18,7 +18,7 @@
             {
                 float2 nSize;
                 gs_pWorldBuffer.GetDimensions(nSize.x, nSize.y);
-                nSize = (1.0f / nSize);                
+                nSize = rcp(nSize);                
 
 	            float4 kCenter = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord) * float4(1,1,1,gs_nCameraInverseViewDistance);
                 float4 kPointP0 = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nSize.x, 0.0f))) * float4(1,1,1,gs_nCameraInverseViewDistance);

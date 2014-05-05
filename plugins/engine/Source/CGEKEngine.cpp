@@ -90,6 +90,8 @@ STDMETHODIMP CGEKEngine::Initialize(void)
     m_aInputBindings['S'] = L"backward";
     m_aInputBindings['A'] = L"strafe_left";
     m_aInputBindings['D'] = L"strafe_right";
+    m_aInputBindings['Q'] = L"rise";
+    m_aInputBindings['Z'] = L"fall";
     m_aInputBindings[WM_MOUSEWHEEL] = L"height";
     m_aInputBindings[WM_MOUSEMOVE] = L"turn";
 

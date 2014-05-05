@@ -10,9 +10,15 @@
         float4 info                         : SV_TARGET2;
     };
 
-    OUTPUT MainPixelProgram(INPUT kInput)
+    OUTPUT MainPixelProgram(in INPUT kInput)
     {
         float4 nAlbedo = gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord);
+
+        [branch]
+        if(nAlbedo.a < 0.5f)
+        {
+            discard;
+        }
 
         float3 nNormal;
         nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xy * 2.0) - 1.0f);

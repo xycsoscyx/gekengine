@@ -27,7 +27,7 @@ struct PIXEL
 	float3 view							: TEXCOORD1;
 };
 
-PIXEL MainVertexProgram(VERTEX kVertex)
+PIXEL MainVertexProgram(in VERTEX kVertex)
 {
     PIXEL kPixel;
     kPixel.position = mul(gs_nOrthoMatrix, float4(kVertex.position, 0.0f, 1.0f));

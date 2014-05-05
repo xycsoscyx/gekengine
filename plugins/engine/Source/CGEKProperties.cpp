@@ -148,11 +148,12 @@ void GetTargetStates(GEKVIDEO::TARGETBLENDSTATES &kStates, CLibXMLNode &kNode)
 HRESULT CGEKBlendStates::Load(IGEKVideoSystem *pSystem, CLibXMLNode &kBlend)
 {
     bool bAlphaToCoverage = false;
+/*
     if (kBlend.HasAttribute(L"alphatocoverage") && StrToBoolean(kBlend.GetAttribute(L"alphatocoverage")))
     {
         bAlphaToCoverage = true;
     }
-
+*/
     if (kBlend.HasAttribute(L"factor"))
     {
         m_nBlendFactor = StrToFloat4(kBlend.GetAttribute(L"factor"));

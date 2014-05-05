@@ -11,7 +11,7 @@
         <![CDATA[
             Texture2D     gs_pBrowser               : register(t0);
 
-            float4 MainPixelProgram(INPUT kInput) : SV_TARGET
+            float4 MainPixelProgram(in INPUT kInput) : SV_TARGET
             {
 	            return gs_pBrowser.Sample(gs_pPointSampler, kInput.texcoord);
             }

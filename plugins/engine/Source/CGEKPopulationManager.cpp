@@ -1,6 +1,8 @@
 ﻿#include "CGEKPopulationManager.h"
 #include "CGEKEntity.h"
 #include <algorithm>
+#include <thread>
+#include <ppl.h>
 
 #include "GEKEngineCLSIDs.h"
 
@@ -71,6 +73,7 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
     GetRenderManager()->BeginLoad();
 
     CLibXMLDoc kDocument;
+    std::list<CLibXMLNode> aEntities;
     HRESULT hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\worlds\\%s.xml", pName));
     if (SUCCEEDED(hRetVal))
     {
@@ -83,15 +86,8 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
                 CLibXMLNode &kEntity = kPopulation.FirstChildElement(L"entity");
                 while (kEntity)
                 {
-                    hRetVal = AddEntity(kEntity);
-                    if (SUCCEEDED(hRetVal))
-                    {
-                        kEntity = kEntity.NextSiblingElement(L"entity");
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    aEntities.push_back(kEntity);
+                    kEntity = kEntity.NextSiblingElement(L"entity");
                 };
             }
             else
@@ -104,6 +100,11 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
             hRetVal = E_INVALID;
         }
     }
+
+    concurrency::parallel_for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntity) -> void
+    {
+        AddEntity(kEntity);
+    });
 
     if (SUCCEEDED(hRetVal))
     {
