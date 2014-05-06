@@ -44,9 +44,10 @@ public:
 
     struct LIGHT
     {
-        float4 m_nPosition;
-        float3 m_nColor;
+        float3 m_nPosition;
         float m_nRange;
+        float3 m_nColor;
+        float m_nInvRange;
     };
 
     struct LIGHTBUFFER

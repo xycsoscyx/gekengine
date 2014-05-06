@@ -1374,9 +1374,10 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLight(IGEKEntity *pEntity, const GEKL
         pTransform->GetProperty(L"position", kPosition);
 
         LIGHT kData;
-        kData.m_nPosition = float4(kPosition.GetFloat3(), 1.0f);
+        kData.m_nPosition = kPosition.GetFloat3();
         kData.m_nColor = kLight.m_nColor;
         kData.m_nRange = kLight.m_nRange;
+        kData.m_nInvRange = (1.0f / kLight.m_nRange);
         if (m_kFrustum.IsVisible(sphere(kData.m_nPosition, kData.m_nRange)))
         {
             m_aCurrentLights.push_back(kData);
@@ -1525,20 +1526,19 @@ STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
     m_aCulledLights.clear();
     for (auto &kLight : m_aCurrentLights)
     {
-        kLight.m_nRange = (1.0f / kLight.m_nRange);
-        kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * kLight.m_nPosition);
+        kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kLight.m_nPosition, 1.0f));
         m_aCulledLights.push_back(kLight);
 
         if (++nCounter % m_nNumLightInstances == 0)
         {
             LIGHT kSentinel;
-            kSentinel.m_nRange = -1;
+            kSentinel.m_nRange = -1.0f;
             m_aCulledLights.push_back(kSentinel);
         }
     }
 
     LIGHT kSentinel;
-    kSentinel.m_nRange = -1;
+    kSentinel.m_nRange = -1.0f;
     m_aCulledLights.push_back(kSentinel);
     m_aCurrentLights.clear();
 

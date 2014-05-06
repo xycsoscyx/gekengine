@@ -1727,7 +1727,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1738,9 +1738,22 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
     DWORD nFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #endif
 
+    std::vector<D3D10_SHADER_MACRO> aDefines;
+    if (pDefines != nullptr)
+    {
+        for (auto &kPair : (*pDefines))
+        {
+            D3D10_SHADER_MACRO kMacro = { kPair.first.GetString(), kPair.second.GetString() };
+            aDefines.push_back(kMacro);
+        }
+    }
+
+    D3D10_SHADER_MACRO kMacro = { nullptr, nullptr };
+    aDefines.push_back(kMacro);
+
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, nullptr, nullptr, pEntry, "cs_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
+    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "cs_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
     if (spBlob != nullptr)
     {
         CComPtr<ID3D11ComputeShader> spProgram;
@@ -1764,7 +1777,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1775,9 +1788,22 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
     DWORD nFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #endif
 
+    std::vector<D3D10_SHADER_MACRO> aDefines;
+    if (pDefines != nullptr)
+    {
+        for (auto &kPair : (*pDefines))
+        {
+            D3D10_SHADER_MACRO kMacro = { kPair.first.GetString(), kPair.second.GetString() };
+            aDefines.push_back(kMacro);
+        }
+    }
+
+    D3D10_SHADER_MACRO kMacro = { nullptr, nullptr };
+    aDefines.push_back(kMacro);
+
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, nullptr, nullptr, pEntry, "vs_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
+    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "vs_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
     if (spBlob != nullptr)
     {
         CComPtr<ID3D11VertexShader> spProgram;
@@ -1880,7 +1906,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1891,9 +1917,22 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
     DWORD nFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #endif
 
+    std::vector<D3D10_SHADER_MACRO> aDefines;
+    if (pDefines != nullptr)
+    {
+        for (auto &kPair : (*pDefines))
+        {
+            D3D10_SHADER_MACRO kMacro = { kPair.first.GetString(), kPair.second.GetString() };
+            aDefines.push_back(kMacro);
+        }
+    }
+
+    D3D10_SHADER_MACRO kMacro = { nullptr, nullptr };
+    aDefines.push_back(kMacro);
+
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, nullptr, nullptr, pEntry, "gs_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
+    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "gs_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
     if (spBlob != nullptr)
     {
         CComPtr<ID3D11GeometryShader> spProgram;
@@ -1917,7 +1956,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram)
+STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1930,9 +1969,22 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
     nFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
+    std::vector<D3D10_SHADER_MACRO> aDefines;
+    if (pDefines != nullptr)
+    {
+        for (auto &kPair : (*pDefines))
+        {
+            D3D10_SHADER_MACRO kMacro = { kPair.first.GetString(), kPair.second.GetString() };
+            aDefines.push_back(kMacro);
+        }
+    }
+
+    D3D10_SHADER_MACRO kMacro = { nullptr, nullptr };
+    aDefines.push_back(kMacro);
+
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, nullptr, nullptr, pEntry, "ps_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
+    HRESULT hRetVal = D3DX11CompileFromMemory(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "ps_5_0", nFlags, 0, nullptr, &spBlob, &spErrors, nullptr);
     if (spBlob != nullptr)
     {
         CComPtr<ID3D11PixelShader> spProgram;
@@ -1956,7 +2008,7 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram)
+STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1965,13 +2017,13 @@ STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntr
     HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CompileComputeProgram(strProgram, pEntry, ppProgram);
+        hRetVal = CompileComputeProgram(strProgram, pEntry, ppProgram, pDefines);
     }
 
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram)
+STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1980,13 +2032,13 @@ STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry
     HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CompileVertexProgram(strProgram, pEntry, aLayout, ppProgram);
+        hRetVal = CompileVertexProgram(strProgram, pEntry, aLayout, ppProgram, pDefines);
     }
 
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram)
+STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -1995,13 +2047,13 @@ STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEnt
     HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CompileGeometryProgram(strProgram, pEntry, ppProgram);
+        hRetVal = CompileGeometryProgram(strProgram, pEntry, ppProgram, pDefines);
     }
 
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram)
+STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -2010,7 +2062,7 @@ STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry,
     HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CompilePixelProgram(strProgram, pEntry, ppProgram);
+        hRetVal = CompilePixelProgram(strProgram, pEntry, ppProgram, pDefines);
     }
 
     return hRetVal;
