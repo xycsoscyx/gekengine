@@ -10,14 +10,14 @@
     </targets>
     
     <pixel>
-        <textures>
-            <texture stage="0" source="Opaque/Deferred.World" />
-            <texture stage="1" source="Opaque/Deferred.Info" />
-            <texture stage="2" source="Opaque/Lighting.Buffer" />
-            <texture stage="3" source="Glass/Deferred.World" />
-            <texture stage="4" source="Glass/Lighting.Diffuse" />
-            <texture stage="5" source="Glass/Lighting.Specular" />
-        </textures>
+        <resources>
+            <resource stage="0" source="Opaque/Deferred.World" />
+            <resource stage="1" source="Opaque/Deferred.Info" />
+            <resource stage="2" source="Opaque/Lighting.Buffer" />
+            <resource stage="3" source="Glass/Deferred.World" />
+            <resource stage="4" source="Glass/Lighting.Diffuse" />
+            <resource stage="5" source="Glass/Lighting.Specular" />
+        </resources>
         
         <![CDATA[
             Texture2D     gs_pOpaqueWorldBuffer             : register(t0);

@@ -91,7 +91,7 @@ private:
     HRESULT LoadRenderStates(CLibXMLNode &kFilterNode);
     HRESULT LoadBlendStates(CLibXMLNode &kFilterNode);
     HRESULT LoadTargets(CLibXMLNode &kPixelNode);
-    HRESULT LoadTextures(DATA &kData, CLibXMLNode &kPixelNode);
+    HRESULT LoadResources(DATA &kData, CLibXMLNode &kPixelNode);
     HRESULT LoadComputeProgram(CLibXMLNode &kFilterNode);
     HRESULT LoadPixelProgram(CLibXMLNode &kFilterNode);
 

@@ -14,11 +14,11 @@
     </targets>
     
     <pixel>
-        <textures>
-            <texture stage="1" source="Opaque/Deferred.Albedo" />
-            <texture stage="2" source="Glass/Deferred.World" />
-            <texture stage="3" source="Opaque/Deferred.Info" />
-        </textures>
+        <resources>
+            <resource stage="1" source="Opaque/Deferred.Albedo" />
+            <resource stage="2" source="Glass/Deferred.World" />
+            <resource stage="3" source="Opaque/Deferred.Info" />
+        </resources>
         
         &LightingShader;
         <![CDATA[

@@ -5,11 +5,11 @@
     </targets>
     
     <pixel>
-        <textures>
-            <texture stage="0" source="Deferred.Albedo" />
-            <texture stage="1" source="Deferred.World" />
-            <texture stage="2" source="Deferred.Info" />
-        </textures>
+        <resources>
+            <resource stage="0" source="Deferred.Albedo" />
+            <resource stage="1" source="Deferred.World" />
+            <resource stage="2" source="Deferred.Info" />
+        </resources>
         
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t0);

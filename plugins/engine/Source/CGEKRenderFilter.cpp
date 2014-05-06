@@ -326,28 +326,28 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
     return hRetVal;
 }
 
-HRESULT CGEKRenderFilter::LoadTextures(DATA &kData, CLibXMLNode &kFilterNode)
+HRESULT CGEKRenderFilter::LoadResources(DATA &kData, CLibXMLNode &kFilterNode)
 {
     HRESULT hRetVal = S_OK;
-    CLibXMLNode kTexturesNode = kFilterNode.FirstChildElement(L"textures");
-    if (kTexturesNode)
+    CLibXMLNode kResourcesNode = kFilterNode.FirstChildElement(L"resources");
+    if (kResourcesNode)
     {
-        CLibXMLNode kTextureNode = kTexturesNode.FirstChildElement(L"texture");
-        while (kTextureNode)
+        CLibXMLNode nResourceNode = kResourcesNode.FirstChildElement(L"resource");
+        while (nResourceNode)
         {
-            if (kTextureNode.HasAttribute(L"stage"))
+            if (nResourceNode.HasAttribute(L"stage"))
             {
-                UINT32 nStage = StrToUINT32(kTextureNode.GetAttribute(L"stage"));
+                UINT32 nStage = StrToUINT32(nResourceNode.GetAttribute(L"stage"));
 
                 TEXTURE kTexture;
-                if (kTextureNode.HasAttribute(L"source"))
+                if (nResourceNode.HasAttribute(L"source"))
                 {
-                    kTexture.m_strName = kTextureNode.GetAttribute(L"source");
+                    kTexture.m_strName = nResourceNode.GetAttribute(L"source");
                 }
-                else if (kTextureNode.HasAttribute(L"data"))
+                else if (nResourceNode.HasAttribute(L"data"))
                 {
                     CComPtr<IUnknown> spTexture;
-                    hRetVal = GetRenderManager()->LoadTexture(kTextureNode.GetAttribute(L"data"), &spTexture);
+                    hRetVal = GetRenderManager()->LoadTexture(nResourceNode.GetAttribute(L"data"), &spTexture);
                     if (SUCCEEDED(hRetVal))
                     {
                         kTexture.m_spTexture = spTexture;
@@ -364,7 +364,7 @@ HRESULT CGEKRenderFilter::LoadTextures(DATA &kData, CLibXMLNode &kFilterNode)
                 }
                 
                 kData.m_aTextures[nStage] = kTexture;
-                kTextureNode = kTextureNode.NextSiblingElement(L"texture");
+                nResourceNode = nResourceNode.NextSiblingElement(L"resource");
             }
             else
             {
@@ -415,7 +415,7 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = LoadTextures(m_kComputeData, kComputeNode);
+            hRetVal = LoadResources(m_kComputeData, kComputeNode);
         }
     }
 
@@ -460,7 +460,7 @@ HRESULT CGEKRenderFilter::LoadPixelProgram(CLibXMLNode &kFilterNode)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = LoadTextures(m_kPixelData, kPixelNode);
+            hRetVal = LoadResources(m_kPixelData, kPixelNode);
         }
     }
 

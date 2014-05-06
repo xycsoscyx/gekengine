@@ -5,10 +5,10 @@
     </targets>
     
     <pixel>
-        <textures>
-            <texture stage="0" source="SSAO.Ambient" />
-            <texture stage="1" source="Deferred.World" />
-        </textures>
+        <resources>
+            <resource stage="0" source="SSAO.Ambient" />
+            <resource stage="1" source="Deferred.World" />
+        </resources>
         
         <![CDATA[
             Texture2D     gs_pAmbientBuffer         : register(t0);
