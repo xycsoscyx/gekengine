@@ -448,6 +448,16 @@ HRESULT CGEKRenderFilter::LoadProgram(CLibXMLNode &kFilter)
         }
     }
 
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = LoadTargets(kPixel);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = LoadTextures(kPixel);
+    }
+
     return hRetVal;
 }
 
@@ -466,16 +476,6 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName)
                 hRetVal = LoadRenderStates(kFilter);
             }
 
-            if (SUCCEEDED(hRetVal))
-            {
-                hRetVal = LoadTargets(kFilter);
-            }
-                
-            if (SUCCEEDED(hRetVal))
-            {
-                hRetVal = LoadTextures(kFilter);
-            }
-                
             if (SUCCEEDED(hRetVal))
             {
                 hRetVal = LoadProgram(kFilter);

@@ -3,20 +3,20 @@
     <!ENTITY LightingShader PUBLIC "%root%/data/filters/Shared/Lighting.xml" "">
 ]>
 <filter>
-    <targets>
-        <target name="Diffuse" format="RGBA_UINT8" clear="0,0,0,0" />
-        <target name="Specular" format="RGBA_UINT8" clear="0,0,0,0" />
-    </targets>
-    <textures>
-        <texture source="Opaque/Deferred.Albedo" />
-        <texture source="Glass/Deferred.World" />
-        <texture source="Opaque/Deferred.Info" />
-    </textures>
     <blend>
         <color source="one" destination="one" operation="add" />
         <alpha source="one" destination="one" operation="add" />
     </blend>
     <pixel mode="lighting">
+        <targets>
+            <target name="Diffuse" format="RGBA_UINT8" clear="0,0,0,0" />
+            <target name="Specular" format="RGBA_UINT8" clear="0,0,0,0" />
+        </targets>
+        <textures>
+            <texture source="Opaque/Deferred.Albedo" />
+            <texture source="Glass/Deferred.World" />
+            <texture source="Opaque/Deferred.Info" />
+        </textures>
         &LightingShader;
         <![CDATA[
             struct OUTPUT

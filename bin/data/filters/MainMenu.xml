@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <filter>
-    <textures>
-        <texture data="*browser:mainmenu" />
-    </textures>
     <blend>
         <color source="source_alpha" destination="inverse_source_alpha" operation="add" />
         <alpha source="one" destination="one" operation="add" />
     </blend>
     <pixel>
+        <textures>
+            <texture data="*browser:mainmenu" />
+        </textures>
         <![CDATA[
             Texture2D     gs_pBrowser               : register(t0);
 

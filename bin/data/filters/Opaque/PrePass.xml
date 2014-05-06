@@ -1,14 +1,11 @@
 <?xml version="1.0"?>
 <filter>
     <render cullmode="back" />
-    <targets>
-        <depth format="D24S8" comparison="lessequal" writemask="all" clear="1" />
-    </targets>
-    <targets>
-        <target name="Albedo" format="RGBA_UINT8"/>
-    </targets>
     <blend writemask="" />
     <pixel mode="forward" vertexattributes="position">
+        <targets>
+            <depth format="D24S8" comparison="lessequal" writemask="all" clear="1" />
+        </targets>
         <![CDATA[
             Texture2D     gs_pAlbedoMap             : register(t0);
 
