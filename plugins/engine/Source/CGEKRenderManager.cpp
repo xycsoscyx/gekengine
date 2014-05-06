@@ -590,9 +590,6 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         });
     }
 
-//    GetVideoSystem()->LoadComputeProgram(L"%root%\\data\\programs\\compute\\indexed.hlsl", "MainComputeProgram", &m_spLightCompute);
-//    GetVideoSystem()->CreateBuffer(sizeof(UINT32), (32 * 32 * 255), GEKVIDEO::BUFFER::UNORDERED_ACCESS, &m_spLightIndex);
-
     return hRetVal;
 }
 

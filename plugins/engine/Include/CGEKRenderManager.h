@@ -50,13 +50,6 @@ public:
         float m_nInvRange;
     };
 
-    struct LIGHTBUFFER
-    {
-        UINT32 m_nNumLights;
-        UINT32 m_nBuffer[3];
-        LIGHT m_aLights[50];
-    };
-
     struct ENGINEBUFFER
     {
         float4x4 m_nViewMatrix;
@@ -112,9 +105,6 @@ private:
 
     std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aCulledModels;
     std::vector<LIGHT> m_aCulledLights;
-
-    CComPtr<IUnknown> m_spLightCompute;
-    CComPtr<IGEKVideoBuffer> m_spLightIndex;
 
 private:
     HRESULT LoadPass(LPCWSTR pName);
