@@ -47,9 +47,9 @@ public:
 
     STDMETHODIMP_(void) Enable(CGEKRenderManager *pManager, IGEKVideoSystem *pSystem)
     {
-        pManager->SetTexture(0, m_spAlbedoMap);
-        pManager->SetTexture(1, m_spNormalMap);
-        pManager->SetTexture(2, m_spInfoMap);
+        pManager->SetResource(0, m_spAlbedoMap);
+        pManager->SetResource(1, m_spNormalMap);
+        pManager->SetResource(2, m_spInfoMap);
         CGEKRenderStates::Enable(pSystem);
         CGEKBlendStates::Enable(pSystem);
     }
@@ -750,16 +750,16 @@ STDMETHODIMP_(void) CGEKRenderManager::Free(void)
     m_pCurrentPass = nullptr;
 }
 
-STDMETHODIMP CGEKRenderManager::LoadTexture(LPCWSTR pName, IUnknown **ppTexture)
+STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResource)
 {
     REQUIRE_RETURN(pName, E_INVALIDARG);
-    REQUIRE_RETURN(ppTexture, E_INVALIDARG);
+    REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aTextures.find(pName);
     if (pIterator != m_aTextures.end())
     {
-        hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppTexture));
+        hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppResource));
     }
     else
     {
@@ -889,19 +889,19 @@ STDMETHODIMP CGEKRenderManager::LoadTexture(LPCWSTR pName, IUnknown **ppTexture)
         if (spTexture != nullptr)
         {
             m_aTextures[pName] = spTexture;
-            hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
+            hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
         }
     }
 
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::SetTexture(UINT32 nStage, IUnknown *pTexture)
+STDMETHODIMP_(void) CGEKRenderManager::SetResource(UINT32 nStage, IUnknown *pResource)
 {
-    CComQIPtr<IGEKVideoTexture> spTexture(pTexture);
+    CComQIPtr<IGEKVideoTexture> spTexture(pResource);
     if (spTexture == nullptr)
     {
-        CComQIPtr<IGEKWebView> spWebView(pTexture);
+        CComQIPtr<IGEKWebView> spWebView(pResource);
         if (spWebView)
         {
             auto pIterator = m_aWebSurfaces.find(spWebView->GetView());
@@ -922,9 +922,9 @@ STDMETHODIMP_(void) CGEKRenderManager::SetTexture(UINT32 nStage, IUnknown *pText
     }
 }
 
-STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppTexture)
+STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
 {
-    REQUIRE_RETURN(ppTexture, E_INVALIDARG);
+    REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
     if (_wcsicmp(pName, L"Screen") == 0)
@@ -933,7 +933,7 @@ STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppTexture)
         hRetVal = GetVideoSystem()->GetDefaultRenderTarget(&spTexture);
         if (spTexture)
         {
-            hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
+            hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
         }
     }
     else
@@ -946,7 +946,7 @@ STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppTexture)
         {
             if (kPair.first == nFilter)
             {
-                hRetVal = kPair.second->GetBuffer(strSource, ppTexture);
+                hRetVal = kPair.second->GetBuffer(strSource, ppResource);
                 return true;
             }
 
@@ -1008,10 +1008,10 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CStringW strAlbedo = kAlbedoNode.GetAttribute(L"source");
                         strAlbedo.Replace(L"%material%", pName);
                         strAlbedo.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadTexture(strAlbedo, &spAlbedoMap);
+                        LoadResource(strAlbedo, &spAlbedoMap);
                         if (!spAlbedoMap)
                         {
-                            LoadTexture(L"*color:1,1,1,1", &spAlbedoMap);
+                            LoadResource(L"*color:1,1,1,1", &spAlbedoMap);
                         }
 
                         CComPtr<IUnknown> spNormalMap;
@@ -1019,10 +1019,10 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CStringW strNormal = kNormalNode.GetAttribute(L"source");
                         strNormal.Replace(L"%material%", pName);
                         strNormal.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadTexture(strNormal, &spNormalMap);
+                        LoadResource(strNormal, &spNormalMap);
                         if (!spNormalMap)
                         {
-                            LoadTexture(L"*color:0.5,0.5,1,1", &spNormalMap);
+                            LoadResource(L"*color:0.5,0.5,1,1", &spNormalMap);
                         }
 
                         CComPtr<IUnknown> spInfoMap;
@@ -1030,10 +1030,10 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CStringW strInfo = kInfoNode.GetAttribute(L"source");
                         strInfo.Replace(L"%material%", pName);
                         strInfo.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadTexture(strInfo, &spInfoMap);
+                        LoadResource(strInfo, &spInfoMap);
                         if (!spInfoMap)
                         {
-                            LoadTexture(L"*color:0.5,0,0,0", &spInfoMap);
+                            LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
                         }
 
                         CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
@@ -1064,13 +1064,13 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
             if (SUCCEEDED(hRetVal))
             {
                 CComPtr<IUnknown> spAlbedoMap;
-                LoadTexture(L"*color:1,1,1,1", &spAlbedoMap);
+                LoadResource(L"*color:1,1,1,1", &spAlbedoMap);
 
                 CComPtr<IUnknown> spNormalMap;
-                LoadTexture(L"*color:0.5,0.5,1,1", &spNormalMap);
+                LoadResource(L"*color:0.5,0.5,1,1", &spNormalMap);
 
                 CComPtr<IUnknown> spInfoMap;
-                LoadTexture(L"*color:0.5,0,0,0", &spInfoMap);
+                LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
 
                 CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(L"Opaque", spAlbedoMap, spNormalMap, spInfoMap));
                 if (spMaterial != nullptr)

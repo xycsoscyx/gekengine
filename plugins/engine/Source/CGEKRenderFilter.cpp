@@ -347,7 +347,7 @@ HRESULT CGEKRenderFilter::LoadResources(DATA &kData, CLibXMLNode &kFilterNode)
                 else if (nResourceNode.HasAttribute(L"data"))
                 {
                     CComPtr<IUnknown> spTexture;
-                    hRetVal = GetRenderManager()->LoadTexture(nResourceNode.GetAttribute(L"data"), &spTexture);
+                    hRetVal = GetRenderManager()->LoadResource(nResourceNode.GetAttribute(L"data"), &spTexture);
                     if (SUCCEEDED(hRetVal))
                     {
                         kTexture.m_spTexture = spTexture;
@@ -669,7 +669,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     {
         if (kPair.second.m_spTexture != nullptr)
         {
-            GetRenderManager()->SetTexture(kPair.first, kPair.second.m_spTexture);
+            GetRenderManager()->SetResource(kPair.first, kPair.second.m_spTexture);
         }
         else if (!kPair.second.m_strName.IsEmpty())
         {
@@ -677,7 +677,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             GetRenderManager()->GetBuffer(kPair.second.m_strName, &spTexture);
             if (spTexture != nullptr)
             {
-                GetRenderManager()->SetTexture(kPair.first, spTexture);
+                GetRenderManager()->SetResource(kPair.first, spTexture);
             }
         }
     }

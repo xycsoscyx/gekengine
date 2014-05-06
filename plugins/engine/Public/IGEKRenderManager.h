@@ -10,11 +10,11 @@ DECLARE_INTERFACE_IID_(IGEKRenderManager, IUnknown, "77161A84-61C4-4C05-9550-4EE
 
     STDMETHOD_(void, Free)                  (THIS) PURE;
 
-    STDMETHOD(LoadTexture)                  (THIS_ LPCWSTR pName, IUnknown **ppTexture) PURE;
-    STDMETHOD_(void, SetTexture)            (THIS_ UINT32 nStage, IUnknown *pTexture) PURE;
+    STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppResource) PURE;
+    STDMETHOD_(void, SetResource)           (THIS_ UINT32 nStage, IUnknown *pResource) PURE;
 
-    STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture) PURE;
-    STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppBuffer) PURE;
+    STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppResource) PURE;
+    STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppResource) PURE;
 
     STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes) PURE;
     STDMETHOD_(void, DrawOverlay)           (THIS_ bool bPerLight) PURE;
