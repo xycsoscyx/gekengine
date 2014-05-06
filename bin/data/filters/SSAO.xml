@@ -3,13 +3,15 @@
     <targets scale="0.5">
         <target name="Ambient" format="RGBA_UINT8" />
     </targets>
-    <textures>
-        <texture source="Deferred.Albedo" />
-        <texture source="Deferred.World" />
-        <texture source="Deferred.Info" />
-        <texture data="%root%\data\textures\random.dds" />
-    </textures>
+    
     <pixel>
+        <textures>
+            <texture stage="0" source="Deferred.Albedo" />
+            <texture stage="1" source="Deferred.World" />
+            <texture stage="2" source="Deferred.Info" />
+            <texture stage="3" data="%root%\data\textures\random.dds" />
+        </textures>
+        
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t0);
             Texture2D     gs_pWorldBuffer           : register(t1);

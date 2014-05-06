@@ -6,7 +6,7 @@ DECLARE_INTERFACE_IID_(IGEKSceneManager, IUnknown, "43DF2FD7-3BE2-4333-86ED-CB12
 {
     STDMETHOD(LoadScene)                (LPCWSTR pName, LPCWSTR pEntry) PURE;
 
-    STDMETHOD(AddEntity)                (THIS_ CLibXMLNode &kEntity) PURE;
+    STDMETHOD(AddEntity)                (THIS_ CLibXMLNode &kEntityNode) PURE;
     STDMETHOD(FindEntity)               (THIS_ LPCWSTR pName, IGEKEntity **ppEntity) PURE;
     STDMETHOD(DestroyEntity)            (THIS_ IGEKEntity *pEntity) PURE;
 

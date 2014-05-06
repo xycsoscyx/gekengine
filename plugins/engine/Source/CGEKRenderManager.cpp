@@ -660,18 +660,18 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
                     kPassData.m_nPriority = 1;
                 }
 
-                CLibXMLNode kRequires = kPassNode.FirstChildElement(L"requires");
-                if (kRequires)
+                CLibXMLNode kRequiresNode = kPassNode.FirstChildElement(L"requires");
+                if (kRequiresNode)
                 {
-                    CLibXMLNode kRequiredPass = kRequires.FirstChildElement(L"pass");
-                    while (kRequiredPass)
+                    CLibXMLNode kPassNode = kRequiresNode.FirstChildElement(L"pass");
+                    while (kPassNode)
                     {
-                        CStringW strRequiredPass = kRequiredPass.GetAttribute(L"source");
+                        CStringW strRequiredPass = kPassNode.GetAttribute(L"source");
                         hRetVal = LoadPass(strRequiredPass);
                         if (SUCCEEDED(hRetVal))
                         {
                             kPassData.m_aRequiredPasses.push_back(&m_aPasses[strRequiredPass]);
-                            kRequiredPass = kRequiredPass.NextSiblingElement(L"pass");
+                            kPassNode = kPassNode.NextSiblingElement(L"pass");
                         }
                         else
                         {
@@ -683,13 +683,13 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
                 if (SUCCEEDED(hRetVal))
                 {
                     hRetVal = E_INVALID;
-                    CLibXMLNode kFilters = kPassNode.FirstChildElement(L"filters");
-                    if (kFilters)
+                    CLibXMLNode kFiltersNode = kPassNode.FirstChildElement(L"filters");
+                    if (kFiltersNode)
                     {
-                        CLibXMLNode kFilter = kFilters.FirstChildElement(L"filter");
-                        while (kFilter)
+                        CLibXMLNode kFilterNode = kFiltersNode.FirstChildElement(L"filter");
+                        while (kFilterNode)
                         {
-                            CStringW strFilter = kFilter.GetAttribute(L"source");
+                            CStringW strFilter = kFilterNode.GetAttribute(L"source");
                             auto pFilterIterator = m_aFilters.find(strFilter);
                             if (pFilterIterator != m_aFilters.end())
                             {
@@ -716,7 +716,7 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
                                 }
                             }
 
-                            kFilter = kFilter.NextSiblingElement(L"filter");
+                            kFilterNode = kFilterNode.NextSiblingElement(L"filter");
                         };
                     }
                 }
@@ -778,18 +778,18 @@ STDMETHODIMP CGEKRenderManager::LoadTexture(LPCWSTR pName, IUnknown **ppTexture)
                 if (SUCCEEDED(hRetVal))
                 {
                     hRetVal = E_INVALIDARG;
-                    CLibXMLNode kBrowser = kDocument.GetRoot();
-                    if (kBrowser && kBrowser.HasAttribute(L"size"))
+                    CLibXMLNode kBrowerNode = kDocument.GetRoot();
+                    if (kBrowerNode && kBrowerNode.HasAttribute(L"size"))
                     {
                         nPosition = 0;
-                        CStringW strSize = kBrowser.GetAttribute(L"size");
+                        CStringW strSize = kBrowerNode.GetAttribute(L"size");
                         CStringW strXSize = strSize.Tokenize(L",", nPosition);
                         CStringW strYSize = strSize.Tokenize(L",", nPosition);
                         UINT32 nXSize = GetSystem()->ParseValue(strXSize);
                         UINT32 nYSize = GetSystem()->ParseValue(strYSize);
 
-                        CLibXMLNode kSource = kBrowser.FirstChildElement(L"source");
-                        if (kSource && kSource.HasAttribute(L"url"))
+                        CLibXMLNode kSourceNode = kBrowerNode.FirstChildElement(L"source");
+                        if (kSourceNode && kSourceNode.HasAttribute(L"url"))
                         {
                             Awesomium::WebView *pView = m_pWebCore->CreateWebView(nXSize, nYSize, m_pWebSession);
                             if (pView)
@@ -797,10 +797,10 @@ STDMETHODIMP CGEKRenderManager::LoadTexture(LPCWSTR pName, IUnknown **ppTexture)
                                 pView->set_view_listener(this);
 
                                 bool bGUI = false;
-                                CLibXMLNode kFlags = kBrowser.FirstChildElement(L"flags");
-                                if (kFlags)
+                                CLibXMLNode kFlagsNode = kBrowerNode.FirstChildElement(L"flags");
+                                if (kFlagsNode)
                                 {
-                                    if (kFlags.HasAttribute(L"javascript") && StrToBoolean(kFlags.GetAttribute(L"javascript")))
+                                    if (kFlagsNode.HasAttribute(L"javascript") && StrToBoolean(kFlagsNode.GetAttribute(L"javascript")))
                                     {
                                         pView->set_js_method_handler(this);
                                         Awesomium::JSValue kResult = pView->CreateGlobalJavascriptObject(Awesomium::WSLit("Engine"));
@@ -817,18 +817,18 @@ STDMETHODIMP CGEKRenderManager::LoadTexture(LPCWSTR pName, IUnknown **ppTexture)
                                         }
                                     }
 
-                                    if (kFlags.HasAttribute(L"transparent") && StrToBoolean(kFlags.GetAttribute(L"transparent")))
+                                    if (kFlagsNode.HasAttribute(L"transparent") && StrToBoolean(kFlagsNode.GetAttribute(L"transparent")))
                                     {
                                         pView->SetTransparent(true);
                                     }
 
-                                    if (kFlags.HasAttribute(L"gui"))
+                                    if (kFlagsNode.HasAttribute(L"gui"))
                                     {
-                                        bGUI = StrToBoolean(kFlags.GetAttribute(L"gui"));
+                                        bGUI = StrToBoolean(kFlagsNode.GetAttribute(L"gui"));
                                     }
                                 }
 
-                                CStringW strURL = kSource.GetAttribute(L"url");
+                                CStringW strURL = kSourceNode.GetAttribute(L"url");
                                 CStringA strURLUTF8 = CW2A(strURL, CP_UTF8);
                                 pView->LoadURL(Awesomium::WebURL(Awesomium::WSLit(strURLUTF8)));
                                 CComPtr<CGEKWebView> spWebView(new CGEKWebView(pView));
@@ -991,12 +991,12 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = E_INVALIDARG;
-            CLibXMLNode kMaterial = kDocument.GetRoot();
-            if (kMaterial)
+            CLibXMLNode kMaterialNode = kDocument.GetRoot();
+            if (kMaterialNode)
             {
-                if (kMaterial.HasAttribute(L"pass"))
+                if (kMaterialNode.HasAttribute(L"pass"))
                 {
-                    CStringW strPass = kMaterial.GetAttribute(L"pass");
+                    CStringW strPass = kMaterialNode.GetAttribute(L"pass");
                     hRetVal = LoadPass(strPass);
                     if (SUCCEEDED(hRetVal))
                     {
@@ -1004,8 +1004,8 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         kName.RemoveFileSpec();
 
                         CComPtr<IUnknown> spAlbedoMap;
-                        CLibXMLNode kAlbedo = kMaterial.FirstChildElement(L"albedo");
-                        CStringW strAlbedo = kAlbedo.GetAttribute(L"source");
+                        CLibXMLNode kAlbedoNode = kMaterialNode.FirstChildElement(L"albedo");
+                        CStringW strAlbedo = kAlbedoNode.GetAttribute(L"source");
                         strAlbedo.Replace(L"%material%", pName);
                         strAlbedo.Replace(L"%directory%", kName.m_strPath.GetString());
                         LoadTexture(strAlbedo, &spAlbedoMap);
@@ -1015,8 +1015,8 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         }
 
                         CComPtr<IUnknown> spNormalMap;
-                        CLibXMLNode kNormal = kMaterial.FirstChildElement(L"normal");
-                        CStringW strNormal = kNormal.GetAttribute(L"source");
+                        CLibXMLNode kNormalNode = kMaterialNode.FirstChildElement(L"normal");
+                        CStringW strNormal = kNormalNode.GetAttribute(L"source");
                         strNormal.Replace(L"%material%", pName);
                         strNormal.Replace(L"%directory%", kName.m_strPath.GetString());
                         LoadTexture(strNormal, &spNormalMap);
@@ -1026,8 +1026,8 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         }
 
                         CComPtr<IUnknown> spInfoMap;
-                        CLibXMLNode kInfo = kMaterial.FirstChildElement(L"info");
-                        CStringW strInfo = kInfo.GetAttribute(L"source");
+                        CLibXMLNode kInfoNode = kMaterialNode.FirstChildElement(L"info");
+                        CStringW strInfo = kInfoNode.GetAttribute(L"source");
                         strInfo.Replace(L"%material%", pName);
                         strInfo.Replace(L"%directory%", kName.m_strPath.GetString());
                         LoadTexture(strInfo, &spInfoMap);
@@ -1039,8 +1039,8 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
                         if (spMaterial != nullptr)
                         {
-                            spMaterial->CGEKRenderStates::Load(GetVideoSystem(), kMaterial.FirstChildElement(L"render"));
-                            spMaterial->CGEKBlendStates::Load(GetVideoSystem(), kMaterial.FirstChildElement(L"blend"));
+                            spMaterial->CGEKRenderStates::Load(GetVideoSystem(), kMaterialNode.FirstChildElement(L"render"));
+                            spMaterial->CGEKBlendStates::Load(GetVideoSystem(), kMaterialNode.FirstChildElement(L"blend"));
                             spMaterial->QueryInterface(IID_PPV_ARGS(&m_aMaterials[pName]));
                             hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
                         }
@@ -1075,9 +1075,9 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                 CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(L"Opaque", spAlbedoMap, spNormalMap, spInfoMap));
                 if (spMaterial != nullptr)
                 {
-                    CLibXMLNode kBlank(nullptr);
-                    spMaterial->CGEKRenderStates::Load(GetVideoSystem(), kBlank);
-                    spMaterial->CGEKBlendStates::Load(GetVideoSystem(), kBlank);
+                    CLibXMLNode kBlankNode(nullptr);
+                    spMaterial->CGEKRenderStates::Load(GetVideoSystem(), kBlankNode);
+                    spMaterial->CGEKBlendStates::Load(GetVideoSystem(), kBlankNode);
                     spMaterial->QueryInterface(IID_PPV_ARGS(&m_aMaterials[L"*default"]));
                     hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
                 }
@@ -1156,32 +1156,32 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                 if (SUCCEEDED(hRetVal))
                 {
                     hRetVal = E_INVALIDARG;
-                    CLibXMLNode kProgram = kDocument.GetRoot();
-                    if (kProgram)
+                    CLibXMLNode kProgramNode = kDocument.GetRoot();
+                    if (kProgramNode)
                     {
-                        CLibXMLNode kLayout = kProgram.FirstChildElement(L"layout");
-                        if (kLayout)
+                        CLibXMLNode kLayoutNode = kProgramNode.FirstChildElement(L"layout");
+                        if (kLayoutNode)
                         {
                             std::vector<CStringA> aNames;
                             std::vector<GEKVIDEO::INPUTELEMENT> aLayout;
-                            CLibXMLNode kElement = kLayout.FirstChildElement(L"element");
-                            while (kElement)
+                            CLibXMLNode kElementNode = kLayoutNode.FirstChildElement(L"element");
+                            while (kElementNode)
                             {
-                                if (kElement.HasAttribute(L"type") && 
-                                   kElement.HasAttribute(L"name") &&
-                                   kElement.HasAttribute(L"index"))
+                                if (kElementNode.HasAttribute(L"type") && 
+                                   kElementNode.HasAttribute(L"name") &&
+                                   kElementNode.HasAttribute(L"index"))
                                 {
-                                    aNames.push_back((LPCSTR)CW2A(kElement.GetAttribute(L"name")));
+                                    aNames.push_back((LPCSTR)CW2A(kElementNode.GetAttribute(L"name")));
 
                                     GEKVIDEO::INPUTELEMENT kData;
-                                    kData.m_eType = GetFormatType(kElement.GetAttribute(L"type"));
+                                    kData.m_eType = GetFormatType(kElementNode.GetAttribute(L"type"));
                                     kData.m_pName = aNames.back().GetString();
-                                    kData.m_nIndex = StrToUINT32(kElement.GetAttribute(L"index"));
-                                    if (kElement.HasAttribute(L"class") &&
-                                       kElement.HasAttribute(L"slot"))
+                                    kData.m_nIndex = StrToUINT32(kElementNode.GetAttribute(L"index"));
+                                    if (kElementNode.HasAttribute(L"class") &&
+                                       kElementNode.HasAttribute(L"slot"))
                                     {
-                                        kData.m_eClass = GetElementClass(kElement.GetAttribute(L"class"));
-                                        kData.m_nSlot = StrToUINT32(kElement.GetAttribute(L"slot"));
+                                        kData.m_eClass = GetElementClass(kElementNode.GetAttribute(L"class"));
+                                        kData.m_nSlot = StrToUINT32(kElementNode.GetAttribute(L"slot"));
                                     }
 
                                     aLayout.push_back(kData);
@@ -1191,25 +1191,25 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                                     break;
                                 }
 
-                                kElement = kElement.NextSiblingElement(L"element");
+                                kElementNode = kElementNode.NextSiblingElement(L"element");
                             };
 
                             hRetVal = S_OK;
                             CComPtr<IUnknown> spGeometryProgram;
-                            CLibXMLNode kGeometry = kProgram.FirstChildElement(L"geometry");
-                            if (kGeometry)
+                            CLibXMLNode kGeometryNode = kProgramNode.FirstChildElement(L"geometry");
+                            if (kGeometryNode)
                             {
-                                CStringA strGeometryProgram = kGeometry.GetText();
+                                CStringA strGeometryProgram = kGeometryNode.GetText();
                                 hRetVal = GetVideoSystem()->CompileGeometryProgram(strGeometryProgram, "MainGeometryProgram", &spGeometryProgram);
                             }
 
                             if (SUCCEEDED(hRetVal))
                             {
                                 hRetVal = E_INVALIDARG;
-                                CLibXMLNode kVertex = kProgram.FirstChildElement(L"vertex");
-                                if (kVertex)
+                                CLibXMLNode kVertexNode = kProgramNode.FirstChildElement(L"vertex");
+                                if (kVertexNode)
                                 {
-                                    CStringA strVertexProgram = kVertex.GetText();
+                                    CStringA strVertexProgram = kVertexNode.GetText();
                                     strDeferredProgram.Replace("_INSERT_WORLD_PROGRAM", (strVertexProgram + "\r\n"));
 
                                     CComPtr<IUnknown> spVertexProgram;
@@ -1449,7 +1449,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
     GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     if (bPerLight)
     {
-        GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(3, m_spLightBuffer);
+        GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
         for (UINT32 nPass = 0; nPass < m_aCulledLights.size(); nPass += (m_nNumLightInstances + 1))
         {
             UINT32 nNumLights = min((m_nNumLightInstances + 1), (m_aCulledLights.size() - nPass));

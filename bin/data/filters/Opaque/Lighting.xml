@@ -3,30 +3,36 @@
     <!ENTITY LightingShader PUBLIC "%root%/data/filters/Shared/Lighting.xml" "">
     <!ENTITY ComputeShader PUBLIC "%root%/data/filters/Shared/Indexed.xml" "">
 ]>
-<filter>
+<filter mode="lighting">
     <blend>
         <color source="one" destination="one" operation="add" />
         <alpha source="one" destination="one" operation="add" />
     </blend>
-    <compute mode="lighting">
+
+    <compute>
         <buffers>
             <buffer name="TileIndices" stride="2" count="100" />
         </buffers>
+
         &ComputeShader;
     </compute>
-    <pixel mode="lighting">
+    
+    <targets>
+        <target source="Screen" />
+        <target name="Buffer" format="RGBA_UINT8" clear="0,0,0,0" />
+    </targets>
+    
+    <pixel>
         <buffers>
             <buffer source="Opaque/TileIndices" />
         </buffers>
-        <targets>
-            <target source="Screen" />
-            <target name="Buffer" format="RGBA_UINT8" clear="0,0,0,0" />
-        </targets>
+        
         <textures>
-            <texture source="Opaque/Deferred.Albedo" />
-            <texture source="Opaque/Deferred.World" />
-            <texture source="Opaque/Deferred.Info" />
+            <texture stage="1" source="Opaque/Deferred.Albedo" />
+            <texture stage="2" source="Opaque/Deferred.World" />
+            <texture stage="3" source="Opaque/Deferred.Info" />
         </textures>
+
         &LightingShader;
         <![CDATA[
             struct OUTPUT

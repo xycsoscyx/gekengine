@@ -350,10 +350,10 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::Clear(void)
     m_aCollisions.clear();
 }
 
-STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
+STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
 {
     HRESULT hRetVal = E_FAIL;
-    if (kNode.HasAttribute(L"type") && kNode.GetAttribute(L"type").CompareNoCase(L"newton") == 0)
+    if (kEntityNode.HasAttribute(L"type") && kEntityNode.GetAttribute(L"type").CompareNoCase(L"newton") == 0)
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKComponentNewton> spComponent(new CGEKComponentNewton(pEntity, this));
@@ -369,7 +369,7 @@ STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kNode, IGEKEnt
             hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
             if (SUCCEEDED(hRetVal))
             {
-                kNode.ListAttributes([&spComponent] (LPCWSTR pName, LPCWSTR pValue) -> void
+                kEntityNode.ListAttributes([&spComponent] (LPCWSTR pName, LPCWSTR pValue) -> void
                 {
                     spComponent->SetProperty(pName, pValue);
                 } );

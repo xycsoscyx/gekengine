@@ -58,7 +58,7 @@ public:
         float3 m_nCameraPosition;
         float m_nCameraViewDistance;
         float2 m_nCameraView;
-        float2 m_nPadding;
+        float2 m_nCameraSize;
     };
 
 private:

@@ -6,7 +6,7 @@
     </blend>
     <pixel>
         <textures>
-            <texture data="*browser:mainmenu" />
+            <texture stage="0" data="*browser:mainmenu" />
         </textures>
         <![CDATA[
             Texture2D     gs_pBrowser               : register(t0);

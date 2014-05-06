@@ -3,11 +3,13 @@
     <targets scale="0.5">
         <target name="Ambient" format="RGBA_UINT8" />
     </targets>
-    <textures>
-        <texture source="SSAO.Ambient" />
-        <texture source="Deferred.World" />
-    </textures>
+    
     <pixel>
+        <textures>
+            <texture stage="0" source="SSAO.Ambient" />
+            <texture stage="1" source="Deferred.World" />
+        </textures>
+        
         <![CDATA[
             Texture2D     gs_pAmbientBuffer         : register(t0);
             Texture2D     gs_pWorldBuffer           : register(t1);

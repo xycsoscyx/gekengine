@@ -61,7 +61,7 @@ public:
     // IGEKComponentSystem
     STDMETHOD_(void, Clear)             (THIS);
     STDMETHOD(Destroy)                  (THIS_ IGEKEntity *pEntity);
-    STDMETHOD(Create)                   (THIS_ const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
+    STDMETHOD(Create)                   (THIS_ const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnPreUpdate)       (THIS_ float nGameTime, float nFrameTime);

@@ -1,16 +1,19 @@
 <?xml version="1.0"?>
-<filter>
+<filter mode="forward" vertexattributes="position">
     <render cullmode="back" />
+    
     <blend writemask="" />
-    <pixel mode="forward" vertexattributes="position">
-        <targets>
-            <depth source="Opaque/PrePass" comparison="lessequal" writemask="all">
-                <stencil reference="1" readmask="255" writemask="255" clear="0">
-                    <front pass="replace" fail="keep" depthfail="keep" comparison="always" />
-                    <back pass="keep" fail="keep" depthfail="keep" comparison="never" />
-                </stencil>
-            </depth>
-        </targets>
+    
+    <targets>
+        <depth source="Opaque/PrePass" comparison="lessequal" writemask="all">
+            <stencil reference="1" readmask="255" writemask="255" clear="0">
+                <front pass="replace" fail="keep" depthfail="keep" comparison="always" />
+                <back pass="keep" fail="keep" depthfail="keep" comparison="never" />
+            </stencil>
+        </depth>
+    </targets>
+    
+    <pixel>
         <![CDATA[
             Texture2D     gs_pAlbedoMap             : register(t0);
 

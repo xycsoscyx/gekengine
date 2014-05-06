@@ -136,10 +136,10 @@ STDMETHODIMP_(void) CGEKComponentSystemLogic::Clear(void)
     m_aComponents.clear();
 }
 
-STDMETHODIMP CGEKComponentSystemLogic::Create(const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
+STDMETHODIMP CGEKComponentSystemLogic::Create(const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
 {
     HRESULT hRetVal = E_FAIL;
-    if (kNode.HasAttribute(L"type") && kNode.GetAttribute(L"type").CompareNoCase(L"logic") == 0)
+    if (kEntityNode.HasAttribute(L"type") && kEntityNode.GetAttribute(L"type").CompareNoCase(L"logic") == 0)
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKComponentLogic> spComponent(new CGEKComponentLogic(pEntity));
@@ -155,7 +155,7 @@ STDMETHODIMP CGEKComponentSystemLogic::Create(const CLibXMLNode &kNode, IGEKEnti
             hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
             if (SUCCEEDED(hRetVal))
             {
-                kNode.ListAttributes([&spComponent] (LPCWSTR pName, LPCWSTR pValue) -> void
+                kEntityNode.ListAttributes([&spComponent] (LPCWSTR pName, LPCWSTR pValue) -> void
                 {
                     spComponent->SetProperty(pName, pValue);
                 } );

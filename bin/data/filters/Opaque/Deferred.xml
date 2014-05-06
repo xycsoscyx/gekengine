@@ -2,15 +2,17 @@
 <!DOCTYPE filter [
     <!ENTITY DeferredShader PUBLIC "%root%/data/filters/Shared/Deferred.xml" "">
 ]>
-<filter>
+<filter mode="forward">
     <render cullmode="back" />
-    <pixel mode="forward">
-        <targets>
-            <target name="Albedo" format="RGBA_UINT8"/>
-            <target name="World" format="RGBA_FLOAT"/>
-            <target name="Info" format="RGBA_UINT8"/>
-            <depth source="Opaque/PrePass" comparison="lessequal" writemask="none" />
-        </targets>
+    
+    <targets>
+        <target name="Albedo" format="RGBA_UINT8"/>
+        <target name="World" format="RGBA_FLOAT"/>
+        <target name="Info" format="RGBA_UINT8"/>
+        <depth source="Opaque/PrePass" comparison="lessequal" writemask="none" />
+    </targets>
+    
+    <pixel>
         &DeferredShader;
     </pixel>
 </filter>

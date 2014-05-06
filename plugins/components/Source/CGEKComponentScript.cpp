@@ -576,10 +576,10 @@ STDMETHODIMP_(void) CGEKComponentSystemScript::Clear(void)
     m_aComponents.clear();
 }
 
-STDMETHODIMP CGEKComponentSystemScript::Create(const CLibXMLNode &kNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
+STDMETHODIMP CGEKComponentSystemScript::Create(const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
 {
     HRESULT hRetVal = E_FAIL;
-    if (kNode.HasAttribute(L"type") && kNode.GetAttribute(L"type").CompareNoCase(L"script") == 0)
+    if (kEntityNode.HasAttribute(L"type") && kEntityNode.GetAttribute(L"type").CompareNoCase(L"script") == 0)
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKComponentScript> spComponent(new CGEKComponentScript(pEntity, m_pState));
@@ -595,7 +595,7 @@ STDMETHODIMP CGEKComponentSystemScript::Create(const CLibXMLNode &kNode, IGEKEnt
             hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
             if (SUCCEEDED(hRetVal))
             {
-                kNode.ListAttributes([&spComponent] (LPCWSTR pName, LPCWSTR pValue) -> void
+                kEntityNode.ListAttributes([&spComponent] (LPCWSTR pName, LPCWSTR pValue) -> void
                 {
                     spComponent->SetProperty(pName, pValue);
                 } );

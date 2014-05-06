@@ -1,22 +1,24 @@
 <?xml version="1.0"?>
 <filter>
+    <targets>
+        <depth source="Opaque/PrePass" comparison="always" writemask="zero">
+            <stencil reference="1" readmask="255" writemask="255">
+                <front pass="replace" fail="keep" depthfail="keep" comparison="equal" />
+                <back pass="keep" fail="keep" depthfail="keep" comparison="never" />
+            </stencil>
+        </depth>
+    </targets>
+    
     <pixel>
-        <targets>
-            <depth source="Opaque/PrePass" comparison="always" writemask="zero">
-                <stencil reference="1" readmask="255" writemask="255">
-                    <front pass="replace" fail="keep" depthfail="keep" comparison="equal" />
-                    <back pass="keep" fail="keep" depthfail="keep" comparison="never" />
-                </stencil>
-            </depth>
-        </targets>
         <textures>
-            <texture source="Opaque/Deferred.World" />
-            <texture source="Opaque/Deferred.Info" />
-            <texture source="Opaque/Lighting.Buffer" />
-            <texture source="Glass/Deferred.World" />
-            <texture source="Glass/Lighting.Diffuse" />
-            <texture source="Glass/Lighting.Specular" />
+            <texture stage="0" source="Opaque/Deferred.World" />
+            <texture stage="1" source="Opaque/Deferred.Info" />
+            <texture stage="2" source="Opaque/Lighting.Buffer" />
+            <texture stage="3" source="Glass/Deferred.World" />
+            <texture stage="4" source="Glass/Lighting.Diffuse" />
+            <texture stage="5" source="Glass/Lighting.Specular" />
         </textures>
+        
         <![CDATA[
             Texture2D     gs_pOpaqueWorldBuffer             : register(t0);
             Texture2D     gs_pOpaqueInfoBuffer              : register(t1);

@@ -110,7 +110,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Destroy(void)
 
 STDMETHODIMP_(void) CGEKRenderFilter::OnPreReset(void)
 {
-    for (auto &kTarget : m_aTargetList)
+    for (auto &kTarget : m_aTargets)
     {
         kTarget.m_spTexture = nullptr;
     }
@@ -123,7 +123,7 @@ STDMETHODIMP CGEKRenderFilter::OnPostReset(void)
     HRESULT hRetVal = S_OK;
     UINT32 nXSize = UINT32(float(GetSystem()->GetXSize()) * m_nScale);
     UINT32 nYSize = UINT32(float(GetSystem()->GetYSize()) * m_nScale);
-    for (auto &kTarget : m_aTargetList)
+    for (auto &kTarget : m_aTargets)
     {
         if (kTarget.m_eFormat != GEKVIDEO::DATA::UNKNOWN)
         {
@@ -143,24 +143,24 @@ STDMETHODIMP CGEKRenderFilter::OnPostReset(void)
     return hRetVal;
 }
 
-HRESULT CGEKRenderFilter::LoadDepthStates(CLibXMLNode &kTargets, UINT32 nXSize, UINT32 nYSize)
+HRESULT CGEKRenderFilter::LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSize, UINT32 nYSize)
 {
     HRESULT hRetVal = S_OK;
     GEKVIDEO::DEPTHSTATES kDepthStates;
-    CLibXMLNode kDepth = kTargets.FirstChildElement(L"depth");
-    if (kDepth)
+    CLibXMLNode kDepthNode = kTargetsNode.FirstChildElement(L"depth");
+    if (kDepthNode)
     {
-        if (kDepth.HasAttribute(L"source"))
+        if (kDepthNode.HasAttribute(L"source"))
         {
-            m_strDepthSource = kDepth.GetAttribute(L"source");
+            m_strDepthSource = kDepthNode.GetAttribute(L"source");
             hRetVal = S_OK;
         }
         else
         {
             GEKVIDEO::DATA::FORMAT eFormat = GEKVIDEO::DATA::D32;
-            if (kDepth.HasAttribute(L"format"))
+            if (kDepthNode.HasAttribute(L"format"))
             {
-                eFormat = GetTargetFormat(kDepth.GetAttribute(L"format"));
+                eFormat = GetTargetFormat(kDepthNode.GetAttribute(L"format"));
             }
 
             if (eFormat == GEKVIDEO::DATA::UNKNOWN)
@@ -177,58 +177,58 @@ HRESULT CGEKRenderFilter::LoadDepthStates(CLibXMLNode &kTargets, UINT32 nXSize, 
         if (SUCCEEDED(hRetVal))
         {
             kDepthStates.m_bDepthEnable = true;
-            if (kDepth.HasAttribute(L"clear"))
+            if (kDepthNode.HasAttribute(L"clear"))
             {
                 m_bClearDepth = true;
-                m_nClearDepth = StrToFloat(kDepth.GetAttribute(L"clear"));
+                m_nClearDepth = StrToFloat(kDepthNode.GetAttribute(L"clear"));
             }
 
-            if (kDepth.HasAttribute(L"comparison"))
+            if (kDepthNode.HasAttribute(L"comparison"))
             {
-                kDepthStates.m_eDepthComparison = GetComparisonFunction(kDepth.GetAttribute(L"comparison"));
+                kDepthStates.m_eDepthComparison = GetComparisonFunction(kDepthNode.GetAttribute(L"comparison"));
             }
 
-            if (kDepth.HasAttribute(L"writemask"))
+            if (kDepthNode.HasAttribute(L"writemask"))
             {
-                kDepthStates.m_eDepthWriteMask = GetDepthWriteMask(kDepth.GetAttribute(L"writemask"));
+                kDepthStates.m_eDepthWriteMask = GetDepthWriteMask(kDepthNode.GetAttribute(L"writemask"));
             }
         }
 
-        CLibXMLNode kStencil = kDepth.FirstChildElement(L"stencil");
-        if (kStencil)
+        CLibXMLNode kStencilNode = kDepthNode.FirstChildElement(L"stencil");
+        if (kStencilNode)
         {
             kDepthStates.m_bStencilEnable = true;
-            if (kStencil.HasAttribute(L"clear"))
+            if (kStencilNode.HasAttribute(L"clear"))
             {
                 m_bClearStencil = true;
-                m_nClearStencil = StrToUINT32(kStencil.GetAttribute(L"clear"));
+                m_nClearStencil = StrToUINT32(kStencilNode.GetAttribute(L"clear"));
             }
 
-            if (kStencil.HasAttribute(L"reference"))
+            if (kStencilNode.HasAttribute(L"reference"))
             {
-                m_nStencilReference = StrToUINT32(kStencil.GetAttribute(L"reference"));
+                m_nStencilReference = StrToUINT32(kStencilNode.GetAttribute(L"reference"));
             }
 
-            if (kStencil.HasAttribute(L"readmask"))
+            if (kStencilNode.HasAttribute(L"readmask"))
             {
-                kDepthStates.m_nStencilReadMask = StrToUINT32(kStencil.GetAttribute(L"readmask"));
+                kDepthStates.m_nStencilReadMask = StrToUINT32(kStencilNode.GetAttribute(L"readmask"));
             }
 
-            if (kStencil.HasAttribute(L"writemask"))
+            if (kStencilNode.HasAttribute(L"writemask"))
             {
-                kDepthStates.m_nStencilReadMask = StrToUINT32(kStencil.GetAttribute(L"writemask"));
+                kDepthStates.m_nStencilReadMask = StrToUINT32(kStencilNode.GetAttribute(L"writemask"));
             }
 
-            CLibXMLNode kFront = kStencil.FirstChildElement(L"front");
-            if (kFront)
+            CLibXMLNode kFrontNode = kStencilNode.FirstChildElement(L"front");
+            if (kFrontNode)
             {
-                GetStentilStates(kDepthStates.m_kStencilFrontStates, kFront);
+                GetStentilStates(kDepthStates.m_kStencilFrontStates, kFrontNode);
             }
 
-            CLibXMLNode kBack = kStencil.FirstChildElement(L"back");
-            if (kBack)
+            CLibXMLNode kBackNode = kStencilNode.FirstChildElement(L"back");
+            if (kBackNode)
             {
-                GetStentilStates(kDepthStates.m_kStencilBackStates, kBack);
+                GetStentilStates(kDepthStates.m_kStencilBackStates, kBackNode);
             }
         }
     }
@@ -241,42 +241,52 @@ HRESULT CGEKRenderFilter::LoadDepthStates(CLibXMLNode &kTargets, UINT32 nXSize, 
     return hRetVal;
 }
 
-HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilter)
+HRESULT CGEKRenderFilter::LoadRenderStates(CLibXMLNode &kFilterNode)
+{
+    return CGEKRenderStates::Load(GetVideoSystem(), kFilterNode.FirstChildElement(L"render"));
+}
+
+HRESULT CGEKRenderFilter::LoadBlendStates(CLibXMLNode &kFilterNode)
+{
+    return CGEKBlendStates::Load(GetVideoSystem(), kFilterNode.FirstChildElement(L"blend"));
+}
+
+HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
 {
     HRESULT hRetVal = S_OK;
-    CLibXMLNode kTargets = kFilter.FirstChildElement(L"targets");
-    if (kTargets)
+    CLibXMLNode kTargetsNode = kFilterNode.FirstChildElement(L"targets");
+    if (kTargetsNode)
     {
         m_nScale = 1.0f;
-        if (kTargets.HasAttribute(L"scale"))
+        if (kTargetsNode.HasAttribute(L"scale"))
         {
-            m_nScale = StrToFloat(kTargets.GetAttribute(L"scale"));
+            m_nScale = StrToFloat(kTargetsNode.GetAttribute(L"scale"));
         }
 
         UINT32 nXSize = UINT32(float(GetSystem()->GetXSize()) * m_nScale);
         UINT32 nYSize = UINT32(float(GetSystem()->GetYSize()) * m_nScale);
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = LoadDepthStates(kTargets, nXSize, nYSize);
+            hRetVal = LoadDepthStates(kTargetsNode, nXSize, nYSize);
         }
 
-        CLibXMLNode kTarget = kTargets.FirstChildElement(L"target");
-        while (kTarget)
+        CLibXMLNode kTargetNode = kTargetsNode.FirstChildElement(L"target");
+        while (kTargetNode)
         {
-            GEKVIDEO::DATA::FORMAT eFormat = GetTargetFormat(kTarget.GetAttribute(L"format"));
+            GEKVIDEO::DATA::FORMAT eFormat = GetTargetFormat(kTargetNode.GetAttribute(L"format"));
 
             TARGET kData;
-            if (kTarget.HasAttribute(L"clear"))
+            if (kTargetNode.HasAttribute(L"clear"))
             {
                 kData.m_bClear = true;
-                kData.m_nClearColor = StrToFloat4(kTarget.GetAttribute(L"clear"));
+                kData.m_nClearColor = StrToFloat4(kTargetNode.GetAttribute(L"clear"));
             }
             else
             {
                 kData.m_bClear = false;
             }
 
-            if (kTarget.HasAttribute(L"name"))
+            if (kTargetNode.HasAttribute(L"name"))
             {
                 if (eFormat == GEKVIDEO::DATA::UNKNOWN)
                 {
@@ -290,18 +300,18 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilter)
                 {
                     kData.m_eFormat = eFormat;
                     kData.m_spTexture = spTexture;
-                    m_aTargetList.push_back(kData);
-                    m_aTargetMap[kTarget.GetAttribute(L"name")] = &m_aTargetList.back();
+                    m_aTargets.push_back(kData);
+                    m_aTargetMap[kTargetNode.GetAttribute(L"name")] = &m_aTargets.back();
                 }
                 else
                 {
                     break;
                 }
             }
-            else if (kTarget.HasAttribute(L"source"))
+            else if (kTargetNode.HasAttribute(L"source"))
             {
-                kData.m_strSource = kTarget.GetAttribute(L"source");
-                m_aTargetList.push_back(kData);
+                kData.m_strSource = kTargetNode.GetAttribute(L"source");
+                m_aTargets.push_back(kData);
             }
             else
             {
@@ -309,114 +319,115 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilter)
                 break;
             }
 
-            kTarget = kTarget.NextSiblingElement(L"target");
+            kTargetNode = kTargetNode.NextSiblingElement(L"target");
         }
     }
 
     return hRetVal;
 }
 
-HRESULT CGEKRenderFilter::LoadTextures(CLibXMLNode &kFilter)
+HRESULT CGEKRenderFilter::LoadTextures(DATA &kData, CLibXMLNode &kFilterNode)
 {
     HRESULT hRetVal = S_OK;
-    CLibXMLNode kTextures = kFilter.FirstChildElement(L"textures");
-    if (kTextures)
+    CLibXMLNode kTexturesNode = kFilterNode.FirstChildElement(L"textures");
+    if (kTexturesNode)
     {
-        CLibXMLNode kTexture = kTextures.FirstChildElement(L"texture");
-        while (kTexture)
+        CLibXMLNode kTextureNode = kTexturesNode.FirstChildElement(L"texture");
+        while (kTextureNode)
         {
-            SOURCE kSource;
-            if (kTexture.HasAttribute(L"source"))
+            if (kTextureNode.HasAttribute(L"stage"))
             {
-                kSource.m_strName = kTexture.GetAttribute(L"source");
-            }
-            else if (kTexture.HasAttribute(L"data"))
-            {
-                CComPtr<IUnknown> spTexture;
-                hRetVal = GetRenderManager()->LoadTexture(kTexture.GetAttribute(L"data"), &spTexture);
-                if (SUCCEEDED(hRetVal))
+                UINT32 nStage = StrToUINT32(kTextureNode.GetAttribute(L"stage"));
+
+                TEXTURE kTexture;
+                if (kTextureNode.HasAttribute(L"source"))
                 {
-                    kSource.m_spTexture = spTexture;
+                    kTexture.m_strName = kTextureNode.GetAttribute(L"source");
+                }
+                else if (kTextureNode.HasAttribute(L"data"))
+                {
+                    CComPtr<IUnknown> spTexture;
+                    hRetVal = GetRenderManager()->LoadTexture(kTextureNode.GetAttribute(L"data"), &spTexture);
+                    if (SUCCEEDED(hRetVal))
+                    {
+                        kTexture.m_spTexture = spTexture;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 else
                 {
+                    hRetVal = E_INVALIDARG;
                     break;
                 }
+                
+                kData.m_aTextures[nStage] = kTexture;
+                kTextureNode = kTextureNode.NextSiblingElement(L"texture");
             }
             else
             {
                 hRetVal = E_INVALIDARG;
                 break;
             }
-
-            m_aSourceList.push_back(kSource);
-            kTexture = kTexture.NextSiblingElement(L"texture");
         };
     }
 
     return hRetVal;
 }
 
-HRESULT CGEKRenderFilter::LoadRenderStates(CLibXMLNode &kFilter)
+HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
 {
-    return CGEKRenderStates::Load(GetVideoSystem(), kFilter.FirstChildElement(L"render"));
+    HRESULT hRetVal = S_OK;
+    CLibXMLNode kComputeNode = kFilterNode.FirstChildElement(L"compute");
+    if (kComputeNode)
+    {
+        CStringA strProgram;
+        switch (m_eMode)
+        {
+        case FORWARD:
+            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\forward.hlsl", strProgram);
+            break;
+
+        case LIGHTING:
+            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\lighting.hlsl", strProgram);
+            break;
+
+        default:
+            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\default.hlsl", strProgram);
+            break;
+        };
+
+        if (SUCCEEDED(hRetVal))
+        {
+            if (strProgram.Find("_INSERT_COMPUTE_PROGRAM") < 0)
+            {
+                hRetVal = E_INVALIDARG;
+            }
+            else
+            {
+                CStringA strCoreProgram = kComputeNode.GetText();
+                strProgram.Replace("_INSERT_COMPUTE_PROGRAM", strCoreProgram);
+                hRetVal = GetVideoSystem()->CompileComputeProgram(strProgram, "MainComputeProgram", &m_kComputeData.m_spProgram);
+            }
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = LoadTextures(m_kComputeData, kComputeNode);
+        }
+    }
+
+    return hRetVal;
 }
 
-HRESULT CGEKRenderFilter::LoadBlendStates(CLibXMLNode &kFilter)
-{
-    return CGEKBlendStates::Load(GetVideoSystem(), kFilter.FirstChildElement(L"blend"));
-}
-
-HRESULT CGEKRenderFilter::LoadProgram(CLibXMLNode &kFilter)
+HRESULT CGEKRenderFilter::LoadPixelProgram(CLibXMLNode &kFilterNode)
 {
     HRESULT hRetVal = E_INVALIDARG;
-    CLibXMLNode kPixel = kFilter.FirstChildElement(L"pixel");
-    if (kPixel)
+    CLibXMLNode kPixelNode = kFilterNode.FirstChildElement(L"pixel");
+    if (kPixelNode)
     {
-        CStringW strVertexAttributes = kPixel.GetAttribute(L"vertexattributes");
-        if (!strVertexAttributes.IsEmpty())
-        {
-            m_nVertexAttributes = 0;
-
-            int nPosition = 0;
-            CStringW strAttribute = strVertexAttributes.Tokenize(L",", nPosition);
-            while (!strAttribute.IsEmpty())
-            {
-                if (strAttribute.CompareNoCase(L"position") == 0)
-                {
-                    m_nVertexAttributes |= GEK_VERTEX_POSITION;
-                }
-                else if (strAttribute.CompareNoCase(L"position") == 0)
-                {
-                    m_nVertexAttributes |= GEK_VERTEX_TEXCOORD;
-                }
-                else if (strAttribute.CompareNoCase(L"position") == 0)
-                {
-                    m_nVertexAttributes |= GEK_VERTEX_BASIS;
-                }
-
-                strAttribute = strVertexAttributes.Tokenize(L",", nPosition);
-            };
-        }
-        else
-        {
-            m_nVertexAttributes = 0xFFFFFFFF;
-        }
-
-        CStringW strMode = kPixel.GetAttribute(L"mode");
-        if (strMode.CompareNoCase(L"forward") == 0)
-        {
-            m_eMode = FORWARD;
-        }
-        else if (strMode.CompareNoCase(L"lighting") == 0)
-        {
-            m_eMode = LIGHTING;
-        }
-        else
-        {
-            hRetVal = E_INVALIDARG;
-        }
-
         CStringA strProgram;
         switch (m_eMode)
         {
@@ -441,21 +452,16 @@ HRESULT CGEKRenderFilter::LoadProgram(CLibXMLNode &kFilter)
             }
             else
             {
-                CStringA strCoreProgram = kPixel.GetText();
+                CStringA strCoreProgram = kPixelNode.GetText();
                 strProgram.Replace("_INSERT_PIXEL_PROGRAM", strCoreProgram);
-                hRetVal = GetVideoSystem()->CompilePixelProgram(strProgram, "MainPixelProgram", &m_spPixelProgram);
+                hRetVal = GetVideoSystem()->CompilePixelProgram(strProgram, "MainPixelProgram", &m_kPixelData.m_spProgram);
             }
         }
-    }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = LoadTargets(kPixel);
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = LoadTextures(kPixel);
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = LoadTextures(m_kPixelData, kPixelNode);
+        }
     }
 
     return hRetVal;
@@ -467,18 +473,76 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName)
     HRESULT hRetVal = kDocument.Load(pFileName);
     if (SUCCEEDED(hRetVal))
     {
-        CLibXMLNode kFilter = kDocument.GetRoot();
-        if (kFilter)
+        CLibXMLNode kFilterNode = kDocument.GetRoot();
+        if (kFilterNode)
         {
-            hRetVal = LoadBlendStates(kFilter);
-            if (SUCCEEDED(hRetVal))
+            CStringW strVertexAttributes = kFilterNode.GetAttribute(L"vertexattributes");
+            if (strVertexAttributes.IsEmpty())
             {
-                hRetVal = LoadRenderStates(kFilter);
+                m_nVertexAttributes = 0xFFFFFFFF;
+            }
+            else
+            {
+                m_nVertexAttributes = 0;
+
+                int nPosition = 0;
+                CStringW strAttribute = strVertexAttributes.Tokenize(L",", nPosition);
+                while (!strAttribute.IsEmpty())
+                {
+                    if (strAttribute.CompareNoCase(L"position") == 0)
+                    {
+                        m_nVertexAttributes |= GEK_VERTEX_POSITION;
+                    }
+                    else if (strAttribute.CompareNoCase(L"position") == 0)
+                    {
+                        m_nVertexAttributes |= GEK_VERTEX_TEXCOORD;
+                    }
+                    else if (strAttribute.CompareNoCase(L"position") == 0)
+                    {
+                        m_nVertexAttributes |= GEK_VERTEX_BASIS;
+                    }
+
+                    strAttribute = strVertexAttributes.Tokenize(L",", nPosition);
+                };
+            }
+
+            CStringW strMode = kFilterNode.GetAttribute(L"mode");
+            if (strMode.CompareNoCase(L"forward") == 0)
+            {
+                m_eMode = FORWARD;
+            }
+            else if (strMode.CompareNoCase(L"lighting") == 0)
+            {
+                m_eMode = LIGHTING;
+            }
+            else
+            {
+                m_eMode = STANDARD;
             }
 
             if (SUCCEEDED(hRetVal))
             {
-                hRetVal = LoadProgram(kFilter);
+                hRetVal = LoadBlendStates(kFilterNode);
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = LoadRenderStates(kFilterNode);
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = LoadTargets(kFilterNode);
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = LoadComputeProgram(kFilterNode);
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = LoadPixelProgram(kFilterNode);
             }
 
             if (SUCCEEDED(hRetVal) && !m_spDepthStates)
@@ -564,9 +628,9 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     }
 
     std::vector<IGEKVideoTexture *> aTargets;
-    if (m_aTargetList.size() > 0)
+    if (m_aTargets.size() > 0)
     {
-        for (auto &kTarget : m_aTargetList)
+        for (auto &kTarget : m_aTargets)
         {
             CComQIPtr<IGEKVideoTexture> spTarget;
             if (kTarget.m_spTexture != nullptr)
@@ -601,33 +665,31 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         GetVideoSystem()->SetDefaultTargets(nullptr, (spDepthBuffer ? spDepthBuffer : nullptr));
     }
 
-    UINT32 nStage = 0;
-    for (auto &kSource : m_aSourceList)
+    for (auto &kPair : m_kPixelData.m_aTextures)
     {
-        if (kSource.m_spTexture != nullptr)
+        if (kPair.second.m_spTexture != nullptr)
         {
-            GetRenderManager()->SetTexture(nStage, kSource.m_spTexture);
+            GetRenderManager()->SetTexture(kPair.first, kPair.second.m_spTexture);
         }
-        else if (!kSource.m_strName.IsEmpty())
+        else if (!kPair.second.m_strName.IsEmpty())
         {
             CComPtr<IUnknown> spTexture;
-            GetRenderManager()->GetBuffer(kSource.m_strName, &spTexture);
+            GetRenderManager()->GetBuffer(kPair.second.m_strName, &spTexture);
             if (spTexture != nullptr)
             {
-                GetRenderManager()->SetTexture(nStage, spTexture);
+                GetRenderManager()->SetTexture(kPair.first, spTexture);
             }
         }
-
-        nStage++;
     }
     
     CGEKRenderStates::Enable(GetVideoSystem());
     CGEKBlendStates::Enable(GetVideoSystem());
     GetVideoSystem()->GetImmediateContext()->SetDepthStates(m_nStencilReference, m_spDepthStates);
-    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetProgram(m_spPixelProgram);
+    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetProgram(m_kPixelData.m_spProgram);
+    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetProgram(m_kComputeData.m_spProgram);
     if (m_eMode == FORWARD)
     {
-        GetRenderManager()->DrawScene(0xFFFFFFFF);
+        GetRenderManager()->DrawScene(m_nVertexAttributes);
     }
     else if (m_eMode == LIGHTING)
     {

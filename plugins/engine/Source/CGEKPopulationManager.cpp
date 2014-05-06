@@ -77,17 +77,17 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
     HRESULT hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\worlds\\%s.xml", pName));
     if (SUCCEEDED(hRetVal))
     {
-        CLibXMLNode &kWorld = kDocument.GetRoot();
-        if (kWorld.GetType().CompareNoCase(L"world") == 0)
+        CLibXMLNode &kWorldNode = kDocument.GetRoot();
+        if (kWorldNode.GetType().CompareNoCase(L"world") == 0)
         {
-            CLibXMLNode &kPopulation = kWorld.FirstChildElement(L"population");
-            if (kPopulation)
+            CLibXMLNode &kPopulationNode = kWorldNode.FirstChildElement(L"population");
+            if (kPopulationNode)
             {
-                CLibXMLNode &kEntity = kPopulation.FirstChildElement(L"entity");
-                while (kEntity)
+                CLibXMLNode &kEntityNode = kPopulationNode.FirstChildElement(L"entity");
+                while (kEntityNode)
                 {
-                    aEntities.push_back(kEntity);
-                    kEntity = kEntity.NextSiblingElement(L"entity");
+                    aEntities.push_back(kEntityNode);
+                    kEntityNode = kEntityNode.NextSiblingElement(L"entity");
                 };
             }
             else
@@ -101,9 +101,9 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
         }
     }
 
-    concurrency::parallel_for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntity) -> void
+    concurrency::parallel_for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
-        AddEntity(kEntity);
+        AddEntity(kEntityNode);
     });
 
     if (SUCCEEDED(hRetVal))
@@ -118,31 +118,31 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
             {
                 CLibXMLDoc kDocument;
                 kDocument.Create(L"player");
-                CLibXMLNode &kPlayer = kDocument.GetRoot().CreateChildElement(L"entity");
-                kPlayer.SetAttribute(L"name", L"player");
-                kPlayer.SetAttribute(L"flags", pEntity->GetFlags());
+                CLibXMLNode &kPlayerNode = kDocument.GetRoot().CreateChildElement(L"entity");
+                kPlayerNode.SetAttribute(L"name", L"player");
+                kPlayerNode.SetAttribute(L"flags", pEntity->GetFlags());
 
                 GEKVALUE kPosition;
                 GEKVALUE kRotation;
                 pTransform->GetProperty(L"position", kPosition);
                 pTransform->GetProperty(L"rotation", kRotation);
 
-                CLibXMLNode &kTransform = kPlayer.CreateChildElement(L"component");
-                kTransform.SetAttribute(L"type", L"transform");
-                kTransform.SetAttribute(L"position", kPosition.GetString());
-                kTransform.SetAttribute(L"rotation", kRotation.GetString());
+                CLibXMLNode &kTransformNode = kPlayerNode.CreateChildElement(L"component");
+                kTransformNode.SetAttribute(L"type", L"transform");
+                kTransformNode.SetAttribute(L"position", kPosition.GetString());
+                kTransformNode.SetAttribute(L"rotation", kRotation.GetString());
 
-                CLibXMLNode &kViewer = kPlayer.CreateChildElement(L"component");
-                kViewer.SetAttribute(L"type", L"viewer");
-                kViewer.SetAttribute(L"fieldofview", L"%f", _DEGTORAD(90.0f));
-                kViewer.SetAttribute(L"minviewdistance", L"0.1");
-                kViewer.SetAttribute(L"maxviewdistance", L"100");
+                CLibXMLNode &kViewerNode = kPlayerNode.CreateChildElement(L"component");
+                kViewerNode.SetAttribute(L"type", L"viewer");
+                kViewerNode.SetAttribute(L"fieldofview", L"%f", _DEGTORAD(90.0f));
+                kViewerNode.SetAttribute(L"minviewdistance", L"0.1");
+                kViewerNode.SetAttribute(L"maxviewdistance", L"100");
 
-                CLibXMLNode &kScript = kPlayer.CreateChildElement(L"component");
-                kScript.SetAttribute(L"type", L"script");
-                kScript.SetAttribute(L"source", L"player");
+                CLibXMLNode &kScriptNode = kPlayerNode.CreateChildElement(L"component");
+                kScriptNode.SetAttribute(L"type", L"script");
+                kScriptNode.SetAttribute(L"source", L"player");
 
-                hRetVal = AddEntity(kPlayer);
+                hRetVal = AddEntity(kPlayerNode);
                 if (SUCCEEDED(hRetVal))
                 {
                     pIterator = m_aPopulation.find(L"player");
@@ -241,17 +241,17 @@ STDMETHODIMP_(void) CGEKPopulationManager::Render(void)
     }
 }
 
-STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntity)
+STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
-    CStringW strName = kEntity.GetAttribute(L"name");
+    CStringW strName = kEntityNode.GetAttribute(L"name");
     if (strName.IsEmpty())
     {
         static int nUnNamedCount = 0;
         strName.Format(L"entity_%d", nUnNamedCount++);
     }
 
-    CStringW strFlags = kEntity.GetAttribute(L"flags");
+    CStringW strFlags = kEntityNode.GetAttribute(L"flags");
     auto pIterator = m_aPopulation.find(strName.GetString());
     if (pIterator != m_aPopulation.end())
     {
@@ -262,13 +262,13 @@ STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntity)
         CComPtr<CGEKEntity> spEntity(new CGEKEntity(strFlags));
         if (spEntity)
         {
-            CLibXMLNode &kComponent = kEntity.FirstChildElement(L"component");
-            while (kComponent)
+            CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement(L"component");
+            while (kComponentNode)
             {
                 CComPtr<IGEKComponent> spComponent;
                 std::find_if(m_aComponentSystems.begin(), m_aComponentSystems.end(), [&](IGEKComponentSystem *pSystem) -> bool
                 {
-                    return SUCCEEDED(pSystem->Create(kComponent, spEntity, &spComponent));
+                    return SUCCEEDED(pSystem->Create(kComponentNode, spEntity, &spComponent));
                 });
 
                 if (spComponent)
@@ -276,12 +276,15 @@ STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntity)
                     spEntity->AddComponent(spComponent);
                 }
 
-                kComponent = kComponent.NextSiblingElement(L"component");
+                kComponentNode = kComponentNode.NextSiblingElement(L"component");
             };
 
             if (SUCCEEDED(spEntity->OnEntityCreated()))
             {
+                m_kCriticalSection.lock();
                 hRetVal = spEntity->QueryInterface(IID_PPV_ARGS(&m_aPopulation[strName.GetString()]));
+                m_kCriticalSection.unlock();
+
                 if (strFlags.Find(L"input") >= 0)
                 {
                     m_aInputHandlers.push_back(spEntity);

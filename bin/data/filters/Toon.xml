@@ -3,12 +3,14 @@
     <targets>
         <target name="Edge" format="RGBA_UINT8" />
     </targets>
-    <textures>
-        <texture source="Deferred.Albedo" />
-        <texture source="Deferred.World" />
-        <texture source="Deferred.Info" />
-    </textures>
+    
     <pixel>
+        <textures>
+            <texture stage="0" source="Deferred.Albedo" />
+            <texture stage="1" source="Deferred.World" />
+            <texture stage="2" source="Deferred.Info" />
+        </textures>
+        
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t0);
             Texture2D     gs_pWorldBuffer           : register(t1);

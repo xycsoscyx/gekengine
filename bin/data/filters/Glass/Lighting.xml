@@ -2,21 +2,24 @@
 <!DOCTYPE filter [
     <!ENTITY LightingShader PUBLIC "%root%/data/filters/Shared/Lighting.xml" "">
 ]>
-<filter>
+<filter mode="lighting">
     <blend>
         <color source="one" destination="one" operation="add" />
         <alpha source="one" destination="one" operation="add" />
     </blend>
-    <pixel mode="lighting">
-        <targets>
-            <target name="Diffuse" format="RGBA_UINT8" clear="0,0,0,0" />
-            <target name="Specular" format="RGBA_UINT8" clear="0,0,0,0" />
-        </targets>
+    
+    <targets>
+        <target name="Diffuse" format="RGBA_UINT8" clear="0,0,0,0" />
+        <target name="Specular" format="RGBA_UINT8" clear="0,0,0,0" />
+    </targets>
+    
+    <pixel>
         <textures>
-            <texture source="Opaque/Deferred.Albedo" />
-            <texture source="Glass/Deferred.World" />
-            <texture source="Opaque/Deferred.Info" />
+            <texture stage="1" source="Opaque/Deferred.Albedo" />
+            <texture stage="2" source="Glass/Deferred.World" />
+            <texture stage="3" source="Opaque/Deferred.Info" />
         </textures>
+        
         &LightingShader;
         <![CDATA[
             struct OUTPUT

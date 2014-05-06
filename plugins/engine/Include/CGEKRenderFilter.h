@@ -45,10 +45,24 @@ public:
         }
     };
 
-    struct SOURCE
+    struct TEXTURE
     {
         CStringW m_strName;
         CComPtr<IUnknown> m_spTexture;
+    };
+
+    struct BUFFER
+    {
+        CStringW m_strName;
+        CComPtr<IGEKVideoBuffer> m_spBuffer;
+    };
+
+    struct DATA
+    {
+        CComPtr<IUnknown> m_spProgram;
+        std::map<GEKHASH, BUFFER *> m_aBufferMap;
+        std::map<UINT32, TEXTURE> m_aTextures;
+        std::list<BUFFER> m_aBuffers;
     };
 
 private:
@@ -58,27 +72,28 @@ private:
 
     MODES m_eMode;
     CComPtr<IUnknown> m_spDepthStates;
-    CComPtr<IUnknown> m_spPixelProgram;
 
     bool m_bClearDepth;
     bool m_bClearStencil;
     float m_nClearDepth;
     UINT32 m_nClearStencil;
     UINT32 m_nStencilReference;
+    std::map<GEKHASH, TARGET *> m_aTargetMap;
+    std::list<TARGET> m_aTargets;
     CComPtr<IUnknown> m_spDepthBuffer;
     CStringW m_strDepthSource;
 
-    std::list<SOURCE> m_aSourceList;
-    std::map<GEKHASH, TARGET *> m_aTargetMap;
-    std::list<TARGET> m_aTargetList;
+    DATA m_kComputeData;
+    DATA m_kPixelData;
 
 private:
-    HRESULT LoadDepthStates(CLibXMLNode &kTargets, UINT32 nXSize, UINT32 nYSize);
-    HRESULT LoadTargets(CLibXMLNode &kFilter);
-    HRESULT LoadTextures(CLibXMLNode &kFilter);
-    HRESULT LoadRenderStates(CLibXMLNode &kFilter);
-    HRESULT LoadBlendStates(CLibXMLNode &kFilter);
-    HRESULT LoadProgram(CLibXMLNode &kFilter);
+    HRESULT LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSize, UINT32 nYSize);
+    HRESULT LoadRenderStates(CLibXMLNode &kFilterNode);
+    HRESULT LoadBlendStates(CLibXMLNode &kFilterNode);
+    HRESULT LoadTargets(CLibXMLNode &kPixelNode);
+    HRESULT LoadTextures(DATA &kData, CLibXMLNode &kPixelNode);
+    HRESULT LoadComputeProgram(CLibXMLNode &kFilterNode);
+    HRESULT LoadPixelProgram(CLibXMLNode &kFilterNode);
 
 public:
     CGEKRenderFilter(void);

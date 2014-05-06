@@ -4,9 +4,9 @@ cbuffer ENGINEBUFFER                    : register(b0)
     float4x4 gs_nProjectionMatrix;
     float4x4 gs_nTransformMatrix;
     float3   gs_nCameraPosition;
-	float    gs_nCameraViewDistance;
-	float2   gs_nCameraView;
-	float2   gs_nPadding;
+    float    gs_nCameraViewDistance;
+    float2   gs_nCameraView;
+    float2   gs_nCameraSize;
 };
 
 cbuffer ORTHOBUFFER                     : register(b1)

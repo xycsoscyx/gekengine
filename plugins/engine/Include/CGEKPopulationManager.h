@@ -5,6 +5,7 @@
 #include "GEKAPI.h"
 #include "IGEKPopulationManager.h"
 #include "IGEKRenderManager.h"
+#include <concrt.h>
 #include <list>
 
 class CGEKPopulationManager : public CGEKUnknown
@@ -16,6 +17,7 @@ class CGEKPopulationManager : public CGEKUnknown
                             , public IGEKSceneManager
 {
 private:
+    concurrency::critical_section m_kCriticalSection;
     std::list<CComQIPtr<IGEKComponentSystem>> m_aComponentSystems;
     std::map<GEKHASH, CComPtr<IGEKEntity>> m_aPopulation;
     std::list<IGEKEntity *> m_aInputHandlers;
@@ -42,7 +44,7 @@ public:
     STDMETHOD_(void, Render)            (THIS);
 
     // IGEKSceneManager
-    STDMETHOD(AddEntity)                (THIS_ CLibXMLNode &kEntity);
+    STDMETHOD(AddEntity)                (THIS_ CLibXMLNode &kEntityNode);
     STDMETHOD(FindEntity)               (THIS_ LPCWSTR pName, IGEKEntity **ppEntity);
     STDMETHOD(DestroyEntity)            (THIS_ IGEKEntity *pEntity);
     STDMETHOD_(float3, GetGravity)      (THIS_ const float4 &nGravity);
