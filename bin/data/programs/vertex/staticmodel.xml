@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <program>
     <layout>
-		<element type="xyz_float" name="POSITION" index="0" class="vertex" slot="0" />
-		<element type="xy_float" name="TEXCOORD" index="0" class="vertex" slot="1" />
-		<element type="xyz_float" name="TEXCOORD" index="1" class="vertex" slot="2" />
-		<element type="xyz_float" name="TEXCOORD" index="2" class="vertex" slot="2" />
-		<element type="xyz_float" name="TEXCOORD" index="3" class="vertex" slot="2" />
+		<element type="rgb_float" name="POSITION" index="0" class="vertex" slot="0" />
+		<element type="rg_float" name="TEXCOORD" index="0" class="vertex" slot="1" />
+		<element type="rgb_float" name="TEXCOORD" index="1" class="vertex" slot="2" />
+		<element type="rgb_float" name="TEXCOORD" index="2" class="vertex" slot="2" />
+		<element type="rgb_float" name="TEXCOORD" index="3" class="vertex" slot="2" />
     </layout>
     <vertex>
         <![CDATA[

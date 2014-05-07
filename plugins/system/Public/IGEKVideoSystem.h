@@ -11,27 +11,20 @@ namespace GEKVIDEO
     {
         enum FORMAT
         {
-            UNKNOWN                         = 0,
-
-            // Vertex Data Formats
-            X_FLOAT,
-            XY_FLOAT,
-            XYZ_FLOAT,
-            XYZW_FLOAT,
-            X_UINT32,
-            XY_UINT32,
-            XYZ_UINT32,
-            XYZW_UINT32,
-
-            // Render Target Formats
+            UNKNOWN = 0,
+            RGBA_UINT8,
+            BGRA_UINT8,
+            R_UINT16,
+            RG_UINT16,
+            RGBA_UINT16,
+            R_UINT32,
+            RG_UINT32,
+            RGB_UINT32,
+            RGBA_UINT32,
             R_FLOAT,
             RG_FLOAT,
             RGB_FLOAT,
             RGBA_FLOAT,
-            RGBA_UINT8,
-            BGRA_UINT8,
-
-            // Depth Target Formats
             D16,
             D32,
             D24_S8,
@@ -488,6 +481,7 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget) PURE;
 
     STDMETHOD(CreateBuffer)                             (THIS_ UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData = nullptr) PURE;
+    STDMETHOD(CreateBuffer)                             (THIS_ GEKVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData = nullptr) PURE;
 
     STDMETHOD(CompileComputeProgram)                    (THIS_ LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines = nullptr) PURE;
     STDMETHOD(CompileVertexProgram)                     (THIS_ LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines = nullptr) PURE;

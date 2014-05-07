@@ -35,7 +35,7 @@ public:
         bool m_bClear;
         float4 m_nClearColor;
         GEKVIDEO::DATA::FORMAT m_eFormat;
-        CComPtr<IGEKVideoTexture> m_spTexture;
+        CComPtr<IGEKVideoTexture> m_spResource;
         CStringW m_strSource;
 
         TARGET(void)
@@ -72,6 +72,7 @@ private:
     UINT32 m_nStencilReference;
     std::list<TARGET> m_aTargets;
     std::map<GEKHASH, TARGET *> m_aTargetMap;
+    std::map<GEKHASH, CComPtr<IUnknown>> m_aBufferMap;
     CComPtr<IUnknown> m_spDepthBuffer;
     CStringW m_strDepthSource;
 
@@ -82,8 +83,9 @@ private:
     HRESULT LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSize, UINT32 nYSize);
     HRESULT LoadRenderStates(CLibXMLNode &kFilterNode);
     HRESULT LoadBlendStates(CLibXMLNode &kFilterNode);
-    HRESULT LoadTargets(CLibXMLNode &kPixelNode);
-    HRESULT LoadResources(DATA &kData, CLibXMLNode &kPixelNode);
+    HRESULT LoadBuffers(CLibXMLNode &kFilterNode);
+    HRESULT LoadTargets(CLibXMLNode &kFilterNode);
+    HRESULT LoadResources(DATA &kData, CLibXMLNode &kNode);
     HRESULT LoadComputeProgram(CLibXMLNode &kFilterNode);
     HRESULT LoadPixelProgram(CLibXMLNode &kFilterNode);
 

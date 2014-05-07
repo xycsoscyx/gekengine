@@ -1654,11 +1654,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         kBufferDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
     }
 
-    if (nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
-    {
-        kBufferDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
-    }
-
     kBufferDesc.CPUAccessFlags = 0;
     if (nFlags & GEKVIDEO::BUFFER::STRUCTURED_BUFFER)
     {
@@ -1700,23 +1695,186 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
             hRetVal = m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
         }
 
-        CComPtr<ID3D11UnorderedAccessView> spUnderedView;
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = E_OUTOFMEMORY;
+            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, nullptr, nStride, nCount));
+            if (spBuffer != nullptr)
+            {
+                hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
+            }
+        }
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData)
+{
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
+    REQUIRE_RETURN(eFormat != GEKVIDEO::DATA::UNKNOWN && nCount > 0 && ppBuffer, E_INVALIDARG);
+
+    UINT32 nStride = 0;
+    DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
+    switch (eFormat)
+    {
+    case GEKVIDEO::DATA::R_UINT16:
+        eNewFormat = DXGI_FORMAT_R16_UINT;
+        nStride = sizeof(UINT16);
+        break;
+
+    case GEKVIDEO::DATA::RG_UINT16:
+        eNewFormat = DXGI_FORMAT_R16G16_UINT;
+        nStride = (sizeof(UINT16) * 2);
+        break;
+
+    case GEKVIDEO::DATA::RGBA_UINT16:
+        eNewFormat = DXGI_FORMAT_R16G16B16A16_UINT;
+        nStride = (sizeof(UINT16) * 4);
+        break;
+
+    case GEKVIDEO::DATA::R_UINT32:
+        eNewFormat = DXGI_FORMAT_R32_UINT;
+        nStride = sizeof(UINT32);
+        break;
+
+    case GEKVIDEO::DATA::RG_UINT32:
+        eNewFormat = DXGI_FORMAT_R32G32_UINT;
+        nStride = (sizeof(UINT32)* 2);
+        break;
+
+    case GEKVIDEO::DATA::RGB_UINT32:
+        eNewFormat = DXGI_FORMAT_R32G32B32_UINT;
+        nStride = (sizeof(UINT32) * 3);
+        break;
+
+    case GEKVIDEO::DATA::RGBA_UINT32:
+        eNewFormat = DXGI_FORMAT_R32G32B32A32_UINT;
+        nStride = (sizeof(UINT32) * 4);
+        break;
+
+    case GEKVIDEO::DATA::R_FLOAT:
+        eNewFormat = DXGI_FORMAT_R32_FLOAT;
+        nStride = sizeof(float);
+        break;
+
+    case GEKVIDEO::DATA::RG_FLOAT:
+        eNewFormat = DXGI_FORMAT_R32G32_FLOAT;
+        nStride = (sizeof(float) * 2);
+        break;
+
+    case GEKVIDEO::DATA::RGB_FLOAT:
+        eNewFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+        nStride = (sizeof(float) * 3);
+        break;
+
+    case GEKVIDEO::DATA::RGBA_FLOAT:
+        eNewFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        nStride = (sizeof(float) * 4);
+        break;
+    };
+
+    D3D11_BUFFER_DESC kBufferDesc;
+    kBufferDesc.ByteWidth = (nStride * nCount);
+    if (nFlags & GEKVIDEO::BUFFER::STATIC)
+    {
+        if (pData == NULL)
+        {
+            return E_INVALIDARG;
+        }
+
+        kBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+    }
+    else
+    {
+        kBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    }
+
+    if (nFlags & GEKVIDEO::BUFFER::VERTEX_BUFFER)
+    {
+        kBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    }
+    else if (nFlags & GEKVIDEO::BUFFER::INDEX_BUFFER)
+    {
+        kBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    }
+    else if (nFlags & GEKVIDEO::BUFFER::CONSTANT_BUFFER)
+    {
+        kBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    }
+    else
+    {
+        kBufferDesc.BindFlags = 0;
+    }
+
+    if (nFlags & GEKVIDEO::BUFFER::RESOURCE)
+    {
+        kBufferDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+    }
+
+    if (nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
+    {
+        kBufferDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
+    }
+
+    kBufferDesc.CPUAccessFlags = 0;
+    if (nFlags & GEKVIDEO::BUFFER::STRUCTURED_BUFFER)
+    {
+        kBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+        kBufferDesc.StructureByteStride = nStride;
+    }
+    else
+    {
+        kBufferDesc.MiscFlags = 0;
+        kBufferDesc.StructureByteStride = 0;
+    }
+
+    HRESULT hRetVal = E_FAIL;
+    CComPtr<ID3D11Buffer> spBuffer;
+    if (pData == nullptr)
+    {
+        hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, nullptr, &spBuffer);
+    }
+    else
+    {
+        D3D11_SUBRESOURCE_DATA kData;
+        kData.pSysMem = pData;
+        kData.SysMemPitch = 0;
+        kData.SysMemSlicePitch = 0;
+        hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, &kData, &spBuffer);
+    }
+
+    if (spBuffer != nullptr)
+    {
+        CComPtr<ID3D11ShaderResourceView> spShaderView;
+        if (nFlags & GEKVIDEO::BUFFER::RESOURCE)
+        {
+            D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
+            kViewDesc.Format = eNewFormat;
+            kViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+            kViewDesc.Buffer.FirstElement = 0;
+            kViewDesc.Buffer.NumElements = nCount;
+
+            hRetVal = m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
+        }
+
+        CComPtr<ID3D11UnorderedAccessView> spUnoderedView;
         if (SUCCEEDED(hRetVal) && nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
         {
             D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
-            kViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+            kViewDesc.Format = eNewFormat;
             kViewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
             kViewDesc.Buffer.FirstElement = 0;
             kViewDesc.Buffer.NumElements = nCount;
             kViewDesc.Buffer.Flags = 0;
 
-            hRetVal = m_spDevice->CreateUnorderedAccessView(spBuffer, &kViewDesc, &spUnderedView);
+            hRetVal = m_spDevice->CreateUnorderedAccessView(spBuffer, &kViewDesc, &spUnoderedView);
         }
 
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, spUnderedView, nStride, nCount));
+            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, spUnoderedView, nStride, nCount));
             if (spBuffer != nullptr)
             {
                 hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
@@ -1842,35 +2000,35 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
 
                 switch (aLayout[nIndex].m_eType)
                 {
-                case GEKVIDEO::DATA::X_FLOAT:
+                case GEKVIDEO::DATA::R_FLOAT:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::XY_FLOAT:
+                case GEKVIDEO::DATA::RG_FLOAT:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::XYZ_FLOAT:
+                case GEKVIDEO::DATA::RGB_FLOAT:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::XYZW_FLOAT:
+                case GEKVIDEO::DATA::RGBA_FLOAT:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::X_UINT32:
+                case GEKVIDEO::DATA::R_UINT32:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32_UINT;
                     break;
 
-                case GEKVIDEO::DATA::XY_UINT32:
+                case GEKVIDEO::DATA::RG_UINT32:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32_UINT;
                     break;
 
-                case GEKVIDEO::DATA::XYZ_UINT32:
+                case GEKVIDEO::DATA::RGB_UINT32:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32_UINT;
                     break;
 
-                case GEKVIDEO::DATA::XYZW_UINT32:
+                case GEKVIDEO::DATA::RGBA_UINT32:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32A32_UINT;
                     break;
 

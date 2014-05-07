@@ -47,9 +47,9 @@ public:
 
     STDMETHODIMP_(void) Enable(CGEKRenderManager *pManager, IGEKVideoSystem *pSystem)
     {
-        pManager->SetResource(0, m_spAlbedoMap);
-        pManager->SetResource(1, m_spNormalMap);
-        pManager->SetResource(2, m_spInfoMap);
+        pManager->SetResource(nullptr, 0, m_spAlbedoMap);
+        pManager->SetResource(nullptr, 1, m_spNormalMap);
+        pManager->SetResource(nullptr, 2, m_spInfoMap);
         CGEKRenderStates::Enable(pSystem);
         CGEKBlendStates::Enable(pSystem);
     }
@@ -255,14 +255,14 @@ END_INTERFACE_LIST_UNKNOWN
 
 static GEKVIDEO::DATA::FORMAT GetFormatType(LPCWSTR pValue)
 {
-         if (_wcsicmp(pValue, L"x_float") == 0) return GEKVIDEO::DATA::X_FLOAT;
-    else if (_wcsicmp(pValue, L"xy_float") == 0) return GEKVIDEO::DATA::XY_FLOAT;
-    else if (_wcsicmp(pValue, L"xyz_float") == 0) return GEKVIDEO::DATA::XYZ_FLOAT;
-    else if (_wcsicmp(pValue, L"xyzw_float") == 0) return GEKVIDEO::DATA::XYZW_FLOAT;
-    else if (_wcsicmp(pValue, L"x_uint32") == 0) return GEKVIDEO::DATA::X_UINT32;
-    else if (_wcsicmp(pValue, L"xy_uint32") == 0) return GEKVIDEO::DATA::XY_UINT32;
-    else if (_wcsicmp(pValue, L"xyz_uint32") == 0) return GEKVIDEO::DATA::XYZ_UINT32;
-    else if (_wcsicmp(pValue, L"xyzw_uint32") == 0) return GEKVIDEO::DATA::XYZW_UINT32;
+         if (_wcsicmp(pValue, L"R_FLOAT") == 0) return GEKVIDEO::DATA::R_FLOAT;
+    else if (_wcsicmp(pValue, L"RG_FLOAT") == 0) return GEKVIDEO::DATA::RG_FLOAT;
+    else if (_wcsicmp(pValue, L"RGB_FLOAT") == 0) return GEKVIDEO::DATA::RGB_FLOAT;
+    else if (_wcsicmp(pValue, L"RGBA_FLOAT") == 0) return GEKVIDEO::DATA::RGBA_FLOAT;
+    else if (_wcsicmp(pValue, L"R_UINT32") == 0) return GEKVIDEO::DATA::R_UINT32;
+    else if (_wcsicmp(pValue, L"RG_UINT32") == 0) return GEKVIDEO::DATA::RG_UINT32;
+    else if (_wcsicmp(pValue, L"RGB_UINT32") == 0) return GEKVIDEO::DATA::RGB_UINT32;
+    else if (_wcsicmp(pValue, L"RGBA_UINT32") == 0) return GEKVIDEO::DATA::RGBA_UINT32;
     else return GEKVIDEO::DATA::UNKNOWN;
 }
 
@@ -498,8 +498,8 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         std::vector<GEKVIDEO::INPUTELEMENT> aLayout;
-        aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::XY_FLOAT, "POSITION", 0));
-        aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::XY_FLOAT, "TEXCOORD", 0));
+        aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::RG_FLOAT, "POSITION", 0));
+        aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::RG_FLOAT, "TEXCOORD", 0));
         hRetVal = GetVideoSystem()->LoadVertexProgram(L"%root%\\data\\programs\\vertex\\overlay.hlsl", "MainVertexProgram", aLayout, &m_spVertexProgram);
     }
 
@@ -896,7 +896,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::SetResource(UINT32 nStage, IUnknown *pResource)
+STDMETHODIMP_(void) CGEKRenderManager::SetResource(IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource)
 {
     CComQIPtr<IGEKVideoTexture> spTexture(pResource);
     if (spTexture == nullptr)
@@ -918,7 +918,14 @@ STDMETHODIMP_(void) CGEKRenderManager::SetResource(UINT32 nStage, IUnknown *pRes
 
     if (spTexture)
     {
-        GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(nStage, spTexture);
+        if (pSystem == nullptr)
+        {
+            GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(nStage, spTexture);
+        }
+        else
+        {
+            pSystem->SetResource(nStage, spTexture);
+        }
     }
 }
 
@@ -1450,6 +1457,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
     if (bPerLight)
     {
         GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
+        GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetResource(0, m_spLightBuffer);
         for (UINT32 nPass = 0; nPass < m_aCulledLights.size(); nPass += (m_nNumLightInstances + 1))
         {
             UINT32 nNumLights = min((m_nNumLightInstances + 1), (m_aCulledLights.size() - nPass));

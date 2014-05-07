@@ -154,7 +154,7 @@ public:
     STDMETHOD_(void, EndLoad)               (THIS_ HRESULT hRetVal);
     STDMETHOD_(void, Free)                  (THIS);
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);
-    STDMETHOD_(void, SetResource)           (THIS_ UINT32 nStage, IUnknown *pTexture);
+    STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppBuffer);
     STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes);

@@ -15,7 +15,7 @@
     </targets>
     
     <buffers>
-        <buffer name="TileIndices" stride="2" count="100" />
+        <buffer name="TileIndices" format="R_UINT16" count="100" />
     </buffers>
 
     <compute>
