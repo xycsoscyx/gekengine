@@ -339,10 +339,10 @@ HRESULT CGEKRenderFilter::LoadResources(DATA &kData, CLibXMLNode &kFilterNode)
             {
                 UINT32 nStage = StrToUINT32(nResourceNode.GetAttribute(L"stage"));
 
-                TEXTURE kTexture;
+                RESOURCE kResource;
                 if (nResourceNode.HasAttribute(L"source"))
                 {
-                    kTexture.m_strName = nResourceNode.GetAttribute(L"source");
+                    kResource.m_strName = nResourceNode.GetAttribute(L"source");
                 }
                 else if (nResourceNode.HasAttribute(L"data"))
                 {
@@ -350,7 +350,7 @@ HRESULT CGEKRenderFilter::LoadResources(DATA &kData, CLibXMLNode &kFilterNode)
                     hRetVal = GetRenderManager()->LoadResource(nResourceNode.GetAttribute(L"data"), &spTexture);
                     if (SUCCEEDED(hRetVal))
                     {
-                        kTexture.m_spTexture = spTexture;
+                        kResource.m_spResource = spTexture;
                     }
                     else
                     {
@@ -363,7 +363,7 @@ HRESULT CGEKRenderFilter::LoadResources(DATA &kData, CLibXMLNode &kFilterNode)
                     break;
                 }
                 
-                kData.m_aTextures[nStage] = kTexture;
+                kData.m_aResources[nStage] = kResource;
                 nResourceNode = nResourceNode.NextSiblingElement(L"resource");
             }
             else
@@ -586,16 +586,6 @@ STDMETHODIMP CGEKRenderFilter::GetDepthBuffer(IUnknown **ppBuffer)
     return hRetVal;
 }
 
-STDMETHODIMP_(IUnknown *) CGEKRenderFilter::GetRenderStates(void)
-{
-    return m_spRenderStates;
-}
-
-STDMETHODIMP_(IUnknown *) CGEKRenderFilter::GetBlendStates(void)
-{
-    return m_spBlendStates;
-}
-
 STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
 {
     CComPtr<IUnknown> spDepthBuffer;
@@ -665,11 +655,11 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         GetVideoSystem()->SetDefaultTargets(nullptr, (spDepthBuffer ? spDepthBuffer : nullptr));
     }
 
-    for (auto &kPair : m_kPixelData.m_aTextures)
+    for (auto &kPair : m_kPixelData.m_aResources)
     {
-        if (kPair.second.m_spTexture != nullptr)
+        if (kPair.second.m_spResource != nullptr)
         {
-            GetRenderManager()->SetResource(kPair.first, kPair.second.m_spTexture);
+            GetRenderManager()->SetResource(kPair.first, kPair.second.m_spResource);
         }
         else if (!kPair.second.m_strName.IsEmpty())
         {

@@ -9,28 +9,29 @@
         <alpha source="one" destination="one" operation="add" />
     </blend>
 
-    <compute>
-        <buffers>
-            <buffer name="TileIndices" stride="2" count="100" />
-        </buffers>
-
-        &ComputeShader;
-    </compute>
-    
     <targets>
         <target source="Screen" />
         <target name="Buffer" format="RGBA_UINT8" clear="0,0,0,0" />
     </targets>
     
+    <buffers>
+        <buffer name="TileIndices" stride="2" count="100" />
+    </buffers>
+
+    <compute>
+        <resources>
+            <resource stage="0" source="Opaque/Lighting.TileIndices" />
+        </resources>
+
+        &ComputeShader;
+    </compute>
+    
     <pixel>
-        <buffers>
-            <buffer source="Opaque/TileIndices" />
-        </buffers>
-        
         <resources>
             <resource stage="1" source="Opaque/Deferred.Albedo" />
             <resource stage="2" source="Opaque/Deferred.World" />
             <resource stage="3" source="Opaque/Deferred.Info" />
+            <resource stage="4" source="Opaque/Lighting.TileIndices" />
         </resources>
 
         &LightingShader;

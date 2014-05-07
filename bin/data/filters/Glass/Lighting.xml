@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE filter [
     <!ENTITY LightingShader PUBLIC "%root%/data/filters/Shared/Lighting.xml" "">
+    <!ENTITY ComputeShader PUBLIC "%root%/data/filters/Shared/Indexed.xml" "">
 ]>
 <filter mode="lighting">
     <blend>
@@ -13,13 +14,26 @@
         <target name="Specular" format="RGBA_UINT8" clear="0,0,0,0" />
     </targets>
     
+    <buffers>
+        <buffer name="TileIndices" stride="2" count="100" />
+    </buffers>
+
+    <compute>
+        <resources>
+            <resource stage="0" source="Opaque/Lighting.TileIndices" />
+        </resources>
+
+        &ComputeShader;
+    </compute>
+    
     <pixel>
         <resources>
             <resource stage="1" source="Opaque/Deferred.Albedo" />
             <resource stage="2" source="Glass/Deferred.World" />
             <resource stage="3" source="Opaque/Deferred.Info" />
+            <resource stage="4" source="Opaque/Lighting.TileIndices" />
         </resources>
-        
+
         &LightingShader;
         <![CDATA[
             struct OUTPUT

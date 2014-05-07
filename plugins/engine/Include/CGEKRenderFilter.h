@@ -45,24 +45,16 @@ public:
         }
     };
 
-    struct TEXTURE
+    struct RESOURCE
     {
         CStringW m_strName;
-        CComPtr<IUnknown> m_spTexture;
-    };
-
-    struct BUFFER
-    {
-        CStringW m_strName;
-        CComPtr<IGEKVideoBuffer> m_spBuffer;
+        CComPtr<IUnknown> m_spResource;
     };
 
     struct DATA
     {
         CComPtr<IUnknown> m_spProgram;
-        std::map<GEKHASH, BUFFER *> m_aBufferMap;
-        std::map<UINT32, TEXTURE> m_aTextures;
-        std::list<BUFFER> m_aBuffers;
+        std::map<UINT32, RESOURCE> m_aResources;
     };
 
 private:
@@ -78,8 +70,8 @@ private:
     float m_nClearDepth;
     UINT32 m_nClearStencil;
     UINT32 m_nStencilReference;
-    std::map<GEKHASH, TARGET *> m_aTargetMap;
     std::list<TARGET> m_aTargets;
+    std::map<GEKHASH, TARGET *> m_aTargetMap;
     CComPtr<IUnknown> m_spDepthBuffer;
     CStringW m_strDepthSource;
 
@@ -113,7 +105,5 @@ public:
     STDMETHOD_(UINT32, GetVertexAttributes)                 (THIS);
     STDMETHOD(GetBuffer)                                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)                               (THIS_ IUnknown **ppBuffer);
-    STDMETHOD_(IUnknown *, GetRenderStates)    (THIS);
-    STDMETHOD_(IUnknown *, GetBlendStates)      (THIS);
     STDMETHOD_(void, Draw)                                  (THIS);
 };
