@@ -5,7 +5,7 @@
 
 #include "GEKSystemCLSIDs.h"
 
-GEKVIDEO::DATA::FORMAT GetFormat(LPCWSTR pValue)
+static GEKVIDEO::DATA::FORMAT GetFormat(LPCWSTR pValue)
 {
          if (_wcsicmp(pValue, L"RGBA_UINT8") == 0) return GEKVIDEO::DATA::RGBA_UINT8;
     else if (_wcsicmp(pValue, L"BGRA_UINT8") == 0) return GEKVIDEO::DATA::BGRA_UINT8;
@@ -26,14 +26,14 @@ GEKVIDEO::DATA::FORMAT GetFormat(LPCWSTR pValue)
     else return GEKVIDEO::DATA::UNKNOWN;
 }
 
-GEKVIDEO::DEPTHWRITE::MASK GetDepthWriteMask(LPCWSTR pValue)
+static GEKVIDEO::DEPTHWRITE::MASK GetDepthWriteMask(LPCWSTR pValue)
 {
     if (_wcsicmp(pValue, L"zero") == 0) return GEKVIDEO::DEPTHWRITE::ZERO;
     else if (_wcsicmp(pValue, L"all") == 0) return GEKVIDEO::DEPTHWRITE::ALL;
     else return GEKVIDEO::DEPTHWRITE::ZERO;
 }
 
-GEKVIDEO::COMPARISON::FUNCTION GetComparisonFunction(LPCWSTR pValue)
+static GEKVIDEO::COMPARISON::FUNCTION GetComparisonFunction(LPCWSTR pValue)
 {
     if (_wcsicmp(pValue, L"always") == 0) return GEKVIDEO::COMPARISON::ALWAYS;
     else if (_wcsicmp(pValue, L"never") == 0) return GEKVIDEO::COMPARISON::NEVER;
@@ -46,7 +46,7 @@ GEKVIDEO::COMPARISON::FUNCTION GetComparisonFunction(LPCWSTR pValue)
     else return GEKVIDEO::COMPARISON::ALWAYS;
 }
 
-GEKVIDEO::STENCIL::OPERATION GetStencilOperation(LPCWSTR pValue)
+static GEKVIDEO::STENCIL::OPERATION GetStencilOperation(LPCWSTR pValue)
 {
     if (_wcsicmp(pValue, L"ZERO") == 0) return GEKVIDEO::STENCIL::ZERO;
     else if (_wcsicmp(pValue, L"KEEP") == 0) return GEKVIDEO::STENCIL::KEEP;
@@ -59,7 +59,7 @@ GEKVIDEO::STENCIL::OPERATION GetStencilOperation(LPCWSTR pValue)
     else return GEKVIDEO::STENCIL::ZERO;
 }
 
-void GetStentilStates(GEKVIDEO::STENCILSTATES &kStates, CLibXMLNode &kNode)
+static void GetStentilStates(GEKVIDEO::STENCILSTATES &kStates, CLibXMLNode &kNode)
 {
     if (kNode.HasAttribute(L"pass"))
     {

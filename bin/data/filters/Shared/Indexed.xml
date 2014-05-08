@@ -90,6 +90,6 @@
         uint nTileIndex = nGroupID.y * gs_nNumTiles.x + nGroupID.x;
         uint nBufferIndex = nTileIndex * gs_nMaxLights + nGroupThreadIndex;
         uint nLightIndex = nGroupThreadIndex < g_nNumTileLights ? g_aTileLightList[nGroupThreadIndex] : gs_nMaxLights;
-        g_pTileOutput[nBufferIndex] = nLightIndex;
+        g_pTileOutput[nBufferIndex] = g_nNumTileLights;
     }
 ]]>

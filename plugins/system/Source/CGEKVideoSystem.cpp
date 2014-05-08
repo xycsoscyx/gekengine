@@ -2226,83 +2226,153 @@ STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry,
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEKVideoTexture **ppTexture)
+STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEKVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEKVideoTexture **ppTexture)
 {
-    D3D11_TEXTURE2D_DESC kTextureDesc;
-    kTextureDesc.Width = nXSize;
-    kTextureDesc.Height = nYSize;
-    kTextureDesc.MipLevels = 1;
-    kTextureDesc.ArraySize = 1;
+    DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
     switch (eFormat)
     {
-    case GEKVIDEO::DATA::R_FLOAT:
-        kTextureDesc.Format = DXGI_FORMAT_R32_FLOAT;
-        break;
-
-    case GEKVIDEO::DATA::RG_FLOAT:
-        kTextureDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-        break;
-
-    case GEKVIDEO::DATA::RGB_FLOAT:
-        kTextureDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-        break;
-
-    case GEKVIDEO::DATA::RGBA_FLOAT:
-        kTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-        break;
-
     case GEKVIDEO::DATA::RGBA_UINT8:
-        kTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        eNewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
         break;
 
     case GEKVIDEO::DATA::BGRA_UINT8:
-        kTextureDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        eNewFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+        break;
+
+    case GEKVIDEO::DATA::R_UINT16:
+        eNewFormat = DXGI_FORMAT_R16_UNORM;
+        break;
+
+    case GEKVIDEO::DATA::RG_UINT16:
+        eNewFormat = DXGI_FORMAT_R16G16_UNORM;
+        break;
+
+    case GEKVIDEO::DATA::RGBA_UINT16:
+        eNewFormat = DXGI_FORMAT_R16G16B16A16_UNORM;
+        break;
+
+    case GEKVIDEO::DATA::R_UINT32:
+        eNewFormat = DXGI_FORMAT_R32_UINT;
+        break;
+
+    case GEKVIDEO::DATA::RG_UINT32:
+        eNewFormat = DXGI_FORMAT_R32G32_UINT;
+        break;
+
+    case GEKVIDEO::DATA::RGB_UINT32:
+        eNewFormat = DXGI_FORMAT_R32G32B32_UINT;
+        break;
+
+    case GEKVIDEO::DATA::RGBA_UINT32:
+        eNewFormat = DXGI_FORMAT_R32G32B32A32_UINT;
+        break;
+
+    case GEKVIDEO::DATA::R_FLOAT:
+        eNewFormat = DXGI_FORMAT_R32_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RG_FLOAT:
+        eNewFormat = DXGI_FORMAT_R32G32_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RGB_FLOAT:
+        eNewFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RGBA_FLOAT:
+        eNewFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
         break;
     };
 
-    kTextureDesc.SampleDesc.Count = 1;
-    kTextureDesc.SampleDesc.Quality = 0;
-    kTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-    kTextureDesc.BindFlags = 0;
-
+    UINT32 nBindFlags = 0;
     if (nFlags & GEKVIDEO::TEXTURE::RESOURCE)
     {
-        kTextureDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+        nBindFlags |= D3D11_BIND_SHADER_RESOURCE;
     }
 
     if (nFlags & GEKVIDEO::TEXTURE::UNORDERED_ACCESS)
     {
-        kTextureDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
+        nBindFlags |= D3D11_BIND_UNORDERED_ACCESS;
     }
 
-    kTextureDesc.CPUAccessFlags = 0;
-    kTextureDesc.MiscFlags = 0;
+    HRESULT hRetVal = E_FAIL;
+    CComQIPtr<ID3D11Resource> spResource;
+    if (nZSize == 1)
+    {
+        D3D11_TEXTURE2D_DESC kTextureDesc;
+        kTextureDesc.Width = nXSize;
+        kTextureDesc.Height = nYSize;
+        kTextureDesc.MipLevels = 1;
+        kTextureDesc.Format = eNewFormat;
+        kTextureDesc.ArraySize = 1;
+        kTextureDesc.SampleDesc.Count = 1;
+        kTextureDesc.SampleDesc.Quality = 0;
+        kTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+        kTextureDesc.BindFlags = nBindFlags;
+        kTextureDesc.CPUAccessFlags = 0;
+        kTextureDesc.MiscFlags = 0;
 
-    CComPtr<ID3D11Texture2D> spTexture;
-    HRESULT hRetVal = m_spDevice->CreateTexture2D(&kTextureDesc, nullptr, &spTexture);
-    if (spTexture)
+        CComPtr<ID3D11Texture2D> spTexture;
+        hRetVal = m_spDevice->CreateTexture2D(&kTextureDesc, nullptr, &spTexture);
+        if (spTexture)
+        {
+            spResource = spTexture;
+        }
+    }
+    else
+    {
+        D3D11_TEXTURE3D_DESC kTextureDesc;
+        kTextureDesc.Width = nXSize;
+        kTextureDesc.Height = nYSize;
+        kTextureDesc.Depth = nZSize;
+        kTextureDesc.MipLevels = 1;
+        kTextureDesc.Format = eNewFormat;
+        kTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+        kTextureDesc.BindFlags = nBindFlags;
+        kTextureDesc.CPUAccessFlags = 0;
+        kTextureDesc.MiscFlags = 0;
+
+        CComPtr<ID3D11Texture3D> spTexture;
+        hRetVal = m_spDevice->CreateTexture3D(&kTextureDesc, nullptr, &spTexture);
+        if (spTexture)
+        {
+            spResource = spTexture;
+        }
+    }
+
+    if (spResource)
     {
         CComPtr<ID3D11ShaderResourceView> spResourceView;
         if (nFlags & GEKVIDEO::TEXTURE::RESOURCE)
         {
-            hRetVal = m_spDevice->CreateShaderResourceView(spTexture, nullptr, &spResourceView);
+            hRetVal = m_spDevice->CreateShaderResourceView(spResource, nullptr, &spResourceView);
         }
 
         CComPtr<ID3D11UnorderedAccessView> spUnderedView;
         if (SUCCEEDED(hRetVal) && nFlags & GEKVIDEO::TEXTURE::UNORDERED_ACCESS)
         {
             D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
-            kViewDesc.Format = DXGI_FORMAT_UNKNOWN;
-            kViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-            kViewDesc.Texture2D.MipSlice = 0;
+            kViewDesc.Format = eNewFormat;
+            if (nZSize == 1)
+            {
+                kViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+                kViewDesc.Texture2D.MipSlice = 0;
+            }
+            else
+            {
+                kViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+                kViewDesc.Texture3D.MipSlice = 0;
+                kViewDesc.Texture3D.FirstWSlice = 0;
+                kViewDesc.Texture3D.WSize = nZSize;
+            }
 
-            hRetVal = m_spDevice->CreateUnorderedAccessView(spTexture, &kViewDesc, &spUnderedView);
+            hRetVal = m_spDevice->CreateUnorderedAccessView(spResource, &kViewDesc, &spUnderedView);
         }
         
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, spUnderedView, nXSize, nYSize, 0));
+            CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, spUnderedView, nXSize, nYSize, nZSize));
             if (spTexture != nullptr)
             {
                 hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
@@ -2409,9 +2479,9 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **
             spResourceView->GetResource(&spResource);
             if (spResource != nullptr)
             {
-                UINT32 nXSize = 0;
-                UINT32 nYSize = 0;
-                UINT32 nZSize = 0;
+                UINT32 nXSize = 1;
+                UINT32 nYSize = 1;
+                UINT32 nZSize = 1;
                 D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
                 spResourceView->GetDesc(&kViewDesc);
                 if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE1D)

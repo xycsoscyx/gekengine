@@ -128,7 +128,7 @@ public:
         , m_nPitch(nXSize * 4)
         , m_bDirty(false)
     {
-        m_pVideoSystem->CreateTexture(nXSize, nYSize, GEKVIDEO::DATA::BGRA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &m_spTexture);
+        m_pVideoSystem->CreateTexture(nXSize, nYSize, 1, GEKVIDEO::DATA::BGRA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &m_spTexture);
         m_aBuffer.resize(nXSize * nYSize * 4);
     }
 
@@ -852,7 +852,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                 float4 nColor = StrToFloat4(strColor);
 
                 CComPtr<IGEKVideoTexture> spColorTexture;
-                hRetVal = GetVideoSystem()->CreateTexture(1, 1, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &spColorTexture);
+                hRetVal = GetVideoSystem()->CreateTexture(1, 1, 1, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &spColorTexture);
                 if (spColorTexture)
                 {
                     UINT32 nColorValue = UINT32(UINT8(nColor.r * 255.0f)) |
