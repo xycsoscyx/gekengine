@@ -97,6 +97,9 @@ CGEKRenderFilter::CGEKRenderFilter(void)
     , m_eDepthFormat(GEKVIDEO::DATA::UNKNOWN)
     , m_nVertexAttributes(0xFFFFFFFF)
     , m_eMode(STANDARD)
+    , m_nDispatchXSize(0)
+    , m_nDispatchYSize(0)
+    , m_nDispatchZSize(0)
     , m_bClearDepth(false)
     , m_bClearStencil(false)
     , m_nClearDepth(0.0f)
@@ -149,6 +152,46 @@ STDMETHODIMP CGEKRenderFilter::OnPostReset(void)
     if (SUCCEEDED(hRetVal) && m_eDepthFormat != GEKVIDEO::DATA::UNKNOWN)
     {
         hRetVal = GetVideoSystem()->CreateDepthTarget(nXSize, nYSize, m_eDepthFormat, &m_spDepthBuffer);
+    }
+
+    return hRetVal;
+}
+
+UINT32 CGEKRenderFilter::EvaluateValue(LPCWSTR pValue)
+{
+    CStringW strValue(pValue);
+    for (auto &kPair : m_aDefines)
+    {
+        strValue.Replace(CA2W(kPair.first), CA2W(kPair.second));
+    }
+
+    return GetSystem()->EvaluateValue(strValue);
+}
+
+HRESULT CGEKRenderFilter::LoadDefines(CLibXMLNode &kFilterNode)
+{
+    HRESULT hRetVal = S_OK;
+    CLibXMLNode kDefinesNode = kFilterNode.FirstChildElement(L"defines");
+    if (kDefinesNode)
+    {
+        CLibXMLNode kDefineNode = kDefinesNode.FirstChildElement(L"define");
+        while (kDefineNode)
+        {
+            if (kDefineNode.HasAttribute(L"name") &&
+                kDefineNode.HasAttribute(L"value"))
+            {
+                CStringA strName = CW2A(kDefineNode.GetAttribute(L"name"), CP_UTF8);
+                CStringA strValue = CW2A(kDefineNode.GetAttribute(L"value"), CP_UTF8);
+
+                m_aDefines[strName] = strValue;
+                kDefineNode = kDefineNode.NextSiblingElement(L"define");
+            }
+            else
+            {
+                hRetVal = E_INVALIDARG;
+                break;
+            }
+        };
     }
 
     return hRetVal;
@@ -272,40 +315,43 @@ HRESULT CGEKRenderFilter::LoadBuffers(CLibXMLNode &kFilterNode)
         while (kBufferNode)
         {
             if (kBufferNode.HasAttribute(L"name") &&
-                kBufferNode.HasAttribute(L"stride") &&
                 kBufferNode.HasAttribute(L"count"))
             {
                 CStringW strName = kBufferNode.GetAttribute(L"name");
-                UINT32 nStride = StrToUINT32(kBufferNode.GetAttribute(L"stride"));
-                UINT32 nCount = StrToUINT32(kBufferNode.GetAttribute(L"count"));
-
-                CComPtr<IGEKVideoBuffer> spBuffer;
-                hRetVal = GetVideoSystem()->CreateBuffer(nStride, nCount, GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &spBuffer);
-                if (spBuffer)
+                UINT32 nCount = EvaluateValue(kBufferNode.GetAttribute(L"count"));
+                if (kBufferNode.HasAttribute(L"stride"))
                 {
-                    m_aBufferMap[strName] = spBuffer;
+                    UINT32 nStride = StrToUINT32(kBufferNode.GetAttribute(L"stride"));
+
+                    CComPtr<IGEKVideoBuffer> spBuffer;
+                    hRetVal = GetVideoSystem()->CreateBuffer(nStride, nCount, GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &spBuffer);
+                    if (spBuffer)
+                    {
+                        m_aBufferMap[strName] = spBuffer;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                else if (kBufferNode.HasAttribute(L"format"))
+                {
+                    GEKVIDEO::DATA::FORMAT eFormat = GetFormat(kBufferNode.GetAttribute(L"format"));
+
+                    CComPtr<IGEKVideoBuffer> spBuffer;
+                    hRetVal = GetVideoSystem()->CreateBuffer(eFormat, nCount, GEKVIDEO::BUFFER::UNORDERED_ACCESS | GEKVIDEO::BUFFER::RESOURCE, &spBuffer);
+                    if (spBuffer)
+                    {
+                        m_aBufferMap[strName] = spBuffer;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 else
                 {
-                    break;
-                }
-            }
-            else if (kBufferNode.HasAttribute(L"name") &&
-                     kBufferNode.HasAttribute(L"format") &&
-                     kBufferNode.HasAttribute(L"count"))
-            {
-                CStringW strName = kBufferNode.GetAttribute(L"name");
-                GEKVIDEO::DATA::FORMAT eFormat = GetFormat(kBufferNode.GetAttribute(L"format"));
-                UINT32 nCount = StrToUINT32(kBufferNode.GetAttribute(L"count"));
-
-                CComPtr<IGEKVideoBuffer> spBuffer;
-                hRetVal = GetVideoSystem()->CreateBuffer(eFormat, nCount, GEKVIDEO::BUFFER::UNORDERED_ACCESS | GEKVIDEO::BUFFER::RESOURCE, &spBuffer);
-                if (spBuffer)
-                {
-                    m_aBufferMap[strName] = spBuffer;
-                }
-                else
-                {
+                    hRetVal = E_INVALIDARG;
                     break;
                 }
             }
@@ -403,22 +449,22 @@ HRESULT CGEKRenderFilter::LoadResources(DATA &kData, CLibXMLNode &kNode)
     CLibXMLNode kResourcesNode = kNode.FirstChildElement(L"resources");
     if (kResourcesNode)
     {
-        CLibXMLNode nResourceNode = kResourcesNode.FirstChildElement(L"resource");
-        while (nResourceNode)
+        CLibXMLNode kResourceNode = kResourcesNode.FirstChildElement(L"resource");
+        while (kResourceNode)
         {
-            if (nResourceNode.HasAttribute(L"stage"))
+            if (kResourceNode.HasAttribute(L"stage"))
             {
-                UINT32 nStage = StrToUINT32(nResourceNode.GetAttribute(L"stage"));
+                UINT32 nStage = StrToUINT32(kResourceNode.GetAttribute(L"stage"));
 
                 RESOURCE kResource;
-                if (nResourceNode.HasAttribute(L"source"))
+                if (kResourceNode.HasAttribute(L"source"))
                 {
-                    kResource.m_strName = nResourceNode.GetAttribute(L"source");
+                    kResource.m_strName = kResourceNode.GetAttribute(L"source");
                 }
-                else if (nResourceNode.HasAttribute(L"data"))
+                else if (kResourceNode.HasAttribute(L"data"))
                 {
                     CComPtr<IUnknown> spResource;
-                    hRetVal = GetRenderManager()->LoadResource(nResourceNode.GetAttribute(L"data"), &spResource);
+                    hRetVal = GetRenderManager()->LoadResource(kResourceNode.GetAttribute(L"data"), &spResource);
                     if (SUCCEEDED(hRetVal))
                     {
                         kResource.m_spResource = spResource;
@@ -434,8 +480,17 @@ HRESULT CGEKRenderFilter::LoadResources(DATA &kData, CLibXMLNode &kNode)
                     break;
                 }
                 
+                if (kResourceNode.HasAttribute(L"unorderedaccess"))
+                {
+                    kResource.m_bUnorderedAccess = StrToBoolean(kResourceNode.GetAttribute(L"unorderedaccess"));
+                }
+                else
+                {
+                    kResource.m_bUnorderedAccess = false;
+                }
+
                 kData.m_aResources[nStage] = kResource;
-                nResourceNode = nResourceNode.NextSiblingElement(L"resource");
+                kResourceNode = kResourceNode.NextSiblingElement(L"resource");
             }
             else
             {
@@ -454,39 +509,52 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
     CLibXMLNode kComputeNode = kFilterNode.FirstChildElement(L"compute");
     if (kComputeNode)
     {
-        CStringA strProgram;
-        switch (m_eMode)
+        if (kComputeNode.HasAttribute(L"dispatch"))
         {
-        case FORWARD:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\forward.hlsl", strProgram);
-            break;
+            int nPosition = 0;
+            CStringW strDispatch = kComputeNode.GetAttribute(L"dispatch");
+            m_nDispatchXSize = EvaluateValue(strDispatch.Tokenize(L",", nPosition));
+            m_nDispatchYSize = EvaluateValue(strDispatch.Tokenize(L",", nPosition));
+            m_nDispatchZSize = EvaluateValue(strDispatch.Tokenize(L",", nPosition));
 
-        case LIGHTING:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\lighting.hlsl", strProgram);
-            break;
-
-        default:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\default.hlsl", strProgram);
-            break;
-        };
-
-        if (SUCCEEDED(hRetVal))
-        {
-            if (strProgram.Find("_INSERT_COMPUTE_PROGRAM") < 0)
+            CStringA strProgram;
+            switch (m_eMode)
             {
-                hRetVal = E_INVALIDARG;
+            case FORWARD:
+                hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\forward.hlsl", strProgram);
+                break;
+
+            case LIGHTING:
+                hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\lighting.hlsl", strProgram);
+                break;
+
+            default:
+                hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\default.hlsl", strProgram);
+                break;
+            };
+
+            if (SUCCEEDED(hRetVal))
+            {
+                if (strProgram.Find("_INSERT_COMPUTE_PROGRAM") < 0)
+                {
+                    hRetVal = E_INVALIDARG;
+                }
+                else
+                {
+                    CStringA strCoreProgram = kComputeNode.GetText();
+                    strProgram.Replace("_INSERT_COMPUTE_PROGRAM", strCoreProgram);
+                    hRetVal = GetVideoSystem()->CompileComputeProgram(strProgram, "MainComputeProgram", &m_kComputeData.m_spProgram, &m_aDefines);
+                }
             }
-            else
+
+            if (SUCCEEDED(hRetVal))
             {
-                CStringA strCoreProgram = kComputeNode.GetText();
-                strProgram.Replace("_INSERT_COMPUTE_PROGRAM", strCoreProgram);
-                hRetVal = GetVideoSystem()->CompileComputeProgram(strProgram, "MainComputeProgram", &m_kComputeData.m_spProgram);
+                hRetVal = LoadResources(m_kComputeData, kComputeNode);
             }
         }
-
-        if (SUCCEEDED(hRetVal))
+        else
         {
-            hRetVal = LoadResources(m_kComputeData, kComputeNode);
+            hRetVal = E_INVALIDARG;
         }
     }
 
@@ -525,7 +593,7 @@ HRESULT CGEKRenderFilter::LoadPixelProgram(CLibXMLNode &kFilterNode)
             {
                 CStringA strCoreProgram = kPixelNode.GetText();
                 strProgram.Replace("_INSERT_PIXEL_PROGRAM", strCoreProgram);
-                hRetVal = GetVideoSystem()->CompilePixelProgram(strProgram, "MainPixelProgram", &m_kPixelData.m_spProgram);
+                hRetVal = GetVideoSystem()->CompilePixelProgram(strProgram, "MainPixelProgram", &m_kPixelData.m_spProgram, &m_aDefines);
             }
         }
 
@@ -589,6 +657,11 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName)
             else
             {
                 m_eMode = STANDARD;
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = LoadDefines(kFilterNode);
             }
 
             if (SUCCEEDED(hRetVal))
@@ -745,7 +818,14 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     {
         if (kPair.second.m_spResource != nullptr)
         {
-            GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.first, kPair.second.m_spResource);
+            if (kPair.second.m_bUnorderedAccess)
+            {
+                GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.first, kPair.second.m_spResource);
+            }
+            else
+            {
+                GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.first, kPair.second.m_spResource);
+            }
         }
         else if (!kPair.second.m_strName.IsEmpty())
         {
@@ -753,7 +833,14 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             GetRenderManager()->GetBuffer(kPair.second.m_strName, &spResource);
             if (spResource != nullptr)
             {
-                GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.first, spResource);
+                if (kPair.second.m_bUnorderedAccess)
+                {
+                    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.first, spResource);
+                }
+                else
+                {
+                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.first, spResource);
+                }
             }
         }
     }
@@ -785,10 +872,10 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     }
     else if (m_eMode == LIGHTING)
     {
-        GetRenderManager()->DrawOverlay(true);
+        GetRenderManager()->DrawLights(m_nDispatchXSize, m_nDispatchYSize, m_nDispatchZSize);
     }
     else
     {
-        GetRenderManager()->DrawOverlay(false);
+        GetRenderManager()->DrawOverlay();
     }
 }

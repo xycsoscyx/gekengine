@@ -221,30 +221,54 @@ STDMETHODIMP_(UINT32) CGEKSystem::GetYSize(void)
     return m_nYSize;
 }
 
-STDMETHODIMP_(UINT32) CGEKSystem::ParseValue(LPCWSTR pValue)
+STDMETHODIMP_(void) CGEKSystem::ParseValue(CStringW &strValue)
+{
+    while (strValue.Find(L"%") >= 0)
+    {
+        CStringW strLeft;
+        int nPosition = 0;
+        if (strValue.GetAt(0) == L'%')
+        {
+            nPosition = 1;
+        }
+        else
+        {
+            strLeft = strValue.Tokenize(L"%", nPosition);
+        }
+
+        if (nPosition >= 0)
+        {
+            CStringW strMiddle = strValue.Tokenize(L"%", nPosition);
+            if (nPosition >= 0)
+            {
+                nPosition = 0;
+                CStringW strGroup = strMiddle.Tokenize(L".", nPosition);
+                CStringW strName = strMiddle.Tokenize(L".", nPosition);
+                strValue.Replace((L"%" + strMiddle + L"%"), GetConfig().GetValue(strGroup, strName, L"0"));
+            }
+        }
+    };
+}
+
+#ifdef min
+#undef min
+#undef max
+#endif
+
+#include "exprtk.hpp"
+STDMETHODIMP_(UINT32) CGEKSystem::EvaluateValue(LPCWSTR pValue)
 {
     REQUIRE_RETURN(pValue, 0);
 
-    UINT32 nValue = 0;
-    if (pValue[0] == L'%')
-    {
-        if (pValue[wcslen(pValue) - 1] == L'%')
-        {
-            CStringW strValue = pValue;
-            strValue.Trim(L'%');
+    CStringW strValue(pValue);
+    ParseValue(strValue);
 
-            int nPosition = 0;
-            CStringW strGroup = strValue.Tokenize(L".", nPosition);
-            CStringW strName = strValue.Tokenize(L".", nPosition);
-            nValue = StrToUINT32(GetConfig().GetValue(strGroup, strName, L"0"));
-        }
-    }
-    else
-    {
-        nValue = StrToUINT32(pValue);
-    }
+    exprtk::expression<double> kExpression;
 
-    return nValue;
+    exprtk::parser<double> kParser;
+    kParser.compile((LPCSTR)CW2A(strValue), kExpression);
+
+    return UINT32(kExpression.value());
 }
 
 STDMETHODIMP_(bool) CGEKSystem::IsRunning(void)

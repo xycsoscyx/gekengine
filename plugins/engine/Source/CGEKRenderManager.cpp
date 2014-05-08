@@ -785,8 +785,8 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                         CStringW strSize = kBrowerNode.GetAttribute(L"size");
                         CStringW strXSize = strSize.Tokenize(L",", nPosition);
                         CStringW strYSize = strSize.Tokenize(L",", nPosition);
-                        UINT32 nXSize = GetSystem()->ParseValue(strXSize);
-                        UINT32 nYSize = GetSystem()->ParseValue(strYSize);
+                        UINT32 nXSize = GetSystem()->EvaluateValue(strXSize);
+                        UINT32 nYSize = GetSystem()->EvaluateValue(strYSize);
 
                         CLibXMLNode kSourceNode = kBrowerNode.FirstChildElement(L"source");
                         if (kSourceNode && kSourceNode.HasAttribute(L"url"))
@@ -1446,7 +1446,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
     }
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
+STDMETHODIMP_(void) CGEKRenderManager::DrawLights(UINT32 nDispatchX, UINT32 nDispatchY, UINT32 nDispatchZ)
 {
     GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
     GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
@@ -1454,21 +1454,30 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(bool bPerLight)
     GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
     GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
     GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
-    if (bPerLight)
+    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
+    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetResource(0, m_spLightBuffer);
+    for (UINT32 nPass = 0; nPass < m_aCulledLights.size(); nPass += (m_nNumLightInstances + 1))
     {
-        GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
-        GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetResource(0, m_spLightBuffer);
-        for (UINT32 nPass = 0; nPass < m_aCulledLights.size(); nPass += (m_nNumLightInstances + 1))
+        UINT32 nNumLights = min((m_nNumLightInstances + 1), (m_aCulledLights.size() - nPass));
+        m_spLightBuffer->Update(&m_aCulledLights[nPass], (sizeof(LIGHT) * nNumLights));
+        if (nDispatchX > 0)
         {
-            UINT32 nNumLights = min((m_nNumLightInstances + 1), (m_aCulledLights.size() - nPass));
-            m_spLightBuffer->Update(&m_aCulledLights[nPass], (sizeof(LIGHT) * nNumLights));
-            GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+            GetVideoSystem()->GetImmediateContext()->Dispatch(nDispatchX, nDispatchY, nDispatchZ);
         }
-    }
-    else
-    {
+
         GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
     }
+}
+
+STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
+{
+    GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
+    GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
+    GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+    GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
+    GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
+    GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 }
 
 STDMETHODIMP CGEKRenderManager::BeginFrame(void)

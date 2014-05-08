@@ -49,7 +49,8 @@ public:
     STDMETHOD_(bool, IsWindowed)                    (THIS);
     STDMETHOD_(UINT32, GetXSize)                    (THIS);
     STDMETHOD_(UINT32, GetYSize)                    (THIS);
-    STDMETHOD_(UINT32, ParseValue)                  (THIS_ LPCWSTR pValue);
+    STDMETHOD_(void, ParseValue)                    (THIS_ CStringW &strValue);
+    STDMETHOD_(UINT32, EvaluateValue)               (THIS_ LPCWSTR pValue);
     STDMETHOD_(bool, IsRunning)                     (THIS);
     STDMETHOD_(void, Run)                           (THIS);
     STDMETHOD_(void, Stop)                          (THIS);

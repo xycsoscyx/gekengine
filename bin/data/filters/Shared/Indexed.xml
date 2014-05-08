@@ -1,7 +1,4 @@
 <![CDATA[
-    static const uint gs_nLightTileSize = 16;
-    static const uint gs_nMaxLights = 255;
-    
     cbuffer TILESBUFFER                     : register(b1)
     {
         uint2   gs_nNumTiles;
@@ -10,18 +7,17 @@
 
     static const uint gs_nThreadGroupSize = gs_nLightTileSize * gs_nLightTileSize;
 
-    Texture2D<float> Depth                  : register(t1);
-
     RWBuffer<uint> g_pTileOutput            : register(u0);
+    Texture2D<float4> gs_pWorldBuffer       : register(t1);
 
     groupshared uint g_nTileMinDepth;
     groupshared uint g_nTileMaxDepth;
     groupshared uint g_aTileLightList[gs_nMaxLights];
     groupshared uint g_nNumTileLights;
 
-    float LinearDepth(in float zw)
+    float LinearDepth(in float nViewDepth)
     {
-        return gs_nProjectionMatrix._43 / (zw - gs_nProjectionMatrix._33);
+        return gs_nProjectionMatrix._43 / (nViewDepth - gs_nProjectionMatrix._33);
     }
 
     [numthreads(gs_nLightTileSize, gs_nLightTileSize, 1)]
@@ -33,10 +29,10 @@
         float nMinSampleDepth = gs_nCameraViewDistance;
         float nMaxSampleDepth = 0.0f;
 
-        float zw = Depth[nPixelCoord];
-        float linearZ = LinearDepth(zw);
-        nMinSampleDepth = min(nMinSampleDepth, linearZ);
-        nMaxSampleDepth = max(nMaxSampleDepth, linearZ);
+        float nViewDepth = gs_pWorldBuffer[nPixelCoord].w;
+        float nLinearDepth = LinearDepth(nViewDepth);
+        nMinSampleDepth = min(nMinSampleDepth, nLinearDepth);
+        nMaxSampleDepth = max(nMaxSampleDepth, nLinearDepth);
 
         if (nGroupThreadIndex == 0)
         {

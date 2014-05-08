@@ -49,6 +49,7 @@ public:
     {
         CStringW m_strName;
         CComPtr<IUnknown> m_spResource;
+        bool m_bUnorderedAccess;
     };
 
     struct DATA
@@ -61,6 +62,11 @@ private:
     float m_nScale;
     GEKVIDEO::DATA::FORMAT m_eDepthFormat;
     UINT32 m_nVertexAttributes;
+
+    UINT32 m_nDispatchXSize;
+    UINT32 m_nDispatchYSize;
+    UINT32 m_nDispatchZSize;
+    std::map<CStringA, CStringA> m_aDefines;
 
     MODES m_eMode;
     CComPtr<IUnknown> m_spDepthStates;
@@ -80,6 +86,9 @@ private:
     DATA m_kPixelData;
 
 private:
+    UINT32 EvaluateValue(LPCWSTR pValue);
+
+    HRESULT LoadDefines(CLibXMLNode &kNode);
     HRESULT LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSize, UINT32 nYSize);
     HRESULT LoadRenderStates(CLibXMLNode &kFilterNode);
     HRESULT LoadBlendStates(CLibXMLNode &kFilterNode);

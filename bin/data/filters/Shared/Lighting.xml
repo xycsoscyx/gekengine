@@ -2,6 +2,7 @@
     Texture2D     gs_pAlbedoBuffer          : register(t1);
     Texture2D     gs_pWorldBuffer           : register(t2);
     Texture2D     gs_pInfoBuffer            : register(t3);
+    Buffer<uint>  gs_pTileIndices           : register(t4);
     
     static const float gs_nPI = 3.14159265358979323846;
     static const float gs_nReciprocalPI = rcp(gs_nPI);
@@ -74,9 +75,23 @@
 
         float3 nTotalContribution = 0.0f;
         
+//        [loop]
+//        for(uint nLight = 0; gs_aLights[nLight].m_nInvRange > 0.0f; nLight++)
+//        {
+
+        uint2 nNumTiles = uint2(gs_nCameraSize / gs_nLightTileSize) + 1;
+        uint2 nTileIndex = uint2(kInput.position.xy) / gs_nLightTileSize;
+        uint nBufferIndex = (nTileIndex.y * nNumTiles.x + nTileIndex.x) * gs_nMaxLights;
+
+        nTotalDiffuse = 0;
+        nTotalSpecular = 0;
+
         [loop]
-        for(uint nLight = 0; gs_aLights[nLight].m_nInvRange > 0.0f; nLight++)
+        for(uint nTileLightIndex = 0; nTileLightIndex < gs_nMaxLights; ++nTileLightIndex)
         {
+            uint nLight = gs_pTileIndices[nBufferIndex + nTileLightIndex];
+            nTotalDiffuse.r += nLight;
+/*            
             float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nPixelPosition);
             float nDistance = length(nLightVector);
             float3 nLightNormal = normalize(nLightVector);
@@ -95,7 +110,7 @@
                     nTotalDiffuse += saturate(gs_aLights[nLight].m_nColor * nCurrentDiffuse * nAttenuation);
                     nTotalSpecular += saturate(gs_aLights[nLight].m_nColor * nCurrentSpecular * nAttenuation);
                 }
-            }
+            }*/
         }
 
         nTotalDiffuse = saturate(nTotalDiffuse);
