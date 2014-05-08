@@ -296,7 +296,7 @@ CGEKRenderManager::CGEKRenderManager(void)
     , m_pViewer(nullptr)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
-    , m_nNumLightInstances(255)
+    , m_nNumLightInstances(256)
 {
 }
 
@@ -541,7 +541,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(LIGHT), (m_nNumLightInstances + 1), GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
+        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(LIGHT), m_nNumLightInstances, GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -1456,9 +1456,9 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(UINT32 nDispatchX, UINT32 nDis
     GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
     GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetResource(0, m_spLightBuffer);
-    for (UINT32 nPass = 0; nPass < m_aCulledLights.size(); nPass += (m_nNumLightInstances + 1))
+    for (UINT32 nPass = 0; nPass < m_aCulledLights.size(); nPass += m_nNumLightInstances)
     {
-        UINT32 nNumLights = min((m_nNumLightInstances + 1), (m_aCulledLights.size() - nPass));
+        UINT32 nNumLights = min(m_nNumLightInstances, (m_aCulledLights.size() - nPass));
         m_spLightBuffer->Update(&m_aCulledLights[nPass], (sizeof(LIGHT) * nNumLights));
         if (nDispatchX > 0)
         {
@@ -1542,13 +1542,6 @@ STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
     {
         kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kLight.m_nPosition, 1.0f));
         m_aCulledLights.push_back(kLight);
-
-        if (++nCounter % m_nNumLightInstances == 0)
-        {
-            LIGHT kSentinel;
-            kSentinel.m_nRange = -1.0f;
-            m_aCulledLights.push_back(kSentinel);
-        }
     }
 
     LIGHT kSentinel;

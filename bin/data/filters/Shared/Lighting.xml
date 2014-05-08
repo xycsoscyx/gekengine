@@ -6,6 +6,7 @@
     
     static const float gs_nPI = 3.14159265358979323846;
     static const float gs_nReciprocalPI = rcp(gs_nPI);
+    static const uint2 gs_nNumTiles = asuint(ceil(gs_nCameraSize / gs_nLightTileSize));
     
     // Diffuse & Specular Term
     // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
@@ -74,24 +75,23 @@
         float3 nViewNormal = -kInput.view;
 
         float3 nTotalContribution = 0.0f;
-        
-//        [loop]
-//        for(uint nLight = 0; gs_aLights[nLight].m_nInvRange > 0.0f; nLight++)
-//        {
 
-        uint2 nNumTiles = uint2(gs_nCameraSize / gs_nLightTileSize) + 1;
-        uint2 nTileIndex = uint2(kInput.position.xy) / gs_nLightTileSize;
-        uint nBufferIndex = (nTileIndex.y * nNumTiles.x + nTileIndex.x) * gs_nMaxLights;
+        uint2 nTilePosition = asuint(kInput.position.xy / gs_nLightTileSize);
+        uint nTileIndex = (nTilePosition.y * gs_nNumTiles.x + nTilePosition.x);
 
         nTotalDiffuse = 0;
         nTotalSpecular = 0;
 
         [loop]
-        for(uint nTileLightIndex = 0; nTileLightIndex < gs_nMaxLights; ++nTileLightIndex)
+        for(uint nLight = 0; nLight < 1; nLight++)
         {
-            uint nLight = gs_pTileIndices[nBufferIndex + nTileLightIndex];
-            nTotalDiffuse.r += nLight;
-/*            
+            uint nLightIndex = gs_pTileIndices[nTileIndex + nLight];
+            nTotalDiffuse.r = asfloat(nLightIndex) / 256.0f;
+        }
+/*
+        [loop]
+        for(uint nLight = 0; nLight < gs_nMaxLights && gs_aLights[nLight].m_nRange > 0.0f; nLight++)
+        {
             float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nPixelPosition);
             float nDistance = length(nLightVector);
             float3 nLightNormal = normalize(nLightVector);
@@ -110,9 +110,9 @@
                     nTotalDiffuse += saturate(gs_aLights[nLight].m_nColor * nCurrentDiffuse * nAttenuation);
                     nTotalSpecular += saturate(gs_aLights[nLight].m_nColor * nCurrentSpecular * nAttenuation);
                 }
-            }*/
+            }
         }
-
+*/
         nTotalDiffuse = saturate(nTotalDiffuse);
         nTotalSpecular = saturate(nTotalSpecular);
     }

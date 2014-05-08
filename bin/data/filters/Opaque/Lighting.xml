@@ -6,7 +6,7 @@
 <filter mode="lighting">
     <defines>
         <define name="gs_nLightTileSize" value="16" />
-        <define name="gs_nMaxLights" value="255" />
+        <define name="gs_nMaxLights" value="256" />
     </defines>
 
     <blend>
@@ -20,7 +20,7 @@
     </targets>
     
     <buffers>
-        <buffer name="TileIndices" format="R_UINT16" count="((%video.xsize%/gs_nLightTileSize)+1)*((%video.ysize%/gs_nLightTileSize)+1)*gs_nMaxLights" />
+        <buffer name="TileIndices" format="R_UINT16" count="ceil(%video.xsize%/gs_nLightTileSize)*ceil(%video.ysize%/gs_nLightTileSize)*gs_nMaxLights" />
     </buffers>
 
     <compute dispatch="((%video.xsize%/gs_nLightTileSize)+1),((%video.ysize%/gs_nLightTileSize)+1),1">
