@@ -886,14 +886,14 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         {
             if (m_nDispatchXSize > 0)
             {
-                for (auto &kPair : aComputeUnorderedAccess)
-                {
-                    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.second, kPair.first);
-                }
-
                 for (auto &kPair : aComputeResources)
                 {
                     GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.second, kPair.first);
+                }
+
+                for (auto &kPair : aComputeUnorderedAccess)
+                {
+                    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.second, kPair.first);
                 }
 
                 GetVideoSystem()->GetImmediateContext()->Dispatch(m_nDispatchXSize, m_nDispatchYSize, m_nDispatchZSize);

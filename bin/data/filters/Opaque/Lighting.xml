@@ -23,7 +23,7 @@
         <buffer name="TileIndices" format="R_UINT8" count="ceil(%video.xsize%/gs_nLightTileSize)*ceil(%video.ysize%/gs_nLightTileSize)*gs_nMaxLights" />
     </buffers>
 
-    <compute dispatch="((%video.xsize%/gs_nLightTileSize)+1),((%video.ysize%/gs_nLightTileSize)+1),1">
+    <compute dispatch="ceil(%video.xsize%/gs_nLightTileSize),ceil(%video.ysize%/gs_nLightTileSize),1">
         <resources>
             <resource stage="0" source="Opaque/Lighting.TileIndices" unorderedaccess="true" />
             <resource stage="1" source="Opaque/Deferred.World" />

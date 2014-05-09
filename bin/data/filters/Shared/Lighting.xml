@@ -87,8 +87,9 @@
 #ifdef _INDEXED_LIGHTING
         for(uint nLightIndex = 0; nLightIndex < 1; nLightIndex++)
         {
-            float nLight = gs_pTileIndices[nTileIndex + nLightIndex];
-            //nTotalDiffuse.r = nLight / gs_nMaxLights;
+            float nLight = gs_pTileIndices.Load(nTileIndex + nLightIndex);
+            nTotalDiffuse.r = nTileIndex / float(gs_nMaxLights * gs_nNumTiles.x * gs_nNumTiles.y);
+            nTotalDiffuse.r = nLight / float(gs_nMaxLights);
             nTotalDiffuse.b = float(nTilePosition.x) / float(gs_nNumTiles.x);
             nTotalDiffuse.g = float(nTilePosition.y) / float(gs_nNumTiles.y);
         }
