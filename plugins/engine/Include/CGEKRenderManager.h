@@ -158,7 +158,7 @@ public:
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppBuffer);
     STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes);
-    STDMETHOD_(void, DrawLights)            (THIS_ UINT32 nDispatchX, UINT32 nDispatchY, UINT32 nDispatchZ);
+    STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch);
     STDMETHOD_(void, DrawOverlay)           (THIS);
     STDMETHOD(BeginFrame)                   (THIS);
     STDMETHOD_(const frustum &, GetFrustum) (THIS);

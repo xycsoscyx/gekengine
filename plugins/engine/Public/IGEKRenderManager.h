@@ -17,7 +17,7 @@ DECLARE_INTERFACE_IID_(IGEKRenderManager, IUnknown, "77161A84-61C4-4C05-9550-4EE
     STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppResource) PURE;
 
     STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes) PURE;
-    STDMETHOD_(void, DrawLights)            (THIS_ UINT32 nDispatchX, UINT32 nDispatchY, UINT32 nDispatchZ) PURE;
+    STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch) PURE;
     STDMETHOD_(void, DrawOverlay)           (THIS) PURE;
 
     STDMETHOD(BeginFrame)                   (THIS) PURE;

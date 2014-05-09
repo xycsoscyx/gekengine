@@ -12,6 +12,8 @@ namespace GEKVIDEO
         enum FORMAT
         {
             UNKNOWN = 0,
+            R_UINT8,
+            RG_UINT8,
             RGBA_UINT8,
             BGRA_UINT8,
             R_UINT16,

@@ -87,7 +87,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateBuffer((sizeof(float3)* 3), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spBasisBuffer, pBuffer);
+            hRetVal = GetVideoSystem()->CreateBuffer((sizeof(float3) * 3), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spBasisBuffer, pBuffer);
             pBuffer += (sizeof(float3) * 3 * nNumVertices);
         }
 

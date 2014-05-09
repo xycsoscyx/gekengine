@@ -296,7 +296,7 @@ CGEKRenderManager::CGEKRenderManager(void)
     , m_pViewer(nullptr)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
-    , m_nNumLightInstances(256)
+    , m_nNumLightInstances(100)
 {
 }
 
@@ -1446,7 +1446,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
     }
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::DrawLights(UINT32 nDispatchX, UINT32 nDispatchY, UINT32 nDispatchZ)
+STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLightBatch)
 {
     GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
     GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
@@ -1460,10 +1460,8 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(UINT32 nDispatchX, UINT32 nDis
     {
         UINT32 nNumLights = min(m_nNumLightInstances, (m_aCulledLights.size() - nPass));
         m_spLightBuffer->Update(&m_aCulledLights[nPass], (sizeof(LIGHT) * nNumLights));
-        if (nDispatchX > 0)
-        {
-            GetVideoSystem()->GetImmediateContext()->Dispatch(nDispatchX, nDispatchY, nDispatchZ);
-        }
+
+        OnLightBatch();
 
         GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
     }
@@ -1546,9 +1544,13 @@ STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
         m_aCulledLights.push_back(kLight);
     }
 
-    LIGHT kSentinel;
-    kSentinel.m_nRange = -1.0f;
-    m_aCulledLights.push_back(kSentinel);
+    if ((m_aCulledLights.size() % m_nNumLightInstances) > 0)
+    {
+        LIGHT kSentinel;
+        kSentinel.m_nRange = -1.0f;
+        m_aCulledLights.push_back(kSentinel);
+    }
+
     m_aCurrentLights.clear();
 
     m_aCulledModels.clear();

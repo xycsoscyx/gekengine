@@ -1486,6 +1486,14 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
     HRESULT hRetVal = S_OK;
     switch (eFormat)
     {
+    case GEKVIDEO::DATA::RGBA_FLOAT:
+        kTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RGBA_UINT8:
+        kTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        break;
+
     case GEKVIDEO::DATA::R_FLOAT:
 	    kTextureDesc.Format = DXGI_FORMAT_R32_FLOAT;
         break;
@@ -1496,14 +1504,6 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 
     case GEKVIDEO::DATA::RGB_FLOAT:
 	    kTextureDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-        break;
-
-    case GEKVIDEO::DATA::RGBA_FLOAT:
-	    kTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-        break;
-
-    case GEKVIDEO::DATA::RGBA_UINT8:
-	    kTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         break;
 
     default:
@@ -1718,6 +1718,21 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
     DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
     switch (eFormat)
     {
+    case GEKVIDEO::DATA::R_UINT8:
+        eNewFormat = DXGI_FORMAT_R8_UINT;
+        nStride = sizeof(UINT8);
+        break;
+
+    case GEKVIDEO::DATA::RG_UINT8:
+        eNewFormat = DXGI_FORMAT_R8G8_UINT;
+        nStride = (sizeof(UINT8) * 2);
+        break;
+
+    case GEKVIDEO::DATA::RGBA_UINT8:
+        eNewFormat = DXGI_FORMAT_R8G8B8A8_UINT;
+        nStride = (sizeof(UINT8) * 4);
+        break;
+
     case GEKVIDEO::DATA::R_UINT16:
         eNewFormat = DXGI_FORMAT_R16_UINT;
         nStride = sizeof(UINT16);
@@ -1740,7 +1755,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
 
     case GEKVIDEO::DATA::RG_UINT32:
         eNewFormat = DXGI_FORMAT_R32G32_UINT;
-        nStride = (sizeof(UINT32)* 2);
+        nStride = (sizeof(UINT32) * 2);
         break;
 
     case GEKVIDEO::DATA::RGB_UINT32:
@@ -2231,6 +2246,14 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
     DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
     switch (eFormat)
     {
+    case GEKVIDEO::DATA::R_UINT8:
+        eNewFormat = DXGI_FORMAT_R8_UINT;
+        break;
+
+    case GEKVIDEO::DATA::RG_UINT8:
+        eNewFormat = DXGI_FORMAT_R8G8_UINT;
+        break;
+
     case GEKVIDEO::DATA::RGBA_UINT8:
         eNewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
         break;
@@ -2240,15 +2263,15 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
         break;
 
     case GEKVIDEO::DATA::R_UINT16:
-        eNewFormat = DXGI_FORMAT_R16_UNORM;
+        eNewFormat = DXGI_FORMAT_R16_UINT;
         break;
 
     case GEKVIDEO::DATA::RG_UINT16:
-        eNewFormat = DXGI_FORMAT_R16G16_UNORM;
+        eNewFormat = DXGI_FORMAT_R16G16_UINT;
         break;
 
     case GEKVIDEO::DATA::RGBA_UINT16:
-        eNewFormat = DXGI_FORMAT_R16G16B16A16_UNORM;
+        eNewFormat = DXGI_FORMAT_R16G16B16A16_UINT;
         break;
 
     case GEKVIDEO::DATA::R_UINT32:

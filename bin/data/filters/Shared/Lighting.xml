@@ -78,7 +78,7 @@
 
 #ifdef _INDEXED_LIGHTING
         const uint2 nTilePosition = floor(kInput.position.xy / gs_nLightTileSize.xx);
-        const uint nTileIndex = ((nTilePosition.y * gs_nNumTiles.x) + nTilePosition.x);
+        const uint nTileIndex = (((nTilePosition.y * gs_nNumTiles.x) + nTilePosition.x) * gs_nMaxLights);
         nTotalDiffuse = 0;
         nTotalSpecular = 0;
 #endif
@@ -88,9 +88,9 @@
         for(uint nLightIndex = 0; nLightIndex < 1; nLightIndex++)
         {
             float nLight = gs_pTileIndices[nTileIndex + nLightIndex];
-            nTotalDiffuse.r = nLight / asfloat(gs_nMaxLights);
-            //nTotalDiffuse.b = nTilePosition.x / asfloat(gs_nNumTiles.x);
-            //nTotalDiffuse.g = nTilePosition.y / asfloat(gs_nNumTiles.y);
+            //nTotalDiffuse.r = nLight / gs_nMaxLights;
+            nTotalDiffuse.b = float(nTilePosition.x) / float(gs_nNumTiles.x);
+            nTotalDiffuse.g = float(nTilePosition.y) / float(gs_nNumTiles.y);
         }
 #else
         for(uint nLight = 0; nLight < gs_nMaxLights && gs_aLights[nLight].m_nRange > 0.0f; nLight++)

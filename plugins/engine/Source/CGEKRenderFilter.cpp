@@ -7,7 +7,9 @@
 
 static GEKVIDEO::DATA::FORMAT GetFormat(LPCWSTR pValue)
 {
-         if (_wcsicmp(pValue, L"RGBA_UINT8") == 0) return GEKVIDEO::DATA::RGBA_UINT8;
+         if (_wcsicmp(pValue, L"R_UINT8") == 0) return GEKVIDEO::DATA::R_UINT8;
+    else if (_wcsicmp(pValue, L"RG_UINT8") == 0) return GEKVIDEO::DATA::RG_UINT8;
+    else if (_wcsicmp(pValue, L"RGBA_UINT8") == 0) return GEKVIDEO::DATA::RGBA_UINT8;
     else if (_wcsicmp(pValue, L"BGRA_UINT8") == 0) return GEKVIDEO::DATA::BGRA_UINT8;
     else if (_wcsicmp(pValue, L"R_UINT16") == 0) return GEKVIDEO::DATA::R_UINT16;
     else if (_wcsicmp(pValue, L"RG_UINT16") == 0) return GEKVIDEO::DATA::RG_UINT16;
@@ -775,9 +777,9 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         }
     }
 
-    std::vector<IGEKVideoTexture *> aTargets;
     if (m_aTargets.size() > 0)
     {
+        std::vector<IGEKVideoTexture *> aTargets;
         for (auto &kTarget : m_aTargets)
         {
             CComQIPtr<IGEKVideoTexture> spTarget;
@@ -813,18 +815,19 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         GetVideoSystem()->SetDefaultTargets(nullptr, (spDepthBuffer ? spDepthBuffer : nullptr));
     }
 
-    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetProgram(m_kComputeData.m_spProgram);
+    std::map<IUnknown *, UINT32> aComputeResources;
+    std::map<IUnknown *, UINT32> aComputeUnorderedAccess;
     for (auto &kPair : m_kComputeData.m_aResources)
     {
         if (kPair.second.m_spResource != nullptr)
         {
             if (kPair.second.m_bUnorderedAccess)
             {
-                GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.first, kPair.second.m_spResource);
+                aComputeUnorderedAccess[kPair.second.m_spResource] = kPair.first;
             }
             else
             {
-                GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.first, kPair.second.m_spResource);
+                aComputeResources[kPair.second.m_spResource] = kPair.first;
             }
         }
         else if (!kPair.second.m_strName.IsEmpty())
@@ -835,22 +838,22 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             {
                 if (kPair.second.m_bUnorderedAccess)
                 {
-                    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.first, spResource);
+                    aComputeUnorderedAccess[spResource] = kPair.first;
                 }
                 else
                 {
-                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.first, spResource);
+                    aComputeResources[spResource] = kPair.first;
                 }
             }
         }
     }
 
-    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetProgram(m_kPixelData.m_spProgram);
+    std::map<IUnknown *, UINT32> aPixelResources;
     for (auto &kPair : m_kPixelData.m_aResources)
     {
         if (kPair.second.m_spResource != nullptr)
         {
-            GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.first, kPair.second.m_spResource);
+            aPixelResources[kPair.second.m_spResource] = kPair.first;
         }
         else if (!kPair.second.m_strName.IsEmpty())
         {
@@ -858,7 +861,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             GetRenderManager()->GetBuffer(kPair.second.m_strName, &spResource);
             if (spResource != nullptr)
             {
-                GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.first, spResource);
+                aPixelResources[spResource] = kPair.first;
             }
         }
     }
@@ -866,16 +869,50 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     CGEKRenderStates::Enable(GetVideoSystem());
     CGEKBlendStates::Enable(GetVideoSystem());
     GetVideoSystem()->GetImmediateContext()->SetDepthStates(m_nStencilReference, m_spDepthStates);
+    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetProgram(m_kComputeData.m_spProgram);
+    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetProgram(m_kPixelData.m_spProgram);
     if (m_eMode == FORWARD)
     {
+        for (auto &kPair : aPixelResources)
+        {
+            GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.second, kPair.first);
+        }
+
         GetRenderManager()->DrawScene(m_nVertexAttributes);
     }
     else if (m_eMode == LIGHTING)
     {
-        GetRenderManager()->DrawLights(m_nDispatchXSize, m_nDispatchYSize, m_nDispatchZSize);
+        GetRenderManager()->DrawLights([&](void) -> void
+        {
+            if (m_nDispatchXSize > 0)
+            {
+                for (auto &kPair : aComputeUnorderedAccess)
+                {
+                    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.second, kPair.first);
+                }
+
+                for (auto &kPair : aComputeResources)
+                {
+                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.second, kPair.first);
+                }
+
+                GetVideoSystem()->GetImmediateContext()->Dispatch(m_nDispatchXSize, m_nDispatchYSize, m_nDispatchZSize);
+                for (auto &kPair : aPixelResources)
+                {
+                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.second, kPair.first);
+                }
+            }
+        });
     }
     else
     {
+        for (auto &kPair : aPixelResources)
+        {
+            GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.second, kPair.first);
+        }
+
         GetRenderManager()->DrawOverlay();
     }
+
+    GetVideoSystem()->GetImmediateContext()->ClearResources();
 }
