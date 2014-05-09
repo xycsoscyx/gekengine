@@ -73,27 +73,29 @@ public:
     STDMETHODIMP_(void) SetResource(UINT32 nStage, IUnknown *pResource)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pResource);
 
+        ID3D11ShaderResourceView *apView[1] = { nullptr };
         CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
         if (spView != nullptr)
         {
-            ID3D11ShaderResourceView *pView = spView;
-            m_pDeviceContext->CSSetShaderResources(nStage, 1, &pView);
+            apView[0] = spView;
         }
+
+        m_pDeviceContext->CSSetShaderResources(nStage, 1, apView);
     }
 
     STDMETHODIMP_(void) SetUnorderedAccess(UINT32 nStage, IUnknown *pResource)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pResource);
 
+        ID3D11UnorderedAccessView *apView[1] = { nullptr };
         CComQIPtr<ID3D11UnorderedAccessView> spView(pResource);
         if (spView != nullptr)
         {
-            ID3D11UnorderedAccessView *pView = spView;
-            m_pDeviceContext->CSSetUnorderedAccessViews(nStage, 1, &pView, nullptr);
+            apView[0] = spView;
         }
+
+        m_pDeviceContext->CSSetUnorderedAccessViews(nStage, 1, apView, nullptr);
     }
 };
 
@@ -284,14 +286,15 @@ public:
     STDMETHODIMP_(void) SetResource(UINT32 nStage, IUnknown *pResource)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pResource);
 
+        ID3D11ShaderResourceView *apView[1] = { nullptr };
         CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
         if (spView != nullptr)
         {
-            ID3D11ShaderResourceView *pView = spView;
-            m_pDeviceContext->PSSetShaderResources(nStage, 1, &pView);
+            apView[0] = spView;
         }
+
+        m_pDeviceContext->PSSetShaderResources(nStage, 1, apView);
     }
 };
 
@@ -652,6 +655,9 @@ STDMETHODIMP_(void) CGEKVideoContext::ClearResources(void)
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     };
 
+    m_spDeviceContext->CSSetShaderResources(0, 10, pNullTextures);
+    m_spDeviceContext->VSSetShaderResources(0, 10, pNullTextures);
+    m_spDeviceContext->GSSetShaderResources(0, 10, pNullTextures);
     m_spDeviceContext->PSSetShaderResources(0, 10, pNullTextures);
     m_spDeviceContext->OMSetRenderTargets(6, pNullTargets, nullptr);
 }

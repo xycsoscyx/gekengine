@@ -29,6 +29,9 @@
         float nLinearDepth = LinearDepth(nViewDepth);
         nMinSampleDepth = min(nMinSampleDepth, nLinearDepth);
         nMaxSampleDepth = max(nMaxSampleDepth, nLinearDepth);
+
+        GroupMemoryBarrierWithGroupSync();
+
         if (nMaxSampleDepth >= nMinSampleDepth)
         {
             InterlockedMin(g_nTileMinDepth, asuint(nMinSampleDepth));
@@ -36,6 +39,7 @@
         }
 
         GroupMemoryBarrierWithGroupSync();
+
         float nMinTileDepth = asfloat(g_nTileMinDepth);
         float nMaxTileDepth = asfloat(g_nTileMaxDepth);
         float2 nTileScale = (gs_nCameraSize.xy * rcp(2.0f * gs_nLightTileSize.xx));
@@ -86,9 +90,14 @@
         }
 
         GroupMemoryBarrierWithGroupSync();
-        uint nTileIndex = ((nGroupID.y * gs_nNumTiles.x) + nGroupID.x);
-        uint nBufferIndex = ((nTileIndex * gs_nMaxLights) + nGroupThreadIndex);
-        uint nLightIndex = (nGroupThreadIndex < g_nNumTileLights ? g_aTileLightList[nGroupThreadIndex] : gs_nMaxLights);
-        g_pTileOutput[nBufferIndex] = 213;
+        
+        [branch]
+        if(nGroupThreadIndex < gs_nMaxLights)
+        {
+            uint nTileIndex = ((nGroupID.y * gs_nNumTiles.x) + nGroupID.x);
+            uint nBufferIndex = ((nTileIndex * gs_nMaxLights) + nGroupThreadIndex);
+            uint nLightIndex = (nGroupThreadIndex < g_nNumTileLights ? g_aTileLightList[nGroupThreadIndex] : gs_nMaxLights);
+            g_pTileOutput[nBufferIndex] = 213;
+        }
     }
 ]]>
