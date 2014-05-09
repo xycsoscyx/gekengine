@@ -1,6 +1,6 @@
 <![CDATA[
-    static const uint gs_nThreadGroupSize = gs_nLightTileSize * gs_nLightTileSize;
-    static const uint2 gs_nNumTiles = asuint(ceil(gs_nCameraSize / gs_nLightTileSize));
+    static const uint gs_nThreadGroupSize = (gs_nLightTileSize * gs_nLightTileSize);
+    static const uint2 gs_nNumTiles = ceil(gs_nCameraSize / gs_nLightTileSize.xx);
 
     Texture2D<float4> gs_pWorldBuffer       : register(t1);
 
@@ -19,8 +19,8 @@
     [numthreads(gs_nLightTileSize, gs_nLightTileSize, 1)]
     void MainComputeProgram(uint3 nGroupID : SV_GroupID, uint3 nGroupThreadID : SV_GroupThreadID)
     {
-        uint2 nPixelCoord = nGroupID.xy * gs_nLightTileSize + nGroupThreadID.xy;
-        const uint nGroupThreadIndex = nGroupThreadID.y * gs_nLightTileSize + nGroupThreadID.x;
+        const uint2 nPixelCoord = ((nGroupID.xy * gs_nLightTileSize.xx) + nGroupThreadID.xy);
+        const uint nGroupThreadIndex = ((nGroupThreadID.y * gs_nLightTileSize) + nGroupThreadID.x);
 
         float nMinSampleDepth = gs_nCameraViewDistance;
         float nMaxSampleDepth = 0.0f;
@@ -38,7 +38,7 @@
         GroupMemoryBarrierWithGroupSync();
         float nMinTileDepth = asfloat(g_nTileMinDepth);
         float nMaxTileDepth = asfloat(g_nTileMaxDepth);
-        float2 nTileScale = float2(gs_nCameraSize.xy) * rcp(2.0f * gs_nLightTileSize);
+        float2 nTileScale = float2(gs_nCameraSize.xy) * rcp(2.0f * gs_nLightTileSize.xx);
         float2 nTileBias = nTileScale - float2(nGroupID.xy);
         float4 c1 = float4(gs_nProjectionMatrix._11 * nTileScale.x, 0.0f, nTileBias.x, 0.0f);
         float4 c2 = float4(0.0f, -gs_nProjectionMatrix._22 * nTileScale.y, nTileBias.y, 0.0f);
