@@ -8,7 +8,7 @@
     
     static const float gs_nPI = 3.14159265358979323846;
     static const float gs_nReciprocalPI = rcp(gs_nPI);
-    static const uint2 gs_nNumTiles = asuint(ceil(gs_nCameraSize / gs_nLightTileSize));
+    static const uint2 gs_nNumTiles = ceil(gs_nCameraSize / gs_nLightTileSize.xx);
     
     // Diffuse & Specular Term
     // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
@@ -77,19 +77,24 @@
         float3 nViewNormal = -kInput.view;
 
 #ifdef _INDEXED_LIGHTING
-        uint2 nTilePosition = asuint(kInput.position.xy / gs_nLightTileSize);
-        uint nTileIndex = (nTilePosition.y * gs_nNumTiles.x + nTilePosition.x);
+        const uint2 nTilePosition = floor(kInput.position.xy / gs_nLightTileSize.xx);
+        const uint nTileIndex = ((nTilePosition.y * gs_nNumTiles.x) + nTilePosition.x);
+        nTotalDiffuse = 0;
+        nTotalSpecular = 0;
 #endif
 
         [loop]
 #ifdef _INDEXED_LIGHTING
-        for(uint nLightIndex = 0; nLightIndex < gs_nMaxLights && gs_pTileIndices[nTileIndex + nLightIndex] < gs_nMaxLights; nLightIndex++)
+        for(uint nLightIndex = 0; nLightIndex < 1; nLightIndex++)
         {
-            uint nLight = gs_pTileIndices[nTileIndex + nLightIndex];
+            float nLight = gs_pTileIndices[nTileIndex + nLightIndex];
+            nTotalDiffuse.r = nLight / asfloat(gs_nMaxLights);
+            //nTotalDiffuse.b = nTilePosition.x / asfloat(gs_nNumTiles.x);
+            //nTotalDiffuse.g = nTilePosition.y / asfloat(gs_nNumTiles.y);
+        }
 #else
         for(uint nLight = 0; nLight < gs_nMaxLights && gs_aLights[nLight].m_nRange > 0.0f; nLight++)
         {
-#endif
             float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nPixelPosition);
             float nDistance = length(nLightVector);
             float3 nLightNormal = normalize(nLightVector);
@@ -110,6 +115,7 @@
                 }
             }
         }
+#endif
 
         nTotalDiffuse = saturate(nTotalDiffuse);
         nTotalSpecular = saturate(nTotalSpecular);

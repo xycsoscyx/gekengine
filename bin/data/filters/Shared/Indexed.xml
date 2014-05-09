@@ -69,14 +69,14 @@
             float nLightRange = gs_aLights[nLight].m_nRange;
 
             bool bIsLightInFrustum = true;
-/*
+
             [unroll]
             for (uint nIndex = 0; nIndex < 6; ++nIndex)
             {
                 float nDistance = dot(aFrustumPlanes[nIndex], float4(nLightPosition, 1.0f));
                 bIsLightInFrustum = bIsLightInFrustum && (nDistance >= -nLightRange);
             }
-*/
+
             [branch]
             if (bIsLightInFrustum)
             {

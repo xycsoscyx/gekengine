@@ -1522,6 +1522,8 @@ STDMETHODIMP CGEKRenderManager::BeginFrame(void)
         m_kEngineBuffer.m_nCameraViewDistance = kMaxViewDistance.GetFloat();
         m_kEngineBuffer.m_nCameraView.x = tan(kFieldOfView.GetFloat() * 0.5f);
         m_kEngineBuffer.m_nCameraView.y = (m_kEngineBuffer.m_nCameraView.x / nAspect);
+        m_kEngineBuffer.m_nCameraSize.x = nXSize;
+        m_kEngineBuffer.m_nCameraSize.y = nYSize;
 
         hRetVal = S_OK;
     }

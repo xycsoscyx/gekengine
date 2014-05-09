@@ -101,7 +101,7 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
         }
     }
 
-    concurrency::parallel_for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
+    std::for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
         AddEntity(kEntityNode);
     });
