@@ -24,7 +24,6 @@
         float nMinSampleDepth = gs_nCameraViewDistance;
         float nMaxSampleDepth = 0.0f;
 
-        float4 nWorld = gs_pWorldBuffer[nScreenPixel.xy];
         float nViewDepth = gs_pWorldBuffer[nScreenPixel.xy].w;
         float nLinearDepth = (gs_nProjectionMatrix._43 / (nViewDepth - gs_nProjectionMatrix._33));
         nMinSampleDepth = min(nMinSampleDepth, nLinearDepth);
@@ -42,41 +41,35 @@
 
         float nMinTileDepth = asfloat(g_nTileMinDepth);
         float nMaxTileDepth = asfloat(g_nTileMaxDepth);
-        float2 nTileScale = (gs_nCameraSize.xy * rcp(2.0f * gs_nLightTileSize.xx));
+        float2 nTileScale = (gs_nCameraSize.xy * rcp(2.0f * gs_nLightTileSize).xx);
         float2 nTileBias = (nTileScale - float2(nTileID.xy));
-        float4 nXPlane = float4((gs_nProjectionMatrix._11 * nTileScale.x), 0.0f, nTileBias.x, 0.0f);
-        float4 nYPlane = float4(0.0f, (-gs_nProjectionMatrix._22 * nTileScale.y), nTileBias.y, 0.0f);
-        float4 nZPlane = float4(0.0f, 0.0f, 1.0f, 0.0f);
+        float3 nXPlane = float3((gs_nProjectionMatrix._11 * nTileScale.x), 0.0f, nTileBias.x);
+        float3 nYPlane = float3(0.0f, (-gs_nProjectionMatrix._22 * nTileScale.y), nTileBias.y);
+        float3 nZPlane = float3(0.0f, 0.0f, 1.0f);
         float4 aFrustumPlanes[6] = 
         {
             // Sides
-            (nZPlane - nXPlane),
-            (nZPlane + nXPlane),
-            (nZPlane - nYPlane),
-            (nZPlane + nYPlane),
+            float4(normalize(nZPlane - nXPlane), 0.0f),
+            float4(normalize(nZPlane + nXPlane), 0.0f),
+            float4(normalize(nZPlane - nYPlane), 0.0f),
+            float4(normalize(nZPlane + nYPlane), 0.0f),
 
             // Near/far
             float4(0.0f, 0.0f, 1.0f, -nMinTileDepth),
             float4(0.0f, 0.0f, -1.0f, nMaxTileDepth),
         };
 
-        [unroll]
-        for (uint nIndex = 0; nIndex < 4; ++nIndex)
-        {
-            aFrustumPlanes[nIndex] *= rcp(length(aFrustumPlanes[nIndex].xyz));
-        }
-
         [loop]
         for(uint nLight = nTilePixelIndex; nLight < gs_nMaxLights && gs_aLights[nLight].m_nRange > 0.0f; nLight += gs_nThreadGroupSize)
         {
-            float3 nLightPosition = gs_aLights[nLight].m_nPosition;
+            float4 nLightPosition = float4(gs_aLights[nLight].m_nPosition, 1.0f);
             float nLightRange = gs_aLights[nLight].m_nRange;
             bool bIsLightInFrustum = true;
 
             [unroll]
             for (uint nIndex = 0; nIndex < 6; ++nIndex)
             {
-                float nDistance = dot(aFrustumPlanes[nIndex], float4(nLightPosition, 1.0f));
+                float nDistance = dot(aFrustumPlanes[nIndex], nLightPosition);
                 bIsLightInFrustum = (bIsLightInFrustum && (nDistance >= -nLightRange));
             }
 

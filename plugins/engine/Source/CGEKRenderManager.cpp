@@ -296,7 +296,7 @@ CGEKRenderManager::CGEKRenderManager(void)
     , m_pViewer(nullptr)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
-    , m_nNumLightInstances(250)
+    , m_nNumLightInstances(254)
 {
 }
 
