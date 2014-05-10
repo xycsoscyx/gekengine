@@ -296,7 +296,7 @@ CGEKRenderManager::CGEKRenderManager(void)
     , m_pViewer(nullptr)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
-    , m_nNumLightInstances(100)
+    , m_nNumLightInstances(250)
 {
 }
 
@@ -898,33 +898,30 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
 
 STDMETHODIMP_(void) CGEKRenderManager::SetResource(IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource)
 {
-    CComQIPtr<IGEKVideoTexture> spTexture(pResource);
-    if (spTexture == nullptr)
+    CComPtr<IUnknown> spResource(pResource);
+    CComQIPtr<IGEKWebView> spWebView(pResource);
+    if (spWebView)
     {
-        CComQIPtr<IGEKWebView> spWebView(pResource);
-        if (spWebView)
+        auto pIterator = m_aWebSurfaces.find(spWebView->GetView());
+        if (pIterator != m_aWebSurfaces.end())
         {
-            auto pIterator = m_aWebSurfaces.find(spWebView->GetView());
-            if (pIterator != m_aWebSurfaces.end())
+            CComQIPtr<IGEKWebSurface> spWebSurface((*pIterator).second);
+            if (spWebSurface)
             {
-                CComQIPtr<IGEKWebSurface> spWebSurface((*pIterator).second);
-                if (spWebSurface)
-                {
-                    spTexture = spWebSurface->GetTexture();
-                }
+                spResource = spWebSurface->GetTexture();
             }
         }
     }
 
-    if (spTexture)
+    if (spResource)
     {
         if (pSystem == nullptr)
         {
-            GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(nStage, spTexture);
+            GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(nStage, spResource);
         }
         else
         {
-            pSystem->SetResource(nStage, spTexture);
+            pSystem->SetResource(nStage, spResource);
         }
     }
 }
@@ -1511,17 +1508,18 @@ STDMETHODIMP CGEKRenderManager::BeginFrame(void)
         float nYSize = float(GetSystem()->GetYSize());
         float nAspect = (nXSize / nYSize);
 
+        m_kEngineBuffer.m_nCameraSize.x = nXSize;
+        m_kEngineBuffer.m_nCameraSize.y = nYSize;
+        m_kEngineBuffer.m_nCameraView.x = tan(kFieldOfView.GetFloat() * 0.5f);
+        m_kEngineBuffer.m_nCameraView.y = (m_kEngineBuffer.m_nCameraView.x / nAspect);
+        m_kEngineBuffer.m_nCameraViewDistance = kMaxViewDistance.GetFloat();
+        m_kEngineBuffer.m_nCameraPosition = kPosition.GetFloat3();
+
         m_kEngineBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
         m_kEngineBuffer.m_nProjectionMatrix.SetPerspective(kFieldOfView.GetFloat(), nAspect, kMinViewDistance.GetFloat(), kMaxViewDistance.GetFloat());
         m_kEngineBuffer.m_nTransformMatrix = (m_kEngineBuffer.m_nViewMatrix * m_kEngineBuffer.m_nProjectionMatrix);
-        m_kFrustum.Create(nCameraMatrix, m_kEngineBuffer.m_nProjectionMatrix);
 
-        m_kEngineBuffer.m_nCameraPosition = kPosition.GetFloat3();
-        m_kEngineBuffer.m_nCameraViewDistance = kMaxViewDistance.GetFloat();
-        m_kEngineBuffer.m_nCameraView.x = tan(kFieldOfView.GetFloat() * 0.5f);
-        m_kEngineBuffer.m_nCameraView.y = (m_kEngineBuffer.m_nCameraView.x / nAspect);
-        m_kEngineBuffer.m_nCameraSize.x = nXSize;
-        m_kEngineBuffer.m_nCameraSize.y = nYSize;
+        m_kFrustum.Create(nCameraMatrix, m_kEngineBuffer.m_nProjectionMatrix);
 
         hRetVal = S_OK;
     }
@@ -1575,6 +1573,7 @@ STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
     }
 
     m_spEngineBuffer->Update((void *)&m_kEngineBuffer);
+    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
     GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
     GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
     GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);

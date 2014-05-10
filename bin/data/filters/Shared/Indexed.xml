@@ -1,32 +1,32 @@
 <![CDATA[
-    static const uint gs_nThreadGroupSize = (gs_nLightTileSize * gs_nLightTileSize);
-    static const uint2 gs_nNumTiles = ceil(gs_nCameraSize / gs_nLightTileSize.xx);
+    #define gs_nThreadGroupSize             (gs_nLightTileSize * gs_nLightTileSize)
 
     Texture2D<float4> gs_pWorldBuffer       : register(t1);
 
     RWBuffer<uint> g_pTileOutput            : register(u0);
 
-    groupshared uint g_nNumTileLights = 0;
-    groupshared uint g_nTileMinDepth = 0x7f7fffff;
-    groupshared uint g_nTileMaxDepth = 0;
+    groupshared uint g_nNumTileLights;
+    groupshared uint g_nTileMinDepth;
+    groupshared uint g_nTileMaxDepth;
     groupshared uint g_aTileLightList[gs_nMaxLights];
 
-    float LinearDepth(in float nViewDepth)
-    {
-        return gs_nProjectionMatrix._43 / (nViewDepth - gs_nProjectionMatrix._33);
-    }
-
     [numthreads(gs_nLightTileSize, gs_nLightTileSize, 1)]
-    void MainComputeProgram(uint3 nGroupID : SV_GroupID, uint3 nGroupThreadID : SV_GroupThreadID)
+    void MainComputeProgram(uint3 nScreenPixel : SV_DispatchThreadID, uint3 nTileID : SV_GroupID, uint3 nTilePixelID : SV_GroupThreadID, uint nTilePixelIndex : SV_GroupIndex)
     {
-        const uint2 nPixelCoord = ((nGroupID.xy * gs_nLightTileSize.xx) + nGroupThreadID.xy);
-        const uint nGroupThreadIndex = ((nGroupThreadID.y * gs_nLightTileSize) + nGroupThreadID.x);
+        [branch]
+        if(nTilePixelIndex == 0)
+        {
+            g_nNumTileLights = 0;
+            g_nTileMinDepth = 0x7f7fffff;
+            g_nTileMaxDepth = 0;
+        }
 
         float nMinSampleDepth = gs_nCameraViewDistance;
         float nMaxSampleDepth = 0.0f;
 
-        float nViewDepth = gs_pWorldBuffer[nPixelCoord].w;
-        float nLinearDepth = LinearDepth(nViewDepth);
+        float4 nWorld = gs_pWorldBuffer[nScreenPixel.xy];
+        float nViewDepth = gs_pWorldBuffer[nScreenPixel.xy].w;
+        float nLinearDepth = (gs_nProjectionMatrix._43 / (nViewDepth - gs_nProjectionMatrix._33));
         nMinSampleDepth = min(nMinSampleDepth, nLinearDepth);
         nMaxSampleDepth = max(nMaxSampleDepth, nLinearDepth);
 
@@ -43,17 +43,17 @@
         float nMinTileDepth = asfloat(g_nTileMinDepth);
         float nMaxTileDepth = asfloat(g_nTileMaxDepth);
         float2 nTileScale = (gs_nCameraSize.xy * rcp(2.0f * gs_nLightTileSize.xx));
-        float2 nTileBias = (nTileScale - float2(nGroupID.xy));
-        float4 c1 = float4(gs_nProjectionMatrix._11 * nTileScale.x, 0.0f, nTileBias.x, 0.0f);
-        float4 c2 = float4(0.0f, -gs_nProjectionMatrix._22 * nTileScale.y, nTileBias.y, 0.0f);
-        float4 c4 = float4(0.0f, 0.0f, 1.0f, 0.0f);
+        float2 nTileBias = (nTileScale - float2(nTileID.xy));
+        float4 nXPlane = float4((gs_nProjectionMatrix._11 * nTileScale.x), 0.0f, nTileBias.x, 0.0f);
+        float4 nYPlane = float4(0.0f, (-gs_nProjectionMatrix._22 * nTileScale.y), nTileBias.y, 0.0f);
+        float4 nZPlane = float4(0.0f, 0.0f, 1.0f, 0.0f);
         float4 aFrustumPlanes[6] = 
         {
             // Sides
-            (c4 - c1),
-            (c4 + c1),
-            (c4 - c2),
-            (c4 + c2),
+            (nZPlane - nXPlane),
+            (nZPlane + nXPlane),
+            (nZPlane - nYPlane),
+            (nZPlane + nYPlane),
 
             // Near/far
             float4(0.0f, 0.0f, 1.0f, -nMinTileDepth),
@@ -67,7 +67,7 @@
         }
 
         [loop]
-        for(uint nLight = nGroupThreadIndex; nLight < gs_nMaxLights && gs_aLights[nLight].m_nRange > 0.0f; nLight += gs_nThreadGroupSize)
+        for(uint nLight = nTilePixelIndex; nLight < gs_nMaxLights && gs_aLights[nLight].m_nRange > 0.0f; nLight += gs_nThreadGroupSize)
         {
             float3 nLightPosition = gs_aLights[nLight].m_nPosition;
             float nLightRange = gs_aLights[nLight].m_nRange;
@@ -92,12 +92,12 @@
         GroupMemoryBarrierWithGroupSync();
         
         [branch]
-        if(nGroupThreadIndex < gs_nMaxLights)
+        if(nTilePixelIndex < gs_nMaxLights)
         {
-            uint nTileIndex = ((nGroupID.y * gs_nNumTiles.x) + nGroupID.x);
-            uint nBufferIndex = ((nTileIndex * gs_nMaxLights) + nGroupThreadIndex);
-            uint nLightIndex = (nGroupThreadIndex < g_nNumTileLights ? g_aTileLightList[nGroupThreadIndex] : gs_nMaxLights);
-            g_pTileOutput[nBufferIndex] = 213;
+            uint nTileIndex = ((nTileID.y * gs_nDispatchXSize) + nTileID.x);
+            uint nBufferIndex = ((nTileIndex * gs_nMaxLights) + nTilePixelIndex);
+            uint nLightIndex = (nTilePixelIndex < g_nNumTileLights ? g_aTileLightList[nTilePixelIndex] : gs_nMaxLights);
+            g_pTileOutput[nBufferIndex] = nLightIndex;
         }
     }
 ]]>

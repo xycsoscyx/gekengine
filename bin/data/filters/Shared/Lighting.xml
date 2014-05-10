@@ -8,7 +8,6 @@
     
     static const float gs_nPI = 3.14159265358979323846;
     static const float gs_nReciprocalPI = rcp(gs_nPI);
-    static const uint2 gs_nNumTiles = ceil(gs_nCameraSize / gs_nLightTileSize.xx);
     
     // Diffuse & Specular Term
     // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
@@ -77,25 +76,20 @@
         float3 nViewNormal = -kInput.view;
 
 #ifdef _INDEXED_LIGHTING
-        const uint2 nTilePosition = floor(kInput.position.xy / gs_nLightTileSize.xx);
-        const uint nTileIndex = (((nTilePosition.y * gs_nNumTiles.x) + nTilePosition.x) * gs_nMaxLights);
-        nTotalDiffuse = 0;
-        nTotalSpecular = 0;
+        const uint2 nTileID = uint2(kInput.position.xy / gs_nLightTileSize.xx);
+        const uint nTileIndex = ((nTileID.y * gs_nDispatchXSize) + nTileID.x);
+        const uint nBufferIndex = (nTileIndex * gs_nMaxLights);
 #endif
 
         [loop]
 #ifdef _INDEXED_LIGHTING
-        for(uint nLightIndex = 0; nLightIndex < 1; nLightIndex++)
+        for(uint nLightIndex = 0; nLightIndex < gs_nMaxLights && gs_pTileIndices[nBufferIndex + nLightIndex] < gs_nMaxLights; nLightIndex++)
         {
-            float nLight = gs_pTileIndices.Load(nTileIndex + nLightIndex);
-            nTotalDiffuse.r = nTileIndex / float(gs_nMaxLights * gs_nNumTiles.x * gs_nNumTiles.y);
-            nTotalDiffuse.r = nLight / float(gs_nMaxLights);
-            nTotalDiffuse.b = float(nTilePosition.x) / float(gs_nNumTiles.x);
-            nTotalDiffuse.g = float(nTilePosition.y) / float(gs_nNumTiles.y);
-        }
+            uint nLight = gs_pTileIndices[nBufferIndex + nLightIndex];
 #else
         for(uint nLight = 0; nLight < gs_nMaxLights && gs_aLights[nLight].m_nRange > 0.0f; nLight++)
         {
+#endif
             float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nPixelPosition);
             float nDistance = length(nLightVector);
             float3 nLightNormal = normalize(nLightVector);
@@ -116,7 +110,6 @@
                 }
             }
         }
-#endif
 
         nTotalDiffuse = saturate(nTotalDiffuse);
         nTotalSpecular = saturate(nTotalSpecular);

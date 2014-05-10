@@ -52,13 +52,13 @@ public:
 
     struct ENGINEBUFFER
     {
+        float2 m_nCameraSize;
+        float2 m_nCameraView;
+        float m_nCameraViewDistance;
+        float3 m_nCameraPosition;
         float4x4 m_nViewMatrix;
         float4x4 m_nProjectionMatrix;
         float4x4 m_nTransformMatrix;
-        float3 m_nCameraPosition;
-        float m_nCameraViewDistance;
-        float2 m_nCameraView;
-        float2 m_nCameraSize;
     };
 
 private:

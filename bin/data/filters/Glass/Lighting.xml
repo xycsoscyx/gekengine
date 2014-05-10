@@ -6,7 +6,7 @@
 <filter mode="lighting">
     <defines>
         <define name="gs_nLightTileSize" value="16" />
-        <define name="gs_nMaxLights" value="255" />
+        <define name="gs_nMaxLights" value="250" />
     </defines>
 
     <blend>

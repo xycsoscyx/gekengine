@@ -28,8 +28,8 @@ namespace GEKVIDEO
             RGB_FLOAT,
             RGBA_FLOAT,
             D16,
-            D32,
             D24_S8,
+            D32,
         };
     };
 

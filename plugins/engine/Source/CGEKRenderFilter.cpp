@@ -543,9 +543,14 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
                 }
                 else
                 {
+                    std::map<CStringA, CStringA> aDefines(m_aDefines);
+                    aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
+                    aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
+                    aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
+
                     CStringA strCoreProgram = kComputeNode.GetText();
                     strProgram.Replace("_INSERT_COMPUTE_PROGRAM", strCoreProgram);
-                    hRetVal = GetVideoSystem()->CompileComputeProgram(strProgram, "MainComputeProgram", &m_kComputeData.m_spProgram, &m_aDefines);
+                    hRetVal = GetVideoSystem()->CompileComputeProgram(strProgram, "MainComputeProgram", &m_kComputeData.m_spProgram, &aDefines);
                 }
             }
 
@@ -593,9 +598,14 @@ HRESULT CGEKRenderFilter::LoadPixelProgram(CLibXMLNode &kFilterNode)
             }
             else
             {
+                std::map<CStringA, CStringA> aDefines(m_aDefines);
+                aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
+                aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
+                aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
+
                 CStringA strCoreProgram = kPixelNode.GetText();
                 strProgram.Replace("_INSERT_PIXEL_PROGRAM", strCoreProgram);
-                hRetVal = GetVideoSystem()->CompilePixelProgram(strProgram, "MainPixelProgram", &m_kPixelData.m_spProgram, &m_aDefines);
+                hRetVal = GetVideoSystem()->CompilePixelProgram(strProgram, "MainPixelProgram", &m_kPixelData.m_spProgram, &aDefines);
             }
         }
 
@@ -815,19 +825,19 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         GetVideoSystem()->SetDefaultTargets(nullptr, (spDepthBuffer ? spDepthBuffer : nullptr));
     }
 
-    std::map<IUnknown *, UINT32> aComputeResources;
-    std::map<IUnknown *, UINT32> aComputeUnorderedAccess;
+    std::map<UINT32, IUnknown *> aComputeResources;
+    std::map<UINT32, IUnknown *> aComputeUnorderedAccess;
     for (auto &kPair : m_kComputeData.m_aResources)
     {
         if (kPair.second.m_spResource != nullptr)
         {
             if (kPair.second.m_bUnorderedAccess)
             {
-                aComputeUnorderedAccess[kPair.second.m_spResource] = kPair.first;
+                aComputeUnorderedAccess[kPair.first] = kPair.second.m_spResource;
             }
             else
             {
-                aComputeResources[kPair.second.m_spResource] = kPair.first;
+                aComputeResources[kPair.first] = kPair.second.m_spResource;
             }
         }
         else if (!kPair.second.m_strName.IsEmpty())
@@ -838,22 +848,22 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             {
                 if (kPair.second.m_bUnorderedAccess)
                 {
-                    aComputeUnorderedAccess[spResource] = kPair.first;
+                    aComputeUnorderedAccess[kPair.first] = spResource;
                 }
                 else
                 {
-                    aComputeResources[spResource] = kPair.first;
+                    aComputeResources[kPair.first] = spResource;
                 }
             }
         }
     }
 
-    std::map<IUnknown *, UINT32> aPixelResources;
+    std::map<UINT32, IUnknown *> aPixelResources;
     for (auto &kPair : m_kPixelData.m_aResources)
     {
         if (kPair.second.m_spResource != nullptr)
         {
-            aPixelResources[kPair.second.m_spResource] = kPair.first;
+            aPixelResources[kPair.first] = kPair.second.m_spResource;
         }
         else if (!kPair.second.m_strName.IsEmpty())
         {
@@ -861,7 +871,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             GetRenderManager()->GetBuffer(kPair.second.m_strName, &spResource);
             if (spResource != nullptr)
             {
-                aPixelResources[spResource] = kPair.first;
+                aPixelResources[kPair.first] = spResource;
             }
         }
     }
@@ -869,53 +879,58 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     CGEKRenderStates::Enable(GetVideoSystem());
     CGEKBlendStates::Enable(GetVideoSystem());
     GetVideoSystem()->GetImmediateContext()->SetDepthStates(m_nStencilReference, m_spDepthStates);
-    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetProgram(m_kComputeData.m_spProgram);
     GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetProgram(m_kPixelData.m_spProgram);
     if (m_eMode == FORWARD)
     {
         for (auto &kPair : aPixelResources)
         {
-            GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.second, kPair.first);
+            GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.first, kPair.second);
         }
 
         GetRenderManager()->DrawScene(m_nVertexAttributes);
     }
     else if (m_eMode == LIGHTING)
     {
+        if (m_nDispatchXSize > 0)
+        {
+            GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetProgram(m_kComputeData.m_spProgram);
+        }
+
         GetRenderManager()->DrawLights([&](void) -> void
         {
             if (m_nDispatchXSize > 0)
             {
                 for (auto &kPair : aPixelResources)
                 {
-                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.second, nullptr);
+                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.first, nullptr);
                 }
 
                 for (auto &kPair : aComputeResources)
                 {
-                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.second, kPair.first);
+                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.first, kPair.second);
                 }
 
                 for (auto &kPair : aComputeUnorderedAccess)
                 {
-                    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.second, kPair.first);
+                    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.first, kPair.second);
                 }
 
                 GetVideoSystem()->GetImmediateContext()->Dispatch(m_nDispatchXSize, m_nDispatchYSize, m_nDispatchZSize);
+                GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetProgram(nullptr);
 
                 for (auto &kPair : aComputeResources)
                 {
-                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.second, nullptr);
+                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.first, nullptr);
                 }
 
                 for (auto &kPair : aComputeUnorderedAccess)
                 {
-                    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.second, nullptr);
+                    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.first, nullptr);
                 }
 
                 for (auto &kPair : aPixelResources)
                 {
-                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.second, kPair.first);
+                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.first, kPair.second);
                 }
             }
         });
@@ -924,7 +939,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     {
         for (auto &kPair : aPixelResources)
         {
-            GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.second, kPair.first);
+            GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.first, kPair.second);
         }
 
         GetRenderManager()->DrawOverlay();
