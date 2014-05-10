@@ -32,7 +32,7 @@
 
         OUTPUT kOutput;
         kOutput.albedo    = nAlbedo;
-        kOutput.world.xyz = nNormal.xyz;
+        kOutput.world.xyz = nNormal;
         kOutput.world.w   = nViewPosition.z;
         kOutput.info      = nInfo;
         return kOutput;

@@ -53,6 +53,7 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
     nLocalTransform.Transpose();
 
     float4x4 nTransform = (nLocalTransform * nParentTransform);
+    float4x4 nRotation = float4x4(quaternion(nTransform)).GetInverse();
     float4x4 nInverseTransform = nTransform.GetInverse();
     if (pNode->mNumMeshes > 0)
     {
@@ -171,10 +172,7 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                     nTexBasis.rz.x = pMesh->mNormals[nVertex].x;
                     nTexBasis.rz.y = pMesh->mNormals[nVertex].y;
                     nTexBasis.rz.z = pMesh->mNormals[nVertex].z;
-                    nTexBasis = (nTexBasis * nTransform);
-                    nTexBasis.rx.Normalize();
-                    nTexBasis.ry.Normalize();
-                    nTexBasis.rz.Normalize();
+                    nTexBasis = (nTexBasis * nRotation);
 
                     kModel.m_aBasis.push_back(nTexBasis.rx);
                     kModel.m_aBasis.push_back(nTexBasis.ry);
@@ -215,6 +213,9 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
     {
         aiPropertyStore *pPropertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(pPropertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
+        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
+        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, 80.0f);
+
         const aiScene *pScene = aiImportFileExWithProperties(CW2A(strInput, CP_UTF8), aiProcess_RemoveComponent | aiProcess_FlipUVs | aiProcess_TransformUVCoords, nullptr, pPropertyStore);
         if (pScene == nullptr)
         {
@@ -227,9 +228,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         }
 
         aiApplyPostProcessing(pScene, aiProcess_FindInvalidData | aiProcess_Triangulate | aiProcess_RemoveRedundantMaterials);
-        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 45.0f);
         aiApplyPostProcessing(pScene, aiProcess_GenSmoothNormals);
-        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, 45.0f);
         aiApplyPostProcessing(pScene, aiProcess_CalcTangentSpace);
         aiApplyPostProcessing(pScene, aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices);
         aiReleasePropertyStore(pPropertyStore);

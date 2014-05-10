@@ -902,7 +902,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             {
                 for (auto &kPair : aPixelResources)
                 {
-                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.first, nullptr);
+                    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(kPair.first, nullptr);
                 }
 
                 for (auto &kPair : aComputeResources)
@@ -916,22 +916,21 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
                 }
 
                 GetVideoSystem()->GetImmediateContext()->Dispatch(m_nDispatchXSize, m_nDispatchYSize, m_nDispatchZSize);
-                GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetProgram(nullptr);
 
                 for (auto &kPair : aComputeResources)
                 {
-                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetComputeSystem(), kPair.first, nullptr);
+                    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetResource(kPair.first, nullptr);
                 }
 
                 for (auto &kPair : aComputeUnorderedAccess)
                 {
                     GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.first, nullptr);
                 }
+            }
 
-                for (auto &kPair : aPixelResources)
-                {
-                    GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.first, kPair.second);
-                }
+            for (auto &kPair : aPixelResources)
+            {
+                GetRenderManager()->SetResource(GetVideoSystem()->GetImmediateContext()->GetPixelSystem(), kPair.first, kPair.second);
             }
         });
     }

@@ -136,7 +136,7 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
                 kViewerNode.SetAttribute(L"type", L"viewer");
                 kViewerNode.SetAttribute(L"fieldofview", L"%f", _DEGTORAD(90.0f));
                 kViewerNode.SetAttribute(L"minviewdistance", L"0.1");
-                kViewerNode.SetAttribute(L"maxviewdistance", L"100");
+                kViewerNode.SetAttribute(L"maxviewdistance", L"150");
 
                 CLibXMLNode &kScriptNode = kPlayerNode.CreateChildElement(L"component");
                 kScriptNode.SetAttribute(L"type", L"script");

@@ -26,8 +26,8 @@
 
         float nViewDepth = gs_pWorldBuffer[nScreenPixel.xy].w;
         float nLinearDepth = (gs_nProjectionMatrix._43 / (nViewDepth - gs_nProjectionMatrix._33));
-        nMinSampleDepth = min(nMinSampleDepth, nLinearDepth);
-        nMaxSampleDepth = max(nMaxSampleDepth, nLinearDepth);
+        nMinSampleDepth = min(nMinSampleDepth, nViewDepth);
+        nMaxSampleDepth = max(nMaxSampleDepth, nViewDepth);
 
         GroupMemoryBarrierWithGroupSync();
 

@@ -11,6 +11,7 @@
 #include <atlpath.h>
 
 #include "GEKSystemCLSIDs.h"
+#include "d3dx9tex.h"
 
 #pragma comment(lib, "devil.lib")
 #pragma comment(lib, "ilu.lib")
@@ -33,10 +34,10 @@ public:
     STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        CComQIPtr<ID3D11ComputeShader> spD3DShader(pProgram);
-        if (spD3DShader != nullptr)
+        CComQIPtr<ID3D11ComputeShader> spShader(pProgram);
+        if (spShader != nullptr)
         {
-            m_pDeviceContext->CSSetShader(spD3DShader, nullptr, 0);
+            m_pDeviceContext->CSSetShader(spShader, nullptr, 0);
         }
         else
         {
@@ -49,11 +50,11 @@ public:
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pBuffer);
 
-        CComQIPtr<ID3D11Buffer> spD3DBuffer(pBuffer);
-        if (spD3DBuffer != nullptr)
+        CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+        if (spBuffer != nullptr)
         {
-            ID3D11Buffer *pD3DBuffer = spD3DBuffer;
-            m_pDeviceContext->CSSetConstantBuffers(nIndex, 1, &pD3DBuffer);
+            ID3D11Buffer *apBuffer[1] = { spBuffer };
+            m_pDeviceContext->CSSetConstantBuffers(nIndex, 1, apBuffer);
         }
     }
 
@@ -62,11 +63,11 @@ public:
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pStates);
 
-        CComQIPtr<ID3D11SamplerState> spD3DStates(pStates);
-        if (spD3DStates != nullptr)
+        CComQIPtr<ID3D11SamplerState> spStates(pStates);
+        if (spStates != nullptr)
         {
-            ID3D11SamplerState *pD3DStates = spD3DStates;
-            m_pDeviceContext->CSSetSamplers(nStage, 1, &pD3DStates);
+            ID3D11SamplerState *apStates[1] = { spStates };
+            m_pDeviceContext->CSSetSamplers(nStage, 1, apStates);
         }
     }
 
@@ -113,13 +114,13 @@ public:
     STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        CComQIPtr<ID3D11VertexShader> spD3DShader(pProgram);
-        CComQIPtr<ID3D11InputLayout> spD3DLayout(pProgram);
-        if (spD3DShader != nullptr &&
-            spD3DLayout != nullptr)
+        CComQIPtr<ID3D11VertexShader> spShader(pProgram);
+        CComQIPtr<ID3D11InputLayout> spLayout(pProgram);
+        if (spShader != nullptr &&
+            spLayout != nullptr)
         {
-            m_pDeviceContext->VSSetShader(spD3DShader, nullptr, 0);
-            m_pDeviceContext->IASetInputLayout(spD3DLayout);
+            m_pDeviceContext->VSSetShader(spShader, nullptr, 0);
+            m_pDeviceContext->IASetInputLayout(spLayout);
         }
         else
         {
@@ -132,11 +133,11 @@ public:
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pBuffer);
 
-        CComQIPtr<ID3D11Buffer> spD3DBuffer(pBuffer);
-        if (spD3DBuffer != nullptr)
+        CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+        if (spBuffer != nullptr)
         {
-            ID3D11Buffer *pD3DBuffer = spD3DBuffer;
-            m_pDeviceContext->VSSetConstantBuffers(nIndex, 1, &pD3DBuffer);
+            ID3D11Buffer *apBuffer[1] = { spBuffer };
+            m_pDeviceContext->VSSetConstantBuffers(nIndex, 1, apBuffer);
         }
     }
 
@@ -145,11 +146,11 @@ public:
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pStates);
 
-        CComQIPtr<ID3D11SamplerState> spD3DStates(pStates);
-        if (spD3DStates != nullptr)
+        CComQIPtr<ID3D11SamplerState> spStates(pStates);
+        if (spStates != nullptr)
         {
-            ID3D11SamplerState *pD3DStates = spD3DStates;
-            m_pDeviceContext->VSSetSamplers(nStage, 1, &pD3DStates);
+            ID3D11SamplerState *apStates[1] = { spStates };
+            m_pDeviceContext->VSSetSamplers(nStage, 1, apStates);
         }
     }
 
@@ -158,12 +159,14 @@ public:
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pResource);
 
+        ID3D11ShaderResourceView *apView[1] = { nullptr };
         CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
         if (spView != nullptr)
         {
-            ID3D11ShaderResourceView *pView = spView;
-            m_pDeviceContext->VSSetShaderResources(nStage, 1, &pView);
+            apView[0] = spView;
         }
+
+        m_pDeviceContext->VSSetShaderResources(nStage, 1, apView);
     }
 };
 
@@ -181,10 +184,10 @@ public:
     STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        CComQIPtr<ID3D11GeometryShader> spD3DShader(pProgram);
-        if (spD3DShader != nullptr)
+        CComQIPtr<ID3D11GeometryShader> spShader(pProgram);
+        if (spShader != nullptr)
         {
-            m_pDeviceContext->GSSetShader(spD3DShader, nullptr, 0);
+            m_pDeviceContext->GSSetShader(spShader, nullptr, 0);
         }
         else
         {
@@ -197,11 +200,11 @@ public:
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pBuffer);
 
-        CComQIPtr<ID3D11Buffer> spD3DBuffer(pBuffer);
-        if (spD3DBuffer != nullptr)
+        CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+        if (spBuffer != nullptr)
         {
-            ID3D11Buffer *pD3DBuffer = spD3DBuffer;
-            m_pDeviceContext->GSSetConstantBuffers(nIndex, 1, &pD3DBuffer);
+            ID3D11Buffer *apBuffer[1] = { spBuffer };
+            m_pDeviceContext->GSSetConstantBuffers(nIndex, 1, apBuffer);
         }
     }
 
@@ -210,11 +213,11 @@ public:
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pStates);
 
-        CComQIPtr<ID3D11SamplerState> spD3DStates(pStates);
-        if (spD3DStates != nullptr)
+        CComQIPtr<ID3D11SamplerState> spStates(pStates);
+        if (spStates != nullptr)
         {
-            ID3D11SamplerState *pD3DStates = spD3DStates;
-            m_pDeviceContext->GSSetSamplers(nStage, 1, &pD3DStates);
+            ID3D11SamplerState *apStates[1] = { spStates };
+            m_pDeviceContext->GSSetSamplers(nStage, 1, apStates);
         }
     }
 
@@ -223,12 +226,14 @@ public:
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pResource);
 
+        ID3D11ShaderResourceView *apView[1] = { nullptr };
         CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
         if (spView != nullptr)
         {
-            ID3D11ShaderResourceView *pView = spView;
-            m_pDeviceContext->GSSetShaderResources(nStage, 1, &pView);
+            apView[0] = spView;
         }
+
+        m_pDeviceContext->GSSetShaderResources(nStage, 1, apView);
     }
 };
 
@@ -246,10 +251,10 @@ public:
     STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        CComQIPtr<ID3D11PixelShader> spD3DShader(pProgram);
-        if (spD3DShader != nullptr)
+        CComQIPtr<ID3D11PixelShader> spShader(pProgram);
+        if (spShader != nullptr)
         {
-            m_pDeviceContext->PSSetShader(spD3DShader, nullptr, 0);
+            m_pDeviceContext->PSSetShader(spShader, nullptr, 0);
         }
         else
         {
@@ -262,11 +267,11 @@ public:
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pBuffer);
 
-        CComQIPtr<ID3D11Buffer> spD3DBuffer(pBuffer);
-        if (spD3DBuffer != nullptr)
+        CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+        if (spBuffer != nullptr)
         {
-            ID3D11Buffer *pD3DBuffer = spD3DBuffer;
-            m_pDeviceContext->PSSetConstantBuffers(nIndex, 1, &pD3DBuffer);
+            ID3D11Buffer *apBuffer[1] = { spBuffer };
+            m_pDeviceContext->PSSetConstantBuffers(nIndex, 1, apBuffer);
         }
     }
 
@@ -275,11 +280,11 @@ public:
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pStates);
 
-        CComQIPtr<ID3D11SamplerState> spD3DStates(pStates);
-        if (spD3DStates != nullptr)
+        CComQIPtr<ID3D11SamplerState> spStates(pStates);
+        if (spStates != nullptr)
         {
-            ID3D11SamplerState *pD3DStates = spD3DStates;
-            m_pDeviceContext->PSSetSamplers(nStage, 1, &pD3DStates);
+            ID3D11SamplerState *apStates[1] = { spStates };
+            m_pDeviceContext->PSSetSamplers(nStage, 1, apStates);
         }
     }
 
@@ -741,10 +746,10 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(IUnknown *pStates)
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pStates);
 
-    CComQIPtr<ID3D11RasterizerState> spD3DStates(pStates);
-    if (spD3DStates != nullptr)
+    CComQIPtr<ID3D11RasterizerState> spStates(pStates);
+    if (spStates != nullptr)
     {
-        m_spDeviceContext->RSSetState(spD3DStates);
+        m_spDeviceContext->RSSetState(spStates);
     }
 }
 
@@ -753,10 +758,10 @@ STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(UINT32 nStencilReference, I
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pStates);
 
-    CComQIPtr<ID3D11DepthStencilState> spD3DStates(pStates);
-    if (spD3DStates != nullptr)
+    CComQIPtr<ID3D11DepthStencilState> spStates(pStates);
+    if (spStates != nullptr)
     {
-        m_spDeviceContext->OMSetDepthStencilState(spD3DStates, nStencilReference);
+        m_spDeviceContext->OMSetDepthStencilState(spStates, nStencilReference);
     }
 }
 
@@ -765,10 +770,10 @@ STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &kBlendFactor,
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pStates);
 
-    CComQIPtr<ID3D11BlendState> spD3DStates(pStates);
-    if (spD3DStates != nullptr)
+    CComQIPtr<ID3D11BlendState> spStates(pStates);
+    if (spStates != nullptr)
     {
-        m_spDeviceContext->OMSetBlendState(spD3DStates, kBlendFactor.rgba, nMask);
+        m_spDeviceContext->OMSetBlendState(spStates, kBlendFactor.rgba, nMask);
     }
 }
 
@@ -797,11 +802,11 @@ STDMETHODIMP_(void) CGEKVideoContext::SetVertexBuffer(UINT32 nSlot, UINT32 nOffs
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pBuffer);
 
-    CComQIPtr<ID3D11Buffer> spD3DBuffer(pBuffer);
-    if (spD3DBuffer != nullptr)
+    CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+    if (spBuffer != nullptr)
     {
         UINT32 nStride = pBuffer->GetStride();
-        ID3D11Buffer *pD3DBuffer = spD3DBuffer;
+        ID3D11Buffer *pD3DBuffer = spBuffer;
         m_spDeviceContext->IASetVertexBuffers(nSlot, 1, &pD3DBuffer, &nStride, &nOffset);
     }
 }
@@ -811,17 +816,17 @@ STDMETHODIMP_(void) CGEKVideoContext::SetIndexBuffer(UINT32 nOffset, IGEKVideoBu
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pBuffer);
 
-    CComQIPtr<ID3D11Buffer> spD3DBuffer(pBuffer);
-    if (spD3DBuffer != nullptr)
+    CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+    if (spBuffer != nullptr)
     {
         switch (pBuffer->GetStride())
         {
         case 2:
-            m_spDeviceContext->IASetIndexBuffer(spD3DBuffer, DXGI_FORMAT_R16_UINT, nOffset);
+            m_spDeviceContext->IASetIndexBuffer(spBuffer, DXGI_FORMAT_R16_UINT, nOffset);
             break;
 
         case 4:
-            m_spDeviceContext->IASetIndexBuffer(spD3DBuffer, DXGI_FORMAT_R32_UINT, nOffset);
+            m_spDeviceContext->IASetIndexBuffer(spBuffer, DXGI_FORMAT_R32_UINT, nOffset);
             break;
         };
     }
@@ -2427,12 +2432,8 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **
     HRESULT hRetVal = GEKLoadFromFile(pFileName, aBuffer);
     if (SUCCEEDED(hRetVal))
     {
-        D3DX11_IMAGE_LOAD_INFO kInfo;
-        memset(&kInfo, 0, sizeof(D3DX11_IMAGE_LOAD_INFO));
-        kInfo.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-
         CComPtr<ID3D11ShaderResourceView> spResourceView;
-        hRetVal = D3DX11CreateShaderResourceViewFromMemory(m_spDevice, &aBuffer[0], aBuffer.size(), &kInfo, nullptr, &spResourceView, nullptr);
+        hRetVal = D3DX11CreateShaderResourceViewFromMemory(m_spDevice, &aBuffer[0], aBuffer.size(), nullptr, nullptr, &spResourceView, nullptr);
         if (FAILED(hRetVal))
         {
             unsigned int nImageID = 0;
