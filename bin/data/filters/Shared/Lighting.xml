@@ -1,5 +1,5 @@
 <![CDATA[
-    //#define _INDEXED_LIGHTING               1
+    #define _INDEXED_LIGHTING               1
 
     Texture2D     gs_pAlbedoBuffer          : register(t1);
     Texture2D     gs_pWorldBuffer           : register(t2);
@@ -79,16 +79,29 @@
         const uint2 nTileID = uint2(kInput.position.xy / gs_nLightTileSize.xx);
         const uint nTileIndex = ((nTileID.y * gs_nDispatchXSize) + nTileID.x);
         const uint nBufferIndex = (nTileIndex * gs_nMaxLights);
+        nTotalDiffuse = 0;
+        nTotalSpecular = 0;
 #endif
 
         [loop]
 #ifdef _INDEXED_LIGHTING
-        for(uint nLightIndex = 0; nLightIndex < gs_nMaxLights && gs_pTileIndices[nBufferIndex + nLightIndex] < gs_nMaxLights; nLightIndex++)
+        for(uint nLightIndex = 0; nLightIndex < gs_nMaxLights; nLightIndex++)
         {
             uint nLight = gs_pTileIndices[nBufferIndex + nLightIndex];
+            
+            [branch]
+            if(nLight == gs_nMaxLights)
+            {
+                break;
+            }
 #else
-        for(uint nLight = 0; nLight < gs_nMaxLights && gs_aLights[nLight].m_nRange > 0.0f; nLight++)
+        for(uint nLight = 0; nLight < gs_nMaxLights; nLight++)
         {
+            [branch]
+            if(gs_aLights[nLight].m_nRange <= 0.0f)
+            {
+                break;
+            }
 #endif
             float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nPixelPosition);
             float nDistance = length(nLightVector);
