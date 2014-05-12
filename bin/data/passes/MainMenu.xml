@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<pass priority="-10">
+<pass>
     <filters>
         <filter source="MainMenu" />
     </filters>

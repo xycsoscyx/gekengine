@@ -37,7 +37,6 @@ class CGEKRenderManager : public CGEKUnknown
 public:
     struct PASS
     {
-        INT32 m_nPriority;
         std::vector<PASS *> m_aRequiredPasses;
         std::vector<IGEKRenderFilter *> m_aFilters;
     };
@@ -146,7 +145,7 @@ public:
     STDMETHOD_(IGEKEntity *, GetViewer)     (THIS);
     STDMETHOD_(void, DrawLight)             (THIS_ IGEKEntity *pEntity, const GEKLIGHT &kLight);
     STDMETHOD_(void, DrawModel)             (THIS_ IGEKEntity *pEntity, IUnknown *pModel);
-    STDMETHOD(EnablePass)                   (THIS_ LPCWSTR pName);
+    STDMETHOD(EnablePass)                   (THIS_ LPCWSTR pName, UINT32 nPriority);
     STDMETHOD_(void, CaptureMouse)          (THIS_ bool bCapture);
 
     // IGEKRenderManager

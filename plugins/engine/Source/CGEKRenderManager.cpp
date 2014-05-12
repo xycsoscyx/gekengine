@@ -651,15 +651,6 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
             {
                 hRetVal = S_OK;
                 PASS &kPassData = m_aPasses[pName];
-                if (kPassNode.HasAttribute(L"priority"))
-                {
-                    kPassData.m_nPriority = StrToINT32(kPassNode.GetAttribute(L"priority"));
-                }
-                else
-                {
-                    kPassData.m_nPriority = 1;
-                }
-
                 CLibXMLNode kRequiresNode = kPassNode.FirstChildElement(L"requires");
                 if (kRequiresNode)
                 {
@@ -1386,7 +1377,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLight(IGEKEntity *pEntity, const GEKL
     }
 }
 
-STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName)
+STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName, UINT32 nPriority)
 {
     REQUIRE_RETURN(pName, E_INVALIDARG);
 
@@ -1396,7 +1387,7 @@ STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName)
         auto pIterator = m_aPasses.find(pName);
         if (pIterator != m_aPasses.end())
         {
-            m_aCurrentPasses[&(*pIterator).second] = ((*pIterator).second).m_nPriority;
+            m_aCurrentPasses[&(*pIterator).second] = nPriority;
         }
     }
 
