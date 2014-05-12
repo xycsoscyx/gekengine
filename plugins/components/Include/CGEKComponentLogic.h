@@ -6,31 +6,30 @@
 #include "GEKAPI.h"
 #include <list>
 
+DECLARE_INTERFACE(IGEKLogicSystem)
+{
+};
+
 class CGEKComponentLogic : public CGEKUnknown
                          , public CGEKComponent
 {
-public:
-    struct STATE
-    {
-        std::function<void(IGEKEntity *)> OnEnter;
-        std::function<void(IGEKEntity *)> OnExit;
-        std::function<void(IGEKEntity *, float, float)> OnUpdate;
-        std::function<void(IGEKEntity *, LPCWSTR, const GEKVALUE &, const GEKVALUE &)> OnEvent;
-    };
-
 private:
+    IGEKLogicSystem *m_pSystem;
+
     CStringW m_strModule;
     CStringW m_strFunction;
 
     HMODULE m_hModule;
-    STATE m_kCurrentState;
+    std::function<void(void *)> OnLogicDestroyed;
+    std::function<void(void *, LPCWSTR, const GEKVALUE &, const GEKVALUE &)> OnLogicEvent;
+    std::function<void(void *, float, float)> OnLogicUpdate;
+    void *m_pData;
+
 
 public:
     DECLARE_UNKNOWN(CGEKComponentLogic)
-    CGEKComponentLogic(IGEKEntity *pEntity);
+    CGEKComponentLogic(IGEKLogicSystem *pSystem, IGEKEntity *pEntity);
     ~CGEKComponentLogic(void);
-
-    STATE &GetCurrentState(void);
 
     // IGEKComponent
     STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
@@ -46,6 +45,7 @@ class CGEKComponentSystemLogic : public CGEKUnknown
                                , public CGEKSceneManagerUser
                                , public IGEKSceneObserver
                                , public IGEKComponentSystem
+                               , public IGEKLogicSystem
 {
 private:
     std::map<IGEKEntity *, CComPtr<CGEKComponentLogic>> m_aComponents;

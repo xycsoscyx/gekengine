@@ -6,9 +6,11 @@ BEGIN_INTERFACE_LIST(CGEKComponentLogic)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentLogic::CGEKComponentLogic(IGEKEntity *pEntity)
+CGEKComponentLogic::CGEKComponentLogic(IGEKLogicSystem *pSystem, IGEKEntity *pEntity)
     : CGEKComponent(pEntity)
+    , m_pSystem(pSystem)
     , m_hModule(nullptr)
+    , m_pData(nullptr)
 {
 }
 
@@ -18,11 +20,6 @@ CGEKComponentLogic::~CGEKComponentLogic(void)
     {
         FreeLibrary(m_hModule);
     }
-}
-
-CGEKComponentLogic::STATE &CGEKComponentLogic::GetCurrentState(void)
-{
-    return m_kCurrentState;
 }
 
 STDMETHODIMP_(LPCWSTR) CGEKComponentLogic::GetType(void) const
@@ -80,15 +77,11 @@ STDMETHODIMP CGEKComponentLogic::OnEntityCreated(void)
         m_hModule = LoadLibrary(m_strModule);
         if (m_hModule)
         {
-            typedef HRESULT(*GEINITIALIZELOGIC)(IGEKEntity *,
-                std::function<void(IGEKEntity *)> &,
-                std::function<void(IGEKEntity *)> &,
-                std::function<void(IGEKEntity *, float, float)> &,
-                std::function<void(IGEKEntity *, LPCWSTR, const GEKVALUE &, const GEKVALUE &)> &);
+            typedef HRESULT(*GEINITIALIZELOGIC)(IGEKLogicSystem *, IGEKEntity *, void **ppData);
             GEINITIALIZELOGIC Initialize = (GEINITIALIZELOGIC)GetProcAddress(m_hModule, CW2A(m_strFunction, CP_UTF8));
             if (Initialize)
             {
-                hRetVal = Initialize(GetEntity(), m_kCurrentState.OnEnter, m_kCurrentState.OnExit, m_kCurrentState.OnUpdate, m_kCurrentState.OnEvent);
+                hRetVal = Initialize(m_pSystem, GetEntity(), &m_pData);
             }
         }
     }
@@ -98,10 +91,6 @@ STDMETHODIMP CGEKComponentLogic::OnEntityCreated(void)
 
 STDMETHODIMP_(void) CGEKComponentLogic::OnEvent(LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB)
 {
-    if (m_kCurrentState.OnEvent)
-    {
-        m_kCurrentState.OnEvent(GetEntity(), pAction, kParamA, kParamB);
-    }
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemLogic)
@@ -142,7 +131,7 @@ STDMETHODIMP CGEKComponentSystemLogic::Create(const CLibXMLNode &kEntityNode, IG
     if (kEntityNode.HasAttribute(L"type") && kEntityNode.GetAttribute(L"type").CompareNoCase(L"logic") == 0)
     {
         hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKComponentLogic> spComponent(new CGEKComponentLogic(pEntity));
+        CComPtr<CGEKComponentLogic> spComponent(new CGEKComponentLogic(this, pEntity));
         if (spComponent)
         {
             CComPtr<IUnknown> spComponentUnknown;
@@ -189,9 +178,5 @@ STDMETHODIMP_(void) CGEKComponentSystemLogic::OnPreUpdate(float nGameTime, float
 {
     for (auto &kPair : m_aComponents)
     {
-        if (kPair.second->GetCurrentState().OnUpdate)
-        {
-            kPair.second->GetCurrentState().OnUpdate(kPair.first, nGameTime, nFrameTime);
-        }
     }
 }
