@@ -718,7 +718,7 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
     return hRetVal;
 }
 
-static void CountPasses(std::map<CGEKRenderManager::PASS *, UINT32> &aPasses, CGEKRenderManager::PASS *pPass)
+static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGEKRenderManager::PASS *pPass)
 {
     if (aPasses.find(pPass) == aPasses.end())
     {
@@ -1377,7 +1377,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLight(IGEKEntity *pEntity, const GEKL
     }
 }
 
-STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName, UINT32 nPriority)
+STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName, INT32 nPriority)
 {
     REQUIRE_RETURN(pName, E_INVALIDARG);
 

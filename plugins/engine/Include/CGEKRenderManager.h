@@ -97,7 +97,7 @@ private:
 
     PASS *m_pCurrentPass;
     IGEKRenderFilter *m_pCurrentFilter;
-    std::map<PASS *, UINT32> m_aCurrentPasses;
+    std::map<PASS *, INT32> m_aCurrentPasses;
 
     concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> m_aCurrentModels;
     concurrency::concurrent_vector<LIGHT> m_aCurrentLights;
@@ -145,7 +145,7 @@ public:
     STDMETHOD_(IGEKEntity *, GetViewer)     (THIS);
     STDMETHOD_(void, DrawLight)             (THIS_ IGEKEntity *pEntity, const GEKLIGHT &kLight);
     STDMETHOD_(void, DrawModel)             (THIS_ IGEKEntity *pEntity, IUnknown *pModel);
-    STDMETHOD(EnablePass)                   (THIS_ LPCWSTR pName, UINT32 nPriority);
+    STDMETHOD(EnablePass)                   (THIS_ LPCWSTR pName, INT32 nPriority);
     STDMETHOD_(void, CaptureMouse)          (THIS_ bool bCapture);
 
     // IGEKRenderManager

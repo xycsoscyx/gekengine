@@ -22,7 +22,7 @@ DECLARE_INTERFACE_IID_(IGEKViewManager, IUnknown, "585D122C-2488-4EEE-9FED-A7B0A
     STDMETHOD_(void, DrawLight)         (THIS_ IGEKEntity *pEntity, const GEKLIGHT &kLight) PURE;
     STDMETHOD_(void, DrawModel)         (THIS_ IGEKEntity *pEntity, IUnknown *pModel) PURE;
 
-    STDMETHOD(EnablePass)               (THIS_ LPCWSTR pName, UINT32 nPriority) PURE;
+    STDMETHOD(EnablePass)               (THIS_ LPCWSTR pName, INT32 nPriority) PURE;
     STDMETHOD_(void, CaptureMouse)      (THIS_ bool bCapture) PURE;
 };
 

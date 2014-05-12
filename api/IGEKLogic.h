@@ -8,6 +8,7 @@ DECLARE_INTERFACE_IID_(IGEKLogicState, IUnknown, "8C0118E0-D37E-4EC6-B1BE-D036AB
     STDMETHOD_(void, OnExit)            (THIS) PURE;
     STDMETHOD_(void, OnEvent)           (THIS_ LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB) PURE;
     STDMETHOD_(void, OnUpdate)          (THIS_ float nGameTime, float nFrameTime) PURE;
+    STDMETHOD_(void, OnRender)          (THIS_ const frustum &kFrustum) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKLogicSystem, IUnknown, "CAE93234-6A56-42BA-AF8D-8A34A84B4F5C")

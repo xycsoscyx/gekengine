@@ -168,7 +168,6 @@ STDMETHODIMP CGEKComponentSystemModel::Destroy(IGEKEntity *pEntity)
 
 STDMETHODIMP_(void) CGEKComponentSystemModel::OnRender(const frustum &kFrustum)
 {
-//    for (auto &kPair : m_aComponents)
     concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentModel>>::value_type &kPair) -> void
     {
         kPair.second->OnRender();

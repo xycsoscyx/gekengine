@@ -23,6 +23,7 @@ public:
 
     void SetState(IGEKLogicState *pState);
     void OnUpdate(float nGameTime, float nFrameTime);
+    void OnRender(const frustum &kFrustum);
 
     // IGEKComponent
     STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
@@ -64,6 +65,7 @@ public:
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnPreUpdate)       (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD_(void, OnRender)          (THIS_ const frustum &kFrustum);
 
     // IGEKLogicSystem
     STDMETHOD_(void, SetState)          (IGEKEntity *pEntity, IGEKLogicState *pState);

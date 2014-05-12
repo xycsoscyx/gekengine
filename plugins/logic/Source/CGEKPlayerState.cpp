@@ -52,7 +52,7 @@ STDMETHODIMP_(void) CGEKPlayerState::OnEvent(LPCWSTR pAction, const GEKVALUE &kP
         {
             if (kParamA.GetString().CompareNoCase(L"turn") == 0)
             {
-                m_nRotation += kParamB.GetFloat2() * 3.0f;
+                m_nRotation += kParamB.GetFloat2() * 0.01f;
             }
             else
             {
@@ -73,7 +73,7 @@ STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
         pTransform->GetProperty(L"rotation", kRotation);
 
         float3 nForce;
-        float4x4 nRotation = kRotation.GetQuaternion();
+        float4x4 nRotation = quaternion(m_nRotation.x, m_nRotation.y, 0.0f);
         if (m_aActions[L"forward"])
         {
             nForce += nRotation.rz;
@@ -108,9 +108,19 @@ STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
         float3 nPosition = (kPosition.GetFloat3() + (nForce * nFrameTime));
         pTransform->SetProperty(L"position", nPosition);
 
-        nRotation = (nRotation * quaternion(0.0, m_nRotation.x * nFrameTime, 0.0));
+//        nRotation = (nRotation * quaternion(0.0, m_nRotation.x * nFrameTime, 0.0));
         pTransform->SetProperty(L"rotation", quaternion(nRotation));
     }
+}
 
-    m_nRotation = 0.0f;
+STDMETHODIMP_(void) CGEKPlayerState::OnRender(const frustum &kFrustum)
+{
+    if (!m_bActive)
+    {
+        CComQIPtr<IGEKViewManager> spViewManager(GetLogicSystem());
+        if (spViewManager)
+        {
+            spViewManager->EnablePass(L"MainMenu", -1);
+        }
+    }
 }

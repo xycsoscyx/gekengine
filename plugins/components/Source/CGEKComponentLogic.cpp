@@ -1,5 +1,6 @@
 #include "CGEKComponentLogic.h"
 #include <algorithm>
+#include <ppl.h>
 
 BEGIN_INTERFACE_LIST(CGEKComponentLogic)
     INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
@@ -35,6 +36,14 @@ void CGEKComponentLogic::OnUpdate(float nGameTime, float nFrameTime)
     if (m_spState)
     {
         m_spState->OnUpdate(nGameTime, nFrameTime);
+    }
+}
+
+void CGEKComponentLogic::OnRender(const frustum &kFrustum)
+{
+    if (m_spState)
+    {
+        m_spState->OnRender(kFrustum);
     }
 }
 
@@ -203,9 +212,18 @@ STDMETHODIMP CGEKComponentSystemLogic::Destroy(IGEKEntity *pEntity)
 
 STDMETHODIMP_(void) CGEKComponentSystemLogic::OnPreUpdate(float nGameTime, float nFrameTime)
 {
-    for (auto &kPair : m_aComponents)
+    concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLogic>>::value_type &kPair) -> void
     {
         kPair.second->OnUpdate(nGameTime, nFrameTime);
+    });
+}
+
+STDMETHODIMP_(void) CGEKComponentSystemLogic::OnRender(const frustum &kFrustum)
+{
+    for (auto &kPair : m_aComponents)
+    //concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLogic>>::value_type &kPair) -> void
+    {
+        kPair.second->OnRender(kFrustum);
     }
 }
 
