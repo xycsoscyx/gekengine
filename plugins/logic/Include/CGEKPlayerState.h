@@ -12,6 +12,7 @@ private:
     IGEKEntity *m_pEntity;
     std::map<GEKHASH, bool> m_aActions;
     float2 m_nRotation;
+    bool m_bActive;
 
 public:
     CGEKPlayerState(void);

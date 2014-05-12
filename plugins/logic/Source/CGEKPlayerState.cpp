@@ -9,6 +9,7 @@ REGISTER_CLASS(CGEKPlayerState)
 
 CGEKPlayerState::CGEKPlayerState(void)
     : m_pEntity(nullptr)
+    , m_bActive(true)
 {
 }
 
@@ -37,12 +38,21 @@ STDMETHODIMP_(void) CGEKPlayerState::OnEvent(LPCWSTR pAction, const GEKVALUE &kP
     {
         if (kParamA.GetString().CompareNoCase(L"escape") == 0)
         {
+            if (!kParamB.GetBoolean())
+            {
+                m_bActive = !m_bActive;
+                CComQIPtr<IGEKViewManager> spViewManager(GetLogicSystem());
+                if (spViewManager)
+                {
+                    spViewManager->CaptureMouse(m_bActive);
+                }
+            }
         }
         else if (m_pEntity != nullptr)
         {
             if (kParamA.GetString().CompareNoCase(L"turn") == 0)
             {
-                m_nRotation += kParamB.GetFloat2() * 10.0f;
+                m_nRotation += kParamB.GetFloat2() * 3.0f;
             }
             else
             {
@@ -94,6 +104,7 @@ STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
             nForce -= nRotation.ry;
         }
 
+        nForce *= 5.0f;
         float3 nPosition = (kPosition.GetFloat3() + (nForce * nFrameTime));
         pTransform->SetProperty(L"position", nPosition);
 
