@@ -139,8 +139,8 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
                 kViewerNode.SetAttribute(L"maxviewdistance", L"150");
 
                 CLibXMLNode &kScriptNode = kPlayerNode.CreateChildElement(L"component");
-                kScriptNode.SetAttribute(L"type", L"script");
-                kScriptNode.SetAttribute(L"source", L"player");
+                kScriptNode.SetAttribute(L"type", L"logic");
+                kScriptNode.SetAttribute(L"state", L"default_player_state");
 
                 hRetVal = AddEntity(kPlayerNode);
                 if (SUCCEEDED(hRetVal))

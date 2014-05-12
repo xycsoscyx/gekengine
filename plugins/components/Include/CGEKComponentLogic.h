@@ -6,31 +6,15 @@
 #include "GEKAPI.h"
 #include <list>
 
-DECLARE_INTERFACE_IID_(IGEKLogicState, IUnknown, "8C0118E0-D37E-4EC6-B1BE-D036AB33F757")
-{
-    STDMETHOD_(void, OnEnter)           (THIS) PURE;
-    STDMETHOD_(void, OnExit)            (THIS) PURE;
-    STDMETHOD_(void, OnEvent)           (THIS_ LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB) PURE;
-    STDMETHOD_(void, OnUpdate)          (THIS_ float nGameTime, float nFrameTime) PURE;
-};
-
-DECLARE_INTERFACE_IID_(IGEKLogicSystem, IUnknown, "CAE93234-6A56-42BA-AF8D-8A34A84B4F5C")
-{
-    STDMETHOD_(void, SetState)          (IGEKEntity *pEntity, IGEKLogicState *pState) PURE;
-};
-
 class CGEKComponentLogic : public CGEKUnknown
+                         , public CGEKContextUser
                          , public CGEKComponent
 {
 private:
     IGEKLogicSystem *m_pSystem;
+    CStringW m_strDefaultState;
 
-    CStringW m_strModule;
-    CStringW m_strFunction;
-
-    HMODULE m_hModule;
     CComPtr<IGEKLogicState> m_spState;
-
 
 public:
     DECLARE_UNKNOWN(CGEKComponentLogic)
@@ -52,6 +36,8 @@ public:
 class CGEKComponentSystemLogic : public CGEKUnknown
                                , public CGEKContextUser
                                , public CGEKSceneManagerUser
+                               , public CGEKViewManagerUser
+                               , public IGEKContextObserver
                                , public IGEKSceneObserver
                                , public IGEKComponentSystem
                                , public IGEKLogicSystem
@@ -63,6 +49,9 @@ public:
     DECLARE_UNKNOWN(CGEKComponentSystemLogic)
     CGEKComponentSystemLogic(void);
     ~CGEKComponentSystemLogic(void);
+
+    // IGEKContextObserver
+    STDMETHOD(OnRegistration)           (THIS_ IUnknown *pObject);
 
     // IGEKUnknown
     STDMETHOD(Initialize)               (THIS);

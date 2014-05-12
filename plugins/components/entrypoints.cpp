@@ -21,9 +21,6 @@ DEFINE_GUID(CLSID_GEKComponentSystemLight, 0x9ded5a4d, 0x433e, 0x4d66, 0xad, 0xb
 // {CA7DB8F4-91D2-47E4-BE98-488E51092076}
 DEFINE_GUID(CLSID_GEKComponentSystemViewer, 0xca7db8f4, 0x91d2, 0x47e4, 0xbe, 0x98, 0x48, 0x8e, 0x51, 0x9, 0x20, 0x76);
 
-// {92336C35-CE7C-4B43-8DD7-0C6783F27E0B}
-DEFINE_GUID(CLSID_GEKComponentSystemScript, 0x92336c35, 0xce7c, 0x4b43, 0x8d, 0xd7, 0xc, 0x67, 0x83, 0xf2, 0x7e, 0xb);
-
 // {EA35B983-E069-4207-AF88-74678C3F8C69}
 DEFINE_GUID(CLSID_GEKComponentSystemLogic, 0xea35b983, 0xe069, 0x4207, 0xaf, 0x88, 0x74, 0x67, 0x8c, 0x3f, 0x8c, 0x69);
 
@@ -32,7 +29,6 @@ DECLARE_REGISTERED_CLASS(CGEKComponentSystemNewton)
 DECLARE_REGISTERED_CLASS(CGEKComponentSystemModel)
 DECLARE_REGISTERED_CLASS(CGEKComponentSystemLight)
 DECLARE_REGISTERED_CLASS(CGEKComponentSystemViewer)
-DECLARE_REGISTERED_CLASS(CGEKComponentSystemScript)
 DECLARE_REGISTERED_CLASS(CGEKComponentSystemLogic)
 
 DECLARE_CONTEXT_SOURCE(Components)
@@ -45,8 +41,6 @@ DECLARE_CONTEXT_SOURCE(Components)
     ADD_CONTEXT_CLASS(CLSID_GEKComponentSystemLight, CGEKComponentSystemLight)
         ADD_CLASS_TYPE(CLSID_GEKComponentSystemType)
     ADD_CONTEXT_CLASS(CLSID_GEKComponentSystemViewer, CGEKComponentSystemViewer)
-        ADD_CLASS_TYPE(CLSID_GEKComponentSystemType)
-    ADD_CONTEXT_CLASS(CLSID_GEKComponentSystemScript, CGEKComponentSystemScript)
         ADD_CLASS_TYPE(CLSID_GEKComponentSystemType)
     ADD_CONTEXT_CLASS(CLSID_GEKComponentSystemLogic, CGEKComponentSystemLogic)
         ADD_CLASS_TYPE(CLSID_GEKComponentSystemType)

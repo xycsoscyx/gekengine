@@ -265,6 +265,12 @@ public:
             return (OBJECT)->QueryInterface(rIID, ppObject);                        \
         }
 
+#define INTERFACE_LIST_ENTRY_MEMBER_COM(INTERFACE_CLASS, OBJECT)                    \
+        if (IsEqualIID(__uuidof(INTERFACE_CLASS), rIID))                            \
+        {                                                                           \
+            return (OBJECT)->QueryInterface(__uuidof(INTERFACE_CLASS), ppObject);   \
+        }
+
 #define INTERFACE_LIST_ENTRY_DELEGATE(INTERFACE_IID, FUNCTION)                      \
         if (IsEqualIID(INTERFACE_IID, rIID))                                        \
         {                                                                           \

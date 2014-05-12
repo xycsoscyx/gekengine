@@ -1,24 +1,19 @@
 #include "CGEKComponentLogic.h"
-#include <luabind/adopt_policy.hpp>
 #include <algorithm>
 
 BEGIN_INTERFACE_LIST(CGEKComponentLogic)
+    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
 CGEKComponentLogic::CGEKComponentLogic(IGEKLogicSystem *pSystem, IGEKEntity *pEntity)
     : CGEKComponent(pEntity)
-    , m_hModule(nullptr)
 {
 }
 
 CGEKComponentLogic::~CGEKComponentLogic(void)
 {
     m_spState = nullptr;
-    if (m_hModule)
-    {
-        FreeLibrary(m_hModule);
-    }
 }
 
 void CGEKComponentLogic::SetState(IGEKLogicState *pState)
@@ -31,7 +26,7 @@ void CGEKComponentLogic::SetState(IGEKLogicState *pState)
     m_spState = pState;
     if (m_spState)
     {
-        m_spState->OnEnter();
+        m_spState->OnEnter(GetEntity());
     }
 }
 
@@ -50,23 +45,16 @@ STDMETHODIMP_(LPCWSTR) CGEKComponentLogic::GetType(void) const
 
 STDMETHODIMP_(void) CGEKComponentLogic::ListProperties(std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty)
 {
-    OnProperty(L"module", m_strModule.GetString());
-    OnProperty(L"function", m_strFunction.GetString());
+    OnProperty(L"state", m_strDefaultState.GetString());
 }
 
-static GEKHASH gs_nModule(L"module");
-static GEKHASH gs_nFunction(L"function");
+static GEKHASH gs_nState(L"state");
 STDMETHODIMP_(bool) CGEKComponentLogic::GetProperty(LPCWSTR pName, GEKVALUE &kValue) const
 {
     GEKHASH nHash(pName);
-    if (nHash == gs_nModule)
+    if (nHash == gs_nState)
     {
-        kValue = m_strModule.GetString();
-        return true;
-    }
-    else if (nHash == gs_nFunction)
-    {
-        kValue = m_strFunction.GetString();
+        kValue = m_strDefaultState.GetString();
         return true;
     }
 
@@ -76,14 +64,9 @@ STDMETHODIMP_(bool) CGEKComponentLogic::GetProperty(LPCWSTR pName, GEKVALUE &kVa
 STDMETHODIMP_(bool) CGEKComponentLogic::SetProperty(LPCWSTR pName, const GEKVALUE &kValue)
 {
     GEKHASH nHash(pName);
-    if (nHash == gs_nModule)
+    if (nHash == gs_nState)
     {
-        m_strModule = kValue.GetString();
-        return true;
-    }
-    else if (nHash == gs_nFunction)
-    {
-        m_strFunction = kValue.GetString();
+        m_strDefaultState = kValue.GetString();
         return true;
     }
 
@@ -93,17 +76,13 @@ STDMETHODIMP_(bool) CGEKComponentLogic::SetProperty(LPCWSTR pName, const GEKVALU
 STDMETHODIMP CGEKComponentLogic::OnEntityCreated(void)
 {
     HRESULT hRetVal = S_OK;
-    if (!m_strModule.IsEmpty() && !m_strFunction.IsEmpty())
+    if (!m_strDefaultState.IsEmpty())
     {
-        m_hModule = LoadLibrary(m_strModule);
-        if (m_hModule)
+        CComPtr<IGEKLogicState> spState;
+        hRetVal = GetContext()->CreateNamedInstance(m_strDefaultState, IID_PPV_ARGS(&spState));
+        if (spState)
         {
-            typedef HRESULT(*GEINITIALIZELOGIC)(IGEKLogicSystem *, IGEKEntity *);
-            GEINITIALIZELOGIC Initialize = (GEINITIALIZELOGIC)GetProcAddress(m_hModule, CW2A(m_strFunction, CP_UTF8));
-            if (Initialize)
-            {
-                hRetVal = Initialize(m_pSystem, GetEntity());
-            }
+            SetState(spState);
         }
     }
 
@@ -121,9 +100,13 @@ STDMETHODIMP_(void) CGEKComponentLogic::OnEvent(LPCWSTR pAction, const GEKVALUE 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemLogic)
     INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKViewManagerUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
-    END_INTERFACE_LIST_UNKNOWN
+    INTERFACE_LIST_ENTRY_MEMBER_COM(IGEKSceneManager, GetSceneManager())
+    INTERFACE_LIST_ENTRY_MEMBER_COM(IGEKViewManager, GetViewManager())
+END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKComponentSystemLogic)
 
@@ -135,14 +118,33 @@ CGEKComponentSystemLogic::~CGEKComponentSystemLogic(void)
 {
 }
 
+STDMETHODIMP CGEKComponentSystemLogic::OnRegistration(IUnknown *pObject)
+{
+    HRESULT hRetVal = S_OK;
+    CComQIPtr<IGEKLogicSystemUser> spUser(pObject);
+    if (spUser != nullptr)
+    {
+        hRetVal = spUser->Register(this);
+    }
+
+    return hRetVal;
+}
+
 STDMETHODIMP CGEKComponentSystemLogic::Initialize(void)
 {
-    return CGEKObservable::AddObserver(GetSceneManager(), this);
+    HRESULT hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)this);
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = CGEKObservable::AddObserver(GetSceneManager(), (IGEKSceneObserver *)this);
+    }
+
+    return hRetVal;
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemLogic::Destroy(void)
 {
-    CGEKObservable::RemoveObserver(GetSceneManager(), this);
+    CGEKObservable::RemoveObserver(GetSceneManager(), (IGEKSceneObserver *)this);
+    CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemLogic::Clear(void)

@@ -36,6 +36,5 @@ public:
     // IGEKStaticFactory
     STDMETHOD_(IUnknown *, GetVertexProgram)                    (THIS);
     STDMETHOD_(IGEKVideoBuffer *, GetInstanceBuffer)            (THIS);
-    STDMETHOD_(UINT32, GetNumInstances)                         (THIS)
-;
+    STDMETHOD_(UINT32, GetNumInstances)                         (THIS);
 };
