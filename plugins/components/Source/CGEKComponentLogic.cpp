@@ -8,17 +8,38 @@ END_INTERFACE_LIST_UNKNOWN
 
 CGEKComponentLogic::CGEKComponentLogic(IGEKLogicSystem *pSystem, IGEKEntity *pEntity)
     : CGEKComponent(pEntity)
-    , m_pSystem(pSystem)
     , m_hModule(nullptr)
-    , m_pData(nullptr)
 {
 }
 
 CGEKComponentLogic::~CGEKComponentLogic(void)
 {
+    m_spState = nullptr;
     if (m_hModule)
     {
         FreeLibrary(m_hModule);
+    }
+}
+
+void CGEKComponentLogic::SetState(IGEKLogicState *pState)
+{
+    if (m_spState)
+    {
+        m_spState->OnExit();
+    }
+
+    m_spState = pState;
+    if (m_spState)
+    {
+        m_spState->OnEnter();
+    }
+}
+
+void CGEKComponentLogic::OnUpdate(float nGameTime, float nFrameTime)
+{
+    if (m_spState)
+    {
+        m_spState->OnUpdate(nGameTime, nFrameTime);
     }
 }
 
@@ -77,11 +98,11 @@ STDMETHODIMP CGEKComponentLogic::OnEntityCreated(void)
         m_hModule = LoadLibrary(m_strModule);
         if (m_hModule)
         {
-            typedef HRESULT(*GEINITIALIZELOGIC)(IGEKLogicSystem *, IGEKEntity *, void **ppData);
+            typedef HRESULT(*GEINITIALIZELOGIC)(IGEKLogicSystem *, IGEKEntity *);
             GEINITIALIZELOGIC Initialize = (GEINITIALIZELOGIC)GetProcAddress(m_hModule, CW2A(m_strFunction, CP_UTF8));
             if (Initialize)
             {
-                hRetVal = Initialize(m_pSystem, GetEntity(), &m_pData);
+                hRetVal = Initialize(m_pSystem, GetEntity());
             }
         }
     }
@@ -91,6 +112,10 @@ STDMETHODIMP CGEKComponentLogic::OnEntityCreated(void)
 
 STDMETHODIMP_(void) CGEKComponentLogic::OnEvent(LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB)
 {
+    if (m_spState)
+    {
+        m_spState->OnEvent(pAction, kParamA, kParamB);
+    }
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemLogic)
@@ -178,5 +203,19 @@ STDMETHODIMP_(void) CGEKComponentSystemLogic::OnPreUpdate(float nGameTime, float
 {
     for (auto &kPair : m_aComponents)
     {
+        kPair.second->OnUpdate(nGameTime, nFrameTime);
+    }
+}
+
+STDMETHODIMP_(void) CGEKComponentSystemLogic::SetState(IGEKEntity *pEntity, IGEKLogicState *pState)
+{
+    auto pIterator = std::find_if(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLogic>>::value_type &kPair) -> bool
+    {
+        return (kPair.first == pEntity);
+    });
+
+    if (pIterator != m_aComponents.end())
+    {
+        (*pIterator).second->SetState(pState);
     }
 }

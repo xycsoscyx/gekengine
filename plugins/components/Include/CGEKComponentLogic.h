@@ -6,8 +6,17 @@
 #include "GEKAPI.h"
 #include <list>
 
-DECLARE_INTERFACE(IGEKLogicSystem)
+DECLARE_INTERFACE_IID_(IGEKLogicState, IUnknown, "8C0118E0-D37E-4EC6-B1BE-D036AB33F757")
 {
+    STDMETHOD_(void, OnEnter)           (THIS) PURE;
+    STDMETHOD_(void, OnExit)            (THIS) PURE;
+    STDMETHOD_(void, OnEvent)           (THIS_ LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB) PURE;
+    STDMETHOD_(void, OnUpdate)          (THIS_ float nGameTime, float nFrameTime) PURE;
+};
+
+DECLARE_INTERFACE_IID_(IGEKLogicSystem, IUnknown, "CAE93234-6A56-42BA-AF8D-8A34A84B4F5C")
+{
+    STDMETHOD_(void, SetState)          (IGEKEntity *pEntity, IGEKLogicState *pState) PURE;
 };
 
 class CGEKComponentLogic : public CGEKUnknown
@@ -20,16 +29,16 @@ private:
     CStringW m_strFunction;
 
     HMODULE m_hModule;
-    std::function<void(void *)> OnLogicDestroyed;
-    std::function<void(void *, LPCWSTR, const GEKVALUE &, const GEKVALUE &)> OnLogicEvent;
-    std::function<void(void *, float, float)> OnLogicUpdate;
-    void *m_pData;
+    CComPtr<IGEKLogicState> m_spState;
 
 
 public:
     DECLARE_UNKNOWN(CGEKComponentLogic)
     CGEKComponentLogic(IGEKLogicSystem *pSystem, IGEKEntity *pEntity);
     ~CGEKComponentLogic(void);
+
+    void SetState(IGEKLogicState *pState);
+    void OnUpdate(float nGameTime, float nFrameTime);
 
     // IGEKComponent
     STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
@@ -66,4 +75,7 @@ public:
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnPreUpdate)       (THIS_ float nGameTime, float nFrameTime);
+
+    // IGEKLogicSystem
+    STDMETHOD_(void, SetState)          (IGEKEntity *pEntity, IGEKLogicState *pState);
 };
