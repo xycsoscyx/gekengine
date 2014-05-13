@@ -174,9 +174,9 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                     nTexBasis.rz.z = pMesh->mNormals[nVertex].z;
                     nTexBasis = (nTexBasis * nRotation);
 
-                    kModel.m_aBasis.push_back(nTexBasis.rx);
-                    kModel.m_aBasis.push_back(nTexBasis.ry);
-                    kModel.m_aBasis.push_back(nTexBasis.rz);
+                    kModel.m_aBasis.push_back(nTexBasis.rx.GetNormal());
+                    kModel.m_aBasis.push_back(nTexBasis.ry.GetNormal());
+                    kModel.m_aBasis.push_back(nTexBasis.rz.GetNormal());
                 }
 
                 aModels.insert(std::make_pair(strMaterial, kModel));

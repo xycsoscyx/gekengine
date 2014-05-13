@@ -1,56 +1,56 @@
 <?xml version="1.0"?>
 <filter>
     <targets>
-        <target name="Edge" format="RGBA_UINT8" />
+        <target source="Screen" />
     </targets>
     
     <pixel>
         <resources>
-            <resource stage="0" source="Deferred.Albedo" />
-            <resource stage="1" source="Deferred.World" />
-            <resource stage="2" source="Deferred.Info" />
+            <resource stage="0" source="Opaque/Deferred.Albedo" />
+            <resource stage="1" source="Opaque/Deferred.World" />
+            <resource stage="2" source="Opaque/Deferred.Info" />
         </resources>
         
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t0);
             Texture2D     gs_pWorldBuffer           : register(t1);
-            Texture2D     gs_pInfoBuffer            : register(t2); // Roughness, Specular, 0, 0
+            Texture2D     gs_pInfoBuffer            : register(t2);
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
-                float2 nSize;
-                gs_pWorldBuffer.GetDimensions(nSize.x, nSize.y);
-                nSize = rcp(nSize);                
+                float2 nInverseCameraSize = rcp(gs_nCameraSize);
+                float nInverseCameraViewDistance = rcp(gs_nCameraViewDistance);
+	            float4 nCenter = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord) * float4(1,1,1,nInverseCameraViewDistance);
+                float4 nPointP0 = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, 0.0f))) * float4(1,1,1,nInverseCameraViewDistance);
+                float4 nPointN0 = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, 0.0f))) * float4(1,1,1,nInverseCameraViewDistance);
+                float4 nPoint0P = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f, nInverseCameraSize.y))) * float4(1,1,1,nInverseCameraViewDistance);
+                float4 nPoint0N = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f,-nInverseCameraSize.y))) * float4(1,1,1,nInverseCameraViewDistance);
+                float4 nPointNN = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x,-nInverseCameraSize.y))) * float4(1,1,1,nInverseCameraViewDistance);
+                float4 nPointPP = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, nInverseCameraSize.y))) * float4(1,1,1,nInverseCameraViewDistance);
+                float4 nPointNP = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, nInverseCameraSize.y))) * float4(1,1,1,nInverseCameraViewDistance);
+                float4 nPointPN = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x,-nInverseCameraSize.y))) * float4(1,1,1,nInverseCameraViewDistance);
 
-	            float4 kCenter = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord) * float4(1,1,1,gs_nCameraInverseViewDistance);
-                float4 kPointP0 = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nSize.x, 0.0f))) * float4(1,1,1,gs_nCameraInverseViewDistance);
-                float4 kPointN0 = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nSize.x, 0.0f))) * float4(1,1,1,gs_nCameraInverseViewDistance);
-                float4 kPoint0P = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f, nSize.y))) * float4(1,1,1,gs_nCameraInverseViewDistance);
-                float4 kPoint0N = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f,-nSize.y))) * float4(1,1,1,gs_nCameraInverseViewDistance);
-                float4 kPointNN = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nSize.x,-nSize.y))) * float4(1,1,1,gs_nCameraInverseViewDistance);
-                float4 kPointPP = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nSize.x, nSize.y))) * float4(1,1,1,gs_nCameraInverseViewDistance);
-                float4 kPointNP = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nSize.x, nSize.y))) * float4(1,1,1,gs_nCameraInverseViewDistance);
-                float4 kPointPN = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nSize.x,-nSize.y))) * float4(1,1,1,gs_nCameraInverseViewDistance);
-
-                float4 kEdgeNormal;
-                kEdgeNormal.x = dot(kPointP0.xyz, kPointN0.xyz);
-                kEdgeNormal.y = dot(kPoint0P.xyz, kPoint0N.xyz);
-                kEdgeNormal.z = dot(kPointNN.xyz, kPointPP.xyz);
-                kEdgeNormal.w = dot(kPointNP.xyz, kPointPN.xyz);
-                kEdgeNormal -= 0.5f;
-                kEdgeNormal = step(0, kEdgeNormal);
-                float fEdgeNormal = saturate(dot(kEdgeNormal, 0.3f));
+                float4 nEdgeNormal;
+                nEdgeNormal.x = dot(nPointP0.xyz, nPointN0.xyz);
+                nEdgeNormal.y = dot(nPoint0P.xyz, nPoint0N.xyz);
+                nEdgeNormal.z = dot(nPointNN.xyz, nPointPP.xyz);
+                nEdgeNormal.w = dot(nPointNP.xyz, nPointPN.xyz);
+                nEdgeNormal -= 0.5f;
+                nEdgeNormal = step(0, nEdgeNormal);
+                float nAverageEdgeNormal = saturate(dot(nEdgeNormal, 0.3f));
  
-                float4 kEdgeDepth;
-                kEdgeDepth.x = (kPointP0.w + kPointN0.w);
-                kEdgeDepth.y = (kPoint0P.w + kPoint0N.w);
-                kEdgeDepth.z = (kPointNN.w + kPointPP.w);
-                kEdgeDepth.w = (kPointNP.w + kPointPN.w);
-                kEdgeDepth = (abs((2.0f * kCenter.w) - kEdgeDepth) - 0.01f);
-                kEdgeDepth = step(kEdgeDepth, 0);
-                float fEdgeDepth = saturate(dot(kEdgeDepth, 0.4f));
-	
-                return (fEdgeDepth * fEdgeNormal);
+                float4 nEdgeDepth;
+                nEdgeDepth.x = (nPointP0.w + nPointN0.w);
+                nEdgeDepth.y = (nPoint0P.w + nPoint0N.w);
+                nEdgeDepth.z = (nPointNN.w + nPointPP.w);
+                nEdgeDepth.w = (nPointNP.w + nPointPN.w);
+                nEdgeDepth = (abs((2.0f * nCenter.w) - nEdgeDepth) - 0.01f);
+                nEdgeDepth = step(nEdgeDepth, 0);
+                float nAverageEdgeDepth = saturate(dot(nEdgeDepth, 0.4f));
+
+                float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+
+                return (nAlbedo * nAverageEdgeDepth * nAverageEdgeNormal);
             }
         ]]>
     </pixel>

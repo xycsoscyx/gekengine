@@ -73,7 +73,7 @@ STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
         pTransform->GetProperty(L"rotation", kRotation);
 
         float3 nForce;
-        float4x4 nRotation = quaternion(m_nRotation.x, m_nRotation.y, 0.0f);
+        float4x4 nRotation = quaternion(m_nRotation.y, m_nRotation.x, 0.0f);
         if (m_aActions[L"forward"])
         {
             nForce += nRotation.rz;
@@ -104,7 +104,7 @@ STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
             nForce -= nRotation.ry;
         }
 
-        nForce *= 5.0f;
+        nForce *= 10.0f;
         float3 nPosition = (kPosition.GetFloat3() + (nForce * nFrameTime));
         pTransform->SetProperty(L"position", nPosition);
 
@@ -115,12 +115,13 @@ STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
 
 STDMETHODIMP_(void) CGEKPlayerState::OnRender(const frustum &kFrustum)
 {
-    if (!m_bActive)
+    CComQIPtr<IGEKViewManager> spViewManager(GetLogicSystem());
+    if (spViewManager)
     {
-        CComQIPtr<IGEKViewManager> spViewManager(GetLogicSystem());
-        if (spViewManager)
+        spViewManager->EnablePass(L"Toon", -1);
+        if (!m_bActive)
         {
-            spViewManager->EnablePass(L"MainMenu", -1);
+            spViewManager->EnablePass(L"MainMenu", -10);
         }
     }
 }

@@ -15,7 +15,7 @@
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t0);
             Texture2D     gs_pWorldBuffer           : register(t1);
-            Texture2D     gs_pInfoBuffer            : register(t2); // Roughness, Specular, 0, 0
+            Texture2D     gs_pInfoBuffer            : register(t2);
             Texture2D     gs_pRandomMap             : register(t3);
 
             static const float gs_nContrast = 2.0f;
