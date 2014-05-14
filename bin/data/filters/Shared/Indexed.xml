@@ -3,10 +3,11 @@
 
     RWBuffer<uint> g_pTileOutput            : register(u0);
 
-    groupshared uint g_nNumTileLights;
     groupshared uint g_nTileMinDepth;
     groupshared uint g_nTileMaxDepth;
+    groupshared uint g_nNumTileLights;
     groupshared uint g_aTileLightList[gs_nMaxLights];
+    groupshared float4 g_aTileFrustum[6];
 
     [numthreads(gs_nLightTileSize, gs_nLightTileSize, 1)]
     void MainComputeProgram(uint3 nScreenPixel : SV_DispatchThreadID, uint3 nTileID : SV_GroupID, uint3 nTilePixelID : SV_GroupThreadID, uint nTilePixelIndex : SV_GroupIndex)
@@ -15,52 +16,42 @@
         if(nTilePixelIndex == 0)
         {
             g_nNumTileLights = 0;
-            g_nTileMinDepth = 0x7f7fffff;
+            g_nTileMinDepth = 0x7F7FFFFF;
             g_nTileMaxDepth = 0;
         }
 
-        float nMinSampleDepth = gs_nCameraViewDistance;
-        float nMaxSampleDepth = 0.0f;
-
         float nViewDepth = gs_pWorldBuffer[nScreenPixel.xy].w;
-        nMinSampleDepth = min(nMinSampleDepth, nViewDepth);
-        nMaxSampleDepth = max(nMaxSampleDepth, nViewDepth);
+        uint nViewDepthInt = asuint(nViewDepth);
 
         GroupMemoryBarrierWithGroupSync();
 
-        if (nMaxSampleDepth >= nMinSampleDepth)
-        {
-            InterlockedMin(g_nTileMinDepth, asuint(nMinSampleDepth));
-            InterlockedMax(g_nTileMaxDepth, asuint(nMaxSampleDepth));
-        }
+        InterlockedMin(g_nTileMinDepth, nViewDepthInt);
+        InterlockedMax(g_nTileMaxDepth, nViewDepthInt);
 
         GroupMemoryBarrierWithGroupSync();
 
         float nMinTileDepth = asfloat(g_nTileMinDepth);
         float nMaxTileDepth = asfloat(g_nTileMaxDepth);
 
-        float2 nTileScale = gs_nCameraSize * rcp(float(2*gs_nLightTileSize));
-        float2 nTileBias = nTileScale - float2(nTileID.xy);
-
-        float4 c1 = float4(gs_nProjectionMatrix[0][0] * nTileScale.x, 0.0f, nTileBias.x, 0.0f);
-        float4 c2 = float4(0.0f, -gs_nProjectionMatrix[1][1] * nTileScale.y, nTileBias.y, 0.0f);
-        float4 c4 = float4(0.0f, 0.0f, 1.0f, 0.0f);
-
-        float4 aFrustumPlanes[6] = 
+        [branch]
+        if(nTilePixelIndex == 0)
         {
-            c4 - c1,
-            c4 + c1,
-            c4 - c2,
-            c4 + c2,
-            float4(0.0f, 0.0f,  1.0f, -nMinTileDepth),
-            float4(0.0f, 0.0f, -1.0f,  nMaxTileDepth),
-        };
+            float2 nTileScale = gs_nCameraSize * rcp(float(2*gs_nLightTileSize));
+            float2 nTileBias = nTileScale - float2(nTileID.xy);
 
-        [loop]
-        for(uint nPlane = 0; nPlane < 4; nPlane++)
-        {
-            aFrustumPlanes[nPlane] *= rcp(length(aFrustumPlanes[nPlane].xyz));
+            float3 nXPlane = float3(gs_nProjectionMatrix[0][0] * nTileScale.x, 0.0f, nTileBias.x);
+            float3 nYPlane = float3(0.0f, -gs_nProjectionMatrix[1][1] * nTileScale.y, nTileBias.y);
+            float3 nZPlane = float3(0.0f, 0.0f, 1.0f);
+
+            g_aTileFrustum[0] = float4(normalize(nZPlane - nXPlane), 0.0f),
+            g_aTileFrustum[1] = float4(normalize(nZPlane + nXPlane), 0.0f),
+            g_aTileFrustum[2] = float4(normalize(nZPlane - nYPlane), 0.0f),
+            g_aTileFrustum[3] = float4(normalize(nZPlane + nYPlane), 0.0f),
+            g_aTileFrustum[4] = float4(0.0f, 0.0f,  1.0f, -nMinTileDepth);
+            g_aTileFrustum[5] = float4(0.0f, 0.0f, -1.0f,  nMaxTileDepth);
         }
+
+        GroupMemoryBarrierWithGroupSync();
 
         [loop]
         for(uint nLight = nTilePixelIndex; nLight < gs_nMaxLights; nLight += (gs_nLightTileSize * gs_nLightTileSize))
@@ -68,24 +59,26 @@
             LIGHT kLight = gs_aLights[nLight];
 
             [branch]
-            if(kLight.m_nRange > 0.0f)
+            if(kLight.m_nRange <= 0.0f)
             {
-                bool bIsLightInFrustum = true;
+                break;
+            }
 
-                [unroll]
-                for (uint nIndex = 0; nIndex < 6; ++nIndex)
-                {
-                    float nDistance = dot(aFrustumPlanes[nIndex], float4(kLight.m_nPosition, 1.0f));
-                    bIsLightInFrustum = (bIsLightInFrustum && (nDistance >= -kLight.m_nRange));
-                }
+            bool bIsLightInFrustum = true;
 
-                [branch]
-                if (bIsLightInFrustum)
-                {
-                    uint nTileIndex;
-                    InterlockedAdd(g_nNumTileLights, 1, nTileIndex);
-                    g_aTileLightList[nTileIndex] = nLight;
-                }
+            [unroll]
+            for (uint nIndex = 0; nIndex < 6; ++nIndex)
+            {
+                float nDistance = dot(g_aTileFrustum[nIndex], float4(kLight.m_nPosition, 1.0f));
+                bIsLightInFrustum = (bIsLightInFrustum && (nDistance >= -kLight.m_nRange));
+            }
+
+            [branch]
+            if (bIsLightInFrustum)
+            {
+                uint nTileIndex;
+                InterlockedAdd(g_nNumTileLights, 1, nTileIndex);
+                g_aTileLightList[nTileIndex] = nLight;
             }
         }
 
@@ -97,7 +90,9 @@
             uint nTileIndex = ((nTileID.y * gs_nDispatchXSize) + nTileID.x);
             uint nBufferIndex = ((nTileIndex * gs_nMaxLights) + nTilePixelIndex);
             uint nLightIndex = (nTilePixelIndex < g_nNumTileLights ? g_aTileLightList[nTilePixelIndex] : gs_nMaxLights);
-            g_pTileOutput[nBufferIndex] = nLightIndex;//g_nNumTileLights / float(gs_nMaxLights) * 255.0f;
+            //g_pTileOutput[nBufferIndex] = nLightIndex;
+            g_pTileOutput[nBufferIndex] = g_nNumTileLights / float(gs_nMaxLights) * 255.0f;
+            //g_pTileOutput[nBufferIndex] = nMinTileDepth / gs_nCameraViewDistance * 255.0f;
         }
     }
 ]]>

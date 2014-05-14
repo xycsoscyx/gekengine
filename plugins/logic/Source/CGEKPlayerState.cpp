@@ -118,7 +118,6 @@ STDMETHODIMP_(void) CGEKPlayerState::OnRender(const frustum &kFrustum)
     CComQIPtr<IGEKViewManager> spViewManager(GetLogicSystem());
     if (spViewManager)
     {
-        spViewManager->EnablePass(L"Toon", -1);
         if (!m_bActive)
         {
             spViewManager->EnablePass(L"MainMenu", -10);

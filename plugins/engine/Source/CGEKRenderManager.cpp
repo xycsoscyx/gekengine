@@ -1359,20 +1359,22 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLight(IGEKEntity *pEntity, const GEKL
 {
     REQUIRE_VOID_RETURN(pEntity);
 
-    IGEKComponent *pTransform = pEntity->GetComponent(L"transform");
-    if (pTransform)
+    if (kLight.m_nRange > 0.0f && kLight.m_nColor.GetLengthSqr() > 0.0f)
     {
-        GEKVALUE kPosition;
-        pTransform->GetProperty(L"position", kPosition);
-
-        LIGHT kData;
-        kData.m_nPosition = kPosition.GetFloat3();
-        kData.m_nColor = kLight.m_nColor;
-        kData.m_nRange = kLight.m_nRange;
-        kData.m_nInvRange = (1.0f / kLight.m_nRange);
-        if (m_kFrustum.IsVisible(sphere(kData.m_nPosition, kData.m_nRange)))
+        IGEKComponent *pTransform = pEntity->GetComponent(L"transform");
+        if (pTransform)
         {
-            m_aCurrentLights.push_back(kData);
+            GEKVALUE kPosition;
+            pTransform->GetProperty(L"position", kPosition);
+
+            LIGHT kData;
+            kData.m_nPosition = kPosition.GetFloat3();
+            kData.m_nColor = kLight.m_nColor;
+            kData.m_nRange = kLight.m_nRange;
+            if (m_kFrustum.IsVisible(sphere(kData.m_nPosition, kData.m_nRange)))
+            {
+                m_aCurrentLights.push_back(kData);
+            }
         }
     }
 }
@@ -1447,11 +1449,14 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
     for (UINT32 nPass = 0; nPass < m_aCulledLights.size(); nPass += m_nNumLightInstances)
     {
         UINT32 nNumLights = min(m_nNumLightInstances, (m_aCulledLights.size() - nPass));
-        m_spLightBuffer->Update(&m_aCulledLights[nPass], (sizeof(LIGHT) * nNumLights));
+        if (nNumLights > 1)
+        {
+            m_spLightBuffer->Update(&m_aCulledLights[nPass], (sizeof(LIGHT)* nNumLights));
 
-        OnLightBatch();
+            OnLightBatch();
 
-        GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+            GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+        }
     }
 }
 
@@ -1527,19 +1532,17 @@ STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
 {
     UINT32 nCounter = 0;
     m_aCulledLights.clear();
+    m_aCulledLights.reserve(m_aCurrentLights.size());
     for (auto &kLight : m_aCurrentLights)
     {
+        kLight.m_nInvRange = (1.0f / kLight.m_nRange);
         kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kLight.m_nPosition, 1.0f));
         m_aCulledLights.push_back(kLight);
     }
 
-    if ((m_aCulledLights.size() % m_nNumLightInstances) > 0)
-    {
-        LIGHT kSentinel;
-        kSentinel.m_nRange = -1.0f;
-        m_aCulledLights.push_back(kSentinel);
-    }
-
+    LIGHT kSentinel;
+    kSentinel.m_nRange = -1.0f;
+    m_aCulledLights.push_back(kSentinel);
     m_aCurrentLights.clear();
 
     m_aCulledModels.clear();

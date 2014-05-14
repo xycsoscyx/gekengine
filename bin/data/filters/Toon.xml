@@ -35,7 +35,7 @@
                 nEdgeNormal.y = dot(nPoint0P.xyz, nPoint0N.xyz);
                 nEdgeNormal.z = dot(nPointNN.xyz, nPointPP.xyz);
                 nEdgeNormal.w = dot(nPointNP.xyz, nPointPN.xyz);
-                nEdgeNormal -= 0.5f;
+                nEdgeNormal -= 0.7f;
                 nEdgeNormal = step(0, nEdgeNormal);
                 float nAverageEdgeNormal = saturate(dot(nEdgeNormal, 0.3f));
  
@@ -48,9 +48,9 @@
                 nEdgeDepth = step(nEdgeDepth, 0);
                 float nAverageEdgeDepth = saturate(dot(nEdgeDepth, 0.4f));
 
-                float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                float4 nAlbedo = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
-                return (nAlbedo * nAverageEdgeDepth * nAverageEdgeNormal);
+                return float4((nAlbedo.xyz * nAverageEdgeDepth * nAverageEdgeNormal), 1.0f);
             }
         ]]>
     </pixel>
