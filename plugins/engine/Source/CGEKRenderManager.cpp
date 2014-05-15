@@ -542,7 +542,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(LIGHT), m_nNumLightInstances, GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
+        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(LIGHT), m_nNumLightInstances, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -1452,11 +1452,16 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
         UINT32 nNumLights = min(m_nNumLightInstances, (m_aCulledLights.size() - nPass));
         if (nNumLights > 1)
         {
-            m_spLightBuffer->Update(&m_aCulledLights[nPass], (sizeof(LIGHT)* nNumLights));
+            LIGHT *pLights = nullptr;
+            if (SUCCEEDED(m_spLightBuffer->Map((LPVOID *)&pLights)))
+            {
+                memcpy(pLights, &m_aCulledLights[nPass], (sizeof(LIGHT)* nNumLights));
+                m_spLightBuffer->UnMap();
 
-            OnLightBatch();
+                OnLightBatch();
 
-            GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+                GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+            }
         }
     }
 }
@@ -1531,28 +1536,39 @@ STDMETHODIMP_(const frustum &) CGEKRenderManager::GetFrustum(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
 {
-    m_aCulledLights.assign(m_aCurrentLights.begin(), m_aCurrentLights.end());
-    concurrency::parallel_for_each(m_aCulledLights.begin(), m_aCulledLights.end(), [&](LIGHT &kLight) -> void
+    if (GetEngine()->IsMouseCaptured())
     {
-        kLight.m_nInvRange = (1.0f / kLight.m_nRange);
-        kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kLight.m_nPosition, 1.0f));
-    });
+        m_aCulledLights.assign(m_aCurrentLights.begin(), m_aCurrentLights.end());
+        m_aCurrentLights.clear();
 
-    LIGHT kSentinel;
-    kSentinel.m_nRange = -1.0f;
-    m_aCulledLights.push_back(kSentinel);
-    m_aCurrentLights.clear();
+        concurrency::parallel_for_each(m_aCulledLights.begin(), m_aCulledLights.end(), [&](LIGHT &kLight) -> void
+        {
+            kLight.m_nInvRange = (1.0f / kLight.m_nRange);
+            kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kLight.m_nPosition, 1.0f));
+        });
 
-    m_aCulledModels.clear();
-    for (auto &kPair : m_aCurrentModels)
-    {
-        m_aCulledModels[kPair.first].push_back(kPair.second);
+        LIGHT kSentinel;
+        kSentinel.m_nRange = -1.0f;
+        m_aCulledLights.push_back(kSentinel);
+
+        m_aCulledModels.clear();
+        for (auto &kPair : m_aCurrentModels)
+        {
+            m_aCulledModels[kPair.first].push_back(kPair.second);
+        }
+
+        m_aCurrentModels.clear();
+        for (auto &kPair : m_aCulledModels)
+        {
+            kPair.first->Prepare();
+        }
     }
-
-    m_aCurrentModels.clear();
-    for (auto &kPair : m_aCulledModels)
+    else
     {
-        kPair.first->Prepare();
+        m_aCurrentLights.clear();
+        m_aCurrentModels.clear();
+        m_aCulledLights.clear();
+        m_aCulledModels.clear();
     }
 
     for (auto &kPair : m_aWebSurfaces)

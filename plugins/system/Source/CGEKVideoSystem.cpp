@@ -442,7 +442,7 @@ public:
 };
 
 class CGEKVideoBuffer : public CGEKUnknown
-                      , public IGEKVideoBuffer
+    , public IGEKVideoBuffer
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -478,24 +478,37 @@ public:
         return m_nCount;
     }
 
-    STDMETHODIMP_(void) Update(const void *pData, UINT32 nSize)
+    STDMETHODIMP_(void) Update(const void *pData)
     {
-        REQUIRE_VOID_RETURN(m_pDeviceContext && m_spBuffer);
-        if (nSize > 0)
+        REQUIRE_VOID_RETURN(m_pDeviceContext);
+        REQUIRE_VOID_RETURN(m_spBuffer);
+        REQUIRE_VOID_RETURN(pData);
+
+        m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, nullptr, pData, 0, 0);
+    }
+
+    STDMETHODIMP Map(LPVOID *ppData)
+    {
+        REQUIRE_RETURN(m_pDeviceContext, E_FAIL);
+        REQUIRE_RETURN(m_spBuffer, E_FAIL);
+        REQUIRE_RETURN(ppData, E_INVALIDARG);
+
+        D3D11_MAPPED_SUBRESOURCE kResource;
+        kResource.pData = nullptr;
+        kResource.RowPitch = 0;
+        kResource.DepthPitch = 0;
+        HRESULT hRetVal = m_pDeviceContext->Map(m_spBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &kResource);
+        if (SUCCEEDED(hRetVal))
         {
-            D3D11_BOX kBox;
-            kBox.left = 0;
-            kBox.right = nSize;
-            kBox.top = 0;
-            kBox.bottom = 1;
-            kBox.front = 0;
-            kBox.back = 1;
-            m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, &kBox, pData, 0, 0);
+            (*ppData) = kResource.pData;
         }
-        else
-        {
-            m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, nullptr, pData, 0, 0);
-        }
+
+        return hRetVal;
+    }
+
+    STDMETHODIMP_(void) UnMap(void)
+    {
+        m_pDeviceContext->Unmap(m_spBuffer, 0);
     }
 };
 
@@ -1638,6 +1651,10 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
 
         kBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
     }
+    else if (nFlags & GEKVIDEO::BUFFER::DYNAMIC)
+    {
+        kBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    }
     else
     {
         kBufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -1670,7 +1687,15 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         kBufferDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
     }
 
-    kBufferDesc.CPUAccessFlags = 0;
+    if (nFlags & GEKVIDEO::BUFFER::DYNAMIC)
+    {
+        kBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    }
+    else
+    {
+        kBufferDesc.CPUAccessFlags = 0;
+    }
+
     if (nFlags & GEKVIDEO::BUFFER::STRUCTURED_BUFFER)
     {
         kBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;

@@ -201,6 +201,7 @@ namespace GEKVIDEO
             RESOURCE                        = 1 << 4,
             UNORDERED_ACCESS                = 1 << 5,
             STATIC                          = 1 << 6,
+            DYNAMIC                         = 1 << 7,
         };
     };
 
@@ -411,7 +412,10 @@ DECLARE_INTERFACE_IID_(IGEKVideoBuffer, IUnknown, "8542B213-0F5E-4BF7-88E2-80DE0
     STDMETHOD_(UINT32, GetStride)                       (THIS) PURE;
     STDMETHOD_(UINT32, GetCount)                        (THIS) PURE;
 
-    STDMETHOD_(void, Update)                            (THIS_ const void *pData, UINT32 nSize = 0) PURE;
+    STDMETHOD_(void, Update)                            (THIS_ const void *pData) PURE;
+
+    STDMETHOD(Map)                                      (THIS_ LPVOID *ppData) PURE;
+    STDMETHOD_(void, UnMap)                             (THIS) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKVideoTexture, IUnknown, "9477396F-28D6-414B-81A3-A44AD00A4409")

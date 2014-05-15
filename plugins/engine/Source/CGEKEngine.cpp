@@ -270,6 +270,11 @@ STDMETHODIMP_(void) CGEKEngine::CaptureMouse(bool bCapture)
     m_bCaptureMouse = bCapture;
 }
 
+STDMETHODIMP_(bool) CGEKEngine::IsMouseCaptured(void)
+{
+    return m_bCaptureMouse;
+}
+
 STDMETHODIMP_(void) CGEKEngine::OnCommand(LPCWSTR pCommand, LPCWSTR *pParams, UINT32 nNumParams)
 {
     if (_wcsicmp(pCommand, L"quit") == 0)

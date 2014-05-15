@@ -60,5 +60,6 @@ public:
 
     // IGEKEngine
     STDMETHOD_(void, CaptureMouse)      (THIS_ bool bCapture);
+    STDMETHOD_(bool, IsMouseCaptured)   (THIS);
     STDMETHOD_(void, OnCommand)         (THIS_ LPCWSTR pCommand, LPCWSTR *pParams, UINT32 nNumParams);
 };

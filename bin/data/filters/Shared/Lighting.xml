@@ -88,8 +88,6 @@
         for(uint nLightIndex = 0; nLightIndex < gs_nMaxLights; nLightIndex++)
         {
             uint nLight = gs_pTileIndices[nBufferIndex + nLightIndex];
-            nTotalDiffuse = nLight / float(gs_nMaxLights);
-            break;
             
             [branch]
             if(nLight == gs_nMaxLights)

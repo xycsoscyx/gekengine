@@ -88,8 +88,8 @@
             uint nTileIndex = ((nTileID.y * gs_nDispatchXSize) + nTileID.x);
             uint nBufferIndex = ((nTileIndex * gs_nMaxLights) + nTilePixelIndex);
             uint nLightIndex = (nTilePixelIndex < g_nNumTileLights ? g_aTileLightList[nTilePixelIndex] : gs_nMaxLights);
-            //g_pTileOutput[nBufferIndex] = nLightIndex;
-            g_pTileOutput[nBufferIndex] = g_nNumTileLights / float(gs_nMaxLights) * 255.0f;
+            g_pTileOutput[nBufferIndex] = nLightIndex;
+            //g_pTileOutput[nBufferIndex] = g_nNumTileLights / float(gs_nMaxLights) * 255.0f;
             //g_pTileOutput[nBufferIndex] = nMinTileDepth / gs_nCameraViewDistance * 255.0f;
         }
     }

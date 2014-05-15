@@ -148,12 +148,18 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
     for (UINT32 nPass = 0; nPass < aInstances.size(); nPass += GetStaticFactory()->GetNumInstances())
     {
         UINT32 nNumInstances = min(GetStaticFactory()->GetNumInstances(), (aInstances.size() - nPass));
-        GetStaticFactory()->GetInstanceBuffer()->Update(&aInstances[nPass], (sizeof(IGEKModel::INSTANCE) * nNumInstances));
-        for (auto &kPair : m_aMaterials)
+
+        IGEKModel::INSTANCE *pInstances = nullptr;
+        if (SUCCEEDED(GetStaticFactory()->GetInstanceBuffer()->Map((LPVOID *)&pInstances)))
         {
-            if (GetMaterialManager()->EnableMaterial(kPair.first))
+            memcpy(pInstances, &aInstances[nPass], (sizeof(IGEKModel::INSTANCE) * nNumInstances));
+            GetStaticFactory()->GetInstanceBuffer()->UnMap();
+            for (auto &kPair : m_aMaterials)
             {
-                GetVideoSystem()->GetImmediateContext()->DrawInstancedIndexedPrimitive(kPair.second.m_nNumIndices, nNumInstances, kPair.second.m_nFirstIndex, kPair.second.m_nFirstVertex, 0);
+                if (GetMaterialManager()->EnableMaterial(kPair.first))
+                {
+                    GetVideoSystem()->GetImmediateContext()->DrawInstancedIndexedPrimitive(kPair.second.m_nNumIndices, nNumInstances, kPair.second.m_nFirstIndex, kPair.second.m_nFirstVertex, 0);
+                }
             }
         }
     }
