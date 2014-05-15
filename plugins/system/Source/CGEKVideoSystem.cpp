@@ -1665,6 +1665,11 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         kBufferDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
     }
 
+    if (nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
+    {
+        kBufferDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
+    }
+
     kBufferDesc.CPUAccessFlags = 0;
     if (nFlags & GEKVIDEO::BUFFER::STRUCTURED_BUFFER)
     {
@@ -1706,10 +1711,23 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
             hRetVal = m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
         }
 
+        CComPtr<ID3D11UnorderedAccessView> spUnorderedView;
+        if (SUCCEEDED(hRetVal) && nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
+        {
+            D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
+            kViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+            kViewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+            kViewDesc.Buffer.FirstElement = 0;
+            kViewDesc.Buffer.NumElements = nCount;
+            kViewDesc.Buffer.Flags = 0;
+
+            hRetVal = m_spDevice->CreateUnorderedAccessView(spBuffer, &kViewDesc, &spUnorderedView);
+        }
+
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, nullptr, nStride, nCount));
+            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, spUnorderedView, nStride, nCount));
             if (spBuffer != nullptr)
             {
                 hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));

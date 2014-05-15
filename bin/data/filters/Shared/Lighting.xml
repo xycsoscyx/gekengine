@@ -76,7 +76,7 @@
         float3 nViewNormal = -kInput.view;
 
 #ifdef _INDEXED_LIGHTING
-        const uint2 nTileID = uint2(kInput.position.xy / gs_nLightTileSize.xx);
+        const uint2 nTileID = uint2(floor(kInput.position.xy / float(gs_nLightTileSize).xx));
         const uint nTileIndex = ((nTileID.y * gs_nDispatchXSize) + nTileID.x);
         const uint nBufferIndex = (nTileIndex * gs_nMaxLights);
         nTotalDiffuse = 0;

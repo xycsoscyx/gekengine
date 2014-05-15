@@ -56,10 +56,8 @@
         [loop]
         for(uint nLight = nTilePixelIndex; nLight < gs_nMaxLights; nLight += (gs_nLightTileSize * gs_nLightTileSize))
         {
-            LIGHT kLight = gs_aLights[nLight];
-
             [branch]
-            if(kLight.m_nRange <= 0.0f)
+            if(gs_aLights[nLight].m_nRange <= 0.0f)
             {
                 break;
             }
@@ -69,8 +67,8 @@
             [unroll]
             for (uint nIndex = 0; nIndex < 6; ++nIndex)
             {
-                float nDistance = dot(g_aTileFrustum[nIndex], float4(kLight.m_nPosition, 1.0f));
-                bIsLightInFrustum = (bIsLightInFrustum && (nDistance >= -kLight.m_nRange));
+                float nDistance = dot(g_aTileFrustum[nIndex], float4(gs_aLights[nLight].m_nPosition, 1.0f));
+                bIsLightInFrustum = (bIsLightInFrustum && (nDistance >= -gs_aLights[nLight].m_nRange));
             }
 
             [branch]
@@ -91,8 +89,8 @@
             uint nBufferIndex = ((nTileIndex * gs_nMaxLights) + nTilePixelIndex);
             uint nLightIndex = (nTilePixelIndex < g_nNumTileLights ? g_aTileLightList[nTilePixelIndex] : gs_nMaxLights);
             //g_pTileOutput[nBufferIndex] = nLightIndex;
-            g_pTileOutput[nBufferIndex] = g_nNumTileLights / float(gs_nMaxLights) * 255.0f;
-            //g_pTileOutput[nBufferIndex] = nMinTileDepth / gs_nCameraViewDistance * 255.0f;
+            //g_pTileOutput[nBufferIndex] = g_nNumTileLights / float(gs_nMaxLights) * 255.0f;
+            g_pTileOutput[nBufferIndex] = nMinTileDepth / gs_nCameraViewDistance * 255.0f;
         }
     }
 ]]>
