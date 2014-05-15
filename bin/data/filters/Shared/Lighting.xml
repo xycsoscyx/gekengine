@@ -1,5 +1,5 @@
 <![CDATA[
-    #define _INDEXED_LIGHTING               1
+    //#define _INDEXED_LIGHTING               1
 
     Texture2D     gs_pAlbedoBuffer          : register(t1);
     Texture2D     gs_pWorldBuffer           : register(t2);

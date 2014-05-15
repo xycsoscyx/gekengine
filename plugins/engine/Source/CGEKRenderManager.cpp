@@ -4,6 +4,7 @@
 #include <windowsx.h>
 #include <algorithm>
 #include <atlpath.h>
+#include <ppl.h>
 
 #include "GEKEngineCLSIDs.h"
 #include "GEKSystemCLSIDs.h"
@@ -1530,15 +1531,12 @@ STDMETHODIMP_(const frustum &) CGEKRenderManager::GetFrustum(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
 {
-    UINT32 nCounter = 0;
-    m_aCulledLights.clear();
-    m_aCulledLights.reserve(m_aCurrentLights.size());
-    for (auto &kLight : m_aCurrentLights)
+    m_aCulledLights.assign(m_aCurrentLights.begin(), m_aCurrentLights.end());
+    concurrency::parallel_for_each(m_aCulledLights.begin(), m_aCulledLights.end(), [&](LIGHT &kLight) -> void
     {
         kLight.m_nInvRange = (1.0f / kLight.m_nRange);
         kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kLight.m_nPosition, 1.0f));
-        m_aCulledLights.push_back(kLight);
-    }
+    });
 
     LIGHT kSentinel;
     kSentinel.m_nRange = -1.0f;
