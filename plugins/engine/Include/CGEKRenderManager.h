@@ -74,6 +74,7 @@ private:
 
     CComPtr<IGEKVideoBuffer> m_spOrthoBuffer;
     CComPtr<IGEKVideoBuffer> m_spEngineBuffer;
+    CComPtr<IGEKVideoBuffer> m_spLightCountBuffer;
     CComPtr<IGEKVideoBuffer> m_spLightBuffer;
     UINT32 m_nNumLightInstances;
 

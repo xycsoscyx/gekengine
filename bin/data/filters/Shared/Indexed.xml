@@ -54,14 +54,8 @@
         GroupMemoryBarrierWithGroupSync();
 
         [loop]
-        for(uint nLight = nTilePixelIndex; nLight < gs_nMaxLights; nLight += (gs_nLightTileSize * gs_nLightTileSize))
+        for(uint nLight = nTilePixelIndex; nLight < gs_nNumLights; nLight += (gs_nLightTileSize * gs_nLightTileSize))
         {
-            [branch]
-            if(gs_aLights[nLight].m_nRange <= 0.0f)
-            {
-                break;
-            }
-
             bool bIsLightInFrustum = true;
 
             [unroll]

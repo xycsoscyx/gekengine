@@ -1,5 +1,5 @@
-SamplerState  gs_pPointSampler			: register(s0);
-SamplerState  gs_pLinearSampler			: register(s1);
+SamplerState gs_pPointSampler			: register(s0);
+SamplerState gs_pLinearSampler			: register(s1);
 
 cbuffer ENGINEBUFFER                    : register(b0)
 {
@@ -14,19 +14,25 @@ cbuffer ENGINEBUFFER                    : register(b0)
 
 struct LIGHT
 {
-    float3 m_nPosition;
-    float  m_nRange;
-    float3 m_nColor;
-    float  m_nInvRange;
+    float3  m_nPosition;
+    float   m_nRange;
+    float3  m_nColor;
+    float   m_nInvRange;
 };
 
 StructuredBuffer<LIGHT> gs_aLights      : register(t0);
 
+cbuffer LIGHTBUFFER                     : register(b1)
+{
+    uint    gs_nNumLights               : packoffset(c0);
+    uint3   gs_nLightPadding            : packoffset(c0.y);
+};
+
 struct INPUT
 {
-    float4 position                     : SV_POSITION;
-    float2 texcoord                     : TEXCOORD0;
-    float3 view                         : TEXCOORD1;
+    float4  position                     : SV_POSITION;
+    float2  texcoord                     : TEXCOORD0;
+    float3  view                         : TEXCOORD1;
 };
 
 _INSERT_PIXEL_PROGRAM

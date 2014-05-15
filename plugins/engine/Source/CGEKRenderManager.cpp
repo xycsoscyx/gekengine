@@ -542,6 +542,11 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
+        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(UINT32) * 4, 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spLightCountBuffer);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
         hRetVal = GetVideoSystem()->CreateBuffer(sizeof(LIGHT), m_nNumLightInstances, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
     }
 
@@ -1440,18 +1445,29 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
 STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLightBatch)
 {
     GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
-    GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
     GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+    GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
+    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
+    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
+    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetResource(0, m_spLightBuffer);
+    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
+
     GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
     GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
     GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
-    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetResource(0, m_spLightBuffer);
+
     for (UINT32 nPass = 0; nPass < m_aCulledLights.size(); nPass += m_nNumLightInstances)
     {
         UINT32 nNumLights = min(m_nNumLightInstances, (m_aCulledLights.size() - nPass));
         if (nNumLights > 1)
         {
+            UINT32 aCounts[4] =
+            {
+                nNumLights, 0, 0, 0,
+            };
+
+            m_spLightCountBuffer->Update(aCounts);
+
             LIGHT *pLights = nullptr;
             if (SUCCEEDED(m_spLightBuffer->Map((LPVOID *)&pLights)))
             {
@@ -1469,11 +1485,14 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
 STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
 {
     GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
-    GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
     GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+
+    GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
+
     GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
     GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
     GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+
     GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 }
 
@@ -1581,12 +1600,12 @@ STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
     }
 
     m_spEngineBuffer->Update((void *)&m_kEngineBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
     GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
     GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
     GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
     GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
     GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
+    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
 
     for (auto &kPair : m_aCurrentPasses)
     {

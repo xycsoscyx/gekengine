@@ -19,4 +19,10 @@ struct LIGHT
 
 StructuredBuffer<LIGHT> gs_aLights      : register(t0);
 
+cbuffer LIGHTBUFFER                     : register(b1)
+{
+    uint    gs_nNumLights               : packoffset(c0);
+    uint3   gs_nLightPadding            : packoffset(c0.y);
+};
+
 _INSERT_COMPUTE_PROGRAM
