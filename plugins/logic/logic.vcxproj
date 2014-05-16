@@ -88,6 +88,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Source\CGEKLightMoveState.cpp" />
     <ClCompile Include="Source\CGEKPlayerState.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -101,6 +102,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\api\IGEKLogic.h" />
     <ClInclude Include="GEKLogic.h" />
+    <ClInclude Include="Include\CGEKLightMoveState.h" />
     <ClInclude Include="Include\CGEKPlayerState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<material pass="Opaque">
-    <albedo source="models/barrel/top.albedo.dds" />
-    <normal source="models/barrel/top.normal.dds" />
-    <info source="models/barrel/top.info.dds" />
-</material>

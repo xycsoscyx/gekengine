@@ -2,7 +2,6 @@
 #include <Commctrl.h>
 #include <initguid.h>
 #include <cguid.h>
-#include <random>
 
 #include "resource.h"
 
@@ -97,37 +96,8 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
     return FALSE;
 }
 
-float lerp(float nX, float nY, float nS)
-{
-    return ((nX * (1.0f - nS)) + (nY * nS));
-}
-
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR strCommandLine, int nCmdShow)
 {
-    UINT32 nSize = sizeof(aabb);
-
-    const UINT32 nNumSamples = 16;
-
-    std::random_device kRandomDevice;
-    std::mt19937 kMersine(kRandomDevice());
-
-    std::normal_distribution<float> nRandom(-1.0f, 1.0f);
-
-    CStringA strKernel;
-    for(UINT32 nIndex = 0; nIndex < nNumSamples; nIndex++)
-    {
-        float3 nSample = StrToFloat3(L"rand(-1:1), rand(-1:1), rand(0:1)");
-        nSample.Normalize();
-
-        float nScale = (float(nIndex) / float(nNumSamples));
-        nScale = lerp(0.1f, 1.0f, (nScale * nScale));
-        nSample *= nScale;
-
-        CStringA strSample;
-        strSample.Format("                float3(%f, %f, %f),\r\n", nSample.x, nSample.y, nSample.z);
-        strKernel += strSample;
-    }
-
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
         CComPtr<IGEKContext> spContext;

@@ -5,6 +5,9 @@
     <ClCompile Include="Source\CGEKPlayerState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\CGEKLightMoveState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
@@ -26,6 +29,9 @@
       <Filter>Interface Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKPlayerState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKLightMoveState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
