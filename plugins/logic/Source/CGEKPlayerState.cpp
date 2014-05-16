@@ -2,6 +2,7 @@
 
 BEGIN_INTERFACE_LIST(CGEKPlayerState)
     INTERFACE_LIST_ENTRY_COM(IGEKLogicSystemUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKViewManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKLogicState)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -20,11 +21,8 @@ CGEKPlayerState::~CGEKPlayerState(void)
 STDMETHODIMP_(void) CGEKPlayerState::OnEnter(IGEKEntity *pEntity)
 {
     m_pEntity = pEntity;
-    CComQIPtr<IGEKViewManager> spViewManager(GetLogicSystem());
-    if (spViewManager)
-    {
-        spViewManager->CaptureMouse(true);
-    }
+    GetViewManager()->SetViewer(m_pEntity);
+    GetViewManager()->CaptureMouse(true);
 }
 
 STDMETHODIMP_(void) CGEKPlayerState::OnExit(void)
@@ -41,11 +39,7 @@ STDMETHODIMP_(void) CGEKPlayerState::OnEvent(LPCWSTR pAction, const GEKVALUE &kP
             if (!kParamB.GetBoolean())
             {
                 m_bActive = !m_bActive;
-                CComQIPtr<IGEKViewManager> spViewManager(GetLogicSystem());
-                if (spViewManager)
-                {
-                    spViewManager->CaptureMouse(m_bActive);
-                }
+                GetViewManager()->CaptureMouse(m_bActive);
             }
         }
         else if (m_pEntity != nullptr)
@@ -67,11 +61,6 @@ STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
     IGEKComponent *pTransform = m_pEntity->GetComponent(L"transform");
     if (pTransform)
     {
-        GEKVALUE kPosition;
-        GEKVALUE kRotation;
-        pTransform->GetProperty(L"position", kPosition);
-        pTransform->GetProperty(L"rotation", kRotation);
-
         float3 nForce;
         float4x4 nRotation = quaternion(m_nRotation.y, m_nRotation.x, 0.0f);
         if (m_aActions[L"forward"])
@@ -105,22 +94,10 @@ STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
         }
 
         nForce *= 10.0f;
+        GEKVALUE kPosition;
+        pTransform->GetProperty(L"position", kPosition);
         float3 nPosition = (kPosition.GetFloat3() + (nForce * nFrameTime));
         pTransform->SetProperty(L"position", nPosition);
-
-//        nRotation = (nRotation * quaternion(0.0, m_nRotation.x * nFrameTime, 0.0));
         pTransform->SetProperty(L"rotation", quaternion(nRotation));
-    }
-}
-
-STDMETHODIMP_(void) CGEKPlayerState::OnRender(const frustum &kFrustum)
-{
-    CComQIPtr<IGEKViewManager> spViewManager(GetLogicSystem());
-    if (spViewManager)
-    {
-        if (!m_bActive)
-        {
-            spViewManager->EnablePass(L"MainMenu", -10);
-        }
     }
 }

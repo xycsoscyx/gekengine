@@ -282,6 +282,7 @@ BEGIN_INTERFACE_LIST(CGEKRenderManager)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKEngineUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKPopulationManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderManager)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManager)
     INTERFACE_LIST_ENTRY_COM(IGEKMaterialManager)
@@ -615,8 +616,10 @@ STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
     m_pWebCore = nullptr;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::BeginLoad(void)
+STDMETHODIMP_(void) CGEKRenderManager::Free(void)
 {
+    m_pViewer = nullptr;
+    m_pCurrentPass = nullptr;
     for (auto &kPair : m_aWebViews)
     {
         kPair.second->Destroy();
@@ -631,7 +634,7 @@ STDMETHODIMP_(void) CGEKRenderManager::BeginLoad(void)
     m_aPasses.clear();
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::EndLoad(HRESULT hRetVal)
+STDMETHODIMP_(void) CGEKRenderManager::OnSceneLoaded(void)
 {
     GetVideoSystem()->SetEvent(m_spFrameEvent);
 }
@@ -739,12 +742,6 @@ static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGE
     {
         CountPasses(aPasses, pRequiredPass);
     }
-}
-
-STDMETHODIMP_(void) CGEKRenderManager::Free(void)
-{
-    m_pViewer = nullptr;
-    m_pCurrentPass = nullptr;
 }
 
 STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResource)
@@ -1334,57 +1331,6 @@ STDMETHODIMP CGEKRenderManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnkno
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::DrawModel(IGEKEntity *pEntity, IUnknown *pModel)
-{
-    REQUIRE_VOID_RETURN(pEntity);
-    REQUIRE_VOID_RETURN(pModel);
-
-    CComQIPtr<IGEKModel> spModel(pModel);
-    if (spModel)
-    {
-        IGEKComponent *pTransform = pEntity->GetComponent(L"transform");
-        if (pTransform)
-        {
-            GEKVALUE kPosition;
-            GEKVALUE kRotation;
-            pTransform->GetProperty(L"position", kPosition);
-            pTransform->GetProperty(L"rotation", kRotation);
-
-            IGEKModel::INSTANCE kInstance;
-            kInstance.m_nMatrix = kRotation.GetQuaternion();
-            kInstance.m_nMatrix.t = kPosition.GetFloat3();
-            if (m_kFrustum.IsVisible(obb(spModel->GetAABB(), kInstance.m_nMatrix)))
-            {
-                m_aCurrentModels.insert(std::make_pair(spModel, kInstance));
-            }
-        }
-    }
-}
-
-STDMETHODIMP_(void) CGEKRenderManager::DrawLight(IGEKEntity *pEntity, const GEKLIGHT &kLight)
-{
-    REQUIRE_VOID_RETURN(pEntity);
-
-    if (kLight.m_nRange > 0.0f && kLight.m_nColor.GetLengthSqr() > 0.0f)
-    {
-        IGEKComponent *pTransform = pEntity->GetComponent(L"transform");
-        if (pTransform)
-        {
-            GEKVALUE kPosition;
-            pTransform->GetProperty(L"position", kPosition);
-
-            LIGHT kData;
-            kData.m_nPosition = kPosition.GetFloat3();
-            kData.m_nColor = kLight.m_nColor;
-            kData.m_nRange = kLight.m_nRange;
-            if (m_kFrustum.IsVisible(sphere(kData.m_nPosition, kData.m_nRange)))
-            {
-                m_aCurrentLights.push_back(kData);
-            }
-        }
-    }
-}
-
 STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName, INT32 nPriority)
 {
     REQUIRE_RETURN(pName, E_INVALIDARG);
@@ -1436,7 +1382,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
     REQUIRE_VOID_RETURN(m_pCurrentPass);
     REQUIRE_VOID_RETURN(m_pCurrentFilter);
 
-    for (auto &kPair : m_aCulledModels)
+    for (auto &kPair : m_aVisibleModels)
     {
         kPair.first->Draw(m_pCurrentFilter->GetVertexAttributes(), kPair.second);
     }
@@ -1456,9 +1402,9 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
     GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
     GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
 
-    for (UINT32 nPass = 0; nPass < m_aCulledLights.size(); nPass += m_nNumLightInstances)
+    for (UINT32 nPass = 0; nPass < m_aVisibleLights.size(); nPass += m_nNumLightInstances)
     {
-        UINT32 nNumLights = min(m_nNumLightInstances, (m_aCulledLights.size() - nPass));
+        UINT32 nNumLights = min(m_nNumLightInstances, (m_aVisibleLights.size() - nPass));
         if (nNumLights > 1)
         {
             UINT32 aCounts[4] =
@@ -1471,7 +1417,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
             LIGHT *pLights = nullptr;
             if (SUCCEEDED(m_spLightBuffer->Map((LPVOID *)&pLights)))
             {
-                memcpy(pLights, &m_aCulledLights[nPass], (sizeof(LIGHT)* nNumLights));
+                memcpy(pLights, &m_aVisibleLights[nPass], (sizeof(LIGHT)* nNumLights));
                 m_spLightBuffer->UnMap();
 
                 OnLightBatch();
@@ -1496,30 +1442,35 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
     GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 }
 
-STDMETHODIMP CGEKRenderManager::BeginFrame(void)
+STDMETHODIMP_(void) CGEKRenderManager::Render(void)
 {
-    REQUIRE_RETURN(m_pWebCore, E_FAIL);
+    REQUIRE_VOID_RETURN(m_pWebCore);
 
-    HRESULT hRetVal = E_FAIL;
-
-    m_aCurrentPasses.clear();
     m_pWebCore->Update();
+    for (auto &kPair : m_aWebSurfaces)
+    {
+        CComQIPtr<IGEKWebSurface> spWebSurface(kPair.second);
+        if (spWebSurface)
+        {
+            spWebSurface->Update();
+        }
+    }
 
-    IGEKComponent *pViewer = m_pViewer->GetComponent(L"viewer");
-    IGEKComponent *pTransform = m_pViewer->GetComponent(L"transform");
-    if (pTransform && pViewer)
+    IGEKComponent *pViewerComponent = m_pViewer->GetComponent(L"viewer");
+    IGEKComponent *pTransformComponent = m_pViewer->GetComponent(L"transform");
+    if (pTransformComponent && pViewerComponent)
     {
         GEKVALUE kFieldOfView;
         GEKVALUE kMinViewDistance;
         GEKVALUE kMaxViewDistance;
-        pViewer->GetProperty(L"fieldofview", kFieldOfView);
-        pViewer->GetProperty(L"minviewdistance", kMinViewDistance);
-        pViewer->GetProperty(L"maxviewdistance", kMaxViewDistance);
+        pViewerComponent->GetProperty(L"fieldofview", kFieldOfView);
+        pViewerComponent->GetProperty(L"minviewdistance", kMinViewDistance);
+        pViewerComponent->GetProperty(L"maxviewdistance", kMaxViewDistance);
 
         GEKVALUE kPosition;
         GEKVALUE kRotation;
-        pTransform->GetProperty(L"position", kPosition);
-        pTransform->GetProperty(L"rotation", kRotation);
+        pTransformComponent->GetProperty(L"position", kPosition);
+        pTransformComponent->GetProperty(L"rotation", kRotation);
 
         float4x4 nCameraMatrix;
         nCameraMatrix = kRotation.GetQuaternion();
@@ -1542,60 +1493,69 @@ STDMETHODIMP CGEKRenderManager::BeginFrame(void)
 
         m_kFrustum.Create(nCameraMatrix, m_kEngineBuffer.m_nProjectionMatrix);
 
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP_(const frustum &) CGEKRenderManager::GetFrustum(void)
-{
-    return m_kFrustum;
-}
-
-STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
-{
-    if (GetEngine()->IsMouseCaptured())
-    {
-        m_aCulledLights.assign(m_aCurrentLights.begin(), m_aCurrentLights.end());
-        m_aCurrentLights.clear();
-
-        concurrency::parallel_for_each(m_aCulledLights.begin(), m_aCulledLights.end(), [&](LIGHT &kLight) -> void
+        if (true)
         {
-            kLight.m_nInvRange = (1.0f / kLight.m_nRange);
-            kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kLight.m_nPosition, 1.0f));
-        });
+            concurrency::concurrent_unordered_set<IGEKEntity *> aVisibleEntities;
+            GetPopulationManager()->GetVisible(m_kFrustum, aVisibleEntities);
 
-        LIGHT kSentinel;
-        kSentinel.m_nRange = -1.0f;
-        m_aCulledLights.push_back(kSentinel);
+            concurrency::concurrent_vector<LIGHT> aLights;
+            concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> aModels;
+            concurrency::parallel_for_each(aVisibleEntities.begin(), aVisibleEntities.end(), [&](IGEKEntity *pEntity) -> void
+            {
+                IGEKComponent *pTransformComponent = pEntity->GetComponent(L"transform");
+                if (pTransformComponent)
+                {
+                    GEKVALUE kPosition;
+                    GEKVALUE kRotation;
+                    pTransformComponent->GetProperty(L"position", kPosition);
+                    pTransformComponent->GetProperty(L"rotation", kRotation);
 
-        m_aCulledModels.clear();
-        for (auto &kPair : m_aCurrentModels)
-        {
-            m_aCulledModels[kPair.first].push_back(kPair.second);
-        }
+                    IGEKComponent *pLightComponent = pEntity->GetComponent(L"light");
+                    if (pLightComponent)
+                    {
+                        GEKVALUE kColor;
+                        GEKVALUE kRange;
+                        pLightComponent->GetProperty(L"color", kColor);
+                        pLightComponent->GetProperty(L"range", kRange);
 
-        m_aCurrentModels.clear();
-        for (auto &kPair : m_aCulledModels)
-        {
-            kPair.first->Prepare();
-        }
-    }
-    else
-    {
-        m_aCurrentLights.clear();
-        m_aCurrentModels.clear();
-        m_aCulledLights.clear();
-        m_aCulledModels.clear();
-    }
+                        LIGHT kLight;
+                        kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kPosition.GetFloat3(), 1.0f));
+                        kLight.m_nRange = kRange.GetFloat();
+                        kLight.m_nInvRange = (1.0f / kLight.m_nRange);
+                        kLight.m_nColor = kColor.GetFloat3();
+                        aLights.push_back(kLight);
+                    }
 
-    for (auto &kPair : m_aWebSurfaces)
-    {
-        CComQIPtr<IGEKWebSurface> spWebSurface(kPair.second);
-        if (spWebSurface)
-        {
-            spWebSurface->Update();
+                    IGEKComponent *pModelComponent = pEntity->GetComponent(L"model");
+                    if (pModelComponent)
+                    {
+                        GEKVALUE kModel;
+                        pModelComponent->GetProperty(L"model", kModel);
+                        CComQIPtr<IGEKModel> spModel(kModel.GetObject());
+                        if (spModel)
+                        {
+                            IGEKModel::INSTANCE kInstance;
+                            kInstance.m_nMatrix = kRotation.GetQuaternion();
+                            kInstance.m_nMatrix.t = kPosition.GetFloat3();
+                            aModels.insert(std::make_pair(spModel, kInstance));
+                        }
+
+                    }
+                }
+            });
+
+            m_aVisibleLights.assign(aLights.begin(), aLights.end());
+
+            m_aVisibleModels.clear();
+            for (auto &kPair : aModels)
+            {
+                m_aVisibleModels[kPair.first].push_back(kPair.second);
+            }
+
+            for (auto &kPair : m_aVisibleModels)
+            {
+                kPair.first->Prepare();
+            }
         }
     }
 
@@ -1637,7 +1597,11 @@ STDMETHODIMP_(void) CGEKRenderManager::EndFrame(void)
     GetVideoSystem()->GetImmediateContext()->ClearResources();
     GetVideoSystem()->Present(true);
 
-    while (!GetVideoSystem()->IsEventSet(m_spFrameEvent));
+    while (!GetVideoSystem()->IsEventSet(m_spFrameEvent))
+    {
+        Sleep(0);
+    };
+
     GetVideoSystem()->SetEvent(m_spFrameEvent);
 }
 

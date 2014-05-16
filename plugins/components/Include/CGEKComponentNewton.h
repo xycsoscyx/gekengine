@@ -13,7 +13,7 @@ class CGEKComponentNewton : public CGEKUnknown
                           , public CGEKComponent
                           , public CGEKSceneManagerUser
 {
-private:
+public:
     CGEKComponentSystemNewton *m_pSystem;
     NewtonBody *m_pBody;
     CStringW m_strShape;
@@ -24,9 +24,6 @@ public:
     DECLARE_UNKNOWN(CGEKComponentNewton)
     CGEKComponentNewton(IGEKEntity *pEntity, CGEKComponentSystemNewton *pSystem);
     ~CGEKComponentNewton(void);
-
-    float GetMass(void) const;
-    NewtonBody *GetBody(void) const;
 
     // IGEKComponent
     STDMETHOD_(LPCWSTR, GetType)    (THIS) const;

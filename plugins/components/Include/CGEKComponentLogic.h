@@ -10,10 +10,9 @@ class CGEKComponentLogic : public CGEKUnknown
                          , public CGEKContextUser
                          , public CGEKComponent
 {
-private:
+public:
     IGEKLogicSystem *m_pSystem;
     CStringW m_strDefaultState;
-
     CComPtr<IGEKLogicState> m_spState;
 
 public:
@@ -22,8 +21,6 @@ public:
     ~CGEKComponentLogic(void);
 
     void SetState(IGEKLogicState *pState);
-    void OnUpdate(float nGameTime, float nFrameTime);
-    void OnRender(const frustum &kFrustum);
 
     // IGEKComponent
     STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
@@ -37,7 +34,6 @@ public:
 class CGEKComponentSystemLogic : public CGEKUnknown
                                , public CGEKContextUser
                                , public CGEKSceneManagerUser
-                               , public CGEKViewManagerUser
                                , public IGEKContextObserver
                                , public IGEKSceneObserver
                                , public IGEKComponentSystem
@@ -65,7 +61,6 @@ public:
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnPreUpdate)       (THIS_ float nGameTime, float nFrameTime);
-    STDMETHOD_(void, OnRender)          (THIS_ const frustum &kFrustum);
 
     // IGEKLogicSystem
     STDMETHOD_(void, SetState)          (IGEKEntity *pEntity, IGEKLogicState *pState);

@@ -4,6 +4,7 @@
 #include "GEKSystem.h"
 #include "GEKAPI.h"
 #include "IGEKRenderManager.h"
+#include "IGEKPopulationManager.h"
 #include "IGEKEngine.h"
 #include <Awesomium/WebCore.h>
 #include <Awesomium/STLHelpers.h>
@@ -21,6 +22,7 @@ class CGEKRenderManager : public CGEKUnknown
                         , public CGEKSystemUser
                         , public CGEKVideoSystemUser
                         , public CGEKEngineUser
+                        , public CGEKPopulationManagerUser
                         , public IGEKContextObserver
                         , public IGEKVideoObserver
                         , public IGEKSystemObserver
@@ -100,11 +102,8 @@ private:
     IGEKRenderFilter *m_pCurrentFilter;
     std::map<PASS *, INT32> m_aCurrentPasses;
 
-    concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> m_aCurrentModels;
-    concurrency::concurrent_vector<LIGHT> m_aCurrentLights;
-
-    std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aCulledModels;
-    std::vector<LIGHT> m_aCulledLights;
+    std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aVisibleModels;
+    std::vector<LIGHT> m_aVisibleLights;
 
 private:
     HRESULT LoadPass(LPCWSTR pName);
@@ -144,15 +143,12 @@ public:
     // IGEKViewManager
     STDMETHOD(SetViewer)                    (THIS_ IGEKEntity *pEntity);
     STDMETHOD_(IGEKEntity *, GetViewer)     (THIS);
-    STDMETHOD_(void, DrawLight)             (THIS_ IGEKEntity *pEntity, const GEKLIGHT &kLight);
-    STDMETHOD_(void, DrawModel)             (THIS_ IGEKEntity *pEntity, IUnknown *pModel);
     STDMETHOD(EnablePass)                   (THIS_ LPCWSTR pName, INT32 nPriority);
     STDMETHOD_(void, CaptureMouse)          (THIS_ bool bCapture);
 
     // IGEKRenderManager
-    STDMETHOD_(void, BeginLoad)             (THIS);
-    STDMETHOD_(void, EndLoad)               (THIS_ HRESULT hRetVal);
     STDMETHOD_(void, Free)                  (THIS);
+    STDMETHOD_(void, OnSceneLoaded)         (THIS);
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
@@ -160,9 +156,7 @@ public:
     STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes);
     STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch);
     STDMETHOD_(void, DrawOverlay)           (THIS);
-    STDMETHOD(BeginFrame)                   (THIS);
-    STDMETHOD_(const frustum &, GetFrustum) (THIS);
-    STDMETHOD_(void, EndFrame)              (THIS);
+    STDMETHOD_(void, Render)                (THIS);
 
     // Awesomium::DataSource
     void OnRequest(int nRequestID, const Awesomium::ResourceRequest &kRequest, const Awesomium::WebString &kPath);

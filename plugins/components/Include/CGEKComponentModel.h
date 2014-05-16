@@ -11,17 +11,15 @@ class CGEKComponentModel : public CGEKUnknown
                          , public CGEKModelManagerUser
                          , public CGEKViewManagerUser
 {
-private:
-    CComPtr<IUnknown> m_spModel;
-    CStringW m_strModel;
+public:
+    CStringW m_strSource;
     CStringW m_strParams;
+    CComPtr<IUnknown> m_spModel;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentModel)
     CGEKComponentModel(IGEKEntity *pEntity);
     ~CGEKComponentModel(void);
-
-    void OnRender(void);
 
     // IGEKComponent
     STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
@@ -35,7 +33,6 @@ class CGEKComponentSystemModel : public CGEKUnknown
                                , public CGEKContextUser
                                , public CGEKSceneManagerUser
                                , public CGEKViewManagerUser
-                               , public IGEKSceneObserver
                                , public IGEKComponentSystem
 {
 private:
@@ -46,15 +43,9 @@ public:
     CGEKComponentSystemModel(void);
     ~CGEKComponentSystemModel(void);
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)               (THIS);
-    STDMETHOD_(void, Destroy)           (THIS);
-
     // IGEKComponentSystem
     STDMETHOD_(void, Clear)             (THIS);
     STDMETHOD(Destroy)                  (THIS_ IGEKEntity *pEntity);
     STDMETHOD(Create)                   (THIS_ const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
-
-    // IGEKSceneObserver
-    STDMETHOD_(void, OnRender)          (THIS_ const frustum &kFrustum);
+    STDMETHOD_(void, GetVisible)        (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities);
 };

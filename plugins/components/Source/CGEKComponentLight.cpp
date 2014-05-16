@@ -3,7 +3,6 @@
 #include <ppl.h>
 
 BEGIN_INTERFACE_LIST(CGEKComponentLight)
-    INTERFACE_LIST_ENTRY_COM(IGEKViewManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -15,11 +14,6 @@ CGEKComponentLight::CGEKComponentLight(IGEKEntity *pEntity)
 
 CGEKComponentLight::~CGEKComponentLight(void)
 {
-}
-
-void CGEKComponentLight::OnRender(void)
-{
-    GetViewManager()->DrawLight(GetEntity(), GEKLIGHT(m_nColor, m_nRange));
 }
 
 STDMETHODIMP_(LPCWSTR) CGEKComponentLight::GetType(void) const
@@ -73,7 +67,6 @@ BEGIN_INTERFACE_LIST(CGEKComponentSystemLight)
     INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKViewManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -85,16 +78,6 @@ CGEKComponentSystemLight::CGEKComponentSystemLight(void)
 
 CGEKComponentSystemLight::~CGEKComponentSystemLight(void)
 {
-}
-
-STDMETHODIMP CGEKComponentSystemLight::Initialize(void)
-{
-    return CGEKObservable::AddObserver(GetSceneManager(), this);
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemLight::Destroy(void)
-{
-    CGEKObservable::RemoveObserver(GetSceneManager(), this);
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemLight::Clear(void)
@@ -151,10 +134,22 @@ STDMETHODIMP CGEKComponentSystemLight::Destroy(IGEKEntity *pEntity)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemLight::OnRender(const frustum &kFrustum)
+STDMETHODIMP_(void) CGEKComponentSystemLight::GetVisible(const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities)
 {
     concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLight>>::value_type &kPair) -> void
     {
-        kPair.second->OnRender();
+        if (kPair.second->m_nRange > 0.0f)
+        {
+            IGEKComponent *pTransform = kPair.first->GetComponent(L"transform");
+            if (pTransform)
+            {
+                GEKVALUE kPosition;
+                pTransform->GetProperty(L"position", kPosition);
+                if (kFrustum.IsVisible(sphere(kPosition.GetFloat3(), kPair.second->m_nRange)))
+                {
+                    aVisibleEntities.insert(kPair.first);
+                }
+            }
+        }
     });
 }

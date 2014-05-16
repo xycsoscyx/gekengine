@@ -8,9 +8,8 @@
 
 class CGEKComponentLight : public CGEKUnknown
                          , public CGEKComponent
-                         , public CGEKViewManagerUser
 {
-private:
+public:
     float3 m_nColor;
     float m_nRange;
 
@@ -18,8 +17,6 @@ public:
     DECLARE_UNKNOWN(CGEKComponentLight)
     CGEKComponentLight(IGEKEntity *pEntity);
     ~CGEKComponentLight(void);
-
-    void OnRender(void);
 
     // IGEKComponent
     STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
@@ -32,7 +29,6 @@ class CGEKComponentSystemLight : public CGEKUnknown
                                , public CGEKContextUser
                                , public CGEKSceneManagerUser
                                , public CGEKViewManagerUser
-                               , public IGEKSceneObserver
                                , public IGEKComponentSystem
 {
 private:
@@ -43,15 +39,9 @@ public:
     CGEKComponentSystemLight(void);
     ~CGEKComponentSystemLight(void);
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)               (THIS);
-    STDMETHOD_(void, Destroy)           (THIS);
-
     // IGEKComponentSystem
     STDMETHOD_(void, Clear)             (THIS);
     STDMETHOD(Destroy)                  (THIS_ IGEKEntity *pEntity);
     STDMETHOD(Create)                   (THIS_ const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
-
-    // IGEKSceneObserver
-    STDMETHOD_(void, OnRender)          (THIS_ const frustum &kFrustum);
+    STDMETHOD_(void, GetVisible)        (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities);
 };

@@ -11,7 +11,6 @@
 class CGEKPopulationManager : public CGEKUnknown
                             , public CGEKObservable
                             , public CGEKContextUser
-                            , public CGEKRenderManagerUser
                             , public IGEKContextObserver
                             , public IGEKPopulationManager
                             , public IGEKSceneManager
@@ -41,7 +40,7 @@ public:
     STDMETHOD_(void, Free)              (THIS);
     STDMETHOD_(void, OnInputEvent)      (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);
-    STDMETHOD_(void, Render)            (THIS);
+    STDMETHOD_(void, GetVisible)        (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities);
 
     // IGEKSceneManager
     STDMETHOD(AddEntity)                (THIS_ CLibXMLNode &kEntityNode);

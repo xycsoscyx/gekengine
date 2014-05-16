@@ -31,22 +31,6 @@ void CGEKComponentLogic::SetState(IGEKLogicState *pState)
     }
 }
 
-void CGEKComponentLogic::OnUpdate(float nGameTime, float nFrameTime)
-{
-    if (m_spState)
-    {
-        m_spState->OnUpdate(nGameTime, nFrameTime);
-    }
-}
-
-void CGEKComponentLogic::OnRender(const frustum &kFrustum)
-{
-    if (m_spState)
-    {
-        m_spState->OnRender(kFrustum);
-    }
-}
-
 STDMETHODIMP_(LPCWSTR) CGEKComponentLogic::GetType(void) const
 {
     return L"logic";
@@ -109,12 +93,9 @@ STDMETHODIMP_(void) CGEKComponentLogic::OnEvent(LPCWSTR pAction, const GEKVALUE 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemLogic)
     INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKViewManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
-    INTERFACE_LIST_ENTRY_MEMBER_COM(IGEKSceneManager, GetSceneManager())
-    INTERFACE_LIST_ENTRY_MEMBER_COM(IGEKViewManager, GetViewManager())
 END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKComponentSystemLogic)
@@ -214,17 +195,11 @@ STDMETHODIMP_(void) CGEKComponentSystemLogic::OnPreUpdate(float nGameTime, float
 {
     concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLogic>>::value_type &kPair) -> void
     {
-        kPair.second->OnUpdate(nGameTime, nFrameTime);
+        if (kPair.second->m_spState)
+        {
+            kPair.second->m_spState->OnUpdate(nGameTime, nFrameTime);
+        }
     });
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemLogic::OnRender(const frustum &kFrustum)
-{
-    for (auto &kPair : m_aComponents)
-    //concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLogic>>::value_type &kPair) -> void
-    {
-        kPair.second->OnRender(kFrustum);
-    }
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemLogic::SetState(IGEKEntity *pEntity, IGEKLogicState *pState)

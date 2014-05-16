@@ -35,6 +35,29 @@ CGEKEngine::~CGEKEngine(void)
 {
 }
 
+HRESULT CGEKEngine::LoadLevel(LPCWSTR pName, LPCWSTR pEntry)
+{
+    m_spPopulationManager->Free();
+    m_spRenderManager->Free();
+
+    HRESULT hRetVal = m_spPopulationManager->LoadScene(pName, pEntry);
+    if (SUCCEEDED(hRetVal))
+    {
+        m_spRenderManager->OnSceneLoaded();
+    }
+    else
+    {
+        m_spPopulationManager->Free();
+        m_spRenderManager->Free();
+    }
+
+    return hRetVal;
+}
+
+void CGEKEngine::FreeLevel(void)
+{
+}
+
 void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
 {
     auto pIterator = m_aInputBindings.find(nKey);
@@ -111,12 +134,12 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderManager, IID_PPV_ARGS(&m_spRenderManager));
+        hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationManager, IID_PPV_ARGS(&m_spPopulationManager));
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationManager, IID_PPV_ARGS(&m_spPopulationManager));
+        hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderManager, IID_PPV_ARGS(&m_spRenderManager));
     }
 
     return hRetVal;
@@ -207,7 +230,7 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
 
 STDMETHODIMP_(void) CGEKEngine::OnRun(void)
 {
-    m_spPopulationManager->LoadScene(L"demo", L"info_player_start_1");
+    LoadLevel(L"demo", L"info_player_start_1");
     m_nTotalTime = 0.0;
     m_kTimer.Reset();
 }
@@ -251,11 +274,7 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
             m_spPopulationManager->Update(float(m_nTotalTime), (1.0f / 30.0f));
         };
      
-        if(SUCCEEDED(m_spRenderManager->BeginFrame()))
-        {
-            m_spPopulationManager->Render();
-            m_spRenderManager->EndFrame();
-        }
+        m_spRenderManager->Render();
     }
 }
 
@@ -283,7 +302,7 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(LPCWSTR pCommand, LPCWSTR *pParams, UI
     }
     else if (_wcsicmp(pCommand, L"newgame") == 0)
     {
-        m_spPopulationManager->LoadScene(L"demo", L"info_player_start_1");
+        LoadLevel(L"demo", L"info_player_start_1");
         m_nTotalTime = 0.0;
         m_kTimer.Reset();
     }

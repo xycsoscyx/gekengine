@@ -24,7 +24,6 @@ DECLARE_INTERFACE_IID_(IGEKSceneObserver, IGEKObserver, "51D6E5E6-2AD3-4D61-A704
     STDMETHOD_(void, OnPreUpdate)       (THIS_ float nGameTime, float nFrameTime) { };
     STDMETHOD_(void, OnUpdate)          (THIS_ float nGameTime, float nFrameTime) { };
     STDMETHOD_(void, OnPostUpdate)      (THIS_ float nGameTime, float nFrameTime) { };
-    STDMETHOD_(void, OnRender)          (THIS_ const frustum &kFrustum) { };
 };
 
 SYSTEM_USER(SceneManager, "D7455474-94FE-4282-92F1-7DD662EBC90E");

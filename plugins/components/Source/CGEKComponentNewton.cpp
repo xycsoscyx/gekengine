@@ -20,16 +20,6 @@ CGEKComponentNewton::~CGEKComponentNewton(void)
 {
 }
 
-NewtonBody *CGEKComponentNewton::GetBody(void) const
-{
-    return m_pBody;
-}
-
-float CGEKComponentNewton::GetMass(void) const
-{
-    return m_nMass;
-}
-
 STDMETHODIMP_(LPCWSTR) CGEKComponentNewton::GetType(void) const
 {
     return L"newton";
@@ -123,7 +113,7 @@ STDMETHODIMP CGEKComponentNewton::OnEntityCreated(void)
                         {
                             float4x4 nMatrix;
                             NewtonBodyGetMatrix(pBody, nMatrix.data);
-                            float3 nGravity = (pComponent->GetSceneManager()->GetGravity(nMatrix.t) * pComponent->GetMass());
+                            float3 nGravity = (pComponent->GetSceneManager()->GetGravity(nMatrix.t) * pComponent->m_nMass);
                             NewtonBodyAddForce(pBody, nGravity.xyz);
                         }
                     });
@@ -392,9 +382,9 @@ STDMETHODIMP CGEKComponentSystemNewton::Destroy(IGEKEntity *pEntity)
 
     if (pIterator != m_aComponents.end())
     {
-        if (((*pIterator).second)->GetBody())
+        if (((*pIterator).second)->m_pBody)
         {
-            NewtonDestroyBody(((*pIterator).second)->GetBody());
+            NewtonDestroyBody(((*pIterator).second)->m_pBody);
         }
 
         m_aComponents.erase(pIterator);
@@ -419,10 +409,10 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnUpdate(float nGameTime, float n
     concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentNewton>>::value_type &kPair) -> void
     {
         IGEKComponent *pTransform = kPair.first->GetComponent(L"transform");
-        if (pTransform && kPair.second->GetBody())
+        if (pTransform && kPair.second->m_pBody)
         {
             float4x4 nMatrix;
-            NewtonBodyGetMatrix(kPair.second->GetBody(), nMatrix.data);
+            NewtonBodyGetMatrix(kPair.second->m_pBody, nMatrix.data);
             pTransform->SetProperty(L"position", nMatrix.t);
             pTransform->SetProperty(L"rotation", quaternion(nMatrix));
         }

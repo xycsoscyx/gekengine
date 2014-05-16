@@ -9,7 +9,6 @@
 BEGIN_INTERFACE_LIST(CGEKPopulationManager)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
     INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKRenderManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKPopulationManager)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneManager)
@@ -29,12 +28,17 @@ CGEKPopulationManager::~CGEKPopulationManager(void)
 STDMETHODIMP CGEKPopulationManager::OnRegistration(IUnknown *pObject)
 {
     HRESULT hRetVal = S_OK;
-    CComQIPtr<IGEKSceneManagerUser> spUser(pObject);
-    if (spUser != nullptr)
+    CComQIPtr<IGEKSceneManagerUser> spSceneUser(pObject);
+    if (spSceneUser != nullptr)
     {
-        hRetVal = spUser->Register(this);
+        hRetVal = spSceneUser->Register(this);
     }
 
+    CComQIPtr<IGEKPopulationManagerUser> spPopulationUser(pObject);
+    if (spPopulationUser != nullptr)
+    {
+        hRetVal = spPopulationUser->Register(this);
+    }
 
     return hRetVal;
 }
@@ -70,7 +74,6 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
 {
     Free();
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
-    GetRenderManager()->BeginLoad();
 
     CLibXMLDoc kDocument;
     std::list<CLibXMLNode> aEntities;
@@ -150,14 +153,6 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
                     {
                         hRetVal = E_ACCESSDENIED;
                     }
-                    else
-                    {
-                        CComQIPtr<IGEKViewManager> spViewManager(GetRenderManager());
-                        if (spViewManager)
-                        {
-                            hRetVal = spViewManager->SetViewer((*pIterator).second);
-                        }
-                    }
                 }
             }
         }
@@ -168,7 +163,6 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
         m_bLevelLoaded = true;
     }
 
-    GetRenderManager()->EndLoad(hRetVal);
     return CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
 }
 
@@ -177,7 +171,6 @@ STDMETHODIMP_(void) CGEKPopulationManager::Free(void)
     if (m_bLevelLoaded)
     {
         m_bLevelLoaded = false;
-        GetRenderManager()->Free();
         m_aInputHandlers.clear();
         m_aPopulation.clear();
         m_aHitList.clear();
@@ -233,11 +226,11 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
     }
 }
 
-STDMETHODIMP_(void) CGEKPopulationManager::Render(void)
+STDMETHODIMP_(void) CGEKPopulationManager::GetVisible(const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities)
 {
-    if (m_bLevelLoaded)
+    for (auto &pSystem : m_aComponentSystems)
     {
-        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnRender, std::placeholders::_1, GetRenderManager()->GetFrustum())));
+        pSystem->GetVisible(kFrustum, aVisibleEntities);
     }
 }
 
