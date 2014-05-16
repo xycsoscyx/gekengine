@@ -32,8 +32,8 @@ STDMETHODIMP_(void) CGEKLightMoveState::OnEnter(IGEKEntity *pEntity)
             static std::mt19937 kMersine(kRandomDevice());
             static std::uniform_real_distribution<float> kRandom(1.0, 2.0);
             m_nOffset = (kRandom(kMersine) * _2_PI);
-            m_nSpeed = kRandom(kMersine);
-            m_nSize = kRandom(kMersine);
+            m_nSpeed = (kRandom(kMersine) * 2.0f);
+            m_nSize = (kRandom(kMersine) * 5.0f);
         }
     }
 }
