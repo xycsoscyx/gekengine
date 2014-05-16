@@ -111,12 +111,9 @@
     <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
     <ClInclude Include="..\..\api\GEKVALUE.h" />
     <ClInclude Include="..\..\api\IGEKComponent.h" />
-    <ClInclude Include="..\..\api\IGEKComponentSystem.h" />
-    <ClInclude Include="..\..\api\IGEKEntity.h" />
     <ClInclude Include="..\..\api\IGEKFactory.h" />
     <ClInclude Include="..\..\api\IGEKLogic.h" />
     <ClInclude Include="..\..\api\IGEKMaterialManager.h" />
-    <ClInclude Include="..\..\api\IGEKModel.h" />
     <ClInclude Include="..\..\api\IGEKModelManager.h" />
     <ClInclude Include="..\..\api\IGEKProgramManager.h" />
     <ClInclude Include="..\..\api\IGEKResource.h" />

@@ -62,16 +62,7 @@
     <ClInclude Include="..\..\api\IGEKComponent.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\IGEKComponentSystem.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKEntity.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\api\IGEKMaterialManager.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKModel.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\api\IGEKModelManager.h">

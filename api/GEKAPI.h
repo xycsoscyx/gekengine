@@ -5,15 +5,14 @@
 
 // Interfaces
 #include "IGEKResource.h"
-#include "IGEKEntity.h"
-#include "IGEKLogic.h"
-#include "IGEKComponent.h"
-#include "IGEKComponentSystem.h"
-#include "IGEKProgramManager.h"
-#include "IGEKModel.h"
-#include "IGEKModelManager.h"
 #include "IGEKFactory.h"
+
+#include "IGEKComponent.h"
+#include "IGEKLogic.h"
+
 #include "IGEKMaterialManager.h"
+#include "IGEKProgramManager.h"
+#include "IGEKModelManager.h"
 #include "IGEKSceneManager.h"
 #include "IGEKViewManager.h"
 
