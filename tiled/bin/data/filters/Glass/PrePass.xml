@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<filter mode="forward" vertexattributes="position">
+    <render cullmode="back" />
+    
+    <blend writemask="" />
+    
+    <targets>
+        <depth source="Opaque/PrePass" comparison="lessequal" writemask="all">
+            <stencil reference="1" readmask="255" writemask="255" clear="0">
+                <front pass="replace" fail="keep" depthfail="keep" comparison="always" />
+                <back pass="keep" fail="keep" depthfail="keep" comparison="never" />
+            </stencil>
+        </depth>
+    </targets>
+    
+    <pixel>
+        <![CDATA[
+            Texture2D     gs_pAlbedoMap             : register(t0);
+
+            float4 MainPixelProgram(in INPUT kInput) : SV_TARGET
+            {
+                float4 nAlbedo = gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord);
+
+                [branch]
+                if(nAlbedo.a < 0.5f)
+                {
+                    discard;
+                }
+
+                return 0.0f;
+            }
+        ]]>
+    </pixel>
+</filter>

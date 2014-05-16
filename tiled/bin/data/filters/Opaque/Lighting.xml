@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<!DOCTYPE filter [
+    <!ENTITY LightingShader PUBLIC "%root%/data/filters/Shared/Lighting.xml" "">
+    <!ENTITY ComputeShader PUBLIC "%root%/data/filters/Shared/Indexed.xml" "">
+]>
+<filter mode="lighting">
+    <defines>
+        <define name="gs_nLightTileSize" value="16" />
+        <define name="gs_nMaxLights" value="254" />
+    </defines>
+
+    <blend>
+        <color source="one" destination="one" operation="add" />
+        <alpha source="one" destination="one" operation="add" />
+    </blend>
+
+    <targets>
+        <target source="Screen" />
+        <target name="Buffer" format="RGBA_UINT8" clear="0,0,0,0" />
+    </targets>
+    
+    <buffers>
+        <buffer name="TileIndices" format="R_UINT8" count="ceil(%video.xsize%/gs_nLightTileSize)*ceil(%video.ysize%/gs_nLightTileSize)*gs_nMaxLights" />
+    </buffers>
+
+    <compute dispatch="ceil(%video.xsize%/gs_nLightTileSize),ceil(%video.ysize%/gs_nLightTileSize),1">
+        <resources>
+            <resource stage="0" source="Opaque/Lighting.TileIndices" unorderedaccess="true" />
+            <resource stage="1" source="Opaque/Deferred.World" />
+        </resources>
+
+        &ComputeShader;
+    </compute>
+    
+    <pixel>
+        <resources>
+            <resource stage="1" source="Opaque/Deferred.Albedo" />
+            <resource stage="2" source="Opaque/Deferred.World" />
+            <resource stage="3" source="Opaque/Deferred.Info" />
+            <resource stage="4" source="Opaque/Lighting.TileIndices" />
+        </resources>
+
+        &LightingShader;
+        <![CDATA[
+            struct OUTPUT
+            {
+                float4 screen                       : SV_TARGET0;
+                float4 buffer                       : SV_TARGET1;
+            };
+
+            OUTPUT MainPixelProgram(in INPUT kInput) : SV_TARGET0
+            {
+                float3 nTotalDiffuse = 0.0f;
+                float3 nTotalSpecular = 0.0f;
+                GetLightingContribution(kInput, nTotalDiffuse, nTotalSpecular);
+
+                OUTPUT kOutput;
+                kOutput.screen = kOutput.buffer = float4((nTotalDiffuse + nTotalSpecular), 1.0f);
+                return kOutput;
+            }
+        ]]>
+    </pixel>
+</filter>

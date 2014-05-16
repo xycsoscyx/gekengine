@@ -1,0 +1,279 @@
+﻿<!doctype html>
+<html lang="us">
+<head>
+    <meta charset="utf-8">
+    <title>GEK Engine</title>
+    <link href="css/custom-theme/jquery-ui.css" rel="stylesheet">
+    <style>
+        html {
+            overflow: hidden;
+            -webkit-user-select: none;
+        }
+
+        .no-close .ui-dialog-titlebar-close {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="cursor" style="position: absolute; z-index: 999; pointer-events: none">
+        <img src="images/cursor.gif" />
+    </div>
+
+    <div id="dlgMainMenu" title="GEK Engine">
+        <p align="center">
+            <button id="btnNewGame">New Game</button><br />
+            <button id="btnLoadGame">Load Game</button><br />
+            <button id="btnSaveGame">Save Game</button><br />
+            <button id="btnOptions">Options</button><br />
+            <button id="btnQuit">Quit</button><br />
+        </p>
+    </div>
+
+    <div id="dlgOptions" title="Options">
+        <div id="tabsOptions">
+            <ul>
+                <li><a href="#tabDisplay">Display</a></li>
+                <li><a href="#tabAudio">Audio</a></li>
+                <li><a href="#tabControls">Controls</a></li>
+            </ul>
+            <div id="tabDisplay">
+                <div style="display:inline-block;float:left" class="ui-widget">
+                    <label>Resolution: </label>
+                    <select id="selResolution"></select>
+                </div>
+                <div style="display:inline-block;float:right">
+                    <input type="checkbox" id="chkFullScreen" /><label for="chkFullScreen">FullScreen</label>
+                </div>
+            </div>
+            <div id="tabAudio">
+            </div>
+            <div id="tabControls">
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/jquery-2.1.0.js"></script>
+    <script src="scripts/jquery-ui-1.10.4.custom.js"></script>
+    <style>
+        .custom-combobox {
+            position: relative;
+            display: inline-block;
+        }
+
+        .custom-combobox-toggle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            margin-left: -1px;
+            padding: 0;
+            /* support: IE7 */
+            *height: 1.7em;
+            *top: 0.1em;
+        }
+
+        .custom-combobox-input {
+            margin: 0;
+            padding: 0.3em;
+        }
+
+        .ui-autocomplete {
+            max-height: 300px;
+            overflow-y: auto; /* prevent horizontal scrollbar */
+            overflow-x: hidden; /* add padding to account for vertical scrollbar */
+            z-index: 1000 !important;
+        }
+    </style>
+    <script>
+        (function ($) {
+            $.widget("custom.combobox", {
+                _create: function () {
+                    this.wrapper = $("<span>")
+                      .addClass("custom-combobox")
+                      .insertAfter(this.element);
+                    this.element.hide();
+                    this._createAutocomplete();
+                    this._createShowAllButton();
+                },
+
+                _createAutocomplete: function () {
+                    var selected = this.element.children(":selected"),
+                      value = selected.val() ? selected.text() : "";
+                    this.input = $("<input>")
+                      .appendTo(this.wrapper)
+                      .val(value)
+                      .attr("title", "")
+                      .addClass("custom-combobox-input ui-widget ui-widget-content ui-state-default ui-corner-left")
+                      .autocomplete({
+                          delay: 0,
+                          minLength: 0,
+                          source: $.proxy(this, "_source")
+                      })
+                      .tooltip({
+                          tooltipClass: "ui-state-highlight"
+                      });
+
+                    this._on(this.input, {
+                        autocompleteselect: function (event, ui) {
+                            ui.item.option.selected = true;
+                            this._trigger("select", event, {
+                                item: ui.item.option
+                            });
+                        },
+                        autocompletechange: "_removeIfInvalid"
+                    });
+                },
+
+                _createShowAllButton: function () {
+                    var input = this.input,
+                      wasOpen = false;
+                    $("<a>")
+                      .attr("tabIndex", -1)
+                      .attr("title", "Show All Items")
+                      .tooltip()
+                      .appendTo(this.wrapper)
+                      .button({
+                          icons: {
+                              primary: "ui-icon-triangle-1-s"
+                          },
+                          text: false
+                      })
+                      .removeClass("ui-corner-all")
+                      .addClass("custom-combobox-toggle ui-corner-right")
+                      .mousedown(function () {
+                          wasOpen = input.autocomplete("widget").is(":visible");
+                      })
+                      .click(function () {
+                          input.focus();
+                          // Close if already visible
+                          if (wasOpen) {
+                              return;
+                          }
+                          // Pass empty string as value to search for, displaying all results
+                          input.autocomplete("search", "");
+                      });
+                },
+
+                _source: function (request, response) {
+                    var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
+                    response(this.element.children("option").map(function () {
+                        var text = $(this).text();
+                        if (this.value && (!request.term || matcher.test(text)))
+                            return {
+                                label: text,
+                                value: text,
+                                option: this
+                            };
+                    }));
+                },
+
+                _removeIfInvalid: function (event, ui) {
+                    // Selected an item, nothing to do
+                    if (ui.item) {
+                        return;
+                    }
+                    // Search for a match (case-insensitive)
+                    var value = this.input.val(),
+                      valueLowerCase = value.toLowerCase(),
+                      valid = false;
+                    this.element.children("option").each(function () {
+                        if ($(this).text().toLowerCase() === valueLowerCase) {
+                            this.selected = valid = true;
+                            return false;
+                        }
+                    });
+                    // Found a match, nothing to do
+                    if (valid) {
+                        return;
+                    }
+                    // Remove invalid value
+                    this.input
+                      .val("")
+                      .attr("title", value + " didn't match any item")
+                      .tooltip("open");
+                    this.element.val("");
+                    this._delay(function () {
+                        this.input.tooltip("close").attr("title", "");
+                    }, 2500);
+                    this.input.data("ui-autocomplete").term = "";
+                },
+                _destroy: function () {
+                    this.wrapper.remove();
+                    this.element.show();
+                }
+            });
+        })(jQuery);
+    </script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(document).mousemove(function (kEvent) {
+                $("#cursor").css({ "left": event.pageX, "top": event.pageY });
+            });
+
+            $("#dlgMainMenu").dialog({
+                modal: true,
+                autoOpen: true,
+                closeOnEscape: false,
+                dialogClass: 'no-close',
+                draggable: false,
+                width: 400,
+            });
+
+            $("#btnNewGame").button().css({ width: '200px' }).click(function () {
+                Engine.NewGame();
+            });
+            $("#btnLoadGame").button().css({ width: '200px' });
+            $("#btnSaveGame").button().css({ width: '200px' });
+            $("#btnOptions").button().css({ width: '200px' }).click(function () {
+                $("#dlgOptions").dialog("open");
+                event.preventDefault();
+            });
+            $("#btnQuit").button().css({ width: '200px' }).click(function () {
+                Engine.Quit();
+            });
+
+            $("#dlgOptions").dialog({
+                autoOpen: false,
+                modal: true,
+                closeOnEscape: true,
+                draggable: false,
+                width: 700,
+                height: 600,
+            });
+
+            $("#tabsOptions").tabs().css({
+                'min-height': 500,
+                'overflow': 'auto'
+            });
+
+            $("#chkFullScreen").button().change(function () {
+                var kSelected = $("#selResolution").children(":selected");
+                var bFullScreen = $(this).is(':checked');
+                Engine.SetResolution(kSelected.data("xsize"), kSelected.data("ysize"), !bFullScreen);
+            });
+            var nXSize = Engine.GetValue("video", "xsize");
+            var nYSize = Engine.GetValue("video", "ysize");
+            var aResolutions = Engine.GetResolutions();
+            for (var kEntry in aResolutions) {
+                $('<option data-xsize="' + aResolutions[kEntry].XSize + '" data-ysize="' + aResolutions[kEntry].YSize + '">' + aResolutions[kEntry].Label + '</option>').appendTo($("#selResolution"))
+                if (aResolutions[kEntry].XSize == nXSize &&
+                     aResolutions[kEntry].YSize == nYSize) {
+                    $("#selResolution option:eq(" + kEntry + ")").attr("selected", "true");
+                }
+            }
+            $("#selResolution").combobox({
+                select: function (event, object) {
+                    var kSelected = $(this).children(":selected");
+                    var bFullScreen = $("#chkFullScreen").is(':checked');
+                    Engine.SetResolution(kSelected.data("xsize"), kSelected.data("ysize"), !bFullScreen);
+                }
+            }).closest(".ui-widget").find("input, button").prop("readonly", true);
+
+            $(window).resize(function () {
+                $("#dlgMainMenu").dialog("option", "position", "center");
+                $("#dlgOptions").dialog("option", "position", "center");
+            });
+        });
+    </script>
+</body>
+</html>

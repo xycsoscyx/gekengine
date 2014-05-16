@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE filter [
+    <!ENTITY DeferredShader PUBLIC "%root%/data/filters/Shared/Deferred.xml" "">
+]>
+<filter mode="forward">
+    <render cullmode="back" />
+    
+    <targets>
+        <target source="Opaque/Deferred.Albedo" />
+        <target name="World" format="RGBA_FLOAT" />
+        <target source="Opaque/Deferred.Info" />
+        <depth source="Opaque/PrePass" comparison="lessequal" writemask="none" />
+    </targets>
+        
+    <pixel>
+        &DeferredShader;
+    </pixel>
+</filter>

@@ -1,0 +1,40 @@
+<![CDATA[
+    Texture2D     gs_pAlbedoMap             : register(t0);
+    Texture2D     gs_pNormalMap             : register(t1);
+    Texture2D     gs_pInfoMap               : register(t2);
+
+    struct OUTPUT
+    {
+        float4 albedo                       : SV_TARGET0;
+        float4 world                        : SV_TARGET1;
+        float4 info                         : SV_TARGET2;
+    };
+
+    OUTPUT MainPixelProgram(in INPUT kInput)
+    {
+        float4 nAlbedo = gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord);
+
+        [branch]
+        if(nAlbedo.a < 0.5f)
+        {
+            discard;
+        }
+
+        float3 nNormal;
+        nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xy * 2.0) - 1.0f);
+        nNormal.z = sqrt(1.0 - dot(nNormal.xy, nNormal.xy));
+        nNormal = (mul(nNormal, kInput.texbasis) * (kInput.frontface ? 1 : -1));
+        nNormal = mul((float3x3)gs_nViewMatrix, nNormal);
+
+        float4 nInfo = gs_pInfoMap.Sample(gs_pLinearSampler, kInput.texcoord);
+
+        float4 nViewPosition = mul(gs_nViewMatrix, kInput.worldposition);
+
+        OUTPUT kOutput;
+        kOutput.albedo    = nAlbedo;
+        kOutput.world.xyz = nNormal;
+        kOutput.world.w   = nViewPosition.z;
+        kOutput.info      = nInfo;
+        return kOutput;
+    }
+]]>

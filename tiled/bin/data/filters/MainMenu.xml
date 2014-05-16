@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<filter>
+    <blend>
+        <color source="source_alpha" destination="inverse_source_alpha" operation="add" />
+        <alpha source="one" destination="one" operation="add" />
+    </blend>
+    <pixel>
+        <resources>
+            <resource stage="0" data="*browser:mainmenu" />
+        </resources>
+        <![CDATA[
+            Texture2D     gs_pBrowser               : register(t0);
+
+            float4 MainPixelProgram(in INPUT kInput) : SV_TARGET
+            {
+	            return gs_pBrowser.Sample(gs_pPointSampler, kInput.texcoord);
+            }
+        ]]>
+    </pixel>
+</filter>
