@@ -104,7 +104,7 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
         }
     }
 
-    std::for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
+    concurrency::parallel_for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
         AddEntity(kEntityNode);
     });
@@ -218,7 +218,7 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
                     pSystem->Destroy(pEntity);
                 }
 
-                m_aPopulation.erase(pIterator);
+                m_aPopulation.unsafe_erase(pIterator);
             }
         }
 

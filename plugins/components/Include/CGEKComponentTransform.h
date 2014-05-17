@@ -4,7 +4,7 @@
 #include "GEKContext.h"
 #include "CGEKComponent.h"
 #include "GEKAPI.h"
-#include <list>
+#include <concurrent_unordered_map.h>
 
 class CGEKComponentTransform : public CGEKUnknown
                              , public CGEKComponent
@@ -30,7 +30,7 @@ class CGEKComponentSystemTransform : public CGEKUnknown
                                    , public IGEKComponentSystem
 {
 private:
-    std::map<IGEKEntity *, CComPtr<CGEKComponentTransform>> m_aComponents;
+    concurrency::concurrent_unordered_map<IGEKEntity *, CComPtr<CGEKComponentTransform>> m_aComponents;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemTransform)

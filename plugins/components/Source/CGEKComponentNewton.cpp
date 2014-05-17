@@ -375,11 +375,7 @@ STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kEntityNode, I
 STDMETHODIMP CGEKComponentSystemNewton::Destroy(IGEKEntity *pEntity)
 {
     HRESULT hRetVal = E_FAIL;
-    auto pIterator = std::find_if(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentNewton>>::value_type &kPair) -> bool
-    {
-        return (kPair.first == pEntity);
-    });
-
+    auto pIterator = m_aComponents.find(pEntity);
     if (pIterator != m_aComponents.end())
     {
         if (((*pIterator).second)->m_pBody)
@@ -387,7 +383,7 @@ STDMETHODIMP CGEKComponentSystemNewton::Destroy(IGEKEntity *pEntity)
             NewtonDestroyBody(((*pIterator).second)->m_pBody);
         }
 
-        m_aComponents.erase(pIterator);
+        m_aComponents.unsafe_erase(pIterator);
         hRetVal = S_OK;
     }
 

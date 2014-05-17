@@ -68,6 +68,27 @@ public:
     bool operator == (const CStringW &strString);
 };
 
+namespace std
+{
+    template <>
+    struct hash<GEKHASH> : public unary_function<GEKHASH, size_t>
+    {
+        size_t operator()(const GEKHASH &kHash) const
+        {
+            return kHash.GetHash();
+        }
+    };
+
+    template <>
+    struct equal_to<GEKHASH> : public unary_function<GEKHASH, bool>
+    {
+        bool operator()(const GEKHASH &kHashA, const GEKHASH &kHashB) const
+        {
+            return (kHashA.GetHash() == kHashB.GetHash());
+        }
+    };
+};
+
 double      StrToDouble(LPCWSTR pValue);
 float       StrToFloat(LPCWSTR pValue);
 float2      StrToFloat2(LPCWSTR pValue);

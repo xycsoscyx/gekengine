@@ -5,7 +5,7 @@
 #include "CGEKComponent.h"
 #include "GEKAPI.h"
 #include <Newton.h>
-#include <list>
+#include <concurrent_unordered_map.h>
 
 class CGEKComponentSystemNewton;
 
@@ -42,7 +42,7 @@ class CGEKComponentSystemNewton : public CGEKUnknown
 {
 private:
     NewtonWorld *m_pWorld;
-    std::map<IGEKEntity *, CComPtr<CGEKComponentNewton>> m_aComponents;
+    concurrency::concurrent_unordered_map<IGEKEntity *, CComPtr<CGEKComponentNewton>> m_aComponents;
     std::map<GEKHASH, NewtonCollision *> m_aCollisions;
 
 public:

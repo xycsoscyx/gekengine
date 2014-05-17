@@ -5,7 +5,7 @@
 #include "GEKAPI.h"
 #include "IGEKPopulationManager.h"
 #include "IGEKRenderManager.h"
-#include <concrt.h>
+#include <concurrent_unordered_map.h>
 #include <list>
 
 class CGEKPopulationManager : public CGEKUnknown
@@ -18,7 +18,7 @@ class CGEKPopulationManager : public CGEKUnknown
 private:
     concurrency::critical_section m_kCriticalSection;
     std::list<CComQIPtr<IGEKComponentSystem>> m_aComponentSystems;
-    std::map<GEKHASH, CComPtr<IGEKEntity>> m_aPopulation;
+    concurrency::concurrent_unordered_map<GEKHASH, CComPtr<IGEKEntity>> m_aPopulation;
     std::list<IGEKEntity *> m_aInputHandlers;
     std::list<IGEKEntity *> m_aHitList;
     bool m_bLevelLoaded;
