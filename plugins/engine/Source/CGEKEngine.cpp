@@ -41,11 +41,7 @@ HRESULT CGEKEngine::LoadLevel(LPCWSTR pName, LPCWSTR pEntry)
     m_spRenderManager->Free();
 
     HRESULT hRetVal = m_spPopulationManager->LoadScene(pName, pEntry);
-    if (SUCCEEDED(hRetVal))
-    {
-        m_spRenderManager->OnSceneLoaded();
-    }
-    else
+    if (FAILED(hRetVal))
     {
         m_spPopulationManager->Free();
         m_spRenderManager->Free();

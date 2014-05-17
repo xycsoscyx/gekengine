@@ -40,11 +40,11 @@ public:
     STDMETHOD_(void, Free)              (THIS);
     STDMETHOD_(void, OnInputEvent)      (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);
-    STDMETHOD_(void, GetVisible)        (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities);
 
     // IGEKSceneManager
     STDMETHOD(AddEntity)                (THIS_ CLibXMLNode &kEntityNode);
     STDMETHOD(FindEntity)               (THIS_ LPCWSTR pName, IGEKEntity **ppEntity);
     STDMETHOD(DestroyEntity)            (THIS_ IGEKEntity *pEntity);
     STDMETHOD_(float3, GetGravity)      (THIS_ const float4 &nGravity);
+    STDMETHOD_(void, GetVisible)        (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities);
 };

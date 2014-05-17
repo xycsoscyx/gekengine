@@ -11,7 +11,6 @@ DECLARE_INTERFACE_IID_(IGEKPopulationManager, IUnknown, "15D96F1B-3B38-4EAD-B62A
     STDMETHOD_(void, OnInputEvent)      (THIS_ LPCWSTR pName, const GEKVALUE &kValue) PURE;
 
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime) PURE;
-    STDMETHOD_(void, GetVisible)        (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities) PURE;
 };
 
 SYSTEM_USER(PopulationManager, "0A920D46-6D72-4E90-9DC6-CD147A1775C7");

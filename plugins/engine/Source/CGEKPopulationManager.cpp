@@ -226,14 +226,6 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
     }
 }
 
-STDMETHODIMP_(void) CGEKPopulationManager::GetVisible(const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities)
-{
-    for (auto &pSystem : m_aComponentSystems)
-    {
-        pSystem->GetVisible(kFrustum, aVisibleEntities);
-    }
-}
-
 STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
@@ -315,4 +307,12 @@ STDMETHODIMP CGEKPopulationManager::DestroyEntity(IGEKEntity *pEntity)
 STDMETHODIMP_(float3) CGEKPopulationManager::GetGravity(const float4 &nGravity)
 {
     return float3(0.0f, -9.81f, 0.0f);
+}
+
+STDMETHODIMP_(void) CGEKPopulationManager::GetVisible(const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities)
+{
+    for (auto &pSystem : m_aComponentSystems)
+    {
+        pSystem->GetVisible(kFrustum, aVisibleEntities);
+    }
 }
