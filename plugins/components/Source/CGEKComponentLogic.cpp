@@ -200,11 +200,7 @@ STDMETHODIMP_(void) CGEKComponentSystemLogic::OnPreUpdate(float nGameTime, float
 
 STDMETHODIMP_(void) CGEKComponentSystemLogic::SetState(IGEKEntity *pEntity, IGEKLogicState *pState)
 {
-    auto pIterator = std::find_if(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLogic>>::value_type &kPair) -> bool
-    {
-        return (kPair.first == pEntity);
-    });
-
+    auto pIterator = m_aComponents.find(pEntity);
     if (pIterator != m_aComponents.end())
     {
         (*pIterator).second->SetState(pState);

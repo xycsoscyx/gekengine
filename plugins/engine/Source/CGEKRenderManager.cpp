@@ -940,16 +940,14 @@ STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
         CStringW strName = pName;
         GEKHASH nFilter = strName.Tokenize(L".", nPosition);
         CStringW strSource = strName.Tokenize(L".", nPosition);
-        std::find_if (m_aFilters.begin(), m_aFilters.end(), [&] (std::map<GEKHASH, CComPtr<IGEKRenderFilter>>::value_type &kPair) -> bool
+        for (auto &kPair : m_aFilters)
         {
             if (kPair.first == nFilter)
             {
                 hRetVal = kPair.second->GetBuffer(strSource, ppResource);
-                return true;
+                break;
             }
-
-            return false;
-        } );
+        }
     }
 
     return hRetVal;
@@ -958,16 +956,14 @@ STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
 STDMETHODIMP CGEKRenderManager::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuffer)
 {
     HRESULT hRetVal = E_FAIL;
-    std::find_if(m_aFilters.begin(), m_aFilters.end(), [&hRetVal, pSource, ppBuffer](std::map<GEKHASH, CComPtr<IGEKRenderFilter>>::value_type &kPair) -> bool
+    for (auto &kPair : m_aFilters)
     {
         if (kPair.first == pSource)
         {
             hRetVal = kPair.second->GetDepthBuffer(ppBuffer);
-            return true;
+            break;
         }
-
-        return false;
-    } );
+    }
 
     return hRetVal;
 }
@@ -1539,7 +1535,6 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
                             kInstance.m_nMatrix.t = kPosition.GetFloat3();
                             aModels.insert(std::make_pair(spModel, kInstance));
                         }
-
                     }
                 }
             });

@@ -201,7 +201,7 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
         {
             auto pIterator = std::find_if(m_aPopulation.begin(), m_aPopulation.end(), [pEntity](std::map<GEKHASH, CComPtr<IGEKEntity>>::value_type &kPair) -> bool
             {
-                return (kPair.second == pEntity);
+                return (kPair.second.IsEqualObject(pEntity));
             });
 
             if (pIterator != m_aPopulation.end())
@@ -259,10 +259,13 @@ STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
             while (kComponentNode)
             {
                 CComPtr<IGEKComponent> spComponent;
-                std::find_if(m_aComponentSystems.begin(), m_aComponentSystems.end(), [&](IGEKComponentSystem *pSystem) -> bool
+                for (auto &pSystem : m_aComponentSystems)
                 {
-                    return SUCCEEDED(pSystem->Create(kComponentNode, spEntity, &spComponent));
-                });
+                    if (SUCCEEDED(pSystem->Create(kComponentNode, spEntity, &spComponent)))
+                    {
+                        break;
+                    }
+                }
 
                 if (spComponent)
                 {
