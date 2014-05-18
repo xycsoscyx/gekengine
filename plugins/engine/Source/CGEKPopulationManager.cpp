@@ -17,7 +17,6 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKPopulationManager)
 
 CGEKPopulationManager::CGEKPopulationManager(void)
-    : m_bLevelLoaded(false)
 {
 }
 
@@ -158,27 +157,18 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
         }
     }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        m_bLevelLoaded = true;
-    }
-
     return CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
 }
 
 STDMETHODIMP_(void) CGEKPopulationManager::Free(void)
 {
-    if (m_bLevelLoaded)
-    {
-        m_bLevelLoaded = false;
-        m_aInputHandlers.clear();
-        m_aPopulation.clear();
-        m_aHitList.clear();
+    m_aInputHandlers.clear();
+    m_aPopulation.clear();
+    m_aHitList.clear();
 
-        for (auto &pSystem : m_aComponentSystems)
-        {
-            pSystem->Clear();
-        }
+    for (auto &pSystem : m_aComponentSystems)
+    {
+        pSystem->Clear();
     }
 }
 
@@ -192,37 +182,42 @@ STDMETHODIMP_(void) CGEKPopulationManager::OnInputEvent(LPCWSTR pName, const GEK
 
 STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameTime)
 {
-    if (m_bLevelLoaded)
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnPreUpdate, std::placeholders::_1, nGameTime, nFrameTime)));
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnUpdate, std::placeholders::_1, nGameTime, nFrameTime)));
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnPostUpdate, std::placeholders::_1, nGameTime, nFrameTime)));
+    for (auto &pEntity : m_aHitList)
     {
-        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnPreUpdate, std::placeholders::_1, nGameTime, nFrameTime)));
-        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnUpdate, std::placeholders::_1, nGameTime, nFrameTime)));
-        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnPostUpdate, std::placeholders::_1, nGameTime, nFrameTime)));
-        for (auto &pEntity : m_aHitList)
+        auto pIterator = std::find_if(m_aPopulation.begin(), m_aPopulation.end(), [pEntity](std::map<GEKHASH, CComPtr<IGEKEntity>>::value_type &kPair) -> bool
         {
-            auto pIterator = std::find_if(m_aPopulation.begin(), m_aPopulation.end(), [pEntity](std::map<GEKHASH, CComPtr<IGEKEntity>>::value_type &kPair) -> bool
+            return (kPair.second.IsEqualObject(pEntity));
+        });
+
+        if (pIterator != m_aPopulation.end())
+        {
+            m_aInputHandlers.erase(std::remove_if(m_aInputHandlers.begin(), m_aInputHandlers.end(), [&](IGEKEntity *pInputEntity) -> bool
             {
-                return (kPair.second.IsEqualObject(pEntity));
-            });
+                return (pEntity == pInputEntity);
+            }), m_aInputHandlers.end());
 
-            if (pIterator != m_aPopulation.end())
+            dynamic_cast<CGEKEntity *>(pEntity)->OnEntityDestroyed();
+            CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityDestroyed, std::placeholders::_1, pEntity)));
+            for (auto &pSystem : m_aComponentSystems)
             {
-                m_aInputHandlers.erase(std::remove_if(m_aInputHandlers.begin(), m_aInputHandlers.end(), [&](IGEKEntity *pInputEntity) -> bool
-                {
-                    return (pEntity == pInputEntity);
-                }), m_aInputHandlers.end());
-
-                dynamic_cast<CGEKEntity *>(pEntity)->OnEntityDestroyed();
-                CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityDestroyed, std::placeholders::_1, pEntity)));
-                for (auto &pSystem : m_aComponentSystems)
-                {
-                    pSystem->Destroy(pEntity);
-                }
-
-                m_aPopulation.unsafe_erase(pIterator);
+                pSystem->Destroy(pEntity);
             }
-        }
 
-        m_aHitList.clear();
+            m_aPopulation.unsafe_erase(pIterator);
+        }
+    }
+
+    m_aHitList.clear();
+}
+
+STDMETHODIMP_(void) CGEKPopulationManager::GetVisible(const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities)
+{
+    for (auto &pSystem : m_aComponentSystems)
+    {
+        pSystem->GetVisible(kFrustum, aVisibleEntities);
     }
 }
 
@@ -307,12 +302,4 @@ STDMETHODIMP CGEKPopulationManager::DestroyEntity(IGEKEntity *pEntity)
 STDMETHODIMP_(float3) CGEKPopulationManager::GetGravity(const float4 &nGravity)
 {
     return float3(0.0f, -9.81f, 0.0f);
-}
-
-STDMETHODIMP_(void) CGEKPopulationManager::GetVisible(const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities)
-{
-    for (auto &pSystem : m_aComponentSystems)
-    {
-        pSystem->GetVisible(kFrustum, aVisibleEntities);
-    }
 }

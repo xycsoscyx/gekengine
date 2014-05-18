@@ -281,9 +281,8 @@ BEGIN_INTERFACE_LIST(CGEKRenderManager)
     INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKEngineUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKPopulationManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderManager)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManager)
     INTERFACE_LIST_ENTRY_COM(IGEKMaterialManager)
@@ -464,16 +463,6 @@ STDMETHODIMP CGEKRenderManager::OnPostReset(void)
     return S_OK;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::OnLoadBegin(void)
-{
-}
-
-STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
-{
-    GetVideoSystem()->SetEvent(m_spFrameEvent);
-    return S_OK;
-}
-
 STDMETHODIMP CGEKRenderManager::Initialize(void)
 {
     HRESULT hRetVal = S_OK;
@@ -506,11 +495,6 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = CGEKObservable::AddObserver(GetVideoSystem(), (IGEKVideoObserver *)this);
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::AddObserver(GetSceneManager(), (IGEKSceneObserver *)this);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -619,7 +603,6 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 {
     Free();
-    CGEKObservable::RemoveObserver(GetVideoSystem(), (IGEKSceneObserver *)this);
     CGEKObservable::RemoveObserver(GetVideoSystem(), (IGEKVideoObserver *)this);
     CGEKObservable::RemoveObserver(GetSystem(), (IGEKSystemObserver *)this);
     CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
@@ -649,6 +632,11 @@ STDMETHODIMP_(void) CGEKRenderManager::Free(void)
     m_aModels.clear();
     m_aFilters.clear();
     m_aPasses.clear();
+}
+
+STDMETHODIMP_(void) CGEKRenderManager::OnSceneLoaded(void)
+{
+    GetVideoSystem()->SetEvent(m_spFrameEvent);
 }
 
 HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
@@ -737,23 +725,6 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
     }
 
     return hRetVal;
-}
-
-static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGEKRenderManager::PASS *pPass)
-{
-    if (aPasses.find(pPass) == aPasses.end())
-    {
-        aPasses[pPass] = 1;
-    }
-    else
-    {
-        aPasses[pPass]++;
-    }
-
-    for (auto &pRequiredPass : pPass->m_aRequiredPasses)
-    {
-        CountPasses(aPasses, pRequiredPass);
-    }
 }
 
 STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResource)
@@ -1450,6 +1421,23 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
     GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 }
 
+static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGEKRenderManager::PASS *pPass)
+{
+    if (aPasses.find(pPass) == aPasses.end())
+    {
+        aPasses[pPass] = 1;
+    }
+    else
+    {
+        aPasses[pPass]++;
+    }
+
+    for (auto &pRequiredPass : pPass->m_aRequiredPasses)
+    {
+        CountPasses(aPasses, pRequiredPass);
+    }
+}
+
 STDMETHODIMP_(void) CGEKRenderManager::Render(void)
 {
     REQUIRE_VOID_RETURN(m_pWebCore);
@@ -1504,7 +1492,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         if (true)
         {
             concurrency::concurrent_unordered_set<IGEKEntity *> aVisibleEntities;
-            GetSceneManager()->GetVisible(m_kFrustum, aVisibleEntities);
+            GetPopulationManager()->GetVisible(m_kFrustum, aVisibleEntities);
 
             concurrency::concurrent_vector<LIGHT> aLights;
             concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> aModels;

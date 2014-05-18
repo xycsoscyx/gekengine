@@ -6,6 +6,7 @@
 DECLARE_INTERFACE_IID_(IGEKRenderManager, IUnknown, "77161A84-61C4-4C05-9550-4EEB74EF3CB1")
 {
     STDMETHOD_(void, Free)                  (THIS) PURE;
+    STDMETHOD_(void, OnSceneLoaded)         (THIS) PURE;
 
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppResource) PURE;
     STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource) PURE;
