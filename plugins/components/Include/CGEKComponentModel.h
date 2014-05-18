@@ -46,6 +46,6 @@ public:
     STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
     STDMETHOD_(void, Clear)                 (THIS);
     STDMETHOD(Destroy)                      (THIS_ IGEKEntity *pEntity);
-    STDMETHOD(Create)                       (THIS_ const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
+    STDMETHOD(Create)                       (THIS_ const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
     STDMETHOD_(void, GetVisible)            (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities);
 };

@@ -85,7 +85,7 @@ STDMETHODIMP_(void) CGEKComponentSystemLight::Clear(void)
     m_aComponents.clear();
 }
 
-STDMETHODIMP CGEKComponentSystemLight::Create(const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
+STDMETHODIMP CGEKComponentSystemLight::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
     CComPtr<CGEKComponentLight> spComponent(new CGEKComponentLight(pEntity));
@@ -101,7 +101,7 @@ STDMETHODIMP CGEKComponentSystemLight::Create(const CLibXMLNode &kEntityNode, IG
         hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
         if (SUCCEEDED(hRetVal))
         {
-            kEntityNode.ListAttributes([&spComponent](LPCWSTR pName, LPCWSTR pValue) -> void
+            kComponentNode.ListAttributes([&spComponent](LPCWSTR pName, LPCWSTR pValue) -> void
             {
                 spComponent->SetProperty(pName, pValue);
             });

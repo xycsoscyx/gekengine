@@ -44,5 +44,5 @@ public:
     STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
     STDMETHOD_(void, Clear)                 (THIS);
     STDMETHOD(Destroy)                      (THIS_ IGEKEntity *pEntity);
-    STDMETHOD(Create)                       (THIS_ const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
+    STDMETHOD(Create)                       (THIS_ const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
 };
