@@ -22,7 +22,6 @@ public:
     ~CGEKComponentModel(void);
 
     // IGEKComponent
-    STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
     STDMETHOD_(void, ListProperties)        (THIS_ std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty);
     STDMETHOD_(bool, GetProperty)           (THIS_ LPCWSTR pName, GEKVALUE &kValue) const;
     STDMETHOD_(bool, SetProperty)           (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
@@ -44,8 +43,9 @@ public:
     ~CGEKComponentSystemModel(void);
 
     // IGEKComponentSystem
-    STDMETHOD_(void, Clear)             (THIS);
-    STDMETHOD(Destroy)                  (THIS_ IGEKEntity *pEntity);
-    STDMETHOD(Create)                   (THIS_ const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
-    STDMETHOD_(void, GetVisible)        (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities);
+    STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
+    STDMETHOD_(void, Clear)                 (THIS);
+    STDMETHOD(Destroy)                      (THIS_ IGEKEntity *pEntity);
+    STDMETHOD(Create)                       (THIS_ const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
+    STDMETHOD_(void, GetVisible)            (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities);
 };

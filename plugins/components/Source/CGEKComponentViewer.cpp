@@ -16,11 +16,6 @@ CGEKComponentViewer::~CGEKComponentViewer(void)
 {
 }
 
-STDMETHODIMP_(LPCWSTR) CGEKComponentViewer::GetType(void) const
-{
-    return L"viewer";
-}
-
 STDMETHODIMP_(void) CGEKComponentViewer::ListProperties(std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty)
 {
     OnProperty(L"fieldofview", m_nFieldOfView);
@@ -95,6 +90,11 @@ STDMETHODIMP CGEKComponentSystemViewer::Initialize(void)
     return S_OK;
 }
 
+STDMETHODIMP_(LPCWSTR) CGEKComponentSystemViewer::GetType(void) const
+{
+    return L"viewer";
+}
+
 STDMETHODIMP_(void) CGEKComponentSystemViewer::Clear(void)
 {
     m_aComponents.clear();
@@ -102,30 +102,26 @@ STDMETHODIMP_(void) CGEKComponentSystemViewer::Clear(void)
 
 STDMETHODIMP CGEKComponentSystemViewer::Create(const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
 {
-    HRESULT hRetVal = E_FAIL;
-    if (kEntityNode.HasAttribute(L"type") && kEntityNode.GetAttribute(L"type").CompareNoCase(L"viewer") == 0)
+    HRESULT hRetVal = E_OUTOFMEMORY;
+    CComPtr<CGEKComponentViewer> spComponent(new CGEKComponentViewer(pEntity));
+    if (spComponent)
     {
-        hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKComponentViewer> spComponent(new CGEKComponentViewer(pEntity));
-        if (spComponent)
+        CComPtr<IUnknown> spComponentUnknown;
+        spComponent->QueryInterface(IID_PPV_ARGS(&spComponentUnknown));
+        if (spComponentUnknown)
         {
-            CComPtr<IUnknown> spComponentUnknown;
-            spComponent->QueryInterface(IID_PPV_ARGS(&spComponentUnknown));
-            if (spComponentUnknown)
-            {
-                GetContext()->RegisterInstance(spComponentUnknown);
-            }
+            GetContext()->RegisterInstance(spComponentUnknown);
+        }
 
-            hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
-            if (SUCCEEDED(hRetVal))
+        hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
+        if (SUCCEEDED(hRetVal))
+        {
+            kEntityNode.ListAttributes([&spComponent](LPCWSTR pName, LPCWSTR pValue) -> void
             {
-                kEntityNode.ListAttributes([&spComponent] (LPCWSTR pName, LPCWSTR pValue) -> void
-                {
-                    spComponent->SetProperty(pName, pValue);
-                } );
+                spComponent->SetProperty(pName, pValue);
+            });
 
-                m_aComponents[pEntity] = spComponent;
-            }
+            m_aComponents[pEntity] = spComponent;
         }
     }
 

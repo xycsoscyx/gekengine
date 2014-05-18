@@ -38,10 +38,10 @@ void CGEKEntity::OnEntityDestroyed(void)
     }
 }
 
-HRESULT CGEKEntity::AddComponent(IGEKComponent *pComponent)
+HRESULT CGEKEntity::AddComponent(LPCWSTR pType, IGEKComponent *pComponent)
 {
     REQUIRE_RETURN(pComponent, E_INVALIDARG);
-    m_aComponents[pComponent->GetType()] = pComponent;
+    m_aComponents[pType] = pComponent;
     return S_OK;
 }
 

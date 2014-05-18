@@ -281,8 +281,9 @@ BEGIN_INTERFACE_LIST(CGEKRenderManager)
     INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoObserver)
+    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKEngineUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKPopulationManagerUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderManager)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManager)
     INTERFACE_LIST_ENTRY_COM(IGEKMaterialManager)
@@ -463,6 +464,12 @@ STDMETHODIMP CGEKRenderManager::OnPostReset(void)
     return S_OK;
 }
 
+STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
+{
+    GetVideoSystem()->SetEvent(m_spFrameEvent);
+    return S_OK;
+}
+
 STDMETHODIMP CGEKRenderManager::Initialize(void)
 {
     HRESULT hRetVal = S_OK;
@@ -495,6 +502,11 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = CGEKObservable::AddObserver(GetVideoSystem(), (IGEKVideoObserver *)this);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = CGEKObservable::AddObserver(GetSceneManager(), (IGEKSceneObserver *)this);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -603,6 +615,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 {
     Free();
+    CGEKObservable::RemoveObserver(GetVideoSystem(), (IGEKSceneObserver *)this);
     CGEKObservable::RemoveObserver(GetVideoSystem(), (IGEKVideoObserver *)this);
     CGEKObservable::RemoveObserver(GetSystem(), (IGEKSystemObserver *)this);
     CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
@@ -632,11 +645,6 @@ STDMETHODIMP_(void) CGEKRenderManager::Free(void)
     m_aModels.clear();
     m_aFilters.clear();
     m_aPasses.clear();
-}
-
-STDMETHODIMP_(void) CGEKRenderManager::OnSceneLoaded(void)
-{
-    GetVideoSystem()->SetEvent(m_spFrameEvent);
 }
 
 HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
@@ -1492,7 +1500,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         if (true)
         {
             concurrency::concurrent_unordered_set<IGEKEntity *> aVisibleEntities;
-            GetPopulationManager()->GetVisible(m_kFrustum, aVisibleEntities);
+            GetSceneManager()->GetVisible(m_kFrustum, aVisibleEntities);
 
             concurrency::concurrent_vector<LIGHT> aLights;
             concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> aModels;

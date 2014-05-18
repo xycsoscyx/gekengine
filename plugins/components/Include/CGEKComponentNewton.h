@@ -26,7 +26,6 @@ public:
     ~CGEKComponentNewton(void);
 
     // IGEKComponent
-    STDMETHOD_(LPCWSTR, GetType)    (THIS) const;
     STDMETHOD_(void, ListProperties)        (THIS_ std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty);
     STDMETHOD_(bool, GetProperty)           (THIS_ LPCWSTR pName, GEKVALUE &kValue) const;
     STDMETHOD_(bool, SetProperty)           (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
@@ -54,16 +53,17 @@ public:
     NewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
 
     // IGEKUnknown
-    STDMETHOD(Initialize)               (THIS);
-    STDMETHOD_(void, Destroy)           (THIS);
+    STDMETHOD(Initialize)                   (THIS);
+    STDMETHOD_(void, Destroy)               (THIS);
 
     // IGEKComponentSystem
-    STDMETHOD_(void, Clear)             (THIS);
-    STDMETHOD(Destroy)                  (THIS_ IGEKEntity *pEntity);
-    STDMETHOD(Create)                   (THIS_ const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
+    STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
+    STDMETHOD_(void, Clear)                 (THIS);
+    STDMETHOD(Destroy)                      (THIS_ IGEKEntity *pEntity);
+    STDMETHOD(Create)                       (THIS_ const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
 
     // IGEKSceneObserver
-    STDMETHOD_(void, OnLoadBegin)       (THIS);
-    STDMETHOD(OnLoadEnd)                (THIS_ HRESULT hRetVal);
-    STDMETHOD_(void, OnUpdate)          (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD_(void, OnLoadBegin)           (THIS);
+    STDMETHOD(OnLoadEnd)                    (THIS_ HRESULT hRetVal);
+    STDMETHOD_(void, OnUpdate)              (THIS_ float nGameTime, float nFrameTime);
 };

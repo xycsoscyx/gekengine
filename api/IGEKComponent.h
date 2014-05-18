@@ -8,7 +8,6 @@ DECLARE_INTERFACE(IGEKEntity);
 
 DECLARE_INTERFACE_IID_(IGEKComponent, IUnknown, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E")
 {
-    STDMETHOD_(LPCWSTR, GetType)                (THIS) const PURE;
     STDMETHOD_(IGEKEntity *, GetEntity)         (THIS) const PURE;
 
     STDMETHOD_(void, ListProperties)            (THIS_ std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) PURE;
@@ -30,6 +29,8 @@ DECLARE_INTERFACE_IID_(IGEKEntity, IUnknown, "30A6AF4F-AD6C-4EFB-A239-11532E8B98
 
 DECLARE_INTERFACE_IID_(IGEKComponentSystem, IUnknown, "81A24012-F085-42D0-B931-902485673E90")
 {
+    STDMETHOD_(LPCWSTR, GetType)                (THIS) const PURE;
+
     STDMETHOD(Create)                           (THIS_ const CLibXMLNode &kEntityNode, IGEKEntity *pEntity, IGEKComponent **ppComponent) PURE;
     STDMETHOD(Destroy)                          (THIS_ IGEKEntity *pEntity) PURE;
     STDMETHOD_(void, Clear)                     (THIS) PURE;

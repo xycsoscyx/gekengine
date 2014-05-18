@@ -20,7 +20,7 @@ public:
 
     HRESULT OnEntityCreated(void);
     void OnEntityDestroyed(void);
-    HRESULT AddComponent(IGEKComponent *pComponent);
+    HRESULT AddComponent(LPCWSTR pType, IGEKComponent *pComponent);
     LPCWSTR GetFlags(void);
 
     // IGEKEntity

@@ -22,10 +22,11 @@ class CGEKRenderManager : public CGEKUnknown
                         , public CGEKSystemUser
                         , public CGEKVideoSystemUser
                         , public CGEKEngineUser
-                        , public CGEKPopulationManagerUser
+                        , public CGEKSceneManagerUser
                         , public IGEKContextObserver
-                        , public IGEKVideoObserver
                         , public IGEKSystemObserver
+                        , public IGEKVideoObserver
+                        , public IGEKSceneObserver
                         , public IGEKRenderManager
                         , public IGEKProgramManager
                         , public IGEKMaterialManager
@@ -123,6 +124,9 @@ public:
     STDMETHOD_(void, OnPreReset)            (THIS);
     STDMETHOD(OnPostReset)                  (THIS);
 
+    // IGEKSceneObserver
+    STDMETHOD(OnLoadEnd)                    (THIS_ HRESULT hRetVal);
+
     // IGEKUnknown
     STDMETHOD(Initialize)                   (THIS);
     STDMETHOD_(void, Destroy)               (THIS);
@@ -148,7 +152,6 @@ public:
 
     // IGEKRenderManager
     STDMETHOD_(void, Free)                  (THIS);
-    STDMETHOD_(void, OnSceneLoaded)         (THIS);
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);

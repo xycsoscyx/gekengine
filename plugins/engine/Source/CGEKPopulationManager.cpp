@@ -52,7 +52,7 @@ STDMETHODIMP CGEKPopulationManager::Initialize(void)
             CComQIPtr<IGEKComponentSystem> spSystem(pObject);
             if (spSystem != nullptr)
             {
-                m_aComponentSystems.push_back(spSystem);
+                m_aComponentSystems[spSystem->GetType()] = spSystem;
             }
 
             return S_OK;
@@ -166,9 +166,9 @@ STDMETHODIMP_(void) CGEKPopulationManager::Free(void)
     m_aPopulation.clear();
     m_aHitList.clear();
 
-    for (auto &pSystem : m_aComponentSystems)
+    for (auto &kPair : m_aComponentSystems)
     {
-        pSystem->Clear();
+        kPair.second->Clear();
     }
 }
 
@@ -201,9 +201,9 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
 
             dynamic_cast<CGEKEntity *>(pEntity)->OnEntityDestroyed();
             CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityDestroyed, std::placeholders::_1, pEntity)));
-            for (auto &pSystem : m_aComponentSystems)
+            for (auto &kPair : m_aComponentSystems)
             {
-                pSystem->Destroy(pEntity);
+                kPair.second->Destroy(pEntity);
             }
 
             m_aPopulation.unsafe_erase(pIterator);
@@ -211,14 +211,6 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
     }
 
     m_aHitList.clear();
-}
-
-STDMETHODIMP_(void) CGEKPopulationManager::GetVisible(const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities)
-{
-    for (auto &pSystem : m_aComponentSystems)
-    {
-        pSystem->GetVisible(kFrustum, aVisibleEntities);
-    }
 }
 
 STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
@@ -245,18 +237,21 @@ STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
             CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement(L"component");
             while (kComponentNode)
             {
-                CComPtr<IGEKComponent> spComponent;
-                for (auto &pSystem : m_aComponentSystems)
+                if (kComponentNode.HasAttribute(L"type"))
                 {
-                    if (SUCCEEDED(pSystem->Create(kComponentNode, spEntity, &spComponent)))
-                    {
-                        break;
-                    }
-                }
+                    CStringW strType = kComponentNode.GetAttribute(L"type");
+                    strType.MakeLower();
 
-                if (spComponent)
-                {
-                    spEntity->AddComponent(spComponent);
+                    auto pIterator = m_aComponentSystems.find(strType);
+                    if (pIterator != m_aComponentSystems.end())
+                    {
+                        CComPtr<IGEKComponent> spComponent;
+                        (*pIterator).second->Create(kComponentNode, spEntity, &spComponent);
+                        if (spComponent)
+                        {
+                            spEntity->AddComponent((*pIterator).second->GetType(), spComponent);
+                        }
+                    }
                 }
 
                 kComponentNode = kComponentNode.NextSiblingElement(L"component");
@@ -302,4 +297,12 @@ STDMETHODIMP CGEKPopulationManager::DestroyEntity(IGEKEntity *pEntity)
 STDMETHODIMP_(float3) CGEKPopulationManager::GetGravity(const float4 &nGravity)
 {
     return float3(0.0f, -9.81f, 0.0f);
+}
+
+STDMETHODIMP_(void) CGEKPopulationManager::GetVisible(const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities)
+{
+    for (auto &kPair : m_aComponentSystems)
+    {
+        kPair.second->GetVisible(kFrustum, aVisibleEntities);
+    }
 }
