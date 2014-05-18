@@ -7,7 +7,7 @@ BEGIN_INTERFACE_LIST(CGEKComponentLogic)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentLogic::CGEKComponentLogic(IGEKLogicSystem *pSystem, IGEKEntity *pEntity)
+CGEKComponentLogic::CGEKComponentLogic(IGEKEntity *pEntity)
     : CGEKComponent(pEntity)
 {
 }
@@ -145,7 +145,7 @@ STDMETHODIMP_(void) CGEKComponentSystemLogic::Clear(void)
 STDMETHODIMP CGEKComponentSystemLogic::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
-    CComPtr<CGEKComponentLogic> spComponent(new CGEKComponentLogic(this, pEntity));
+    CComPtr<CGEKComponentLogic> spComponent(new CGEKComponentLogic(pEntity));
     if (spComponent)
     {
         CComPtr<IUnknown> spComponentUnknown;

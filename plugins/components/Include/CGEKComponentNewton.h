@@ -7,14 +7,20 @@
 #include <Newton.h>
 #include <concurrent_unordered_map.h>
 
-class CGEKComponentSystemNewton;
+DECLARE_INTERFACE_IID_(IGEKNewtonSystem, IUnknown, "46D22819-49E1-4CB3-9B9A-41663F1DE553")
+{
+    STDMETHOD_(NewtonWorld *, GetWorld)             (THIS) PURE;
+    STDMETHOD_(NewtonCollision *, LoadCollision)    (THIS_ LPCWSTR pShape, LPCWSTR pParams) PURE;
+};
+
+SYSTEM_USER(NewtonSystem, "1AC940A5-E398-43C3-B2DB-8753D278662D");
 
 class CGEKComponentNewton : public CGEKUnknown
                           , public CGEKComponent
                           , public CGEKSceneManagerUser
+                          , public CGEKNewtonSystemUser
 {
 public:
-    CGEKComponentSystemNewton *m_pSystem;
     NewtonBody *m_pBody;
     CStringW m_strShape;
     CStringW m_strParams;
@@ -22,7 +28,7 @@ public:
 
 public:
     DECLARE_UNKNOWN(CGEKComponentNewton)
-    CGEKComponentNewton(IGEKEntity *pEntity, CGEKComponentSystemNewton *pSystem);
+    CGEKComponentNewton(IGEKEntity *pEntity);
     ~CGEKComponentNewton(void);
 
     // IGEKComponent
@@ -36,8 +42,10 @@ class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public CGEKContextUser
                                 , public CGEKSceneManagerUser
                                 , public CGEKModelManagerUser
+                                , public IGEKContextObserver
                                 , public IGEKSceneObserver
                                 , public IGEKComponentSystem
+                                , public IGEKNewtonSystem
 {
 private:
     NewtonWorld *m_pWorld;
@@ -49,21 +57,25 @@ public:
     CGEKComponentSystemNewton(void);
     ~CGEKComponentSystemNewton(void);
 
-    NewtonWorld *GetWorld(void);
-    NewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
+    // IGEKContextObserver
+    STDMETHOD(OnRegistration)               (THIS_ IUnknown *pObject);
 
     // IGEKUnknown
-    STDMETHOD(Initialize)                   (THIS);
-    STDMETHOD_(void, Destroy)               (THIS);
+    STDMETHOD(Initialize)                           (THIS);
+    STDMETHOD_(void, Destroy)                       (THIS);
 
     // IGEKComponentSystem
-    STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
-    STDMETHOD_(void, Clear)                 (THIS);
-    STDMETHOD(Destroy)                      (THIS_ IGEKEntity *pEntity);
-    STDMETHOD(Create)                       (THIS_ const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
+    STDMETHOD_(LPCWSTR, GetType)                    (THIS) const;
+    STDMETHOD_(void, Clear)                         (THIS);
+    STDMETHOD(Destroy)                              (THIS_ IGEKEntity *pEntity);
+    STDMETHOD(Create)                               (THIS_ const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
 
     // IGEKSceneObserver
-    STDMETHOD_(void, OnLoadBegin)           (THIS);
-    STDMETHOD(OnLoadEnd)                    (THIS_ HRESULT hRetVal);
-    STDMETHOD_(void, OnUpdate)              (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD_(void, OnLoadBegin)                   (THIS);
+    STDMETHOD(OnLoadEnd)                            (THIS_ HRESULT hRetVal);
+    STDMETHOD_(void, OnUpdate)                      (THIS_ float nGameTime, float nFrameTime);
+
+    // IGEKNewtonSystem
+    STDMETHOD_(NewtonWorld *, GetWorld)             (THIS);
+    STDMETHOD_(NewtonCollision *, LoadCollision)    (THIS_ LPCWSTR pShape, LPCWSTR pParams);
 };

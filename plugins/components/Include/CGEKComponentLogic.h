@@ -11,13 +11,12 @@ class CGEKComponentLogic : public CGEKUnknown
                          , public CGEKComponent
 {
 public:
-    IGEKLogicSystem *m_pSystem;
     CStringW m_strDefaultState;
     CComPtr<IGEKLogicState> m_spState;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentLogic)
-    CGEKComponentLogic(IGEKLogicSystem *pSystem, IGEKEntity *pEntity);
+    CGEKComponentLogic(IGEKEntity *pEntity);
     ~CGEKComponentLogic(void);
 
     void SetState(IGEKLogicState *pState);

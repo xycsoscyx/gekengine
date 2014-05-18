@@ -6,11 +6,11 @@
 BEGIN_INTERFACE_LIST(CGEKComponentNewton)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKNewtonSystemUser)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentNewton::CGEKComponentNewton(IGEKEntity *pEntity, CGEKComponentSystemNewton *pSystem)
+CGEKComponentNewton::CGEKComponentNewton(IGEKEntity *pEntity)
     : CGEKComponent(pEntity)
-    , m_pSystem(pSystem)
     , m_pBody(nullptr)
     , m_nMass(0.0f)
 {
@@ -82,7 +82,7 @@ STDMETHODIMP CGEKComponentNewton::OnEntityCreated(void)
         IGEKComponent *pTransform = GetEntity()->GetComponent(L"transform");
         if (pTransform)
         {
-            NewtonCollision *pCollision = m_pSystem->LoadCollision(m_strShape, m_strParams);
+            NewtonCollision *pCollision = GetNewtonSystem()->LoadCollision(m_strShape, m_strParams);
             if (pCollision)
             {
                 GEKVALUE kPosition;
@@ -94,7 +94,7 @@ STDMETHODIMP CGEKComponentNewton::OnEntityCreated(void)
                 nMatrix = kRotation.GetQuaternion();
                 nMatrix.t = kPosition.GetFloat3();
 
-                m_pBody = NewtonCreateDynamicBody(m_pSystem->GetWorld(), pCollision, nMatrix.data);
+                m_pBody = NewtonCreateDynamicBody(GetNewtonSystem()->GetWorld(), pCollision, nMatrix.data);
                 if (m_pBody != nullptr)
                 {
                     NewtonBodySetMassProperties(m_pBody, m_nMass, pCollision);
@@ -126,8 +126,10 @@ BEGIN_INTERFACE_LIST(CGEKComponentSystemNewton)
     INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKModelManagerUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
+    INTERFACE_LIST_ENTRY_COM(IGEKNewtonSystem)
 END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKComponentSystemNewton)
@@ -141,7 +143,172 @@ CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
 {
 }
 
-NewtonWorld *CGEKComponentSystemNewton::GetWorld(void)
+STDMETHODIMP CGEKComponentSystemNewton::OnRegistration(IUnknown *pObject)
+{
+    HRESULT hRetVal = S_OK;
+    CComQIPtr<IGEKNewtonSystemUser> spUser(pObject);
+    if (spUser != nullptr)
+    {
+        hRetVal = spUser->Register(this);
+    }
+
+    return hRetVal;
+}
+
+int GEKNewtonOnAABBOverlap(const NewtonMaterial *pMaterial, const NewtonBody *pBody0, const NewtonBody *pBody1, int nThreadID)
+{
+    return 1;
+}
+
+void GEKNewtonContactsProcess(const NewtonJoint *const pContactJoint, dFloat nFrameTime, int nThreadID)
+{
+    NewtonBody *pBody0 = NewtonJointGetBody0(pContactJoint);
+    NewtonBody *pBody1 = NewtonJointGetBody1(pContactJoint);
+    NewtonWorld *pWorld = NewtonBodyGetWorld(pBody0);
+
+    CGEKComponentSystemNewton *pNewtonSystem = (CGEKComponentSystemNewton *)NewtonWorldGetUserData(pWorld);
+    if (pNewtonSystem)
+    {
+        CGEKComponentNewton *pComponent0 = static_cast<CGEKComponentNewton *>(NewtonBodyGetUserData(pBody0));
+        CGEKComponentNewton *pComponent1 = static_cast<CGEKComponentNewton *>(NewtonBodyGetUserData(pBody1));
+        if (pComponent0 && pComponent1)
+        {
+            CComPtr<IUnknown> spComponent0;
+            CComPtr<IUnknown> spComponent1;
+            pComponent0->QueryInterface(IID_PPV_ARGS(&spComponent0));
+            pComponent1->QueryInterface(IID_PPV_ARGS(&spComponent1));
+            pComponent0->GetEntity()->OnEvent(L"collision", (IUnknown *)spComponent1);
+            pComponent1->GetEntity()->OnEvent(L"collision", (IUnknown *)spComponent0);
+        }
+        else if (pComponent0)
+        {
+            pComponent0->GetEntity()->OnEvent(L"collision");
+        }
+        else if (pComponent1)
+        {
+            pComponent1->GetEntity()->OnEvent(L"collision");
+        }
+    }
+/*
+    NewtonWorld *pWorld = NewtonBodyGetWorld(pBody0);
+    NewtonWorldCriticalSectionLock(pWorld, nThreadID);
+    for (void *pContact = NewtonContactJointGetFirstContact(pContactJoint); pContact; pContact = NewtonContactJointGetNextContact(pContactJoint, pContact))
+    {
+        float3 nPoint;
+        float3 nNormal;
+        NewtonMaterial *pMaterial = NewtonContactGetMaterial(pContact);
+        NewtonMaterialGetContactPositionAndNormal(pMaterial, pBody0, nPoint.xyz, nNormal.xyz);
+    }
+     
+    NewtonWorldCriticalSectionUnlock(pWorld);
+*/
+}
+
+STDMETHODIMP CGEKComponentSystemNewton::Initialize(void)
+{
+    m_pWorld = NewtonCreate();
+    NewtonWorldSetUserData(m_pWorld, (void *)this);
+    int nDefaultID = NewtonMaterialGetDefaultGroupID(m_pWorld);
+    NewtonMaterialSetCollisionCallback(m_pWorld, nDefaultID, nDefaultID, (void *)this, GEKNewtonOnAABBOverlap, GEKNewtonContactsProcess);
+    return CGEKObservable::AddObserver(GetSceneManager(), (IGEKSceneObserver *)this);
+};
+
+STDMETHODIMP_(void) CGEKComponentSystemNewton::Destroy(void)
+{
+    CGEKObservable::RemoveObserver(GetSceneManager(), (IGEKSceneObserver *)this);
+
+    Clear();
+    if (m_pWorld != nullptr)
+    {
+        NewtonDestroy(m_pWorld);
+        m_pWorld = nullptr;
+    }
+}
+
+STDMETHODIMP_(LPCWSTR) CGEKComponentSystemNewton::GetType(void) const
+{
+    return L"newton";
+}
+
+STDMETHODIMP_(void) CGEKComponentSystemNewton::Clear(void)
+{
+    NewtonDestroyAllBodies(m_pWorld);
+    m_aComponents.clear();
+    m_aCollisions.clear();
+}
+
+STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
+{
+    HRESULT hRetVal = E_OUTOFMEMORY;
+    CComPtr<CGEKComponentNewton> spComponent(new CGEKComponentNewton(pEntity));
+    if (spComponent)
+    {
+        CComPtr<IUnknown> spComponentUnknown;
+        spComponent->QueryInterface(IID_PPV_ARGS(&spComponentUnknown));
+        if (spComponentUnknown)
+        {
+            GetContext()->RegisterInstance(spComponentUnknown);
+        }
+
+        hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
+        if (SUCCEEDED(hRetVal))
+        {
+            kComponentNode.ListAttributes([&spComponent](LPCWSTR pName, LPCWSTR pValue) -> void
+            {
+                spComponent->SetProperty(pName, pValue);
+            });
+
+            m_aComponents[pEntity] = spComponent;
+        }
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP CGEKComponentSystemNewton::Destroy(IGEKEntity *pEntity)
+{
+    HRESULT hRetVal = E_FAIL;
+    auto pIterator = m_aComponents.find(pEntity);
+    if (pIterator != m_aComponents.end())
+    {
+        if (((*pIterator).second)->m_pBody)
+        {
+            NewtonDestroyBody(((*pIterator).second)->m_pBody);
+        }
+
+        m_aComponents.unsafe_erase(pIterator);
+        hRetVal = S_OK;
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP_(void) CGEKComponentSystemNewton::OnLoadBegin(void)
+{
+}
+
+STDMETHODIMP CGEKComponentSystemNewton::OnLoadEnd(HRESULT hRetVal)
+{
+    return S_OK;
+}
+
+STDMETHODIMP_(void) CGEKComponentSystemNewton::OnUpdate(float nGameTime, float nFrameTime)
+{
+    NewtonUpdate(m_pWorld, nFrameTime);
+    concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentNewton>>::value_type &kPair) -> void
+    {
+        IGEKComponent *pTransform = kPair.first->GetComponent(L"transform");
+        if (pTransform && kPair.second->m_pBody)
+        {
+            float4x4 nMatrix;
+            NewtonBodyGetMatrix(kPair.second->m_pBody, nMatrix.data);
+            pTransform->SetProperty(L"position", nMatrix.t);
+            pTransform->SetProperty(L"rotation", quaternion(nMatrix));
+        }
+    });
+}
+
+STDMETHODIMP_(NewtonWorld *) CGEKComponentSystemNewton::GetWorld(void)
 {
     return m_pWorld;
 }
@@ -156,7 +323,7 @@ static GEKHASH gs_nShapeTaperedCylinder(L"tapered_cylinder");
 static GEKHASH gs_nShapeChamferCylinder(L"chamfer_cylinder");
 static GEKHASH gs_nShapeConvexHull(L"convex_hull");
 static GEKHASH gs_nShapeTree(L"tree");
-NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWSTR pParams)
+STDMETHODIMP_(NewtonCollision *) CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWSTR pParams)
 {
     GEKHASH nFullHash(FormatString(L"%s|%s", pShape, pParams));
     auto pIterator = m_aCollisions.find(nFullHash);
@@ -249,164 +416,11 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
             }
         }
     }
-    
+
     if (pCollision)
     {
         m_aCollisions[nFullHash] = pCollision;
     }
 
     return pCollision;
-}
-
-int GEKNewtonOnAABBOverlap(const NewtonMaterial *pMaterial, const NewtonBody *pBody0, const NewtonBody *pBody1, int nThreadID)
-{
-    return 1;
-}
-
-void GEKNewtonContactsProcess(const NewtonJoint *const pContactJoint, dFloat nFrameTime, int nThreadID)
-{
-    NewtonBody *pBody0 = NewtonJointGetBody0(pContactJoint);
-    NewtonBody *pBody1 = NewtonJointGetBody1(pContactJoint);
-    NewtonWorld *pWorld = NewtonBodyGetWorld(pBody0);
-
-    CGEKComponentSystemNewton *pNewtonSystem = (CGEKComponentSystemNewton *)NewtonWorldGetUserData(pWorld);
-    if (pNewtonSystem)
-    {
-        CGEKComponentNewton *pComponent0 = static_cast<CGEKComponentNewton *>(NewtonBodyGetUserData(pBody0));
-        CGEKComponentNewton *pComponent1 = static_cast<CGEKComponentNewton *>(NewtonBodyGetUserData(pBody1));
-        if (pComponent0 && pComponent1)
-        {
-            CComPtr<IUnknown> spComponent0;
-            CComPtr<IUnknown> spComponent1;
-            pComponent0->QueryInterface(IID_PPV_ARGS(&spComponent0));
-            pComponent1->QueryInterface(IID_PPV_ARGS(&spComponent1));
-            pComponent0->GetEntity()->OnEvent(L"collision", (IUnknown *)spComponent1);
-            pComponent1->GetEntity()->OnEvent(L"collision", (IUnknown *)spComponent0);
-        }
-        else if (pComponent0)
-        {
-            pComponent0->GetEntity()->OnEvent(L"collision");
-        }
-        else if (pComponent1)
-        {
-            pComponent1->GetEntity()->OnEvent(L"collision");
-        }
-    }
-/*
-    NewtonWorld *pWorld = NewtonBodyGetWorld(pBody0);
-    NewtonWorldCriticalSectionLock(pWorld, nThreadID);
-    for (void *pContact = NewtonContactJointGetFirstContact(pContactJoint); pContact; pContact = NewtonContactJointGetNextContact(pContactJoint, pContact))
-    {
-        float3 nPoint;
-        float3 nNormal;
-        NewtonMaterial *pMaterial = NewtonContactGetMaterial(pContact);
-        NewtonMaterialGetContactPositionAndNormal(pMaterial, pBody0, nPoint.xyz, nNormal.xyz);
-    }
-     
-    NewtonWorldCriticalSectionUnlock(pWorld);
-*/
-}
-
-STDMETHODIMP CGEKComponentSystemNewton::Initialize(void)
-{
-    m_pWorld = NewtonCreate();
-    NewtonWorldSetUserData(m_pWorld, (void *)this);
-    int nDefaultID = NewtonMaterialGetDefaultGroupID(m_pWorld);
-    NewtonMaterialSetCollisionCallback(m_pWorld, nDefaultID, nDefaultID, (void *)this, GEKNewtonOnAABBOverlap, GEKNewtonContactsProcess);
-    return CGEKObservable::AddObserver(GetSceneManager(), (IGEKSceneObserver *)this);
-};
-
-STDMETHODIMP_(void) CGEKComponentSystemNewton::Destroy(void)
-{
-    CGEKObservable::RemoveObserver(GetSceneManager(), (IGEKSceneObserver *)this);
-
-    Clear();
-    if (m_pWorld != nullptr)
-    {
-        NewtonDestroy(m_pWorld);
-        m_pWorld = nullptr;
-    }
-}
-
-STDMETHODIMP_(LPCWSTR) CGEKComponentSystemNewton::GetType(void) const
-{
-    return L"newton";
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemNewton::Clear(void)
-{
-    NewtonDestroyAllBodies(m_pWorld);
-    m_aComponents.clear();
-    m_aCollisions.clear();
-}
-
-STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
-{
-    HRESULT hRetVal = E_OUTOFMEMORY;
-    CComPtr<CGEKComponentNewton> spComponent(new CGEKComponentNewton(pEntity, this));
-    if (spComponent)
-    {
-        CComPtr<IUnknown> spComponentUnknown;
-        spComponent->QueryInterface(IID_PPV_ARGS(&spComponentUnknown));
-        if (spComponentUnknown)
-        {
-            GetContext()->RegisterInstance(spComponentUnknown);
-        }
-
-        hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
-        if (SUCCEEDED(hRetVal))
-        {
-            kComponentNode.ListAttributes([&spComponent](LPCWSTR pName, LPCWSTR pValue) -> void
-            {
-                spComponent->SetProperty(pName, pValue);
-            });
-
-            m_aComponents[pEntity] = spComponent;
-        }
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKComponentSystemNewton::Destroy(IGEKEntity *pEntity)
-{
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aComponents.find(pEntity);
-    if (pIterator != m_aComponents.end())
-    {
-        if (((*pIterator).second)->m_pBody)
-        {
-            NewtonDestroyBody(((*pIterator).second)->m_pBody);
-        }
-
-        m_aComponents.unsafe_erase(pIterator);
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemNewton::OnLoadBegin(void)
-{
-}
-
-STDMETHODIMP CGEKComponentSystemNewton::OnLoadEnd(HRESULT hRetVal)
-{
-    return S_OK;
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemNewton::OnUpdate(float nGameTime, float nFrameTime)
-{
-    NewtonUpdate(m_pWorld, nFrameTime);
-    concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentNewton>>::value_type &kPair) -> void
-    {
-        IGEKComponent *pTransform = kPair.first->GetComponent(L"transform");
-        if (pTransform && kPair.second->m_pBody)
-        {
-            float4x4 nMatrix;
-            NewtonBodyGetMatrix(kPair.second->m_pBody, nMatrix.data);
-            pTransform->SetProperty(L"position", nMatrix.t);
-            pTransform->SetProperty(L"rotation", quaternion(nMatrix));
-        }
-    });
 }
