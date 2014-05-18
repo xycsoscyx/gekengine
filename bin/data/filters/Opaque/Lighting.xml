@@ -15,7 +15,7 @@
     </blend>
 
     <targets>
-        <target source="Screen" />
+        <target source="Screen" clear="0,0,0,0" />
         <target name="Buffer" format="RGBA_UINT8" clear="0,0,0,0" />
     </targets>
     

@@ -9,7 +9,12 @@
         <target source="Opaque/Deferred.Albedo" />
         <target name="World" format="RGBA_FLOAT" />
         <target source="Opaque/Deferred.Info" />
-        <depth source="Opaque/PrePass" comparison="lessequal" writemask="none" />
+        <depth source="Opaque/Deferred" comparison="lessequal" writemask="all">
+            <stencil reference="1" readmask="255" writemask="255" clear="0">
+                <front pass="replace" fail="keep" depthfail="keep" comparison="always" />
+                <back pass="keep" fail="keep" depthfail="keep" comparison="never" />
+            </stencil>
+        </depth>
     </targets>
         
     <pixel>

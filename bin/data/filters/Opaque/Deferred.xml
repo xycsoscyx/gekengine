@@ -9,7 +9,7 @@
         <target name="Albedo" format="RGBA_UINT8"/>
         <target name="World" format="RGBA_FLOAT"/>
         <target name="Info" format="RGBA_UINT8"/>
-        <depth source="Opaque/PrePass" comparison="lessequal" writemask="none" />
+        <depth format="D24S8" comparison="lessequal" writemask="all" clear="1" />
     </targets>
     
     <pixel>
