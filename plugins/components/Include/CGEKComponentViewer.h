@@ -26,6 +26,7 @@ public:
 };
 
 class CGEKComponentSystemViewer : public CGEKUnknown
+                                , public CGEKContextUser
                                 , public IGEKComponentSystem
 {
 private:

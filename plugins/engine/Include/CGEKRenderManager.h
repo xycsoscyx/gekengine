@@ -18,6 +18,12 @@ DECLARE_INTERFACE(IGEKRenderFilter);
 DECLARE_INTERFACE(IGEKMaterial);
 
 class CGEKRenderManager : public CGEKUnknown
+                        , public CGEKContextUser
+                        , public CGEKSystemUser
+                        , public CGEKVideoSystemUser
+                        , public CGEKEngineUser
+                        , public CGEKSceneManagerUser
+                        , public IGEKContextObserver
                         , public IGEKSystemObserver
                         , public IGEKVideoObserver
                         , public IGEKSceneObserver
@@ -58,8 +64,6 @@ public:
     };
 
 private:
-    CComPtr<IGEKSystem> m_spSystem;
-    CComPtr<IGEKVideoSystem> m_spVideoSystem;
     std::list<CComPtr<IGEKFactory>> m_aFactories;
 
     CComPtr<IUnknown> m_spFrameEvent;
@@ -109,6 +113,9 @@ public:
     CGEKRenderManager(void);
     virtual ~CGEKRenderManager(void);
     DECLARE_UNKNOWN(CGEKRenderManager);
+
+    // IGEKContextObserver
+    STDMETHOD(OnRegistration)               (THIS_ IUnknown *pObject);
 
     // IGEKSystemObserver
     STDMETHOD_(void, OnEvent)               (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);

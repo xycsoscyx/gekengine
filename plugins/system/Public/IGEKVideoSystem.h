@@ -520,3 +520,5 @@ DECLARE_INTERFACE_IID_(IGEKVideoObserver, IGEKObserver, "2FE17A37-9B0B-4D12-95C9
     STDMETHOD_(void, OnPreReset)                        (THIS) PURE;
     STDMETHOD(OnPostReset)                              (THIS) PURE;
 };
+
+SYSTEM_USER(VideoSystem, "BB2E6492-7D06-42EC-B5E6-606F642FCD9F");

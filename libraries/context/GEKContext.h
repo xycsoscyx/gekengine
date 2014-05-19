@@ -9,34 +9,6 @@
 #include <list>
 #include <map>
 
-template <class CLASS>
-class TGEKComPtr : public CComPtr<CLASS>
-{
-public:
-    TGEKComPtr() throw()
-    {
-    }
-
-    TGEKComPtr(CLASS *pObject) throw()
-        : CComPtrBase<CLASS>(lp)
-    {
-    }
-
-    TGEKComPtr(const CComPtr<CLASS>& pObject) throw()
-        : CComPtrBase<CLASS>(pObject.p)
-    {
-    }
-
-    TGEKComPtr(IGEKContext *pContext, REFCLSID kCLSID, HRESULT *pRetVal = nullptr) throw()
-    {
-        HRESULT hRetVal = pContext->CreateInstance(kCLSID, IID_PPV_ARGS(&p));
-        if (pRetVal)
-        {
-            (*pRetVal) = hRetVal;
-        }
-    }
-};
-
 class CCompareGUID
 {
 public:
@@ -50,7 +22,6 @@ class CGEKUnknown : public IGEKUnknown
 {
 private:
     ULONG m_nRefCount;
-    CComPtr<IGEKContext> m_spContext;
 
 public:
     CGEKUnknown(void)
@@ -62,12 +33,12 @@ public:
     {
     }
 
-    STDMETHOD_(ULONG, AddRef)               (THIS)
+    STDMETHOD_(ULONG, AddRef)       (THIS)
     {
         return InterlockedIncrement(&m_nRefCount);
     }
 
-    STDMETHOD_(ULONG, Release)              (THIS)
+    STDMETHOD_(ULONG, Release)      (THIS)
     {
         LONG nRefCount = InterlockedDecrement(&m_nRefCount);
         if (nRefCount == 0)
@@ -79,7 +50,11 @@ public:
         return nRefCount;
     }
 
-    STDMETHOD(QueryInterface)               (THIS_ REFIID rIID, LPVOID FAR *ppObject)
+    STDMETHOD_(void, Destroy)       (THIS)
+    {
+    }
+
+    STDMETHOD(QueryInterface)       (THIS_ REFIID rIID, LPVOID FAR *ppObject)
     {
         REQUIRE_RETURN(ppObject, E_INVALIDARG);
 
@@ -101,27 +76,6 @@ public:
 
         return hRetVal;
     }
-
-    STDMETHOD(RegisterContext)              (THIS_ IGEKContext *pContext)
-    {
-        m_spContext = pContext;
-        return Initialize();
-    }
-
-    STDMETHOD_(IGEKContext *, GetContext)   (THIS)
-    {
-        REQUIRE_RETURN(m_spContext, nullptr);
-        return m_spContext;
-    }
-
-    STDMETHOD(Initialize)                   (THIS)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD_(void, Destroy)               (THIS)
-    {
-    }
 };
 
 template <typename RESULT>
@@ -142,8 +96,8 @@ private:
     std::function<void(INTERFACE *)> OnEvent;
 
 public:
-    TGEKEvent(std::function<void(INTERFACE *)> const &DoOnEvent)
-        : OnEvent(DoOnEvent)
+    TGEKEvent(std::function<void(INTERFACE *)> const &DoOnEvent) :
+        OnEvent(DoOnEvent)
     {
     }
 
@@ -164,8 +118,8 @@ private:
     std::function<HRESULT(INTERFACE *)> OnEvent;
 
 public:
-    TGEKCheck(std::function<HRESULT(INTERFACE *)> const &DoOnEvent)
-        : OnEvent(DoOnEvent)
+    TGEKCheck(std::function<HRESULT(INTERFACE *)> const &DoOnEvent) :
+        OnEvent(DoOnEvent)
     {
     }
 
@@ -353,7 +307,7 @@ public:
     }
 
 #define REGISTER_CLASS(CLASS)                                                       \
-HRESULT GEKCreateInstanceOf##CLASS##(IGEKUnknown **ppObject)                        \
+HRESULT GEKCreateInstanceOf##CLASS##(IUnknown **ppObject)                           \
 {                                                                                   \
     REQUIRE_RETURN(ppObject, E_INVALIDARG);                                         \
                                                                                     \
@@ -368,15 +322,15 @@ HRESULT GEKCreateInstanceOf##CLASS##(IGEKUnknown **ppObject)                    
 }
 
 #define DECLARE_REGISTERED_CLASS(CLASS)                                             \
-extern HRESULT GEKCreateInstanceOf##CLASS##(IGEKUnknown **ppObject);
+extern HRESULT GEKCreateInstanceOf##CLASS##(IUnknown **ppObject);
 
-#define DECLARE_CONTEXT_SOURCE(SOURCENAME)                                              \
-extern "C" __declspec(dllexport)                                                        \
-HRESULT GEKGetModuleClasses(                                                            \
-    std::map<CLSID, std::function<HRESULT (IGEKUnknown **)>, CCompareGUID> &aClasses,   \
-    std::map<CStringW, CLSID> &aNamedClasses,                                           \
-    std::map<CLSID, std::vector<CLSID>, CCompareGUID> &aTypedClasses)                   \
-{                                                                                       \
+#define DECLARE_CONTEXT_SOURCE(SOURCENAME)                                          \
+extern "C" __declspec(dllexport)                                                    \
+HRESULT GEKGetModuleClasses(                                                        \
+    std::map<CLSID, std::function<HRESULT (IUnknown **)>, CCompareGUID> &aClasses,  \
+    std::map<CStringW, CLSID> &aNamedClasses,                                       \
+    std::map<CLSID, std::vector<CLSID>, CCompareGUID> &aTypedClasses)               \
+{                                                                                   \
     CLSID kLastCLSID = GUID_NULL;
 
 #define ADD_CONTEXT_CLASS(CLASSID, CLASS)                                           \
@@ -406,3 +360,40 @@ HRESULT GEKGetModuleClasses(                                                    
 #define END_CONTEXT_SOURCE                                                          \
     return S_OK;                                                                    \
 }
+
+#define SYSTEM_USER(CLASS, UUID)                                                    \
+DECLARE_INTERFACE_IID_(IGEK##CLASS##User, IUnknown, UUID)                           \
+{                                                                                   \
+    STDMETHOD(Register)(IGEK##CLASS## *pSystem) PURE;                               \
+};                                                                                  \
+                                                                                    \
+class CGEK##CLASS##User : public IGEK##CLASS##User                                  \
+{                                                                                   \
+private:                                                                            \
+    IGEK##CLASS## *m_pSystem;                                                       \
+                                                                                    \
+public:                                                                             \
+    CGEK##CLASS##User(void)                                                         \
+        : m_pSystem(nullptr)                                                        \
+    {                                                                               \
+    }                                                                               \
+                                                                                    \
+    virtual ~CGEK##CLASS##User(void)                                                \
+    {                                                                               \
+    }                                                                               \
+                                                                                    \
+    STDMETHOD(Register)(THIS_ IGEK##CLASS## *pSystem)                               \
+    {                                                                               \
+        REQUIRE_RETURN(pSystem, E_INVALIDARG);                                      \
+        m_pSystem = pSystem;                                                        \
+        return S_OK;                                                                \
+    }                                                                               \
+                                                                                    \
+    STDMETHOD_(IGEK##CLASS## *, Get##CLASS##)(void) const                           \
+    {                                                                               \
+        REQUIRE_RETURN(m_pSystem, nullptr);                                         \
+        return m_pSystem;                                                           \
+    }                                                                               \
+};
+
+SYSTEM_USER(Context, "0FDCE057-B876-4FD6-B02B-6C6E7F5135E9");

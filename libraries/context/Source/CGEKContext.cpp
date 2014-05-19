@@ -54,11 +54,11 @@ STDMETHODIMP CGEKContext::Initialize(void)
             HMODULE hModule = LoadLibrary(pFileName);
             if (hModule)
             {
-                typedef HRESULT(*GEKGETMODULECLASSES)(std::map<CLSID, std::function<HRESULT(IGEKUnknown **)>, CCompareGUID> &, std::map<CStringW, CLSID> &, std::map<CLSID, std::vector<CLSID>> &);
+                typedef HRESULT (*GEKGETMODULECLASSES)(std::map<CLSID, std::function<HRESULT (IUnknown **)>, CCompareGUID> &, std::map<CStringW, CLSID> &, std::map<CLSID, std::vector<CLSID>> &);
                 GEKGETMODULECLASSES GEKGetModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(hModule, "GEKGetModuleClasses");
                 if (GEKGetModuleClasses)
                 {
-                    std::map<CLSID, std::function<HRESULT (IGEKUnknown **ppObject)>, CCompareGUID> aClasses;
+                    std::map<CLSID, std::function<HRESULT (IUnknown **ppObject)>, CCompareGUID> aClasses;
                     std::map<CStringW, CLSID> aNamedClasses;
                     std::map<CLSID, std::vector<CLSID>> aTypedClasses;
                     if (SUCCEEDED(GEKGetModuleClasses(aClasses, aNamedClasses, aTypedClasses)))
@@ -106,65 +106,22 @@ STDMETHODIMP CGEKContext::Initialize(void)
     return S_OK;
 }
 
-STDMETHODIMP CGEKContext::AddCacheClass(REFCLSID kCLSID, IGEKUnknown *pObject)
-{
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aCache.find(kCLSID);
-    if (pIterator == m_aCache.end())
-    {
-        m_aCache[kCLSID] = pObject;
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKContext::RemoveCacheClass(REFCLSID kCLSID)
-{
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aCache.find(kCLSID);
-    if (pIterator != m_aCache.end())
-    {
-        m_aCache.erase(pIterator);
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
 STDMETHODIMP CGEKContext::CreateInstance(REFGUID kCLSID, REFIID kIID, LPVOID FAR *ppObject)
 {
     REQUIRE_RETURN(ppObject, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
-    auto pCacheIterator = m_aCache.find(kCLSID);
-    if (pCacheIterator != m_aCache.end())
+    auto pIterator = m_aClasses.find(kCLSID);
+    if (pIterator != m_aClasses.end())
     {
-        if ((*pCacheIterator).second)
+        CComPtr<IUnknown> spObject;
+        hRetVal = ((*pIterator).second)(&spObject);
+        if (SUCCEEDED(hRetVal) && spObject)
         {
-            hRetVal = (*pCacheIterator).second->QueryInterface(kIID, ppObject);
-        }
-    }
-
-    if (FAILED(hRetVal))
-    {
-        auto pIterator = m_aClasses.find(kCLSID);
-        if (pIterator != m_aClasses.end())
-        {
-            CComPtr<IGEKUnknown> spObject;
-            hRetVal = ((*pIterator).second)(&spObject);
-            if (SUCCEEDED(hRetVal) && spObject)
+            hRetVal = RegisterInstance(spObject);
+            if (SUCCEEDED(hRetVal))
             {
-                hRetVal = spObject->RegisterContext(this);
-                if (SUCCEEDED(hRetVal))
-                {
-                    if (pCacheIterator != m_aCache.end() && !(*pCacheIterator).second)
-                    {
-                        m_aCache[kCLSID] = spObject;
-                    }
-
-                    hRetVal = spObject->QueryInterface(kIID, ppObject);
-                }
+                hRetVal = spObject->QueryInterface(kIID, ppObject);
             }
         }
     }
@@ -186,7 +143,7 @@ STDMETHODIMP CGEKContext::CreateNamedInstance(LPCWSTR pName, REFIID kIID, LPVOID
     return hRetVal;
 }
 
-STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRESULT(IGEKUnknown *pObject)> OnCreate)
+STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRESULT(IUnknown *pObject)> OnCreate)
 {
     HRESULT hRetVal = S_OK;
     auto pIterator = m_aTypedClasses.find(kTypeCLSID);
@@ -194,7 +151,7 @@ STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRES
     {
         for (auto &kCLSID : (*pIterator).second)
         {
-            CComPtr<IGEKUnknown> spObject;
+            CComPtr<IUnknown> spObject;
             hRetVal = CreateInstance(kCLSID, IID_PPV_ARGS(&spObject));
             if (spObject != nullptr)
             {
@@ -205,6 +162,32 @@ STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRES
                 }
             }
         };
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP CGEKContext::RegisterInstance(IUnknown *pObject)
+{
+    HRESULT hRetVal = S_OK;
+    CComQIPtr<IGEKContextUser> spContextUser(pObject);
+    if (spContextUser != nullptr)
+    {
+        hRetVal = spContextUser->Register(this);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEKContextObserver>(std::bind(&IGEKContextObserver::OnRegistration, std::placeholders::_1, pObject)));
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        CComQIPtr<IGEKUnknown> spObject(pObject);
+        if (spObject != nullptr)
+        {
+            hRetVal = spObject->Initialize();
+        }
     }
 
     return hRetVal;

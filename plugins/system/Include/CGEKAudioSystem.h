@@ -9,6 +9,9 @@
 #include <dsound.h>
 
 class CGEKAudioSystem : public CGEKUnknown
+                      , public CGEKContextUser
+                      , public CGEKSystemUser
+                      , public IGEKContextObserver
                       , public IGEKAudioSystem
 {
 private:
@@ -24,6 +27,9 @@ public:
     CGEKAudioSystem(void);
     virtual ~CGEKAudioSystem(void);
     DECLARE_UNKNOWN(CGEKAudioSystem)
+
+    // IGEKContextObserver
+    STDMETHOD(OnRegistration)           (THIS_ IUnknown *pObject);
 
     // IGEKUnknown
     STDMETHOD(Initialize)               (THIS);

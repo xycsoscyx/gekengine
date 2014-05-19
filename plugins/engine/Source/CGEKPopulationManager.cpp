@@ -8,6 +8,8 @@
 
 BEGIN_INTERFACE_LIST(CGEKPopulationManager)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
+    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
+    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKPopulationManager)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneManager)
 END_INTERFACE_LIST_UNKNOWN
@@ -22,9 +24,26 @@ CGEKPopulationManager::~CGEKPopulationManager(void)
 {
 }
 
+STDMETHODIMP CGEKPopulationManager::OnRegistration(IUnknown *pObject)
+{
+    HRESULT hRetVal = S_OK;
+    CComQIPtr<IGEKSceneManagerUser> spSceneUser(pObject);
+    if (spSceneUser != nullptr)
+    {
+        hRetVal = spSceneUser->Register(this);
+    }
+
+    CComQIPtr<IGEKPopulationManagerUser> spPopulationUser(pObject);
+    if (spPopulationUser != nullptr)
+    {
+        hRetVal = spPopulationUser->Register(this);
+    }
+
+    return hRetVal;
+}
+
 STDMETHODIMP CGEKPopulationManager::Initialize(void)
 {
-    GetContext()->AddCacheClass(CLSID_GEKPopulationManager, this);
     HRESULT hRetVal = CGEKObservable::AddObserver(GetContext(), this);
     if (SUCCEEDED(hRetVal))
     {

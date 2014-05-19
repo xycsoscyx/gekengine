@@ -25,6 +25,7 @@ public:
 };
 
 class CGEKComponentSystemTransform : public CGEKUnknown
+                                   , public CGEKContextUser
                                    , public IGEKComponentSystem
 {
 private:

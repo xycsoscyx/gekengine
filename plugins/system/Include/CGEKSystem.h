@@ -9,7 +9,9 @@ DECLARE_INTERFACE(IGEKAudioSystem);
 DECLARE_INTERFACE(IGEKInputSystem);
 
 class CGEKSystem : public CGEKUnknown
+                 , public CGEKContextUser
                  , public CGEKObservable
+                 , public IGEKContextObserver
                  , public IGEKSystem
 {
 protected:
@@ -23,6 +25,7 @@ protected:
 
     CComPtr<IGEKVideoSystem> m_spVideoSystem;
     CComPtr<IGEKAudioSystem> m_spAudioSystem;
+    CComPtr<IGEKInputSystem> m_spInputSystem;
 
 private:
     static LRESULT CALLBACK ManagerBaseProc(HWND hWindow, UINT32 nMessage, WPARAM wParam, LPARAM lParam);
@@ -32,6 +35,9 @@ public:
     CGEKSystem(void);
     virtual ~CGEKSystem(void);
     DECLARE_UNKNOWN(CGEKSystem);
+
+    // IGEKContextObserver
+    STDMETHOD(OnRegistration)           (THIS_ IUnknown *pObject);
 
     // IGEKUnknown
     STDMETHOD(Initialize)                           (THIS);

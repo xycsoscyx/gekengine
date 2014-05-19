@@ -6,6 +6,10 @@
 #include "IGEKStaticFactory.h"
 
 class CGEKFactory : public CGEKUnknown
+                  , public CGEKContextUser
+                  , public CGEKVideoSystemUser
+                  , public CGEKProgramManagerUser
+                  , public IGEKContextObserver
                   , public IGEKFactory
                   , public IGEKStaticFactory
 {
@@ -22,6 +26,9 @@ public:
     // IGEKUnknown
     STDMETHOD(Initialize)                                       (THIS);
     STDMETHOD_(void, Destroy)                                   (THIS);
+
+    // IGEKContextObserver
+    STDMETHOD(OnRegistration)                                   (THIS_ IUnknown *pObject);
 
     // IGEKFactory
     STDMETHOD(Create)                                           (THIS_ const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *ppObject);
