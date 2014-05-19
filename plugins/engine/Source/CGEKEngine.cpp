@@ -14,8 +14,6 @@
 
 BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
     INTERFACE_LIST_ENTRY_COM(IGEKEngine)
@@ -63,20 +61,10 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
     }
 }
 
-STDMETHODIMP CGEKEngine::OnRegistration(IUnknown *pObject)
-{
-    HRESULT hRetVal = S_OK;
-    CComQIPtr<IGEKEngineUser> spuser(pObject);
-    if (spuser != nullptr)
-    {
-        hRetVal = spuser->Register(this);
-    }
-    
-    return hRetVal;
-}
-
 STDMETHODIMP CGEKEngine::Initialize(void)
 {
+    GetContext()->AddCacheClass(CLSID_GEKEngine, this);
+
     LIBXML_TEST_VERSION;
     static xmlExternalEntityLoader kDefaultXMLLoader = xmlGetExternalEntityLoader();
     xmlSetExternalEntityLoader([](LPCSTR pURL, LPCSTR pID, xmlParserCtxtPtr pContext) -> xmlParserInputPtr
@@ -117,12 +105,7 @@ STDMETHODIMP CGEKEngine::Initialize(void)
     m_aInputBindings[VK_ESCAPE] = L"escape";
 
     m_bWindowActive = true;
-    HRESULT hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)this);
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKSystem, IID_PPV_ARGS(&m_spSystem));
-    }
-
+    HRESULT hRetVal = GetContext()->CreateInstance(CLSID_GEKSystem, IID_PPV_ARGS(&m_spSystem));
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = CGEKObservable::AddObserver(m_spSystem, (IGEKSystemObserver *)this);
@@ -147,8 +130,6 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
     m_spPopulationManager = nullptr;
     CGEKObservable::RemoveObserver(m_spSystem, (IGEKSystemObserver *)this);
     m_spSystem = nullptr;
-
-    CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
 
     xmlCleanupParser();
 }

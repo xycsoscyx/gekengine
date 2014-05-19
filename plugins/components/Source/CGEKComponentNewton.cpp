@@ -123,10 +123,6 @@ STDMETHODIMP CGEKComponentNewton::OnEntityCreated(void)
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemNewton)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKModelManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKNewtonSystem)
@@ -141,18 +137,6 @@ CGEKComponentSystemNewton::CGEKComponentSystemNewton(void)
 
 CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
 {
-}
-
-STDMETHODIMP CGEKComponentSystemNewton::OnRegistration(IUnknown *pObject)
-{
-    HRESULT hRetVal = S_OK;
-    CComQIPtr<IGEKNewtonSystemUser> spUser(pObject);
-    if (spUser != nullptr)
-    {
-        hRetVal = spUser->Register(this);
-    }
-
-    return hRetVal;
 }
 
 int GEKNewtonOnAABBOverlap(const NewtonMaterial *pMaterial, const NewtonBody *pBody0, const NewtonBody *pBody1, int nThreadID)

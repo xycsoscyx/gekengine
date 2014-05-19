@@ -40,5 +40,3 @@ DECLARE_INTERFACE_IID_(IGEKAudioSystem, IUnknown, "E760C91D-7AF9-4AAA-B8E5-08F8F
     STDMETHOD(LoadEffect)               (THIS_ LPCWSTR pFileName, IGEKAudioEffect **ppEffect) PURE;
     STDMETHOD(LoadSound)                (THIS_ LPCWSTR pFileName, IGEKAudioSound **ppSound) PURE;
 };
-
-SYSTEM_USER(AudioSystem, "11D8675A-3EFB-4EE9-B864-B86C1470FE1D");

@@ -14,5 +14,3 @@ DECLARE_INTERFACE_IID_(IGEKLogicSystem, IUnknown, "CAE93234-6A56-42BA-AF8D-8A34A
 {
     STDMETHOD_(void, SetState)          (IGEKEntity *pEntity, IGEKLogicState *pState) PURE;
 };
-
-SYSTEM_USER(LogicSystem, "40778BFC-10C0-42F7-BADE-58AD3D319A45");

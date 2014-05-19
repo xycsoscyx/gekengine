@@ -6,10 +6,6 @@
 #include "IGEKStaticFactory.h"
 
 class CGEKStaticModel : public CGEKUnknown
-                      , public CGEKVideoSystemUser
-                      , public CGEKProgramManagerUser
-                      , public CGEKMaterialManagerUser
-                      , public CGEKStaticFactoryUser
                       , public IGEKResource
                       , public IGEKModel
 {

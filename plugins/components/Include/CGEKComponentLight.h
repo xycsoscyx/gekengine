@@ -25,9 +25,6 @@ public:
 };
 
 class CGEKComponentSystemLight : public CGEKUnknown
-                               , public CGEKContextUser
-                               , public CGEKSceneManagerUser
-                               , public CGEKViewManagerUser
                                , public IGEKComponentSystem
 {
 private:

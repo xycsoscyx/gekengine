@@ -13,8 +13,6 @@ DECLARE_INTERFACE_IID_(IGEKNewtonSystem, IUnknown, "46D22819-49E1-4CB3-9B9A-4166
     STDMETHOD_(NewtonCollision *, LoadCollision)    (THIS_ LPCWSTR pShape, LPCWSTR pParams) PURE;
 };
 
-SYSTEM_USER(NewtonSystem, "1AC940A5-E398-43C3-B2DB-8753D278662D");
-
 class CGEKComponentNewton : public CGEKUnknown
                           , public CGEKComponent
                           , public CGEKSceneManagerUser
@@ -39,10 +37,6 @@ public:
 };
 
 class CGEKComponentSystemNewton : public CGEKUnknown
-                                , public CGEKContextUser
-                                , public CGEKSceneManagerUser
-                                , public CGEKModelManagerUser
-                                , public IGEKContextObserver
                                 , public IGEKSceneObserver
                                 , public IGEKComponentSystem
                                 , public IGEKNewtonSystem
@@ -56,9 +50,6 @@ public:
     DECLARE_UNKNOWN(CGEKComponentSystemNewton)
     CGEKComponentSystemNewton(void);
     ~CGEKComponentSystemNewton(void);
-
-    // IGEKContextObserver
-    STDMETHOD(OnRegistration)               (THIS_ IUnknown *pObject);
 
     // IGEKUnknown
     STDMETHOD(Initialize)                           (THIS);

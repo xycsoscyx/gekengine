@@ -14,10 +14,7 @@ DECLARE_INTERFACE(IUnknown);
 DECLARE_INTERFACE(IUnknown);
 
 class CGEKRenderFilter : public CGEKUnknown
-                       , public CGEKSystemUser
-                       , public CGEKVideoSystemUser
                        , public IGEKVideoObserver
-                       , public CGEKRenderManagerUser
                        , public IGEKRenderFilter
                        , public CGEKRenderStates
                        , public CGEKBlendStates

@@ -442,7 +442,7 @@ public:
 };
 
 class CGEKVideoBuffer : public CGEKUnknown
-    , public IGEKVideoBuffer
+                      , public IGEKVideoBuffer
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -632,10 +632,7 @@ BEGIN_INTERFACE_LIST(CGEKVideoContext)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoSystem)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
-    INTERFACE_LIST_ENTRY_COM(IGEKSystemUser)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoSystem)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Device, m_spDevice)
 END_INTERFACE_LIST_BASE(CGEKVideoContext)
@@ -929,41 +926,34 @@ CGEKVideoSystem::CGEKVideoSystem(void)
 
 CGEKVideoSystem::~CGEKVideoSystem(void)
 {
-    CGEKObservable::RemoveObserver(GetContext(), this);
-}
-
-STDMETHODIMP CGEKVideoSystem::OnRegistration(IUnknown *pObject)
-{
-    CComQIPtr<IGEKVideoSystemUser> spSystemUser(pObject);
-    if (spSystemUser != nullptr)
-    {
-        return spSystemUser->Register(this);
-    }
-
-    return S_OK;
 }
 
 HRESULT CGEKVideoSystem::GetDefaultTargets(void)
 {
-    CComPtr<ID3D11Texture2D> spBackBuffer;
-    HRESULT hRetVal = m_spSwapChain->GetBuffer(0, IID_ID3D11Texture2D, (LPVOID FAR *)&spBackBuffer);
-    if (spBackBuffer != nullptr)
+    HRESULT hRetVal = E_FAIL;
+    TGEKComPtr<IGEKSystem> spSystem(GetContext(), CLSID_GEKSystem, &hRetVal);
+    if (spSystem)
     {
-        hRetVal = m_spDevice->CreateRenderTargetView(spBackBuffer, nullptr, &m_spRenderTargetView);
-        if (m_spRenderTargetView != nullptr)
+        CComPtr<ID3D11Texture2D> spBackBuffer;
+        hRetVal = m_spSwapChain->GetBuffer(0, IID_ID3D11Texture2D, (LPVOID FAR *)&spBackBuffer);
+        if (spBackBuffer != nullptr)
         {
-            m_spDefaultTarget = new CGEKVideoRenderTarget(m_spDeviceContext, nullptr, nullptr, m_spRenderTargetView, GetSystem()->GetXSize(), GetSystem()->GetYSize(), 0);
-            if (m_spDefaultTarget != nullptr)
+            hRetVal = m_spDevice->CreateRenderTargetView(spBackBuffer, nullptr, &m_spRenderTargetView);
+            if (m_spRenderTargetView != nullptr)
             {
-                CComPtr<IUnknown> spDepthView;
-                hRetVal = CreateDepthTarget(GetSystem()->GetXSize(), GetSystem()->GetYSize(), GEKVIDEO::DATA::D24_S8, &spDepthView);
-                if (spDepthView != nullptr)
+                m_spDefaultTarget = new CGEKVideoRenderTarget(m_spDeviceContext, nullptr, nullptr, m_spRenderTargetView, spSystem->GetXSize(), spSystem->GetYSize(), 0);
+                if (m_spDefaultTarget != nullptr)
                 {
-                    hRetVal = spDepthView->QueryInterface(IID_ID3D11DepthStencilView, (LPVOID FAR *)&m_spDepthStencilView);
-                    if (m_spDepthStencilView)
+                    CComPtr<IUnknown> spDepthView;
+                    hRetVal = CreateDepthTarget(spSystem->GetXSize(), spSystem->GetYSize(), GEKVIDEO::DATA::D24_S8, &spDepthView);
+                    if (spDepthView != nullptr)
                     {
-                        ID3D11RenderTargetView *pRenderTargetView = m_spRenderTargetView;
-                        m_spDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, m_spDepthStencilView);
+                        hRetVal = spDepthView->QueryInterface(IID_ID3D11DepthStencilView, (LPVOID FAR *)&m_spDepthStencilView);
+                        if (m_spDepthStencilView)
+                        {
+                            ID3D11RenderTargetView *pRenderTargetView = m_spRenderTargetView;
+                            m_spDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, m_spDepthStencilView);
+                        }
                     }
                 }
             }
@@ -975,54 +965,56 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
 
 STDMETHODIMP CGEKVideoSystem::Initialize(void)
 {
-    DXGI_SWAP_CHAIN_DESC kSwapChainDesc;
-    kSwapChainDesc.BufferDesc.Width = GetSystem()->GetXSize();
-    kSwapChainDesc.BufferDesc.Height = GetSystem()->GetYSize();
-    kSwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    kSwapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
-    kSwapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-    kSwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-    kSwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-    kSwapChainDesc.SampleDesc.Count = 1;
-    kSwapChainDesc.SampleDesc.Quality = 0;
-    kSwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    kSwapChainDesc.BufferCount = 1;
-    kSwapChainDesc.OutputWindow = GetSystem()->GetWindow();
-    kSwapChainDesc.Windowed = true;
-    kSwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-    kSwapChainDesc.Flags = 0;
+    GetContext()->AddCacheClass(CLSID_GEKVideoSystem, this);
 
-    D3D_FEATURE_LEVEL eFeatureLevel = D3D_FEATURE_LEVEL_11_0;
+    HRESULT hRetVal = E_FAIL;
+    TGEKComPtr<IGEKSystem> spSystem(GetContext(), CLSID_GEKSystem, &hRetVal);
+    if (spSystem)
+    {
+        DXGI_SWAP_CHAIN_DESC kSwapChainDesc;
+        kSwapChainDesc.BufferDesc.Width = spSystem->GetXSize();
+        kSwapChainDesc.BufferDesc.Height = spSystem->GetYSize();
+        kSwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        kSwapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+        kSwapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+        kSwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+        kSwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+        kSwapChainDesc.SampleDesc.Count = 1;
+        kSwapChainDesc.SampleDesc.Quality = 0;
+        kSwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        kSwapChainDesc.BufferCount = 1;
+        kSwapChainDesc.OutputWindow = spSystem->GetWindow();
+        kSwapChainDesc.Windowed = true;
+        kSwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+        kSwapChainDesc.Flags = 0;
+
+        D3D_FEATURE_LEVEL eFeatureLevel = D3D_FEATURE_LEVEL_11_0;
 #ifdef _DEBUG
-    HRESULT hRetVal = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_DEBUG, &eFeatureLevel, 1,
+        hRetVal = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_DEBUG, &eFeatureLevel, 1,
 #else
-    HRESULT hRetVal = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, &eFeatureLevel, 1,
+        hRetVal = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, &eFeatureLevel, 1,
 #endif
-                                                    D3D11_SDK_VERSION, &kSwapChainDesc, &m_spSwapChain, &m_spDevice, 
-                                                    nullptr, &m_spDeviceContext);
-    if (m_spDevice != nullptr && 
-        m_spDeviceContext != nullptr && 
-        m_spSwapChain != nullptr)
-    {
-        hRetVal = GetDefaultTargets();
-    }
+            D3D11_SDK_VERSION, &kSwapChainDesc, &m_spSwapChain, &m_spDevice,
+            nullptr, &m_spDeviceContext);
+        if (m_spDevice != nullptr &&
+            m_spDeviceContext != nullptr &&
+            m_spSwapChain != nullptr)
+        {
+            hRetVal = GetDefaultTargets();
+        }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        m_spComputeSystem.reset(new CGEKVideoComputeContextSystem(m_spDeviceContext));
-        m_spVertexSystem.reset(new CGEKVideoVertexContextSystem(m_spDeviceContext));
-        m_spGeometrySystem.reset(new CGEKVideoGeometryContextSystem(m_spDeviceContext));
-        m_spPixelSystem.reset(new CGEKVideoPixelContextSystem(m_spDeviceContext));
-    }
+        if (SUCCEEDED(hRetVal))
+        {
+            m_spComputeSystem.reset(new CGEKVideoComputeContextSystem(m_spDeviceContext));
+            m_spVertexSystem.reset(new CGEKVideoVertexContextSystem(m_spDeviceContext));
+            m_spGeometrySystem.reset(new CGEKVideoGeometryContextSystem(m_spDeviceContext));
+            m_spPixelSystem.reset(new CGEKVideoPixelContextSystem(m_spDeviceContext));
+        }
 
-    if (SUCCEEDED(hRetVal) && !GetSystem()->IsWindowed())
-    {
-        hRetVal = m_spSwapChain->SetFullscreenState(true, nullptr);
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::AddObserver(GetContext(), this);
+        if (SUCCEEDED(hRetVal) && !spSystem->IsWindowed())
+        {
+            hRetVal = m_spSwapChain->SetFullscreenState(true, nullptr);
+        }
     }
 
     return hRetVal;
@@ -1039,31 +1031,36 @@ STDMETHODIMP CGEKVideoSystem::Reset(void)
     m_spRenderTargetView = nullptr;
     m_spDepthStencilView = nullptr;
 
-    HRESULT hRetVal = m_spSwapChain->SetFullscreenState(!GetSystem()->IsWindowed(), nullptr);
-    if (SUCCEEDED(hRetVal))
+    HRESULT hRetVal = E_FAIL;
+    TGEKComPtr<IGEKSystem> spSystem(GetContext(), CLSID_GEKSystem, &hRetVal);
+    if (spSystem)
     {
-        DXGI_MODE_DESC kDesc;
-        kDesc.Width = GetSystem()->GetXSize();
-        kDesc.Height = GetSystem()->GetYSize();
-        kDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        kDesc.RefreshRate.Numerator = 60;
-        kDesc.RefreshRate.Denominator = 1;
-        kDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-        kDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-        hRetVal = m_spSwapChain->ResizeTarget(&kDesc);
+        hRetVal = m_spSwapChain->SetFullscreenState(!spSystem->IsWindowed(), nullptr);
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = m_spSwapChain->ResizeBuffers(0, GetSystem()->GetXSize(), GetSystem()->GetYSize(), DXGI_FORMAT_UNKNOWN, 0);
+            DXGI_MODE_DESC kDesc;
+            kDesc.Width = spSystem->GetXSize();
+            kDesc.Height = spSystem->GetYSize();
+            kDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            kDesc.RefreshRate.Numerator = 60;
+            kDesc.RefreshRate.Denominator = 1;
+            kDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+            kDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+            hRetVal = m_spSwapChain->ResizeTarget(&kDesc);
             if (SUCCEEDED(hRetVal))
             {
-                hRetVal = GetDefaultTargets();
+                hRetVal = m_spSwapChain->ResizeBuffers(0, spSystem->GetXSize(), spSystem->GetYSize(), DXGI_FORMAT_UNKNOWN, 0);
+                if (SUCCEEDED(hRetVal))
+                {
+                    hRetVal = GetDefaultTargets();
+                }
             }
         }
-    }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEKVideoObserver>(std::bind(&IGEKVideoObserver::OnPostReset, std::placeholders::_1)));
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEKVideoObserver>(std::bind(&IGEKVideoObserver::OnPostReset, std::placeholders::_1)));
+        }
     }
 
     return hRetVal;
@@ -2693,28 +2690,32 @@ STDMETHODIMP_(void) CGEKVideoSystem::SetDefaultTargets(IGEKVideoContext *pContex
     REQUIRE_VOID_RETURN(m_spRenderTargetView);
     REQUIRE_VOID_RETURN(m_spDepthStencilView);
 
-    D3D11_VIEWPORT kViewport;
-    kViewport.TopLeftX = 0.0f;
-    kViewport.TopLeftY = 0.0f;
-    kViewport.Width = float(GetSystem()->GetXSize());
-    kViewport.Height = float(GetSystem()->GetYSize());
-    kViewport.MinDepth = 0.0f;
-    kViewport.MaxDepth = 1.0f;
-    ID3D11RenderTargetView *pD3DView = m_spRenderTargetView;
-    CComQIPtr<ID3D11DepthStencilView> spDepth(pDepth ? pDepth : m_spDepthStencilView);
-    if (pContext != nullptr)
+    TGEKComPtr<IGEKSystem> spSystem(GetContext(), CLSID_GEKSystem);
+    if (spSystem)
     {
-        CComQIPtr<ID3D11DeviceContext> spContext(pContext);
-        if (spContext != nullptr)
+        D3D11_VIEWPORT kViewport;
+        kViewport.TopLeftX = 0.0f;
+        kViewport.TopLeftY = 0.0f;
+        kViewport.Width = float(spSystem->GetXSize());
+        kViewport.Height = float(spSystem->GetYSize());
+        kViewport.MinDepth = 0.0f;
+        kViewport.MaxDepth = 1.0f;
+        ID3D11RenderTargetView *pD3DView = m_spRenderTargetView;
+        CComQIPtr<ID3D11DepthStencilView> spDepth(pDepth ? pDepth : m_spDepthStencilView);
+        if (pContext != nullptr)
         {
-            spContext->OMSetRenderTargets(1, &pD3DView, spDepth);
-            spContext->RSSetViewports(1, &kViewport);
+            CComQIPtr<ID3D11DeviceContext> spContext(pContext);
+            if (spContext != nullptr)
+            {
+                spContext->OMSetRenderTargets(1, &pD3DView, spDepth);
+                spContext->RSSetViewports(1, &kViewport);
+            }
         }
-    }
-    else
-    {
-        m_spDeviceContext->OMSetRenderTargets(1, &pD3DView, spDepth);
-        m_spDeviceContext->RSSetViewports(1, &kViewport);
+        else
+        {
+            m_spDeviceContext->OMSetRenderTargets(1, &pD3DView, spDepth);
+            m_spDeviceContext->RSSetViewports(1, &kViewport);
+        }
     }
 }
 

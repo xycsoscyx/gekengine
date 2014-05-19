@@ -9,5 +9,3 @@ DECLARE_INTERFACE_IID_(IGEKMaterialManager, IUnknown, "DCB2F842-2A3F-4E15-8263-B
     STDMETHOD(PrepareMaterial)          (THIS_ IUnknown *pMaterial) PURE;
     STDMETHOD_(bool, EnableMaterial)    (THIS_ IUnknown *pMaterial) PURE;
 };
-
-SYSTEM_USER(MaterialManager, "7DCCF48F-83E1-4322-8175-2D2261BFA401");

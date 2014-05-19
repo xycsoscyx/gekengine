@@ -56,7 +56,6 @@ STDMETHODIMP_(bool) CGEKComponentTransform::SetProperty(LPCWSTR pName, const GEK
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemTransform)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
 

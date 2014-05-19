@@ -2,10 +2,6 @@
 #include "GEKModels.h"
 
 BEGIN_INTERFACE_LIST(CGEKFactory)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoSystemUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKProgramManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKFactory)
     INTERFACE_LIST_ENTRY_COM(IGEKStaticFactory)
 END_INTERFACE_LIST_UNKNOWN
@@ -23,12 +19,7 @@ CGEKFactory::~CGEKFactory(void)
 
 STDMETHODIMP CGEKFactory::Initialize(void)
 {
-    HRESULT hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)this);
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetProgramManager()->LoadProgram(L"staticmodel", &m_spVertexProgram);
-    }
-
+    HRESULT hRetVal = GetProgramManager()->LoadProgram(L"staticmodel", &m_spVertexProgram);
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = GetVideoSystem()->CreateBuffer(sizeof(IGEKModel::INSTANCE), m_nNumInstances, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
@@ -39,19 +30,6 @@ STDMETHODIMP CGEKFactory::Initialize(void)
 
 STDMETHODIMP_(void) CGEKFactory::Destroy(void)
 {
-    CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
-}
-
-STDMETHODIMP CGEKFactory::OnRegistration(IUnknown *pObject)
-{
-    HRESULT hRetVal = S_OK;
-    CComQIPtr<IGEKStaticFactoryUser> spuser(pObject);
-    if (spuser != nullptr)
-    {
-        hRetVal = spuser->Register(this);
-    }
-
-    return hRetVal;
 }
 
 STDMETHODIMP CGEKFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *ppObject)

@@ -3,7 +3,6 @@
 #include <ppl.h>
 
 BEGIN_INTERFACE_LIST(CGEKComponentLogic)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -86,9 +85,6 @@ STDMETHODIMP_(void) CGEKComponentLogic::OnEvent(LPCWSTR pAction, const GEKVALUE 
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemLogic)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
@@ -103,33 +99,14 @@ CGEKComponentSystemLogic::~CGEKComponentSystemLogic(void)
 {
 }
 
-STDMETHODIMP CGEKComponentSystemLogic::OnRegistration(IUnknown *pObject)
-{
-    HRESULT hRetVal = S_OK;
-    CComQIPtr<IGEKLogicSystemUser> spUser(pObject);
-    if (spUser != nullptr)
-    {
-        hRetVal = spUser->Register(this);
-    }
-
-    return hRetVal;
-}
-
 STDMETHODIMP CGEKComponentSystemLogic::Initialize(void)
 {
-    HRESULT hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)this);
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::AddObserver(GetSceneManager(), (IGEKSceneObserver *)this);
-    }
-
-    return hRetVal;
+    return CGEKObservable::AddObserver(GetSceneManager(), (IGEKSceneObserver *)this);
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemLogic::Destroy(void)
 {
     CGEKObservable::RemoveObserver(GetSceneManager(), (IGEKSceneObserver *)this);
-    CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
 }
 
 STDMETHODIMP_(LPCWSTR) CGEKComponentSystemLogic::GetType(void) const

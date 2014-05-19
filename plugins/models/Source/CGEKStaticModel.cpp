@@ -2,7 +2,6 @@
 #include <algorithm>
 
 BEGIN_INTERFACE_LIST(CGEKStaticModel)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoSystemUser)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKMaterialManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKStaticFactoryUser)

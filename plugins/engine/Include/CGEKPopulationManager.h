@@ -10,8 +10,6 @@
 
 class CGEKPopulationManager : public CGEKUnknown
                             , public CGEKObservable
-                            , public CGEKContextUser
-                            , public IGEKContextObserver
                             , public IGEKPopulationManager
                             , public IGEKSceneManager
 {
@@ -26,9 +24,6 @@ public:
     CGEKPopulationManager(void);
     virtual ~CGEKPopulationManager(void);
     DECLARE_UNKNOWN(CGEKPopulationManager);
-
-    // IGEKContextObserver
-    STDMETHOD(OnRegistration)           (THIS_ IUnknown *pObject);
 
     // IGEKUnknown
     STDMETHOD(Initialize)               (THIS);

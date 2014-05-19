@@ -51,11 +51,8 @@ public:
     STDMETHOD_(void, FinishCommandList)                 (THIS_ IUnknown **ppUnknown);
 };
 
-class CGEKVideoSystem : public CGEKContextUser
-                      , public CGEKSystemUser
-                      , public CGEKVideoContext
+class CGEKVideoSystem : public CGEKVideoContext
                       , public CGEKObservable
-                      , public IGEKContextObserver
                       , public IGEKVideoSystem
 {
 private:
@@ -73,9 +70,6 @@ public:
     virtual ~CGEKVideoSystem(void);
     DECLARE_UNKNOWN(CGEKVideoSystem);
     
-    // IGEKContextObserver
-    STDMETHOD(OnRegistration)           (THIS_ IUnknown *pObject);
-
     // IGEKUnknown
     STDMETHOD(Initialize)                               (THIS);
 

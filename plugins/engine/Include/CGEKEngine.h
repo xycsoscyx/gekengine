@@ -13,8 +13,6 @@ DECLARE_INTERFACE(IGEKPopulationManager);
 
 class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
-                 , public CGEKContextUser
-                 , public IGEKContextObserver
                  , public IGEKSystemObserver
                  , public IGEKGameApplication
                  , public IGEKEngine
@@ -41,9 +39,6 @@ public:
     CGEKEngine(void);
     virtual ~CGEKEngine(void);
     DECLARE_UNKNOWN(CGEKEngine);
-
-    // IGEKContextObserver
-    STDMETHOD(OnRegistration)           (THIS_ IUnknown *pObject);
 
     // IGEKUnknown
     STDMETHOD(Initialize)               (THIS);
