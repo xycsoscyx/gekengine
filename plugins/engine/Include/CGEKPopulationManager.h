@@ -10,13 +10,10 @@
 
 class CGEKPopulationManager : public CGEKUnknown
                             , public CGEKObservable
-                            , public CGEKContextUser
-                            , public IGEKContextObserver
                             , public IGEKPopulationManager
                             , public IGEKSceneManager
 {
 private:
-    concurrency::critical_section m_kCriticalSection;
     std::map<GEKHASH, CComPtr<IGEKComponentSystem>> m_aComponentSystems;
     concurrency::concurrent_unordered_map<GEKHASH, CComPtr<IGEKEntity>> m_aPopulation;
     std::list<IGEKEntity *> m_aInputHandlers;
@@ -26,9 +23,6 @@ public:
     CGEKPopulationManager(void);
     virtual ~CGEKPopulationManager(void);
     DECLARE_UNKNOWN(CGEKPopulationManager);
-
-    // IGEKContextObserver
-    STDMETHOD(OnRegistration)           (THIS_ IUnknown *pObject);
 
     // IGEKUnknown
     STDMETHOD(Initialize)               (THIS);

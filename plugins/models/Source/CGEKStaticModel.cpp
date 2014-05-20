@@ -1,11 +1,10 @@
 ﻿#include "CGEKStaticModel.h"
 #include <algorithm>
 
+#include "GEKSystemCLSIDs.h"
+#include "GEKEngineCLSIDs.h"
+
 BEGIN_INTERFACE_LIST(CGEKStaticModel)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoSystemUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKProgramManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKMaterialManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKStaticFactoryUser)
     INTERFACE_LIST_ENTRY_COM(IGEKResource)
     INTERFACE_LIST_ENTRY_COM(IGEKModel)
 END_INTERFACE_LIST_UNKNOWN
@@ -18,6 +17,15 @@ CGEKStaticModel::CGEKStaticModel(void)
 
 CGEKStaticModel::~CGEKStaticModel(void)
 {
+}
+
+STDMETHODIMP CGEKStaticModel::Initialize(void)
+{
+    HRESULT hRetVal = E_FAIL;
+    m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
+    m_pMaterialManager = GetContext()->GetCachedClass<IGEKMaterialManager>(CLSID_GEKRenderManager);
+    m_pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderManager);
+    return S_OK;
 }
 
 STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
@@ -49,7 +57,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
             CStringW strMaterial = CA2W(strMaterialUTF8, CP_UTF8);
 
             CComPtr<IUnknown> spMaterial;
-            hRetVal = GetMaterialManager()->LoadMaterial(strMaterial, &spMaterial);
+            hRetVal = m_pMaterialManager->LoadMaterial(strMaterial, &spMaterial);
             if (SUCCEEDED(hRetVal))
             {
                 MATERIAL kMaterial;
@@ -75,19 +83,19 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateBuffer(sizeof(float3), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spPositionBuffer, pBuffer);
+            hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float3), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spPositionBuffer, pBuffer);
             pBuffer += (sizeof(float3) * nNumVertices);
         }
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateBuffer(sizeof(float2), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spTexCoordBuffer, pBuffer);
+            hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float2), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spTexCoordBuffer, pBuffer);
             pBuffer += (sizeof(float2) * nNumVertices);
         }
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetVideoSystem()->CreateBuffer((sizeof(float3) * 3), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spBasisBuffer, pBuffer);
+            hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float3) * 3), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spBasisBuffer, pBuffer);
             pBuffer += (sizeof(float3) * 3 * nNumVertices);
         }
 
@@ -96,7 +104,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
             UINT32 nNumIndices = *((UINT32 *)pBuffer);
             pBuffer += sizeof(UINT32);
 
-            hRetVal = GetVideoSystem()->CreateBuffer(sizeof(UINT16), nNumIndices, GEKVIDEO::BUFFER::INDEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spIndexBuffer, pBuffer);
+            hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), nNumIndices, GEKVIDEO::BUFFER::INDEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spIndexBuffer, pBuffer);
             pBuffer += (sizeof(UINT16) * nNumIndices);
         }
     }
@@ -113,7 +121,7 @@ STDMETHODIMP_(void) CGEKStaticModel::Prepare(void)
 {
     for (auto &kPair : m_aMaterials)
     {
-        GetMaterialManager()->PrepareMaterial(kPair.first);
+        m_pMaterialManager->PrepareMaterial(kPair.first);
     }
 }
 
@@ -126,25 +134,25 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
         return;
     }
 
-    GetProgramManager()->EnableProgram(GetStaticFactory()->GetVertexProgram());
-    GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    m_pProgramManager->EnableProgram(GetStaticFactory()->GetVertexProgram());
+    m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     if (nVertexAttributes & GEK_VERTEX_POSITION)
     {
-        GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(0, 0, m_spPositionBuffer);
+        m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spPositionBuffer);
     }
 
     if (nVertexAttributes & GEK_VERTEX_TEXCOORD)
     {
-        GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(1, 0, m_spTexCoordBuffer);
+        m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(1, 0, m_spTexCoordBuffer);
     }
 
     if (nVertexAttributes & GEK_VERTEX_BASIS)
     { 
-        GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(2, 0, m_spBasisBuffer);
+        m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(2, 0, m_spBasisBuffer);
     }
 
-    GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetResource(0, GetStaticFactory()->GetInstanceBuffer());
+    m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetResource(0, GetStaticFactory()->GetInstanceBuffer());
     for (UINT32 nPass = 0; nPass < aInstances.size(); nPass += GetStaticFactory()->GetNumInstances())
     {
         UINT32 nNumInstances = min(GetStaticFactory()->GetNumInstances(), (aInstances.size() - nPass));
@@ -156,9 +164,9 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
             GetStaticFactory()->GetInstanceBuffer()->UnMap();
             for (auto &kPair : m_aMaterials)
             {
-                if (GetMaterialManager()->EnableMaterial(kPair.first))
+                if (m_pMaterialManager->EnableMaterial(kPair.first))
                 {
-                    GetVideoSystem()->GetImmediateContext()->DrawInstancedIndexedPrimitive(kPair.second.m_nNumIndices, nNumInstances, kPair.second.m_nFirstIndex, kPair.second.m_nFirstVertex, 0);
+                    m_pVideoSystem->GetImmediateContext()->DrawInstancedIndexedPrimitive(kPair.second.m_nNumIndices, nNumInstances, kPair.second.m_nFirstIndex, kPair.second.m_nFirstVertex, 0);
                 }
             }
         }

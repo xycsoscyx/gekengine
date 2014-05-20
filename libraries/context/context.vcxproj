@@ -85,7 +85,6 @@
     <ClInclude Include="Include\CGEKContext.h" />
     <ClInclude Include="Public\IGEKContext.h" />
     <ClInclude Include="Public\IGEKObservable.h" />
-    <ClInclude Include="Public\IGEKObserver.h" />
     <ClInclude Include="Public\IGEKUnknown.h" />
   </ItemGroup>
   <ItemGroup>

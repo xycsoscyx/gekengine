@@ -14,10 +14,7 @@ DECLARE_INTERFACE(IUnknown);
 DECLARE_INTERFACE(IUnknown);
 
 class CGEKRenderFilter : public CGEKUnknown
-                       , public CGEKSystemUser
-                       , public CGEKVideoSystemUser
                        , public IGEKVideoObserver
-                       , public CGEKRenderManagerUser
                        , public IGEKRenderFilter
                        , public CGEKRenderStates
                        , public CGEKBlendStates
@@ -59,6 +56,9 @@ public:
     };
 
 private:
+    IGEKVideoSystem *m_pVideoSystem;
+    IGEKRenderManager *m_pRenderManager;
+
     float m_nScale;
     GEKVIDEO::DATA::FORMAT m_eDepthFormat;
     UINT32 m_nVertexAttributes;

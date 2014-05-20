@@ -170,9 +170,6 @@ BEGIN_INTERFACE_LIST(CGEKAudioSound)
 END_INTERFACE_LIST_BASE(CGEKAudioSample)
 
 BEGIN_INTERFACE_LIST(CGEKAudioSystem)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEKSystemUser)
     INTERFACE_LIST_ENTRY_COM(IGEKAudioSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -184,63 +181,51 @@ CGEKAudioSystem::CGEKAudioSystem(void)
 
 CGEKAudioSystem::~CGEKAudioSystem(void)
 {
-    CGEKObservable::RemoveObserver(GetContext(), this);
-}
-
-STDMETHODIMP CGEKAudioSystem::OnRegistration(IUnknown *pObject)
-{
-    CComQIPtr<IGEKAudioSystemUser> spSystemUser(pObject);
-    if (spSystemUser != nullptr)
-    {
-        return spSystemUser->Register(this);
-    }
-
-    return S_OK;
 }
 
 STDMETHODIMP CGEKAudioSystem::Initialize(void)
 {
-    HRESULT hRetVal = DirectSoundCreate8(nullptr, &m_spDirectSound, nullptr);
-    if (SUCCEEDED(hRetVal))
+    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKAudioSystem, GetUnknown());
+    IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
+    if (pSystem)
     {
-        hRetVal = m_spDirectSound->SetCooperativeLevel(GetSystem()->GetWindow(), DSSCL_PRIORITY);
+        hRetVal = DirectSoundCreate8(nullptr, &m_spDirectSound, nullptr);
         if (SUCCEEDED(hRetVal))
         {
-            DSBUFFERDESC kDesc = { 0 };
-            kDesc.dwSize = sizeof(DSBUFFERDESC);
-            kDesc.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
-            hRetVal = m_spDirectSound->CreateSoundBuffer(&kDesc, &m_spPrimary, nullptr);
+            hRetVal = m_spDirectSound->SetCooperativeLevel(pSystem->GetWindow(), DSSCL_PRIORITY);
             if (SUCCEEDED(hRetVal))
             {
-                WAVEFORMATEX kFormat;
-                ZeroMemory(&kFormat, sizeof(WAVEFORMATEX)); 
-                kFormat.wFormatTag = WAVE_FORMAT_PCM; 
-                kFormat.nChannels = 2; 
-                kFormat.wBitsPerSample = 8;
-                kFormat.nSamplesPerSec = 48000;
-                kFormat.nBlockAlign = (kFormat.wBitsPerSample / 8 * kFormat.nChannels);
-                kFormat.nAvgBytesPerSec = (kFormat.nSamplesPerSec * kFormat.nBlockAlign);
-                hRetVal = m_spPrimary->SetFormat(&kFormat);
+                DSBUFFERDESC kDesc = { 0 };
+                kDesc.dwSize = sizeof(DSBUFFERDESC);
+                kDesc.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
+                hRetVal = m_spDirectSound->CreateSoundBuffer(&kDesc, &m_spPrimary, nullptr);
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = E_FAIL;
-                    m_spListener = m_spPrimary;
-                    if (m_spListener != nullptr)
+                    WAVEFORMATEX kFormat;
+                    ZeroMemory(&kFormat, sizeof(WAVEFORMATEX));
+                    kFormat.wFormatTag = WAVE_FORMAT_PCM;
+                    kFormat.nChannels = 2;
+                    kFormat.wBitsPerSample = 8;
+                    kFormat.nSamplesPerSec = 48000;
+                    kFormat.nBlockAlign = (kFormat.wBitsPerSample / 8 * kFormat.nChannels);
+                    kFormat.nAvgBytesPerSec = (kFormat.nSamplesPerSec * kFormat.nBlockAlign);
+                    hRetVal = m_spPrimary->SetFormat(&kFormat);
+                    if (SUCCEEDED(hRetVal))
                     {
-                        hRetVal = S_OK;
-                        SetMasterVolume(1.0f);
-                        SetDistanceFactor(1.0f);
-                        SetDopplerFactor(0.0f);
-                        SetRollOffFactor(1.0f);
+                        hRetVal = E_FAIL;
+                        m_spListener = m_spPrimary;
+                        if (m_spListener != nullptr)
+                        {
+                            hRetVal = S_OK;
+                            SetMasterVolume(1.0f);
+                            SetDistanceFactor(1.0f);
+                            SetDopplerFactor(0.0f);
+                            SetRollOffFactor(1.0f);
+                        }
                     }
                 }
             }
         }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::AddObserver(GetContext(), this);
     }
 
     return hRetVal;

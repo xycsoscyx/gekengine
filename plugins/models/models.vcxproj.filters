@@ -30,9 +30,6 @@
     <ClInclude Include="Include\CGEKStaticModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\IGEKModel.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\CGEKFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>

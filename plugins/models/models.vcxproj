@@ -101,7 +101,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\api\IGEKModel.h" />
     <ClInclude Include="..\..\api\IGEKModelManager.h" />
     <ClInclude Include="GEKModels.h" />
     <ClInclude Include="Include\CGEKFactory.h" />

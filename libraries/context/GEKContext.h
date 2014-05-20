@@ -1,7 +1,6 @@
 #pragma once
 
 // Interfaces
-#include "Public\IGEKObserver.h"
 #include "Public\IGEKObservable.h"
 #include "Public\IGEKUnknown.h"
 #include "Public\IGEKContext.h"
@@ -22,10 +21,12 @@ class CGEKUnknown : public IGEKUnknown
 {
 private:
     ULONG m_nRefCount;
+    IGEKContext *m_pContext;
 
 public:
     CGEKUnknown(void)
         : m_nRefCount(0)
+        , m_pContext(nullptr)
     {
     }
 
@@ -33,12 +34,12 @@ public:
     {
     }
 
-    STDMETHOD_(ULONG, AddRef)       (THIS)
+    STDMETHOD_(ULONG, AddRef)               (THIS)
     {
         return InterlockedIncrement(&m_nRefCount);
     }
 
-    STDMETHOD_(ULONG, Release)      (THIS)
+    STDMETHOD_(ULONG, Release)              (THIS)
     {
         LONG nRefCount = InterlockedDecrement(&m_nRefCount);
         if (nRefCount == 0)
@@ -50,11 +51,7 @@ public:
         return nRefCount;
     }
 
-    STDMETHOD_(void, Destroy)       (THIS)
-    {
-    }
-
-    STDMETHOD(QueryInterface)       (THIS_ REFIID rIID, LPVOID FAR *ppObject)
+    STDMETHOD(QueryInterface)               (THIS_ REFIID rIID, LPVOID FAR *ppObject)
     {
         REQUIRE_RETURN(ppObject, E_INVALIDARG);
 
@@ -75,6 +72,32 @@ public:
         }
 
         return hRetVal;
+    }
+
+    STDMETHOD(RegisterContext)              (THIS_ IGEKContext *pContext)
+    {
+        REQUIRE_RETURN(pContext, E_INVALIDARG);
+        m_pContext = pContext;
+        return Initialize();
+    }
+
+    STDMETHOD(Initialize)                   (THIS)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD_(void, Destroy)               (THIS)
+    {
+    }
+
+    STDMETHOD_(IGEKContext *, GetContext)   (THIS)
+    {
+        return m_pContext;
+    }
+
+    STDMETHOD_(IUnknown *, GetUnknown)      (THIS)
+    {
+        return dynamic_cast<IUnknown *>(this);
     }
 };
 
@@ -307,7 +330,7 @@ public:
     }
 
 #define REGISTER_CLASS(CLASS)                                                       \
-HRESULT GEKCreateInstanceOf##CLASS##(IUnknown **ppObject)                           \
+HRESULT GEKCreateInstanceOf##CLASS##(IGEKUnknown **ppObject)                        \
 {                                                                                   \
     REQUIRE_RETURN(ppObject, E_INVALIDARG);                                         \
                                                                                     \
@@ -322,15 +345,15 @@ HRESULT GEKCreateInstanceOf##CLASS##(IUnknown **ppObject)                       
 }
 
 #define DECLARE_REGISTERED_CLASS(CLASS)                                             \
-extern HRESULT GEKCreateInstanceOf##CLASS##(IUnknown **ppObject);
+extern HRESULT GEKCreateInstanceOf##CLASS##(IGEKUnknown **ppObject);
 
-#define DECLARE_CONTEXT_SOURCE(SOURCENAME)                                          \
-extern "C" __declspec(dllexport)                                                    \
-HRESULT GEKGetModuleClasses(                                                        \
-    std::map<CLSID, std::function<HRESULT (IUnknown **)>, CCompareGUID> &aClasses,  \
-    std::map<CStringW, CLSID> &aNamedClasses,                                       \
-    std::map<CLSID, std::vector<CLSID>, CCompareGUID> &aTypedClasses)               \
-{                                                                                   \
+#define DECLARE_CONTEXT_SOURCE(SOURCENAME)                                              \
+extern "C" __declspec(dllexport)                                                        \
+HRESULT GEKGetModuleClasses(                                                            \
+    std::map<CLSID, std::function<HRESULT (IGEKUnknown **)>, CCompareGUID> &aClasses,   \
+    std::map<CStringW, CLSID> &aNamedClasses,                                           \
+    std::map<CLSID, std::vector<CLSID>, CCompareGUID> &aTypedClasses)                   \
+{                                                                                       \
     CLSID kLastCLSID = GUID_NULL;
 
 #define ADD_CONTEXT_CLASS(CLASSID, CLASS)                                           \
@@ -360,40 +383,3 @@ HRESULT GEKGetModuleClasses(                                                    
 #define END_CONTEXT_SOURCE                                                          \
     return S_OK;                                                                    \
 }
-
-#define SYSTEM_USER(CLASS, UUID)                                                    \
-DECLARE_INTERFACE_IID_(IGEK##CLASS##User, IUnknown, UUID)                           \
-{                                                                                   \
-    STDMETHOD(Register)(IGEK##CLASS## *pSystem) PURE;                               \
-};                                                                                  \
-                                                                                    \
-class CGEK##CLASS##User : public IGEK##CLASS##User                                  \
-{                                                                                   \
-private:                                                                            \
-    IGEK##CLASS## *m_pSystem;                                                       \
-                                                                                    \
-public:                                                                             \
-    CGEK##CLASS##User(void)                                                         \
-        : m_pSystem(nullptr)                                                        \
-    {                                                                               \
-    }                                                                               \
-                                                                                    \
-    virtual ~CGEK##CLASS##User(void)                                                \
-    {                                                                               \
-    }                                                                               \
-                                                                                    \
-    STDMETHOD(Register)(THIS_ IGEK##CLASS## *pSystem)                               \
-    {                                                                               \
-        REQUIRE_RETURN(pSystem, E_INVALIDARG);                                      \
-        m_pSystem = pSystem;                                                        \
-        return S_OK;                                                                \
-    }                                                                               \
-                                                                                    \
-    STDMETHOD_(IGEK##CLASS## *, Get##CLASS##)(void) const                           \
-    {                                                                               \
-        REQUIRE_RETURN(m_pSystem, nullptr);                                         \
-        return m_pSystem;                                                           \
-    }                                                                               \
-};
-
-SYSTEM_USER(Context, "0FDCE057-B876-4FD6-B02B-6C6E7F5135E9");

@@ -1,5 +1,4 @@
 #include "CGEKSystem.h"
-#include "IGEKInputSystem.h"
 #include "IGEKAudioSystem.h"
 #include "IGEKVideoSystem.h"
 #include <time.h>
@@ -8,8 +7,6 @@
 
 BEGIN_INTERFACE_LIST(CGEKSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -62,18 +59,6 @@ CGEKSystem::CGEKSystem(void)
 
 CGEKSystem::~CGEKSystem(void)
 {
-    CGEKObservable::RemoveObserver(GetContext(), this);
-}
-
-STDMETHODIMP CGEKSystem::OnRegistration(IUnknown *pObject)
-{
-    CComQIPtr<IGEKSystemUser> spSystemUser(pObject);
-    if (spSystemUser != nullptr)
-    {
-        return spSystemUser->Register(this);
-    }
-
-    return S_OK;
 }
 
 STDMETHODIMP CGEKSystem::Initialize(void)
@@ -81,10 +66,10 @@ STDMETHODIMP CGEKSystem::Initialize(void)
     HRESULT hRetVal = CoInitialize(0);
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(GetContext(), this);
+        hRetVal = GetContext()->AddCachedClass(CLSID_GEKSystem, GetUnknown());
     }
 
-    if (SUCCEEDED(hRetVal)) 
+    if (SUCCEEDED(hRetVal))
     {
         m_kConfig.Load(L"%root%\\config.cfg");
         m_nXSize = StrToUINT32(m_kConfig.GetValue(L"video", L"xsize", L"640"));
@@ -153,11 +138,6 @@ STDMETHODIMP CGEKSystem::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = GetContext()->CreateInstance(CLSID_GEKAudioSystem, IID_PPV_ARGS(&m_spAudioSystem));
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKInputSystem, IID_PPV_ARGS(&m_spInputSystem));
     }
 
     if (SUCCEEDED(hRetVal))

@@ -275,15 +275,9 @@ static GEKVIDEO::INPUT::SOURCE GetElementClass(LPCWSTR pValue)
 }
 
 BEGIN_INTERFACE_LIST(CGEKRenderManager)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKSystemUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoSystemUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEKEngineUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderManager)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManager)
     INTERFACE_LIST_ENTRY_COM(IGEKMaterialManager)
@@ -294,7 +288,9 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKRenderManager)
 
 CGEKRenderManager::CGEKRenderManager(void)
-    : m_pWebCore(nullptr)
+    : m_pVideoSystem(nullptr)
+    , m_pSystem(nullptr)
+    , m_pWebCore(nullptr)
     , m_pWebSession(nullptr)
     , m_pViewer(nullptr)
     , m_pCurrentPass(nullptr)
@@ -305,54 +301,6 @@ CGEKRenderManager::CGEKRenderManager(void)
 
 CGEKRenderManager::~CGEKRenderManager(void)
 {
-}
-
-STDMETHODIMP CGEKRenderManager::OnRegistration(IUnknown *pObject)
-{
-    HRESULT hRetVal = S_OK;
-    CComQIPtr<IGEKRenderManagerUser> spRenderUser(pObject);
-    if (spRenderUser != nullptr)
-    {
-        hRetVal = spRenderUser->Register(this);
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        CComQIPtr<IGEKProgramManagerUser> spUser(pObject);
-        if (spUser != nullptr)
-        {
-            hRetVal = spUser->Register(this);
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        CComQIPtr<IGEKMaterialManagerUser> spUser(pObject);
-        if (spUser != nullptr)
-        {
-            hRetVal = spUser->Register(this);
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        CComQIPtr<IGEKModelManagerUser> spUser(pObject);
-        if (spUser != nullptr)
-        {
-            hRetVal = spUser->Register(this);
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        CComQIPtr<IGEKViewManagerUser> spUser(pObject);
-        if (spUser != nullptr)
-        {
-            hRetVal = spUser->Register(this);
-        }
-    }
-
-    return hRetVal;
 }
 
 STDMETHODIMP_(void) CGEKRenderManager::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
@@ -455,7 +403,7 @@ STDMETHODIMP_(void) CGEKRenderManager::OnPreReset(void)
 {
     for (auto pView : m_aGUIViews)
     {
-        pView->Resize(GetSystem()->GetXSize(), GetSystem()->GetYSize());
+        pView->Resize(m_pSystem->GetXSize(), m_pSystem->GetYSize());
     }
 }
 
@@ -466,47 +414,47 @@ STDMETHODIMP CGEKRenderManager::OnPostReset(void)
 
 STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
 {
-    GetVideoSystem()->SetEvent(m_spFrameEvent);
-    return S_OK;
+    if (SUCCEEDED(hRetVal))
+    {
+        m_pVideoSystem->SetEvent(m_spFrameEvent);
+    }
+
+    return hRetVal;
 }
 
 STDMETHODIMP CGEKRenderManager::Initialize(void)
 {
-    HRESULT hRetVal = S_OK;
-    m_pWebCore = Awesomium::WebCore::Initialize(Awesomium::WebConfig());
-    if (m_pWebCore)
+    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKRenderManager, GetUnknown());
+    m_pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
+    m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
+    if (m_pSystem && m_pVideoSystem)
     {
-        m_pWebSession = m_pWebCore->CreateWebSession(Awesomium::WSLit(""), Awesomium::WebPreferences());
-        if (m_pWebSession)
+        m_pWebCore = Awesomium::WebCore::Initialize(Awesomium::WebConfig());
+        if (m_pWebCore)
         {
-            m_pWebSession->AddDataSource(Awesomium::WSLit("Engine"), this);
+            m_pWebSession = m_pWebCore->CreateWebSession(Awesomium::WSLit(""), Awesomium::WebPreferences());
+            if (m_pWebSession)
+            {
+                m_pWebSession->AddDataSource(Awesomium::WSLit("Engine"), this);
+                m_pWebCore->set_surface_factory(this);
+                hRetVal = S_OK;
+            }
         }
-
-        m_pWebCore->set_surface_factory(this);
-    }
-    else
-    {
-        hRetVal = E_FAIL;
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)this);
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKSystem, (IGEKSystemObserver *)this);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(GetSystem(), (IGEKSystemObserver *)this);
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)this);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(GetVideoSystem(), (IGEKVideoObserver *)this);
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::AddObserver(GetSceneManager(), (IGEKSceneObserver *)this);
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)this);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -514,7 +462,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         std::vector<GEKVIDEO::INPUTELEMENT> aLayout;
         aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::RG_FLOAT, "POSITION", 0));
         aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::RG_FLOAT, "TEXCOORD", 0));
-        hRetVal = GetVideoSystem()->LoadVertexProgram(L"%root%\\data\\programs\\vertex\\overlay.hlsl", "MainVertexProgram", aLayout, &m_spVertexProgram);
+        hRetVal = m_pVideoSystem->LoadVertexProgram(L"%root%\\data\\programs\\vertex\\overlay.hlsl", "MainVertexProgram", aLayout, &m_spVertexProgram);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -533,13 +481,13 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
             0, 2, 3,
         };
 
-        hRetVal = GetVideoSystem()->CreateBuffer((sizeof(float2) * 2), 4, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
-        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(UINT16), 6, GEKVIDEO::BUFFER::INDEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
+        hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float2) * 2), 4, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
+        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), 6, GEKVIDEO::BUFFER::INDEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(float4x4), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spOrthoBuffer);
+        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float4x4), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spOrthoBuffer);
         if (m_spOrthoBuffer != nullptr)
         {
             float4x4 nOverlayMatrix;
@@ -550,17 +498,17 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(ENGINEBUFFER), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spEngineBuffer);
+        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(ENGINEBUFFER), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spEngineBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(UINT32) * 4, 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spLightCountBuffer);
+        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT32) * 4, 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spLightCountBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateBuffer(sizeof(LIGHT), m_nNumLightInstances, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
+        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(LIGHT), m_nNumLightInstances, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -569,15 +517,15 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         kStates.m_eFilter = GEKVIDEO::FILTER::MIN_MAG_MIP_POINT;
         kStates.m_eAddressU = GEKVIDEO::ADDRESS::CLAMP;
         kStates.m_eAddressV = GEKVIDEO::ADDRESS::CLAMP;
-        hRetVal = GetVideoSystem()->CreateSamplerStates(kStates, &m_spPointSampler);
+        hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spPointSampler);
     }
 
     if (SUCCEEDED(hRetVal))
     {
         GEKVIDEO::SAMPLERSTATES kStates;
-        if (GetSystem()->GetConfig().DoesValueExists(L"render", L"anisotropy"))
+        if (m_pSystem->GetConfig().DoesValueExists(L"render", L"anisotropy"))
         {
-            kStates.m_nMaxAnisotropy = StrToUINT32(GetSystem()->GetConfig().GetValue(L"render", L"anisotropy", L"1"));
+            kStates.m_nMaxAnisotropy = StrToUINT32(m_pSystem->GetConfig().GetValue(L"render", L"anisotropy", L"1"));
             kStates.m_eFilter = GEKVIDEO::FILTER::ANISOTROPIC;
         }
         else
@@ -587,12 +535,12 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
         kStates.m_eAddressU = GEKVIDEO::ADDRESS::WRAP;
         kStates.m_eAddressV = GEKVIDEO::ADDRESS::WRAP;
-        hRetVal = GetVideoSystem()->CreateSamplerStates(kStates, &m_spLinearSampler);
+        hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spLinearSampler);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetVideoSystem()->CreateEvent(&m_spFrameEvent);
+        hRetVal = m_pVideoSystem->CreateEvent(&m_spFrameEvent);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -615,10 +563,9 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 {
     Free();
-    CGEKObservable::RemoveObserver(GetVideoSystem(), (IGEKSceneObserver *)this);
-    CGEKObservable::RemoveObserver(GetVideoSystem(), (IGEKVideoObserver *)this);
-    CGEKObservable::RemoveObserver(GetSystem(), (IGEKSystemObserver *)this);
-    CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)this);
+    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)this);
+    GetContext()->RemoveCachedObserver(CLSID_GEKSystem, (IGEKSystemObserver *)this);
     if (m_pWebSession)
     {
         m_pWebSession->Release();
@@ -770,8 +717,8 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                         CStringW strSize = kBrowerNode.GetAttribute(L"size");
                         CStringW strXSize = strSize.Tokenize(L",", nPosition);
                         CStringW strYSize = strSize.Tokenize(L",", nPosition);
-                        UINT32 nXSize = GetSystem()->EvaluateValue(strXSize);
-                        UINT32 nYSize = GetSystem()->EvaluateValue(strYSize);
+                        UINT32 nXSize = m_pSystem->EvaluateValue(strXSize);
+                        UINT32 nYSize = m_pSystem->EvaluateValue(strYSize);
 
                         CLibXMLNode kSourceNode = kBrowerNode.FirstChildElement(L"source");
                         if (kSourceNode && kSourceNode.HasAttribute(L"url"))
@@ -837,14 +784,14 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                 float4 nColor = StrToFloat4(strColor);
 
                 CComPtr<IGEKVideoTexture> spColorTexture;
-                hRetVal = GetVideoSystem()->CreateTexture(1, 1, 1, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &spColorTexture);
+                hRetVal = m_pVideoSystem->CreateTexture(1, 1, 1, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &spColorTexture);
                 if (spColorTexture)
                 {
                     UINT32 nColorValue = UINT32(UINT8(nColor.r * 255.0f)) |
                                          UINT32(UINT8(nColor.g * 255.0f) << 8) |
                                          UINT32(UINT8(nColor.b * 255.0f) << 16) |
                                          UINT32(UINT8(nColor.a * 255.0f) << 24);
-                    GetVideoSystem()->UpdateTexture(spColorTexture, &nColorValue, 4);
+                    m_pVideoSystem->UpdateTexture(spColorTexture, &nColorValue, 4);
                     spTexture = spColorTexture;
                 }
                 else
@@ -860,7 +807,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
         else
         {
             CComPtr<IGEKVideoTexture> spFileTexture;
-            hRetVal = GetVideoSystem()->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spFileTexture);
+            hRetVal = m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spFileTexture);
             if (spFileTexture)
             {
                 spTexture = spFileTexture;
@@ -902,7 +849,7 @@ STDMETHODIMP_(void) CGEKRenderManager::SetResource(IGEKVideoContextSystem *pSyst
     {
         if (pSystem == nullptr)
         {
-            GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(nStage, spResource);
+            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(nStage, spResource);
         }
         else
         {
@@ -919,7 +866,7 @@ STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
     if (_wcsicmp(pName, L"Screen") == 0)
     {
         CComPtr<IGEKVideoTexture> spTexture;
-        hRetVal = GetVideoSystem()->GetDefaultRenderTarget(&spTexture);
+        hRetVal = m_pVideoSystem->GetDefaultRenderTarget(&spTexture);
         if (spTexture)
         {
             hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
@@ -1024,8 +971,8 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
                         if (spMaterial != nullptr)
                         {
-                            spMaterial->CGEKRenderStates::Load(GetVideoSystem(), kMaterialNode.FirstChildElement(L"render"));
-                            spMaterial->CGEKBlendStates::Load(GetVideoSystem(), kMaterialNode.FirstChildElement(L"blend"));
+                            spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"render"));
+                            spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"blend"));
                             spMaterial->QueryInterface(IID_PPV_ARGS(&m_aMaterials[pName]));
                             hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
                         }
@@ -1061,8 +1008,8 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                 if (spMaterial != nullptr)
                 {
                     CLibXMLNode kBlankNode(nullptr);
-                    spMaterial->CGEKRenderStates::Load(GetVideoSystem(), kBlankNode);
-                    spMaterial->CGEKBlendStates::Load(GetVideoSystem(), kBlankNode);
+                    spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kBlankNode);
+                    spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kBlankNode);
                     spMaterial->QueryInterface(IID_PPV_ARGS(&m_aMaterials[L"*default"]));
                     hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
                 }
@@ -1106,7 +1053,7 @@ STDMETHODIMP_(bool) CGEKRenderManager::EnableMaterial(IUnknown *pMaterial)
             if (pIterator != m_aPasses.end() && m_pCurrentPass == &(*pIterator).second)
             {
                 bReturn = true;
-                spMaterial->Enable(this, GetVideoSystem());
+                spMaterial->Enable(this, m_pVideoSystem);
             }
         }
     }
@@ -1185,7 +1132,7 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                             if (kGeometryNode)
                             {
                                 CStringA strGeometryProgram = kGeometryNode.GetText();
-                                hRetVal = GetVideoSystem()->CompileGeometryProgram(strGeometryProgram, "MainGeometryProgram", &spGeometryProgram);
+                                hRetVal = m_pVideoSystem->CompileGeometryProgram(strGeometryProgram, "MainGeometryProgram", &spGeometryProgram);
                             }
 
                             if (SUCCEEDED(hRetVal))
@@ -1198,7 +1145,7 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                                     strDeferredProgram.Replace("_INSERT_WORLD_PROGRAM", (strVertexProgram + "\r\n"));
 
                                     CComPtr<IUnknown> spVertexProgram;
-                                    hRetVal = GetVideoSystem()->CompileVertexProgram(strDeferredProgram, "MainVertexProgram", aLayout, &spVertexProgram);
+                                    hRetVal = m_pVideoSystem->CompileVertexProgram(strDeferredProgram, "MainVertexProgram", aLayout, &spVertexProgram);
                                     if (spVertexProgram != nullptr)
                                     {
                                         CComPtr<CGEKProgram> spProgram(new CGEKProgram(spVertexProgram, spGeometryProgram));
@@ -1225,14 +1172,14 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
 
 STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
 {
-    REQUIRE_VOID_RETURN(GetVideoSystem());
+    REQUIRE_VOID_RETURN(m_pVideoSystem);
     REQUIRE_VOID_RETURN(pProgram);
 
     CComQIPtr<IGEKProgram> spProgram(pProgram);
     if (spProgram != nullptr)
     {
-        GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetProgram(spProgram->GetVertexProgram());
-        GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetProgram(spProgram->GetGeometryProgram());
+        m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(spProgram->GetVertexProgram());
+        m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(spProgram->GetGeometryProgram());
     }
 }
 
@@ -1337,7 +1284,11 @@ STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName, INT32 nPriority)
 
 STDMETHODIMP_(void) CGEKRenderManager::CaptureMouse(bool bCapture)
 {
-    GetEngine()->CaptureMouse(bCapture);
+    IGEKEngine *pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
+    if (pEngine)
+    {
+        pEngine->CaptureMouse(bCapture);
+    }
 }
 
 STDMETHODIMP CGEKRenderManager::SetViewer(IGEKEntity *pEntity)
@@ -1377,17 +1328,17 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLightBatch)
 {
-    GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
-    GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
-    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetResource(0, m_spLightBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetResource(0, m_spLightBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
 
-    GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
-    GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
-    GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
+    m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
+    m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
 
     for (UINT32 nPass = 0; nPass < m_aVisibleLights.size(); nPass += m_nNumLightInstances)
     {
@@ -1409,7 +1360,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
 
                 OnLightBatch();
 
-                GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+                m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
             }
         }
     }
@@ -1417,16 +1368,16 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
 {
-    GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
-    GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
 
-    GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
+    m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
 
-    GetVideoSystem()->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
-    GetVideoSystem()->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
-    GetVideoSystem()->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
+    m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
+    m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
 
-    GetVideoSystem()->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+    m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 }
 
 static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGEKRenderManager::PASS *pPass)
@@ -1480,8 +1431,8 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         nCameraMatrix = kRotation.GetQuaternion();
         nCameraMatrix.t = kPosition.GetFloat3();
 
-        float nXSize = float(GetSystem()->GetXSize());
-        float nYSize = float(GetSystem()->GetYSize());
+        float nXSize = float(m_pSystem->GetXSize());
+        float nYSize = float(m_pSystem->GetYSize());
         float nAspect = (nXSize / nYSize);
 
         m_kEngineBuffer.m_nCameraSize.x = nXSize;
@@ -1497,10 +1448,11 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
 
         m_kFrustum.Create(nCameraMatrix, m_kEngineBuffer.m_nProjectionMatrix);
 
-        if (true)
+        IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+        if (pSceneManager)
         {
             concurrency::concurrent_unordered_set<IGEKEntity *> aVisibleEntities;
-            GetSceneManager()->GetVisible(m_kFrustum, aVisibleEntities);
+            pSceneManager->GetVisible(m_kFrustum, aVisibleEntities);
 
             concurrency::concurrent_vector<LIGHT> aLights;
             concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> aModels;
@@ -1563,12 +1515,12 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
     }
 
     m_spEngineBuffer->Update((void *)&m_kEngineBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
-    GetVideoSystem()->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
-    GetVideoSystem()->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
+    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
 
     for (auto &kPair : m_aCurrentPasses)
     {
@@ -1597,15 +1549,15 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
     });
 
     m_pCurrentPass = nullptr;
-    GetVideoSystem()->GetImmediateContext()->ClearResources();
-    GetVideoSystem()->Present(true);
+    m_pVideoSystem->GetImmediateContext()->ClearResources();
+    m_pVideoSystem->Present(true);
 
-    while (!GetVideoSystem()->IsEventSet(m_spFrameEvent))
+    while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))
     {
         Sleep(0);
     };
 
-    GetVideoSystem()->SetEvent(m_spFrameEvent);
+    m_pVideoSystem->SetEvent(m_spFrameEvent);
 }
 
 void CGEKRenderManager::OnRequest(int nRequestID, const Awesomium::ResourceRequest &kRequest, const Awesomium::WebString &kPath)
@@ -1647,21 +1599,25 @@ void CGEKRenderManager::OnRequest(int nRequestID, const Awesomium::ResourceReque
 
 void CGEKRenderManager::OnMethodCall(Awesomium::WebView *pCaller, unsigned int nRemoteObjectID, const Awesomium::WebString &kMethodName, const Awesomium::JSArray &aArgs)
 {
-    std::vector<CStringW> aParams;
-    for (UINT32 nIndex = 0; nIndex < aArgs.size(); nIndex++)
+    IGEKEngine *pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
+    if (pEngine)
     {
-        const Awesomium::JSValue &kValue = aArgs.At(nIndex);
-        aParams.push_back((LPCWSTR)kValue.ToString().data());
-    }
+        std::vector<CStringW> aParams;
+        for (UINT32 nIndex = 0; nIndex < aArgs.size(); nIndex++)
+        {
+            const Awesomium::JSValue &kValue = aArgs.At(nIndex);
+            aParams.push_back((LPCWSTR)kValue.ToString().data());
+        }
 
-    if (aParams.size() > 0)
-    {
-        std::vector<LPCWSTR> aParamPointers(aParams.begin(), aParams.end());
-        GetEngine()->OnCommand((LPCWSTR)kMethodName.data(), &aParamPointers[0], aParamPointers.size());
-    }
-    else
-    {
-        GetEngine()->OnCommand((LPCWSTR)kMethodName.data(), nullptr, 0);
+        if (aParams.size() > 0)
+        {
+            std::vector<LPCWSTR> aParamPointers(aParams.begin(), aParams.end());
+            pEngine->OnCommand((LPCWSTR)kMethodName.data(), &aParamPointers[0], aParamPointers.size());
+        }
+        else
+        {
+            pEngine->OnCommand((LPCWSTR)kMethodName.data(), nullptr, 0);
+        }
     }
 }
 
@@ -1706,7 +1662,7 @@ Awesomium::JSValue CGEKRenderManager::OnMethodCallWithReturnValue(Awesomium::Web
         {
             CStringW strGroup = (LPCWSTR)aArgs.At(0).ToString().data(); 
             CStringW strName = (LPCWSTR)aArgs.At(1).ToString().data();
-            CStringW strValue = GetSystem()->GetConfig().GetValue(strGroup, strName, L"");
+            CStringW strValue = m_pSystem->GetConfig().GetValue(strGroup, strName, L"");
             return Awesomium::JSValue(Awesomium::WSLit(CW2A(strValue, CP_UTF8)));
         }
     }
@@ -1716,7 +1672,7 @@ Awesomium::JSValue CGEKRenderManager::OnMethodCallWithReturnValue(Awesomium::Web
 
 Awesomium::Surface *CGEKRenderManager::CreateSurface(Awesomium::WebView *pView, int nXSize, int nYSize)
 {
-    CComPtr<CGEKWebSurface> spWebSurface(new CGEKWebSurface(GetVideoSystem(), nXSize, nYSize));
+    CComPtr<CGEKWebSurface> spWebSurface(new CGEKWebSurface(m_pVideoSystem, nXSize, nYSize));
     if (spWebSurface)
     {
         spWebSurface->QueryInterface(IID_PPV_ARGS(&m_aWebSurfaces[pView]));

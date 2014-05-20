@@ -14,9 +14,6 @@
     <ClInclude Include="Public\IGEKObservable.h">
       <Filter>Public Files</Filter>
     </ClInclude>
-    <ClInclude Include="Public\IGEKObserver.h">
-      <Filter>Public Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">

@@ -14,8 +14,6 @@
 
 BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
     INTERFACE_LIST_ENTRY_COM(IGEKEngine)
@@ -63,79 +61,66 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
     }
 }
 
-STDMETHODIMP CGEKEngine::OnRegistration(IUnknown *pObject)
-{
-    HRESULT hRetVal = S_OK;
-    CComQIPtr<IGEKEngineUser> spuser(pObject);
-    if (spuser != nullptr)
-    {
-        hRetVal = spuser->Register(this);
-    }
-    
-    return hRetVal;
-}
-
 STDMETHODIMP CGEKEngine::Initialize(void)
 {
-    LIBXML_TEST_VERSION;
-    static xmlExternalEntityLoader kDefaultXMLLoader = xmlGetExternalEntityLoader();
-    xmlSetExternalEntityLoader([](LPCSTR pURL, LPCSTR pID, xmlParserCtxtPtr pContext) -> xmlParserInputPtr
-    {
-        xmlParserInputPtr pReturn = nullptr;
-        if (pID == nullptr)
-        {
-            pReturn = xmlNewInputFromFile(pContext, pURL);
-        }
-        else
-        {
-            CStringW strID = CA2W(pID, CP_UTF8);
-            CStringA strFileName = CW2A(GEKParseFileName(strID), CP_UTF8);
-            pReturn = xmlNewInputFromFile(pContext, strFileName);
-        }
-
-        if (kDefaultXMLLoader != nullptr && pReturn == nullptr)
-        {
-            pReturn = kDefaultXMLLoader(pURL, pID, pContext);
-        }
-
-        return pReturn;
-    });
-
-    m_aInputBindings[VK_UP] = L"forward";
-    m_aInputBindings[VK_DOWN] = L"backward";
-    m_aInputBindings[VK_LEFT] = L"strafe_left";
-    m_aInputBindings[VK_RIGHT] = L"strafe_right";
-    m_aInputBindings['W'] = L"forward";
-    m_aInputBindings['S'] = L"backward";
-    m_aInputBindings['A'] = L"strafe_left";
-    m_aInputBindings['D'] = L"strafe_right";
-    m_aInputBindings['Q'] = L"rise";
-    m_aInputBindings['Z'] = L"fall";
-    m_aInputBindings[WM_MOUSEWHEEL] = L"height";
-    m_aInputBindings[WM_MOUSEMOVE] = L"turn";
-
-    m_aInputBindings[VK_ESCAPE] = L"escape";
-
-    m_bWindowActive = true;
-    HRESULT hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)this);
+    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKEngine, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
+        LIBXML_TEST_VERSION;
+        static xmlExternalEntityLoader kDefaultXMLLoader = xmlGetExternalEntityLoader();
+        xmlSetExternalEntityLoader([](LPCSTR pURL, LPCSTR pID, xmlParserCtxtPtr pContext) -> xmlParserInputPtr
+        {
+            xmlParserInputPtr pReturn = nullptr;
+            if (pID == nullptr)
+            {
+                pReturn = xmlNewInputFromFile(pContext, pURL);
+            }
+            else
+            {
+                CStringW strID = CA2W(pID, CP_UTF8);
+                CStringA strFileName = CW2A(GEKParseFileName(strID), CP_UTF8);
+                pReturn = xmlNewInputFromFile(pContext, strFileName);
+            }
+
+            if (kDefaultXMLLoader != nullptr && pReturn == nullptr)
+            {
+                pReturn = kDefaultXMLLoader(pURL, pID, pContext);
+            }
+
+            return pReturn;
+        });
+
+        m_aInputBindings[VK_UP] = L"forward";
+        m_aInputBindings[VK_DOWN] = L"backward";
+        m_aInputBindings[VK_LEFT] = L"strafe_left";
+        m_aInputBindings[VK_RIGHT] = L"strafe_right";
+        m_aInputBindings['W'] = L"forward";
+        m_aInputBindings['S'] = L"backward";
+        m_aInputBindings['A'] = L"strafe_left";
+        m_aInputBindings['D'] = L"strafe_right";
+        m_aInputBindings['Q'] = L"rise";
+        m_aInputBindings['Z'] = L"fall";
+        m_aInputBindings[WM_MOUSEWHEEL] = L"height";
+        m_aInputBindings[WM_MOUSEMOVE] = L"turn";
+
+        m_aInputBindings[VK_ESCAPE] = L"escape";
+
+        m_bWindowActive = true;
         hRetVal = GetContext()->CreateInstance(CLSID_GEKSystem, IID_PPV_ARGS(&m_spSystem));
-    }
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = CGEKObservable::AddObserver(m_spSystem, (IGEKSystemObserver *)this);
+        }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::AddObserver(m_spSystem, (IGEKSystemObserver *)this);
-    }
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationManager, IID_PPV_ARGS(&m_spPopulationManager));
+        }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationManager, IID_PPV_ARGS(&m_spPopulationManager));
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderManager, IID_PPV_ARGS(&m_spRenderManager));
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderManager, IID_PPV_ARGS(&m_spRenderManager));
+        }
     }
 
     return hRetVal;
@@ -147,9 +132,6 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
     m_spPopulationManager = nullptr;
     CGEKObservable::RemoveObserver(m_spSystem, (IGEKSystemObserver *)this);
     m_spSystem = nullptr;
-
-    CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
-
     xmlCleanupParser();
 }
 

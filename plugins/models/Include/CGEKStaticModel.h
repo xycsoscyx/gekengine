@@ -6,10 +6,6 @@
 #include "IGEKStaticFactory.h"
 
 class CGEKStaticModel : public CGEKUnknown
-                      , public CGEKVideoSystemUser
-                      , public CGEKProgramManagerUser
-                      , public CGEKMaterialManagerUser
-                      , public CGEKStaticFactoryUser
                       , public IGEKResource
                       , public IGEKModel
 {
@@ -22,6 +18,10 @@ private:
     };
 
 private:
+    IGEKVideoSystem *m_pVideoSystem;
+    IGEKMaterialManager *m_pMaterialManager;
+    IGEKProgramManager *m_pProgramManager;
+
     aabb m_nAABB;
     CComPtr<IGEKVideoBuffer> m_spPositionBuffer;
     CComPtr<IGEKVideoBuffer> m_spTexCoordBuffer;
@@ -33,6 +33,9 @@ public:
     CGEKStaticModel(void);
     virtual ~CGEKStaticModel(void);
     DECLARE_UNKNOWN(CGEKStaticModel);
+
+    // IGEKUnknown
+    STDMETHOD(Initialize)           (THIS);
 
     // IGEKResource
     STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, LPCWSTR pParams);
