@@ -20,10 +20,15 @@ HRESULT GEKCreateContext(IGEKContext **ppContext)
 
 BEGIN_INTERFACE_LIST(CGEKContext)
     INTERFACE_LIST_ENTRY_COM(IGEKContext)
+    INTERFACE_LIST_ENTRY_COM(IGEKObservable)
 END_INTERFACE_LIST_UNKNOWN
 
 CGEKContext::CGEKContext(void)
+    : m_nFrequency(0.0)
 {
+    UINT64 nFrequency = 0;
+    QueryPerformanceFrequency((LARGE_INTEGER *)&nFrequency);
+    m_nFrequency = double(nFrequency);
 }
 
 CGEKContext::~CGEKContext(void)
@@ -34,6 +39,30 @@ CGEKContext::~CGEKContext(void)
     for (auto &hModule : m_aModules)
     {
         FreeLibrary(hModule);
+    }
+}
+
+STDMETHODIMP_(double) CGEKContext::GetTime(void)
+{
+    UINT64 nCounter = 0;
+    QueryPerformanceCounter((LARGE_INTEGER *)&nCounter);
+    return (double(nCounter) / m_nFrequency);
+}
+
+STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...)
+{
+    CStringW strMessage;
+    if (pMessage)
+    {
+        va_list pArgs;
+        va_start(pArgs, pMessage);
+        strMessage.FormatV(pMessage, pArgs);
+        va_end(pArgs);
+
+        if (!strMessage.IsEmpty())
+        {
+            CGEKObservable::SendEvent(TGEKEvent<IGEKContextObserver>(std::bind(&IGEKContextObserver::OnLog, std::placeholders::_1, pFile, nLine, strMessage.GetString())));
+        }
     }
 }
 

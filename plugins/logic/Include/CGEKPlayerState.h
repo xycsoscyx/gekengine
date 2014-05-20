@@ -5,8 +5,6 @@
 #include "GEKAPI.h"
 
 class CGEKPlayerState : public CGEKUnknown
-                      , public CGEKLogicSystemUser
-                      , public CGEKViewManagerUser
                       , public IGEKLogicState
 {
 private:

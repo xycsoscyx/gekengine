@@ -4,8 +4,9 @@ BEGIN_INTERFACE_LIST(CGEKComponentTransform)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentTransform::CGEKComponentTransform(IGEKEntity *pEntity)
-    : CGEKComponent(pEntity)
+CGEKComponentTransform::CGEKComponentTransform(IGEKContext *pContext, IGEKEntity *pEntity)
+    : CGEKUnknown(pContext)
+    , CGEKComponent(pEntity)
 {
 }
 
@@ -56,7 +57,6 @@ STDMETHODIMP_(bool) CGEKComponentTransform::SetProperty(LPCWSTR pName, const GEK
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemTransform)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -88,16 +88,9 @@ STDMETHODIMP_(void) CGEKComponentSystemTransform::Clear(void)
 STDMETHODIMP CGEKComponentSystemTransform::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
-    CComPtr<CGEKComponentTransform> spComponent(new CGEKComponentTransform(pEntity));
+    CComPtr<CGEKComponentTransform> spComponent(new CGEKComponentTransform(GetContext(), pEntity));
     if (spComponent)
     {
-        CComPtr<IUnknown> spComponentUnknown;
-        spComponent->QueryInterface(IID_PPV_ARGS(&spComponentUnknown));
-        if (spComponentUnknown)
-        {
-            GetContext()->RegisterInstance(spComponentUnknown);
-        }
-
         hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
         if (SUCCEEDED(hRetVal))
         {

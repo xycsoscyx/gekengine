@@ -15,7 +15,7 @@ public:
 
 public:
     DECLARE_UNKNOWN(CGEKComponentLight)
-    CGEKComponentLight(IGEKEntity *pEntity);
+    CGEKComponentLight(IGEKContext *pContext, IGEKEntity *pEntity);
     ~CGEKComponentLight(void);
 
     // IGEKComponent
@@ -25,9 +25,6 @@ public:
 };
 
 class CGEKComponentSystemLight : public CGEKUnknown
-                               , public CGEKContextUser
-                               , public CGEKSceneManagerUser
-                               , public CGEKViewManagerUser
                                , public IGEKComponentSystem
 {
 private:

@@ -15,8 +15,6 @@ DECLARE_INTERFACE_IID_(IGEKNewtonSystem, IUnknown, "46D22819-49E1-4CB3-9B9A-4166
 
 class CGEKComponentNewton : public CGEKUnknown
                           , public CGEKComponent
-                          , public CGEKSceneManagerUser
-                          , public CGEKNewtonSystemUser
 {
 public:
     NewtonBody *m_pBody;
@@ -26,7 +24,7 @@ public:
 
 public:
     DECLARE_UNKNOWN(CGEKComponentNewton)
-    CGEKComponentNewton(IGEKEntity *pEntity);
+    CGEKComponentNewton(IGEKContext *pContext, IGEKEntity *pEntity);
     ~CGEKComponentNewton(void);
 
     // IGEKComponent
@@ -37,10 +35,6 @@ public:
 };
 
 class CGEKComponentSystemNewton : public CGEKUnknown
-                                , public CGEKContextUser
-                                , public CGEKSceneManagerUser
-                                , public CGEKModelManagerUser
-                                , public IGEKContextObserver
                                 , public IGEKSceneObserver
                                 , public IGEKComponentSystem
                                 , public IGEKNewtonSystem
@@ -54,9 +48,6 @@ public:
     DECLARE_UNKNOWN(CGEKComponentSystemNewton)
     CGEKComponentSystemNewton(void);
     ~CGEKComponentSystemNewton(void);
-
-    // IGEKContextObserver
-    STDMETHOD(OnRegistration)               (THIS_ IUnknown *pObject);
 
     // IGEKUnknown
     STDMETHOD(Initialize)                           (THIS);

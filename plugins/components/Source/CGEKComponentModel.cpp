@@ -3,14 +3,15 @@
 #include <algorithm>
 #include <ppl.h>
 
+#include "GEKEngineCLSIDs.h"
+
 BEGIN_INTERFACE_LIST(CGEKComponentModel)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
-    INTERFACE_LIST_ENTRY_COM(IGEKModelManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKViewManagerUser)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentModel::CGEKComponentModel(IGEKEntity *pEntity)
-    : CGEKComponent(pEntity)
+CGEKComponentModel::CGEKComponentModel(IGEKContext *pContext, IGEKEntity *pEntity)
+    : CGEKUnknown(pContext)
+    , CGEKComponent(pEntity)
 {
 }
 
@@ -77,16 +78,17 @@ STDMETHODIMP CGEKComponentModel::OnEntityCreated(void)
     HRESULT hRetVal = S_OK;
     if (!m_strSource.IsEmpty())
     {
-        hRetVal = GetModelManager()->LoadModel(m_strSource, m_strParams, &m_spModel);
+        IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKRenderManager);
+        if (pModelManager)
+        {
+            hRetVal = pModelManager->LoadModel(m_strSource, m_strParams, &m_spModel);
+        }
     }
 
     return hRetVal;
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemModel)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKViewManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -113,16 +115,9 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::Clear(void)
 STDMETHODIMP CGEKComponentSystemModel::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
-    CComPtr<CGEKComponentModel> spComponent(new CGEKComponentModel(pEntity));
+    CComPtr<CGEKComponentModel> spComponent(new CGEKComponentModel(GetContext(), pEntity));
     if (spComponent)
     {
-        CComPtr<IUnknown> spComponentUnknown;
-        spComponent->QueryInterface(IID_PPV_ARGS(&spComponentUnknown));
-        if (spComponentUnknown)
-        {
-            GetContext()->RegisterInstance(spComponentUnknown);
-        }
-
         hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
         if (SUCCEEDED(hRetVal))
         {

@@ -7,7 +7,6 @@
 #include <concurrent_unordered_map.h>
 
 class CGEKComponentLogic : public CGEKUnknown
-                         , public CGEKContextUser
                          , public CGEKComponent
 {
 public:
@@ -16,7 +15,7 @@ public:
 
 public:
     DECLARE_UNKNOWN(CGEKComponentLogic)
-    CGEKComponentLogic(IGEKEntity *pEntity);
+    CGEKComponentLogic(IGEKContext *pContext, IGEKEntity *pEntity);
     ~CGEKComponentLogic(void);
 
     void SetState(IGEKLogicState *pState);
@@ -30,9 +29,6 @@ public:
 };
 
 class CGEKComponentSystemLogic : public CGEKUnknown
-                               , public CGEKContextUser
-                               , public CGEKSceneManagerUser
-                               , public IGEKContextObserver
                                , public IGEKSceneObserver
                                , public IGEKComponentSystem
                                , public IGEKLogicSystem
@@ -44,9 +40,6 @@ public:
     DECLARE_UNKNOWN(CGEKComponentSystemLogic)
     CGEKComponentSystemLogic(void);
     ~CGEKComponentSystemLogic(void);
-
-    // IGEKContextObserver
-    STDMETHOD(OnRegistration)               (THIS_ IUnknown *pObject);
 
     // IGEKUnknown
     STDMETHOD(Initialize)                   (THIS);

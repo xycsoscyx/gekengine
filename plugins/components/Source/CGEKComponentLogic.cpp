@@ -2,13 +2,16 @@
 #include <algorithm>
 #include <ppl.h>
 
+#include "GEKComponentsCLSIDs.h"
+#include "GEKEngineCLSIDs.h"
+
 BEGIN_INTERFACE_LIST(CGEKComponentLogic)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentLogic::CGEKComponentLogic(IGEKEntity *pEntity)
-    : CGEKComponent(pEntity)
+CGEKComponentLogic::CGEKComponentLogic(IGEKContext *pContext, IGEKEntity *pEntity)
+    : CGEKUnknown(pContext)
+    , CGEKComponent(pEntity)
 {
 }
 
@@ -86,9 +89,6 @@ STDMETHODIMP_(void) CGEKComponentLogic::OnEvent(LPCWSTR pAction, const GEKVALUE 
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemLogic)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneManagerUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
@@ -103,33 +103,15 @@ CGEKComponentSystemLogic::~CGEKComponentSystemLogic(void)
 {
 }
 
-STDMETHODIMP CGEKComponentSystemLogic::OnRegistration(IUnknown *pObject)
-{
-    HRESULT hRetVal = S_OK;
-    CComQIPtr<IGEKLogicSystemUser> spUser(pObject);
-    if (spUser != nullptr)
-    {
-        hRetVal = spUser->Register(this);
-    }
-
-    return hRetVal;
-}
-
 STDMETHODIMP CGEKComponentSystemLogic::Initialize(void)
 {
-    HRESULT hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)this);
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::AddObserver(GetSceneManager(), (IGEKSceneObserver *)this);
-    }
-
-    return hRetVal;
+    GetContext()->AddCachedClass(CLSID_GEKComponentSystemLogic, GetUnknown());
+    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemLogic::Destroy(void)
 {
-    CGEKObservable::RemoveObserver(GetSceneManager(), (IGEKSceneObserver *)this);
-    CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
 }
 
 STDMETHODIMP_(LPCWSTR) CGEKComponentSystemLogic::GetType(void) const
@@ -145,16 +127,9 @@ STDMETHODIMP_(void) CGEKComponentSystemLogic::Clear(void)
 STDMETHODIMP CGEKComponentSystemLogic::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
-    CComPtr<CGEKComponentLogic> spComponent(new CGEKComponentLogic(pEntity));
+    CComPtr<CGEKComponentLogic> spComponent(new CGEKComponentLogic(GetContext(), pEntity));
     if (spComponent)
     {
-        CComPtr<IUnknown> spComponentUnknown;
-        spComponent->QueryInterface(IID_PPV_ARGS(&spComponentUnknown));
-        if (spComponentUnknown)
-        {
-            GetContext()->RegisterInstance(spComponentUnknown);
-        }
-
         hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
         if (SUCCEEDED(hRetVal))
         {

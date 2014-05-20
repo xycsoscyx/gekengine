@@ -1411,153 +1411,156 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         }
     }
 
-    IGEKComponent *pViewerComponent = m_pViewer->GetComponent(L"viewer");
-    IGEKComponent *pTransformComponent = m_pViewer->GetComponent(L"transform");
-    if (pTransformComponent && pViewerComponent)
+    if (m_pViewer)
     {
-        GEKVALUE kFieldOfView;
-        GEKVALUE kMinViewDistance;
-        GEKVALUE kMaxViewDistance;
-        pViewerComponent->GetProperty(L"fieldofview", kFieldOfView);
-        pViewerComponent->GetProperty(L"minviewdistance", kMinViewDistance);
-        pViewerComponent->GetProperty(L"maxviewdistance", kMaxViewDistance);
-
-        GEKVALUE kPosition;
-        GEKVALUE kRotation;
-        pTransformComponent->GetProperty(L"position", kPosition);
-        pTransformComponent->GetProperty(L"rotation", kRotation);
-
-        float4x4 nCameraMatrix;
-        nCameraMatrix = kRotation.GetQuaternion();
-        nCameraMatrix.t = kPosition.GetFloat3();
-
-        float nXSize = float(m_pSystem->GetXSize());
-        float nYSize = float(m_pSystem->GetYSize());
-        float nAspect = (nXSize / nYSize);
-
-        m_kEngineBuffer.m_nCameraSize.x = nXSize;
-        m_kEngineBuffer.m_nCameraSize.y = nYSize;
-        m_kEngineBuffer.m_nCameraView.x = tan(kFieldOfView.GetFloat() * 0.5f);
-        m_kEngineBuffer.m_nCameraView.y = (m_kEngineBuffer.m_nCameraView.x / nAspect);
-        m_kEngineBuffer.m_nCameraViewDistance = kMaxViewDistance.GetFloat();
-        m_kEngineBuffer.m_nCameraPosition = kPosition.GetFloat3();
-
-        m_kEngineBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
-        m_kEngineBuffer.m_nProjectionMatrix.SetPerspective(kFieldOfView.GetFloat(), nAspect, kMinViewDistance.GetFloat(), kMaxViewDistance.GetFloat());
-        m_kEngineBuffer.m_nTransformMatrix = (m_kEngineBuffer.m_nViewMatrix * m_kEngineBuffer.m_nProjectionMatrix);
-
-        m_kFrustum.Create(nCameraMatrix, m_kEngineBuffer.m_nProjectionMatrix);
-
-        IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
-        if (pSceneManager)
+        IGEKComponent *pViewerComponent = m_pViewer->GetComponent(L"viewer");
+        IGEKComponent *pTransformComponent = m_pViewer->GetComponent(L"transform");
+        if (pTransformComponent && pViewerComponent)
         {
-            concurrency::concurrent_unordered_set<IGEKEntity *> aVisibleEntities;
-            pSceneManager->GetVisible(m_kFrustum, aVisibleEntities);
+            GEKVALUE kFieldOfView;
+            GEKVALUE kMinViewDistance;
+            GEKVALUE kMaxViewDistance;
+            pViewerComponent->GetProperty(L"fieldofview", kFieldOfView);
+            pViewerComponent->GetProperty(L"minviewdistance", kMinViewDistance);
+            pViewerComponent->GetProperty(L"maxviewdistance", kMaxViewDistance);
 
-            concurrency::concurrent_vector<LIGHT> aLights;
-            concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> aModels;
-            concurrency::parallel_for_each(aVisibleEntities.begin(), aVisibleEntities.end(), [&](IGEKEntity *pEntity) -> void
+            GEKVALUE kPosition;
+            GEKVALUE kRotation;
+            pTransformComponent->GetProperty(L"position", kPosition);
+            pTransformComponent->GetProperty(L"rotation", kRotation);
+
+            float4x4 nCameraMatrix;
+            nCameraMatrix = kRotation.GetQuaternion();
+            nCameraMatrix.t = kPosition.GetFloat3();
+
+            float nXSize = float(m_pSystem->GetXSize());
+            float nYSize = float(m_pSystem->GetYSize());
+            float nAspect = (nXSize / nYSize);
+
+            m_kEngineBuffer.m_nCameraSize.x = nXSize;
+            m_kEngineBuffer.m_nCameraSize.y = nYSize;
+            m_kEngineBuffer.m_nCameraView.x = tan(kFieldOfView.GetFloat() * 0.5f);
+            m_kEngineBuffer.m_nCameraView.y = (m_kEngineBuffer.m_nCameraView.x / nAspect);
+            m_kEngineBuffer.m_nCameraViewDistance = kMaxViewDistance.GetFloat();
+            m_kEngineBuffer.m_nCameraPosition = kPosition.GetFloat3();
+
+            m_kEngineBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
+            m_kEngineBuffer.m_nProjectionMatrix.SetPerspective(kFieldOfView.GetFloat(), nAspect, kMinViewDistance.GetFloat(), kMaxViewDistance.GetFloat());
+            m_kEngineBuffer.m_nTransformMatrix = (m_kEngineBuffer.m_nViewMatrix * m_kEngineBuffer.m_nProjectionMatrix);
+
+            m_kFrustum.Create(nCameraMatrix, m_kEngineBuffer.m_nProjectionMatrix);
+
+            IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+            if (pSceneManager)
             {
-                IGEKComponent *pTransformComponent = pEntity->GetComponent(L"transform");
-                if (pTransformComponent)
+                concurrency::concurrent_unordered_set<IGEKEntity *> aVisibleEntities;
+                pSceneManager->GetVisible(m_kFrustum, aVisibleEntities);
+
+                concurrency::concurrent_vector<LIGHT> aLights;
+                concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> aModels;
+                concurrency::parallel_for_each(aVisibleEntities.begin(), aVisibleEntities.end(), [&](IGEKEntity *pEntity) -> void
                 {
-                    GEKVALUE kPosition;
-                    GEKVALUE kRotation;
-                    pTransformComponent->GetProperty(L"position", kPosition);
-                    pTransformComponent->GetProperty(L"rotation", kRotation);
-
-                    IGEKComponent *pLightComponent = pEntity->GetComponent(L"light");
-                    if (pLightComponent)
+                    IGEKComponent *pTransformComponent = pEntity->GetComponent(L"transform");
+                    if (pTransformComponent)
                     {
-                        GEKVALUE kColor;
-                        GEKVALUE kRange;
-                        pLightComponent->GetProperty(L"color", kColor);
-                        pLightComponent->GetProperty(L"range", kRange);
+                        GEKVALUE kPosition;
+                        GEKVALUE kRotation;
+                        pTransformComponent->GetProperty(L"position", kPosition);
+                        pTransformComponent->GetProperty(L"rotation", kRotation);
 
-                        LIGHT kLight;
-                        kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kPosition.GetFloat3(), 1.0f));
-                        kLight.m_nRange = kRange.GetFloat();
-                        kLight.m_nInvRange = (1.0f / kLight.m_nRange);
-                        kLight.m_nColor = kColor.GetFloat3();
-                        aLights.push_back(kLight);
-                    }
-
-                    IGEKComponent *pModelComponent = pEntity->GetComponent(L"model");
-                    if (pModelComponent)
-                    {
-                        GEKVALUE kModel;
-                        pModelComponent->GetProperty(L"model", kModel);
-                        CComQIPtr<IGEKModel> spModel(kModel.GetObject());
-                        if (spModel)
+                        IGEKComponent *pLightComponent = pEntity->GetComponent(L"light");
+                        if (pLightComponent)
                         {
-                            IGEKModel::INSTANCE kInstance;
-                            kInstance.m_nMatrix = kRotation.GetQuaternion();
-                            kInstance.m_nMatrix.t = kPosition.GetFloat3();
-                            aModels.insert(std::make_pair(spModel, kInstance));
+                            GEKVALUE kColor;
+                            GEKVALUE kRange;
+                            pLightComponent->GetProperty(L"color", kColor);
+                            pLightComponent->GetProperty(L"range", kRange);
+
+                            LIGHT kLight;
+                            kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kPosition.GetFloat3(), 1.0f));
+                            kLight.m_nRange = kRange.GetFloat();
+                            kLight.m_nInvRange = (1.0f / kLight.m_nRange);
+                            kLight.m_nColor = kColor.GetFloat3();
+                            aLights.push_back(kLight);
+                        }
+
+                        IGEKComponent *pModelComponent = pEntity->GetComponent(L"model");
+                        if (pModelComponent)
+                        {
+                            GEKVALUE kModel;
+                            pModelComponent->GetProperty(L"model", kModel);
+                            CComQIPtr<IGEKModel> spModel(kModel.GetObject());
+                            if (spModel)
+                            {
+                                IGEKModel::INSTANCE kInstance;
+                                kInstance.m_nMatrix = kRotation.GetQuaternion();
+                                kInstance.m_nMatrix.t = kPosition.GetFloat3();
+                                aModels.insert(std::make_pair(spModel, kInstance));
+                            }
                         }
                     }
+                });
+
+                m_aVisibleLights.assign(aLights.begin(), aLights.end());
+
+                m_aVisibleModels.clear();
+                for (auto &kPair : aModels)
+                {
+                    m_aVisibleModels[kPair.first].push_back(kPair.second);
                 }
-            });
 
-            m_aVisibleLights.assign(aLights.begin(), aLights.end());
-
-            m_aVisibleModels.clear();
-            for (auto &kPair : aModels)
-            {
-                m_aVisibleModels[kPair.first].push_back(kPair.second);
-            }
-
-            for (auto &kPair : m_aVisibleModels)
-            {
-                kPair.first->Prepare();
+                for (auto &kPair : m_aVisibleModels)
+                {
+                    kPair.first->Prepare();
+                }
             }
         }
-    }
 
-    m_spEngineBuffer->Update((void *)&m_kEngineBuffer);
-    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-    m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
-    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
-    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
-    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+        m_spEngineBuffer->Update((void *)&m_kEngineBuffer);
+        m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+        m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
+        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
+        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
+        m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
 
-    for (auto &kPair : m_aCurrentPasses)
-    {
-        CountPasses(m_aCurrentPasses, kPair.first);
-    }
-
-    std::map<INT32, std::list<PASS *>> aSortedPasses;
-    for (auto &kPair : m_aCurrentPasses)
-    {
-        aSortedPasses[kPair.second].push_back(kPair.first);
-    }
-
-    std::for_each(aSortedPasses.rbegin(), aSortedPasses.rend(), [&](std::map<INT32, std::list<PASS *>>::value_type &kPair) -> void
-    {
-        std::for_each(kPair.second.rbegin(), kPair.second.rend(), [&](PASS *pPass) -> void
+        for (auto &kPair : m_aCurrentPasses)
         {
-            m_pCurrentPass = pPass;
-            for (auto &pFilter : m_pCurrentPass->m_aFilters)
+            CountPasses(m_aCurrentPasses, kPair.first);
+        }
+
+        std::map<INT32, std::list<PASS *>> aSortedPasses;
+        for (auto &kPair : m_aCurrentPasses)
+        {
+            aSortedPasses[kPair.second].push_back(kPair.first);
+        }
+
+        std::for_each(aSortedPasses.rbegin(), aSortedPasses.rend(), [&](std::map<INT32, std::list<PASS *>>::value_type &kPair) -> void
+        {
+            std::for_each(kPair.second.rbegin(), kPair.second.rend(), [&](PASS *pPass) -> void
             {
-                m_pCurrentFilter = pFilter;
-                pFilter->Draw();
-            }
+                m_pCurrentPass = pPass;
+                for (auto &pFilter : m_pCurrentPass->m_aFilters)
+                {
+                    m_pCurrentFilter = pFilter;
+                    pFilter->Draw();
+                }
 
-            m_pCurrentFilter = nullptr;
+                m_pCurrentFilter = nullptr;
+            });
         });
-    });
 
-    m_pCurrentPass = nullptr;
-    m_pVideoSystem->GetImmediateContext()->ClearResources();
-    m_pVideoSystem->Present(true);
+        m_pCurrentPass = nullptr;
+        m_pVideoSystem->GetImmediateContext()->ClearResources();
+        m_pVideoSystem->Present(true);
 
-    while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))
-    {
-        Sleep(0);
-    };
+        while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))
+        {
+            Sleep(0);
+        };
 
-    m_pVideoSystem->SetEvent(m_spFrameEvent);
+        m_pVideoSystem->SetEvent(m_spFrameEvent);
+    }
 }
 
 void CGEKRenderManager::OnRequest(int nRequestID, const Awesomium::ResourceRequest &kRequest, const Awesomium::WebString &kPath)

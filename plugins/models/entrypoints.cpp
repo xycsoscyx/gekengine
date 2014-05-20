@@ -3,6 +3,7 @@
 
 #include "GEKContext.h"
 #include "GEKEngineCLSIDs.h"
+#include "GEKSystemCLSIDs.h"
 #include "GEKModels.h"
 
 DECLARE_REGISTERED_CLASS(CGEKStaticCollision);

@@ -4,6 +4,7 @@
 #include "Public\IGEKObservable.h"
 #include "Public\IGEKUnknown.h"
 #include "Public\IGEKContext.h"
+#include <atlpath.h>
 #include <algorithm>
 #include <list>
 #include <map>
@@ -24,9 +25,9 @@ private:
     IGEKContext *m_pContext;
 
 public:
-    CGEKUnknown(void)
+    CGEKUnknown(IGEKContext *pContext = nullptr)
         : m_nRefCount(0)
-        , m_pContext(nullptr)
+        , m_pContext(pContext)
     {
     }
 
@@ -383,3 +384,42 @@ HRESULT GEKGetModuleClasses(                                                    
 #define END_CONTEXT_SOURCE                                                          \
     return S_OK;                                                                    \
 }
+
+class CGEKPerformance
+{
+private:
+    IGEKContext *m_pContext;
+    double m_nStartTime;
+    CStringA m_strFunction;
+    CStringA m_strFile;
+    UINT32 m_nLine;
+
+public:
+    CGEKPerformance(IGEKContext *pContext, LPCSTR pFile, UINT32 nLine, LPCSTR pFunction)
+        : m_pContext(pContext)
+        , m_nLine(nLine)
+        , m_strFunction(pFunction)
+    {
+        if (m_pContext)
+        {
+            CPathA kFile(pFile);
+            kFile.StripPath();
+            m_strFile = kFile.m_strPath;
+            m_nStartTime = m_pContext->GetTime();
+            m_pContext->Log(m_strFile, m_nLine, L"> Entering: %s", m_strFunction.GetString());
+        }
+    }
+
+    ~CGEKPerformance(void)
+    {
+        if (m_pContext)
+        {
+            double nEndTime = m_pContext->GetTime();
+            double nTime = (nEndTime - m_nStartTime);
+            m_pContext->Log(m_strFile, m_nLine, L"< Exiting (%f): %s", nTime, m_strFunction.GetString());
+        }
+    }
+};
+
+#define GEKLOG(MESSAGE, ...)                GetContext()->Log(__FILE__, __LINE__, MESSAGE, __VA_ARGS__)
+#define GEKPERFORMANCE()                    CGEKPerformance kPerformanceTimer(GetContext(), __FILE__, __LINE__, __FUNCTION__);

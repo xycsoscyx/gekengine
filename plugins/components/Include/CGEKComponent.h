@@ -19,7 +19,7 @@ public:
     {
     }
 
-    STDMETHOD_(IGEKEntity *, GetEntity) (void) const
+    STDMETHOD_(IGEKEntity *, GetEntity)     (void) const
     {
         return m_pEntity;
     }

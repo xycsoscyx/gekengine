@@ -8,8 +8,6 @@
 
 class CGEKComponentModel : public CGEKUnknown
                          , public CGEKComponent
-                         , public CGEKModelManagerUser
-                         , public CGEKViewManagerUser
 {
 public:
     CStringW m_strSource;
@@ -18,7 +16,7 @@ public:
 
 public:
     DECLARE_UNKNOWN(CGEKComponentModel)
-    CGEKComponentModel(IGEKEntity *pEntity);
+    CGEKComponentModel(IGEKContext *pContext, IGEKEntity *pEntity);
     ~CGEKComponentModel(void);
 
     // IGEKComponent
@@ -29,9 +27,6 @@ public:
 };
 
 class CGEKComponentSystemModel : public CGEKUnknown
-                               , public CGEKContextUser
-                               , public CGEKSceneManagerUser
-                               , public CGEKViewManagerUser
                                , public IGEKComponentSystem
 {
 private:

@@ -21,6 +21,7 @@ private:
     IGEKVideoSystem *m_pVideoSystem;
     IGEKMaterialManager *m_pMaterialManager;
     IGEKProgramManager *m_pProgramManager;
+    IGEKStaticFactory *m_pStaticFactory;
 
     aabb m_nAABB;
     CComPtr<IGEKVideoBuffer> m_spPositionBuffer;

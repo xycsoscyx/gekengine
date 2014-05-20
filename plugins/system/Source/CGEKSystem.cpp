@@ -63,6 +63,8 @@ CGEKSystem::~CGEKSystem(void)
 
 STDMETHODIMP CGEKSystem::Initialize(void)
 {
+    GEKLOG(__FUNCTIONW__);
+
     HRESULT hRetVal = CoInitialize(0);
     if (SUCCEEDED(hRetVal))
     {

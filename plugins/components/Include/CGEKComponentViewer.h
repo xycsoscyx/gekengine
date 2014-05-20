@@ -16,7 +16,7 @@ private:
 
 public:
     DECLARE_UNKNOWN(CGEKComponentViewer)
-    CGEKComponentViewer(IGEKEntity *pEntity);
+    CGEKComponentViewer(IGEKContext *pContext, IGEKEntity *pEntity);
     ~CGEKComponentViewer(void);
 
     // IGEKComponent
@@ -26,7 +26,6 @@ public:
 };
 
 class CGEKComponentSystemViewer : public CGEKUnknown
-                                , public CGEKContextUser
                                 , public IGEKComponentSystem
 {
 private:

@@ -15,7 +15,7 @@ private:
 
 public:
     DECLARE_UNKNOWN(CGEKComponentTransform)
-    CGEKComponentTransform(IGEKEntity *pEntity);
+    CGEKComponentTransform(IGEKContext *pContext, IGEKEntity *pEntity);
     ~CGEKComponentTransform(void);
 
     // IGEKComponent
@@ -25,7 +25,6 @@ public:
 };
 
 class CGEKComponentSystemTransform : public CGEKUnknown
-                                   , public CGEKContextUser
                                    , public IGEKComponentSystem
 {
 private:

@@ -14,6 +14,7 @@
 
 BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
+    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
     INTERFACE_LIST_ENTRY_COM(IGEKEngine)
@@ -63,7 +64,14 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
 
 STDMETHODIMP CGEKEngine::Initialize(void)
 {
+    GEKLOG(__FUNCTIONW__);
+
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKEngine, GetUnknown());
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)this);
+    }
+
     if (SUCCEEDED(hRetVal))
     {
         LIBXML_TEST_VERSION;
@@ -131,8 +139,21 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
     m_spRenderManager = nullptr;
     m_spPopulationManager = nullptr;
     CGEKObservable::RemoveObserver(m_spSystem, (IGEKSystemObserver *)this);
+    CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
     m_spSystem = nullptr;
     xmlCleanupParser();
+}
+
+STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage)
+{
+    FILE *pLogFile = fopen("log.txt", "a+b");
+    if (pLogFile)
+    {
+        CPathA kFile(pFile);
+        kFile.StripPath();
+        fprintf(pLogFile, "(%s:%d): %S\r\n", kFile.m_strPath.GetString(), nLine, pMessage);
+        fclose(pLogFile);
+    }
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)

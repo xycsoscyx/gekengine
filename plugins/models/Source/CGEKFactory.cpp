@@ -22,7 +22,7 @@ CGEKFactory::~CGEKFactory(void)
 
 STDMETHODIMP CGEKFactory::Initialize(void)
 {
-    HRESULT hRetVal = E_FAIL;
+    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKFactory, GetUnknown());
     IGEKProgramManager *pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderManager);
     if (pProgramManager)
     {

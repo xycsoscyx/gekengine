@@ -79,9 +79,16 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
         }
     }
 
+    concurrency::critical_section kCritical;
     concurrency::parallel_for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
-        AddEntity(kEntityNode);
+        HRESULT hAddRetVal = AddEntity(kEntityNode);
+        if (FAILED(hAddRetVal))
+        {
+            kCritical.lock();
+            hRetVal = hAddRetVal;
+            kCritical.unlock();
+        }
     });
 
     if (SUCCEEDED(hRetVal))

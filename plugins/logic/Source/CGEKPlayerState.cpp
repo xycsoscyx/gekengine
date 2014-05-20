@@ -1,8 +1,7 @@
 ﻿#include "CGEKPlayerState.h"
+#include "GEKEngineCLSIDs.h"
 
 BEGIN_INTERFACE_LIST(CGEKPlayerState)
-    INTERFACE_LIST_ENTRY_COM(IGEKLogicSystemUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKViewManagerUser)
     INTERFACE_LIST_ENTRY_COM(IGEKLogicState)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -21,8 +20,12 @@ CGEKPlayerState::~CGEKPlayerState(void)
 STDMETHODIMP_(void) CGEKPlayerState::OnEnter(IGEKEntity *pEntity)
 {
     m_pEntity = pEntity;
-    GetViewManager()->SetViewer(m_pEntity);
-    GetViewManager()->CaptureMouse(true);
+    IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
+    if (pViewManager)
+    {
+        pViewManager->SetViewer(m_pEntity);
+        pViewManager->CaptureMouse(true);
+    }
 }
 
 STDMETHODIMP_(void) CGEKPlayerState::OnExit(void)
@@ -39,7 +42,11 @@ STDMETHODIMP_(void) CGEKPlayerState::OnEvent(LPCWSTR pAction, const GEKVALUE &kP
             if (!kParamB.GetBoolean())
             {
                 m_bActive = !m_bActive;
-                GetViewManager()->CaptureMouse(m_bActive);
+                IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
+                if (pViewManager)
+                {
+                    pViewManager->CaptureMouse(m_bActive);
+                }
             }
         }
         else if (m_pEntity != nullptr)
