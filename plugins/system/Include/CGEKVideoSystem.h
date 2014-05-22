@@ -72,6 +72,7 @@ public:
     
     // IGEKUnknown
     STDMETHOD(Initialize)                               (THIS);
+    STDMETHOD_(void, Destroy)                           (THIS);
 
     // IGEKVideoSystem
     STDMETHOD(Reset)                                    (THIS);

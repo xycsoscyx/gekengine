@@ -36,6 +36,7 @@ STDMETHODIMP CGEKFactory::Initialize(void)
         if (pVideoSystem)
         {
             hRetVal = pVideoSystem->CreateBuffer(sizeof(IGEKModel::INSTANCE), m_nNumInstances, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
+            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
         }
     }
 
@@ -44,6 +45,7 @@ STDMETHODIMP CGEKFactory::Initialize(void)
 
 STDMETHODIMP_(void) CGEKFactory::Destroy(void)
 {
+    GetContext()->RemoveCachedClass(CLSID_GEKFactory);
 }
 
 STDMETHODIMP CGEKFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *ppObject)

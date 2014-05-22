@@ -424,15 +424,18 @@ STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
 
 STDMETHODIMP CGEKRenderManager::Initialize(void)
 {
+    GEKFUNCTION();
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKRenderManager, GetUnknown());
     m_pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
     m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
     if (m_pSystem && m_pVideoSystem)
     {
         m_pWebCore = Awesomium::WebCore::Initialize(Awesomium::WebConfig());
+        GEKRESULT(m_pWebCore, L"Unable to create Awesomium WebCore instance");
         if (m_pWebCore)
         {
             m_pWebSession = m_pWebCore->CreateWebSession(Awesomium::WSLit(""), Awesomium::WebPreferences());
+            GEKRESULT(m_pWebCore, L"Unable to create Awesomium WebSession instance");
             if (m_pWebSession)
             {
                 m_pWebSession->AddDataSource(Awesomium::WSLit("Engine"), this);
@@ -444,17 +447,17 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKSystem, (IGEKSystemObserver *)this);
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKSystem, (IGEKSystemObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)this);
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)this);
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
@@ -463,31 +466,39 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::RG_FLOAT, "POSITION", 0));
         aLayout.push_back(GEKVIDEO::INPUTELEMENT(GEKVIDEO::DATA::RG_FLOAT, "TEXCOORD", 0));
         hRetVal = m_pVideoSystem->LoadVertexProgram(L"%root%\\data\\programs\\vertex\\overlay.hlsl", "MainVertexProgram", aLayout, &m_spVertexProgram);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to LoadVertexProgram failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        float2 aVertices[8] = 
+        float2 aVertices[8] =
         {
             float2(0.0f, 0.0f), float2(-1.0f, 1.0f),
-            float2(1.0f, 0.0f), float2( 1.0f, 1.0f),
-            float2(1.0f, 1.0f), float2( 1.0f,-1.0f),
-            float2(0.0f, 1.0f), float2(-1.0f,-1.0f),
+            float2(1.0f, 0.0f), float2(1.0f, 1.0f),
+            float2(1.0f, 1.0f), float2(1.0f, -1.0f),
+            float2(0.0f, 1.0f), float2(-1.0f, -1.0f),
         };
 
-        UINT16 aIndices[6] = 
+        hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float2)* 2), 4, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        UINT16 aIndices[6] =
         {
             0, 1, 2,
             0, 2, 3,
         };
 
-        hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float2) * 2), 4, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), 6, GEKVIDEO::BUFFER::INDEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float4x4), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spOrthoBuffer);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
         if (m_spOrthoBuffer != nullptr)
         {
             float4x4 nOverlayMatrix;
@@ -499,16 +510,19 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(ENGINEBUFFER), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spEngineBuffer);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT32) * 4, 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spLightCountBuffer);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(LIGHT), m_nNumLightInstances, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -518,6 +532,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         kStates.m_eAddressU = GEKVIDEO::ADDRESS::CLAMP;
         kStates.m_eAddressV = GEKVIDEO::ADDRESS::CLAMP;
         hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spPointSampler);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateSamplerStates failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -536,11 +551,13 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         kStates.m_eAddressU = GEKVIDEO::ADDRESS::WRAP;
         kStates.m_eAddressV = GEKVIDEO::ADDRESS::WRAP;
         hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spLinearSampler);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateSamplerStates failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateEvent(&m_spFrameEvent);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateEvent failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -563,9 +580,9 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 {
     Free();
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)this);
-    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)this);
-    GetContext()->RemoveCachedObserver(CLSID_GEKSystem, (IGEKSystemObserver *)this);
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
+    GetContext()->RemoveCachedObserver(CLSID_GEKSystem, (IGEKSystemObserver *)GetUnknown());
     if (m_pWebSession)
     {
         m_pWebSession->Release();
@@ -574,6 +591,8 @@ STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 
     Awesomium::WebCore::Shutdown();
     m_pWebCore = nullptr;
+
+    GetContext()->RemoveCachedClass(CLSID_GEKRenderManager);
 }
 
 STDMETHODIMP_(void) CGEKRenderManager::Free(void)
@@ -596,6 +615,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Free(void)
 
 HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
 {
+    GEKFUNCTION();
     HRESULT hRetVal = E_FAIL;
     auto pPassIterator = m_aPasses.find(pName);
     if (pPassIterator != m_aPasses.end())
@@ -684,6 +704,7 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
 
 STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResource)
 {
+    GEKFUNCTION();
     REQUIRE_RETURN(pName, E_INVALIDARG);
     REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
@@ -764,6 +785,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                                 CStringA strURLUTF8 = CW2A(strURL, CP_UTF8);
                                 pView->LoadURL(Awesomium::WebURL(Awesomium::WSLit(strURLUTF8)));
                                 CComPtr<CGEKWebView> spWebView(new CGEKWebView(pView));
+                                GEKRESULT(spWebView, L"Call to new failed to allocate instance");
                                 if (spWebView)
                                 {
                                     m_aWebViews[pName] = pView;
@@ -908,6 +930,7 @@ STDMETHODIMP CGEKRenderManager::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuf
 
 STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial)
 {
+    GEKFUNCTION();
     REQUIRE_RETURN(ppMaterial, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
@@ -969,6 +992,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         }
 
                         CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
+                        GEKRESULT(spMaterial, L"Call to new failed to allocate instance");
                         if (spMaterial != nullptr)
                         {
                             spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"render"));
@@ -1005,6 +1029,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                 LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
 
                 CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(L"Opaque", spAlbedoMap, spNormalMap, spInfoMap));
+                GEKRESULT(spMaterial, L"Call to new failed to allocate instance");
                 if (spMaterial != nullptr)
                 {
                     CLibXMLNode kBlankNode(nullptr);
@@ -1063,6 +1088,7 @@ STDMETHODIMP_(bool) CGEKRenderManager::EnableMaterial(IUnknown *pMaterial)
 
 STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
 {
+    GEKFUNCTION();
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
@@ -1149,6 +1175,7 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                                     if (spVertexProgram != nullptr)
                                     {
                                         CComPtr<CGEKProgram> spProgram(new CGEKProgram(spVertexProgram, spGeometryProgram));
+                                        GEKRESULT(spProgram, L"Call to new failed to allocate instance");
                                         if (spProgram)
                                         {
                                             hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -1185,6 +1212,7 @@ STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
 
 STDMETHODIMP CGEKRenderManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IGEKCollision **ppCollision)
 {
+    GEKFUNCTION();
     REQUIRE_RETURN(ppCollision, E_INVALIDARG);
     REQUIRE_RETURN(pName, E_INVALIDARG);
     REQUIRE_RETURN(pParams, E_INVALIDARG);
@@ -1220,6 +1248,7 @@ STDMETHODIMP CGEKRenderManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IG
 
 STDMETHODIMP CGEKRenderManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel)
 {
+    GEKFUNCTION();
     REQUIRE_RETURN(ppModel, E_INVALIDARG);
     REQUIRE_RETURN(pName, E_INVALIDARG);
     REQUIRE_RETURN(pParams, E_INVALIDARG);
@@ -1317,6 +1346,7 @@ STDMETHODIMP_(IGEKEntity *) CGEKRenderManager::GetViewer(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
 {
+    GEKFUNCTION();
     REQUIRE_VOID_RETURN(m_pCurrentPass);
     REQUIRE_VOID_RETURN(m_pCurrentFilter);
 
@@ -1328,6 +1358,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLightBatch)
 {
+    GEKFUNCTION();
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
     m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
@@ -1368,6 +1399,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
 {
+    GEKFUNCTION();
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
 
@@ -1399,6 +1431,7 @@ static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGE
 
 STDMETHODIMP_(void) CGEKRenderManager::Render(void)
 {
+    GEKFUNCTION();
     REQUIRE_VOID_RETURN(m_pWebCore);
 
     m_pWebCore->Update();
@@ -1676,6 +1709,7 @@ Awesomium::JSValue CGEKRenderManager::OnMethodCallWithReturnValue(Awesomium::Web
 Awesomium::Surface *CGEKRenderManager::CreateSurface(Awesomium::WebView *pView, int nXSize, int nYSize)
 {
     CComPtr<CGEKWebSurface> spWebSurface(new CGEKWebSurface(m_pVideoSystem, nXSize, nYSize));
+    GEKRESULT(spWebSurface, L"Call to new failed to allocate instance");
     if (spWebSurface)
     {
         spWebSurface->QueryInterface(IID_PPV_ARGS(&m_aWebSurfaces[pView]));

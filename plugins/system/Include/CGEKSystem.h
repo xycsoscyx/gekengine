@@ -35,6 +35,7 @@ public:
 
     // IGEKUnknown
     STDMETHOD(Initialize)                           (THIS);
+    STDMETHOD_(void, Destroy)                       (THIS);
 
     // IGEKSystem
     STDMETHOD(Reset)                                (THIS);

@@ -6,6 +6,7 @@ DECLARE_INTERFACE_IID_(IGEKContext, IUnknown, "E1BBAFAB-1DD8-42E4-A031-46E22835E
 {
     STDMETHOD_(double, GetTime)             (THIS) PURE;
     STDMETHOD_(void, Log)                   (THIS_ LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...) PURE;
+    STDMETHOD_(void, ChangeIndent)          (THIS_ bool bIndent) PURE;
 
     STDMETHOD(AddSearchPath)                (THIS_ LPCWSTR pPath) PURE;
     STDMETHOD(Initialize)                   (THIS) PURE;

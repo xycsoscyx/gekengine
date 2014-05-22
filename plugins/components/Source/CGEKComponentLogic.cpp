@@ -112,6 +112,7 @@ STDMETHODIMP CGEKComponentSystemLogic::Initialize(void)
 STDMETHODIMP_(void) CGEKComponentSystemLogic::Destroy(void)
 {
     GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    GetContext()->RemoveCachedClass(CLSID_GEKComponentSystemLogic);
 }
 
 STDMETHODIMP_(LPCWSTR) CGEKComponentSystemLogic::GetType(void) const
@@ -128,6 +129,7 @@ STDMETHODIMP CGEKComponentSystemLogic::Create(const CLibXMLNode &kComponentNode,
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
     CComPtr<CGEKComponentLogic> spComponent(new CGEKComponentLogic(GetContext(), pEntity));
+    GEKRESULT(spComponent, L"Call to new failed to allocate instance");
     if (spComponent)
     {
         hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));

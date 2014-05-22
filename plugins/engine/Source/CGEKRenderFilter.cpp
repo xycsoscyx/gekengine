@@ -116,12 +116,13 @@ CGEKRenderFilter::~CGEKRenderFilter(void)
 
 STDMETHODIMP CGEKRenderFilter::Initialize(void)
 {
+    GEKFUNCTION();
     HRESULT hRetVal = E_FAIL;
     m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
     m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderManager);
     if (m_pVideoSystem && m_pRenderManager)
     {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)this);
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
     }
 
     return hRetVal;
@@ -129,7 +130,7 @@ STDMETHODIMP CGEKRenderFilter::Initialize(void)
 
 STDMETHODIMP_(void) CGEKRenderFilter::Destroy(void)
 {
-    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)this);
+    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
 }
 
 STDMETHODIMP_(void) CGEKRenderFilter::OnPreReset(void)

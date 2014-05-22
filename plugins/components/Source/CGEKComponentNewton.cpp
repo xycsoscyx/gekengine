@@ -100,6 +100,7 @@ STDMETHODIMP CGEKComponentNewton::OnEntityCreated(void)
                     nMatrix.t = kPosition.GetFloat3();
 
                     m_pBody = NewtonCreateDynamicBody(pNewtonSystem->GetWorld(), pCollision, nMatrix.data);
+                    GEKRESULT(m_pBody, L"Call to NewtonCreateDynamicBody failed to allocate instance");
                     if (m_pBody != nullptr)
                     {
                         NewtonBodySetMassProperties(m_pBody, m_nMass, pCollision);
@@ -219,6 +220,8 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::Destroy(void)
         NewtonDestroy(m_pWorld);
         m_pWorld = nullptr;
     }
+    
+    GetContext()->RemoveCachedClass(CLSID_GEKComponentSystemNewton);
 }
 
 STDMETHODIMP_(LPCWSTR) CGEKComponentSystemNewton::GetType(void) const
@@ -237,6 +240,7 @@ STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kComponentNode
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
     CComPtr<CGEKComponentNewton> spComponent(new CGEKComponentNewton(GetContext(), pEntity));
+    GEKRESULT(spComponent, L"Call to new failed to allocate instance");
     if (spComponent)
     {
         hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));

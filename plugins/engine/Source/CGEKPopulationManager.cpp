@@ -24,12 +24,14 @@ CGEKPopulationManager::~CGEKPopulationManager(void)
 
 STDMETHODIMP CGEKPopulationManager::Initialize(void)
 {
+    GEKFUNCTION();
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKPopulationManager, GetUnknown());
     hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentSystemType, [&](IUnknown *pObject) -> HRESULT
     {
         CComQIPtr<IGEKComponentSystem> spSystem(pObject);
         if (spSystem != nullptr)
         {
+            GEKLOG(L"Component System Found: %s", spSystem->GetType());
             m_aComponentSystems[spSystem->GetType()] = spSystem;
         }
 
@@ -43,16 +45,22 @@ STDMETHODIMP_(void) CGEKPopulationManager::Destroy(void)
 {
     Free();
     m_aComponentSystems.clear();
+    GetContext()->RemoveCachedClass(CLSID_GEKPopulationManager);
 }
 
 STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
 {
+    GEKFUNCTION();
+
+    GEKLOG(L"Loading Scene: %s (%s)", pName, pEntry);
+
     Free();
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
 
     CLibXMLDoc kDocument;
     std::list<CLibXMLNode> aEntities;
     HRESULT hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\worlds\\%s.xml", pName));
+    GEKRESULT(SUCCEEDED(hRetVal), L"Call to Load Scene Document failed: 0x%08X", hRetVal);
     if (SUCCEEDED(hRetVal))
     {
         CLibXMLNode &kWorldNode = kDocument.GetRoot();
@@ -70,11 +78,13 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
             }
             else
             {
+                GEKLOG(L"Scene missing <population> node");
                 hRetVal = E_INVALID;
             }
         }
         else
         {
+            GEKLOG(L"Scene missing <world> node");
             hRetVal = E_INVALID;
         }
     }
@@ -95,10 +105,12 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
     {
         hRetVal = E_INVALIDARG;
         auto pIterator = m_aPopulation.find(pEntry);
+        GEKRESULT(pIterator != m_aPopulation.end(), L"Unable to locate scene entry entity: %s", pEntry);
         if (pIterator != m_aPopulation.end())
         {
             CGEKEntity *pEntity = dynamic_cast<CGEKEntity *>((IGEKEntity *)(*pIterator).second);
             IGEKComponent *pTransform = ((*pIterator).second)->GetComponent(L"transform");
+            GEKRESULT(pTransform, L"Unable to locate scene entry transform component: %s", pEntry);
             if (pTransform)
             {
                 CLibXMLDoc kDocument;
@@ -131,6 +143,7 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
                 if (SUCCEEDED(hRetVal))
                 {
                     pIterator = m_aPopulation.find(L"player");
+                    GEKRESULT(pIterator == m_aPopulation.end(), L"Player entity already exists in scene");
                     if (pIterator == m_aPopulation.end())
                     {
                         hRetVal = E_ACCESSDENIED;
@@ -198,6 +211,7 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
 
 STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
 {
+    GEKFUNCTION();
     HRESULT hRetVal = E_OUTOFMEMORY;
     CStringW strName = kEntityNode.GetAttribute(L"name");
     if (strName.IsEmpty())
@@ -208,6 +222,7 @@ STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
 
     CStringW strFlags = kEntityNode.GetAttribute(L"flags");
     auto pIterator = m_aPopulation.find(strName.GetString());
+    GEKRESULT(pIterator != m_aPopulation.end(), L"Entity already exists in scene: %s", strName.GetString());
     if (pIterator != m_aPopulation.end())
     {
         hRetVal = E_ACCESSDENIED;
@@ -215,6 +230,7 @@ STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
     else
     {
         CComPtr<CGEKEntity> spEntity(new CGEKEntity(strFlags));
+        GEKRESULT(spEntity, L"Call to new failed to allocate instance");
         if (spEntity)
         {
             CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement(L"component");

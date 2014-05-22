@@ -32,10 +32,12 @@ CGEKEngine::CGEKEngine(void)
 
 CGEKEngine::~CGEKEngine(void)
 {
+    DeleteFile(L"log.txt");
 }
 
 HRESULT CGEKEngine::LoadLevel(LPCWSTR pName, LPCWSTR pEntry)
 {
+    GEKFUNCTION();
     m_spPopulationManager->Free();
     m_spRenderManager->Free();
 
@@ -64,12 +66,11 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
 
 STDMETHODIMP CGEKEngine::Initialize(void)
 {
-    GEKLOG(__FUNCTIONW__);
-
+    GEKFUNCTION();
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKEngine, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)this);
+        hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
@@ -117,7 +118,7 @@ STDMETHODIMP CGEKEngine::Initialize(void)
         hRetVal = GetContext()->CreateInstance(CLSID_GEKSystem, IID_PPV_ARGS(&m_spSystem));
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = CGEKObservable::AddObserver(m_spSystem, (IGEKSystemObserver *)this);
+            hRetVal = CGEKObservable::AddObserver(m_spSystem, (IGEKSystemObserver *)GetUnknown());
         }
 
         if (SUCCEEDED(hRetVal))
@@ -142,11 +143,14 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
     CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
     m_spSystem = nullptr;
     xmlCleanupParser();
+
+    GetContext()->RemoveCachedClass(CLSID_GEKEngine);
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage)
 {
-    FILE *pLogFile = fopen("log.txt", "a+b");
+    FILE *pLogFile = nullptr;
+    fopen_s(&pLogFile, "log.txt", "a+b");
     if (pLogFile)
     {
         CPathA kFile(pFile);

@@ -89,6 +89,7 @@ STDMETHODIMP CGEKComponentSystemTransform::Create(const CLibXMLNode &kComponentN
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
     CComPtr<CGEKComponentTransform> spComponent(new CGEKComponentTransform(GetContext(), pEntity));
+    GEKRESULT(spComponent, L"Call to new failed to allocate instance");
     if (spComponent)
     {
         hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));

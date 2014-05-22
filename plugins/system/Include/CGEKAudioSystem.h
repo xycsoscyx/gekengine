@@ -27,6 +27,7 @@ public:
 
     // IGEKUnknown
     STDMETHOD(Initialize)               (THIS);
+    STDMETHOD_(void, Destroy)           (THIS);
 
     // IGEKAudioSystem
     STDMETHOD_(void, SetMasterVolume)   (THIS_ float nVolume);

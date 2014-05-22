@@ -10,6 +10,7 @@ HRESULT GEKCreateContext(IGEKContext **ppContext)
 
     HRESULT hRetVal = E_OUTOFMEMORY;
     CComPtr<CGEKContext> spContext(new CGEKContext());
+    _ASSERTE(spContext);
     if (spContext != nullptr)
     {
         hRetVal = spContext->QueryInterface(IID_PPV_ARGS(ppContext));
@@ -25,6 +26,7 @@ END_INTERFACE_LIST_UNKNOWN
 
 CGEKContext::CGEKContext(void)
     : m_nFrequency(0.0)
+    , m_nIndent(0)
 {
     UINT64 nFrequency = 0;
     QueryPerformanceFrequency((LARGE_INTEGER *)&nFrequency);
@@ -54,9 +56,16 @@ STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessag
     CStringW strMessage;
     if (pMessage)
     {
+        if (m_nIndent > 0)
+        {
+            CStringW strIndent;
+            strIndent.Format(L"%d", m_nIndent);
+            strMessage.Format(L"%" + strIndent + "s", L" ");
+        }
+
         va_list pArgs;
         va_start(pArgs, pMessage);
-        strMessage.FormatV(pMessage, pArgs);
+        strMessage.AppendFormatV(pMessage, pArgs);
         va_end(pArgs);
 
         if (!strMessage.IsEmpty())
@@ -64,6 +73,11 @@ STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessag
             CGEKObservable::SendEvent(TGEKEvent<IGEKContextObserver>(std::bind(&IGEKContextObserver::OnLog, std::placeholders::_1, pFile, nLine, strMessage.GetString())));
         }
     }
+}
+
+STDMETHODIMP_(void) CGEKContext::ChangeIndent(bool bIndent)
+{
+    m_nIndent += (bIndent ? 1 : -1);
 }
 
 STDMETHODIMP CGEKContext::AddSearchPath(LPCWSTR pPath)
@@ -82,11 +96,11 @@ STDMETHODIMP CGEKContext::Initialize(void)
             HMODULE hModule = LoadLibrary(pFileName);
             if (hModule)
             {
-                typedef HRESULT (*GEKGETMODULECLASSES)(std::map<CLSID, std::function<HRESULT (IGEKUnknown **)>, CCompareGUID> &, std::map<CStringW, CLSID> &, std::map<CLSID, std::vector<CLSID>> &);
+                typedef HRESULT (*GEKGETMODULECLASSES)(std::map<CLSID, std::function<HRESULT (IGEKUnknown **)>> &, std::map<CStringW, CLSID> &, std::map<CLSID, std::vector<CLSID>> &);
                 GEKGETMODULECLASSES GEKGetModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(hModule, "GEKGetModuleClasses");
                 if (GEKGetModuleClasses)
                 {
-                    std::map<CLSID, std::function<HRESULT (IGEKUnknown **ppObject)>, CCompareGUID> aClasses;
+                    std::map<CLSID, std::function<HRESULT (IGEKUnknown **ppObject)>> aClasses;
                     std::map<CStringW, CLSID> aNamedClasses;
                     std::map<CLSID, std::vector<CLSID>> aTypedClasses;
                     if (SUCCEEDED(GEKGetModuleClasses(aClasses, aNamedClasses, aTypedClasses)))
@@ -147,6 +161,7 @@ STDMETHODIMP CGEKContext::CreateInstance(REFGUID kCLSID, REFIID kIID, LPVOID FAR
     else
     {
         auto pIterator = m_aClasses.find(kCLSID);
+        GEKRESULT(pIterator != m_aClasses.end(), L"CLSID not registered with context: %s", CStringW(CComBSTR(kCLSID)).GetString());
         if (pIterator != m_aClasses.end())
         {
             CComPtr<IGEKUnknown> spObject;
@@ -171,6 +186,7 @@ STDMETHODIMP CGEKContext::CreateNamedInstance(LPCWSTR pName, REFIID kIID, LPVOID
 
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aNamedClasses.find(pName);
+    GEKRESULT(pIterator != m_aNamedClasses.end(), L"Name not registered with context: %s", pName);
     if (pIterator != m_aNamedClasses.end())
     {
         hRetVal = CreateInstance(((*pIterator).second), kIID, ppObject);
@@ -183,6 +199,7 @@ STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRES
 {
     HRESULT hRetVal = S_OK;
     auto pIterator = m_aTypedClasses.find(kTypeCLSID);
+    GEKRESULT(pIterator != m_aTypedClasses.end(), L"Type not registered with context: %s", CStringW(CComBSTR(kTypeCLSID)).GetString());
     if (pIterator != m_aTypedClasses.end())
     {
         for (auto &kCLSID : (*pIterator).second)
@@ -211,7 +228,7 @@ STDMETHODIMP CGEKContext::AddCachedClass(REFCLSID kCLSID, IUnknown * const pObje
     auto pIterator = m_aCache.find(kCLSID);
     if (pIterator == m_aCache.end())
     {
-        m_aCache[kCLSID] = pObject;
+        m_aCache.insert(std::make_pair(kCLSID, pObject));
         hRetVal = S_OK;
     }
 

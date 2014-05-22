@@ -9,15 +9,6 @@
 #include <list>
 #include <map>
 
-class CCompareGUID
-{
-public:
-    bool operator()(const GUID &kValueA, const GUID &kValueB)
-    {
-        return memcmp(&kValueA, &kValueB, sizeof(GUID)) > 0 ? true : false;
-    }
-};
-
 class CGEKUnknown : public IGEKUnknown
 {
 private:
@@ -93,6 +84,7 @@ public:
 
     STDMETHOD_(IGEKContext *, GetContext)   (THIS)
     {
+        REQUIRE_RETURN(m_pContext, nullptr);
         return m_pContext;
     }
 
@@ -348,13 +340,13 @@ HRESULT GEKCreateInstanceOf##CLASS##(IGEKUnknown **ppObject)                    
 #define DECLARE_REGISTERED_CLASS(CLASS)                                             \
 extern HRESULT GEKCreateInstanceOf##CLASS##(IGEKUnknown **ppObject);
 
-#define DECLARE_CONTEXT_SOURCE(SOURCENAME)                                              \
-extern "C" __declspec(dllexport)                                                        \
-HRESULT GEKGetModuleClasses(                                                            \
-    std::map<CLSID, std::function<HRESULT (IGEKUnknown **)>, CCompareGUID> &aClasses,   \
-    std::map<CStringW, CLSID> &aNamedClasses,                                           \
-    std::map<CLSID, std::vector<CLSID>, CCompareGUID> &aTypedClasses)                   \
-{                                                                                       \
+#define DECLARE_CONTEXT_SOURCE(SOURCENAME)                                          \
+extern "C" __declspec(dllexport)                                                    \
+HRESULT GEKGetModuleClasses(                                                        \
+    std::map<CLSID, std::function<HRESULT (IGEKUnknown **)>> &aClasses,             \
+    std::map<CStringW, CLSID> &aNamedClasses,                                       \
+    std::map<CLSID, std::vector<CLSID>> &aTypedClasses)                             \
+{                                                                                   \
     CLSID kLastCLSID = GUID_NULL;
 
 #define ADD_CONTEXT_CLASS(CLASSID, CLASS)                                           \
@@ -406,7 +398,8 @@ public:
             kFile.StripPath();
             m_strFile = kFile.m_strPath;
             m_nStartTime = m_pContext->GetTime();
-            m_pContext->Log(m_strFile, m_nLine, L"> Entering: %s", m_strFunction.GetString());
+            m_pContext->Log(m_strFile, m_nLine, L"> Entering: %S", m_strFunction.GetString());
+            m_pContext->ChangeIndent(true);
         }
     }
 
@@ -414,12 +407,14 @@ public:
     {
         if (m_pContext)
         {
+            m_pContext->ChangeIndent(false);
             double nEndTime = m_pContext->GetTime();
             double nTime = (nEndTime - m_nStartTime);
-            m_pContext->Log(m_strFile, m_nLine, L"< Exiting (%f): %s", nTime, m_strFunction.GetString());
+            m_pContext->Log(m_strFile, m_nLine, L"< Exiting (%f): %S", nTime, m_strFunction.GetString());
         }
     }
 };
 
-#define GEKLOG(MESSAGE, ...)                GetContext()->Log(__FILE__, __LINE__, MESSAGE, __VA_ARGS__)
-#define GEKPERFORMANCE()                    CGEKPerformance kPerformanceTimer(GetContext(), __FILE__, __LINE__, __FUNCTION__);
+#define GEKLOG(MESSAGE, ...)                    GetContext()->Log(__FILE__, __LINE__, MESSAGE, __VA_ARGS__)
+#define GEKRESULT(RESULT, MESSAGE, ...)         if(!(RESULT)) { GetContext()->Log(__FILE__, __LINE__, MESSAGE, __VA_ARGS__); }
+#define GEKFUNCTION()                           CGEKPerformance kPerformanceTimer(GetContext(), __FILE__, __LINE__, __FUNCTION__);

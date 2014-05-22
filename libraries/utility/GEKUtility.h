@@ -87,7 +87,36 @@ namespace std
             return (kHashA.GetHash() == kHashB.GetHash());
         }
     };
+
+    template <>
+    struct hash<GUID> : public unary_function<GUID, size_t>
+    {
+        size_t operator()(REFGUID kGUID) const
+        {
+            CStringW strGUID;
+            strGUID.Format(L"%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
+                kGUID.Data1, kGUID.Data2, kGUID.Data3,
+                kGUID.Data4[0], kGUID.Data4[1], kGUID.Data4[2], kGUID.Data4[3],
+                kGUID.Data4[4], kGUID.Data4[5], kGUID.Data4[6], kGUID.Data4[7]);
+            return GEKHASH(strGUID).GetHash();
+        }
+    };
+
+    template <>
+    struct equal_to<GUID> : public unary_function<GUID, bool>
+    {
+        bool operator()(REFGUID kGUIDA, REFGUID kGUIDB) const
+        {
+            return (memcmp(&kGUIDA, &kGUIDB, sizeof(GUID)) == 0);
+        }
+    };
 };
+
+__forceinline
+bool operator < (REFGUID kGUIDA, REFGUID kGUIDB)
+{
+    return (memcmp(&kGUIDA, &kGUIDB, sizeof(GUID)) < 0);
+}
 
 double      StrToDouble(LPCWSTR pValue);
 float       StrToFloat(LPCWSTR pValue);
