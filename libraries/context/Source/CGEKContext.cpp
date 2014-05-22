@@ -265,10 +265,10 @@ STDMETHODIMP CGEKContext::AddCachedObserver(REFCLSID kCLSID, IGEKObserver *pObse
     auto pIterator = m_aCache.find(kCLSID);
     if (pIterator != m_aCache.end())
     {
-        CComQIPtr<IGEKObservable> spObservable((*pIterator).second);
-        if (spObservable)
+        IGEKObservable *pObservable = dynamic_cast<IGEKObservable *>((*pIterator).second);
+        if (pObservable != nullptr)
         {
-            hRetVal = spObservable->AddObserver(pObserver);
+            hRetVal = pObservable->AddObserver(pObserver);
         }
     }
 
@@ -281,10 +281,10 @@ STDMETHODIMP CGEKContext::RemoveCachedObserver(REFCLSID kCLSID, IGEKObserver *pO
     auto pIterator = m_aCache.find(kCLSID);
     if (pIterator != m_aCache.end())
     {
-        CComQIPtr<IGEKObservable> spObservable((*pIterator).second);
-        if (spObservable)
+        IGEKObservable *pObservable = dynamic_cast<IGEKObservable *>((*pIterator).second);
+        if (pObservable != nullptr)
         {
-            hRetVal = spObservable->RemoveObserver(pObserver);
+            hRetVal = pObservable->RemoveObserver(pObserver);
         }
     }
 
