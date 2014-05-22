@@ -125,7 +125,7 @@ STDMETHODIMP_(void) CGEKComponentSystemLight::GetVisible(const frustum &kFrustum
         if (kPair.second->m_nRange > 0.0f)
         {
             IGEKComponent *pTransform = kPair.first->GetComponent(L"transform");
-            if (pTransform)
+            if (pTransform != nullptr)
             {
                 GEKVALUE kPosition;
                 pTransform->GetProperty(L"position", kPosition);

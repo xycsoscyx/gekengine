@@ -118,7 +118,7 @@ void CLibXMLNode::SetAttribute(LPCWSTR pName, LPCWSTR pValueFormat, ...)
         CStringA strNameUTF8 = CW2A(pName, CP_UTF8);
 
         CStringW strValue;
-        if (pValueFormat)
+        if (pValueFormat != nullptr)
         {
             va_list pArgs;
             va_start(pArgs, pValueFormat);
@@ -257,7 +257,7 @@ CLibXMLNode CLibXMLNode::CreateChildElement(LPCWSTR pType, LPCWSTR pContentForma
         CStringA strTypeUTF8 = CW2A(pType, CP_UTF8);
 
         CStringW strContent;
-        if (pContentFormat)
+        if (pContentFormat != nullptr)
         {
             va_list pArgs;
             va_start(pArgs, pContentFormat);

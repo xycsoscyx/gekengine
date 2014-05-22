@@ -21,7 +21,7 @@ STDMETHODIMP_(void) CGEKPlayerState::OnEnter(IGEKEntity *pEntity)
 {
     m_pEntity = pEntity;
     IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
-    if (pViewManager)
+    if (pViewManager != nullptr)
     {
         pViewManager->SetViewer(m_pEntity);
         pViewManager->CaptureMouse(true);
@@ -43,7 +43,7 @@ STDMETHODIMP_(void) CGEKPlayerState::OnEvent(LPCWSTR pAction, const GEKVALUE &kP
             {
                 m_bActive = !m_bActive;
                 IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
-                if (pViewManager)
+                if (pViewManager != nullptr)
                 {
                     pViewManager->CaptureMouse(m_bActive);
                 }
@@ -66,7 +66,7 @@ STDMETHODIMP_(void) CGEKPlayerState::OnEvent(LPCWSTR pAction, const GEKVALUE &kP
 STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
 {
     IGEKComponent *pTransform = m_pEntity->GetComponent(L"transform");
-    if (pTransform)
+    if (pTransform != nullptr)
     {
         float3 nForce;
         float4x4 nRotation = quaternion(m_nRotation.y, m_nRotation.x, 0.0f);

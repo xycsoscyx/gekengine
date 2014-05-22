@@ -23,7 +23,7 @@ DECLARE_INTERFACE_IID_(IGEKContext, IUnknown, "E1BBAFAB-1DD8-42E4-A031-46E22835E
     CLASS *GetCachedClass(REFCLSID kCLSID)
     {
         IUnknown *pObject = GetCachedClass(kCLSID);
-        if (pObject != NULL)
+        if (pObject != nullptr)
         {
             return dynamic_cast<CLASS *>(pObject);
         }

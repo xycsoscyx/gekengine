@@ -22,7 +22,7 @@ STDMETHODIMP_(void) CGEKLightMoveState::OnEnter(IGEKEntity *pEntity)
     if (m_pEntity != nullptr)
     {
         IGEKComponent *pTransform = m_pEntity->GetComponent(L"transform");
-        if (pTransform)
+        if (pTransform != nullptr)
         {
             GEKVALUE kPosition;
             pTransform->GetProperty(L"position", kPosition);
@@ -46,7 +46,7 @@ STDMETHODIMP_(void) CGEKLightMoveState::OnExit(void)
 STDMETHODIMP_(void) CGEKLightMoveState::OnUpdate(float nGameTime, float nFrameTime)
 {
     IGEKComponent *pTransform = m_pEntity->GetComponent(L"transform");
-    if (pTransform)
+    if (pTransform != nullptr)
     {
         float3 nOffset;
         nOffset.x = sin(nGameTime * m_nSpeed + m_nOffset);

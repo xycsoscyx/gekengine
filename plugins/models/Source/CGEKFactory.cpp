@@ -23,17 +23,20 @@ CGEKFactory::~CGEKFactory(void)
 STDMETHODIMP CGEKFactory::Initialize(void)
 {
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKFactory, GetUnknown());
-    IGEKProgramManager *pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderManager);
-    if (pProgramManager)
+    if (SUCCEEDED(hRetVal))
     {
-        hRetVal = pProgramManager->LoadProgram(L"staticmodel", &m_spVertexProgram);
+        IGEKProgramManager *pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderManager);
+        if (pProgramManager != nullptr)
+        {
+            hRetVal = pProgramManager->LoadProgram(L"staticmodel", &m_spVertexProgram);
+        }
     }
 
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = E_FAIL;
         IGEKVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
-        if (pVideoSystem)
+        if (pVideoSystem != nullptr)
         {
             hRetVal = pVideoSystem->CreateBuffer(sizeof(IGEKModel::INSTANCE), m_nNumInstances, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
             GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);

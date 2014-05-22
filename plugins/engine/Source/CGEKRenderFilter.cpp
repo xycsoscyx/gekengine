@@ -120,7 +120,7 @@ STDMETHODIMP CGEKRenderFilter::Initialize(void)
     HRESULT hRetVal = E_FAIL;
     m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
     m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderManager);
-    if (m_pVideoSystem && m_pRenderManager)
+    if (m_pVideoSystem != nullptr && m_pRenderManager != nullptr)
     {
         hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
     }
@@ -147,7 +147,7 @@ STDMETHODIMP CGEKRenderFilter::OnPostReset(void)
 {
     HRESULT hRetVal = E_FAIL;
     IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
-    if (pSystem)
+    if (pSystem != nullptr)
     {
         hRetVal = S_OK;
         UINT32 nXSize = UINT32(float(pSystem->GetXSize()) * m_nScale);
@@ -177,7 +177,7 @@ UINT32 CGEKRenderFilter::EvaluateValue(LPCWSTR pValue)
 {
     UINT32 nValue = 0;
     IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
-    if (pSystem)
+    if (pSystem != nullptr)
     {
         CStringW strValue(pValue);
         for (auto &kPair : m_aDefines)
@@ -395,7 +395,7 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
 {
     HRESULT hRetVal = E_FAIL;
     IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
-    if (pSystem)
+    if (pSystem != nullptr)
     {
         hRetVal = S_OK;
         CLibXMLNode kTargetsNode = kFilterNode.FirstChildElement(L"targets");
@@ -440,7 +440,7 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
 
                     CComPtr<IGEKVideoTexture> spResource;
                     hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, eFormat, &spResource);
-                    if (spResource != nullptr)
+                    if (spResource)
                     {
                         kData.m_eFormat = eFormat;
                         kData.m_spResource = spResource;
@@ -774,7 +774,7 @@ STDMETHODIMP CGEKRenderFilter::GetBuffer(LPCWSTR pName, IUnknown **ppTexture)
 STDMETHODIMP CGEKRenderFilter::GetDepthBuffer(IUnknown **ppBuffer)
 {
     HRESULT hRetVal = E_FAIL;
-    if (m_spDepthBuffer != nullptr)
+    if (m_spDepthBuffer)
     {
         hRetVal = m_spDepthBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
     }
@@ -785,7 +785,7 @@ STDMETHODIMP CGEKRenderFilter::GetDepthBuffer(IUnknown **ppBuffer)
 STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
 {
     CComPtr<IUnknown> spDepthBuffer;
-    if (m_spDepthBuffer != nullptr)
+    if (m_spDepthBuffer)
     {
         spDepthBuffer = m_spDepthBuffer;
     }
@@ -794,7 +794,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         m_pRenderManager->GetDepthBuffer(m_strDepthSource, &spDepthBuffer);
     }
 
-    if (spDepthBuffer != nullptr)
+    if (spDepthBuffer)
     {
         DWORD nFlags = 0;
         if (m_bClearDepth)
@@ -819,7 +819,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         for (auto &kTarget : m_aTargets)
         {
             CComQIPtr<IGEKVideoTexture> spTarget;
-            if (kTarget.m_spResource != nullptr)
+            if (kTarget.m_spResource)
             {
                 spTarget = kTarget.m_spResource;
             }
@@ -833,7 +833,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
                 }
             }
 
-            if (spTarget != nullptr)
+            if (spTarget)
             {
                 if (kTarget.m_bClear)
                 {
@@ -855,7 +855,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     std::map<UINT32, IUnknown *> aComputeUnorderedAccess;
     for (auto &kPair : m_kComputeData.m_aResources)
     {
-        if (kPair.second.m_spResource != nullptr)
+        if (kPair.second.m_spResource)
         {
             if (kPair.second.m_bUnorderedAccess)
             {
@@ -870,7 +870,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         {
             CComPtr<IUnknown> spResource;
             m_pRenderManager->GetBuffer(kPair.second.m_strName, &spResource);
-            if (spResource != nullptr)
+            if (spResource)
             {
                 if (kPair.second.m_bUnorderedAccess)
                 {
@@ -887,7 +887,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     std::map<UINT32, IUnknown *> aPixelResources;
     for (auto &kPair : m_kPixelData.m_aResources)
     {
-        if (kPair.second.m_spResource != nullptr)
+        if (kPair.second.m_spResource)
         {
             aPixelResources[kPair.first] = kPair.second.m_spResource;
         }
@@ -895,7 +895,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         {
             CComPtr<IUnknown> spResource;
             m_pRenderManager->GetBuffer(kPair.second.m_strName, &spResource);
-            if (spResource != nullptr)
+            if (spResource)
             {
                 aPixelResources[kPair.first] = spResource;
             }

@@ -26,17 +26,20 @@ STDMETHODIMP CGEKPopulationManager::Initialize(void)
 {
     GEKFUNCTION();
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKPopulationManager, GetUnknown());
-    hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentSystemType, [&](IUnknown *pObject) -> HRESULT
+    if (SUCCEEDED(hRetVal))
     {
-        CComQIPtr<IGEKComponentSystem> spSystem(pObject);
-        if (spSystem != nullptr)
+        hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentSystemType, [&](IUnknown *pObject) -> HRESULT
         {
-            GEKLOG(L"Component System Found: %s", spSystem->GetType());
-            m_aComponentSystems[spSystem->GetType()] = spSystem;
-        }
+            CComQIPtr<IGEKComponentSystem> spSystem(pObject);
+            if (spSystem)
+            {
+                GEKLOG(L"Component System Found: %s", spSystem->GetType());
+                m_aComponentSystems[spSystem->GetType()] = spSystem;
+            }
 
-        return S_OK;
-    });
+            return S_OK;
+        });
+    }
 
     return hRetVal;
 }
@@ -111,7 +114,7 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
             CGEKEntity *pEntity = dynamic_cast<CGEKEntity *>((IGEKEntity *)(*pIterator).second);
             IGEKComponent *pTransform = ((*pIterator).second)->GetComponent(L"transform");
             GEKRESULT(pTransform, L"Unable to locate scene entry transform component: %s", pEntry);
-            if (pTransform)
+            if (pTransform != nullptr)
             {
                 CLibXMLDoc kDocument;
                 kDocument.Create(L"player");

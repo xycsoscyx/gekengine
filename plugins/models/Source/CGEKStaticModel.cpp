@@ -30,10 +30,7 @@ STDMETHODIMP CGEKStaticModel::Initialize(void)
     m_pMaterialManager = GetContext()->GetCachedClass<IGEKMaterialManager>(CLSID_GEKRenderManager);
     m_pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderManager);
     m_pStaticFactory = GetContext()->GetCachedClass<IGEKStaticFactory>(CLSID_GEKFactory);
-    return (m_pVideoSystem &&
-            m_pMaterialManager &&
-            m_pProgramManager &&
-            m_pStaticFactory ? S_OK : E_FAIL);
+    return ((m_pVideoSystem && m_pMaterialManager && m_pProgramManager && m_pStaticFactory) ? S_OK : E_FAIL);
 }
 
 STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)

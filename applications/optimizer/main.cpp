@@ -104,10 +104,10 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                 }
 
                 CStringA strMaterial;
-                if (pScene->mMaterials)
+                if (pScene->mMaterials != nullptr)
                 {
                     const aiMaterial *pMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
-                    if (pMaterial)
+                    if (pMaterial != nullptr)
                     {
                         aiString strName;
                         pMaterial->Get(AI_MATKEY_NAME, strName);
@@ -344,7 +344,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             throw CMyException(__LINE__, L"! Unable to Save Output: %S\r\n", strOutput.GetString());
         }
 
-        if (pCollision)
+        if (pCollision != nullptr)
         {
             strOutput = (kPath.m_strPath + ".collision.gek");
             _wfopen_s(&pFile, strOutput, L"wb");
@@ -381,7 +381,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             printf("< No Collision Data Found\r\n");
         }
 
-        if (pOcclusion)
+        if (pOcclusion != nullptr)
         {
             strOutput = (kPath.m_strPath + ".occlusion.gek");
             _wfopen_s(&pFile, strOutput, L"wb");

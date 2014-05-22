@@ -190,7 +190,7 @@ STDMETHODIMP CGEKAudioSystem::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
-        if (pSystem)
+        if (pSystem != nullptr)
         {
             hRetVal = DirectSoundCreate8(nullptr, &m_spDirectSound, nullptr);
             GEKRESULT(SUCCEEDED(hRetVal), L"Call to DirectSoundCreate8 failed: 0x%08X", hRetVal);
@@ -221,7 +221,7 @@ STDMETHODIMP CGEKAudioSystem::Initialize(void)
                         {
                             hRetVal = E_FAIL;
                             m_spListener = m_spPrimary;
-                            if (m_spListener != nullptr)
+                            if (m_spListener)
                             {
                                 hRetVal = S_OK;
                                 SetMasterVolume(1.0f);
@@ -299,16 +299,16 @@ STDMETHODIMP CGEKAudioSystem::CopyEffect(IGEKAudioEffect *pSource, IGEKAudioEffe
         CComPtr<IDirectSoundBuffer> spBuffer;
         hRetVal = m_spDirectSound->DuplicateSoundBuffer((LPDIRECTSOUNDBUFFER)spSample->GetBuffer(), &spBuffer);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to DuplicateSoundBuffer failed: 0x%08X", hRetVal);
-        if (spBuffer != nullptr)
+        if (spBuffer)
         {
             hRetVal = E_FAIL;
             CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> spBuffer8(spBuffer);
-            if (spBuffer8 != nullptr)
+            if (spBuffer8)
             {
                 hRetVal = E_OUTOFMEMORY;
                 CComPtr<CGEKAudioEffect> spEffect = new CGEKAudioEffect(spBuffer8);
                 GEKRESULT(spEffect, L"Call to new failed to allocate instance");
-                if (spEffect != nullptr)
+                if (spEffect)
                 {
                     hRetVal = spEffect->QueryInterface(IID_PPV_ARGS(ppEffect));
                 }
@@ -332,19 +332,19 @@ STDMETHODIMP CGEKAudioSystem::CopySound(IGEKAudioSound *pSource, IGEKAudioSound 
         CComPtr<IDirectSoundBuffer> spBuffer;
         hRetVal = m_spDirectSound->DuplicateSoundBuffer((LPDIRECTSOUNDBUFFER)spSample->GetBuffer(), &spBuffer);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to DuplicateSoundBuffer failed: 0x%08X", hRetVal);
-        if (spBuffer != nullptr)
+        if (spBuffer)
         {
             hRetVal = E_FAIL;
             CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> spBuffer8(spBuffer);
-            if (spBuffer8 != nullptr)
+            if (spBuffer8)
             {
                 CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> spBuffer3D(spBuffer8);
-                if (spBuffer3D != nullptr)
+                if (spBuffer3D)
                 {
                     hRetVal = E_OUTOFMEMORY;
                     CComPtr<CGEKAudioSound> spSound = new CGEKAudioSound(spBuffer8, spBuffer3D);
                     GEKRESULT(spSound, L"Call to new failed to allocate instance");
-                    if (spSound != nullptr)
+                    if (spSound)
                     {
                         hRetVal = spSound->QueryInterface(IID_PPV_ARGS(ppSound));
                     }
@@ -402,7 +402,7 @@ HRESULT CGEKAudioSystem::LoadFromFile(LPCWSTR pFileName, DWORD nFlags, GUID nAlg
                 CComPtr<IDirectSoundBuffer> spBuffer;
                 hRetVal = m_spDirectSound->CreateSoundBuffer(&kDesc, &spBuffer, nullptr);
                 GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateSoundBuffer failed: 0x%08X", hRetVal);
-                if (spBuffer != nullptr)
+                if (spBuffer)
                 {
                     void *pData = nullptr;
                     spBuffer->Lock(0, nLength, &pData, &nLength, 0, 0, DSBLOCK_ENTIREBUFFER);
@@ -425,15 +425,15 @@ STDMETHODIMP CGEKAudioSystem::LoadEffect(LPCWSTR pFileName, IGEKAudioEffect **pp
 
     CComPtr<IDirectSoundBuffer> spBuffer;
     HRESULT hRetVal = LoadFromFile(pFileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &spBuffer);
-    if (spBuffer != nullptr)
+    if (spBuffer)
     {
         hRetVal = E_FAIL;
         CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> spBuffer8(spBuffer);
-        if (spBuffer8 != nullptr)
+        if (spBuffer8)
         {
             CComPtr<CGEKAudioEffect> spEffect = new CGEKAudioEffect(spBuffer8);
             GEKRESULT(spEffect, L"Call to new failed to allocate instance");
-            if (spEffect != nullptr)
+            if (spEffect)
             {
                 hRetVal = spEffect->QueryInterface(IID_PPV_ARGS(ppEffect));
             }
@@ -450,18 +450,18 @@ STDMETHODIMP CGEKAudioSystem::LoadSound(LPCWSTR pFileName, IGEKAudioSound **ppSo
 
     CComPtr<IDirectSoundBuffer> spBuffer;
     HRESULT hRetVal = LoadFromFile(pFileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &spBuffer);
-    if (spBuffer != nullptr)
+    if (spBuffer)
     {
         hRetVal = E_FAIL;
         CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> spBuffer8(spBuffer);
-        if (spBuffer8 != nullptr)
+        if (spBuffer8)
         {
             CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> spBuffer3D(spBuffer8);
-            if (spBuffer3D != nullptr)
+            if (spBuffer3D)
             {
                 CComPtr<CGEKAudioSound> spSound = new CGEKAudioSound(spBuffer8, spBuffer3D);
                 GEKRESULT(spSound, L"Call to new failed to allocate instance");
-                if (spSound != nullptr)
+                if (spSound)
                 {
                     hRetVal = spSound->QueryInterface(IID_PPV_ARGS(ppSound));
                 }

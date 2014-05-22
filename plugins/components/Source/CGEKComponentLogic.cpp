@@ -105,8 +105,13 @@ CGEKComponentSystemLogic::~CGEKComponentSystemLogic(void)
 
 STDMETHODIMP CGEKComponentSystemLogic::Initialize(void)
 {
-    GetContext()->AddCachedClass(CLSID_GEKComponentSystemLogic, GetUnknown());
-    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKComponentSystemLogic, GetUnknown());
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    }
+
+    return hRetVal;
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemLogic::Destroy(void)

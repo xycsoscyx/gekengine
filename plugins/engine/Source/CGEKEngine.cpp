@@ -142,16 +142,15 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
     CGEKObservable::RemoveObserver(m_spSystem, (IGEKSystemObserver *)this);
     CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
     m_spSystem = nullptr;
-    xmlCleanupParser();
-
     GetContext()->RemoveCachedClass(CLSID_GEKEngine);
+    xmlCleanupParser();
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage)
 {
     FILE *pLogFile = nullptr;
     fopen_s(&pLogFile, "log.txt", "a+b");
-    if (pLogFile)
+    if (pLogFile != nullptr)
     {
         CPathA kFile(pFile);
         kFile.StripPath();

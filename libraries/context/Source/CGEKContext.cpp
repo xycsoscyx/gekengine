@@ -11,7 +11,7 @@ HRESULT GEKCreateContext(IGEKContext **ppContext)
     HRESULT hRetVal = E_OUTOFMEMORY;
     CComPtr<CGEKContext> spContext(new CGEKContext());
     _ASSERTE(spContext);
-    if (spContext != nullptr)
+    if (spContext)
     {
         hRetVal = spContext->QueryInterface(IID_PPV_ARGS(ppContext));
     }
@@ -54,7 +54,7 @@ STDMETHODIMP_(double) CGEKContext::GetTime(void)
 STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...)
 {
     CStringW strMessage;
-    if (pMessage)
+    if (pMessage != nullptr)
     {
         if (m_nIndent > 0)
         {
@@ -206,7 +206,7 @@ STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRES
         {
             CComPtr<IUnknown> spObject;
             hRetVal = CreateInstance(kCLSID, IID_PPV_ARGS(&spObject));
-            if (spObject != nullptr)
+            if (spObject)
             {
                 hRetVal = OnCreate(spObject);
                 if (FAILED(hRetVal))

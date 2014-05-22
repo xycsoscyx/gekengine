@@ -102,7 +102,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR strComm
     {
         CComPtr<IGEKContext> spContext;
         GEKCreateContext(&spContext);
-        if (spContext != nullptr)
+        if (spContext)
         {
 #ifdef _DEBUG
             SetCurrentDirectory(GEKParseFileName(L"%root%\\Debug"));
@@ -116,7 +116,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR strComm
             {
                 CComPtr<IGEKGameApplication> spGame;
                 spContext->CreateInstance(CLSID_GEKEngine, IID_PPV_ARGS(&spGame));
-                if (spGame != nullptr)
+                if (spGame)
                 {
                     spGame->Run();
                 }

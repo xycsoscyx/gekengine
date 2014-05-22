@@ -28,6 +28,7 @@ LRESULT CALLBACK CGEKSystem::ManagerProc(UINT32 nMessage, WPARAM wParam, LPARAM 
     if (nMessage == WM_CLOSE)
     {
         m_bIsClosed = true;
+        DestroyWindow(m_hWindow);
         return 0;
     }
     else if (nMessage == WM_DESTROY)
@@ -132,7 +133,7 @@ STDMETHODIMP CGEKSystem::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = GetContext()->CreateInstance(CLSID_GEKVideoSystem, IID_PPV_ARGS(&m_spVideoSystem));
-        if (m_spVideoSystem != nullptr)
+        if (m_spVideoSystem)
         {
             m_spVideoSystem->SetDefaultTargets();
         }
@@ -154,6 +155,8 @@ STDMETHODIMP CGEKSystem::Initialize(void)
 
 STDMETHODIMP_(void) CGEKSystem::Destroy(void)
 {
+    m_spAudioSystem = nullptr;
+    m_spVideoSystem = nullptr;
     GetContext()->RemoveCachedClass(CLSID_GEKSystem);
 }
 

@@ -125,7 +125,7 @@ bool GEKHASH::operator == (const CStringW &strString)
 CStringA FormatString(LPCSTR pFormat, ...)
 {
     CStringA strValue;
-    if (pFormat)
+    if (pFormat != nullptr)
     {
         va_list pArgs;
         va_start(pArgs, pFormat);
@@ -139,7 +139,7 @@ CStringA FormatString(LPCSTR pFormat, ...)
 CStringW FormatString(LPCWSTR pFormat, ...)
 {
     CStringW strValue;
-    if (pFormat)
+    if (pFormat != nullptr)
     {
         va_list pArgs;
         va_start(pArgs, pFormat);

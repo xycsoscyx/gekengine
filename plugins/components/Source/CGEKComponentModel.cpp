@@ -79,7 +79,7 @@ STDMETHODIMP CGEKComponentModel::OnEntityCreated(void)
     if (!m_strSource.IsEmpty())
     {
         IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKRenderManager);
-        if (pModelManager)
+        if (pModelManager != nullptr)
         {
             hRetVal = pModelManager->LoadModel(m_strSource, m_strParams, &m_spModel);
         }
@@ -156,7 +156,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::GetVisible(const frustum &kFrustum
         if (spModel)
         {
             IGEKComponent *pTransform = kPair.first->GetComponent(L"transform");
-            if (pTransform)
+            if (pTransform != nullptr)
             {
                 GEKVALUE kPosition;
                 GEKVALUE kRotation;

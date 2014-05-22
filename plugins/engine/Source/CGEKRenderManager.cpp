@@ -426,21 +426,25 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 {
     GEKFUNCTION();
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKRenderManager, GetUnknown());
-    m_pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
-    m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
-    if (m_pSystem && m_pVideoSystem)
+    if (SUCCEEDED(hRetVal))
     {
-        m_pWebCore = Awesomium::WebCore::Initialize(Awesomium::WebConfig());
-        GEKRESULT(m_pWebCore, L"Unable to create Awesomium WebCore instance");
-        if (m_pWebCore)
+        hRetVal = E_FAIL;
+        m_pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
+        m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
+        if (m_pSystem != nullptr && m_pVideoSystem != nullptr)
         {
-            m_pWebSession = m_pWebCore->CreateWebSession(Awesomium::WSLit(""), Awesomium::WebPreferences());
-            GEKRESULT(m_pWebCore, L"Unable to create Awesomium WebSession instance");
-            if (m_pWebSession)
+            m_pWebCore = Awesomium::WebCore::Initialize(Awesomium::WebConfig());
+            GEKRESULT(m_pWebCore, L"Unable to create Awesomium WebCore instance");
+            if (m_pWebCore != nullptr)
             {
-                m_pWebSession->AddDataSource(Awesomium::WSLit("Engine"), this);
-                m_pWebCore->set_surface_factory(this);
-                hRetVal = S_OK;
+                m_pWebSession = m_pWebCore->CreateWebSession(Awesomium::WSLit(""), Awesomium::WebPreferences());
+                GEKRESULT(m_pWebCore, L"Unable to create Awesomium WebSession instance");
+                if (m_pWebSession != nullptr)
+                {
+                    m_pWebSession->AddDataSource(Awesomium::WSLit("Engine"), this);
+                    m_pWebCore->set_surface_factory(this);
+                    hRetVal = S_OK;
+                }
             }
         }
     }
@@ -499,7 +503,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float4x4), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spOrthoBuffer);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
-        if (m_spOrthoBuffer != nullptr)
+        if (m_spOrthoBuffer)
         {
             float4x4 nOverlayMatrix;
             nOverlayMatrix.SetOrthographic(0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f);
@@ -580,10 +584,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 {
     Free();
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
-    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
-    GetContext()->RemoveCachedObserver(CLSID_GEKSystem, (IGEKSystemObserver *)GetUnknown());
-    if (m_pWebSession)
+    if (m_pWebSession != nullptr)
     {
         m_pWebSession->Release();
         m_pWebSession = nullptr;
@@ -592,6 +593,9 @@ STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
     Awesomium::WebCore::Shutdown();
     m_pWebCore = nullptr;
 
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
+    GetContext()->RemoveCachedObserver(CLSID_GEKSystem, (IGEKSystemObserver *)GetUnknown());
     GetContext()->RemoveCachedClass(CLSID_GEKRenderManager);
 }
 
@@ -675,7 +679,7 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
                             {
                                 CComPtr<IGEKRenderFilter> spFilter;
                                 hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderFilter, IID_PPV_ARGS(&spFilter));
-                                if (spFilter != nullptr)
+                                if (spFilter)
                                 {
                                     CStringW strFilterFileName(L"%root%\\data\\filters\\" + strFilter + L".xml");
                                     hRetVal = spFilter->Load(strFilterFileName);
@@ -745,7 +749,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                         if (kSourceNode && kSourceNode.HasAttribute(L"url"))
                         {
                             Awesomium::WebView *pView = m_pWebCore->CreateWebView(nXSize, nYSize, m_pWebSession);
-                            if (pView)
+                            if (pView != nullptr)
                             {
                                 pView->set_view_listener(this);
 
@@ -840,7 +844,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
             }
         }
 
-        if (spTexture != nullptr)
+        if (spTexture)
         {
             m_aTextures[pName] = spTexture;
             hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
@@ -993,7 +997,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
 
                         CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
                         GEKRESULT(spMaterial, L"Call to new failed to allocate instance");
-                        if (spMaterial != nullptr)
+                        if (spMaterial)
                         {
                             spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"render"));
                             spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"blend"));
@@ -1030,7 +1034,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
 
                 CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(L"Opaque", spAlbedoMap, spNormalMap, spInfoMap));
                 GEKRESULT(spMaterial, L"Call to new failed to allocate instance");
-                if (spMaterial != nullptr)
+                if (spMaterial)
                 {
                     CLibXMLNode kBlankNode(nullptr);
                     spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kBlankNode);
@@ -1051,7 +1055,7 @@ STDMETHODIMP CGEKRenderManager::PrepareMaterial(IUnknown *pMaterial)
 
     HRESULT hRetVal = E_FAIL;
     CComQIPtr<IGEKMaterial> spMaterial(pMaterial);
-    if (spMaterial != nullptr)
+    if (spMaterial)
     {
         auto pIterator = m_aPasses.find(spMaterial->GetPass());
         if (pIterator != m_aPasses.end())
@@ -1072,7 +1076,7 @@ STDMETHODIMP_(bool) CGEKRenderManager::EnableMaterial(IUnknown *pMaterial)
     if (m_pCurrentPass != nullptr)
     {
         CComQIPtr<IGEKMaterial> spMaterial(pMaterial);
-        if (spMaterial != nullptr)
+        if (spMaterial)
         {
             auto pIterator = m_aPasses.find(spMaterial->GetPass());
             if (pIterator != m_aPasses.end() && m_pCurrentPass == &(*pIterator).second)
@@ -1172,7 +1176,7 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
 
                                     CComPtr<IUnknown> spVertexProgram;
                                     hRetVal = m_pVideoSystem->CompileVertexProgram(strDeferredProgram, "MainVertexProgram", aLayout, &spVertexProgram);
-                                    if (spVertexProgram != nullptr)
+                                    if (spVertexProgram)
                                     {
                                         CComPtr<CGEKProgram> spProgram(new CGEKProgram(spVertexProgram, spGeometryProgram));
                                         GEKRESULT(spProgram, L"Call to new failed to allocate instance");
@@ -1203,7 +1207,7 @@ STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
     REQUIRE_VOID_RETURN(pProgram);
 
     CComQIPtr<IGEKProgram> spProgram(pProgram);
-    if (spProgram != nullptr)
+    if (spProgram)
     {
         m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(spProgram->GetVertexProgram());
         m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(spProgram->GetGeometryProgram());
@@ -1314,7 +1318,7 @@ STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName, INT32 nPriority)
 STDMETHODIMP_(void) CGEKRenderManager::CaptureMouse(bool bCapture)
 {
     IGEKEngine *pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
-    if (pEngine)
+    if (pEngine != nullptr)
     {
         pEngine->CaptureMouse(bCapture);
     }
@@ -1323,7 +1327,7 @@ STDMETHODIMP_(void) CGEKRenderManager::CaptureMouse(bool bCapture)
 STDMETHODIMP CGEKRenderManager::SetViewer(IGEKEntity *pEntity)
 {
     HRESULT hRetVal = E_INVALID;
-    if (pEntity)
+    if (pEntity != nullptr)
     {
         if (pEntity->GetComponent(L"viewer"))
         {
@@ -1444,11 +1448,11 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         }
     }
 
-    if (m_pViewer)
+    if (m_pViewer != nullptr)
     {
         IGEKComponent *pViewerComponent = m_pViewer->GetComponent(L"viewer");
         IGEKComponent *pTransformComponent = m_pViewer->GetComponent(L"transform");
-        if (pTransformComponent && pViewerComponent)
+        if (pTransformComponent != nullptr && pViewerComponent != nullptr)
         {
             GEKVALUE kFieldOfView;
             GEKVALUE kMinViewDistance;
@@ -1484,7 +1488,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
             m_kFrustum.Create(nCameraMatrix, m_kEngineBuffer.m_nProjectionMatrix);
 
             IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
-            if (pSceneManager)
+            if (pSceneManager != nullptr)
             {
                 concurrency::concurrent_unordered_set<IGEKEntity *> aVisibleEntities;
                 pSceneManager->GetVisible(m_kFrustum, aVisibleEntities);
@@ -1494,7 +1498,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
                 concurrency::parallel_for_each(aVisibleEntities.begin(), aVisibleEntities.end(), [&](IGEKEntity *pEntity) -> void
                 {
                     IGEKComponent *pTransformComponent = pEntity->GetComponent(L"transform");
-                    if (pTransformComponent)
+                    if (pTransformComponent != nullptr)
                     {
                         GEKVALUE kPosition;
                         GEKVALUE kRotation;
@@ -1502,7 +1506,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
                         pTransformComponent->GetProperty(L"rotation", kRotation);
 
                         IGEKComponent *pLightComponent = pEntity->GetComponent(L"light");
-                        if (pLightComponent)
+                        if (pLightComponent != nullptr)
                         {
                             GEKVALUE kColor;
                             GEKVALUE kRange;
@@ -1518,7 +1522,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
                         }
 
                         IGEKComponent *pModelComponent = pEntity->GetComponent(L"model");
-                        if (pModelComponent)
+                        if (pModelComponent != nullptr)
                         {
                             GEKVALUE kModel;
                             pModelComponent->GetProperty(L"model", kModel);
@@ -1636,7 +1640,7 @@ void CGEKRenderManager::OnRequest(int nRequestID, const Awesomium::ResourceReque
 void CGEKRenderManager::OnMethodCall(Awesomium::WebView *pCaller, unsigned int nRemoteObjectID, const Awesomium::WebString &kMethodName, const Awesomium::JSArray &aArgs)
 {
     IGEKEngine *pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
-    if (pEngine)
+    if (pEngine != nullptr)
     {
         std::vector<CStringW> aParams;
         for (UINT32 nIndex = 0; nIndex < aArgs.size(); nIndex++)
