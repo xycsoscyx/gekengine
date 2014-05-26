@@ -1315,15 +1315,6 @@ STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName, INT32 nPriority)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::CaptureMouse(bool bCapture)
-{
-    IGEKEngine *pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
-    if (pEngine != nullptr)
-    {
-        pEngine->CaptureMouse(bCapture);
-    }
-}
-
 STDMETHODIMP CGEKRenderManager::SetViewer(IGEKEntity *pEntity)
 {
     HRESULT hRetVal = E_INVALID;

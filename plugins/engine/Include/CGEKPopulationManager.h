@@ -16,7 +16,6 @@ class CGEKPopulationManager : public CGEKUnknown
 private:
     std::map<GEKHASH, CComPtr<IGEKComponentSystem>> m_aComponentSystems;
     concurrency::concurrent_unordered_map<GEKHASH, CComPtr<IGEKEntity>> m_aPopulation;
-    std::list<IGEKEntity *> m_aInputHandlers;
     std::list<IGEKEntity *> m_aHitList;
 
 public:
@@ -31,7 +30,6 @@ public:
     // IGEKPopulationManager
     STDMETHOD(LoadScene)                (THIS_ LPCWSTR pName, LPCWSTR pEntry);
     STDMETHOD_(void, Free)              (THIS);
-    STDMETHOD_(void, OnInputEvent)      (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);
 
     // IGEKSceneManager

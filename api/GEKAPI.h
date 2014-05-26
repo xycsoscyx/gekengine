@@ -15,6 +15,7 @@
 #include "IGEKModelManager.h"
 #include "IGEKSceneManager.h"
 #include "IGEKViewManager.h"
+#include "IGEKInputManager.h"
 
 // Global
 enum GEKVERTEXATTRIBUTES

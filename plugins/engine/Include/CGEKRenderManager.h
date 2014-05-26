@@ -142,7 +142,6 @@ public:
     STDMETHOD(SetViewer)                    (THIS_ IGEKEntity *pEntity);
     STDMETHOD_(IGEKEntity *, GetViewer)     (THIS);
     STDMETHOD(EnablePass)                   (THIS_ LPCWSTR pName, INT32 nPriority);
-    STDMETHOD_(void, CaptureMouse)          (THIS_ bool bCapture);
 
     // IGEKRenderManager
     STDMETHOD_(void, Free)                  (THIS);

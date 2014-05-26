@@ -3,6 +3,7 @@
 
 BEGIN_INTERFACE_LIST(CGEKPlayerState)
     INTERFACE_LIST_ENTRY_COM(IGEKLogicState)
+    INTERFACE_LIST_ENTRY_COM(IGEKInputObserver)
 END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKPlayerState)
@@ -17,6 +18,16 @@ CGEKPlayerState::~CGEKPlayerState(void)
 {
 }
 
+STDMETHODIMP CGEKPlayerState::Initialize(void)
+{
+    return GetContext()->AddCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
+}
+
+STDMETHODIMP_(void) CGEKPlayerState::Destroy(void)
+{
+    GetContext()->RemoveCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
+}
+
 STDMETHODIMP_(void) CGEKPlayerState::OnEnter(IGEKEntity *pEntity)
 {
     m_pEntity = pEntity;
@@ -24,43 +35,12 @@ STDMETHODIMP_(void) CGEKPlayerState::OnEnter(IGEKEntity *pEntity)
     if (pViewManager != nullptr)
     {
         pViewManager->SetViewer(m_pEntity);
-        pViewManager->CaptureMouse(true);
     }
 }
 
 STDMETHODIMP_(void) CGEKPlayerState::OnExit(void)
 {
     m_pEntity = nullptr;
-}
-
-STDMETHODIMP_(void) CGEKPlayerState::OnEvent(LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB)
-{
-    if (_wcsicmp(pAction, L"input") == 0)
-    {
-        if (kParamA.GetString().CompareNoCase(L"escape") == 0)
-        {
-            if (!kParamB.GetBoolean())
-            {
-                m_bActive = !m_bActive;
-                IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
-                if (pViewManager != nullptr)
-                {
-                    pViewManager->CaptureMouse(m_bActive);
-                }
-            }
-        }
-        else if (m_pEntity != nullptr)
-        {
-            if (kParamA.GetString().CompareNoCase(L"turn") == 0)
-            {
-                m_nRotation += kParamB.GetFloat2() * 0.01f;
-            }
-            else
-            {
-                m_aActions[kParamA.GetString()] = kParamB.GetBoolean();
-            }
-        }
-    }
 }
 
 STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
@@ -108,3 +88,16 @@ STDMETHODIMP_(void) CGEKPlayerState::OnUpdate(float nGameTime, float nFrameTime)
         pTransform->SetProperty(L"rotation", quaternion(nRotation));
     }
 }
+
+STDMETHODIMP_(void) CGEKPlayerState::OnAction(LPCWSTR pEvent, const GEKVALUE &kValue)
+{
+    if (_wcsicmp(pEvent, L"turn") == 0)
+    {
+        m_nRotation += kValue.GetFloat2() * 0.01f;
+    }
+    else
+    {
+        m_aActions[pEvent] = kValue.GetBoolean();
+    }
+}
+

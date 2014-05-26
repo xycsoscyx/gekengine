@@ -6,6 +6,7 @@
 
 class CGEKPlayerState : public CGEKUnknown
                       , public IGEKLogicState
+                      , public IGEKInputObserver
 {
 private:
     IGEKEntity *m_pEntity;
@@ -18,9 +19,15 @@ public:
     virtual ~CGEKPlayerState(void);
     DECLARE_UNKNOWN(CGEKPlayerState);
 
+    // IGEKUnknown
+    STDMETHOD(Initialize)               (THIS);
+    STDMETHOD_(void, Destroy)           (THIS);
+
     // IGEKLogicState
     STDMETHOD_(void, OnEnter)           (THIS_ IGEKEntity *pEntity);
     STDMETHOD_(void, OnExit)            (THIS);
-    STDMETHOD_(void, OnEvent)           (THIS_ LPCWSTR pAction, const GEKVALUE &kParamA, const GEKVALUE &kParamB);
     STDMETHOD_(void, OnUpdate)          (THIS_ float nGameTime, float nFrameTime);
+
+    // IGEKInputObserver
+    STDMETHOD_(void, OnAction)          (THIS_ LPCWSTR pEvent, const GEKVALUE &kValue);
 };

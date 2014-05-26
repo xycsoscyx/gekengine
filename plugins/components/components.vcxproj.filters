@@ -92,6 +92,9 @@
     <ClInclude Include="..\..\api\IGEKLogic.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\api\IGEKInputManager.h">
+      <Filter>Interface Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

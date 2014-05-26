@@ -17,6 +17,7 @@ BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
+    INTERFACE_LIST_ENTRY_COM(IGEKInputManager)
     INTERFACE_LIST_ENTRY_COM(IGEKEngine)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -26,7 +27,6 @@ CGEKEngine::CGEKEngine(void)
     : m_nTotalTime(0.0)
     , m_nTimeAccumulator(0.0)
     , m_bWindowActive(false)
-    , m_bCaptureMouse(false)
 {
 }
 
@@ -60,7 +60,7 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
     auto pIterator = m_aInputBindings.find(nKey);
     if (pIterator != m_aInputBindings.end())
     {
-        m_spPopulationManager->OnInputEvent(((*pIterator).second), kValue);
+        CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnAction, std::placeholders::_1, (*pIterator).second, kValue)));
     }
 }
 
@@ -111,8 +111,6 @@ STDMETHODIMP CGEKEngine::Initialize(void)
         m_aInputBindings['Z'] = L"fall";
         m_aInputBindings[WM_MOUSEWHEEL] = L"height";
         m_aInputBindings[WM_MOUSEMOVE] = L"turn";
-
-        m_aInputBindings[VK_ESCAPE] = L"escape";
 
         m_bWindowActive = true;
         hRetVal = GetContext()->CreateInstance(CLSID_GEKSystem, IID_PPV_ARGS(&m_spSystem));
@@ -248,23 +246,20 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
 {
     if (m_bWindowActive)
     {
-        if (m_bCaptureMouse)
+        POINT kCursor;
+        GetCursorPos(&kCursor);
+
+        RECT kWindow;
+        GetWindowRect(m_spSystem->GetWindow(), &kWindow);
+        INT32 nCenterX = (kWindow.left + ((kWindow.right - kWindow.left) / 2));
+        INT32 nCenterY = (kWindow.top + ((kWindow.bottom - kWindow.top) / 2));
+        SetCursorPos(nCenterX, nCenterY);
+
+        INT32 nCursorMoveX = ((kCursor.x - nCenterX) / 2);
+        INT32 nCursorMoveY = ((kCursor.y - nCenterY) / 2);
+        if (nCursorMoveX != 0 || nCursorMoveY != 0)
         {
-            POINT kCursor;
-            GetCursorPos(&kCursor);
-
-            RECT kWindow;
-            GetWindowRect(m_spSystem->GetWindow(), &kWindow);
-            INT32 nCenterX = (kWindow.left + ((kWindow.right - kWindow.left) / 2));
-            INT32 nCenterY = (kWindow.top + ((kWindow.bottom - kWindow.top) / 2));
-            SetCursorPos(nCenterX, nCenterY);
-
-            INT32 nCursorMoveX = ((kCursor.x - nCenterX) / 2);
-            INT32 nCursorMoveY = ((kCursor.y - nCenterY) / 2);
-            if (nCursorMoveX != 0 || nCursorMoveY != 0)
-            {
-                CheckInput(WM_MOUSEMOVE, float2(float(nCursorMoveX), float(nCursorMoveY)));
-            }
+            CheckInput(WM_MOUSEMOVE, float2(float(nCursorMoveX), float(nCursorMoveY)));
         }
 
         m_kTimer.Update();
@@ -284,16 +279,6 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
 {
     REQUIRE_VOID_RETURN(m_spSystem);
     m_spSystem->Run();
-}
-
-STDMETHODIMP_(void) CGEKEngine::CaptureMouse(bool bCapture)
-{
-    m_bCaptureMouse = bCapture;
-}
-
-STDMETHODIMP_(bool) CGEKEngine::IsMouseCaptured(void)
-{
-    return m_bCaptureMouse;
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnCommand(LPCWSTR pCommand, LPCWSTR *pParams, UINT32 nNumParams)

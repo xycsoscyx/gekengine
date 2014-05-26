@@ -161,7 +161,6 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
 
 STDMETHODIMP_(void) CGEKPopulationManager::Free(void)
 {
-    m_aInputHandlers.clear();
     m_aPopulation.clear();
     m_aHitList.clear();
 
@@ -169,14 +168,6 @@ STDMETHODIMP_(void) CGEKPopulationManager::Free(void)
     {
         kPair.second->Clear();
     }
-}
-
-STDMETHODIMP_(void) CGEKPopulationManager::OnInputEvent(LPCWSTR pName, const GEKVALUE &kValue)
-{
-    for (auto &pEntity : m_aInputHandlers)
-    {
-        pEntity->OnEvent(L"input", pName, kValue);
-    };
 }
 
 STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameTime)
@@ -193,11 +184,6 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
 
         if (pIterator != m_aPopulation.end())
         {
-            m_aInputHandlers.erase(std::remove_if(m_aInputHandlers.begin(), m_aInputHandlers.end(), [&](IGEKEntity *pInputEntity) -> bool
-            {
-                return (pEntity == pInputEntity);
-            }), m_aInputHandlers.end());
-
             dynamic_cast<CGEKEntity *>(pEntity)->OnEntityDestroyed();
             CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityDestroyed, std::placeholders::_1, pEntity)));
             for (auto &kPair : m_aComponentSystems)
@@ -262,11 +248,6 @@ STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
             if (SUCCEEDED(spEntity->OnEntityCreated()))
             {
                 hRetVal = spEntity->QueryInterface(IID_PPV_ARGS(&m_aPopulation[strName.GetString()]));
-                if (strFlags.Find(L"input") >= 0)
-                {
-                    m_aInputHandlers.push_back(spEntity);
-                }
-
                 CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityAdded, std::placeholders::_1, (IGEKEntity *)spEntity)));
             }
         }
