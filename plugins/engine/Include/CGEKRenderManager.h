@@ -64,6 +64,7 @@ private:
     CComPtr<IUnknown> m_spFrameEvent;
 
     CComPtr<IUnknown> m_spVertexProgram;
+    CComPtr<IUnknown> m_spPixelProgram;
     CComPtr<IGEKVideoBuffer> m_spVertexBuffer;
     CComPtr<IGEKVideoBuffer> m_spIndexBuffer;
 
@@ -74,6 +75,10 @@ private:
     CComPtr<IGEKVideoBuffer> m_spEngineBuffer;
     CComPtr<IGEKVideoBuffer> m_spLightCountBuffer;
     CComPtr<IGEKVideoBuffer> m_spLightBuffer;
+    CComPtr<IGEKVideoTexture> m_spScreenBuffer;
+    CComPtr<IUnknown> m_spBlendStates;
+    CComPtr<IUnknown> m_spRenderStates;
+    CComPtr<IUnknown> m_spDepthStates;
     UINT32 m_nNumLightInstances;
 
     Awesomium::WebCore *m_pWebCore;

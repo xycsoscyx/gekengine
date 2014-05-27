@@ -425,6 +425,12 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
+        hRetVal = m_pVideoSystem->LoadPixelProgram(L"%root%\\data\\programs\\pixel\\overlay.hlsl", "MainPixelProgram", &m_spPixelProgram);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to LoadPixelProgram failed: 0x%08X", hRetVal);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
         float2 aVertices[8] =
         {
             float2(0.0f, 0.0f), float2(-1.0f, 1.0f),
@@ -506,6 +512,31 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         kStates.m_eAddressV = GEKVIDEO::ADDRESS::WRAP;
         hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spLinearSampler);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateSamplerStates failed: 0x%08X", hRetVal);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        UINT32 nXSize = m_pSystem->GetXSize();
+        UINT32 nYSize = m_pSystem->GetYSize();
+        hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEKVIDEO::DATA::RGBA_UINT8, &m_spScreenBuffer);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        GEKVIDEO::RENDERSTATES kRenderStates;
+        hRetVal = m_pVideoSystem->CreateRenderStates(kRenderStates, &m_spRenderStates);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        GEKVIDEO::UNIFIEDBLENDSTATES kBlendStates;
+        hRetVal = m_pVideoSystem->CreateBlendStates(kBlendStates, &m_spBlendStates);
+    }
+   
+    if (SUCCEEDED(hRetVal))
+    {
+        GEKVIDEO::DEPTHSTATES kDepthStates;
+        hRetVal = m_pVideoSystem->CreateDepthStates(kDepthStates, &m_spDepthStates);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -812,12 +843,7 @@ STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
     HRESULT hRetVal = E_FAIL;
     if (_wcsicmp(pName, L"Screen") == 0)
     {
-        CComPtr<IGEKVideoTexture> spTexture;
-        hRetVal = m_pVideoSystem->GetDefaultRenderTarget(&spTexture);
-        if (spTexture)
-        {
-            hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
-        }
+        hRetVal = m_spScreenBuffer->QueryInterface(IID_PPV_ARGS(ppResource));
     }
     else
     {
@@ -1499,6 +1525,22 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         });
 
         m_pCurrentPass = nullptr;
+
+        m_pVideoSystem->SetDefaultTargets();
+        m_pVideoSystem->GetImmediateContext()->SetRenderStates(m_spRenderStates);
+        m_pVideoSystem->GetImmediateContext()->SetBlendStates(float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
+        m_pVideoSystem->GetImmediateContext()->SetDepthStates(0x0, m_spDepthStates);
+        m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetProgram(nullptr);
+        m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
+        m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+        m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
+        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetProgram(m_spPixelProgram);
+        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spScreenBuffer);
+        m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
+        m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
+        m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+        m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+
         m_pVideoSystem->GetImmediateContext()->ClearResources();
         m_pVideoSystem->Present(true);
 
