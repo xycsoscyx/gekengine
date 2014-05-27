@@ -135,6 +135,15 @@ STDMETHODIMP CGEKEngine::Initialize(void)
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderManager, IID_PPV_ARGS(&m_spRenderManager));
+            if (m_spRenderManager)
+            {
+                CComPtr<IUnknown> spMainMenu;
+                hRetVal = m_spRenderManager->LoadResource(L"*browser:mainmenu", &spMainMenu);
+                if (spMainMenu)
+                {
+                    m_spMainMenu = spMainMenu;
+                }
+            }
         }
     }
 
@@ -167,6 +176,11 @@ STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessa
 
 STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
 {
+    if (m_spMainMenu)
+    {
+        m_spMainMenu->OnEvent(nMessage, wParam, lParam);
+    }
+
     switch (nMessage)
     {
     case WM_SETCURSOR:
@@ -246,6 +260,7 @@ STDMETHODIMP_(void) CGEKEngine::OnRun(void)
 STDMETHODIMP_(void) CGEKEngine::OnStop(void)
 {
     m_bWindowActive = false;
+    m_spMainMenu = nullptr;
     m_spRenderManager->Free();
     m_spPopulationManager->Free();
 }

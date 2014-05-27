@@ -10,6 +10,7 @@
 
 DECLARE_INTERFACE(IGEKRenderManager);
 DECLARE_INTERFACE(IGEKPopulationManager);
+DECLARE_INTERFACE(IGEKEventResource);
 
 class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
@@ -32,6 +33,7 @@ private:
     CComPtr<IGEKRenderManager> m_spRenderManager;
 
     bool m_bSendInput;
+    CComPtr<IGEKEventResource> m_spMainMenu;
 
 private:
     void CheckInput(UINT32 nKey, const GEKVALUE &kValue);

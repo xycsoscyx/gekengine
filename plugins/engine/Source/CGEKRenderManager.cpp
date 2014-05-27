@@ -233,6 +233,7 @@ DECLARE_INTERFACE_IID_(IGEKWebView, IUnknown, "646FA93A-D554-4423-B3E0-2C8C6F368
 
 class CGEKWebView : public CGEKUnknown
                   , public IGEKWebView
+                  , public IGEKEventResource
 {
 private:
     Awesomium::WebView *m_pView;
@@ -244,14 +245,84 @@ public:
     {
     }
     
+    ~CGEKWebView(void)
+    {
+        if (m_pView)
+        {
+            m_pView->Destroy();
+            m_pView = nullptr;
+        }
+    }
+
     STDMETHODIMP_(Awesomium::WebView *) GetView(void)
     {
         return m_pView;
+    }
+
+    STDMETHODIMP_(void) OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam)
+    {
+        switch (nMessage)
+        {
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+        case WM_CHAR:
+            if (true)
+            {
+                Awesomium::WebKeyboardEvent kEvent(nMessage, wParam, lParam);
+                m_pView->InjectKeyboardEvent(kEvent);
+            }
+
+            break;
+
+        case WM_LBUTTONDOWN:
+            m_pView->InjectMouseDown(Awesomium::kMouseButton_Left);
+            break;
+
+        case WM_RBUTTONDOWN:
+            m_pView->InjectMouseDown(Awesomium::kMouseButton_Right);
+            break;
+
+        case WM_MBUTTONDOWN:
+            m_pView->InjectMouseDown(Awesomium::kMouseButton_Middle);
+            break;
+
+        case WM_LBUTTONUP:
+            m_pView->InjectMouseUp(Awesomium::kMouseButton_Left);
+            break;
+
+        case WM_RBUTTONUP:
+            m_pView->InjectMouseUp(Awesomium::kMouseButton_Right);
+            break;
+
+        case WM_MBUTTONUP:
+            m_pView->InjectMouseUp(Awesomium::kMouseButton_Middle);
+            break;
+
+        case WM_MOUSEMOVE:
+            if (true)
+            {
+                INT32 nXPos = GET_X_LPARAM(lParam);
+                INT32 nYPos = GET_Y_LPARAM(lParam);
+                m_pView->InjectMouseMove(nXPos, nYPos);
+            }
+
+            break;
+
+        case WM_MOUSEWHEEL:
+            if (true)
+            {
+                INT32 nDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+                m_pView->InjectMouseWheel(nDelta, 0);
+            }
+
+            break;
+        };
     }
 };
 
 BEGIN_INTERFACE_LIST(CGEKWebView)
     INTERFACE_LIST_ENTRY_COM(IGEKWebView)
+    INTERFACE_LIST_ENTRY_COM(IGEKEventResource)
 END_INTERFACE_LIST_UNKNOWN
 
 static GEKVIDEO::DATA::FORMAT GetFormatType(LPCWSTR pValue)
@@ -275,8 +346,6 @@ static GEKVIDEO::INPUT::SOURCE GetElementClass(LPCWSTR pValue)
 }
 
 BEGIN_INTERFACE_LIST(CGEKRenderManager)
-    INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderManager)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManager)
@@ -301,115 +370,6 @@ CGEKRenderManager::CGEKRenderManager(void)
 
 CGEKRenderManager::~CGEKRenderManager(void)
 {
-}
-
-STDMETHODIMP_(void) CGEKRenderManager::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
-{
-    switch (nMessage)
-    {
-    case WM_KEYDOWN:
-    case WM_KEYUP:
-    case WM_CHAR:
-        if (true)
-        {
-            Awesomium::WebKeyboardEvent kEvent(nMessage, wParam, lParam);
-            for (auto pView : m_aGUIViews)
-            {
-                pView->InjectKeyboardEvent(kEvent);
-            }
-        }
-
-        nResult = 1;
-        break;
-
-    case WM_LBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-    case WM_MBUTTONDOWN:
-        for (auto pView : m_aGUIViews)
-        {
-            switch (nMessage)
-            {
-            case WM_LBUTTONDOWN:
-                pView->InjectMouseDown(Awesomium::kMouseButton_Left);
-                break;
-
-            case WM_RBUTTONDOWN:
-                pView->InjectMouseDown(Awesomium::kMouseButton_Right);
-                break;
-
-            case WM_MBUTTONDOWN:
-                pView->InjectMouseDown(Awesomium::kMouseButton_Middle);
-                break;
-            };
-        }
-
-        nResult = 1;
-        break;
-
-    case WM_LBUTTONUP:
-    case WM_RBUTTONUP:
-    case WM_MBUTTONUP:
-        for (auto pView : m_aGUIViews)
-        {
-            switch (nMessage)
-            {
-            case WM_LBUTTONUP:
-                pView->InjectMouseUp(Awesomium::kMouseButton_Left);
-                break;
-
-            case WM_RBUTTONUP:
-                pView->InjectMouseUp(Awesomium::kMouseButton_Right);
-                break;
-
-            case WM_MBUTTONUP:
-                pView->InjectMouseUp(Awesomium::kMouseButton_Middle);
-                break;
-            };
-        }
-
-        nResult = 1;
-        break;
-
-    case WM_MOUSEMOVE:
-        if (true)
-        {
-            INT32 nXPos = GET_X_LPARAM(lParam);
-            INT32 nYPos = GET_Y_LPARAM(lParam);
-            for (auto pView : m_aGUIViews)
-            {
-                pView->InjectMouseMove(nXPos, nYPos);
-            }
-        }
-
-        nResult = 1;
-        break;
-
-    case WM_MOUSEWHEEL:
-        if (true)
-        {
-            INT32 nDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-            for (auto pView : m_aGUIViews)
-            {
-                pView->InjectMouseWheel(nDelta, 0);
-            }
-        }
-
-        nResult = 1;
-        break;
-    };
-}
-
-STDMETHODIMP_(void) CGEKRenderManager::OnPreReset(void)
-{
-    for (auto pView : m_aGUIViews)
-    {
-        pView->Resize(m_pSystem->GetXSize(), m_pSystem->GetYSize());
-    }
-}
-
-STDMETHODIMP CGEKRenderManager::OnPostReset(void)
-{
-    return S_OK;
 }
 
 STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
@@ -447,16 +407,6 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
                 }
             }
         }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKSystem, (IGEKSystemObserver *)GetUnknown());
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
@@ -594,8 +544,6 @@ STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
     m_pWebCore = nullptr;
 
     GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
-    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
-    GetContext()->RemoveCachedObserver(CLSID_GEKSystem, (IGEKSystemObserver *)GetUnknown());
     GetContext()->RemoveCachedClass(CLSID_GEKRenderManager);
 }
 
@@ -603,13 +551,6 @@ STDMETHODIMP_(void) CGEKRenderManager::Free(void)
 {
     m_pViewer = nullptr;
     m_pCurrentPass = nullptr;
-    for (auto &kPair : m_aWebViews)
-    {
-        kPair.second->Destroy();
-    }
-
-    m_aWebViews.clear();
-    m_aGUIViews.clear();
     m_aTextures.clear();
     m_aMaterials.clear();
     m_aModels.clear();
@@ -729,6 +670,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
             if (strType.CompareNoCase(L"browser") == 0)
             {
                 CStringW strBrowserName = strName.Tokenize(L":", nPosition);
+                GEKLOG(L"Loading Browser Texture: %s", strBrowserName.GetString());
 
                 CLibXMLDoc kDocument;
                 hRetVal = kDocument.Load(L"%root%\\data\\browsers\\" + strBrowserName + L".xml");
@@ -753,7 +695,6 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                             {
                                 pView->set_view_listener(this);
 
-                                bool bGUI = false;
                                 CLibXMLNode kFlagsNode = kBrowerNode.FirstChildElement(L"flags");
                                 if (kFlagsNode)
                                 {
@@ -778,11 +719,6 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                                     {
                                         pView->SetTransparent(true);
                                     }
-
-                                    if (kFlagsNode.HasAttribute(L"gui"))
-                                    {
-                                        bGUI = StrToBoolean(kFlagsNode.GetAttribute(L"gui"));
-                                    }
                                 }
 
                                 CStringW strURL = kSourceNode.GetAttribute(L"url");
@@ -792,12 +728,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                                 GEKRESULT(spWebView, L"Call to new failed to allocate instance");
                                 if (spWebView)
                                 {
-                                    m_aWebViews[pName] = pView;
                                     hRetVal = spWebView->QueryInterface(IID_PPV_ARGS(&spTexture));
-                                    if (bGUI)
-                                    {
-                                        m_aGUIViews.push_back(pView);
-                                    }
                                 }
                             }
                         }
@@ -807,6 +738,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
             else if (strType.CompareNoCase(L"color") == 0)
             {
                 CStringW strColor = strName.Tokenize(L":", nPosition);
+                GEKLOG(L"Creating Color Texture: %s", strColor.GetString());
                 float4 nColor = StrToFloat4(strColor);
 
                 CComPtr<IGEKVideoTexture> spColorTexture;
@@ -820,27 +752,16 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                     m_pVideoSystem->UpdateTexture(spColorTexture, &nColorValue, 4);
                     spTexture = spColorTexture;
                 }
-                else
-                {
-                    OutputDebugStringW(FormatString(L"-> Unable to create texture: %s\r\n", pName));
-                }
-            }
-            else
-            {
-                OutputDebugStringW(FormatString(L"-> Unknown texture specifier: %s\r\n", pName));
             }
         }
         else
         {
+            GEKLOG(L"Loading Texture: %s", pName);
             CComPtr<IGEKVideoTexture> spFileTexture;
             hRetVal = m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spFileTexture);
             if (spFileTexture)
             {
                 spTexture = spFileTexture;
-            }
-            else
-            {
-                OutputDebugStringW(FormatString(L"-> Unable to load texture: %s\r\n", pName));
             }
         }
 
@@ -1012,7 +933,6 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
 
     if (!(*ppMaterial))
     {
-        OutputDebugStringW(FormatString(L"> Unable to load material: %s\r\n", pName));
         auto pIterator = m_aMaterials.find(L"*default");
         if (pIterator != m_aMaterials.end())
         {
@@ -1757,7 +1677,7 @@ void CGEKRenderManager::OnAddConsoleMessage(Awesomium::WebView *pCaller, const A
 {
     CStringW strMessage((LPCWSTR)kMessage.data());
     CStringW strSource((LPCWSTR)kSource.data());
-    OutputDebugStringW(FormatString(L"Console Message (%s: %d): %s\r\n", strSource.GetString(), nLineNumber, strMessage.GetString()));
+    GEKLOG(L"Browser Console (%s: %d): %s", strSource.GetString(), nLineNumber, strMessage.GetString());
 }
 
 void CGEKRenderManager::OnShowCreatedWebView(Awesomium::WebView *pCaller, Awesomium::WebView *pNewView, const Awesomium::WebURL &kOpenerURL, const Awesomium::WebURL &kTargetURL, const Awesomium::Rect &nInitialPosition, bool bIsPopup)

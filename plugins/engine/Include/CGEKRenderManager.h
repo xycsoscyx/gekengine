@@ -18,8 +18,6 @@ DECLARE_INTERFACE(IGEKRenderFilter);
 DECLARE_INTERFACE(IGEKMaterial);
 
 class CGEKRenderManager : public CGEKUnknown
-                        , public IGEKSystemObserver
-                        , public IGEKVideoObserver
                         , public IGEKSceneObserver
                         , public IGEKRenderManager
                         , public IGEKProgramManager
@@ -80,10 +78,7 @@ private:
 
     Awesomium::WebCore *m_pWebCore;
     Awesomium::WebSession *m_pWebSession;
-
-    std::map<GEKHASH, Awesomium::WebView *> m_aWebViews;
     std::map<Awesomium::WebView *, CComPtr<IUnknown>> m_aWebSurfaces;
-    std::list<Awesomium::WebView *> m_aGUIViews;
 
     std::map<GEKHASH, CComPtr<IUnknown>> m_aTextures;
     std::map<GEKHASH, CComPtr<IUnknown>> m_aMaterials;
@@ -110,13 +105,6 @@ public:
     CGEKRenderManager(void);
     virtual ~CGEKRenderManager(void);
     DECLARE_UNKNOWN(CGEKRenderManager);
-
-    // IGEKSystemObserver
-    STDMETHOD_(void, OnEvent)               (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
-
-    // IGEKVideoObserver
-    STDMETHOD_(void, OnPreReset)            (THIS);
-    STDMETHOD(OnPostReset)                  (THIS);
 
     // IGEKSceneObserver
     STDMETHOD(OnLoadEnd)                    (THIS_ HRESULT hRetVal);
