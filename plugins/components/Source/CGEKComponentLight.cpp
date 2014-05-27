@@ -87,7 +87,7 @@ STDMETHODIMP CGEKComponentSystemLight::Create(const CLibXMLNode &kComponentNode,
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
     CComPtr<CGEKComponentLight> spComponent(new CGEKComponentLight(GetContext(), pEntity));
-    GEKRESULT(spComponent, L"Call to new failed to allocate instance");
+    GEKRESULT(spComponent, L"Unable to allocate new light component instance");
     if (spComponent)
     {
         hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));

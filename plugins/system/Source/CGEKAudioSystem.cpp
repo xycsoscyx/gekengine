@@ -307,7 +307,7 @@ STDMETHODIMP CGEKAudioSystem::CopyEffect(IGEKAudioEffect *pSource, IGEKAudioEffe
             {
                 hRetVal = E_OUTOFMEMORY;
                 CComPtr<CGEKAudioEffect> spEffect = new CGEKAudioEffect(spBuffer8);
-                GEKRESULT(spEffect, L"Call to new failed to allocate instance");
+                GEKRESULT(spEffect, L"Unable to allocate new effect instance");
                 if (spEffect)
                 {
                     hRetVal = spEffect->QueryInterface(IID_PPV_ARGS(ppEffect));
@@ -343,7 +343,7 @@ STDMETHODIMP CGEKAudioSystem::CopySound(IGEKAudioSound *pSource, IGEKAudioSound 
                 {
                     hRetVal = E_OUTOFMEMORY;
                     CComPtr<CGEKAudioSound> spSound = new CGEKAudioSound(spBuffer8, spBuffer3D);
-                    GEKRESULT(spSound, L"Call to new failed to allocate instance");
+                    GEKRESULT(spSound, L"Unable to allocate new sound instance");
                     if (spSound)
                     {
                         hRetVal = spSound->QueryInterface(IID_PPV_ARGS(ppSound));
@@ -432,7 +432,7 @@ STDMETHODIMP CGEKAudioSystem::LoadEffect(LPCWSTR pFileName, IGEKAudioEffect **pp
         if (spBuffer8)
         {
             CComPtr<CGEKAudioEffect> spEffect = new CGEKAudioEffect(spBuffer8);
-            GEKRESULT(spEffect, L"Call to new failed to allocate instance");
+            GEKRESULT(spEffect, L"Unable to allocate new effect instance");
             if (spEffect)
             {
                 hRetVal = spEffect->QueryInterface(IID_PPV_ARGS(ppEffect));
@@ -460,7 +460,7 @@ STDMETHODIMP CGEKAudioSystem::LoadSound(LPCWSTR pFileName, IGEKAudioSound **ppSo
             if (spBuffer3D)
             {
                 CComPtr<CGEKAudioSound> spSound = new CGEKAudioSound(spBuffer8, spBuffer3D);
-                GEKRESULT(spSound, L"Call to new failed to allocate instance");
+                GEKRESULT(spSound, L"Unable to allocate new sound instance");
                 if (spSound)
                 {
                     hRetVal = spSound->QueryInterface(IID_PPV_ARGS(ppSound));

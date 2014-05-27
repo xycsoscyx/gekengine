@@ -251,7 +251,7 @@ STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kComponentNode
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
     CComPtr<CGEKComponentNewton> spComponent(new CGEKComponentNewton(GetContext(), pEntity));
-    GEKRESULT(spComponent, L"Call to new failed to allocate instance");
+    GEKRESULT(spComponent, L"Unable to allocate new newton component instance");
     if (spComponent)
     {
         hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));

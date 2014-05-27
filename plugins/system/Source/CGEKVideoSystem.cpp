@@ -647,16 +647,16 @@ CGEKVideoContext::CGEKVideoContext(ID3D11DeviceContext *pContext)
     : m_spDeviceContext(pContext)
 {
     m_spComputeSystem.reset(new CGEKVideoComputeContextSystem(pContext));
-    GEKRESULT(m_spComputeSystem, L"Call to new failed to allocate instance");
+    GEKRESULT(m_spComputeSystem, L"Unable to allocate new compute system instance");
 
     m_spVertexSystem.reset(new CGEKVideoVertexContextSystem(pContext));
-    GEKRESULT(m_spVertexSystem, L"Call to new failed to allocate instance");
+    GEKRESULT(m_spVertexSystem, L"Unable to allocate new vertex system instance");
 
     m_spGeometrySystem.reset(new CGEKVideoGeometryContextSystem(pContext));
-    GEKRESULT(m_spGeometrySystem, L"Call to new failed to allocate instance");
+    GEKRESULT(m_spGeometrySystem, L"Unable to allocate new geometry system instance");
 
     m_spPixelSystem.reset(new CGEKVideoPixelContextSystem(pContext));
-    GEKRESULT(m_spPixelSystem, L"Call to new failed to allocate instance");
+    GEKRESULT(m_spPixelSystem, L"Unable to allocate new pixel system instance");
 }
 
 CGEKVideoContext::~CGEKVideoContext(void)
@@ -952,7 +952,7 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
             if (m_spRenderTargetView)
             {
                 m_spDefaultTarget = new CGEKVideoRenderTarget(m_spDeviceContext, nullptr, nullptr, m_spRenderTargetView, pSystem->GetXSize(), pSystem->GetYSize(), 0);
-                GEKRESULT(m_spDefaultTarget, L"Call to new failed to allocate instance");
+                GEKRESULT(m_spDefaultTarget, L"Unable to allocate new default target instance");
                 if (m_spDefaultTarget)
                 {
                     CComPtr<IUnknown> spDepthView;
@@ -1018,16 +1018,16 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
             if (SUCCEEDED(hRetVal))
             {
                 m_spComputeSystem.reset(new CGEKVideoComputeContextSystem(m_spDeviceContext));
-                GEKRESULT(m_spComputeSystem, L"Call to new failed to allocate instance");
+                GEKRESULT(m_spComputeSystem, L"Unable to allocate new compute system instance");
 
                 m_spVertexSystem.reset(new CGEKVideoVertexContextSystem(m_spDeviceContext));
-                GEKRESULT(m_spVertexSystem, L"Call to new failed to allocate instance");
+                GEKRESULT(m_spVertexSystem, L"Unable to allocate new vertex system instance");
 
                 m_spGeometrySystem.reset(new CGEKVideoGeometryContextSystem(m_spDeviceContext));
-                GEKRESULT(m_spGeometrySystem, L"Call to new failed to allocate instance");
+                GEKRESULT(m_spGeometrySystem, L"Unable to allocate new geometry system instance");
 
                 m_spPixelSystem.reset(new CGEKVideoPixelContextSystem(m_spDeviceContext));
-                GEKRESULT(m_spPixelSystem, L"Call to new failed to allocate instance");
+                GEKRESULT(m_spPixelSystem, L"Unable to allocate new pixel system instance");
             }
 
             if (SUCCEEDED(hRetVal) && !pSystem->IsWindowed())
@@ -1115,7 +1115,7 @@ STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEKVideoContext **ppContext
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoContext> spVideo(new CGEKVideoContext(spContext));
-        GEKRESULT(spVideo, L"Call to new failed to allocate instance");
+        GEKRESULT(spVideo, L"Unable to allocate new video context instance");
         if (spVideo)
         {
             hRetVal = spVideo->QueryInterface(IID_PPV_ARGS(ppContext));
@@ -1223,7 +1223,7 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &k
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoRenderStates> spStates(new CGEKVideoRenderStates(spRasterStates));
-        GEKRESULT(spStates, L"Call to new failed to allocate instance");
+        GEKRESULT(spStates, L"Unable to allocate new render states instance");
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
@@ -1333,7 +1333,7 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEKVIDEO::DEPTHSTATES &kSt
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoDepthStates> spStates(new CGEKVideoDepthStates(spDepthStencilStates));
-        GEKRESULT(spStates, L"Call to new failed to allocate instance");
+        GEKRESULT(spStates, L"Unable to allocate new depth states instance");
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
@@ -1466,7 +1466,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::UNIFIEDBLENDSTAT
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoBlendStates> spStates(new CGEKVideoBlendStates(spBlendStates));
-        GEKRESULT(spStates, L"Call to new failed to allocate instance");
+        GEKRESULT(spStates, L"Unable to allocate new blend states instance");
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
@@ -1522,7 +1522,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::INDEPENDENTBLEND
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoBlendStates> spStates(new CGEKVideoBlendStates(spBlendStates));
-        GEKRESULT(spStates, L"Call to new failed to allocate instance");
+        GEKRESULT(spStates, L"Unable to allocate new blend states instance");
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
@@ -1608,7 +1608,7 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 	            {
                     hRetVal = E_OUTOFMEMORY;
                     CComPtr<CGEKVideoRenderTarget> spTexture(new CGEKVideoRenderTarget(m_spDeviceContext, spShaderView, nullptr, spRenderView, nXSize, nYSize, 0));
-                    GEKRESULT(spTexture, L"Call to new failed to allocate instance");
+                    GEKRESULT(spTexture, L"Unable to allocate new render target instance");
                     if (spTexture)
                     {
                         hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTarget));
@@ -1808,7 +1808,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         {
             hRetVal = E_OUTOFMEMORY;
             CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, spUnorderedView, nStride, nCount));
-            GEKRESULT(spBuffer, L"Call to new failed to allocate instance");
+            GEKRESULT(spBuffer, L"Unable to allocate new buffer instance");
             if (spBuffer)
             {
                 hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
@@ -2011,7 +2011,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
             {
                 hRetVal = E_OUTOFMEMORY;
                 CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, spUnorderedView, nStride, nCount));
-                GEKRESULT(spBuffer, L"Call to new failed to allocate instance");
+                GEKRESULT(spBuffer, L"Unable to allocate new buffer instance");
                 if (spBuffer)
                 {
                     hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
@@ -2025,7 +2025,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
 
 STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION(L"Entry(%s)", pEntry);
+    GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2060,7 +2060,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
         {
             hRetVal = E_OUTOFMEMORY;
             CComPtr<CGEKVideoComputeProgram> spProgram(new CGEKVideoComputeProgram(spProgram));
-            GEKRESULT(spProgram, L"Call to new failed to allocate instance");
+            GEKRESULT(spProgram, L"Unable to allocate new compute program instance");
             if (spProgram)
             {
                 hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -2077,7 +2077,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
 
 STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION(L"Entry(%s)", pEntry);
+    GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2190,7 +2190,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
                 {
                     hRetVal = E_OUTOFMEMORY;
                     CComPtr<CGEKVideoVertexProgram> spProgram(new CGEKVideoVertexProgram(spProgram, spLayout));
-                    GEKRESULT(spProgram, L"Call to new failed to allocate instance");
+                    GEKRESULT(spProgram, L"Unable to allocate new vertex program instance");
                     if (spProgram)
                     {
                         hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -2209,7 +2209,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
 
 STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION(L"Entry(%s)", pEntry);
+    GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2244,7 +2244,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
         {
             hRetVal = E_OUTOFMEMORY;
             CComPtr<CGEKVideoGeometryProgram> spProgram(new CGEKVideoGeometryProgram(spProgram));
-            GEKRESULT(spProgram, L"Call to new failed to allocate instance");
+            GEKRESULT(spProgram, L"Unable to allocate new geometry program instance");
             if (spProgram)
             {
                 hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -2261,7 +2261,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
 
 STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION(L"Entry(%s)", pEntry);
+    GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2296,7 +2296,7 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
         {
             hRetVal = E_OUTOFMEMORY;
             CComPtr<CGEKVideoPixelProgram> spProgram(new CGEKVideoPixelProgram(spProgram));
-            GEKRESULT(spProgram, L"Call to new failed to allocate instance");
+            GEKRESULT(spProgram, L"Unable to allocate new pixel program instance");
             if (spProgram)
             {
                 hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -2502,7 +2502,7 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
             {
                 hRetVal = E_OUTOFMEMORY;
                 CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, spUnderedView, nXSize, nYSize, nZSize));
-                GEKRESULT(spTexture, L"Call to new failed to allocate instance");
+                GEKRESULT(spTexture, L"Unable to allocate new texture instance");
                 if (spTexture)
                 {
                     hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
@@ -2653,7 +2653,7 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **
 
                 hRetVal = E_OUTOFMEMORY;
                 CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, nullptr, nXSize, nYSize, nZSize));
-                GEKRESULT(spTexture, L"Call to new failed to allocate instance");
+                GEKRESULT(spTexture, L"Unable to allocate new texture instance");
                 if (spTexture)
                 {
                     hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
@@ -2753,7 +2753,7 @@ STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEKVIDEO::SAMPLERSTATES 
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoSamplerStates> spStates(new CGEKVideoSamplerStates(spSamplerStates));
-        GEKRESULT(spStates, L"Call to new failed to allocate instance");
+        GEKRESULT(spStates, L"Unable to allocate new sampler states instance");
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));

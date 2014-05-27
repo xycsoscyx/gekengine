@@ -89,69 +89,66 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
             hRetVal = E_INVALID;
         }
     }
-
-    concurrency::critical_section kCritical;
+    
+    GEKLOG(L"Num. Entities Found: %d", aEntities.size());
     concurrency::parallel_for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
-        HRESULT hAddRetVal = AddEntity(kEntityNode);
-        if (FAILED(hAddRetVal))
-        {
-            kCritical.lock();
-            hRetVal = hAddRetVal;
-            kCritical.unlock();
-        }
+        AddEntity(kEntityNode);
     });
 
-    if (SUCCEEDED(hRetVal))
+    hRetVal = E_INVALIDARG;
+    auto pIterator = m_aPopulation.find(pEntry);
+    if (pIterator != m_aPopulation.end())
     {
-        hRetVal = E_INVALIDARG;
-        auto pIterator = m_aPopulation.find(pEntry);
-        GEKRESULT(pIterator != m_aPopulation.end(), L"Unable to locate scene entry entity: %s", pEntry);
-        if (pIterator != m_aPopulation.end())
+        CGEKEntity *pEntity = dynamic_cast<CGEKEntity *>((IGEKEntity *)(*pIterator).second);
+        IGEKComponent *pTransform = ((*pIterator).second)->GetComponent(L"transform");
+        if (pTransform != nullptr)
         {
-            CGEKEntity *pEntity = dynamic_cast<CGEKEntity *>((IGEKEntity *)(*pIterator).second);
-            IGEKComponent *pTransform = ((*pIterator).second)->GetComponent(L"transform");
-            GEKRESULT(pTransform, L"Unable to locate scene entry transform component: %s", pEntry);
-            if (pTransform != nullptr)
+            CLibXMLDoc kDocument;
+            kDocument.Create(L"player");
+            CLibXMLNode &kPlayerNode = kDocument.GetRoot().CreateChildElement(L"entity");
+            kPlayerNode.SetAttribute(L"name", L"player");
+            kPlayerNode.SetAttribute(L"flags", pEntity->GetFlags());
+
+            GEKVALUE kPosition;
+            GEKVALUE kRotation;
+            pTransform->GetProperty(L"position", kPosition);
+            pTransform->GetProperty(L"rotation", kRotation);
+
+            CLibXMLNode &kTransformNode = kPlayerNode.CreateChildElement(L"component");
+            kTransformNode.SetAttribute(L"type", L"transform");
+            kTransformNode.SetAttribute(L"position", kPosition.GetString());
+            kTransformNode.SetAttribute(L"rotation", kRotation.GetString());
+
+            CLibXMLNode &kViewerNode = kPlayerNode.CreateChildElement(L"component");
+            kViewerNode.SetAttribute(L"type", L"viewer");
+            kViewerNode.SetAttribute(L"fieldofview", L"%f", _DEGTORAD(90.0f));
+            kViewerNode.SetAttribute(L"minviewdistance", L"0.1");
+            kViewerNode.SetAttribute(L"maxviewdistance", L"150");
+
+            CLibXMLNode &kScriptNode = kPlayerNode.CreateChildElement(L"component");
+            kScriptNode.SetAttribute(L"type", L"logic");
+            kScriptNode.SetAttribute(L"state", L"default_player_state");
+
+            hRetVal = AddEntity(kPlayerNode);
+            if (SUCCEEDED(hRetVal))
             {
-                CLibXMLDoc kDocument;
-                kDocument.Create(L"player");
-                CLibXMLNode &kPlayerNode = kDocument.GetRoot().CreateChildElement(L"entity");
-                kPlayerNode.SetAttribute(L"name", L"player");
-                kPlayerNode.SetAttribute(L"flags", pEntity->GetFlags());
-
-                GEKVALUE kPosition;
-                GEKVALUE kRotation;
-                pTransform->GetProperty(L"position", kPosition);
-                pTransform->GetProperty(L"rotation", kRotation);
-
-                CLibXMLNode &kTransformNode = kPlayerNode.CreateChildElement(L"component");
-                kTransformNode.SetAttribute(L"type", L"transform");
-                kTransformNode.SetAttribute(L"position", kPosition.GetString());
-                kTransformNode.SetAttribute(L"rotation", kRotation.GetString());
-
-                CLibXMLNode &kViewerNode = kPlayerNode.CreateChildElement(L"component");
-                kViewerNode.SetAttribute(L"type", L"viewer");
-                kViewerNode.SetAttribute(L"fieldofview", L"%f", _DEGTORAD(90.0f));
-                kViewerNode.SetAttribute(L"minviewdistance", L"0.1");
-                kViewerNode.SetAttribute(L"maxviewdistance", L"150");
-
-                CLibXMLNode &kScriptNode = kPlayerNode.CreateChildElement(L"component");
-                kScriptNode.SetAttribute(L"type", L"logic");
-                kScriptNode.SetAttribute(L"state", L"default_player_state");
-
-                hRetVal = AddEntity(kPlayerNode);
-                if (SUCCEEDED(hRetVal))
+                pIterator = m_aPopulation.find(L"player");
+                if (pIterator == m_aPopulation.end())
                 {
-                    pIterator = m_aPopulation.find(L"player");
-                    GEKRESULT(pIterator == m_aPopulation.end(), L"Player entity already exists in scene");
-                    if (pIterator == m_aPopulation.end())
-                    {
-                        hRetVal = E_ACCESSDENIED;
-                    }
+                    GEKLOG(L"Player entity already exists in scene");
+                    hRetVal = E_ACCESSDENIED;
                 }
             }
         }
+        else
+        {
+            GEKLOG(L"Unable to locate scene entry transform component: %s", pEntry);
+        }
+    }
+    else
+    {
+        GEKLOG(L"Unable to locate scene entry entity: %s", pEntry);
     }
 
     return CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
@@ -198,26 +195,31 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
 
 STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
 {
-    GEKFUNCTION(nullptr);
     HRESULT hRetVal = E_OUTOFMEMORY;
     CStringW strName = kEntityNode.GetAttribute(L"name");
     if (strName.IsEmpty())
     {
-        static int nUnNamedCount = 0;
-        strName.Format(L"entity_%d", nUnNamedCount++);
+        static long nUnNamedCount = 0;
+        long nEntity = InterlockedIncrement(&nUnNamedCount);
+        strName.Format(L"entity_%d", nEntity);
+        GEKLOG(L"Unnamed entity found: %d", nEntity);
+    }
+    else
+    {
+        GEKLOG(L"Named entity found: %s", strName.GetString());
     }
 
     CStringW strFlags = kEntityNode.GetAttribute(L"flags");
     auto pIterator = m_aPopulation.find(strName.GetString());
-    GEKRESULT(pIterator != m_aPopulation.end(), L"Entity already exists in scene: %s", strName.GetString());
     if (pIterator != m_aPopulation.end())
     {
+        GEKLOG(L"Entity already exists in scene: %s", strName.GetString());
         hRetVal = E_ACCESSDENIED;
     }
     else
     {
         CComPtr<CGEKEntity> spEntity(new CGEKEntity(strFlags));
-        GEKRESULT(spEntity, L"Call to new failed to allocate instance");
+        GEKRESULT(spEntity, L"Unable to allocate new entity instance");
         if (spEntity)
         {
             CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement(L"component");
@@ -243,10 +245,15 @@ STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
                 kComponentNode = kComponentNode.NextSiblingElement(L"component");
             };
 
-            if (SUCCEEDED(spEntity->OnEntityCreated()))
+            hRetVal = spEntity->OnEntityCreated();
+            if (SUCCEEDED(hRetVal))
             {
-                hRetVal = spEntity->QueryInterface(IID_PPV_ARGS(&m_aPopulation[strName.GetString()]));
-                CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityAdded, std::placeholders::_1, (IGEKEntity *)spEntity)));
+                CComQIPtr<IGEKEntity> spBaseEntity(spEntity);
+                if (spBaseEntity)
+                {
+                    m_aPopulation.insert(std::make_pair(GEKHASH(strName.GetString()), (IGEKEntity *)spBaseEntity));
+                    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityAdded, std::placeholders::_1, (IGEKEntity *)spBaseEntity)));
+                }
             }
         }
     }

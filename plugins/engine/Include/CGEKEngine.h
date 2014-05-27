@@ -16,11 +16,13 @@ class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
                  , public IGEKContextObserver
                  , public IGEKSystemObserver
+                 , public IGEKVideoObserver
                  , public IGEKGameApplication
                  , public IGEKInputManager
                  , public IGEKEngine
 {
 private:
+    HANDLE m_hLogFile;
     CComPtr<IGEKSystem> m_spSystem;
     bool m_bWindowActive;
 
@@ -46,21 +48,26 @@ public:
     DECLARE_UNKNOWN(CGEKEngine);
 
     // IGEKUnknown
-    STDMETHOD(Initialize)               (THIS);
-    STDMETHOD_(void, Destroy)           (THIS);
+    STDMETHOD(Initialize)                       (THIS);
+    STDMETHOD_(void, Destroy)                   (THIS);
 
     // IGEKContextObserver
-    STDMETHOD_(void, OnLog)             (THIS_ LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage);
+    STDMETHOD_(void, OnLog)                     (THIS_ LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage);
 
     // IGEKSystemObserver
-    STDMETHOD_(void, OnEvent)           (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
-    STDMETHOD_(void, OnRun)             (THIS);
-    STDMETHOD_(void, OnStop)            (THIS);
-    STDMETHOD_(void, OnStep)            (THIS);
+    STDMETHOD_(void, OnEvent)                   (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
+    STDMETHOD_(void, OnRun)                     (THIS);
+    STDMETHOD_(void, OnStop)                    (THIS);
+    STDMETHOD_(void, OnStep)                    (THIS);
+
+    // IGEKVideoObserver
+    STDMETHOD_(void, OnPreReset)                (THIS);
+    STDMETHOD(OnPostReset)                      (THIS);
 
     // IGEKGameApplication
-    STDMETHOD_(void, Run)               (THIS);
+    STDMETHOD_(void, Run)                       (THIS);
 
     // IGEKEngine
-    STDMETHOD_(void, OnCommand)         (THIS_ LPCWSTR pCommand, LPCWSTR *pParams, UINT32 nNumParams);
+    STDMETHOD_(IUnknown *, GetOverlay)          (THIS);
+    STDMETHOD_(void, OnCommand)                 (THIS_ LPCWSTR pCommand, LPCWSTR *pParams, UINT32 nNumParams);
 };

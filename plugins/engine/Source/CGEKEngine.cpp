@@ -16,6 +16,7 @@ BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
     INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
+    INTERFACE_LIST_ENTRY_COM(IGEKVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
     INTERFACE_LIST_ENTRY_COM(IGEKInputManager)
     INTERFACE_LIST_ENTRY_COM(IGEKEngine)
@@ -24,29 +25,38 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKEngine)
 
 CGEKEngine::CGEKEngine(void)
-    : m_nTotalTime(0.0)
+    : m_hLogFile(nullptr)
+    , m_nTotalTime(0.0)
     , m_nTimeAccumulator(0.0)
     , m_bWindowActive(false)
     , m_bSendInput(false)
 {
     DeleteFile(L"log.txt");
+    m_hLogFile = CreateFile(L"log.txt", GENERIC_ALL, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 }
 
 CGEKEngine::~CGEKEngine(void)
 {
+    if (m_hLogFile != nullptr && m_hLogFile != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(m_hLogFile);
+    }
 }
 
 HRESULT CGEKEngine::LoadLevel(LPCWSTR pName, LPCWSTR pEntry)
 {
+    FreeLevel();
     GEKFUNCTION(L"Name(%s), Entry(%s)", pName, pEntry);
-    m_spPopulationManager->Free();
-    m_spRenderManager->Free();
-
     HRESULT hRetVal = m_spPopulationManager->LoadScene(pName, pEntry);
     if (FAILED(hRetVal))
     {
         m_spPopulationManager->Free();
         m_spRenderManager->Free();
+    }
+    else
+    {
+        m_nTotalTime = 0.0;
+        m_kTimer.Reset();
     }
 
     return hRetVal;
@@ -54,6 +64,8 @@ HRESULT CGEKEngine::LoadLevel(LPCWSTR pName, LPCWSTR pEntry)
 
 void CGEKEngine::FreeLevel(void)
 {
+    m_spPopulationManager->Free();
+    m_spRenderManager->Free();
 }
 
 void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
@@ -61,8 +73,9 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
     if (nKey == VK_ESCAPE && !kValue.GetBoolean())
     {
         m_bSendInput = !m_bSendInput;
+        m_kTimer.Pause(!m_bSendInput);
     }
-    else
+    else if (m_bSendInput)
     {
         auto pIterator = m_aInputBindings.find(nKey);
         if (pIterator != m_aInputBindings.end())
@@ -129,6 +142,11 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
         if (SUCCEEDED(hRetVal))
         {
+            hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
             hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationManager, IID_PPV_ARGS(&m_spPopulationManager));
         }
 
@@ -154,6 +172,7 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
 {
     m_spRenderManager = nullptr;
     m_spPopulationManager = nullptr;
+    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
     CGEKObservable::RemoveObserver(m_spSystem, (IGEKSystemObserver *)this);
     CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
     m_spSystem = nullptr;
@@ -163,20 +182,26 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
 
 STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage)
 {
-    FILE *pLogFile = nullptr;
-    fopen_s(&pLogFile, "log.txt", "a+b");
-    if (pLogFile != nullptr)
+    if (m_hLogFile != nullptr && m_hLogFile != INVALID_HANDLE_VALUE)
     {
         CPathA kFile(pFile);
         kFile.StripPath();
-        fprintf(pLogFile, "(%s:%d): %S\r\n", kFile.m_strPath.GetString(), nLine, pMessage);
-        fclose(pLogFile);
+
+        CStringA strFile = kFile.m_strPath;
+        strFile.Replace("cgek", "");
+        strFile = strFile.Mid(0, 20);
+
+        CStringA strMessage;
+        strMessage.Format("(%20s:%d): %S\r\n", strFile.GetString(), nLine, pMessage);
+
+        DWORD nNumWritten = 0;
+        WriteFile(m_hLogFile, strMessage.GetString(), strMessage.GetLength(), &nNumWritten, nullptr);
     }
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
 {
-    if (m_spMainMenu)
+    if (m_spMainMenu && !m_bSendInput)
     {
         m_spMainMenu->OnEvent(nMessage, wParam, lParam);
     }
@@ -252,9 +277,6 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
 
 STDMETHODIMP_(void) CGEKEngine::OnRun(void)
 {
-    LoadLevel(L"demo", L"info_player_start_1");
-    m_nTotalTime = 0.0;
-    m_kTimer.Reset();
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnStop(void)
@@ -288,17 +310,30 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
             }
         }
 
-        m_kTimer.Update();
-        m_nTimeAccumulator += m_kTimer.GetUpdateTime();
-        while (m_nTimeAccumulator > (1.0 / 30.0))
+        if (m_bSendInput)
         {
-            m_nTotalTime += (1.0f / 30.0f);
-            m_nTimeAccumulator -= (1.0 / 30.0);
-            m_spPopulationManager->Update(float(m_nTotalTime), (1.0f / 30.0f));
-        };
+            m_kTimer.Update();
+            m_nTimeAccumulator += m_kTimer.GetUpdateTime();
+            while (m_nTimeAccumulator > (1.0 / 30.0))
+            {
+                m_nTotalTime += (1.0f / 30.0f);
+                m_nTimeAccumulator -= (1.0 / 30.0);
+                m_spPopulationManager->Update(float(m_nTotalTime), (1.0f / 30.0f));
+            };
+        }
      
         m_spRenderManager->Render();
     }
+}
+
+STDMETHODIMP_(void) CGEKEngine::OnPreReset(void)
+{
+}
+
+STDMETHODIMP CGEKEngine::OnPostReset(void)
+{
+    m_spMainMenu->Resize(m_spSystem->GetXSize(), m_spSystem->GetYSize());
+    return S_OK;
 }
 
 STDMETHODIMP_(void) CGEKEngine::Run(void)
@@ -331,5 +366,17 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(LPCWSTR pCommand, LPCWSTR *pParams, UI
                 m_spSystem->Stop();
             }
         }
+    }
+}
+
+STDMETHODIMP_(IUnknown *) CGEKEngine::GetOverlay(void)
+{
+    if (!m_bSendInput)
+    {
+        return m_spMainMenu;
+    }
+    else
+    {
+        return nullptr;
     }
 }

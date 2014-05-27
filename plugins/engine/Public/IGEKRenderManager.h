@@ -7,6 +7,7 @@ DECLARE_INTERFACE(IGEKVideoContextSystem);
 
 DECLARE_INTERFACE_IID_(IGEKEventResource, IUnknown, "1EBAD0F5-DE40-448F-A606-97D7D5062798")
 {
+    STDMETHOD_(void, Resize)                (THIS_ UINT32 nXSize, UINT32 nYSize) PURE;
     STDMETHOD_(void, OnEvent)               (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam) PURE;
 };
 

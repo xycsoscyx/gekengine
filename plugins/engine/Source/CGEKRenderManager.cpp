@@ -318,6 +318,11 @@ public:
             break;
         };
     }
+
+    STDMETHODIMP_(void) Resize(UINT32 nXSize, UINT32 nYSize)
+    {
+        m_pView->Resize(nXSize, nYSize);
+    }
 };
 
 BEGIN_INTERFACE_LIST(CGEKWebView)
@@ -357,8 +362,9 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKRenderManager)
 
 CGEKRenderManager::CGEKRenderManager(void)
-    : m_pVideoSystem(nullptr)
-    , m_pSystem(nullptr)
+    : m_pSystem(nullptr)
+    , m_pVideoSystem(nullptr)
+    , m_pEngine(nullptr)
     , m_pWebCore(nullptr)
     , m_pWebSession(nullptr)
     , m_pViewer(nullptr)
@@ -391,14 +397,15 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
         hRetVal = E_FAIL;
         m_pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
         m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
-        if (m_pSystem != nullptr && m_pVideoSystem != nullptr)
+        m_pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
+        if (m_pSystem != nullptr && m_pVideoSystem != nullptr && m_pEngine != nullptr)
         {
             m_pWebCore = Awesomium::WebCore::Initialize(Awesomium::WebConfig());
-            GEKRESULT(m_pWebCore, L"Unable to create Awesomium WebCore instance");
+            GEKRESULT(m_pWebCore != nullptr, L"Unable to create Awesomium WebCore instance");
             if (m_pWebCore != nullptr)
             {
                 m_pWebSession = m_pWebCore->CreateWebSession(Awesomium::WSLit(""), Awesomium::WebPreferences());
-                GEKRESULT(m_pWebCore, L"Unable to create Awesomium WebSession instance");
+                GEKRESULT(m_pWebSession != nullptr, L"Unable to create Awesomium WebSession instance");
                 if (m_pWebSession != nullptr)
                 {
                     m_pWebSession->AddDataSource(Awesomium::WSLit("Engine"), this);
@@ -756,7 +763,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
                                 CStringA strURLUTF8 = CW2A(strURL, CP_UTF8);
                                 pView->LoadURL(Awesomium::WebURL(Awesomium::WSLit(strURLUTF8)));
                                 CComPtr<CGEKWebView> spWebView(new CGEKWebView(pView));
-                                GEKRESULT(spWebView, L"Call to new failed to allocate instance");
+                                GEKRESULT(spWebView, L"Unable to allocate new web view instance");
                                 if (spWebView)
                                 {
                                     hRetVal = spWebView->QueryInterface(IID_PPV_ARGS(&spTexture));
@@ -943,7 +950,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         }
 
                         CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
-                        GEKRESULT(spMaterial, L"Call to new failed to allocate instance");
+                        GEKRESULT(spMaterial, L"Unable to allocate new material instance");
                         if (spMaterial)
                         {
                             spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"render"));
@@ -979,7 +986,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                 LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
 
                 CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(L"Opaque", spAlbedoMap, spNormalMap, spInfoMap));
-                GEKRESULT(spMaterial, L"Call to new failed to allocate instance");
+                GEKRESULT(spMaterial, L"Unable to allocate material new instance");
                 if (spMaterial)
                 {
                     CLibXMLNode kBlankNode(nullptr);
@@ -1125,7 +1132,7 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                                     if (spVertexProgram)
                                     {
                                         CComPtr<CGEKProgram> spProgram(new CGEKProgram(spVertexProgram, spGeometryProgram));
-                                        GEKRESULT(spProgram, L"Call to new failed to allocate instance");
+                                        GEKRESULT(spProgram, L"Unable to allocate new program instance");
                                         if (spProgram)
                                         {
                                             hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -1525,25 +1532,29 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         });
 
         m_pCurrentPass = nullptr;
+    }
 
-        m_pVideoSystem->SetDefaultTargets();
-        m_pVideoSystem->GetImmediateContext()->SetRenderStates(m_spRenderStates);
-        m_pVideoSystem->GetImmediateContext()->SetBlendStates(float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
-        m_pVideoSystem->GetImmediateContext()->SetDepthStates(0x0, m_spDepthStates);
-        m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetProgram(nullptr);
-        m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
-        m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
-        m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
-        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetProgram(m_spPixelProgram);
-        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spScreenBuffer);
-        m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
-        m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
-        m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
-        m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+    m_pVideoSystem->SetDefaultTargets();
+    m_pVideoSystem->GetImmediateContext()->SetRenderStates(m_spRenderStates);
+    m_pVideoSystem->GetImmediateContext()->SetBlendStates(float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
+    m_pVideoSystem->GetImmediateContext()->SetDepthStates(0x0, m_spDepthStates);
+    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetProgram(nullptr);
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetProgram(m_spPixelProgram);
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spScreenBuffer);
+    SetResource(m_pVideoSystem->GetImmediateContext()->GetPixelSystem(), 1, m_pEngine->GetOverlay());
+    m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
+    m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
+    m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 
-        m_pVideoSystem->GetImmediateContext()->ClearResources();
-        m_pVideoSystem->Present(true);
+    m_pVideoSystem->GetImmediateContext()->ClearResources();
+    m_pVideoSystem->Present(true);
 
+    if (m_pViewer != nullptr)
+    {
         while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))
         {
             Sleep(0);
@@ -1592,25 +1603,21 @@ void CGEKRenderManager::OnRequest(int nRequestID, const Awesomium::ResourceReque
 
 void CGEKRenderManager::OnMethodCall(Awesomium::WebView *pCaller, unsigned int nRemoteObjectID, const Awesomium::WebString &kMethodName, const Awesomium::JSArray &aArgs)
 {
-    IGEKEngine *pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
-    if (pEngine != nullptr)
+    std::vector<CStringW> aParams;
+    for (UINT32 nIndex = 0; nIndex < aArgs.size(); nIndex++)
     {
-        std::vector<CStringW> aParams;
-        for (UINT32 nIndex = 0; nIndex < aArgs.size(); nIndex++)
-        {
-            const Awesomium::JSValue &kValue = aArgs.At(nIndex);
-            aParams.push_back((LPCWSTR)kValue.ToString().data());
-        }
+        const Awesomium::JSValue &kValue = aArgs.At(nIndex);
+        aParams.push_back((LPCWSTR)kValue.ToString().data());
+    }
 
-        if (aParams.size() > 0)
-        {
-            std::vector<LPCWSTR> aParamPointers(aParams.begin(), aParams.end());
-            pEngine->OnCommand((LPCWSTR)kMethodName.data(), &aParamPointers[0], aParamPointers.size());
-        }
-        else
-        {
-            pEngine->OnCommand((LPCWSTR)kMethodName.data(), nullptr, 0);
-        }
+    if (aParams.size() > 0)
+    {
+        std::vector<LPCWSTR> aParamPointers(aParams.begin(), aParams.end());
+        m_pEngine->OnCommand((LPCWSTR)kMethodName.data(), &aParamPointers[0], aParamPointers.size());
+    }
+    else
+    {
+        m_pEngine->OnCommand((LPCWSTR)kMethodName.data(), nullptr, 0);
     }
 }
 
@@ -1666,7 +1673,7 @@ Awesomium::JSValue CGEKRenderManager::OnMethodCallWithReturnValue(Awesomium::Web
 Awesomium::Surface *CGEKRenderManager::CreateSurface(Awesomium::WebView *pView, int nXSize, int nYSize)
 {
     CComPtr<CGEKWebSurface> spWebSurface(new CGEKWebSurface(m_pVideoSystem, nXSize, nYSize));
-    GEKRESULT(spWebSurface, L"Call to new failed to allocate instance");
+    GEKRESULT(spWebSurface, L"Unable to allocate new web surface instance");
     if (spWebSurface)
     {
         spWebSurface->QueryInterface(IID_PPV_ARGS(&m_aWebSurfaces[pView]));

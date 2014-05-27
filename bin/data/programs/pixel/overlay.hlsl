@@ -12,6 +12,7 @@ cbuffer ENGINEBUFFER                    : register(b0)
 SamplerState  gs_pPointSampler			: register(s0);
 
 Texture2D     gs_pScreenBuffer          : register(t0);
+Texture2D     gs_pOverlayBuffer         : register(t1);
 
 struct INPUT
 {
@@ -22,5 +23,7 @@ struct INPUT
 
 float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 {
-    return gs_pScreenBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+    float4 nScreen = gs_pScreenBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+    float4 nOverlay = gs_pOverlayBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+    return ((nScreen * (1.0f - nOverlay.a)) + (nOverlay * nOverlay.a));
 }

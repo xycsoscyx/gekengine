@@ -58,6 +58,7 @@ public:
 private:
     IGEKSystem *m_pSystem;
     IGEKVideoSystem *m_pVideoSystem;
+    IGEKEngine *m_pEngine;
 
     std::list<CComPtr<IGEKFactory>> m_aFactories;
 
