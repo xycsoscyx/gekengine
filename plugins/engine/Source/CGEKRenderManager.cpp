@@ -424,7 +424,7 @@ STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
 
 STDMETHODIMP CGEKRenderManager::Initialize(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKRenderManager, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
@@ -619,7 +619,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Free(void)
 
 HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Name(%s)", pName);
     HRESULT hRetVal = E_FAIL;
     auto pPassIterator = m_aPasses.find(pName);
     if (pPassIterator != m_aPasses.end())
@@ -708,7 +708,7 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
 
 STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResource)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Name(%s)", pName);
     REQUIRE_RETURN(pName, E_INVALIDARG);
     REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
@@ -934,7 +934,7 @@ STDMETHODIMP CGEKRenderManager::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuf
 
 STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Name(%s)", pName);
     REQUIRE_RETURN(ppMaterial, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
@@ -1092,7 +1092,7 @@ STDMETHODIMP_(bool) CGEKRenderManager::EnableMaterial(IUnknown *pMaterial)
 
 STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Name(%s)", pName);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
@@ -1216,7 +1216,7 @@ STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
 
 STDMETHODIMP CGEKRenderManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IGEKCollision **ppCollision)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
     REQUIRE_RETURN(ppCollision, E_INVALIDARG);
     REQUIRE_RETURN(pName, E_INVALIDARG);
     REQUIRE_RETURN(pParams, E_INVALIDARG);
@@ -1252,7 +1252,7 @@ STDMETHODIMP CGEKRenderManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IG
 
 STDMETHODIMP CGEKRenderManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
     REQUIRE_RETURN(ppModel, E_INVALIDARG);
     REQUIRE_RETURN(pName, E_INVALIDARG);
     REQUIRE_RETURN(pParams, E_INVALIDARG);
@@ -1341,7 +1341,7 @@ STDMETHODIMP_(IGEKEntity *) CGEKRenderManager::GetViewer(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Attributes: %d", nAttributes);
     REQUIRE_VOID_RETURN(m_pCurrentPass);
     REQUIRE_VOID_RETURN(m_pCurrentFilter);
 
@@ -1353,7 +1353,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLightBatch)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
     m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
@@ -1394,7 +1394,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
 
@@ -1426,7 +1426,7 @@ static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGE
 
 STDMETHODIMP_(void) CGEKRenderManager::Render(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_VOID_RETURN(m_pWebCore);
 
     m_pWebCore->Update();

@@ -185,7 +185,7 @@ CGEKAudioSystem::~CGEKAudioSystem(void)
 
 STDMETHODIMP CGEKAudioSystem::Initialize(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKAudioSystem, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
@@ -288,7 +288,7 @@ STDMETHODIMP_(void) CGEKAudioSystem::SetRollOffFactor(float nFactor)
 
 STDMETHODIMP CGEKAudioSystem::CopyEffect(IGEKAudioEffect *pSource, IGEKAudioEffect **ppEffect)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDirectSound, E_FAIL);
     REQUIRE_RETURN(pSource && ppEffect, E_INVALIDARG);
 
@@ -321,7 +321,7 @@ STDMETHODIMP CGEKAudioSystem::CopyEffect(IGEKAudioEffect *pSource, IGEKAudioEffe
 
 STDMETHODIMP CGEKAudioSystem::CopySound(IGEKAudioSound *pSource, IGEKAudioSound **ppSound)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDirectSound, E_FAIL);
     REQUIRE_RETURN(pSource && ppSound, E_INVALIDARG);
 
@@ -358,7 +358,7 @@ STDMETHODIMP CGEKAudioSystem::CopySound(IGEKAudioSound *pSource, IGEKAudioSound 
 
 HRESULT CGEKAudioSystem::LoadFromFile(LPCWSTR pFileName, DWORD nFlags, GUID nAlgorithm, IDirectSoundBuffer **ppBuffer)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Name(%s), Flags(%d)", pFileName, nFlags);
     REQUIRE_RETURN(m_spDirectSound, E_FAIL);
     REQUIRE_RETURN(ppBuffer, E_INVALIDARG);
 

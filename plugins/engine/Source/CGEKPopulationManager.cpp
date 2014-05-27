@@ -24,7 +24,7 @@ CGEKPopulationManager::~CGEKPopulationManager(void)
 
 STDMETHODIMP CGEKPopulationManager::Initialize(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKPopulationManager, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
@@ -53,9 +53,7 @@ STDMETHODIMP_(void) CGEKPopulationManager::Destroy(void)
 
 STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
 {
-    GEKFUNCTION();
-
-    GEKLOG(L"Loading Scene: %s (%s)", pName, pEntry);
+    GEKFUNCTION(L"Name(%s), Entry(%s)", pName, pEntry);
 
     Free();
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
@@ -200,7 +198,7 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
 
 STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     HRESULT hRetVal = E_OUTOFMEMORY;
     CStringW strName = kEntityNode.GetAttribute(L"name");
     if (strName.IsEmpty())

@@ -937,7 +937,7 @@ CGEKVideoSystem::~CGEKVideoSystem(void)
 
 HRESULT CGEKVideoSystem::GetDefaultTargets(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     HRESULT hRetVal = E_FAIL;
     IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
     if (pSystem != nullptr)
@@ -976,7 +976,7 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
 
 STDMETHODIMP CGEKVideoSystem::Initialize(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKVideoSystem, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
@@ -1049,7 +1049,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::Destroy(void)
 
 STDMETHODIMP CGEKVideoSystem::Reset(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice, E_FAIL);
     REQUIRE_RETURN(m_spDeviceContext, E_FAIL);
 
@@ -1104,7 +1104,7 @@ STDMETHODIMP_(IGEKVideoContext *) CGEKVideoSystem::GetImmediateContext(void)
 
 STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEKVideoContext **ppContext)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice, E_FAIL);
     REQUIRE_RETURN(ppContext, E_INVALIDARG);
 
@@ -1127,7 +1127,7 @@ STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEKVideoContext **ppContext
 
 STDMETHODIMP CGEKVideoSystem::CreateEvent(IUnknown **ppEvent)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppEvent, E_INVALIDARG);
 
@@ -1175,7 +1175,7 @@ STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(IUnknown *pEvent)
 
 STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &kStates, IUnknown **ppStates)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
 
@@ -1297,7 +1297,7 @@ static D3D11_STENCIL_OP GetStencilOperation(GEKVIDEO::STENCIL::OPERATION eOperat
 
 STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEKVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
 
@@ -1425,7 +1425,7 @@ static D3D11_BLEND_OP GetBlendOperation(GEKVIDEO::BLEND::OPERATION eOperation)
 
 STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
 
@@ -1478,7 +1478,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::UNIFIEDBLENDSTAT
 
 STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::INDEPENDENTBLENDSTATES &kStates, IUnknown **ppStates)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
 
@@ -1534,7 +1534,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::INDEPENDENTBLEND
 
 STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IGEKVideoTexture **ppTarget)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"XSize(%d), YSize(%d), Format(%d)", nXSize, nYSize, eFormat);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(nXSize > 0 && nYSize > 0 && ppTarget, E_INVALIDARG);
 
@@ -1623,7 +1623,7 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 
 STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"XSize(%d), YSize(%d)", nXSize, nYSize);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(nXSize > 0 && nYSize > 0 && ppTarget, E_INVALIDARG);
 
@@ -1687,7 +1687,7 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GE
 
 STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Stride(%d), Count(%d), Flags(%d)", nStride, nCount, nFlags);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(nStride > 0 && nCount > 0 && ppBuffer, E_INVALIDARG);
 
@@ -1821,7 +1821,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
 
 STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Format(%d), Count(%d)", eFormat, nCount);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(eFormat != GEKVIDEO::DATA::UNKNOWN && nCount > 0 && ppBuffer, E_INVALIDARG);
 
@@ -2025,7 +2025,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
 
 STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Entry(%s)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2077,7 +2077,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
 
 STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Entry(%s)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2209,7 +2209,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
 
 STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Entry(%s)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2261,7 +2261,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
 
 STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Entry(%s)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2373,7 +2373,7 @@ STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry,
 
 STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEKVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEKVideoTexture **ppTexture)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"XSize(%d), YSize(%d), ZSize(%d), Format(%d)", nXSize, nYSize, nZSize, eFormat);
 
     HRESULT hRetVal = S_OK;
     DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
@@ -2550,7 +2550,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEKVideoTexture *pTexture, v
 
 STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **ppTexture)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Name(%s)", pFileName);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppTexture, E_INVALIDARG);
 
@@ -2689,7 +2689,7 @@ static D3D11_TEXTURE_ADDRESS_MODE GetAddressMode(GEKVIDEO::ADDRESS::MODE eMode)
 
 STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEKVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
 

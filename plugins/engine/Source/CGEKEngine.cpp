@@ -27,17 +27,18 @@ CGEKEngine::CGEKEngine(void)
     : m_nTotalTime(0.0)
     , m_nTimeAccumulator(0.0)
     , m_bWindowActive(false)
-{
-}
-
-CGEKEngine::~CGEKEngine(void)
+    , m_bSendInput(false)
 {
     DeleteFile(L"log.txt");
 }
 
+CGEKEngine::~CGEKEngine(void)
+{
+}
+
 HRESULT CGEKEngine::LoadLevel(LPCWSTR pName, LPCWSTR pEntry)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(L"Name(%s), Entry(%s)", pName, pEntry);
     m_spPopulationManager->Free();
     m_spRenderManager->Free();
 
@@ -57,16 +58,23 @@ void CGEKEngine::FreeLevel(void)
 
 void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
 {
-    auto pIterator = m_aInputBindings.find(nKey);
-    if (pIterator != m_aInputBindings.end())
+    if (nKey == VK_ESCAPE && !kValue.GetBoolean())
     {
-        CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnAction, std::placeholders::_1, (*pIterator).second, kValue)));
+        m_bSendInput = !m_bSendInput;
+    }
+    else
+    {
+        auto pIterator = m_aInputBindings.find(nKey);
+        if (pIterator != m_aInputBindings.end())
+        {
+            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnAction, std::placeholders::_1, (*pIterator).second, kValue)));
+        }
     }
 }
 
 STDMETHODIMP CGEKEngine::Initialize(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKEngine, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
@@ -246,20 +254,23 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
 {
     if (m_bWindowActive)
     {
-        POINT kCursor;
-        GetCursorPos(&kCursor);
-
-        RECT kWindow;
-        GetWindowRect(m_spSystem->GetWindow(), &kWindow);
-        INT32 nCenterX = (kWindow.left + ((kWindow.right - kWindow.left) / 2));
-        INT32 nCenterY = (kWindow.top + ((kWindow.bottom - kWindow.top) / 2));
-        SetCursorPos(nCenterX, nCenterY);
-
-        INT32 nCursorMoveX = ((kCursor.x - nCenterX) / 2);
-        INT32 nCursorMoveY = ((kCursor.y - nCenterY) / 2);
-        if (nCursorMoveX != 0 || nCursorMoveY != 0)
+        if (m_bSendInput)
         {
-            CheckInput(WM_MOUSEMOVE, float2(float(nCursorMoveX), float(nCursorMoveY)));
+            POINT kCursor;
+            GetCursorPos(&kCursor);
+
+            RECT kWindow;
+            GetWindowRect(m_spSystem->GetWindow(), &kWindow);
+            INT32 nCenterX = (kWindow.left + ((kWindow.right - kWindow.left) / 2));
+            INT32 nCenterY = (kWindow.top + ((kWindow.bottom - kWindow.top) / 2));
+            SetCursorPos(nCenterX, nCenterY);
+
+            INT32 nCursorMoveX = ((kCursor.x - nCenterX) / 2);
+            INT32 nCursorMoveY = ((kCursor.y - nCenterY) / 2);
+            if (nCursorMoveX != 0 || nCursorMoveY != 0)
+            {
+                CheckInput(WM_MOUSEMOVE, float2(float(nCursorMoveX), float(nCursorMoveY)));
+            }
         }
 
         m_kTimer.Update();

@@ -116,7 +116,7 @@ CGEKRenderFilter::~CGEKRenderFilter(void)
 
 STDMETHODIMP CGEKRenderFilter::Initialize(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     HRESULT hRetVal = E_FAIL;
     m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
     m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderManager);

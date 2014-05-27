@@ -382,39 +382,49 @@ class CGEKPerformance
 private:
     IGEKContext *m_pContext;
     double m_nStartTime;
-    CStringA m_strFunction;
     CStringA m_strFile;
     UINT32 m_nLine;
+    CStringA m_strFunction;
+    CStringW m_strMessage;
 
 public:
-    CGEKPerformance(IGEKContext *pContext, LPCSTR pFile, UINT32 nLine, LPCSTR pFunction)
+    CGEKPerformance(IGEKContext *pContext, LPCSTR pFile, UINT32 nLine, LPCSTR pFunction, LPCWSTR pMessage, ...)
         : m_pContext(pContext)
         , m_nLine(nLine)
         , m_strFunction(pFunction)
     {
-        if (m_pContext)
+        if (m_pContext != nullptr)
         {
             CPathA kFile(pFile);
             kFile.StripPath();
             m_strFile = kFile.m_strPath;
             m_nStartTime = m_pContext->GetTime();
-            m_pContext->Log(m_strFile, m_nLine, L"> Entering: %S", m_strFunction.GetString());
+
+            if (pMessage != nullptr)
+            {
+                va_list pArgs;
+                va_start(pArgs, pMessage);
+                m_strMessage.FormatV(pMessage, pArgs);
+                va_end(pArgs);
+            }
+
+            m_pContext->Log(m_strFile, m_nLine, L"> %20S: %s", m_strFunction.GetString(), m_strMessage.GetString());
             m_pContext->ChangeIndent(true);
         }
     }
 
     ~CGEKPerformance(void)
     {
-        if (m_pContext)
+        if (m_pContext != nullptr)
         {
             m_pContext->ChangeIndent(false);
             double nEndTime = m_pContext->GetTime();
             double nTime = (nEndTime - m_nStartTime);
-            m_pContext->Log(m_strFile, m_nLine, L"< Exiting (%f): %S", nTime, m_strFunction.GetString());
+            m_pContext->Log(m_strFile, m_nLine, L"< %20S: %2.5fs", m_strFunction.GetString(), nTime);
         }
     }
 };
 
 #define GEKLOG(MESSAGE, ...)                    GetContext()->Log(__FILE__, __LINE__, MESSAGE, __VA_ARGS__)
 #define GEKRESULT(RESULT, MESSAGE, ...)         if(!(RESULT)) { GetContext()->Log(__FILE__, __LINE__, MESSAGE, __VA_ARGS__); }
-#define GEKFUNCTION()                           CGEKPerformance kPerformanceTimer(GetContext(), __FILE__, __LINE__, __FUNCTION__);
+#define GEKFUNCTION(MESSAGE, ...)               CGEKPerformance kPerformanceTimer(GetContext(), __FILE__, __LINE__, __FUNCTION__, MESSAGE, __VA_ARGS__);

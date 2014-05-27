@@ -53,9 +53,9 @@ STDMETHODIMP_(double) CGEKContext::GetTime(void)
 
 STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...)
 {
-    CStringW strMessage;
     if (pMessage != nullptr)
     {
+        CStringW strMessage;
         if (m_nIndent > 0)
         {
             CStringW strIndent;

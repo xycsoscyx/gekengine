@@ -64,7 +64,7 @@ CGEKSystem::~CGEKSystem(void)
 
 STDMETHODIMP CGEKSystem::Initialize(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     HRESULT hRetVal = CoInitialize(0);
     GEKRESULT(SUCCEEDED(hRetVal), L"Call to CoInitialize failed: 0x%08X", hRetVal);
     if (SUCCEEDED(hRetVal))
@@ -162,7 +162,7 @@ STDMETHODIMP_(void) CGEKSystem::Destroy(void)
 
 STDMETHODIMP CGEKSystem::Reset(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     m_nXSize = StrToUINT32(m_kConfig.GetValue(L"video", L"xsize", L"640"));
     m_nYSize = StrToUINT32(m_kConfig.GetValue(L"video", L"ysize", L"480"));
     m_bIsWindowed = StrToBoolean(m_kConfig.GetValue(L"video", L"windowed", L"1"));
@@ -272,7 +272,7 @@ STDMETHODIMP_(bool) CGEKSystem::IsRunning(void)
 
 STDMETHODIMP_(void) CGEKSystem::Run(void)
 {
-    GEKFUNCTION();
+    GEKFUNCTION(nullptr);
     CGEKObservable::SendEvent(TGEKEvent<IGEKSystemObserver>(std::bind(&IGEKSystemObserver::OnRun, std::placeholders::_1)));
 
     m_bIsRunning = true;

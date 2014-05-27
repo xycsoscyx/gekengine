@@ -31,6 +31,8 @@ private:
     CComPtr<IGEKPopulationManager> m_spPopulationManager;
     CComPtr<IGEKRenderManager> m_spRenderManager;
 
+    bool m_bSendInput;
+
 private:
     void CheckInput(UINT32 nKey, const GEKVALUE &kValue);
     HRESULT LoadLevel(LPCWSTR pName, LPCWSTR pEntry);
