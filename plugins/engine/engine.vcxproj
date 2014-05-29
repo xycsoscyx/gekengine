@@ -93,12 +93,16 @@
   <ItemGroup>
     <ClInclude Include="GEKEngine.h" />
     <ClInclude Include="GEKEngineCLSIDs.h" />
+    <ClInclude Include="Include\CGEKBrowserManager.h" />
     <ClInclude Include="Include\CGEKEngine.h" />
     <ClInclude Include="Include\CGEKEntity.h" />
+    <ClInclude Include="Include\CGEKMaterialManager.h" />
+    <ClInclude Include="Include\CGEKModelManager.h" />
     <ClInclude Include="Include\CGEKPopulationManager.h" />
     <ClInclude Include="Include\CGEKProperties.h" />
     <ClInclude Include="Include\CGEKRenderFilter.h" />
     <ClInclude Include="Include\CGEKRenderManager.h" />
+    <ClInclude Include="Include\CGEKTextureManager.h" />
     <ClInclude Include="Public\IGEKEngine.h" />
     <ClInclude Include="Public\IGEKGameApplication.h" />
     <ClInclude Include="Public\IGEKPopulationManager.h" />
@@ -107,12 +111,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Source\CGEKBrowserManager.cpp" />
     <ClCompile Include="Source\CGEKEngine.cpp" />
     <ClCompile Include="Source\CGEKEntity.cpp" />
+    <ClCompile Include="Source\CGEKMaterialManager.cpp" />
+    <ClCompile Include="Source\CGEKModelManager.cpp" />
     <ClCompile Include="Source\CGEKPopulationManager.cpp" />
     <ClCompile Include="Source\CGEKProperties.cpp" />
     <ClCompile Include="Source\CGEKRenderFilter.cpp" />
     <ClCompile Include="Source\CGEKRenderManager.cpp" />
+    <ClCompile Include="Source\CGEKTextureManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
