@@ -20,16 +20,7 @@
     <ClCompile Include="Source\CGEKProperties.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKMaterialManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKModelManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKTextureManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKBrowserManager.cpp">
+    <ClCompile Include="Source\CGEKResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -69,16 +60,7 @@
     <ClInclude Include="Include\CGEKProperties.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKMaterialManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKModelManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKTextureManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKBrowserManager.h">
+    <ClInclude Include="Include\CGEKResourceManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
