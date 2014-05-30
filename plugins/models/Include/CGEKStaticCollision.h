@@ -3,7 +3,7 @@
 #include "GEKContext.h"
 #include "GEKSystem.h"
 #include "GEKAPI.h"
-#include "IGEKStaticFactory.h"
+#include "IGEKStaticProvider.h"
 
 class CGEKStaticCollision : public CGEKUnknown
                           , public IGEKResource

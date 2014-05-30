@@ -23,6 +23,9 @@
     <ClCompile Include="Source\CGEKResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\CGEKTextureProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKEngine.h" />
@@ -61,6 +64,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKResourceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKTextureProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

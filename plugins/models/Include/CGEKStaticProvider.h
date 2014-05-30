@@ -3,11 +3,11 @@
 #include "GEKContext.h"
 #include "GEKSystem.h"
 #include "GEKAPI.h"
-#include "IGEKStaticFactory.h"
+#include "IGEKStaticProvider.h"
 
 class CGEKFactory : public CGEKUnknown
                   , public IGEKFactory
-                  , public IGEKStaticFactory
+                  , public IGEKStaticProvider
 {
 private:
     UINT32 m_nNumInstances;
@@ -26,7 +26,7 @@ public:
     // IGEKFactory
     STDMETHOD(Create)                                           (THIS_ const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *ppObject);
 
-    // IGEKStaticFactory
+    // IGEKStaticProvider
     STDMETHOD_(IUnknown *, GetVertexProgram)                    (THIS);
     STDMETHOD_(IGEKVideoBuffer *, GetInstanceBuffer)            (THIS);
     STDMETHOD_(UINT32, GetNumInstances)                         (THIS);

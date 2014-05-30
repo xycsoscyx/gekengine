@@ -6,6 +6,7 @@
 // Interfaces
 #include "IGEKResource.h"
 #include "IGEKFactory.h"
+#include "IGEKResourceManager.h"
 
 #include "IGEKComponent.h"
 #include "IGEKLogic.h"

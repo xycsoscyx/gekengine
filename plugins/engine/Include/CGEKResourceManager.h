@@ -8,23 +8,10 @@
 #include <thread>
 
 class CGEKResourceManager : public CGEKUnknown
+                          , public IGEKSceneObserver
+                          , public IGEKResourceManager
 {
 public:
-    struct REQUEST
-    {
-        CStringW m_strName;
-        CStringW m_strParams;
-        REQUEST(void)
-        {
-        }
-
-        REQUEST(LPCWSTR pName, LPCWSTR pParams)
-            : m_strName(pName)
-            , m_strParams(pParams)
-        {
-        }
-    };
-
     struct RESOURCE
     {
         UINT32 m_nSession;
@@ -34,14 +21,15 @@ public:
 private:
     IGEKSystem *m_pSystem;
     IGEKVideoSystem *m_pVideoSystem;
+    HANDLE m_hStopEvent;
 
-    std::list<CComPtr<IGEKFactory>> m_aFactories;
+    std::list<CComPtr<IGEKResourceProvider>> m_aProviders;
 
     UINT32 m_nSession;
     concurrency::critical_section m_kCritical;
-    concurrency::concurrent_queue<REQUEST> m_aQueue;
+    concurrency::concurrent_queue<CStringW> m_aQueue;
     concurrency::concurrent_unordered_multimap<GEKHASH, std::function<void(IUnknown *)>> m_aCallbacks;
-    std::map<GEKHASH, CComPtr<IUnknown>> m_aResources;
+    std::map<GEKHASH, RESOURCE> m_aResources;
     std::unique_ptr<std::thread> m_spThread;
 
 public:
@@ -49,10 +37,14 @@ public:
     virtual ~CGEKResourceManager(void);
     DECLARE_UNKNOWN(CGEKResourceManager);
 
+    // IGEKSceneObserver
+    STDMETHOD_(void, OnLoadBegin)           (THIS);
+    STDMETHOD(OnLoadEnd)                    (THIS_ HRESULT hRetVal);
+
     // IGEKUnknown
     STDMETHOD(Initialize)                   (THIS);
     STDMETHOD_(void, Destroy)               (THIS);
 
     // IGEKResourceManager
-    STDMETHOD(Load)                         (THIS_ LPCWSTR pName, LPCWSTR pParams, std::function<void(IUnknown *)> OnReady);
+    STDMETHOD(Load)                         (THIS_ LPCWSTR pName, std::function<void(IUnknown *)> OnReady);
 };

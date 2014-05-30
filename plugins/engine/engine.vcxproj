@@ -100,6 +100,7 @@
     <ClInclude Include="Include\CGEKRenderFilter.h" />
     <ClInclude Include="Include\CGEKRenderManager.h" />
     <ClInclude Include="Include\CGEKResourceManager.h" />
+    <ClInclude Include="Include\CGEKTextureProvider.h" />
     <ClInclude Include="Public\IGEKEngine.h" />
     <ClInclude Include="Public\IGEKGameApplication.h" />
     <ClInclude Include="Public\IGEKPopulationManager.h" />
@@ -115,6 +116,7 @@
     <ClCompile Include="Source\CGEKRenderFilter.cpp" />
     <ClCompile Include="Source\CGEKRenderManager.cpp" />
     <ClCompile Include="Source\CGEKResourceManager.cpp" />
+    <ClCompile Include="Source\CGEKTextureProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
