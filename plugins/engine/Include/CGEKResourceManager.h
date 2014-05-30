@@ -2,6 +2,7 @@
 
 #include "GEKContext.h"
 #include "GEKSystem.h"
+#include "GEKAPI.h"
 #include <concurrent_unordered_map.h>
 #include <concurrent_queue.h>
 #include <thread>
@@ -33,6 +34,8 @@ public:
 private:
     IGEKSystem *m_pSystem;
     IGEKVideoSystem *m_pVideoSystem;
+
+    std::list<CComPtr<IGEKFactory>> m_aFactories;
 
     UINT32 m_nSession;
     concurrency::critical_section m_kCritical;

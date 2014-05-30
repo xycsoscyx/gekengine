@@ -30,11 +30,11 @@ STDMETHODIMP CGEKResourceManager::Initialize(void)
         {
             while (true)
             {
+                concurrency::critical_section::scoped_lock kLock(m_kCritical);
+
                 REQUEST kRequest;
                 if (m_aQueue.try_pop(kRequest))
                 {
-                    concurrency::critical_section::scoped_lock kLock(m_kCritical);
-
                     GEKHASH nID(kRequest.m_strName + L"|" + kRequest.m_strParams);
 
                     m_aResources[nID] = nullptr;
@@ -51,6 +51,20 @@ STDMETHODIMP CGEKResourceManager::Initialize(void)
         }));
 
         hRetVal = S_OK;
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        GetContext()->CreateEachType(CLSID_GEKFactoryType, [&](IUnknown *pObject) -> HRESULT
+        {
+            CComQIPtr<IGEKFactory> spFactory(pObject);
+            if (spFactory)
+            {
+                m_aFactories.push_back(spFactory);
+            }
+
+            return S_OK;
+        });
     }
 
     return hRetVal;
