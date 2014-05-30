@@ -5,9 +5,9 @@
 #include "GEKAPI.h"
 #include "IGEKStaticProvider.h"
 
-class CGEKFactory : public CGEKUnknown
-                  , public IGEKFactory
-                  , public IGEKStaticProvider
+class CGEKStaticProvider : public CGEKUnknown
+                         , public IGEKResourceProvider
+                         , public IGEKStaticProvider
 {
 private:
     UINT32 m_nNumInstances;
@@ -15,16 +15,16 @@ private:
     CComPtr<IUnknown> m_spVertexProgram;
 
 public:
-    CGEKFactory(void);
-    virtual ~CGEKFactory(void);
-    DECLARE_UNKNOWN(CGEKFactory);
+    CGEKStaticProvider(void);
+    virtual ~CGEKStaticProvider(void);
+    DECLARE_UNKNOWN(CGEKStaticProvider);
 
     // IGEKUnknown
     STDMETHOD(Initialize)                                       (THIS);
     STDMETHOD_(void, Destroy)                                   (THIS);
 
-    // IGEKFactory
-    STDMETHOD(Create)                                           (THIS_ const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *ppObject);
+    // IGEKResourceProvider
+    STDMETHOD(Load)                                             (THIS_ LPCWSTR pName, const UINT8 *pBuffer, UINT32 nBufferSize, IUnknown **ppObject);
 
     // IGEKStaticProvider
     STDMETHOD_(IUnknown *, GetVertexProgram)                    (THIS);

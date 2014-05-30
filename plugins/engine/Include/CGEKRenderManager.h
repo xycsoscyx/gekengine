@@ -59,7 +59,9 @@ private:
     IGEKVideoSystem *m_pVideoSystem;
     IGEKEngine *m_pEngine;
 
-    std::list<CComPtr<IGEKFactory>> m_aFactories;
+    CComPtr<IGEKResourceManager> m_spResourceManager;
+
+    std::list<CComPtr<IGEKResourceProvider>> m_aFactories;
 
     CComPtr<IUnknown> m_spFrameEvent;
 

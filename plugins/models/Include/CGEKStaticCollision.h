@@ -6,7 +6,7 @@
 #include "IGEKStaticProvider.h"
 
 class CGEKStaticCollision : public CGEKUnknown
-                          , public IGEKResource
+                          , public IGEKStaticData
                           , public IGEKCollision
 {
 private:
@@ -20,7 +20,7 @@ public:
     DECLARE_UNKNOWN(CGEKStaticCollision);
 
     // IGEKResource
-    STDMETHOD(Load)                     (THIS_ const UINT8 *pBuffer, LPCWSTR pParams);
+    STDMETHOD(Load)                     (THIS_ const UINT8 *pBuffer, UINT32 nBufferSize);
 
     // IGEKCollision
     STDMETHOD_(UINT32, GetNumVertices)  (THIS);

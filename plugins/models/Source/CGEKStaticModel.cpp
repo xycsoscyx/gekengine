@@ -6,7 +6,7 @@
 #include "GEKModels.h"
 
 BEGIN_INTERFACE_LIST(CGEKStaticModel)
-    INTERFACE_LIST_ENTRY_COM(IGEKResource)
+    INTERFACE_LIST_ENTRY_COM(IGEKStaticData)
     INTERFACE_LIST_ENTRY_COM(IGEKModel)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -29,11 +29,11 @@ STDMETHODIMP CGEKStaticModel::Initialize(void)
     m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
     m_pMaterialManager = GetContext()->GetCachedClass<IGEKMaterialManager>(CLSID_GEKRenderManager);
     m_pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderManager);
-    m_pStaticProvider = GetContext()->GetCachedClass<IGEKStaticProvider>(CLSID_GEKFactory);
+    m_pStaticProvider = GetContext()->GetCachedClass<IGEKStaticProvider>(CLSID_GEKStaticProvider);
     return ((m_pVideoSystem && m_pMaterialManager && m_pProgramManager && m_pStaticProvider) ? S_OK : E_FAIL);
 }
 
-STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
+STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, UINT32 nBufferSize)
 {
     REQUIRE_RETURN(pBuffer, E_INVALIDARG);
 

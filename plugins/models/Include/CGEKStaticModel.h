@@ -6,7 +6,7 @@
 #include "IGEKStaticProvider.h"
 
 class CGEKStaticModel : public CGEKUnknown
-                      , public IGEKResource
+                      , public IGEKStaticData
                       , public IGEKModel
 {
 private:
@@ -39,7 +39,7 @@ public:
     STDMETHOD(Initialize)           (THIS);
 
     // IGEKResource
-    STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, LPCWSTR pParams);
+    STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, UINT32 nBufferSize);
 
     // IGEKModel
     STDMETHOD_(aabb, GetAABB)       (THIS);
