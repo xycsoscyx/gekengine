@@ -1,5 +1,7 @@
 #include "CGEKComponentTransform.h"
 
+#include "GEKEngineCLSIDs.h"
+
 BEGIN_INTERFACE_LIST(CGEKComponentTransform)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
@@ -57,6 +59,7 @@ STDMETHODIMP_(bool) CGEKComponentTransform::SetProperty(LPCWSTR pName, const GEK
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemTransform)
+    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -70,19 +73,24 @@ CGEKComponentSystemTransform::~CGEKComponentSystemTransform(void)
 {
 }
 
+STDMETHODIMP_(void) CGEKComponentSystemTransform::OnFree(void)
+{
+    m_aComponents.clear();
+}
+
 STDMETHODIMP CGEKComponentSystemTransform::Initialize(void)
 {
-    return S_OK;
+    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+};
+
+STDMETHODIMP_(void) CGEKComponentSystemTransform::Destroy(void)
+{
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
 }
 
 STDMETHODIMP_(LPCWSTR) CGEKComponentSystemTransform::GetType(void) const
 {
     return L"transform";
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemTransform::Clear(void)
-{
-    m_aComponents.clear();
 }
 
 STDMETHODIMP CGEKComponentSystemTransform::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)

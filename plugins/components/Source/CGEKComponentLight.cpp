@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <ppl.h>
 
+#include "GEKEngineCLSIDs.h"
+
 BEGIN_INTERFACE_LIST(CGEKComponentLight)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
@@ -60,6 +62,7 @@ STDMETHODIMP_(bool) CGEKComponentLight::SetProperty(LPCWSTR pName, const GEKVALU
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemLight)
+    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -73,14 +76,24 @@ CGEKComponentSystemLight::~CGEKComponentSystemLight(void)
 {
 }
 
+STDMETHODIMP_(void) CGEKComponentSystemLight::OnFree(void)
+{
+    m_aComponents.clear();
+}
+
+STDMETHODIMP CGEKComponentSystemLight::Initialize(void)
+{
+    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+};
+
+STDMETHODIMP_(void) CGEKComponentSystemLight::Destroy(void)
+{
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+}
+
 STDMETHODIMP_(LPCWSTR) CGEKComponentSystemLight::GetType(void) const
 {
     return L"light";
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemLight::Clear(void)
-{
-    m_aComponents.clear();
 }
 
 STDMETHODIMP CGEKComponentSystemLight::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)

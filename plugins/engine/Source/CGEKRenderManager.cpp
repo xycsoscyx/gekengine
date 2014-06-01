@@ -388,6 +388,22 @@ STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
     return hRetVal;
 }
 
+STDMETHODIMP_(void) CGEKRenderManager::OnFree(void)
+{
+    m_aWebSurfaces.clear();
+    m_aTextures.clear();
+    m_aMaterials.clear();
+    m_aPrograms.clear();
+    m_aFilters.clear();
+    m_aPasses.clear();
+    m_pViewer = nullptr;
+    m_pCurrentPass = nullptr;
+    m_pCurrentFilter = nullptr;
+    m_aCurrentPasses.clear();
+    m_aVisibleModels.clear();
+    m_aVisibleLights.clear();
+}
+
 STDMETHODIMP CGEKRenderManager::Initialize(void)
 {
     GEKFUNCTION(nullptr);
@@ -554,16 +570,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        GetContext()->CreateEachType(CLSID_GEKFactoryType, [&](IUnknown *pObject) -> HRESULT
-        {
-            CComQIPtr<IGEKFactory> spFactory(pObject);
-            if (spFactory)
-            {
-                m_aFactories.push_back(spFactory);
-            }
-
-            return S_OK;
-        });
+        hRetVal = GetContext()->CreateInstance(CLSID_GEKModelManager, IID_PPV_ARGS(&m_spModelManager));
     }
 
     return hRetVal;
@@ -571,7 +578,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 {
-    Free();
+    OnFree();
     if (m_pWebSession != nullptr)
     {
         m_pWebSession->Release();
@@ -583,17 +590,6 @@ STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 
     GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
     GetContext()->RemoveCachedClass(CLSID_GEKRenderManager);
-}
-
-STDMETHODIMP_(void) CGEKRenderManager::Free(void)
-{
-    m_pViewer = nullptr;
-    m_pCurrentPass = nullptr;
-    m_aTextures.clear();
-    m_aMaterials.clear();
-    m_aModels.clear();
-    m_aFilters.clear();
-    m_aPasses.clear();
 }
 
 HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
@@ -1167,90 +1163,6 @@ STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
     }
 }
 
-STDMETHODIMP CGEKRenderManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IGEKCollision **ppCollision)
-{
-    GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
-    REQUIRE_RETURN(ppCollision, E_INVALIDARG);
-    REQUIRE_RETURN(pName, E_INVALIDARG);
-    REQUIRE_RETURN(pParams, E_INVALIDARG);
-
-    std::vector<UINT8> aBuffer;
-    HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.collision.gek", pName), aBuffer);
-    if (SUCCEEDED(hRetVal))
-    {
-        for (auto &spFactory : m_aFactories)
-        {
-            hRetVal = spFactory->Create(&aBuffer[0], IID_PPV_ARGS(ppCollision));
-            if (*ppCollision)
-            {
-                CComQIPtr<IGEKResource> spResource(*ppCollision);
-                if (spResource)
-                {
-                    hRetVal = spResource->Load(&aBuffer[0], pParams);
-                    if (SUCCEEDED(hRetVal))
-                    {
-                        break;
-                    }
-                }
-                else
-                {
-                    hRetVal = E_INVALID;
-                }
-            }
-        }
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKRenderManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel)
-{
-    GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
-    REQUIRE_RETURN(ppModel, E_INVALIDARG);
-    REQUIRE_RETURN(pName, E_INVALIDARG);
-    REQUIRE_RETURN(pParams, E_INVALIDARG);
-
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aModels.find(FormatString(L"%s|%s", pName, pParams));
-    if (pIterator != m_aModels.end())
-    {
-        hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppModel));
-    }
-    else
-    {
-        std::vector<UINT8> aBuffer;
-        hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.model.gek", pName), aBuffer);
-        if (SUCCEEDED(hRetVal))
-        {
-            for (auto &spFactory : m_aFactories)
-            {
-                CComPtr<IGEKModel> spModel;
-                hRetVal = spFactory->Create(&aBuffer[0], IID_PPV_ARGS(&spModel));
-                if (spModel)
-                {
-                    CComQIPtr<IGEKResource> spResource(spModel);
-                    if (spResource)
-                    {
-                        hRetVal = spResource->Load(&aBuffer[0], pParams);
-                        if (SUCCEEDED(hRetVal))
-                        {
-                            m_aModels[FormatString(L"%s|%s", pName, pParams)] = spModel;
-                            hRetVal = spModel->QueryInterface(IID_PPV_ARGS(ppModel));
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        hRetVal = E_INVALID;
-                    }
-                }
-            }
-        }
-    }
-
-    return hRetVal;
-}
-
 STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName, INT32 nPriority)
 {
     REQUIRE_RETURN(pName, E_INVALIDARG);
@@ -1294,10 +1206,8 @@ STDMETHODIMP_(IGEKEntity *) CGEKRenderManager::GetViewer(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
 {
-    GEKFUNCTION(L"Attributes: %d", nAttributes);
     REQUIRE_VOID_RETURN(m_pCurrentPass);
     REQUIRE_VOID_RETURN(m_pCurrentFilter);
-
     for (auto &kPair : m_aVisibleModels)
     {
         kPair.first->Draw(m_pCurrentFilter->GetVertexAttributes(), kPair.second);
@@ -1306,7 +1216,6 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLightBatch)
 {
-    GEKFUNCTION(nullptr);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
     m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
@@ -1347,7 +1256,6 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
 {
-    GEKFUNCTION(nullptr);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
 
@@ -1379,7 +1287,6 @@ static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGE
 
 STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
 {
-    GEKFUNCTION(nullptr);
     REQUIRE_VOID_RETURN(m_pWebCore);
 
     m_pWebCore->Update();

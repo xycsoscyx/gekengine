@@ -78,7 +78,7 @@ STDMETHODIMP CGEKComponentModel::OnEntityCreated(void)
     HRESULT hRetVal = S_OK;
     if (!m_strSource.IsEmpty())
     {
-        IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKRenderManager);
+        IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKModelManager);
         if (pModelManager != nullptr)
         {
             hRetVal = pModelManager->LoadModel(m_strSource, m_strParams, &m_spModel);
@@ -89,6 +89,7 @@ STDMETHODIMP CGEKComponentModel::OnEntityCreated(void)
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemModel)
+    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -102,14 +103,24 @@ CGEKComponentSystemModel::~CGEKComponentSystemModel(void)
 {
 }
 
+STDMETHODIMP_(void) CGEKComponentSystemModel::OnFree(void)
+{
+    m_aComponents.clear();
+}
+
+STDMETHODIMP CGEKComponentSystemModel::Initialize(void)
+{
+    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+};
+
+STDMETHODIMP_(void) CGEKComponentSystemModel::Destroy(void)
+{
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+}
+
 STDMETHODIMP_(LPCWSTR) CGEKComponentSystemModel::GetType(void) const
 {
     return L"model";
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemModel::Clear(void)
-{
-    m_aComponents.clear();
 }
 
 STDMETHODIMP CGEKComponentSystemModel::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)

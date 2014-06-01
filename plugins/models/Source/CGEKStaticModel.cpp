@@ -132,7 +132,6 @@ STDMETHODIMP_(void) CGEKStaticModel::Prepare(void)
 
 STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::vector<IGEKModel::INSTANCE> &aInstances)
 {
-    GEKFUNCTION(L"Attributes(%d)", nVertexAttributes);
     if (!(nVertexAttributes & GEK_VERTEX_POSITION) &&
         !(nVertexAttributes & GEK_VERTEX_TEXCOORD) &&
         !(nVertexAttributes & GEK_VERTEX_BASIS))

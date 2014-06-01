@@ -20,6 +20,9 @@
     <ClCompile Include="Source\CGEKProperties.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\CGEKModelManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKEngine.h" />
@@ -55,6 +58,9 @@
       <Filter>Interface Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKProperties.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKModelManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

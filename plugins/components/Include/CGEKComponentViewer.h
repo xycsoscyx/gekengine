@@ -26,6 +26,7 @@ public:
 };
 
 class CGEKComponentSystemViewer : public CGEKUnknown
+                                , public IGEKSceneObserver
                                 , public IGEKComponentSystem
 {
 private:
@@ -36,12 +37,15 @@ public:
     CGEKComponentSystemViewer(void);
     ~CGEKComponentSystemViewer(void);
 
+    // IGEKSceneObserver
+    STDMETHOD_(void, OnFree)                (THIS);
+
     // IGEKUnknown
     STDMETHOD(Initialize)                   (THIS);
+    STDMETHOD_(void, Destroy)               (THIS);
 
     // IGEKComponentSystem
     STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
-    STDMETHOD_(void, Clear)                 (THIS);
     STDMETHOD(Destroy)                      (THIS_ IGEKEntity *pEntity);
     STDMETHOD(Create)                       (THIS_ const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
 };

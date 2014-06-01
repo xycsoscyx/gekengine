@@ -150,6 +150,32 @@ CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
 {
 }
 
+STDMETHODIMP_(void) CGEKComponentSystemNewton::OnUpdate(float nGameTime, float nFrameTime)
+{
+    NewtonUpdate(m_pWorld, nFrameTime);
+    concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentNewton>>::value_type &kPair) -> void
+    {
+        IGEKComponent *pTransform = kPair.first->GetComponent(L"transform");
+        if (pTransform && kPair.second->m_pBody)
+        {
+            float4x4 nMatrix;
+            NewtonBodyGetMatrix(kPair.second->m_pBody, nMatrix.data);
+            pTransform->SetProperty(L"position", nMatrix.t);
+            pTransform->SetProperty(L"rotation", quaternion(nMatrix));
+        }
+    });
+}
+
+STDMETHODIMP_(void) CGEKComponentSystemNewton::OnFree(void)
+{
+    m_aComponents.clear();
+    m_aCollisions.clear();
+    if (m_pWorld != nullptr)
+    {
+        NewtonDestroyAllBodies(m_pWorld);
+    }
+}
+
 int GEKNewtonOnAABBOverlap(const NewtonMaterial *pMaterial, const NewtonBody *pBody0, const NewtonBody *pBody1, int nThreadID)
 {
     return 1;
@@ -221,7 +247,7 @@ STDMETHODIMP CGEKComponentSystemNewton::Initialize(void)
 
 STDMETHODIMP_(void) CGEKComponentSystemNewton::Destroy(void)
 {
-    Clear();
+    OnFree();
     if (m_pWorld != nullptr)
     {
         NewtonDestroy(m_pWorld);
@@ -235,16 +261,6 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::Destroy(void)
 STDMETHODIMP_(LPCWSTR) CGEKComponentSystemNewton::GetType(void) const
 {
     return L"newton";
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemNewton::Clear(void)
-{
-    m_aComponents.clear();
-    m_aCollisions.clear();
-    if (m_pWorld != nullptr)
-    {
-        NewtonDestroyAllBodies(m_pWorld);
-    }
 }
 
 STDMETHODIMP CGEKComponentSystemNewton::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
@@ -285,31 +301,6 @@ STDMETHODIMP CGEKComponentSystemNewton::Destroy(IGEKEntity *pEntity)
     }
 
     return hRetVal;
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemNewton::OnLoadBegin(void)
-{
-}
-
-STDMETHODIMP CGEKComponentSystemNewton::OnLoadEnd(HRESULT hRetVal)
-{
-    return S_OK;
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemNewton::OnUpdate(float nGameTime, float nFrameTime)
-{
-    NewtonUpdate(m_pWorld, nFrameTime);
-    concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentNewton>>::value_type &kPair) -> void
-    {
-        IGEKComponent *pTransform = kPair.first->GetComponent(L"transform");
-        if (pTransform && kPair.second->m_pBody)
-        {
-            float4x4 nMatrix;
-            NewtonBodyGetMatrix(kPair.second->m_pBody, nMatrix.data);
-            pTransform->SetProperty(L"position", nMatrix.t);
-            pTransform->SetProperty(L"rotation", quaternion(nMatrix));
-        }
-    });
 }
 
 STDMETHODIMP_(NewtonWorld *) CGEKComponentSystemNewton::GetWorld(void)

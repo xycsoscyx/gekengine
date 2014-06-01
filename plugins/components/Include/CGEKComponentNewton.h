@@ -49,20 +49,18 @@ public:
     CGEKComponentSystemNewton(void);
     ~CGEKComponentSystemNewton(void);
 
+    // IGEKSceneObserver
+    STDMETHOD_(void, OnFree)                        (THIS);
+    STDMETHOD_(void, OnUpdate)                      (THIS_ float nGameTime, float nFrameTime);
+
     // IGEKUnknown
     STDMETHOD(Initialize)                           (THIS);
     STDMETHOD_(void, Destroy)                       (THIS);
 
     // IGEKComponentSystem
     STDMETHOD_(LPCWSTR, GetType)                    (THIS) const;
-    STDMETHOD_(void, Clear)                         (THIS);
     STDMETHOD(Destroy)                              (THIS_ IGEKEntity *pEntity);
     STDMETHOD(Create)                               (THIS_ const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
-
-    // IGEKSceneObserver
-    STDMETHOD_(void, OnLoadBegin)                   (THIS);
-    STDMETHOD(OnLoadEnd)                            (THIS_ HRESULT hRetVal);
-    STDMETHOD_(void, OnUpdate)                      (THIS_ float nGameTime, float nFrameTime);
 
     // IGEKNewtonSystem
     STDMETHOD_(NewtonWorld *, GetWorld)             (THIS);

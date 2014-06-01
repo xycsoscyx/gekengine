@@ -28,7 +28,7 @@ public:
     STDMETHOD_(void, Destroy)           (THIS);
 
     // IGEKPopulationManager
-    STDMETHOD(LoadScene)                (THIS_ LPCWSTR pName, LPCWSTR pEntry);
+    STDMETHOD(Load)                     (THIS_ LPCWSTR pName, LPCWSTR pEntry);
     STDMETHOD_(void, Free)              (THIS);
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);
 

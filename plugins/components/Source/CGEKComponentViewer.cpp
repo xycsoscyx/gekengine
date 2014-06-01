@@ -1,5 +1,7 @@
 #include "CGEKComponentViewer.h"
 
+#include "GEKEngineCLSIDs.h"
+
 BEGIN_INTERFACE_LIST(CGEKComponentViewer)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
@@ -72,6 +74,7 @@ STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(LPCWSTR pName, const GEKVAL
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemViewer)
+    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -85,19 +88,24 @@ CGEKComponentSystemViewer::~CGEKComponentSystemViewer(void)
 {
 }
 
+STDMETHODIMP_(void) CGEKComponentSystemViewer::OnFree(void)
+{
+    m_aComponents.clear();
+}
+
 STDMETHODIMP CGEKComponentSystemViewer::Initialize(void)
 {
-    return S_OK;
+    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+};
+
+STDMETHODIMP_(void) CGEKComponentSystemViewer::Destroy(void)
+{
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
 }
 
 STDMETHODIMP_(LPCWSTR) CGEKComponentSystemViewer::GetType(void) const
 {
     return L"viewer";
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemViewer::Clear(void)
-{
-    m_aComponents.clear();
 }
 
 STDMETHODIMP CGEKComponentSystemViewer::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)

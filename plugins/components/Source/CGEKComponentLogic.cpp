@@ -103,6 +103,22 @@ CGEKComponentSystemLogic::~CGEKComponentSystemLogic(void)
 {
 }
 
+STDMETHODIMP_(void) CGEKComponentSystemLogic::OnPreUpdate(float nGameTime, float nFrameTime)
+{
+    concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLogic>>::value_type &kPair) -> void
+    {
+        if (kPair.second->m_spState)
+        {
+            kPair.second->m_spState->OnUpdate(nGameTime, nFrameTime);
+        }
+    });
+}
+
+STDMETHODIMP_(void) CGEKComponentSystemLogic::OnFree(void)
+{
+    m_aComponents.clear();
+}
+
 STDMETHODIMP CGEKComponentSystemLogic::Initialize(void)
 {
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKComponentSystemLogic, GetUnknown());
@@ -123,11 +139,6 @@ STDMETHODIMP_(void) CGEKComponentSystemLogic::Destroy(void)
 STDMETHODIMP_(LPCWSTR) CGEKComponentSystemLogic::GetType(void) const
 {
     return L"logic";
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemLogic::Clear(void)
-{
-    m_aComponents.clear();
 }
 
 STDMETHODIMP CGEKComponentSystemLogic::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
@@ -163,17 +174,6 @@ STDMETHODIMP CGEKComponentSystemLogic::Destroy(IGEKEntity *pEntity)
     }
 
     return hRetVal;
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemLogic::OnPreUpdate(float nGameTime, float nFrameTime)
-{
-    concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLogic>>::value_type &kPair) -> void
-    {
-        if (kPair.second->m_spState)
-        {
-            kPair.second->m_spState->OnUpdate(nGameTime, nFrameTime);
-        }
-    });
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemLogic::SetState(IGEKEntity *pEntity, IGEKLogicState *pState)

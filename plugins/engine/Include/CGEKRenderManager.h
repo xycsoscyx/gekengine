@@ -22,7 +22,6 @@ class CGEKRenderManager : public CGEKUnknown
                         , public IGEKRenderManager
                         , public IGEKProgramManager
                         , public IGEKMaterialManager
-                        , public IGEKModelManager
                         , public IGEKViewManager
                         , public Awesomium::DataSource
                         , public Awesomium::JSMethodHandler
@@ -60,7 +59,7 @@ private:
     IGEKVideoSystem *m_pVideoSystem;
     IGEKEngine *m_pEngine;
 
-    std::list<CComPtr<IGEKFactory>> m_aFactories;
+    CComPtr<IUnknown> m_spModelManager;
 
     CComPtr<IUnknown> m_spFrameEvent;
 
@@ -89,7 +88,6 @@ private:
     std::map<GEKHASH, CComPtr<IUnknown>> m_aTextures;
     std::map<GEKHASH, CComPtr<IUnknown>> m_aMaterials;
     std::map<GEKHASH, CComPtr<IUnknown>> m_aPrograms;
-    std::map<GEKHASH, CComPtr<IGEKModel>> m_aModels;
     std::map<GEKHASH, CComPtr<IGEKRenderFilter>> m_aFilters;
     std::map<GEKHASH, PASS> m_aPasses;
 
@@ -114,6 +112,7 @@ public:
 
     // IGEKSceneObserver
     STDMETHOD(OnLoadEnd)                    (THIS_ HRESULT hRetVal);
+    STDMETHOD_(void, OnFree)                (THIS);
 
     // IGEKUnknown
     STDMETHOD(Initialize)                   (THIS);
@@ -128,17 +127,12 @@ public:
     STDMETHOD(LoadProgram)                  (THIS_ LPCWSTR pName, IUnknown **ppProgram);
     STDMETHOD_(void, EnableProgram)         (THIS_ IUnknown *pProgram);
 
-    // IGEKModelManager
-    STDMETHOD(LoadCollision)                (THIS_ LPCWSTR pName, LPCWSTR pParams, IGEKCollision **ppCollision);
-    STDMETHOD(LoadModel)                    (THIS_ LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel);
-
     // IGEKViewManager
     STDMETHOD(SetViewer)                    (THIS_ IGEKEntity *pEntity);
     STDMETHOD_(IGEKEntity *, GetViewer)     (THIS);
     STDMETHOD(EnablePass)                   (THIS_ LPCWSTR pName, INT32 nPriority);
 
     // IGEKRenderManager
-    STDMETHOD_(void, Free)                  (THIS);
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);

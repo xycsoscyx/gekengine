@@ -51,11 +51,12 @@ STDMETHODIMP_(void) CGEKPopulationManager::Destroy(void)
     GetContext()->RemoveCachedClass(CLSID_GEKPopulationManager);
 }
 
-STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
+STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
 {
     GEKFUNCTION(L"Name(%s), Entry(%s)", pName, pEntry);
 
     Free();
+
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
 
     CLibXMLDoc kDocument;
@@ -156,13 +157,9 @@ STDMETHODIMP CGEKPopulationManager::LoadScene(LPCWSTR pName, LPCWSTR pEntry)
 
 STDMETHODIMP_(void) CGEKPopulationManager::Free(void)
 {
-    m_aPopulation.clear();
     m_aHitList.clear();
-
-    for (auto &kPair : m_aComponentSystems)
-    {
-        kPair.second->Clear();
-    }
+    m_aPopulation.clear();
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnFree, std::placeholders::_1)));
 }
 
 STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameTime)

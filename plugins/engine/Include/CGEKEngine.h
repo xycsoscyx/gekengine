@@ -39,8 +39,7 @@ private:
 
 private:
     void CheckInput(UINT32 nKey, const GEKVALUE &kValue);
-    HRESULT LoadLevel(LPCWSTR pName, LPCWSTR pEntry);
-    void FreeLevel(void);
+    HRESULT Load(LPCWSTR pName, LPCWSTR pEntry);
 
 public:
     CGEKEngine(void);

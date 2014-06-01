@@ -26,8 +26,6 @@ REGISTER_CLASS(CGEKEngine)
 
 CGEKEngine::CGEKEngine(void)
     : m_hLogFile(nullptr)
-    , m_nTotalTime(0.0)
-    , m_nTimeAccumulator(0.0)
     , m_bWindowActive(false)
     , m_bSendInput(false)
 {
@@ -43,29 +41,23 @@ CGEKEngine::~CGEKEngine(void)
     }
 }
 
-HRESULT CGEKEngine::LoadLevel(LPCWSTR pName, LPCWSTR pEntry)
+HRESULT CGEKEngine::Load(LPCWSTR pName, LPCWSTR pEntry)
 {
-    FreeLevel();
     GEKFUNCTION(L"Name(%s), Entry(%s)", pName, pEntry);
-    HRESULT hRetVal = m_spPopulationManager->LoadScene(pName, pEntry);
+    HRESULT hRetVal = m_spPopulationManager->Load(pName, pEntry);
     if (FAILED(hRetVal))
     {
         m_spPopulationManager->Free();
-        m_spRenderManager->Free();
     }
     else
     {
+        m_bSendInput = true;
         m_nTotalTime = 0.0;
+        m_nTimeAccumulator = 0.0f;
         m_kTimer.Reset();
     }
 
     return hRetVal;
-}
-
-void CGEKEngine::FreeLevel(void)
-{
-    m_spPopulationManager->Free();
-    m_spRenderManager->Free();
 }
 
 void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
@@ -73,7 +65,7 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
     if (nKey == VK_ESCAPE && !kValue.GetBoolean())
     {
         m_bSendInput = !m_bSendInput;
-        m_kTimer.Pause(!m_bSendInput);
+        m_kTimer.Pause(!m_bWindowActive || !m_bSendInput);
     }
     else if (m_bSendInput)
     {
@@ -192,7 +184,7 @@ STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessa
         strFile = strFile.Mid(0, 20);
 
         CStringA strMessage;
-        strMessage.Format("(%20s:%d): %S\r\n", strFile.GetString(), nLine, pMessage);
+        strMessage.Format("(%20s:%4d): %S\r\n", strFile.GetString(), nLine, pMessage);
 
         DWORD nNumWritten = 0;
         WriteFile(m_hLogFile, strMessage.GetString(), strMessage.GetLength(), &nNumWritten, nullptr);
@@ -217,7 +209,7 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
         if (HIWORD(wParam))
         {
             m_bWindowActive = false;
-            m_kTimer.Pause(true);
+            m_kTimer.Pause(!m_bWindowActive || !m_bSendInput);
         }
         else
         {
@@ -226,12 +218,12 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
             case WA_ACTIVE:
             case WA_CLICKACTIVE:
                 m_bWindowActive = true;
-                m_kTimer.Pause(false);
+                m_kTimer.Pause(!m_bWindowActive || !m_bSendInput);
                 break;
 
             case WA_INACTIVE:
                 m_bWindowActive = false;
-                m_kTimer.Pause(true);
+                m_kTimer.Pause(!m_bWindowActive || !m_bSendInput);
                 break;
             };
         }
@@ -283,7 +275,6 @@ STDMETHODIMP_(void) CGEKEngine::OnStop(void)
 {
     m_bWindowActive = false;
     m_spMainMenu = nullptr;
-    m_spRenderManager->Free();
     m_spPopulationManager->Free();
 }
 
@@ -350,9 +341,7 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(LPCWSTR pCommand, LPCWSTR *pParams, UI
     }
     else if (_wcsicmp(pCommand, L"newgame") == 0)
     {
-        LoadLevel(L"demo", L"info_player_start_1");
-        m_nTotalTime = 0.0;
-        m_kTimer.Reset();
+        Load(L"demo", L"info_player_start_1");
     }
     else if (_wcsicmp(pCommand, L"setresolution") == 0)
     {

@@ -27,6 +27,7 @@ public:
 };
 
 class CGEKComponentSystemModel : public CGEKUnknown
+                               , public IGEKSceneObserver
                                , public IGEKComponentSystem
 {
 private:
@@ -37,9 +38,15 @@ public:
     CGEKComponentSystemModel(void);
     ~CGEKComponentSystemModel(void);
 
+    // IGEKSceneObserver
+    STDMETHOD_(void, OnFree)                (THIS);
+
+    // IGEKUnknown
+    STDMETHOD(Initialize)                   (THIS);
+    STDMETHOD_(void, Destroy)               (THIS);
+
     // IGEKComponentSystem
     STDMETHOD_(LPCWSTR, GetType)            (THIS) const;
-    STDMETHOD_(void, Clear)                 (THIS);
     STDMETHOD(Destroy)                      (THIS_ IGEKEntity *pEntity);
     STDMETHOD(Create)                       (THIS_ const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
     STDMETHOD_(void, GetVisible)            (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities);
