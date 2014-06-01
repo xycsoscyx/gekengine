@@ -1377,7 +1377,7 @@ static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGE
     }
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::Render(void)
+STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
 {
     GEKFUNCTION(nullptr);
     REQUIRE_VOID_RETURN(m_pWebCore);
@@ -1392,7 +1392,9 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         }
     }
 
-    if (m_pViewer != nullptr)
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
+    if (m_pViewer != nullptr && bUpdateScreen)
     {
         IGEKComponent *pViewerComponent = m_pViewer->GetComponent(L"viewer");
         IGEKComponent *pTransformComponent = m_pViewer->GetComponent(L"transform");
@@ -1501,8 +1503,6 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
         m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
         m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
-        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
         m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
 
         for (auto &kPair : m_aCurrentPasses)

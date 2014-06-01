@@ -146,7 +146,7 @@ public:
     STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes);
     STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch);
     STDMETHOD_(void, DrawOverlay)           (THIS);
-    STDMETHOD_(void, Render)                (THIS);
+    STDMETHOD_(void, Render)                (THIS_ bool bUpdateScreen);
 
     // Awesomium::DataSource
     void OnRequest(int nRequestID, const Awesomium::ResourceRequest &kRequest, const Awesomium::WebString &kPath);
