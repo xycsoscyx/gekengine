@@ -4,11 +4,11 @@
     <ClCompile Include="Source\CGEKStaticModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKStaticCollision.cpp">
+    <ClCompile Include="Source\CGEKFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKStaticProvider.cpp">
+    <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Source\CGEKStaticCollision.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -30,17 +30,17 @@
     <ClInclude Include="Include\CGEKStaticModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\CGEKFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\IGEKStaticFactory.h">
+      <Filter>Interface Files</Filter>
+    </ClInclude>
     <ClInclude Include="Include\CGEKStaticCollision.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEKModels.h" />
     <ClInclude Include="..\..\api\IGEKModelManager.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKStaticProvider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\IGEKStaticProvider.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
   </ItemGroup>

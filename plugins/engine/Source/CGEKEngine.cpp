@@ -48,21 +48,15 @@ HRESULT CGEKEngine::LoadLevel(LPCWSTR pName, LPCWSTR pEntry)
     FreeLevel();
     GEKFUNCTION(L"Name(%s), Entry(%s)", pName, pEntry);
     HRESULT hRetVal = m_spPopulationManager->LoadScene(pName, pEntry);
-    if (SUCCEEDED(hRetVal))
+    if (FAILED(hRetVal))
     {
-        m_nTotalTime = 0.0;
-        m_kTimer.Reset();
+        m_spPopulationManager->Free();
+        m_spRenderManager->Free();
     }
     else
     {
-        FreeLevel();
-    }
-
-    CComPtr<IUnknown> spMainMenu;
-    hRetVal = m_spRenderManager->LoadResource(L"*browser:mainmenu", &spMainMenu);
-    if (spMainMenu)
-    {
-        m_spMainMenu = spMainMenu;
+        m_nTotalTime = 0.0;
+        m_kTimer.Reset();
     }
 
     return hRetVal;
@@ -357,6 +351,8 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(LPCWSTR pCommand, LPCWSTR *pParams, UI
     else if (_wcsicmp(pCommand, L"newgame") == 0)
     {
         LoadLevel(L"demo", L"info_player_start_1");
+        m_nTotalTime = 0.0;
+        m_kTimer.Reset();
     }
     else if (_wcsicmp(pCommand, L"setresolution") == 0)
     {

@@ -4,7 +4,8 @@
 #include "GEKVALUE.h"
 
 // Interfaces
-#include "IGEKResourceManager.h"
+#include "IGEKResource.h"
+#include "IGEKFactory.h"
 
 #include "IGEKComponent.h"
 #include "IGEKLogic.h"

@@ -6,7 +6,7 @@
 #include "GEKModels.h"
 
 BEGIN_INTERFACE_LIST(CGEKStaticModel)
-    INTERFACE_LIST_ENTRY_COM(IGEKStaticData)
+    INTERFACE_LIST_ENTRY_COM(IGEKResource)
     INTERFACE_LIST_ENTRY_COM(IGEKModel)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -16,7 +16,7 @@ CGEKStaticModel::CGEKStaticModel(void)
     : m_pVideoSystem(nullptr)
     , m_pMaterialManager(nullptr)
     , m_pProgramManager(nullptr)
-    , m_pStaticProvider(nullptr)
+    , m_pStaticFactory(nullptr)
 {
 }
 
@@ -29,11 +29,11 @@ STDMETHODIMP CGEKStaticModel::Initialize(void)
     m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
     m_pMaterialManager = GetContext()->GetCachedClass<IGEKMaterialManager>(CLSID_GEKRenderManager);
     m_pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderManager);
-    m_pStaticProvider = GetContext()->GetCachedClass<IGEKStaticProvider>(CLSID_GEKStaticProvider);
-    return ((m_pVideoSystem && m_pMaterialManager && m_pProgramManager && m_pStaticProvider) ? S_OK : E_FAIL);
+    m_pStaticFactory = GetContext()->GetCachedClass<IGEKStaticFactory>(CLSID_GEKFactory);
+    return ((m_pVideoSystem && m_pMaterialManager && m_pProgramManager && m_pStaticFactory) ? S_OK : E_FAIL);
 }
 
-STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, UINT32 nBufferSize)
+STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 {
     REQUIRE_RETURN(pBuffer, E_INVALIDARG);
 
@@ -140,7 +140,7 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
         return;
     }
 
-    m_pProgramManager->EnableProgram(m_pStaticProvider->GetVertexProgram());
+    m_pProgramManager->EnableProgram(m_pStaticFactory->GetVertexProgram());
     m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     if (nVertexAttributes & GEK_VERTEX_POSITION)
     {
@@ -158,16 +158,16 @@ STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::v
     }
 
     m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
-    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetResource(0, m_pStaticProvider->GetInstanceBuffer());
-    for (UINT32 nPass = 0; nPass < aInstances.size(); nPass += m_pStaticProvider->GetNumInstances())
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetResource(0, m_pStaticFactory->GetInstanceBuffer());
+    for (UINT32 nPass = 0; nPass < aInstances.size(); nPass += m_pStaticFactory->GetNumInstances())
     {
-        UINT32 nNumInstances = min(m_pStaticProvider->GetNumInstances(), (aInstances.size() - nPass));
+        UINT32 nNumInstances = min(m_pStaticFactory->GetNumInstances(), (aInstances.size() - nPass));
 
         IGEKModel::INSTANCE *pInstances = nullptr;
-        if (SUCCEEDED(m_pStaticProvider->GetInstanceBuffer()->Map((LPVOID *)&pInstances)))
+        if (SUCCEEDED(m_pStaticFactory->GetInstanceBuffer()->Map((LPVOID *)&pInstances)))
         {
             memcpy(pInstances, &aInstances[nPass], (sizeof(IGEKModel::INSTANCE) * nNumInstances));
-            m_pStaticProvider->GetInstanceBuffer()->UnMap();
+            m_pStaticFactory->GetInstanceBuffer()->UnMap();
             for (auto &kPair : m_aMaterials)
             {
                 if (m_pMaterialManager->EnableMaterial(kPair.first))

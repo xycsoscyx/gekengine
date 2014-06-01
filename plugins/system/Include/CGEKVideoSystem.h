@@ -100,7 +100,6 @@ public:
     STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEKVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEKVideoTexture **ppTexture);
     STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEKVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT *pDestRect);
     STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, IGEKVideoTexture **ppTexture);
-    STDMETHOD(LoadTexture)                              (THIS_ const UINT8 *pBuffer, UINT32 nBufferSize, IGEKVideoTexture **ppTexture);
     STDMETHOD(CreateSamplerStates)                      (THIS_ const GEKVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates);
     STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor);
     STDMETHOD_(void, ClearDefaultDepthStencilTarget)    (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil);

@@ -2,7 +2,7 @@
 #include <algorithm>
 
 BEGIN_INTERFACE_LIST(CGEKStaticCollision)
-    INTERFACE_LIST_ENTRY_COM(IGEKStaticData)
+    INTERFACE_LIST_ENTRY_COM(IGEKResource)
     INTERFACE_LIST_ENTRY_COM(IGEKCollision)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -16,7 +16,7 @@ CGEKStaticCollision::~CGEKStaticCollision(void)
 {
 }
 
-STDMETHODIMP CGEKStaticCollision::Load(const UINT8 *pBuffer, UINT32 nBufferSize)
+STDMETHODIMP CGEKStaticCollision::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 {
     REQUIRE_RETURN(pBuffer, E_INVALIDARG);
 

@@ -8,6 +8,7 @@
 #include "IGEKEngine.h"
 #include <Awesomium/WebCore.h>
 #include <Awesomium/STLHelpers.h>
+#include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
 #include <memory>
@@ -59,9 +60,7 @@ private:
     IGEKVideoSystem *m_pVideoSystem;
     IGEKEngine *m_pEngine;
 
-    CComPtr<IGEKResourceManager> m_spResourceManager;
-
-    std::list<CComPtr<IGEKResourceProvider>> m_aFactories;
+    std::list<CComPtr<IGEKFactory>> m_aFactories;
 
     CComPtr<IUnknown> m_spFrameEvent;
 

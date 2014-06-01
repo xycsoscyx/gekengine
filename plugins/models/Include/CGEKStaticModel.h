@@ -3,10 +3,10 @@
 #include "GEKContext.h"
 #include "GEKSystem.h"
 #include "GEKAPI.h"
-#include "IGEKStaticProvider.h"
+#include "IGEKStaticFactory.h"
 
 class CGEKStaticModel : public CGEKUnknown
-                      , public IGEKStaticData
+                      , public IGEKResource
                       , public IGEKModel
 {
 private:
@@ -21,7 +21,7 @@ private:
     IGEKVideoSystem *m_pVideoSystem;
     IGEKMaterialManager *m_pMaterialManager;
     IGEKProgramManager *m_pProgramManager;
-    IGEKStaticProvider *m_pStaticProvider;
+    IGEKStaticFactory *m_pStaticFactory;
 
     aabb m_nAABB;
     CComPtr<IGEKVideoBuffer> m_spPositionBuffer;
@@ -39,7 +39,7 @@ public:
     STDMETHOD(Initialize)           (THIS);
 
     // IGEKResource
-    STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, UINT32 nBufferSize);
+    STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, LPCWSTR pParams);
 
     // IGEKModel
     STDMETHOD_(aabb, GetAABB)       (THIS);

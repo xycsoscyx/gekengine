@@ -2552,123 +2552,112 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **
 {
     GEKFUNCTION(L"Name(%s)", pFileName);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(pFileName && ppTexture, E_INVALIDARG);
+    REQUIRE_RETURN(ppTexture, E_INVALIDARG);
 
     std::vector<UINT8> aBuffer;
     HRESULT hRetVal = GEKLoadFromFile(pFileName, aBuffer);
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = LoadTexture(&aBuffer[0], aBuffer.size(), ppTexture);
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKVideoSystem::LoadTexture(const UINT8 *pBuffer, UINT32 nBufferSize, IGEKVideoTexture **ppTexture)
-{
-    GEKFUNCTION(nullptr);
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(pBuffer && ppTexture, E_INVALIDARG);
-
-    CComPtr<ID3D11ShaderResourceView> spResourceView;
-    HRESULT hRetVal = D3DX11CreateShaderResourceViewFromMemory(m_spDevice, pBuffer, nBufferSize, nullptr, nullptr, &spResourceView, nullptr);
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to D3DX11CreateShaderResourceViewFromMemory failed: 0x%08X", hRetVal);
-    if (FAILED(hRetVal))
-    {
-        unsigned int nImageID = 0;
-        ilGenImages(1, &nImageID);
-        ilBindImage(nImageID);
-        ILboolean bSuccess = ilLoadL(IL_TYPE_UNKNOWN, pBuffer, nBufferSize);
-        GEKRESULT(bSuccess, L"Call to ilLoadL failed");
-        if (bSuccess)
+        CComPtr<ID3D11ShaderResourceView> spResourceView;
+        hRetVal = D3DX11CreateShaderResourceViewFromMemory(m_spDevice, &aBuffer[0], aBuffer.size(), nullptr, nullptr, &spResourceView, nullptr);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to D3DX11CreateShaderResourceViewFromMemory failed: 0x%08X", hRetVal);
+        if (FAILED(hRetVal))
         {
-            ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
-            int nXSize = ilGetInteger(IL_IMAGE_WIDTH);
-            int nYSize = ilGetInteger(IL_IMAGE_HEIGHT);
-            std::vector<UINT8> aImage(nXSize * nYSize * 4);
-            memcpy(&aImage[0], ilGetData(), (nXSize * nYSize * 4));
-            ilDeleteImages(1, &nImageID);
+            unsigned int nImageID = 0;
+	        ilGenImages(1, &nImageID);
+	        ilBindImage(nImageID);
+            ILboolean bSuccess = ilLoadL(IL_TYPE_UNKNOWN, &aBuffer[0], aBuffer.size());
+            GEKRESULT(bSuccess, L"Call to ilLoadL failed");
+            if (bSuccess)
+	        {
+	            ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+	            int nXSize = ilGetInteger(IL_IMAGE_WIDTH);
+	            int nYSize = ilGetInteger(IL_IMAGE_HEIGHT);
+                std::vector<UINT8> aImage(nXSize * nYSize * 4);
+                memcpy(&aImage[0], ilGetData(), (nXSize * nYSize * 4));
+                ilDeleteImages(1, &nImageID);
 
-            D3D11_TEXTURE2D_DESC kTextureDesc;
-            kTextureDesc.Width = nXSize;
-            kTextureDesc.Height = nYSize;
-            kTextureDesc.MipLevels = 1;
-            kTextureDesc.ArraySize = 1;
-            kTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            kTextureDesc.SampleDesc.Count = 1;
-            kTextureDesc.SampleDesc.Quality = 0;
-            kTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-            kTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            kTextureDesc.CPUAccessFlags = 0;
-            kTextureDesc.MiscFlags = 0;
+                D3D11_TEXTURE2D_DESC kTextureDesc;
+                kTextureDesc.Width = nXSize;
+                kTextureDesc.Height = nYSize;
+                kTextureDesc.MipLevels = 1;
+                kTextureDesc.ArraySize = 1;
+                kTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                kTextureDesc.SampleDesc.Count = 1;
+                kTextureDesc.SampleDesc.Quality = 0;
+                kTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+                kTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                kTextureDesc.CPUAccessFlags = 0;
+                kTextureDesc.MiscFlags = 0;
 
-            D3D11_SUBRESOURCE_DATA kResourceData;
-            kResourceData.pSysMem = &aImage[0];
-            kResourceData.SysMemPitch = (nXSize * 4);
-            kResourceData.SysMemSlicePitch = 0;
+                D3D11_SUBRESOURCE_DATA kResourceData;
+                kResourceData.pSysMem = &aImage[0];
+                kResourceData.SysMemPitch = (nXSize * 4);
+                kResourceData.SysMemSlicePitch = 0;
 
-            CComPtr<ID3D11Texture2D> spTexture;
-            hRetVal = m_spDevice->CreateTexture2D(&kTextureDesc, &kResourceData, &spTexture);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateTexture2D failed: 0x%08X", hRetVal);
-            if (spTexture)
-            {
-                hRetVal = m_spDevice->CreateShaderResourceView(spTexture, nullptr, &spResourceView);
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateShaderResourceView failed: 0x%08X", hRetVal);
-            }
+                CComPtr<ID3D11Texture2D> spTexture;
+                hRetVal = m_spDevice->CreateTexture2D(&kTextureDesc, &kResourceData, &spTexture);
+                GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateTexture2D failed: 0x%08X", hRetVal);
+                if (spTexture)
+                {
+                    hRetVal = m_spDevice->CreateShaderResourceView(spTexture, nullptr, &spResourceView);
+                    GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateShaderResourceView failed: 0x%08X", hRetVal);
+                }
+	        }
         }
-    }
 
-    if (spResourceView)
-    {
-        CComPtr<ID3D11Resource> spResource;
-        spResourceView->GetResource(&spResource);
-        if (spResource)
+        if (spResourceView)
         {
-            UINT32 nXSize = 1;
-            UINT32 nYSize = 1;
-            UINT32 nZSize = 1;
-            D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
-            spResourceView->GetDesc(&kViewDesc);
-            if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE1D)
+            CComPtr<ID3D11Resource> spResource;
+            spResourceView->GetResource(&spResource);
+            if (spResource)
             {
-                CComQIPtr<ID3D11Texture1D> spTexture1D(spResource);
-                if (spTexture1D)
+                UINT32 nXSize = 1;
+                UINT32 nYSize = 1;
+                UINT32 nZSize = 1;
+                D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
+                spResourceView->GetDesc(&kViewDesc);
+                if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE1D)
                 {
-                    D3D11_TEXTURE1D_DESC kDesc;
-                    spTexture1D->GetDesc(&kDesc);
-                    nXSize = kDesc.Width;
+                    CComQIPtr<ID3D11Texture1D> spTexture1D(spResource);
+                    if (spTexture1D)
+                    {
+                        D3D11_TEXTURE1D_DESC kDesc;
+                        spTexture1D->GetDesc(&kDesc);
+                        nXSize = kDesc.Width;
+                    }
                 }
-            }
-            else if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2D)
-            {
-                CComQIPtr<ID3D11Texture2D> spTexture2D(spResource);
-                if (spTexture2D)
+                else if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2D)
                 {
-                    D3D11_TEXTURE2D_DESC kDesc;
-                    spTexture2D->GetDesc(&kDesc);
-                    nXSize = kDesc.Width;
-                    nYSize = kDesc.Height;
+                    CComQIPtr<ID3D11Texture2D> spTexture2D(spResource);
+                    if (spTexture2D)
+                    {
+                        D3D11_TEXTURE2D_DESC kDesc;
+                        spTexture2D->GetDesc(&kDesc);
+                        nXSize = kDesc.Width;
+                        nYSize = kDesc.Height;
+                    }
                 }
-            }
-            else if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE3D)
-            {
-                CComQIPtr<ID3D11Texture3D> spTexture3D(spResource);
-                if (spTexture3D)
+                else if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE3D)
                 {
-                    D3D11_TEXTURE3D_DESC kDesc;
-                    spTexture3D->GetDesc(&kDesc);
-                    nXSize = kDesc.Width;
-                    nYSize = kDesc.Height;
-                    nZSize = kDesc.Width;
+                    CComQIPtr<ID3D11Texture3D> spTexture3D(spResource);
+                    if (spTexture3D)
+                    {
+                        D3D11_TEXTURE3D_DESC kDesc;
+                        spTexture3D->GetDesc(&kDesc);
+                        nXSize = kDesc.Width;
+                        nYSize = kDesc.Height;
+                        nZSize = kDesc.Width;
+                    }
                 }
-            }
 
-            hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, nullptr, nXSize, nYSize, nZSize));
-            GEKRESULT(spTexture, L"Unable to allocate new texture instance");
-            if (spTexture)
-            {
-                hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
+                hRetVal = E_OUTOFMEMORY;
+                CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, nullptr, nXSize, nYSize, nZSize));
+                GEKRESULT(spTexture, L"Unable to allocate new texture instance");
+                if (spTexture)
+                {
+                    hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
+                }
             }
         }
     }

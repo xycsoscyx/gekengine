@@ -1,28 +1,28 @@
-﻿#include "CGEKStaticProvider.h"
+﻿#include "CGEKFactory.h"
 #include "GEKModels.h"
 
 #include "GEKSystemCLSIDs.h"
 #include "GEKEngineCLSIDs.h"
 
-BEGIN_INTERFACE_LIST(CGEKStaticProvider)
-    INTERFACE_LIST_ENTRY_COM(IGEKResourceProvider)
-    INTERFACE_LIST_ENTRY_COM(IGEKStaticProvider)
+BEGIN_INTERFACE_LIST(CGEKFactory)
+    INTERFACE_LIST_ENTRY_COM(IGEKFactory)
+    INTERFACE_LIST_ENTRY_COM(IGEKStaticFactory)
 END_INTERFACE_LIST_UNKNOWN
 
-REGISTER_CLASS(CGEKStaticProvider)
+REGISTER_CLASS(CGEKFactory)
 
-CGEKStaticProvider::CGEKStaticProvider(void)
+CGEKFactory::CGEKFactory(void)
     : m_nNumInstances(50)
 {
 }
 
-CGEKStaticProvider::~CGEKStaticProvider(void)
+CGEKFactory::~CGEKFactory(void)
 {
 }
 
-STDMETHODIMP CGEKStaticProvider::Initialize(void)
+STDMETHODIMP CGEKFactory::Initialize(void)
 {
-    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKStaticProvider, GetUnknown());
+    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKFactory, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
         IGEKProgramManager *pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderManager);
@@ -46,12 +46,12 @@ STDMETHODIMP CGEKStaticProvider::Initialize(void)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKStaticProvider::Destroy(void)
+STDMETHODIMP_(void) CGEKFactory::Destroy(void)
 {
-    GetContext()->RemoveCachedClass(CLSID_GEKStaticProvider);
+    GetContext()->RemoveCachedClass(CLSID_GEKFactory);
 }
 
-STDMETHODIMP CGEKStaticProvider::Load(LPCWSTR pName, const UINT8 *pBuffer, UINT32 nBufferSize, IUnknown **ppObject)
+STDMETHODIMP CGEKFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *ppObject)
 {
     UINT32 nGEKX = *((UINT32 *)pBuffer);
     pBuffer += sizeof(UINT32);
@@ -62,39 +62,29 @@ STDMETHODIMP CGEKStaticProvider::Load(LPCWSTR pName, const UINT8 *pBuffer, UINT3
     UINT16 nVersion = *((UINT16 *)pBuffer);
 
     HRESULT hRetVal = E_INVALIDARG;
-    CComPtr<IGEKStaticData> spData;
     if (nGEKX == *(UINT32 *)"GEKX" && nType == 0 && nVersion == 2)
     {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKStaticModel, IID_PPV_ARGS(&spData));
+        hRetVal = GetContext()->CreateInstance(CLSID_GEKStaticModel, rIID, ppObject);
     }
     else  if (nGEKX == *(UINT32 *)"GEKX" && nType == 1 && nVersion == 2)
     {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKStaticCollision, IID_PPV_ARGS(&spData));
-    }
-
-    if (spData)
-    {
-        hRetVal = spData->Load(pBuffer, nBufferSize);
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = spData->QueryInterface(IID_PPV_ARGS(ppObject));
-        }
+        hRetVal = GetContext()->CreateInstance(CLSID_GEKStaticCollision, rIID, ppObject);
     }
 
     return hRetVal;
 }
 
-STDMETHODIMP_(IUnknown *) CGEKStaticProvider::GetVertexProgram(void)
+STDMETHODIMP_(IUnknown *) CGEKFactory::GetVertexProgram(void)
 {
     return m_spVertexProgram;
 }
 
-STDMETHODIMP_(IGEKVideoBuffer *) CGEKStaticProvider::GetInstanceBuffer(void)
+STDMETHODIMP_(IGEKVideoBuffer *) CGEKFactory::GetInstanceBuffer(void)
 {
     return m_spInstanceBuffer;
 }
 
-STDMETHODIMP_(UINT32) CGEKStaticProvider::GetNumInstances(void)
+STDMETHODIMP_(UINT32) CGEKFactory::GetNumInstances(void)
 {
     return m_nNumInstances;
 }

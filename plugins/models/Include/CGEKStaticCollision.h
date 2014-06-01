@@ -3,10 +3,10 @@
 #include "GEKContext.h"
 #include "GEKSystem.h"
 #include "GEKAPI.h"
-#include "IGEKStaticProvider.h"
+#include "IGEKStaticFactory.h"
 
 class CGEKStaticCollision : public CGEKUnknown
-                          , public IGEKStaticData
+                          , public IGEKResource
                           , public IGEKCollision
 {
 private:
@@ -20,7 +20,7 @@ public:
     DECLARE_UNKNOWN(CGEKStaticCollision);
 
     // IGEKResource
-    STDMETHOD(Load)                     (THIS_ const UINT8 *pBuffer, UINT32 nBufferSize);
+    STDMETHOD(Load)                     (THIS_ const UINT8 *pBuffer, LPCWSTR pParams);
 
     // IGEKCollision
     STDMETHOD_(UINT32, GetNumVertices)  (THIS);
