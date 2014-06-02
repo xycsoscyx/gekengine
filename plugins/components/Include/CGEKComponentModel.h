@@ -13,6 +13,7 @@ public:
     CStringW m_strSource;
     CStringW m_strParams;
     CComPtr<IUnknown> m_spModel;
+    float3 m_nScale;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentModel)

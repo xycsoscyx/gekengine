@@ -17,6 +17,8 @@ DECLARE_INTERFACE_IID_(IGEKModel, IUnknown, "7A6B192B-0EA1-4944-BEF4-3C7871EE3FF
     struct INSTANCE
     {
         float4x4 m_nMatrix;
+        float3 m_nScale;
+        float m_nBuffer;
     };
 
     STDMETHOD_(aabb, GetAABB)       (THIS)PURE;

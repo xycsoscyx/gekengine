@@ -9,7 +9,14 @@
     </layout>
     <vertex>
         <![CDATA[
-            StructuredBuffer<float4x4> gs_aInstances    : register(t0);
+            struct INSTANCE
+            {
+                float4x4    m_nMatrix;
+                float3      m_nScale;
+                float       m_nBuffer;
+            };
+            
+            StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);
 
 			struct SOURCEVERTEX
 			{
@@ -23,11 +30,12 @@
 
 			VERTEX SourceVertexProgram(in SOURCEVERTEX kSource)
 			{
-                float4x4 nObject = gs_aInstances[kSource.instance];
+                INSTANCE kInstance = gs_aInstances[kSource.instance];
+                float4x4 nObject = kInstance.m_nMatrix;
 				float3x3 nBasis  = transpose(nObject);
 
 				VERTEX kVertex;
-				kVertex.position = mul(nObject, float4(kSource.position, 1.0f));
+				kVertex.position = mul(nObject, float4(kSource.position * kInstance.m_nScale, 1.0f));
 				kVertex.texcoord = kSource.texcoord;
 				kVertex.texbasis = float3x3(kSource.tangent, kSource.bitangent, kSource.normal);
 				kVertex.texbasis = mul(kVertex.texbasis, nBasis);

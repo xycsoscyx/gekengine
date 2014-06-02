@@ -12,6 +12,7 @@ END_INTERFACE_LIST_UNKNOWN
 CGEKComponentModel::CGEKComponentModel(IGEKContext *pContext, IGEKEntity *pEntity)
     : CGEKUnknown(pContext)
     , CGEKComponent(pEntity)
+    , m_nScale(1.0f)
 {
 }
 
@@ -24,11 +25,13 @@ STDMETHODIMP_(void) CGEKComponentModel::ListProperties(std::function<void(LPCWST
     OnProperty(L"source", m_strSource.GetString());
     OnProperty(L"params", m_strParams.GetString());
     OnProperty(L"model", (IUnknown *)m_spModel);
+    OnProperty(L"scale", m_nScale);
 }
 
 static GEKHASH gs_nSource(L"source");
 static GEKHASH gs_nParams(L"params");
 static GEKHASH gs_nModel(L"model");
+static GEKHASH gs_nScale(L"scale");
 STDMETHODIMP_(bool) CGEKComponentModel::GetProperty(LPCWSTR pName, GEKVALUE &kValue) const
 {
     GEKHASH nHash(pName);
@@ -45,6 +48,11 @@ STDMETHODIMP_(bool) CGEKComponentModel::GetProperty(LPCWSTR pName, GEKVALUE &kVa
     else if (nHash == gs_nModel)
     {
         kValue = (IUnknown *)m_spModel;
+        return true;
+    }
+    else if (nHash == gs_nScale)
+    {
+        kValue = m_nScale;
         return true;
     }
 
@@ -67,6 +75,11 @@ STDMETHODIMP_(bool) CGEKComponentModel::SetProperty(LPCWSTR pName, const GEKVALU
     else if (nHash == gs_nModel)
     {
         m_spModel = kValue.GetObject();
+        return true;
+    }
+    else if (nHash == gs_nScale)
+    {
+        m_nScale = kValue.GetFloat3();
         return true;
     }
 

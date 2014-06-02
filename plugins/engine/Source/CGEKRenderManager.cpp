@@ -1347,7 +1347,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
                 pSceneManager->GetVisible(m_kFrustum, aVisibleEntities);
 
                 concurrency::concurrent_vector<LIGHT> aLights;
-                concurrency::concurrent_unordered_multimap<IGEKModel *, IGEKModel::INSTANCE> aModels;
+                concurrency::concurrent_vector<std::pair<CComPtr<IGEKModel>, IGEKModel::INSTANCE>> aModels;
                 concurrency::parallel_for_each(aVisibleEntities.begin(), aVisibleEntities.end(), [&](IGEKEntity *pEntity) -> void
                 {
                     IGEKComponent *pTransformComponent = pEntity->GetComponent(L"transform");
@@ -1383,9 +1383,14 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
                             if (spModel)
                             {
                                 IGEKModel::INSTANCE kInstance;
+
+                                GEKVALUE kScale;
+                                pModelComponent->GetProperty(L"scale", kScale);
+                                kInstance.m_nScale = kScale.GetFloat3();
+
                                 kInstance.m_nMatrix = kRotation.GetQuaternion();
                                 kInstance.m_nMatrix.t = kPosition.GetFloat3();
-                                aModels.insert(std::make_pair(spModel, kInstance));
+                                aModels.push_back(std::make_pair(spModel, kInstance));
                             }
                         }
                     }

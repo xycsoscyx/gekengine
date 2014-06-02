@@ -403,17 +403,23 @@ float StrToFloat(LPCWSTR pValue)
 float2 StrToFloat2(LPCWSTR pValue)
 {
     float2 nValue(0.0f);
-
-    int nAxis = 0;
-    int nPosition = 0;
-    CString strValue(pValue);
-    CStringW strToken = strValue.Tokenize(L",", nPosition);
-    while (!strToken.IsEmpty() && nAxis < 2)
+    if (wcschr(pValue, L',') == nullptr)
     {
-        strToken.Trim();
-        nValue[nAxis++] = StrToFloat(strToken);
-        strToken = strValue.Tokenize(L",", nPosition);
-    };
+        nValue = StrToFloat(pValue);
+    }
+    else
+    {
+        int nAxis = 0;
+        int nPosition = 0;
+        CString strValue(pValue);
+        CStringW strToken = strValue.Tokenize(L",", nPosition);
+        while (!strToken.IsEmpty() && nAxis < 2)
+        {
+            strToken.Trim();
+            nValue[nAxis++] = StrToFloat(strToken);
+            strToken = strValue.Tokenize(L",", nPosition);
+        };
+    }
 
     return nValue;
 }
@@ -421,17 +427,23 @@ float2 StrToFloat2(LPCWSTR pValue)
 float3 StrToFloat3(LPCWSTR pValue)
 {
     float3 nValue(0.0f);
-
-    int nAxis = 0;
-    int nPosition = 0;
-    CString strValue(pValue);
-    CStringW strToken = strValue.Tokenize(L",", nPosition);
-    while (!strToken.IsEmpty() && nAxis < 3)
+    if (wcschr(pValue, L',') == nullptr)
     {
-        strToken.Trim();
-        nValue[nAxis++] = StrToFloat(strToken);
-        strToken = strValue.Tokenize(L",", nPosition);
-    };
+        nValue = StrToFloat(pValue);
+    }
+    else
+    {
+        int nAxis = 0;
+        int nPosition = 0;
+        CString strValue(pValue);
+        CStringW strToken = strValue.Tokenize(L",", nPosition);
+        while (!strToken.IsEmpty() && nAxis < 3)
+        {
+            strToken.Trim();
+            nValue[nAxis++] = StrToFloat(strToken);
+            strToken = strValue.Tokenize(L",", nPosition);
+        };
+    }
 
     return nValue;
 }
@@ -439,16 +451,22 @@ float3 StrToFloat3(LPCWSTR pValue)
 float4 StrToFloat4(LPCWSTR pValue)
 {
     float4 nValue(0.0f);
-
-    int nAxis = 0;
-    int nPosition = 0;
-    CString strValue(pValue);
-    CStringW strToken = strValue.Tokenize(L",", nPosition);
-    while (!strToken.IsEmpty() && nAxis < 4)
+    if (wcschr(pValue, L',') == nullptr)
     {
-        nValue[nAxis++] = StrToFloat(strToken);
-        strToken = strValue.Tokenize(L",", nPosition);
-    };
+        nValue = StrToFloat(pValue);
+    }
+    else
+    {
+        int nAxis = 0;
+        int nPosition = 0;
+        CString strValue(pValue);
+        CStringW strToken = strValue.Tokenize(L",", nPosition);
+        while (!strToken.IsEmpty() && nAxis < 4)
+        {
+            nValue[nAxis++] = StrToFloat(strToken);
+            strToken = strValue.Tokenize(L",", nPosition);
+        };
+    }
 
     return nValue;
 }
