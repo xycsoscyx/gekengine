@@ -371,11 +371,17 @@ CGEKRenderManager::CGEKRenderManager(void)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
     , m_nNumLightInstances(254)
+    , m_nSession(0)
 {
 }
 
 CGEKRenderManager::~CGEKRenderManager(void)
 {
+}
+
+STDMETHODIMP_(void) CGEKRenderManager::OnLoadBegin(void)
+{
+    m_nSession++;
 }
 
 STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
@@ -390,8 +396,28 @@ STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
 
 STDMETHODIMP_(void) CGEKRenderManager::OnFree(void)
 {
-    m_aWebSurfaces.clear();
-    m_aTextures.clear();
+    for (auto pIterator = m_aWebSurfaces.begin(); pIterator != m_aWebSurfaces.end();)
+    {
+        auto pCurrentIterator = pIterator;
+        pIterator++;
+
+        if ((*pCurrentIterator).second.m_nSession != -1 && (*pCurrentIterator).second.m_nSession != m_nSession)
+        {
+            m_aWebSurfaces.erase(pCurrentIterator);
+        }
+    }
+
+    for (auto pIterator = m_aTextures.begin(); pIterator != m_aTextures.end();)
+    {
+        auto pCurrentIterator = pIterator;
+        pIterator++;
+
+        if ((*pCurrentIterator).second.m_nSession != -1 && (*pCurrentIterator).second.m_nSession != m_nSession)
+        {
+            m_aTextures.erase(pCurrentIterator);
+        }
+    }
+
     m_aMaterials.clear();
     m_aPrograms.clear();
     m_aFilters.clear();
@@ -578,7 +604,19 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 {
-    OnFree();
+    m_aWebSurfaces.clear();
+    m_aTextures.clear();
+    m_aMaterials.clear();
+    m_aPrograms.clear();
+    m_aFilters.clear();
+    m_aPasses.clear();
+    m_pViewer = nullptr;
+    m_pCurrentPass = nullptr;
+    m_pCurrentFilter = nullptr;
+    m_aCurrentPasses.clear();
+    m_aVisibleModels.clear();
+    m_aVisibleLights.clear();
+
     if (m_pWebSession != nullptr)
     {
         m_pWebSession->Release();
@@ -681,7 +719,7 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResource)
+STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResource, bool bPersistent)
 {
     GEKFUNCTION(L"Name(%s)", pName);
     REQUIRE_RETURN(pName, E_INVALIDARG);
@@ -691,7 +729,8 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
     auto pIterator = m_aTextures.find(pName);
     if (pIterator != m_aTextures.end())
     {
-        hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppResource));
+        hRetVal = ((*pIterator).second).m_spResource->QueryInterface(IID_PPV_ARGS(ppResource));
+        ((*pIterator).second).m_nSession = (bPersistent ? -1 : m_nSession);
     }
     else
     {
@@ -801,7 +840,8 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
 
         if (spTexture)
         {
-            m_aTextures[pName] = spTexture;
+            m_aTextures[pName].m_nSession = (bPersistent ? -1 : m_nSession);
+            m_aTextures[pName].m_spResource = spTexture;
             hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
         }
     }
@@ -818,7 +858,7 @@ STDMETHODIMP_(void) CGEKRenderManager::SetResource(IGEKVideoContextSystem *pSyst
         auto pIterator = m_aWebSurfaces.find(spWebView->GetView());
         if (pIterator != m_aWebSurfaces.end())
         {
-            CComQIPtr<IGEKWebSurface> spWebSurface((*pIterator).second);
+            CComQIPtr<IGEKWebSurface> spWebSurface((*pIterator).second.m_spResource);
             if (spWebSurface)
             {
                 spResource = spWebSurface->GetTexture();
@@ -1292,7 +1332,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
     m_pWebCore->Update();
     for (auto &kPair : m_aWebSurfaces)
     {
-        CComQIPtr<IGEKWebSurface> spWebSurface(kPair.second);
+        CComQIPtr<IGEKWebSurface> spWebSurface(kPair.second.m_spResource);
         if (spWebSurface)
         {
             spWebSurface->Update();
@@ -1588,7 +1628,8 @@ Awesomium::Surface *CGEKRenderManager::CreateSurface(Awesomium::WebView *pView, 
     GEKRESULT(spWebSurface, L"Unable to allocate new web surface instance");
     if (spWebSurface)
     {
-        spWebSurface->QueryInterface(IID_PPV_ARGS(&m_aWebSurfaces[pView]));
+        m_aWebSurfaces[pView].m_nSession = (bPersistent ? -1 : m_nSession);
+        spWebSurface->QueryInterface(IID_PPV_ARGS(&m_aWebSurfaces[pView].m_spResource));
         return spWebSurface.Detach();
     }
 
@@ -1599,9 +1640,9 @@ void CGEKRenderManager::DestroySurface(Awesomium::Surface *pSurface)
 {
     CComPtr<CGEKWebSurface> spWebSurface;
     spWebSurface.Attach(dynamic_cast<CGEKWebSurface *>(pSurface));
-    auto pIterator = std::find_if(m_aWebSurfaces.begin(), m_aWebSurfaces.end(), [&](std::map<Awesomium::WebView *, CComPtr<IUnknown>>::value_type &kPair) -> bool
+    auto pIterator = std::find_if(m_aWebSurfaces.begin(), m_aWebSurfaces.end(), [&](std::map<Awesomium::WebView *, RESOURCE>::value_type &kPair) -> bool
     {
-        return (spWebSurface.IsEqualObject(kPair.second));
+        return (spWebSurface.IsEqualObject(kPair.second.m_spResource));
     });
 
     if (pIterator != m_aWebSurfaces.end())
