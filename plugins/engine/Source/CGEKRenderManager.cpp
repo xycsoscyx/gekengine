@@ -2,8 +2,9 @@
 #include "IGEKRenderFilter.h"
 #include "CGEKProperties.h"
 #include <windowsx.h>
-#include <algorithm>
 #include <atlpath.h>
+#include <algorithm>
+#include <concurrent_vector.h>
 #include <ppl.h>
 
 #include "GEKEngineCLSIDs.h"
