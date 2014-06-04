@@ -89,12 +89,10 @@ private:
 
     Awesomium::WebCore *m_pWebCore;
     Awesomium::WebSession *m_pWebSession;
-    std::map<Awesomium::WebView *, RESOURCE> m_aWebSurfaces;
-    std::map<GEKHASH, RESOURCE> m_aTextures;
+    std::map<Awesomium::WebView *, CComPtr<IUnknown>> m_aWebSurfaces;
+    std::map<GEKHASH, RESOURCE> m_aResources;
     UINT32 m_nSession;
 
-    std::map<GEKHASH, CComPtr<IUnknown>> m_aMaterials;
-    std::map<GEKHASH, CComPtr<IUnknown>> m_aPrograms;
     std::map<GEKHASH, CComPtr<IGEKRenderFilter>> m_aFilters;
     std::map<GEKHASH, PASS> m_aPasses;
 
@@ -111,6 +109,8 @@ private:
 
 private:
     HRESULT LoadPass(LPCWSTR pName);
+    HRESULT GetResource(LPCWSTR pName, IUnknown **ppObject);
+    HRESULT AddResource(LPCWSTR pName, bool bPersistent, IUnknown *pObject);
 
 public:
     CGEKRenderManager(void);
@@ -141,7 +141,7 @@ public:
     STDMETHOD(EnablePass)                   (THIS_ LPCWSTR pName, INT32 nPriority);
 
     // IGEKRenderManager
-    STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture, bool bPersistent = false);
+    STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, bool bPersistent, IUnknown **ppTexture);
     STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppBuffer);

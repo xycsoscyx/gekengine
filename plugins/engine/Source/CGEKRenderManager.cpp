@@ -396,30 +396,15 @@ STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
 
 STDMETHODIMP_(void) CGEKRenderManager::OnFree(void)
 {
-    for (auto pIterator = m_aWebSurfaces.begin(); pIterator != m_aWebSurfaces.end();)
+    for (auto pIterator = m_aResources.begin(); pIterator != m_aResources.end();)
     {
-        auto pCurrentIterator = pIterator;
-        pIterator++;
-
+        auto pCurrentIterator = pIterator++;
         if ((*pCurrentIterator).second.m_nSession != -1 && (*pCurrentIterator).second.m_nSession != m_nSession)
         {
-            m_aWebSurfaces.erase(pCurrentIterator);
+            m_aResources.erase(pCurrentIterator);
         }
     }
 
-    for (auto pIterator = m_aTextures.begin(); pIterator != m_aTextures.end();)
-    {
-        auto pCurrentIterator = pIterator;
-        pIterator++;
-
-        if ((*pCurrentIterator).second.m_nSession != -1 && (*pCurrentIterator).second.m_nSession != m_nSession)
-        {
-            m_aTextures.erase(pCurrentIterator);
-        }
-    }
-
-    m_aMaterials.clear();
-    m_aPrograms.clear();
     m_aFilters.clear();
     m_aPasses.clear();
     m_pViewer = nullptr;
@@ -604,19 +589,15 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 {
-    m_aWebSurfaces.clear();
-    m_aTextures.clear();
-    m_aMaterials.clear();
-    m_aPrograms.clear();
-    m_aFilters.clear();
-    m_aPasses.clear();
     m_pViewer = nullptr;
     m_pCurrentPass = nullptr;
     m_pCurrentFilter = nullptr;
     m_aCurrentPasses.clear();
     m_aVisibleModels.clear();
     m_aVisibleLights.clear();
-
+    m_aResources.clear();
+    m_aFilters.clear();
+    m_aPasses.clear();
     if (m_pWebSession != nullptr)
     {
         m_pWebSession->Release();
@@ -719,20 +700,49 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResource, bool bPersistent)
+HRESULT CGEKRenderManager::GetResource(LPCWSTR pName, IUnknown **ppObject)
+{
+    REQUIRE_RETURN(ppObject, E_INVALIDARG);
+
+    HRESULT hRetVal = E_FAIL;
+    auto pIterator = m_aResources.find(pName);
+    if (pIterator != m_aResources.end())
+    {
+        hRetVal = ((*pIterator).second).m_spResource->QueryInterface(IID_PPV_ARGS(ppObject));
+        if (SUCCEEDED(hRetVal))
+        {
+            ((*pIterator).second).m_nSession = m_nSession;
+        }
+    }
+
+    return hRetVal;
+}
+
+HRESULT CGEKRenderManager::AddResource(LPCWSTR pName, bool bPersistent, IUnknown *pObject)
+{
+    REQUIRE_RETURN(pName && pObject, E_INVALIDARG);
+
+    HRESULT hRetVal = E_FAIL;
+    auto pIterator = m_aResources.find(pName);
+    if (pIterator == m_aResources.end())
+    {
+        RESOURCE &kResource = m_aResources[pName];
+        kResource.m_nSession = (bPersistent ? -1 : m_nSession);
+        kResource.m_spResource = pObject;
+        hRetVal = S_OK;
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, bool bPersistent, IUnknown **ppResource)
 {
     GEKFUNCTION(L"Name(%s)", pName);
     REQUIRE_RETURN(pName, E_INVALIDARG);
     REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aTextures.find(pName);
-    if (pIterator != m_aTextures.end())
-    {
-        hRetVal = ((*pIterator).second).m_spResource->QueryInterface(IID_PPV_ARGS(ppResource));
-        ((*pIterator).second).m_nSession = (bPersistent ? -1 : m_nSession);
-    }
-    else
+    HRESULT hRetVal = GetResource(pName, ppResource);
+    if (FAILED(hRetVal))
     {
         CComPtr<IUnknown> spTexture;
         if (pName[0] == L'*')
@@ -840,9 +850,11 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
 
         if (spTexture)
         {
-            m_aTextures[pName].m_nSession = (bPersistent ? -1 : m_nSession);
-            m_aTextures[pName].m_spResource = spTexture;
-            hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
+            hRetVal = AddResource(pName, bPersistent, spTexture);
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
+            }
         }
     }
 
@@ -858,7 +870,7 @@ STDMETHODIMP_(void) CGEKRenderManager::SetResource(IGEKVideoContextSystem *pSyst
         auto pIterator = m_aWebSurfaces.find(spWebView->GetView());
         if (pIterator != m_aWebSurfaces.end())
         {
-            CComQIPtr<IGEKWebSurface> spWebSurface((*pIterator).second.m_spResource);
+            CComQIPtr<IGEKWebSurface> spWebSurface((*pIterator).second);
             if (spWebSurface)
             {
                 spResource = spWebSurface->GetTexture();
@@ -927,13 +939,8 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
     GEKFUNCTION(L"Name(%s)", pName);
     REQUIRE_RETURN(ppMaterial, E_INVALIDARG);
 
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aMaterials.find(pName);
-    if (pIterator != m_aMaterials.end())
-    {
-        hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppMaterial));
-    }
-    else
+    HRESULT hRetVal = GetResource(pName, ppMaterial);
+    if (FAILED(hRetVal))
     {
         CLibXMLDoc kDocument;
         hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\materials\\%s.xml", pName));
@@ -957,10 +964,10 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CStringW strAlbedo = kAlbedoNode.GetAttribute(L"source");
                         strAlbedo.Replace(L"%material%", pName);
                         strAlbedo.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadResource(strAlbedo, &spAlbedoMap);
+                        LoadResource(strAlbedo, false, &spAlbedoMap);
                         if (!spAlbedoMap)
                         {
-                            LoadResource(L"*color:1,1,1,1", &spAlbedoMap);
+                            LoadResource(L"*color:1,1,1,1", false, &spAlbedoMap);
                         }
 
                         CComPtr<IUnknown> spNormalMap;
@@ -968,10 +975,10 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CStringW strNormal = kNormalNode.GetAttribute(L"source");
                         strNormal.Replace(L"%material%", pName);
                         strNormal.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadResource(strNormal, &spNormalMap);
+                        LoadResource(strNormal, false, &spNormalMap);
                         if (!spNormalMap)
                         {
-                            LoadResource(L"*color:0.5,0.5,1,1", &spNormalMap);
+                            LoadResource(L"*color:0.5,0.5,1,1", false, &spNormalMap);
                         }
 
                         CComPtr<IUnknown> spInfoMap;
@@ -979,10 +986,10 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CStringW strInfo = kInfoNode.GetAttribute(L"source");
                         strInfo.Replace(L"%material%", pName);
                         strInfo.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadResource(strInfo, &spInfoMap);
+                        LoadResource(strInfo, false, &spInfoMap);
                         if (!spInfoMap)
                         {
-                            LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
+                            LoadResource(L"*color:0.5,0,0,0", false, &spInfoMap);
                         }
 
                         CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
@@ -991,8 +998,11 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         {
                             spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"render"));
                             spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"blend"));
-                            spMaterial->QueryInterface(IID_PPV_ARGS(&m_aMaterials[pName]));
-                            hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
+                            hRetVal = AddResource(pName, false, spMaterial->GetUnknown());
+                            if (SUCCEEDED(hRetVal))
+                            {
+                                hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
+                            }
                         }
                     }
                 }
@@ -1002,24 +1012,20 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
 
     if (!(*ppMaterial))
     {
-        auto pIterator = m_aMaterials.find(L"*default");
-        if (pIterator != m_aMaterials.end())
-        {
-            hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppMaterial));
-        }
-        else
+        hRetVal = GetResource(L"*default", ppMaterial);
+        if (FAILED(hRetVal))
         {
             hRetVal = LoadPass(L"Opaque");
             if (SUCCEEDED(hRetVal))
             {
                 CComPtr<IUnknown> spAlbedoMap;
-                LoadResource(L"*color:1,1,1,1", &spAlbedoMap);
+                LoadResource(L"*color:1,1,1,1", false, &spAlbedoMap);
 
                 CComPtr<IUnknown> spNormalMap;
-                LoadResource(L"*color:0.5,0.5,1,1", &spNormalMap);
+                LoadResource(L"*color:0.5,0.5,1,1", false, &spNormalMap);
 
                 CComPtr<IUnknown> spInfoMap;
-                LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
+                LoadResource(L"*color:0.5,0,0,0", false, &spInfoMap);
 
                 CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(L"Opaque", spAlbedoMap, spNormalMap, spInfoMap));
                 GEKRESULT(spMaterial, L"Unable to allocate material new instance");
@@ -1028,8 +1034,11 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                     CLibXMLNode kBlankNode(nullptr);
                     spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kBlankNode);
                     spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kBlankNode);
-                    spMaterial->QueryInterface(IID_PPV_ARGS(&m_aMaterials[L"*default"]));
-                    hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
+                    hRetVal = AddResource(L"*default", true, spMaterial->GetUnknown());
+                    if (SUCCEEDED(hRetVal))
+                    {
+                        hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
+                    }
                 }
             }
         }
@@ -1084,13 +1093,8 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
     GEKFUNCTION(L"Name(%s)", pName);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aPrograms.find(pName);
-    if (pIterator != m_aPrograms.end())
-    {
-        hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppProgram));
-    }
-    else
+    HRESULT hRetVal = GetResource(pName, ppProgram);
+    if (FAILED(hRetVal))
     {
         CStringA strDeferredProgram;
         hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\vertex\\deferred.hlsl", strDeferredProgram);
@@ -1171,10 +1175,10 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                                         GEKRESULT(spProgram, L"Unable to allocate new program instance");
                                         if (spProgram)
                                         {
-                                            hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
-                                            if (*ppProgram)
+                                            hRetVal = AddResource(pName, false, spProgram->GetUnknown());
+                                            if (SUCCEEDED(hRetVal))
                                             {
-                                                m_aPrograms[pName] = (*ppProgram);
+                                                hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
                                             }
                                         }
                                     }
@@ -1332,7 +1336,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
     m_pWebCore->Update();
     for (auto &kPair : m_aWebSurfaces)
     {
-        CComQIPtr<IGEKWebSurface> spWebSurface(kPair.second.m_spResource);
+        CComQIPtr<IGEKWebSurface> spWebSurface(kPair.second);
         if (spWebSurface)
         {
             spWebSurface->Update();
@@ -1628,8 +1632,7 @@ Awesomium::Surface *CGEKRenderManager::CreateSurface(Awesomium::WebView *pView, 
     GEKRESULT(spWebSurface, L"Unable to allocate new web surface instance");
     if (spWebSurface)
     {
-        m_aWebSurfaces[pView].m_nSession = (bPersistent ? -1 : m_nSession);
-        spWebSurface->QueryInterface(IID_PPV_ARGS(&m_aWebSurfaces[pView].m_spResource));
+        spWebSurface->QueryInterface(IID_PPV_ARGS(&m_aWebSurfaces[pView]));
         return spWebSurface.Detach();
     }
 
@@ -1640,9 +1643,9 @@ void CGEKRenderManager::DestroySurface(Awesomium::Surface *pSurface)
 {
     CComPtr<CGEKWebSurface> spWebSurface;
     spWebSurface.Attach(dynamic_cast<CGEKWebSurface *>(pSurface));
-    auto pIterator = std::find_if(m_aWebSurfaces.begin(), m_aWebSurfaces.end(), [&](std::map<Awesomium::WebView *, RESOURCE>::value_type &kPair) -> bool
+    auto pIterator = std::find_if(m_aWebSurfaces.begin(), m_aWebSurfaces.end(), [&](std::map<Awesomium::WebView *, CComPtr<IUnknown>>::value_type &kPair) -> bool
     {
-        return (spWebSurface.IsEqualObject(kPair.second.m_spResource));
+        return (spWebSurface.IsEqualObject(kPair.second));
     });
 
     if (pIterator != m_aWebSurfaces.end())

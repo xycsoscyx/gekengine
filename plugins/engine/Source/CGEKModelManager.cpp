@@ -19,10 +19,15 @@ REGISTER_CLASS(CGEKModelManager)
 CGEKModelManager::CGEKModelManager(void)
     : m_pSystem(nullptr)
     , m_pVideoSystem(nullptr)
+    , m_nSession(0)
 {
 }
 
 CGEKModelManager::~CGEKModelManager(void)
+{
+}
+
+STDMETHODIMP_(void) CGEKModelManager::OnBeginLoad(void)
 {
 }
 
@@ -33,7 +38,14 @@ STDMETHODIMP CGEKModelManager::OnLoadEnd(HRESULT hRetVal)
 
 STDMETHODIMP_(void) CGEKModelManager::OnFree(void)
 {
-    m_aModels.clear();
+    for (auto pIterator = m_aModels.begin(); pIterator != m_aModels.end();)
+    {
+        auto pCurrentIterator = pIterator++;
+        if ((*pCurrentIterator).second.m_nSession != -1 && (*pCurrentIterator).second.m_nSession != m_nSession)
+        {
+            m_aModels.erase(pCurrentIterator);
+        }
+    }
 }
 
 STDMETHODIMP CGEKModelManager::Initialize(void)
@@ -75,6 +87,7 @@ STDMETHODIMP CGEKModelManager::Initialize(void)
 
 STDMETHODIMP_(void) CGEKModelManager::Destroy(void)
 {
+    m_aModels.clear();
     GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
     GetContext()->RemoveCachedClass(CLSID_GEKModelManager);
 }
@@ -127,7 +140,8 @@ STDMETHODIMP CGEKModelManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknow
     auto pIterator = m_aModels.find(FormatString(L"%s|%s", pName, pParams));
     if (pIterator != m_aModels.end())
     {
-        hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppModel));
+        ((*pIterator).second).m_nSession = m_nSession;
+        hRetVal = ((*pIterator).second).m_spModel->QueryInterface(IID_PPV_ARGS(ppModel));
     }
     else
     {
@@ -147,7 +161,10 @@ STDMETHODIMP CGEKModelManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknow
                         hRetVal = spResource->Load(&aBuffer[0], pParams);
                         if (SUCCEEDED(hRetVal))
                         {
-                            m_aModels[FormatString(L"%s|%s", pName, pParams)] = spModel;
+                            MODEL &kModel = m_aModels[FormatString(L"%s|%s", pName, pParams)];
+                            kModel.m_nSession = m_nSession;
+                            kModel.m_spModel = spModel;
+
                             hRetVal = spModel->QueryInterface(IID_PPV_ARGS(ppModel));
                             break;
                         }

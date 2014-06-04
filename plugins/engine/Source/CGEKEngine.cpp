@@ -148,7 +148,7 @@ STDMETHODIMP CGEKEngine::Initialize(void)
             if (m_spRenderManager)
             {
                 CComPtr<IUnknown> spMainMenu;
-                hRetVal = m_spRenderManager->LoadResource(L"*browser:mainmenu", &spMainMenu, true);
+                hRetVal = m_spRenderManager->LoadResource(L"*browser:mainmenu", true, &spMainMenu);
                 if (spMainMenu)
                 {
                     m_spMainMenu = spMainMenu;
