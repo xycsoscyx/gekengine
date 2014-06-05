@@ -10,22 +10,14 @@ class CGEKModelManager : public CGEKUnknown
                        , public IGEKSceneObserver
                        , public IGEKModelManager
 {
-public:
-    struct MODEL
-    {
-        UINT32 m_nSession;
-        CComPtr<IGEKModel> m_spModel;
-    };
-
 private:
     IGEKSystem *m_pSystem;
     IGEKVideoSystem *m_pVideoSystem;
 
     std::list<CComPtr<IGEKFactory>> m_aFactories;
 
-    UINT32 m_nSession;
     concurrency::critical_section m_kCritical;
-    std::map<GEKHASH, MODEL> m_aModels;
+    std::map<GEKHASH, CComPtr<IGEKModel>> m_aModels;
 
 public:
     CGEKModelManager(void);

@@ -372,7 +372,6 @@ CGEKRenderManager::CGEKRenderManager(void)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
     , m_nNumLightInstances(254)
-    , m_nSession(0)
 {
 }
 
@@ -382,7 +381,9 @@ CGEKRenderManager::~CGEKRenderManager(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::OnLoadBegin(void)
 {
-    m_nSession++;
+    m_aResources.clear();
+    m_aFilters.clear();
+    m_aPasses.clear();
 }
 
 STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
@@ -397,15 +398,7 @@ STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
 
 STDMETHODIMP_(void) CGEKRenderManager::OnFree(void)
 {
-    for (auto pIterator = m_aResources.begin(); pIterator != m_aResources.end();)
-    {
-        auto pCurrentIterator = pIterator++;
-        if ((*pCurrentIterator).second.m_nSession != -1 && (*pCurrentIterator).second.m_nSession != m_nSession)
-        {
-            m_aResources.erase(pCurrentIterator);
-        }
-    }
-
+    m_aResources.clear();
     m_aFilters.clear();
     m_aPasses.clear();
     m_pViewer = nullptr;
@@ -597,6 +590,8 @@ STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
     m_aVisibleModels.clear();
     m_aVisibleLights.clear();
     m_aResources.clear();
+    m_aPersistentResources.clear();
+    m_aWebSurfaces.clear();
     m_aFilters.clear();
     m_aPasses.clear();
     if (m_pWebSession != nullptr)
@@ -701,159 +696,142 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
     return hRetVal;
 }
 
-HRESULT CGEKRenderManager::GetResource(LPCWSTR pName, IUnknown **ppObject)
+STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, bool bPersistent, IUnknown **ppResource)
 {
-    REQUIRE_RETURN(ppObject, E_INVALIDARG);
+    REQUIRE_RETURN(pName, E_INVALIDARG);
+    REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aResources.find(pName);
     if (pIterator != m_aResources.end())
     {
-        hRetVal = ((*pIterator).second).m_spResource->QueryInterface(IID_PPV_ARGS(ppObject));
-        if (SUCCEEDED(hRetVal))
+        hRetVal = (*pIterator).second->QueryInterface(IID_PPV_ARGS(ppResource));
+    }
+    else
+    {
+        pIterator = m_aPersistentResources.find(pName);
+        if (pIterator != m_aPersistentResources.end())
         {
-            ((*pIterator).second).m_nSession = m_nSession;
+            hRetVal = (*pIterator).second->QueryInterface(IID_PPV_ARGS(ppResource));
         }
-    }
-
-    return hRetVal;
-}
-
-HRESULT CGEKRenderManager::AddResource(LPCWSTR pName, bool bPersistent, IUnknown *pObject)
-{
-    REQUIRE_RETURN(pName && pObject, E_INVALIDARG);
-
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aResources.find(pName);
-    if (pIterator == m_aResources.end())
-    {
-        RESOURCE &kResource = m_aResources[pName];
-        kResource.m_nSession = (bPersistent ? -1 : m_nSession);
-        kResource.m_spResource = pObject;
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, bool bPersistent, IUnknown **ppResource)
-{
-    GEKFUNCTION(L"Name(%s)", pName);
-    REQUIRE_RETURN(pName, E_INVALIDARG);
-    REQUIRE_RETURN(ppResource, E_INVALIDARG);
-
-    HRESULT hRetVal = GetResource(pName, ppResource);
-    if (FAILED(hRetVal))
-    {
-        CComPtr<IUnknown> spTexture;
-        if (pName[0] == L'*')
+        else
         {
-            int nPosition = 0;
-            CStringW strName = &pName[1];
-            CStringW strType = strName.Tokenize(L":", nPosition);
-            if (strType.CompareNoCase(L"browser") == 0)
+            GEKFUNCTION(L"Name(%s)", pName);
+            CComPtr<IUnknown> spTexture;
+            if (pName[0] == L'*')
             {
-                CStringW strBrowserName = strName.Tokenize(L":", nPosition);
-                GEKLOG(L"Loading Browser Texture: %s", strBrowserName.GetString());
-
-                CLibXMLDoc kDocument;
-                hRetVal = kDocument.Load(L"%root%\\data\\browsers\\" + strBrowserName + L".xml");
-                if (SUCCEEDED(hRetVal))
+                int nPosition = 0;
+                CStringW strName = &pName[1];
+                CStringW strType = strName.Tokenize(L":", nPosition);
+                if (strType.CompareNoCase(L"browser") == 0)
                 {
-                    hRetVal = E_INVALIDARG;
-                    CLibXMLNode kBrowerNode = kDocument.GetRoot();
-                    if (kBrowerNode && kBrowerNode.HasAttribute(L"size"))
+                    CStringW strBrowserName = strName.Tokenize(L":", nPosition);
+                    GEKLOG(L"Loading Browser Texture: %s", strBrowserName.GetString());
+
+                    CLibXMLDoc kDocument;
+                    hRetVal = kDocument.Load(L"%root%\\data\\browsers\\" + strBrowserName + L".xml");
+                    if (SUCCEEDED(hRetVal))
                     {
-                        nPosition = 0;
-                        CStringW strSize = kBrowerNode.GetAttribute(L"size");
-                        CStringW strXSize = strSize.Tokenize(L",", nPosition);
-                        CStringW strYSize = strSize.Tokenize(L",", nPosition);
-                        UINT32 nXSize = m_pSystem->EvaluateValue(strXSize);
-                        UINT32 nYSize = m_pSystem->EvaluateValue(strYSize);
-
-                        CLibXMLNode kSourceNode = kBrowerNode.FirstChildElement(L"source");
-                        if (kSourceNode && kSourceNode.HasAttribute(L"url"))
+                        hRetVal = E_INVALIDARG;
+                        CLibXMLNode kBrowerNode = kDocument.GetRoot();
+                        if (kBrowerNode && kBrowerNode.HasAttribute(L"size"))
                         {
-                            Awesomium::WebView *pView = m_pWebCore->CreateWebView(nXSize, nYSize, m_pWebSession);
-                            if (pView != nullptr)
+                            nPosition = 0;
+                            CStringW strSize = kBrowerNode.GetAttribute(L"size");
+                            CStringW strXSize = strSize.Tokenize(L",", nPosition);
+                            CStringW strYSize = strSize.Tokenize(L",", nPosition);
+                            UINT32 nXSize = m_pSystem->EvaluateValue(strXSize);
+                            UINT32 nYSize = m_pSystem->EvaluateValue(strYSize);
+
+                            CLibXMLNode kSourceNode = kBrowerNode.FirstChildElement(L"source");
+                            if (kSourceNode && kSourceNode.HasAttribute(L"url"))
                             {
-                                pView->set_view_listener(this);
-
-                                CLibXMLNode kFlagsNode = kBrowerNode.FirstChildElement(L"flags");
-                                if (kFlagsNode)
+                                Awesomium::WebView *pView = m_pWebCore->CreateWebView(nXSize, nYSize, m_pWebSession);
+                                if (pView != nullptr)
                                 {
-                                    if (kFlagsNode.HasAttribute(L"javascript") && StrToBoolean(kFlagsNode.GetAttribute(L"javascript")))
+                                    pView->set_view_listener(this);
+
+                                    CLibXMLNode kFlagsNode = kBrowerNode.FirstChildElement(L"flags");
+                                    if (kFlagsNode)
                                     {
-                                        pView->set_js_method_handler(this);
-                                        Awesomium::JSValue kResult = pView->CreateGlobalJavascriptObject(Awesomium::WSLit("Engine"));
-                                        if (kResult.IsObject())
+                                        if (kFlagsNode.HasAttribute(L"javascript") && StrToBoolean(kFlagsNode.GetAttribute(L"javascript")))
                                         {
-                                            Awesomium::JSObject &kEngineObject = kResult.ToObject();
+                                            pView->set_js_method_handler(this);
+                                            Awesomium::JSValue kResult = pView->CreateGlobalJavascriptObject(Awesomium::WSLit("Engine"));
+                                            if (kResult.IsObject())
+                                            {
+                                                Awesomium::JSObject &kEngineObject = kResult.ToObject();
 
-                                            kEngineObject.SetCustomMethod(Awesomium::WSLit("NewGame"), false);
-                                            kEngineObject.SetCustomMethod(Awesomium::WSLit("Quit"), false);
-                                            kEngineObject.SetCustomMethod(Awesomium::WSLit("SetResolution"), false);
+                                                kEngineObject.SetCustomMethod(Awesomium::WSLit("NewGame"), false);
+                                                kEngineObject.SetCustomMethod(Awesomium::WSLit("Quit"), false);
+                                                kEngineObject.SetCustomMethod(Awesomium::WSLit("SetResolution"), false);
 
-                                            kEngineObject.SetCustomMethod(Awesomium::WSLit("GetResolutions"), true);
-                                            kEngineObject.SetCustomMethod(Awesomium::WSLit("GetValue"), true);
+                                                kEngineObject.SetCustomMethod(Awesomium::WSLit("GetResolutions"), true);
+                                                kEngineObject.SetCustomMethod(Awesomium::WSLit("GetValue"), true);
+                                            }
+                                        }
+
+                                        if (kFlagsNode.HasAttribute(L"transparent") && StrToBoolean(kFlagsNode.GetAttribute(L"transparent")))
+                                        {
+                                            pView->SetTransparent(true);
                                         }
                                     }
 
-                                    if (kFlagsNode.HasAttribute(L"transparent") && StrToBoolean(kFlagsNode.GetAttribute(L"transparent")))
+                                    CStringW strURL = kSourceNode.GetAttribute(L"url");
+                                    CStringA strURLUTF8 = CW2A(strURL, CP_UTF8);
+                                    pView->LoadURL(Awesomium::WebURL(Awesomium::WSLit(strURLUTF8)));
+                                    CComPtr<CGEKWebView> spWebView(new CGEKWebView(pView));
+                                    GEKRESULT(spWebView, L"Unable to allocate new web view instance");
+                                    if (spWebView)
                                     {
-                                        pView->SetTransparent(true);
+                                        hRetVal = spWebView->QueryInterface(IID_PPV_ARGS(&spTexture));
                                     }
-                                }
-
-                                CStringW strURL = kSourceNode.GetAttribute(L"url");
-                                CStringA strURLUTF8 = CW2A(strURL, CP_UTF8);
-                                pView->LoadURL(Awesomium::WebURL(Awesomium::WSLit(strURLUTF8)));
-                                CComPtr<CGEKWebView> spWebView(new CGEKWebView(pView));
-                                GEKRESULT(spWebView, L"Unable to allocate new web view instance");
-                                if (spWebView)
-                                {
-                                    hRetVal = spWebView->QueryInterface(IID_PPV_ARGS(&spTexture));
                                 }
                             }
                         }
                     }
                 }
-            }
-            else if (strType.CompareNoCase(L"color") == 0)
-            {
-                CStringW strColor = strName.Tokenize(L":", nPosition);
-                GEKLOG(L"Creating Color Texture: %s", strColor.GetString());
-                float4 nColor = StrToFloat4(strColor);
-
-                CComPtr<IGEKVideoTexture> spColorTexture;
-                hRetVal = m_pVideoSystem->CreateTexture(1, 1, 1, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &spColorTexture);
-                if (spColorTexture)
+                else if (strType.CompareNoCase(L"color") == 0)
                 {
-                    UINT32 nColorValue = UINT32(UINT8(nColor.r * 255.0f)) |
-                                         UINT32(UINT8(nColor.g * 255.0f) << 8) |
-                                         UINT32(UINT8(nColor.b * 255.0f) << 16) |
-                                         UINT32(UINT8(nColor.a * 255.0f) << 24);
-                    m_pVideoSystem->UpdateTexture(spColorTexture, &nColorValue, 4);
-                    spTexture = spColorTexture;
+                    CStringW strColor = strName.Tokenize(L":", nPosition);
+                    GEKLOG(L"Creating Color Texture: %s", strColor.GetString());
+                    float4 nColor = StrToFloat4(strColor);
+
+                    CComPtr<IGEKVideoTexture> spColorTexture;
+                    hRetVal = m_pVideoSystem->CreateTexture(1, 1, 1, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &spColorTexture);
+                    if (spColorTexture)
+                    {
+                        UINT32 nColorValue = UINT32(UINT8(nColor.r * 255.0f)) |
+                            UINT32(UINT8(nColor.g * 255.0f) << 8) |
+                            UINT32(UINT8(nColor.b * 255.0f) << 16) |
+                            UINT32(UINT8(nColor.a * 255.0f) << 24);
+                        m_pVideoSystem->UpdateTexture(spColorTexture, &nColorValue, 4);
+                        spTexture = spColorTexture;
+                    }
                 }
             }
-        }
-        else
-        {
-            GEKLOG(L"Loading Texture: %s", pName);
-            CComPtr<IGEKVideoTexture> spFileTexture;
-            hRetVal = m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spFileTexture);
-            if (spFileTexture)
+            else
             {
-                spTexture = spFileTexture;
+                GEKLOG(L"Loading Texture: %s", pName);
+                CComPtr<IGEKVideoTexture> spFileTexture;
+                hRetVal = m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spFileTexture);
+                if (spFileTexture)
+                {
+                    spTexture = spFileTexture;
+                }
             }
-        }
 
-        if (spTexture)
-        {
-            hRetVal = AddResource(pName, bPersistent, spTexture);
-            if (SUCCEEDED(hRetVal))
+            if (spTexture)
             {
+                if (bPersistent)
+                {
+                    spTexture->QueryInterface(IID_PPV_ARGS(&m_aPersistentResources[pName]));
+                }
+                else
+                {
+                    spTexture->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
+                }
+
                 hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
             }
         }
@@ -937,12 +915,18 @@ STDMETHODIMP CGEKRenderManager::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuf
 
 STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial)
 {
-    GEKFUNCTION(L"Name(%s)", pName);
     REQUIRE_RETURN(ppMaterial, E_INVALIDARG);
 
-    HRESULT hRetVal = GetResource(pName, ppMaterial);
-    if (FAILED(hRetVal))
+    HRESULT hRetVal = E_FAIL;
+    auto pIterator = m_aResources.find(pName);
+    if (pIterator != m_aResources.end())
     {
+        hRetVal = (*pIterator).second->QueryInterface(IID_PPV_ARGS(ppMaterial));
+    }
+    else
+    {
+        GEKFUNCTION(L"Name(%s)", pName);
+
         CLibXMLDoc kDocument;
         hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\materials\\%s.xml", pName));
         if (SUCCEEDED(hRetVal))
@@ -999,11 +983,8 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         {
                             spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"render"));
                             spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"blend"));
-                            hRetVal = AddResource(pName, false, spMaterial->GetUnknown());
-                            if (SUCCEEDED(hRetVal))
-                            {
-                                hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
-                            }
+                            spMaterial->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
+                            hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
                         }
                     }
                 }
@@ -1013,8 +994,13 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
 
     if (!(*ppMaterial))
     {
-        hRetVal = GetResource(L"*default", ppMaterial);
-        if (FAILED(hRetVal))
+        HRESULT hRetVal = E_FAIL;
+        auto pIterator = m_aResources.find(L"*default");
+        if (pIterator != m_aResources.end())
+        {
+            hRetVal = (*pIterator).second->QueryInterface(IID_PPV_ARGS(ppMaterial));
+        }
+        else
         {
             hRetVal = LoadPass(L"Opaque");
             if (SUCCEEDED(hRetVal))
@@ -1035,11 +1021,8 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                     CLibXMLNode kBlankNode(nullptr);
                     spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kBlankNode);
                     spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kBlankNode);
-                    hRetVal = AddResource(L"*default", true, spMaterial->GetUnknown());
-                    if (SUCCEEDED(hRetVal))
-                    {
-                        hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
-                    }
+                    spMaterial->QueryInterface(IID_PPV_ARGS(&m_aResources[L"*default"]));
+                    hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
                 }
             }
         }
@@ -1091,12 +1074,18 @@ STDMETHODIMP_(bool) CGEKRenderManager::EnableMaterial(IUnknown *pMaterial)
 
 STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
 {
-    GEKFUNCTION(L"Name(%s)", pName);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
-    HRESULT hRetVal = GetResource(pName, ppProgram);
-    if (FAILED(hRetVal))
+    HRESULT hRetVal = E_FAIL;
+    auto pIterator = m_aResources.find(pName);
+    if (pIterator != m_aResources.end())
     {
+        hRetVal = (*pIterator).second->QueryInterface(IID_PPV_ARGS(ppProgram));
+    }
+    else
+    {
+        GEKFUNCTION(L"Name(%s)", pName);
+
         CStringA strDeferredProgram;
         hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\vertex\\deferred.hlsl", strDeferredProgram);
         if (SUCCEEDED(hRetVal))
@@ -1176,11 +1165,8 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                                         GEKRESULT(spProgram, L"Unable to allocate new program instance");
                                         if (spProgram)
                                         {
-                                            hRetVal = AddResource(pName, false, spProgram->GetUnknown());
-                                            if (SUCCEEDED(hRetVal))
-                                            {
-                                                hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
-                                            }
+                                            spProgram->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
+                                            hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
                                         }
                                     }
                                 }

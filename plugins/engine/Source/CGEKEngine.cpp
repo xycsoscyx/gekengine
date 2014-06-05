@@ -303,13 +303,21 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
 
         if (m_bSendInput)
         {
+            UINT32 nFrame = 3;
             m_kTimer.Update();
             m_nTimeAccumulator += m_kTimer.GetUpdateTime();
             while (m_nTimeAccumulator > (1.0 / 30.0))
             {
                 m_nTotalTime += (1.0f / 30.0f);
-                m_nTimeAccumulator -= (1.0 / 30.0);
                 m_spPopulationManager->Update(float(m_nTotalTime), (1.0f / 30.0f));
+                if (--nFrame == 0)
+                {
+                    m_nTimeAccumulator = 0.0f;
+                }
+                else
+                {
+                    m_nTimeAccumulator -= (1.0 / 30.0);
+                }
             };
         }
      

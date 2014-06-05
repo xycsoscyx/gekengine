@@ -19,7 +19,6 @@ REGISTER_CLASS(CGEKModelManager)
 CGEKModelManager::CGEKModelManager(void)
     : m_pSystem(nullptr)
     , m_pVideoSystem(nullptr)
-    , m_nSession(0)
 {
 }
 
@@ -29,6 +28,7 @@ CGEKModelManager::~CGEKModelManager(void)
 
 STDMETHODIMP_(void) CGEKModelManager::OnBeginLoad(void)
 {
+    m_aModels.clear();
 }
 
 STDMETHODIMP CGEKModelManager::OnLoadEnd(HRESULT hRetVal)
@@ -38,14 +38,7 @@ STDMETHODIMP CGEKModelManager::OnLoadEnd(HRESULT hRetVal)
 
 STDMETHODIMP_(void) CGEKModelManager::OnFree(void)
 {
-    for (auto pIterator = m_aModels.begin(); pIterator != m_aModels.end();)
-    {
-        auto pCurrentIterator = pIterator++;
-        if ((*pCurrentIterator).second.m_nSession != -1 && (*pCurrentIterator).second.m_nSession != m_nSession)
-        {
-            m_aModels.erase(pCurrentIterator);
-        }
-    }
+    m_aModels.clear();
 }
 
 STDMETHODIMP CGEKModelManager::Initialize(void)
@@ -140,8 +133,7 @@ STDMETHODIMP CGEKModelManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknow
     auto pIterator = m_aModels.find(FormatString(L"%s|%s", pName, pParams));
     if (pIterator != m_aModels.end())
     {
-        ((*pIterator).second).m_nSession = m_nSession;
-        hRetVal = ((*pIterator).second).m_spModel->QueryInterface(IID_PPV_ARGS(ppModel));
+        hRetVal = ((*pIterator).second)->QueryInterface(IID_PPV_ARGS(ppModel));
     }
     else
     {
@@ -161,10 +153,7 @@ STDMETHODIMP CGEKModelManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknow
                         hRetVal = spResource->Load(&aBuffer[0], pParams);
                         if (SUCCEEDED(hRetVal))
                         {
-                            MODEL &kModel = m_aModels[FormatString(L"%s|%s", pName, pParams)];
-                            kModel.m_nSession = m_nSession;
-                            kModel.m_spModel = spModel;
-
+                            m_aModels[FormatString(L"%s|%s", pName, pParams)] = spModel;
                             hRetVal = spModel->QueryInterface(IID_PPV_ARGS(ppModel));
                             break;
                         }

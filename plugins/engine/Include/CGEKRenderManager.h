@@ -24,12 +24,6 @@ class CGEKRenderManager : public CGEKUnknown
                         , public Awesomium::WebViewListener::View
 {
 public:
-    struct RESOURCE
-    {
-        UINT32 m_nSession;
-        CComPtr<IUnknown> m_spResource;
-    };
-
     struct PASS
     {
         std::vector<PASS *> m_aRequiredPasses;
@@ -85,9 +79,8 @@ private:
     Awesomium::WebCore *m_pWebCore;
     Awesomium::WebSession *m_pWebSession;
     std::map<Awesomium::WebView *, CComPtr<IUnknown>> m_aWebSurfaces;
-    std::map<GEKHASH, RESOURCE> m_aResources;
-    UINT32 m_nSession;
-
+    std::map<GEKHASH, CComPtr<IUnknown>> m_aPersistentResources;
+    std::map<GEKHASH, CComPtr<IUnknown>> m_aResources;
     std::map<GEKHASH, CComPtr<IGEKRenderFilter>> m_aFilters;
     std::map<GEKHASH, PASS> m_aPasses;
 
@@ -104,8 +97,6 @@ private:
 
 private:
     HRESULT LoadPass(LPCWSTR pName);
-    HRESULT GetResource(LPCWSTR pName, IUnknown **ppObject);
-    HRESULT AddResource(LPCWSTR pName, bool bPersistent, IUnknown *pObject);
 
 public:
     CGEKRenderManager(void);
