@@ -190,7 +190,7 @@ STDMETHODIMP_(void) CGEKPopulationManager::Update(float nGameTime, float nFrameT
     m_aHitList.clear();
 }
 
-STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
+STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode, IGEKEntity **ppEntity)
 {
     HRESULT hRetVal = E_OUTOFMEMORY;
     CStringW strName = kEntityNode.GetAttribute(L"name");
@@ -250,6 +250,10 @@ STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode)
                 {
                     m_aPopulation.insert(std::make_pair(GEKHASH(strName.GetString()), (IGEKEntity *)spBaseEntity));
                     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityAdded, std::placeholders::_1, (IGEKEntity *)spBaseEntity)));
+                    if (ppEntity)
+                    {
+                        hRetVal = spEntity->QueryInterface(IID_PPV_ARGS(ppEntity));
+                    }
                 }
             }
         }

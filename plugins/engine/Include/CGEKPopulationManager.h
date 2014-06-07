@@ -33,7 +33,7 @@ public:
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);
 
     // IGEKSceneManager
-    STDMETHOD(AddEntity)                (THIS_ CLibXMLNode &kEntityNode);
+    STDMETHOD(AddEntity)                (THIS_ CLibXMLNode &kEntityNode, IGEKEntity **ppEntity = nullptr);
     STDMETHOD(FindEntity)               (THIS_ LPCWSTR pName, IGEKEntity **ppEntity);
     STDMETHOD(DestroyEntity)            (THIS_ IGEKEntity *pEntity);
     STDMETHOD_(float3, GetGravity)      (THIS_ const float4 &nGravity);
