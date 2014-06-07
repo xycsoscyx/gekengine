@@ -5,8 +5,8 @@ struct tobb
 {
 public:
     tvector3<TYPE> position;
-    tquaternion<TYPE> rotation;
-    tvector3<TYPE> size;
+    tmatrix4x4<TYPE> rotation;
+    tvector3<TYPE> halfsize;
 
 public:
     tobb(void)
@@ -16,7 +16,7 @@ public:
     tobb(const tobb<TYPE> &nBox)
         : position(nBox.position)
         , rotation(nBox.rotation)
-        , size(nBox.size)
+        , halfsize(nBox.size / TYPE(2))
     {
     }
 
@@ -24,31 +24,30 @@ public:
     {
         rotation = nRotation;
         position = (nPosition + nBox.GetCenter());
-        size = nBox.GetSize();
+        halfsize = (nBox.GetSize() / TYPE(2));
     }
 
     tobb(const taabb<TYPE> &nBox, const tmatrix4x4<TYPE> &nMatrix)
     {
         rotation = nMatrix;
         position = (nMatrix.t + nBox.GetCenter());
-        size = nBox.GetSize();
+        halfsize = (nBox.GetSize() / TYPE(2));
     }
 
     tobb operator = (const tobb<TYPE> &nBox)
     {
         position = nBox.position;
         rotation = nBox.rotation;
-        size = nBox.size;
+        halfsize = nBox.halfsize;
         return (*this);
     }
 
     int GetPosition(const tplane<TYPE> &nPlane) const
     {
-        tmatrix4x4<TYPE> nRotation(rotation);
         TYPE nDistance = nPlane.Distance(position);
-        TYPE nRadiusX = fabs(nRotation.rx.Dot(nPlane.normal) * (size.x / TYPE(2)));
-        TYPE nRadiusY = fabs(nRotation.ry.Dot(nPlane.normal) * (size.y / TYPE(2)));
-        TYPE nRadiusZ = fabs(nRotation.rz.Dot(nPlane.normal) * (size.z / TYPE(2)));
+        TYPE nRadiusX = fabs(rotation.rx.Dot(nPlane.normal) * halfsize.x);
+        TYPE nRadiusY = fabs(rotation.ry.Dot(nPlane.normal) * halfsize.y);
+        TYPE nRadiusZ = fabs(rotation.rz.Dot(nPlane.normal) * halfsize.z);
         TYPE nRadius = (nRadiusX + nRadiusY + nRadiusZ);
         if (nDistance < -nRadius)
         {

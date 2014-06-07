@@ -4,7 +4,7 @@ template <typename TYPE>
 struct tsphere
 {
 public:
-    tvector4<TYPE> position;
+    tvector3<TYPE> position;
     TYPE radius;
 
 public:
@@ -19,7 +19,7 @@ public:
     {
     }
 
-    tsphere(const tvector4<TYPE> &nPosition, TYPE nRadius)
+    tsphere(const tvector3<TYPE> &nPosition, TYPE nRadius)
         : position(nPosition)
         , radius(nRadius)
     {

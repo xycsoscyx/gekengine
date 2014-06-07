@@ -1,8 +1,12 @@
 #pragma once
 
 template <typename TYPE>
-struct tplane : public tvector4<TYPE>
+struct tplane
 {
+public:
+    tvector3<TYPE> normal;
+    TYPE distance;
+
 public:
     tplane(void)
     {
