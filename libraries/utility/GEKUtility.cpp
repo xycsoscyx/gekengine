@@ -6,6 +6,11 @@
 #include <algorithm>
 #include <random>
 
+static std::random_device kRandomDevice;
+static std::mt19937 kMersine(kRandomDevice());
+static std::uniform_real_distribution<double> kRandomDouble(0.0, 1.0);
+static std::uniform_real_distribution<float> kRandomFloat(0.0f, 1.0f);
+
 float ClipFloat(float fValue, UINT32 nNumDecimals)
 {
     CStringW strFormat;
@@ -333,11 +338,8 @@ HRESULT GEKSaveToFile(LPCWSTR pFileName, LPCWSTR pString, bool bConvertToUTF8)
     return GEKSaveToFile(pFileName, strMultiString);
 }
 
-static std::random_device kRandomDevice;
-static std::mt19937 kMersine(kRandomDevice());
 double StrToDouble(LPCWSTR pValue)
 {
-    static std::uniform_real_distribution<double> kRandom(0.0, 1.0);
     if (_wcsnicmp(pValue, L"rand(", 5) == 0)
     {
         CStringW strRange = pValue;
@@ -351,13 +353,13 @@ double StrToDouble(LPCWSTR pValue)
             CStringW strMaximum = strRange.Tokenize(L":", nPosition);
             double nMinimum = wcstod(strMinimum, nullptr);
             double nMaximum = wcstod(strMaximum, nullptr);
-            double nValue = kRandom(kMersine);
+            double nValue = kRandomDouble(kMersine);
             return ((nValue * (nMaximum - nMinimum)) + nMinimum);
         }
         else
         {
             double nRange = wcstod(strRange, nullptr);
-            double nValue = kRandom(kMersine);
+            double nValue = kRandomDouble(kMersine);
             return ((nValue * nRange * 2.0) - nRange);
         }
     }
@@ -369,7 +371,6 @@ double StrToDouble(LPCWSTR pValue)
 
 float StrToFloat(LPCWSTR pValue)
 {
-    static std::uniform_real_distribution<float> kRandom(0.0f, 1.0f);
     if (_wcsnicmp(pValue, L"rand(", 5) == 0)
     {
         CStringW strRange = pValue;
@@ -383,13 +384,13 @@ float StrToFloat(LPCWSTR pValue)
             CStringW strMaximum = strRange.Tokenize(L":", nPosition);
             float nMinimum = wcstof(strMinimum, nullptr);
             float nMaximum = wcstof(strMaximum, nullptr);
-            float nValue = kRandom(kMersine);
+            float nValue = kRandomFloat(kMersine);
             return ((nValue * (nMaximum - nMinimum)) + nMinimum);
         }
         else
         {
             float nRange = wcstof(strRange, nullptr);
-            float nValue = kRandom(kMersine);
+            float nValue = kRandomFloat(kMersine);
             return ((nValue * nRange * 2.0f) - nRange);
         }
     }

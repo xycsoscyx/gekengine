@@ -214,7 +214,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         aiPropertyStore *pPropertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(pPropertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
         aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
-        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, 80.0f);
+        //aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, 80.0f);
 
         const aiScene *pScene = aiImportFileExWithProperties(CW2A(strInput, CP_UTF8), aiProcess_RemoveComponent | aiProcess_FlipUVs | aiProcess_TransformUVCoords, nullptr, pPropertyStore);
         if (pScene == nullptr)

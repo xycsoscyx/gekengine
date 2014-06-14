@@ -16,6 +16,9 @@ CGEKLightMoveState::~CGEKLightMoveState(void)
 {
 }
 
+static std::random_device kRandomDevice;
+static std::mt19937 kMersine(kRandomDevice());
+static std::uniform_real_distribution<float> kRandom(1.0, 2.0);
 STDMETHODIMP_(void) CGEKLightMoveState::OnEnter(IGEKEntity *pEntity)
 {
     m_pEntity = pEntity;
@@ -28,9 +31,6 @@ STDMETHODIMP_(void) CGEKLightMoveState::OnEnter(IGEKEntity *pEntity)
             pTransform->GetProperty(L"position", kPosition);
             m_nOrigin = kPosition.GetFloat3();
 
-            static std::random_device kRandomDevice;
-            static std::mt19937 kMersine(kRandomDevice());
-            static std::uniform_real_distribution<float> kRandom(1.0, 2.0);
             m_nOffset = (kRandom(kMersine) * _2_PI);
             m_nSpeed = (kRandom(kMersine) * 2.0f);
             m_nSize = (kRandom(kMersine) * 5.0f);

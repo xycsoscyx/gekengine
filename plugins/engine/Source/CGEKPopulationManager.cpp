@@ -15,6 +15,7 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKPopulationManager)
 
 CGEKPopulationManager::CGEKPopulationManager(void)
+    : m_nUnnamedCount(0)
 {
 }
 
@@ -196,8 +197,7 @@ STDMETHODIMP CGEKPopulationManager::AddEntity(CLibXMLNode &kEntityNode, IGEKEnti
     CStringW strName = kEntityNode.GetAttribute(L"name");
     if (strName.IsEmpty())
     {
-        static long nUnNamedCount = 0;
-        long nEntity = InterlockedIncrement(&nUnNamedCount);
+        long nEntity = InterlockedIncrement(&m_nUnnamedCount);
         strName.Format(L"entity_%d", nEntity);
         GEKLOG(L"Unnamed entity found: %d", nEntity);
     }

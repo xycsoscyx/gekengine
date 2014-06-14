@@ -1507,6 +1507,19 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
     }
 }
 
+static const std::map<GEKHASH, CStringA> gs_aDataMimeTypes =
+{
+    { L".htm", "text/html", },
+    { L".html", "text/html", },
+    { L".xml", "text/xml", },
+    { L".js", "text/javascript", },
+    { L".css", "text/css", },
+    { L".png", "image/png", },
+    { L".gif", "image/gif", },
+    { L".bmp", "image/bmp", },
+    { L".jpg", "image/jpg", },
+};
+
 void CGEKRenderManager::OnRequest(int nRequestID, const Awesomium::ResourceRequest &kRequest, const Awesomium::WebString &kPath)
 {
     CStringW strPath((LPCWSTR)kPath.data());
@@ -1514,22 +1527,9 @@ void CGEKRenderManager::OnRequest(int nRequestID, const Awesomium::ResourceReque
     std::vector<UINT8> aBuffer;
     if (SUCCEEDED(GEKLoadFromFile(L"%root%\\data\\" + strPath, aBuffer)))
     {
-        static const std::map<GEKHASH, CStringA> aMimeTypes = 
-        {
-            { L".htm", "text/html", },
-            { L".html", "text/html", },
-            { L".xml", "text/xml", },
-            { L".js", "text/javascript", },
-            { L".css", "text/css", },
-            { L".png", "image/png", },
-            { L".gif", "image/gif", },
-            { L".bmp", "image/bmp", },
-            { L".jpg", "image/jpg", },
-        };
-
         CStringW strExtension = CPathW(strPath).GetExtension();
-        auto pIterator = aMimeTypes.find(strExtension);
-        if (pIterator != aMimeTypes.end())
+        auto pIterator = gs_aDataMimeTypes.find(strExtension);
+        if (pIterator != gs_aDataMimeTypes.end())
         {
             SendResponse(nRequestID, aBuffer.size(), &aBuffer[0], Awesomium::WSLit((*pIterator).second));
         }

@@ -663,25 +663,25 @@ CGEKVideoContext::~CGEKVideoContext(void)
 {
 }
 
+static ID3D11ShaderResourceView *const gs_pNullTextures[] =
+{
+    nullptr, nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr, nullptr,
+};
+
+static ID3D11RenderTargetView  *const gs_pNumTargets[] =
+{
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+};
+
 STDMETHODIMP_(void) CGEKVideoContext::ClearResources(void)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
-    static ID3D11ShaderResourceView *const pNullTextures[] =
-    {
-        nullptr, nullptr, nullptr, nullptr, nullptr,
-        nullptr, nullptr, nullptr, nullptr, nullptr,
-    };
-
-    static ID3D11RenderTargetView  *const pNullTargets[] =
-    {
-        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    };
-
-    m_spDeviceContext->CSSetShaderResources(0, 10, pNullTextures);
-    m_spDeviceContext->VSSetShaderResources(0, 10, pNullTextures);
-    m_spDeviceContext->GSSetShaderResources(0, 10, pNullTextures);
-    m_spDeviceContext->PSSetShaderResources(0, 10, pNullTextures);
-    m_spDeviceContext->OMSetRenderTargets(6, pNullTargets, nullptr);
+    m_spDeviceContext->CSSetShaderResources(0, 10, gs_pNullTextures);
+    m_spDeviceContext->VSSetShaderResources(0, 10, gs_pNullTextures);
+    m_spDeviceContext->GSSetShaderResources(0, 10, gs_pNullTextures);
+    m_spDeviceContext->PSSetShaderResources(0, 10, gs_pNullTextures);
+    m_spDeviceContext->OMSetRenderTargets(6, gs_pNumTargets, nullptr);
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::SetViewports(const std::vector<GEKVIDEO::VIEWPORT> &aViewports)

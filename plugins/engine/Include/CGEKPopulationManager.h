@@ -14,6 +14,7 @@ class CGEKPopulationManager : public CGEKUnknown
                             , public IGEKSceneManager
 {
 private:
+    long m_nUnnamedCount;
     std::map<GEKHASH, CComPtr<IGEKComponentSystem>> m_aComponentSystems;
     concurrency::concurrent_unordered_map<GEKHASH, CComPtr<IGEKEntity>> m_aPopulation;
     std::list<IGEKEntity *> m_aHitList;
