@@ -2,6 +2,7 @@
 <pass>
     <filters>
         <filter source="Opaque/Deferred" />
+        <filter source="Opaque/Ambient" />
         <filter source="Opaque/Lighting" />
     </filters>
 </pass>

@@ -10,7 +10,7 @@ DECLARE_INTERFACE_IID_(IGEKSceneManager, IUnknown, "43DF2FD7-3BE2-4333-86ED-CB12
     STDMETHOD(FindEntity)               (THIS_ LPCWSTR pName, IGEKEntity **ppEntity) PURE;
     STDMETHOD(DestroyEntity)            (THIS_ IGEKEntity *pEntity) PURE;
 
-    STDMETHOD_(float3, GetGravity)      (THIS_ const float4 &nGravity) PURE;
+    STDMETHOD_(float3, GetGravity)      (THIS_ const float3 &nPosition) PURE;
 
     STDMETHOD_(void, GetVisible)        (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities) PURE;
 };

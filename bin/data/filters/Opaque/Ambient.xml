@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<filter>
+    <targets>
+        <target source="Screen" />
+    </targets>
+    
+    <pixel>
+        <resources>
+            <resource stage="1" source="Opaque/Deferred.Albedo" />
+        </resources>
+
+        <![CDATA[
+            Texture2D     gs_pAlbedoBuffer          : register(t1);
+
+            float4 MainPixelProgram(in INPUT kInput) : SV_TARGET0
+            {
+                return float4(gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord) * 0.05f);
+            }
+        ]]>
+    </pixel>
+</filter>

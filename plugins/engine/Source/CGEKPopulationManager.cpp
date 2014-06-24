@@ -280,7 +280,7 @@ STDMETHODIMP CGEKPopulationManager::DestroyEntity(IGEKEntity *pEntity)
     return S_OK;
 }
 
-STDMETHODIMP_(float3) CGEKPopulationManager::GetGravity(const float4 &nGravity)
+STDMETHODIMP_(float3) CGEKPopulationManager::GetGravity(const float3 &nPosition)
 {
     return float3(0.0f, -9.81f, 0.0f);
 }
