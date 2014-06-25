@@ -108,40 +108,39 @@ CGEKBlendStates::~CGEKBlendStates(void)
 {
 }
 
-void GetTargetStates(GEKVIDEO::TARGETBLENDSTATES &kStatesNode, CLibXMLNode &kNode)
+void GetTargetStates(GEKVIDEO::TARGETBLENDSTATES &kStates, CLibXMLNode &kTargetNode)
 {
-    if (kNode.HasAttribute(L"writemask"))
-    {
-        kStatesNode.m_bEnable = true;
-        CStringW strMask(kNode.GetAttribute(L"writemask"));
-        strMask.MakeLower();
-
-        kStatesNode.m_nWriteMask = 0;
-        if (strMask.Find(L"r") >= 0) kStatesNode.m_nWriteMask |= GEKVIDEO::COLOR::R;
-        if (strMask.Find(L"g") >= 0) kStatesNode.m_nWriteMask |= GEKVIDEO::COLOR::G;
-        if (strMask.Find(L"b") >= 0) kStatesNode.m_nWriteMask |= GEKVIDEO::COLOR::B;
-        if (strMask.Find(L"a") >= 0) kStatesNode.m_nWriteMask |= GEKVIDEO::COLOR::A;
-    }
-    else
-    {
-        kStatesNode.m_nWriteMask = GEKVIDEO::COLOR::RGBA;
-    }
-
-    CLibXMLNode kColorNode = kNode.FirstChildElement(L"color");
-    CLibXMLNode kAlphaNode = kNode.FirstChildElement(L"alpha");
+    CLibXMLNode kColorNode = kTargetNode.FirstChildElement(L"color");
+    CLibXMLNode kAlphaNode = kTargetNode.FirstChildElement(L"alpha");
     if (kColorNode && kAlphaNode)
     {
         if (kColorNode.HasAttribute(L"source") && kColorNode.HasAttribute(L"destination") && kColorNode.HasAttribute(L"operation") &&
             kAlphaNode.HasAttribute(L"source") && kAlphaNode.HasAttribute(L"destination") && kAlphaNode.HasAttribute(L"operation"))
         {
-            kStatesNode.m_bEnable = true;
-            kStatesNode.m_eColorSource = GetBlendFactor(kColorNode.GetAttribute(L"source"));
-            kStatesNode.m_eColorDestination = GetBlendFactor(kColorNode.GetAttribute(L"destination"));
-            kStatesNode.m_eColorOperation = GetBlendOperation(kColorNode.GetAttribute(L"operation"));
-            kStatesNode.m_eAlphaSource = GetBlendFactor(kAlphaNode.GetAttribute(L"source"));
-            kStatesNode.m_eAlphaDestination = GetBlendFactor(kAlphaNode.GetAttribute(L"destination"));
-            kStatesNode.m_eAlphaOperation = GetBlendOperation(kAlphaNode.GetAttribute(L"operation"));
+            kStates.m_bEnable = true;
+            kStates.m_eColorSource = GetBlendFactor(kColorNode.GetAttribute(L"source"));
+            kStates.m_eColorDestination = GetBlendFactor(kColorNode.GetAttribute(L"destination"));
+            kStates.m_eColorOperation = GetBlendOperation(kColorNode.GetAttribute(L"operation"));
+            kStates.m_eAlphaSource = GetBlendFactor(kAlphaNode.GetAttribute(L"source"));
+            kStates.m_eAlphaDestination = GetBlendFactor(kAlphaNode.GetAttribute(L"destination"));
+            kStates.m_eAlphaOperation = GetBlendOperation(kAlphaNode.GetAttribute(L"operation"));
         }
+    }
+
+    if (kTargetNode.HasAttribute(L"writemask"))
+    {
+        CStringW strMask(kTargetNode.GetAttribute(L"writemask"));
+        strMask.MakeLower();
+
+        kStates.m_nWriteMask = 0;
+        if (strMask.Find(L"r") >= 0) kStates.m_nWriteMask |= GEKVIDEO::COLOR::R;
+        if (strMask.Find(L"g") >= 0) kStates.m_nWriteMask |= GEKVIDEO::COLOR::G;
+        if (strMask.Find(L"b") >= 0) kStates.m_nWriteMask |= GEKVIDEO::COLOR::B;
+        if (strMask.Find(L"a") >= 0) kStates.m_nWriteMask |= GEKVIDEO::COLOR::A;
+    }
+    else
+    {
+        kStates.m_nWriteMask = GEKVIDEO::COLOR::RGBA;
     }
 }
 
@@ -151,12 +150,30 @@ HRESULT CGEKBlendStates::Load(IGEKVideoSystem *pSystem, CLibXMLNode &kBlendNode)
     {
         m_nBlendFactor = StrToFloat4(kBlendNode.GetAttribute(L"factor"));
     }
+    else
+    {
+        m_nBlendFactor = 1.0f;
+    }
+
+    if (kBlendNode.HasAttribute(L"mask"))
+    {
+        m_nSampleMask = StrToUINT32(kBlendNode.GetAttribute(L"mask"));
+    }
+    else
+    {
+        m_nSampleMask = 0xFFFFFFFF;
+    }
 
     HRESULT hRetVal = E_FAIL;
-    if (kBlendNode.HasAttribute(L"independent"))
+    if (kBlendNode.HasAttribute(L"independent") && StrToBoolean(kBlendNode.GetAttribute(L"independent")))
     {
         UINT32 nTarget = 0;
         GEKVIDEO::INDEPENDENTBLENDSTATES kBlendStates;
+        if (kBlendNode.HasAttribute(L"alphatocoverage"))
+        {
+            kBlendStates.m_bAlphaToCoverage = StrToBoolean(kBlendNode.GetAttribute(L"alphatocoverage"));
+        }
+
         CLibXMLNode &kTargetNode = kBlendNode.FirstChildElement(L"target");
         while (kTargetNode)
         {
@@ -170,6 +187,11 @@ HRESULT CGEKBlendStates::Load(IGEKVideoSystem *pSystem, CLibXMLNode &kBlendNode)
     else
     {
         GEKVIDEO::UNIFIEDBLENDSTATES kBlendStates;
+        if (kBlendNode.HasAttribute(L"alphatocoverage"))
+        {
+            kBlendStates.m_bAlphaToCoverage = StrToBoolean(kBlendNode.GetAttribute(L"alphatocoverage"));
+        }
+
         GetTargetStates(kBlendStates, kBlendNode);
         hRetVal = pSystem->CreateBlendStates(kBlendStates, &m_spBlendStates);
     }
@@ -179,5 +201,5 @@ HRESULT CGEKBlendStates::Load(IGEKVideoSystem *pSystem, CLibXMLNode &kBlendNode)
 
 void CGEKBlendStates::Enable(IGEKVideoSystem *pSystem)
 {
-    pSystem->GetImmediateContext()->SetBlendStates(m_nBlendFactor, 0xFFFFFFFF, m_spBlendStates);
+    pSystem->GetImmediateContext()->SetBlendStates(m_nBlendFactor, m_nSampleMask, m_spBlendStates);
 }
