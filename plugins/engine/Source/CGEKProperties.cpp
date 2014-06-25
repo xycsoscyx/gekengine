@@ -164,16 +164,18 @@ HRESULT CGEKBlendStates::Load(IGEKVideoSystem *pSystem, CLibXMLNode &kBlendNode)
         m_nSampleMask = 0xFFFFFFFF;
     }
 
+    bool bAlphaToCoverage = false;
+    if (kBlendNode.HasAttribute(L"alphatocoverage"))
+    {
+        bAlphaToCoverage = StrToBoolean(kBlendNode.GetAttribute(L"alphatocoverage"));
+    }
+
     HRESULT hRetVal = E_FAIL;
     if (kBlendNode.HasAttribute(L"independent") && StrToBoolean(kBlendNode.GetAttribute(L"independent")))
     {
         UINT32 nTarget = 0;
         GEKVIDEO::INDEPENDENTBLENDSTATES kBlendStates;
-        if (kBlendNode.HasAttribute(L"alphatocoverage"))
-        {
-            kBlendStates.m_bAlphaToCoverage = StrToBoolean(kBlendNode.GetAttribute(L"alphatocoverage"));
-        }
-
+        kBlendStates.m_bAlphaToCoverage = bAlphaToCoverage;
         CLibXMLNode &kTargetNode = kBlendNode.FirstChildElement(L"target");
         while (kTargetNode)
         {
@@ -187,11 +189,7 @@ HRESULT CGEKBlendStates::Load(IGEKVideoSystem *pSystem, CLibXMLNode &kBlendNode)
     else
     {
         GEKVIDEO::UNIFIEDBLENDSTATES kBlendStates;
-        if (kBlendNode.HasAttribute(L"alphatocoverage"))
-        {
-            kBlendStates.m_bAlphaToCoverage = StrToBoolean(kBlendNode.GetAttribute(L"alphatocoverage"));
-        }
-
+        kBlendStates.m_bAlphaToCoverage = bAlphaToCoverage;
         GetTargetStates(kBlendStates, kBlendNode);
         hRetVal = pSystem->CreateBlendStates(kBlendStates, &m_spBlendStates);
     }
