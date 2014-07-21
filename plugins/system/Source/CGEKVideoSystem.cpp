@@ -1553,24 +1553,36 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
     HRESULT hRetVal = S_OK;
     switch (eFormat)
     {
-    case GEKVIDEO::DATA::RGBA_FLOAT:
-        kTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-        break;
-
     case GEKVIDEO::DATA::RGBA_UINT8:
         kTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         break;
 
     case GEKVIDEO::DATA::R_FLOAT:
-	    kTextureDesc.Format = DXGI_FORMAT_R32_FLOAT;
+        kTextureDesc.Format = DXGI_FORMAT_R32_FLOAT;
         break;
 
     case GEKVIDEO::DATA::RG_FLOAT:
-	    kTextureDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+        kTextureDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
         break;
 
     case GEKVIDEO::DATA::RGB_FLOAT:
-	    kTextureDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+        kTextureDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RGBA_FLOAT:
+        kTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::R_HALF:
+        kTextureDesc.Format = DXGI_FORMAT_R16_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RG_HALF:
+        kTextureDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RGBA_HALF:
+        kTextureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
         break;
 
     default:
@@ -1900,6 +1912,21 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
         nStride = (sizeof(float) * 4);
         break;
 
+    case GEKVIDEO::DATA::R_HALF:
+        eNewFormat = DXGI_FORMAT_R16_FLOAT;
+        nStride = (sizeof(float) / 2);
+        break;
+
+    case GEKVIDEO::DATA::RG_HALF:
+        eNewFormat = DXGI_FORMAT_R16G16_FLOAT;
+        nStride = sizeof(float);
+        break;
+
+    case GEKVIDEO::DATA::RGBA_HALF:
+        eNewFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+        nStride = (sizeof(float) * 2);
+        break;
+
     default:
         hRetVal = E_INVALIDARG;
         break;
@@ -2158,6 +2185,18 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
                     break;
 
+                case GEKVIDEO::DATA::R_HALF:
+                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R16_FLOAT;
+                    break;
+
+                case GEKVIDEO::DATA::RG_HALF:
+                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R16G16_FLOAT;
+                    break;
+
+                case GEKVIDEO::DATA::RGBA_HALF:
+                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+                    break;
+
                 case GEKVIDEO::DATA::R_UINT32:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32_UINT;
                     break;
@@ -2401,6 +2440,18 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
 
     case GEKVIDEO::DATA::RGBA_FLOAT:
         eNewFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::R_HALF:
+        eNewFormat = DXGI_FORMAT_R16_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RG_HALF:
+        eNewFormat = DXGI_FORMAT_R16G16_FLOAT;
+        break;
+
+    case GEKVIDEO::DATA::RGBA_HALF:
+        eNewFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
         break;
 
     default:

@@ -23,6 +23,9 @@ static GEKVIDEO::DATA::FORMAT GetFormat(LPCWSTR pValue)
     else if (_wcsicmp(pValue, L"RG_FLOAT") == 0) return GEKVIDEO::DATA::RG_FLOAT;
     else if (_wcsicmp(pValue, L"RGB_FLOAT") == 0) return GEKVIDEO::DATA::RGB_FLOAT;
     else if (_wcsicmp(pValue, L"RGBA_FLOAT") == 0) return GEKVIDEO::DATA::RGBA_FLOAT;
+    else if (_wcsicmp(pValue, L"R_HALF") == 0) return GEKVIDEO::DATA::R_HALF;
+    else if (_wcsicmp(pValue, L"RG_HALF") == 0) return GEKVIDEO::DATA::RG_HALF;
+    else if (_wcsicmp(pValue, L"RGBA_HALF") == 0) return GEKVIDEO::DATA::RGBA_HALF;
     else if (_wcsicmp(pValue, L"D16") == 0) return GEKVIDEO::DATA::D16;
     else if (_wcsicmp(pValue, L"D32") == 0) return GEKVIDEO::DATA::D32;
     else if (_wcsicmp(pValue, L"D24S8") == 0) return GEKVIDEO::DATA::D24_S8;
