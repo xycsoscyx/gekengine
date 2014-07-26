@@ -70,6 +70,7 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
         auto pIterator = m_aInputBindings.find(nKey);
         if (pIterator != m_aInputBindings.end())
         {
+            OnCommand((*pIterator).second, nullptr, 0);
 //            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnAction, std::placeholders::_1, (*pIterator).second, kValue)));
         }
     }
@@ -123,6 +124,8 @@ STDMETHODIMP CGEKEngine::Initialize(void)
         m_aInputBindings[WM_MOUSEWHEEL] = L"height";
         m_aInputBindings[WM_MOUSEMOVE] = L"turn";
 
+        m_aInputBindings[VK_ESCAPE] = L"quit";
+
         m_bWindowActive = true;
         hRetVal = GetContext()->CreateInstance(CLSID_GEKSystem, IID_PPV_ARGS(&m_spSystem));
         if (SUCCEEDED(hRetVal))
@@ -139,11 +142,16 @@ STDMETHODIMP CGEKEngine::Initialize(void)
         {
             hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationManager, IID_PPV_ARGS(&m_spPopulationManager));
         }
-    }
+        
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderManager, IID_PPV_ARGS(&m_spRenderManager));
+        }
 
-    if (m_spPopulationManager)
-    {
-        hRetVal = Load(L"demo", L"info_player_start_1");
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = Load(L"demo", L"info_player_start_1");
+        }
     }
 
     return hRetVal;

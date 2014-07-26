@@ -121,17 +121,12 @@ STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
             CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
             while (kComponentNode)
             {
-                auto pIterator = m_aComponents.find(kComponentNode.GetType());
-                if (pIterator != m_aComponents.end())
+                if (SUCCEEDED(AddComponent(nEntityID, kComponentNode.GetType())))
                 {
-                    CComPtr<IGEKComponent> spComponent;
-                    if (SUCCEEDED((*pIterator).second->AddComponent(nEntityID)))
+                    kComponentNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
                     {
-                        kComponentNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
-                        {
-                            (*pIterator).second->SetProperty(nEntityID, pName, pValue);
-                        });
-                    }
+                        SetProperty(nEntityID, kComponentNode.GetType(), pName, pValue);
+                    });
                 }
 
                 kComponentNode = kComponentNode.NextSiblingElement();
@@ -167,28 +162,88 @@ STDMETHODIMP CGEKPopulationManager::CreateEntity(GEKENTITYID &nEntityID)
     static GEKENTITYID nNextEntityID = 0;
     m_aPopulation.push_back(++nNextEntityID);
     nEntityID = nNextEntityID;
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityCreated, std::placeholders::_1, nEntityID)));
     return S_OK;
 }
 
 STDMETHODIMP CGEKPopulationManager::DestroyEntity(const GEKENTITYID &nEntityID)
 {
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityDestroyed, std::placeholders::_1, nEntityID)));
     m_aHitList.push_back(nEntityID);
     return S_OK;
 }
 
 STDMETHODIMP CGEKPopulationManager::AddComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent)
 {
-    return m_aComponents[pComponent]->AddComponent(nEntityID);
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentAdded, std::placeholders::_1, nEntityID, pComponent)));
+
+    HRESULT hRetVal = E_FAIL;
+    auto pIterator = m_aComponents.find(pComponent);
+    if (pIterator != m_aComponents.end())
+    {
+        hRetVal = (*pIterator).second->AddComponent(nEntityID);
+    }
+
+    return hRetVal;
 }
 
 STDMETHODIMP CGEKPopulationManager::RemoveComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent)
 {
-    return m_aComponents[pComponent]->RemoveComponent(nEntityID);
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentRemoved, std::placeholders::_1, nEntityID, pComponent)));
+    
+    HRESULT hRetVal = E_FAIL;
+    auto pIterator = m_aComponents.find(pComponent);
+    if (pIterator != m_aComponents.end())
+    {
+        hRetVal = (*pIterator).second->RemoveComponent(nEntityID);
+    }
+
+    return hRetVal;
 }
 
 STDMETHODIMP_(bool) CGEKPopulationManager::HasComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent)
 {
-    return m_aComponents[pComponent]->HasComponent(nEntityID);
+    bool bReturn = false;
+    auto pIterator = m_aComponents.find(pComponent);
+    if (pIterator != m_aComponents.end())
+    {
+        bReturn = (*pIterator).second->HasComponent(nEntityID);
+    }
+
+    return bReturn;
+}
+
+STDMETHODIMP_(void) CGEKPopulationManager::ListProperties(const GEKENTITYID &nEntityID, LPCWSTR pComponent, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const
+{
+    auto pIterator = m_aComponents.find(pComponent);
+    if (pIterator != m_aComponents.end())
+    {
+        (*pIterator).second->ListProperties(nEntityID, OnProperty);
+    }
+}
+
+STDMETHODIMP_(bool) CGEKPopulationManager::GetProperty(const GEKENTITYID &nEntityID, LPCWSTR pComponent, LPCWSTR pName, GEKVALUE &kValue) const
+{
+    bool bReturn = false;
+    auto pIterator = m_aComponents.find(pComponent);
+    if (pIterator != m_aComponents.end())
+    {
+        bReturn = (*pIterator).second->GetProperty(nEntityID, pName, kValue);
+    }
+
+    return bReturn;
+}
+
+STDMETHODIMP_(bool) CGEKPopulationManager::SetProperty(const GEKENTITYID &nEntityID, LPCWSTR pComponent, LPCWSTR pName, const GEKVALUE &kValue)
+{
+    bool bReturn = false;
+    auto pIterator = m_aComponents.find(pComponent);
+    if (pIterator != m_aComponents.end())
+    {
+        bReturn = (*pIterator).second->SetProperty(nEntityID, pName, kValue);
+    }
+
+    return bReturn;
 }
 
 STDMETHODIMP_(void) CGEKPopulationManager::ListEntities(std::function<void(const GEKENTITYID &)> OnEntity)
@@ -217,9 +272,4 @@ STDMETHODIMP_(void) CGEKPopulationManager::ListComponentsEntities(const std::vec
             OnEntity(nEntityID);
         }
     });
-}
-
-STDMETHODIMP_(IGEKComponent *) CGEKPopulationManager::GetComponent(LPCWSTR pComponent)
-{
-    return m_aComponents[pComponent];
 }

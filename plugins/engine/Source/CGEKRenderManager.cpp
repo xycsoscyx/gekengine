@@ -952,14 +952,14 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
             GEKVALUE kFieldOfView;
             GEKVALUE kMinViewDistance;
             GEKVALUE kMaxViewDistance;
-            pSceneManager->GetComponent(L"viewer")->GetProperty(m_nViewerEntityID, L"fieldofview", kFieldOfView);
-            pSceneManager->GetComponent(L"viewer")->GetProperty(m_nViewerEntityID, L"minviewdistance", kMinViewDistance);
-            pSceneManager->GetComponent(L"viewer")->GetProperty(m_nViewerEntityID, L"maxviewdistance", kMaxViewDistance);
+            pSceneManager->GetProperty(m_nViewerEntityID, L"viewer", L"fieldofview", kFieldOfView);
+            pSceneManager->GetProperty(m_nViewerEntityID, L"viewer", L"minviewdistance", kMinViewDistance);
+            pSceneManager->GetProperty(m_nViewerEntityID, L"viewer", L"maxviewdistance", kMaxViewDistance);
 
             GEKVALUE kPosition;
             GEKVALUE kRotation;
-            pSceneManager->GetComponent(L"transform")->GetProperty(m_nViewerEntityID, L"position", kPosition);
-            pSceneManager->GetComponent(L"transform")->GetProperty(m_nViewerEntityID, L"rotation", kRotation);
+            pSceneManager->GetProperty(m_nViewerEntityID, L"transform", L"position", kPosition);
+            pSceneManager->GetProperty(m_nViewerEntityID, L"transform", L"rotation", kRotation);
 
             float4x4 nCameraMatrix;
             nCameraMatrix = kRotation.GetQuaternion();

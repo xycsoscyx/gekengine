@@ -190,11 +190,6 @@ STDMETHODIMP CGEKComponentSystemNewton::Initialize(void)
         NewtonWorldSetUserData(m_pWorld, (void *)this);
         int nDefaultID = NewtonMaterialGetDefaultGroupID(m_pWorld);
         NewtonMaterialSetCollisionCallback(m_pWorld, nDefaultID, nDefaultID, (void *)this, OnAABBOverlap, ContactsProcess);
-        hRetVal = S_OK;
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
         hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
     }
 
