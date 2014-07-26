@@ -2,67 +2,60 @@
 
 #include "GEKUtility.h"
 #include "GEKContext.h"
-#include "CGEKComponent.h"
 #include "GEKAPI.h"
-#include <Newton.h>
 #include <concurrent_unordered_map.h>
-
-DECLARE_INTERFACE_IID_(IGEKNewtonSystem, IUnknown, "46D22819-49E1-4CB3-9B9A-41663F1DE553")
-{
-    STDMETHOD_(NewtonWorld *, GetWorld)             (THIS) PURE;
-    STDMETHOD_(NewtonCollision *, LoadCollision)    (THIS_ LPCWSTR pShape, LPCWSTR pParams) PURE;
-};
+#include <Newton.h>
 
 class CGEKComponentNewton : public CGEKUnknown
-                          , public CGEKComponent
+                          , public IGEKComponent
 {
 public:
-    NewtonBody *m_pBody;
-    CStringW m_strShape;
-    CStringW m_strParams;
-    float m_nMass;
+    struct DATA
+    {
+        CStringW m_strShape;
+        CStringW m_strParams;
+        float m_nMass;
+    };
+
+public:
+    concurrency::concurrent_unordered_map<GEKENTITYID, DATA> m_aData;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentNewton)
-    CGEKComponentNewton(IGEKContext *pContext, IGEKEntity *pEntity);
+    CGEKComponentNewton(void);
     ~CGEKComponentNewton(void);
 
     // IGEKComponent
-    STDMETHOD_(void, ListProperties)        (THIS_ std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty);
-    STDMETHOD_(bool, GetProperty)           (THIS_ LPCWSTR pName, GEKVALUE &kValue) const;
-    STDMETHOD_(bool, SetProperty)           (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
-    STDMETHOD(OnEntityCreated)              (THIS);
+    STDMETHOD_(LPCWSTR, GetName)                (THIS) const;
+    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID);
+    STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID);
+    STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID) const;
+    STDMETHOD_(void, ListProperties)            (THIS_ const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const;
+    STDMETHOD_(bool, GetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const;
+    STDMETHOD_(bool, SetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue);
 };
 
 class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public IGEKSceneObserver
                                 , public IGEKComponentSystem
-                                , public IGEKNewtonSystem
 {
 private:
     NewtonWorld *m_pWorld;
-    concurrency::concurrent_unordered_map<IGEKEntity *, CComPtr<CGEKComponentNewton>> m_aComponents;
-    std::map<GEKHASH, NewtonCollision *> m_aCollisions;
+    concurrency::concurrent_unordered_map<GEKENTITYID, NewtonBody *> m_aBodies;
+    std::map<CStringW, NewtonCollision *> m_aCollisions;
+
+private:
+    static int OnAABBOverlap(const NewtonMaterial *pMaterial, const NewtonBody *pBody0, const NewtonBody *pBody1, int nThreadID);
+    static void ContactsProcess(const NewtonJoint *const pContactJoint, dFloat nFrameTime, int nThreadID);
 
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemNewton)
     CGEKComponentSystemNewton(void);
     ~CGEKComponentSystemNewton(void);
 
-    // IGEKSceneObserver
-    STDMETHOD_(void, OnFree)                        (THIS);
-    STDMETHOD_(void, OnUpdate)                      (THIS_ float nGameTime, float nFrameTime);
-
     // IGEKUnknown
-    STDMETHOD(Initialize)                           (THIS);
-    STDMETHOD_(void, Destroy)                       (THIS);
+    STDMETHOD(Initialize)                   (THIS);
+    STDMETHOD_(void, Destroy)               (THIS);
 
-    // IGEKComponentSystem
-    STDMETHOD_(LPCWSTR, GetType)                    (THIS) const;
-    STDMETHOD(Destroy)                              (THIS_ IGEKEntity *pEntity);
-    STDMETHOD(Create)                               (THIS_ const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent);
-
-    // IGEKNewtonSystem
-    STDMETHOD_(NewtonWorld *, GetWorld)             (THIS);
-    STDMETHOD_(NewtonCollision *, LoadCollision)    (THIS_ LPCWSTR pShape, LPCWSTR pParams);
+    // IGEKSceneObserver
 };

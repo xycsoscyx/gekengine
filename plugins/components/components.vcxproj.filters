@@ -27,9 +27,6 @@
     <ClCompile Include="Source\CGEKComponentLight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentLogic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="entrypoints.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -39,9 +36,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKComponentNewton.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKComponentModel.h">
@@ -62,37 +56,16 @@
     <ClInclude Include="..\..\api\IGEKComponent.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\IGEKMaterialManager.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\api\IGEKModelManager.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKProgramManager.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\api\IGEKSceneManager.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\IGEKViewManager.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\api\GEKVALUE.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\IGEKFactory.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentLogic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKResource.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKLogic.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKInputManager.h">
+    <ClInclude Include="..\..\api\IGEKViewManager.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
   </ItemGroup>

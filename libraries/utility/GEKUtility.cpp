@@ -74,59 +74,6 @@ std::map<UINT32, std::vector<GEKMODE>> GEKGetDisplayModes(void)
     return aDisplayModes;
 }
 
-static std::hash<std::wstring> gs_nHash;
-GEKHASH::GEKHASH(void)
-    : m_nHash(0)
-{
-}
-
-GEKHASH::GEKHASH(LPCWSTR pString)
-: m_nHash(gs_nHash(pString))
-{
-}
-
-GEKHASH::GEKHASH(const CStringW &strString)
-: m_nHash(gs_nHash(strString.GetString()))
-{
-}
-
-UINT32 GEKHASH::GetHash(void) const
-{
-    return UINT32(m_nHash);
-}
-
-GEKHASH GEKHASH::operator = (LPCWSTR pString)
-{
-    m_nHash = gs_nHash(pString);
-    return (*this);
-}
-
-GEKHASH GEKHASH::operator = (const CStringW &strString)
-{
-    m_nHash = gs_nHash(strString.GetString());
-    return (*this);
-}
-
-bool GEKHASH::operator<(const GEKHASH &nValue) const
-{
-    return m_nHash < nValue.m_nHash;
-}
-
-bool GEKHASH::operator == (const GEKHASH &nValue) const
-{
-    return m_nHash == nValue.m_nHash;
-}
-
-bool GEKHASH::operator == (LPCWSTR pString)
-{
-    return m_nHash == gs_nHash(pString);
-}
-
-bool GEKHASH::operator == (const CStringW &strString)
-{
-    return m_nHash == gs_nHash(strString.GetString());
-}
-
 CStringA FormatString(LPCSTR pFormat, ...)
 {
     CStringA strValue;

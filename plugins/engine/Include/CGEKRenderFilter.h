@@ -77,8 +77,8 @@ private:
     UINT32 m_nClearStencil;
     UINT32 m_nStencilReference;
     std::list<TARGET> m_aTargets;
-    std::map<GEKHASH, TARGET *> m_aTargetMap;
-    std::map<GEKHASH, CComPtr<IUnknown>> m_aBufferMap;
+    std::map<CStringW, TARGET *> m_aTargetMap;
+    std::map<CStringW, CComPtr<IUnknown>> m_aBufferMap;
     CComPtr<IUnknown> m_spDepthBuffer;
     CStringW m_strDepthSource;
 

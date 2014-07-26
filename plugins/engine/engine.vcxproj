@@ -94,7 +94,6 @@
     <ClInclude Include="GEKEngine.h" />
     <ClInclude Include="GEKEngineCLSIDs.h" />
     <ClInclude Include="Include\CGEKEngine.h" />
-    <ClInclude Include="Include\CGEKEntity.h" />
     <ClInclude Include="Include\CGEKModelManager.h" />
     <ClInclude Include="Include\CGEKPopulationManager.h" />
     <ClInclude Include="Include\CGEKProperties.h" />
@@ -109,7 +108,6 @@
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Source\CGEKEngine.cpp" />
-    <ClCompile Include="Source\CGEKEntity.cpp" />
     <ClCompile Include="Source\CGEKModelManager.cpp" />
     <ClCompile Include="Source\CGEKPopulationManager.cpp" />
     <ClCompile Include="Source\CGEKProperties.cpp" />

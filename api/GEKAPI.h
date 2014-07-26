@@ -8,14 +8,12 @@
 #include "IGEKFactory.h"
 
 #include "IGEKComponent.h"
-#include "IGEKLogic.h"
 
 #include "IGEKMaterialManager.h"
 #include "IGEKProgramManager.h"
 #include "IGEKModelManager.h"
 #include "IGEKSceneManager.h"
 #include "IGEKViewManager.h"
-#include "IGEKInputManager.h"
 
 // Global
 enum GEKVERTEXATTRIBUTES

@@ -1,4 +1,6 @@
 #include "CGEKComponentTransform.h"
+#include <algorithm>
+#include <ppl.h>
 
 #include "GEKEngineCLSIDs.h"
 
@@ -6,9 +8,9 @@ BEGIN_INTERFACE_LIST(CGEKComponentTransform)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentTransform::CGEKComponentTransform(IGEKContext *pContext, IGEKEntity *pEntity)
-    : CGEKUnknown(pContext)
-    , CGEKComponent(pEntity)
+REGISTER_CLASS(CGEKComponentTransform)
+
+CGEKComponentTransform::CGEKComponentTransform(void)
 {
 }
 
@@ -16,114 +18,81 @@ CGEKComponentTransform::~CGEKComponentTransform(void)
 {
 }
 
-STDMETHODIMP_(void) CGEKComponentTransform::ListProperties(std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty)
-{
-    OnProperty(L"position", m_nPosition);
-    OnProperty(L"rotation", m_nRotation);
-}
-
-static GEKHASH gs_nPosition(L"position");
-static GEKHASH gs_nRotation(L"rotation");
-STDMETHODIMP_(bool) CGEKComponentTransform::GetProperty(LPCWSTR pName, GEKVALUE &kValue) const
-{
-    GEKHASH nHash(pName);
-    if (nHash == gs_nPosition)
-    {
-        kValue = m_nPosition;
-        return true;
-    }
-    else if (nHash == gs_nRotation)
-    {
-        kValue = m_nRotation;
-        return true;
-    }
-
-    return false;
-}
-
-STDMETHODIMP_(bool) CGEKComponentTransform::SetProperty(LPCWSTR pName, const GEKVALUE &kValue)
-{
-    GEKHASH nHash(pName);
-    if (nHash == gs_nPosition)
-    {
-        m_nPosition = kValue.GetFloat3();
-        return true;
-    }
-    else if (nHash == gs_nRotation)
-    {
-        m_nRotation = kValue.GetQuaternion();
-        return true;
-    }
-
-    return false;
-}
-
-BEGIN_INTERFACE_LIST(CGEKComponentSystemTransform)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
-END_INTERFACE_LIST_UNKNOWN
-
-REGISTER_CLASS(CGEKComponentSystemTransform)
-
-CGEKComponentSystemTransform::CGEKComponentSystemTransform(void)
-{
-}
-
-CGEKComponentSystemTransform::~CGEKComponentSystemTransform(void)
-{
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemTransform::OnFree(void)
-{
-    m_aComponents.clear();
-}
-
-STDMETHODIMP CGEKComponentSystemTransform::Initialize(void)
-{
-    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
-};
-
-STDMETHODIMP_(void) CGEKComponentSystemTransform::Destroy(void)
-{
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
-}
-
-STDMETHODIMP_(LPCWSTR) CGEKComponentSystemTransform::GetType(void) const
+STDMETHODIMP_(LPCWSTR) CGEKComponentTransform::GetName(void) const
 {
     return L"transform";
+};
+
+STDMETHODIMP CGEKComponentTransform::AddComponent(const GEKENTITYID &nEntityID)
+{
+    m_aData[nEntityID] = DATA();
+    return S_OK;
 }
 
-STDMETHODIMP CGEKComponentSystemTransform::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
+STDMETHODIMP CGEKComponentTransform::RemoveComponent(const GEKENTITYID &nEntityID)
 {
-    HRESULT hRetVal = E_OUTOFMEMORY;
-    CComPtr<CGEKComponentTransform> spComponent(new CGEKComponentTransform(GetContext(), pEntity));
-    GEKRESULT(spComponent, L"Unable to allocate new transform component instance");
-    if (spComponent)
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
     {
-        hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
-        if (SUCCEEDED(hRetVal))
-        {
-            kComponentNode.ListAttributes([&spComponent](LPCWSTR pName, LPCWSTR pValue) -> void
-            {
-                spComponent->SetProperty(pName, pValue);
-            });
+        m_aData.unsafe_erase(pIterator);
+    }
 
-            m_aComponents[pEntity] = spComponent;
+    return S_OK;
+}
+
+STDMETHODIMP_(bool) CGEKComponentTransform::HasComponent(const GEKENTITYID &nEntityID) const
+{
+    return (m_aData.find(nEntityID) != m_aData.end());
+}
+
+STDMETHODIMP_(void) CGEKComponentTransform::ListProperties(const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const
+{
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
+    {
+        OnProperty(L"position", (*pIterator).second.m_nPosition);
+        OnProperty(L"rotation", (*pIterator).second.m_nRotation);
+    }
+}
+
+STDMETHODIMP_(bool) CGEKComponentTransform::GetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const
+{
+    bool bReturn = false;
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
+    {
+        if (wcscmp(pName, L"position") == 0)
+        {
+            kValue = (*pIterator).second.m_nPosition;
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"rotation") == 0)
+        {
+            kValue = (*pIterator).second.m_nRotation;
+            bReturn = true;
         }
     }
 
-    return hRetVal;
+    return bReturn;
 }
 
-STDMETHODIMP CGEKComponentSystemTransform::Destroy(IGEKEntity *pEntity)
+STDMETHODIMP_(bool) CGEKComponentTransform::SetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue)
 {
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aComponents.find(pEntity);
-    if (pIterator != m_aComponents.end())
+    bool bReturn = false;
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
     {
-        m_aComponents.unsafe_erase(pIterator);
-        hRetVal = S_OK;
+        if (wcscmp(pName, L"position") == 0)
+        {
+            (*pIterator).second.m_nPosition = kValue.GetFloat3();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"rotation") == 0)
+        {
+            (*pIterator).second.m_nRotation = kValue.GetQuaternion();
+            bReturn = true;
+        }
     }
 
-    return hRetVal;
+    return bReturn;
 }

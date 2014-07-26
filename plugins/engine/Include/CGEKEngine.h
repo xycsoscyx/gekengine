@@ -10,7 +10,6 @@
 
 DECLARE_INTERFACE(IGEKRenderManager);
 DECLARE_INTERFACE(IGEKPopulationManager);
-DECLARE_INTERFACE(IGEKEventResource);
 
 class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
@@ -18,7 +17,6 @@ class CGEKEngine : public CGEKUnknown
                  , public IGEKSystemObserver
                  , public IGEKVideoObserver
                  , public IGEKGameApplication
-                 , public IGEKInputManager
                  , public IGEKEngine
 {
 private:
@@ -35,7 +33,6 @@ private:
     CComPtr<IGEKRenderManager> m_spRenderManager;
 
     bool m_bSendInput;
-    CComPtr<IGEKEventResource> m_spMainMenu;
 
 private:
     void CheckInput(UINT32 nKey, const GEKVALUE &kValue);
@@ -67,6 +64,5 @@ public:
     STDMETHOD_(void, Run)                       (THIS);
 
     // IGEKEngine
-    STDMETHOD_(IUnknown *, GetOverlay)          (THIS);
     STDMETHOD_(void, OnCommand)                 (THIS_ LPCWSTR pCommand, LPCWSTR *pParams, UINT32 nNumParams);
 };

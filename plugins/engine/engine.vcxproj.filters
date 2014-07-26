@@ -8,9 +8,6 @@
     <ClCompile Include="Source\CGEKRenderManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKEntity.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\CGEKRenderFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -31,9 +28,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKRenderManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKEntity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Public\IGEKGameApplication.h">

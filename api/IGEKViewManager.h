@@ -1,23 +1,18 @@
 #pragma once
 
 #include "GEKContext.h"
-
-struct GEKLIGHT
-{
-    float3 m_nColor;
-    float m_nRange;
-
-    GEKLIGHT(const float3 &nColor, float nRange)
-        : m_nColor(nColor)
-        , m_nRange(nRange)
-    {
-    }
-};
+#include "IGEKComponent.h"
 
 DECLARE_INTERFACE_IID_(IGEKViewManager, IUnknown, "585D122C-2488-4EEE-9FED-A7B0A421A324")
 {
-    STDMETHOD(SetViewer)                (THIS_ IGEKEntity *pEntity) PURE;
-    STDMETHOD_(IGEKEntity *, GetViewer) (THIS) PURE;
+    STDMETHOD(SetViewer)                (THIS_ const GEKENTITYID &nEntityID) PURE;
+    STDMETHOD_(GEKENTITYID, GetViewer)  (THIS) const PURE;
 
-    STDMETHOD(EnablePass)               (THIS_ LPCWSTR pName, INT32 nPriority) PURE;
+    STDMETHOD(ShowLight)                (THIS_ const GEKENTITYID &nEntityID) PURE;
+    STDMETHOD(ShowModel)                (THIS_ const GEKENTITYID &nEntityID) PURE;
+};
+
+DECLARE_INTERFACE_IID_(IGEKViewObserver, IGEKObserver, "91E2AD0F-2C01-4F9F-A345-72B4469E9949")
+{
+    STDMETHOD_(void, OnRender)          (THIS) { };
 };

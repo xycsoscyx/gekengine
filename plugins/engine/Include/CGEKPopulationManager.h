@@ -5,7 +5,7 @@
 #include "GEKAPI.h"
 #include "IGEKPopulationManager.h"
 #include "IGEKRenderManager.h"
-#include <concurrent_unordered_map.h>
+#include <concurrent_vector.h>
 #include <list>
 
 class CGEKPopulationManager : public CGEKUnknown
@@ -14,10 +14,10 @@ class CGEKPopulationManager : public CGEKUnknown
                             , public IGEKSceneManager
 {
 private:
-    long m_nUnnamedCount;
-    std::map<GEKHASH, CComPtr<IGEKComponentSystem>> m_aComponentSystems;
-    concurrency::concurrent_unordered_map<GEKHASH, CComPtr<IGEKEntity>> m_aPopulation;
-    std::list<IGEKEntity *> m_aHitList;
+    std::map<CStringW, CComPtr<IGEKComponent>> m_aComponents;
+    std::list<CComPtr<IGEKComponentSystem>> m_aComponentSystems;
+    concurrency::concurrent_vector<GEKENTITYID> m_aPopulation;
+    concurrency::concurrent_vector<GEKENTITYID> m_aHitList;
 
 public:
     CGEKPopulationManager(void);
@@ -34,9 +34,13 @@ public:
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);
 
     // IGEKSceneManager
-    STDMETHOD(AddEntity)                (THIS_ CLibXMLNode &kEntityNode, IGEKEntity **ppEntity = nullptr);
-    STDMETHOD(FindEntity)               (THIS_ LPCWSTR pName, IGEKEntity **ppEntity);
-    STDMETHOD(DestroyEntity)            (THIS_ IGEKEntity *pEntity);
-    STDMETHOD_(float3, GetGravity)      (THIS_ const float3 &nPosition);
-    STDMETHOD_(void, GetVisible)        (THIS_ const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities);
+    STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID);
+    STDMETHOD(DestroyEntity)                    (THIS_ const GEKENTITYID &nEntityID);
+    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
+    STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
+    STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
+    STDMETHOD_(void, ListEntities)              (THIS_ std::function<void(const GEKENTITYID &)> OnEntity);
+    STDMETHOD_(void, ListComponentsEntities)    (THIS_ const std::vector<CStringW> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity);
+    STDMETHOD_(IGEKComponent *, GetComponent)   (THIS_ LPCWSTR pComponent);
+    STDMETHOD_(float3, GetGravity)              (THIS_ const float3 &nPosition);
 };

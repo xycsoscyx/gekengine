@@ -1,4 +1,6 @@
 #include "CGEKComponentViewer.h"
+#include <algorithm>
+#include <ppl.h>
 
 #include "GEKEngineCLSIDs.h"
 
@@ -6,12 +8,9 @@ BEGIN_INTERFACE_LIST(CGEKComponentViewer)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentViewer::CGEKComponentViewer(IGEKContext *pContext, IGEKEntity *pEntity)
-    : CGEKUnknown(pContext)
-    , CGEKComponent(pEntity)
-    , m_nFieldOfView(0.0f)
-    , m_nMinViewDistance(0.0f)
-    , m_nMaxViewDistance(0.0f)
+REGISTER_CLASS(CGEKComponentViewer)
+
+CGEKComponentViewer::CGEKComponentViewer(void)
 {
 }
 
@@ -19,126 +18,92 @@ CGEKComponentViewer::~CGEKComponentViewer(void)
 {
 }
 
-STDMETHODIMP_(void) CGEKComponentViewer::ListProperties(std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty)
-{
-    OnProperty(L"fieldofview", m_nFieldOfView);
-    OnProperty(L"minviewdistance", m_nMinViewDistance);
-    OnProperty(L"maxviewdistance", m_nMaxViewDistance);
-}
-
-static GEKHASH gs_nFieldOfView(L"fieldofview");
-static GEKHASH gs_nMinViewDistance(L"minviewdistance");
-static GEKHASH gs_nMaxViewDistance(L"maxviewdistance");
-STDMETHODIMP_(bool) CGEKComponentViewer::GetProperty(LPCWSTR pName, GEKVALUE &kValue) const
-{
-    GEKHASH nHash(pName);
-    if (nHash == gs_nFieldOfView)
-    {
-        kValue = m_nFieldOfView;
-        return true;
-    }
-    else if (nHash == gs_nMinViewDistance)
-    {
-        kValue = m_nMinViewDistance;
-        return true;
-    }
-    else if (nHash == gs_nMaxViewDistance)
-    {
-        kValue = m_nMaxViewDistance;
-        return true;
-    }
-
-    return false;
-}
-
-STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(LPCWSTR pName, const GEKVALUE &kValue)
-{
-    GEKHASH nHash(pName);
-    if (nHash == gs_nFieldOfView)
-    {
-        m_nFieldOfView = kValue.GetFloat();
-        return true;
-    }
-    else if (nHash == gs_nMinViewDistance)
-    {
-        m_nMinViewDistance = kValue.GetFloat();
-        return true;
-    }
-    else if (nHash == gs_nMaxViewDistance)
-    {
-        m_nMaxViewDistance = kValue.GetFloat();
-        return true;
-    }
-
-    return false;
-}
-
-BEGIN_INTERFACE_LIST(CGEKComponentSystemViewer)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
-END_INTERFACE_LIST_UNKNOWN
-
-REGISTER_CLASS(CGEKComponentSystemViewer)
-
-CGEKComponentSystemViewer::CGEKComponentSystemViewer(void)
-{
-}
-
-CGEKComponentSystemViewer::~CGEKComponentSystemViewer(void)
-{
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemViewer::OnFree(void)
-{
-    m_aComponents.clear();
-}
-
-STDMETHODIMP CGEKComponentSystemViewer::Initialize(void)
-{
-    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
-};
-
-STDMETHODIMP_(void) CGEKComponentSystemViewer::Destroy(void)
-{
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
-}
-
-STDMETHODIMP_(LPCWSTR) CGEKComponentSystemViewer::GetType(void) const
+STDMETHODIMP_(LPCWSTR) CGEKComponentViewer::GetName(void) const
 {
     return L"viewer";
+};
+
+STDMETHODIMP CGEKComponentViewer::AddComponent(const GEKENTITYID &nEntityID)
+{
+    m_aData[nEntityID] = DATA();
+    return S_OK;
 }
 
-STDMETHODIMP CGEKComponentSystemViewer::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
+STDMETHODIMP CGEKComponentViewer::RemoveComponent(const GEKENTITYID &nEntityID)
 {
-    HRESULT hRetVal = E_OUTOFMEMORY;
-    CComPtr<CGEKComponentViewer> spComponent(new CGEKComponentViewer(GetContext(), pEntity));
-    GEKRESULT(spComponent, L"Unable to allocate new viewer component instance");
-    if (spComponent)
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
     {
-        hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
-        if (SUCCEEDED(hRetVal))
-        {
-            kComponentNode.ListAttributes([&spComponent](LPCWSTR pName, LPCWSTR pValue) -> void
-            {
-                spComponent->SetProperty(pName, pValue);
-            });
+        m_aData.unsafe_erase(pIterator);
+    }
 
-            m_aComponents[pEntity] = spComponent;
+    return S_OK;
+}
+
+STDMETHODIMP_(bool) CGEKComponentViewer::HasComponent(const GEKENTITYID &nEntityID) const
+{
+    return (m_aData.find(nEntityID) != m_aData.end());
+}
+
+STDMETHODIMP_(void) CGEKComponentViewer::ListProperties(const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const
+{
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
+    {
+        OnProperty(L"fieldofview", (*pIterator).second.m_nFieldOfView);
+        OnProperty(L"minviewdistance", (*pIterator).second.m_nMinViewDistance);
+        OnProperty(L"maxviewdistance", (*pIterator).second.m_nMaxViewDistance);
+    }
+}
+
+STDMETHODIMP_(bool) CGEKComponentViewer::GetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const
+{
+    bool bReturn = false;
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
+    {
+        if (wcscmp(pName, L"fieldofview") == 0)
+        {
+            kValue = (*pIterator).second.m_nFieldOfView;
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"minviewdistance") == 0)
+        {
+            kValue = (*pIterator).second.m_nMinViewDistance;
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"maxviewdistance") == 0)
+        {
+            kValue = (*pIterator).second.m_nMaxViewDistance;
+            bReturn = true;
         }
     }
 
-    return hRetVal;
+    return bReturn;
 }
 
-STDMETHODIMP CGEKComponentSystemViewer::Destroy(IGEKEntity *pEntity)
+STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue)
 {
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aComponents.find(pEntity);
-    if (pIterator != m_aComponents.end())
+    bool bReturn = false;
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
     {
-        m_aComponents.unsafe_erase(pIterator);
-        hRetVal = S_OK;
+        if (wcscmp(pName, L"fieldofview") == 0)
+        {
+            (*pIterator).second.m_nFieldOfView = kValue.GetFloat();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"minviewdistance") == 0)
+        {
+            (*pIterator).second.m_nMinViewDistance = kValue.GetFloat();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"maxviewdistance") == 0)
+        {
+            (*pIterator).second.m_nMaxViewDistance = kValue.GetFloat();
+            bReturn = true;
+        }
     }
 
-    return hRetVal;
+    return bReturn;
 }

@@ -8,10 +8,9 @@ BEGIN_INTERFACE_LIST(CGEKComponentLight)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentLight::CGEKComponentLight(IGEKContext *pContext, IGEKEntity *pEntity)
-    : CGEKUnknown(pContext)
-    , CGEKComponent(pEntity)
-    , m_nRange(0.0f)
+REGISTER_CLASS(CGEKComponentLight)
+
+CGEKComponentLight::CGEKComponentLight(void)
 {
 }
 
@@ -19,50 +18,87 @@ CGEKComponentLight::~CGEKComponentLight(void)
 {
 }
 
-STDMETHODIMP_(void) CGEKComponentLight::ListProperties(std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty)
+STDMETHODIMP_(LPCWSTR) CGEKComponentLight::GetName(void) const
 {
-    OnProperty(L"color", m_nColor);
-    OnProperty(L"range", m_nRange);
+    return L"light";
+};
+
+STDMETHODIMP CGEKComponentLight::AddComponent(const GEKENTITYID &nEntityID)
+{
+    m_aData[nEntityID] = DATA();
+    return S_OK;
 }
 
-static GEKHASH gs_nColor(L"color");
-static GEKHASH gs_nRange(L"range");
-STDMETHODIMP_(bool) CGEKComponentLight::GetProperty(LPCWSTR pName, GEKVALUE &kValue) const
+STDMETHODIMP CGEKComponentLight::RemoveComponent(const GEKENTITYID &nEntityID)
 {
-    GEKHASH nHash(pName);
-    if (nHash == gs_nColor)
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
     {
-        kValue = m_nColor;
-        return true;
-    }
-    else if (nHash == gs_nRange)
-    {
-        kValue = m_nRange;
-        return true;
+        m_aData.unsafe_erase(pIterator);
     }
 
-    return false;
+    return S_OK;
 }
 
-STDMETHODIMP_(bool) CGEKComponentLight::SetProperty(LPCWSTR pName, const GEKVALUE &kValue)
+STDMETHODIMP_(bool) CGEKComponentLight::HasComponent(const GEKENTITYID &nEntityID) const
 {
-    GEKHASH nHash(pName);
-    if (nHash == gs_nColor)
+    return (m_aData.find(nEntityID) != m_aData.end());
+}
+
+STDMETHODIMP_(void) CGEKComponentLight::ListProperties(const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const
+{
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
     {
-        m_nColor = kValue.GetFloat3();
-        return true;
+        OnProperty(L"color", (*pIterator).second.m_nColor);
+        OnProperty(L"range", (*pIterator).second.m_nRange);
     }
-    else if (nHash == gs_nRange)
+}
+
+STDMETHODIMP_(bool) CGEKComponentLight::GetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const
+{
+    bool bReturn = false;
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
     {
-        m_nRange = kValue.GetFloat();
-        return true;
+        if (wcscmp(pName, L"color") == 0)
+        {
+            kValue = (*pIterator).second.m_nColor;
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"range") == 0)
+        {
+            kValue = (*pIterator).second.m_nRange;
+            bReturn = true;
+        }
     }
 
-    return false;
+    return bReturn;
+}
+
+STDMETHODIMP_(bool) CGEKComponentLight::SetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue)
+{
+    bool bReturn = false;
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
+    {
+        if (wcscmp(pName, L"color") == 0)
+        {
+            (*pIterator).second.m_nColor = kValue.GetFloat3();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"range") == 0)
+        {
+            (*pIterator).second.m_nRange = kValue.GetFloat();
+            bReturn = true;
+        }
+    }
+
+    return bReturn;
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemLight)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
+    INTERFACE_LIST_ENTRY_COM(IGEKViewObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -76,77 +112,25 @@ CGEKComponentSystemLight::~CGEKComponentSystemLight(void)
 {
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemLight::OnFree(void)
-{
-    m_aComponents.clear();
-}
-
 STDMETHODIMP CGEKComponentSystemLight::Initialize(void)
 {
-    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    return GetContext()->AddCachedObserver(CLSID_GEKRenderManager, (IGEKViewObserver *)GetUnknown());
 };
 
 STDMETHODIMP_(void) CGEKComponentSystemLight::Destroy(void)
 {
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    GetContext()->RemoveCachedObserver(CLSID_GEKRenderManager, (IGEKViewObserver *)GetUnknown());
 }
 
-STDMETHODIMP_(LPCWSTR) CGEKComponentSystemLight::GetType(void) const
+STDMETHODIMP_(void) CGEKComponentSystemLight::OnRender(void)
 {
-    return L"light";
-}
-
-STDMETHODIMP CGEKComponentSystemLight::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
-{
-    HRESULT hRetVal = E_OUTOFMEMORY;
-    CComPtr<CGEKComponentLight> spComponent(new CGEKComponentLight(GetContext(), pEntity));
-    GEKRESULT(spComponent, L"Unable to allocate new light component instance");
-    if (spComponent)
+    IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
+    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+    if (pSceneManager != nullptr)
     {
-        hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
-        if (SUCCEEDED(hRetVal))
+        pSceneManager->ListComponentsEntities({ L"transform", L"light" }, [&](const GEKENTITYID &nEntityID)->void
         {
-            kComponentNode.ListAttributes([&spComponent](LPCWSTR pName, LPCWSTR pValue) -> void
-            {
-                spComponent->SetProperty(pName, pValue);
-            });
-
-            m_aComponents[pEntity] = spComponent;
-        }
+            pViewManager->ShowLight(nEntityID);
+        });
     }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKComponentSystemLight::Destroy(IGEKEntity *pEntity)
-{
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aComponents.find(pEntity);
-    if (pIterator != m_aComponents.end())
-    {
-        m_aComponents.unsafe_erase(pIterator);
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemLight::GetVisible(const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities)
-{
-    concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentLight>>::value_type &kPair) -> void
-    {
-        if (kPair.second->m_nRange > 0.0f)
-        {
-            IGEKComponent *pTransform = kPair.first->GetComponent(L"transform");
-            if (pTransform != nullptr)
-            {
-                GEKVALUE kPosition;
-                pTransform->GetProperty(L"position", kPosition);
-                if (kFrustum.IsVisible(sphere(kPosition.GetFloat3(), kPair.second->m_nRange)))
-                {
-                    aVisibleEntities.insert(kPair.first);
-                }
-            }
-        }
-    });
 }

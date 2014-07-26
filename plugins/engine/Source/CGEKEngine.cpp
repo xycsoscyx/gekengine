@@ -1,7 +1,6 @@
 ﻿#include "CGEKEngine.h"
 #include "IGEKRenderManager.h"
 #include "IGEKPopulationManager.h"
-#include "CGEKEntity.h"
 #include <libxml/parserInternals.h>
 #include <windowsx.h>
 #include <algorithm>
@@ -18,7 +17,6 @@ BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
-    INTERFACE_LIST_ENTRY_COM(IGEKInputManager)
     INTERFACE_LIST_ENTRY_COM(IGEKEngine)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -72,7 +70,7 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
         auto pIterator = m_aInputBindings.find(nKey);
         if (pIterator != m_aInputBindings.end())
         {
-            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnAction, std::placeholders::_1, (*pIterator).second, kValue)));
+//            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnAction, std::placeholders::_1, (*pIterator).second, kValue)));
         }
     }
 }
@@ -141,20 +139,11 @@ STDMETHODIMP CGEKEngine::Initialize(void)
         {
             hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationManager, IID_PPV_ARGS(&m_spPopulationManager));
         }
+    }
 
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderManager, IID_PPV_ARGS(&m_spRenderManager));
-            if (m_spRenderManager)
-            {
-                CComPtr<IUnknown> spMainMenu;
-                hRetVal = m_spRenderManager->LoadResource(L"*browser:mainmenu", true, &spMainMenu);
-                if (spMainMenu)
-                {
-                    m_spMainMenu = spMainMenu;
-                }
-            }
-        }
+    if (m_spPopulationManager)
+    {
+        hRetVal = Load(L"demo", L"info_player_start_1");
     }
 
     return hRetVal;
@@ -193,11 +182,6 @@ STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessa
 
 STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
 {
-    if (m_spMainMenu && !m_bSendInput)
-    {
-        m_spMainMenu->OnEvent(nMessage, wParam, lParam);
-    }
-
     switch (nMessage)
     {
     case WM_SETCURSOR:
@@ -274,7 +258,6 @@ STDMETHODIMP_(void) CGEKEngine::OnRun(void)
 STDMETHODIMP_(void) CGEKEngine::OnStop(void)
 {
     m_bWindowActive = false;
-    m_spMainMenu = nullptr;
     m_spPopulationManager->Free();
 }
 
@@ -331,7 +314,6 @@ STDMETHODIMP_(void) CGEKEngine::OnPreReset(void)
 
 STDMETHODIMP CGEKEngine::OnPostReset(void)
 {
-    m_spMainMenu->Resize(m_spSystem->GetXSize(), m_spSystem->GetYSize());
     return S_OK;
 }
 
@@ -363,17 +345,5 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(LPCWSTR pCommand, LPCWSTR *pParams, UI
                 m_spSystem->Stop();
             }
         }
-    }
-}
-
-STDMETHODIMP_(IUnknown *) CGEKEngine::GetOverlay(void)
-{
-    if (!m_bSendInput)
-    {
-        return m_spMainMenu;
-    }
-    else
-    {
-        return nullptr;
     }
 }

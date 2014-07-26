@@ -101,236 +101,6 @@ BEGIN_INTERFACE_LIST(CGEKProgram)
     INTERFACE_LIST_ENTRY_COM(IGEKProgram)
 END_INTERFACE_LIST_UNKNOWN
 
-DECLARE_INTERFACE_IID_(IGEKWebSurface, IUnknown, "47015E42-8CFD-43BD-A10A-737A778A5122")
-{
-    STDMETHOD_(IGEKVideoTexture *, GetTexture)          (THIS) PURE;
-    STDMETHOD_(void, Update)                            (THIS) PURE;
-};
-
-class CGEKWebSurface : public CGEKUnknown
-                     , public Awesomium::Surface
-                     , public IGEKWebSurface
-{
-private:
-    
-    IGEKVideoSystem *m_pVideoSystem;
-    CComPtr<IGEKVideoTexture> m_spTexture;
-    std::vector<UINT8> m_aBuffer;
-    UINT32 m_nXSize;
-    UINT32 m_nYSize;
-    UINT32 m_nPitch;
-    bool m_bDirty;
-
-public:
-    DECLARE_UNKNOWN(CGEKWebSurface);
-    CGEKWebSurface(IGEKVideoSystem *pVideoSystem, int nXSize, int nYSize)
-        : m_pVideoSystem(pVideoSystem)
-        , m_nXSize(nXSize)
-        , m_nYSize(nYSize)
-        , m_nPitch(nXSize * 4)
-        , m_bDirty(false)
-    {
-        m_pVideoSystem->CreateTexture(nXSize, nYSize, 1, GEKVIDEO::DATA::BGRA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &m_spTexture);
-        m_aBuffer.resize(nXSize * nYSize * 4);
-    }
-
-    ~CGEKWebSurface(void)
-    {
-    }
-
-    STDMETHODIMP_(IGEKVideoTexture *) GetTexture(void)
-    {
-        return m_spTexture;
-    }
-
-    STDMETHODIMP_(void) Update(void)
-    {
-        if (m_bDirty)
-        {
-            m_bDirty = false;
-            RECT kRect =
-            {
-                0, 0, m_nXSize, m_nYSize,
-            };
-
-            m_pVideoSystem->UpdateTexture(m_spTexture, &m_aBuffer[0], m_nPitch, &kRect);
-        }
-    }
-
-    void Paint(UINT8 *pSourceBuffer, int nSourcePitch, const Awesomium::Rect &nSourceRect, const Awesomium::Rect &nDestRect)
-    {
-        UINT8 *pDestBuffer = &m_aBuffer[0];
-        for (int nRow = 0; nRow < nDestRect.height; nRow++)
-        {
-            memcpy(pDestBuffer + (nRow + nDestRect.y) * m_nPitch + (nDestRect.x * 4),
-                pSourceBuffer + (nRow + nSourceRect.y) * nSourcePitch + (nSourceRect.x * 4),
-                nDestRect.width * 4);
-        }
-
-        m_bDirty = true;
-    }
-
-    void Scroll(int nDX, int nDY, const Awesomium::Rect &nClipRect)
-    {
-        if (abs(nDX) >= nClipRect.width || abs(nDY) >= nClipRect.height)
-        {
-            return;
-        }
-
-        UINT8 *pDestBuffer = &m_aBuffer[0];
-        if (nDX < 0 && nDY == 0)
-        {
-            std::vector<UINT8> aTempBuffer((nClipRect.width + nDX) * 4);
-            UINT8 *pTempBuffer = &aTempBuffer[0];
-
-            for (INT32 nIndex = 0; nIndex < nClipRect.height; nIndex++)
-            {
-                memcpy(pTempBuffer, (pDestBuffer + (nIndex + nClipRect.y) * m_nPitch + (nClipRect.x - nDX) * 4), ((nClipRect.width + nDX) * 4));
-                memcpy((pDestBuffer + (nIndex + nClipRect.y) * m_nPitch + (nClipRect.x) * 4), pTempBuffer, ((nClipRect.width + nDX) * 4));
-            }
-        }
-        else if (nDX > 0 && nDY == 0)
-        {
-            std::vector<UINT8> aTempBuffer((nClipRect.width + nDX) * 4);
-            UINT8 *pTempBuffer = &aTempBuffer[0];
-
-            for (INT32 nIndex = 0; nIndex < nClipRect.height; nIndex++)
-            {
-                memcpy(pTempBuffer, (pDestBuffer + (nIndex + nClipRect.y) * m_nPitch + (nClipRect.x) * 4), ((nClipRect.width - nDX) * 4));
-                memcpy((pDestBuffer + (nIndex + nClipRect.y) * m_nPitch + (nClipRect.x + nDX) * 4), pTempBuffer, ((nClipRect.width - nDX) * 4));
-            }
-        }
-        else if (nDY < 0 && nDX == 0)
-        {
-            for (INT32 nIndex = 0; nIndex < (nClipRect.height + nDY); nIndex++)
-            {
-                memcpy((pDestBuffer + (nIndex + nClipRect.y) * m_nPitch + (nClipRect.x * 4)),
-                    (pDestBuffer + (nIndex + nClipRect.y - nDY) * m_nPitch + (nClipRect.x * 4)),
-                    (nClipRect.width * 4));
-            }
-        }
-        else if (nDY > 0 && nDX == 0)
-        {
-            for (INT32 nIndex = (nClipRect.height - 1); nIndex >= nDY; nIndex--)
-            {
-                memcpy((pDestBuffer + (nIndex + nClipRect.y) * m_nPitch + (nClipRect.x * 4)),
-                    (pDestBuffer + (nIndex + nClipRect.y - nDY) * m_nPitch + (nClipRect.x * 4)),
-                    (nClipRect.width * 4));
-            }
-        }
-
-        m_bDirty = true;
-    }
-};
-
-BEGIN_INTERFACE_LIST(CGEKWebSurface)
-    INTERFACE_LIST_ENTRY_COM(IGEKWebSurface)
-END_INTERFACE_LIST_UNKNOWN
-
-DECLARE_INTERFACE_IID_(IGEKWebView, IUnknown, "646FA93A-D554-4423-B3E0-2C8C6F368976")
-{
-    STDMETHOD_(Awesomium::WebView *, GetView)   (THIS) PURE;
-};
-
-class CGEKWebView : public CGEKUnknown
-                  , public IGEKWebView
-                  , public IGEKEventResource
-{
-private:
-    Awesomium::WebView *m_pView;
-
-public:
-    DECLARE_UNKNOWN(CGEKWebView);
-    CGEKWebView(Awesomium::WebView *pView)
-        : m_pView(pView)
-    {
-    }
-    
-    ~CGEKWebView(void)
-    {
-        if (m_pView)
-        {
-            m_pView->Destroy();
-            m_pView = nullptr;
-        }
-    }
-
-    STDMETHODIMP_(Awesomium::WebView *) GetView(void)
-    {
-        return m_pView;
-    }
-
-    STDMETHODIMP_(void) OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam)
-    {
-        switch (nMessage)
-        {
-        case WM_KEYDOWN:
-        case WM_KEYUP:
-        case WM_CHAR:
-            if (true)
-            {
-                Awesomium::WebKeyboardEvent kEvent(nMessage, wParam, lParam);
-                m_pView->InjectKeyboardEvent(kEvent);
-            }
-
-            break;
-
-        case WM_LBUTTONDOWN:
-            m_pView->InjectMouseDown(Awesomium::kMouseButton_Left);
-            break;
-
-        case WM_RBUTTONDOWN:
-            m_pView->InjectMouseDown(Awesomium::kMouseButton_Right);
-            break;
-
-        case WM_MBUTTONDOWN:
-            m_pView->InjectMouseDown(Awesomium::kMouseButton_Middle);
-            break;
-
-        case WM_LBUTTONUP:
-            m_pView->InjectMouseUp(Awesomium::kMouseButton_Left);
-            break;
-
-        case WM_RBUTTONUP:
-            m_pView->InjectMouseUp(Awesomium::kMouseButton_Right);
-            break;
-
-        case WM_MBUTTONUP:
-            m_pView->InjectMouseUp(Awesomium::kMouseButton_Middle);
-            break;
-
-        case WM_MOUSEMOVE:
-            if (true)
-            {
-                INT32 nXPos = GET_X_LPARAM(lParam);
-                INT32 nYPos = GET_Y_LPARAM(lParam);
-                m_pView->InjectMouseMove(nXPos, nYPos);
-            }
-
-            break;
-
-        case WM_MOUSEWHEEL:
-            if (true)
-            {
-                INT32 nDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-                m_pView->InjectMouseWheel(nDelta, 0);
-            }
-
-            break;
-        };
-    }
-
-    STDMETHODIMP_(void) Resize(UINT32 nXSize, UINT32 nYSize)
-    {
-        m_pView->Resize(nXSize, nYSize);
-    }
-};
-
-BEGIN_INTERFACE_LIST(CGEKWebView)
-    INTERFACE_LIST_ENTRY_COM(IGEKWebView)
-    INTERFACE_LIST_ENTRY_COM(IGEKEventResource)
-END_INTERFACE_LIST_UNKNOWN
-
 static GEKVIDEO::DATA::FORMAT GetFormatType(LPCWSTR pValue)
 {
          if (_wcsicmp(pValue, L"R_FLOAT") == 0) return GEKVIDEO::DATA::R_FLOAT;
@@ -352,6 +122,7 @@ static GEKVIDEO::INPUT::SOURCE GetElementClass(LPCWSTR pValue)
 }
 
 BEGIN_INTERFACE_LIST(CGEKRenderManager)
+    INTERFACE_LIST_ENTRY_COM(IGEKObservable)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderManager)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManager)
@@ -366,9 +137,6 @@ CGEKRenderManager::CGEKRenderManager(void)
     : m_pSystem(nullptr)
     , m_pVideoSystem(nullptr)
     , m_pEngine(nullptr)
-    , m_pWebCore(nullptr)
-    , m_pWebSession(nullptr)
-    , m_pViewer(nullptr)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
     , m_nNumLightInstances(254)
@@ -401,7 +169,6 @@ STDMETHODIMP_(void) CGEKRenderManager::OnFree(void)
     m_aResources.clear();
     m_aFilters.clear();
     m_aPasses.clear();
-    m_pViewer = nullptr;
     m_pCurrentPass = nullptr;
     m_pCurrentFilter = nullptr;
     m_aCurrentPasses.clear();
@@ -415,26 +182,9 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKRenderManager, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = E_FAIL;
         m_pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
         m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
         m_pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
-        if (m_pSystem != nullptr && m_pVideoSystem != nullptr && m_pEngine != nullptr)
-        {
-            m_pWebCore = Awesomium::WebCore::Initialize(Awesomium::WebConfig());
-            GEKRESULT(m_pWebCore != nullptr, L"Unable to create Awesomium WebCore instance");
-            if (m_pWebCore != nullptr)
-            {
-                m_pWebSession = m_pWebCore->CreateWebSession(Awesomium::WSLit(""), Awesomium::WebPreferences());
-                GEKRESULT(m_pWebSession != nullptr, L"Unable to create Awesomium WebSession instance");
-                if (m_pWebSession != nullptr)
-                {
-                    m_pWebSession->AddDataSource(Awesomium::WSLit("Engine"), this);
-                    m_pWebCore->set_surface_factory(this);
-                    hRetVal = S_OK;
-                }
-            }
-        }
     }
 
     if (SUCCEEDED(hRetVal))
@@ -583,25 +333,14 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
 STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
 {
-    m_pViewer = nullptr;
     m_pCurrentPass = nullptr;
     m_pCurrentFilter = nullptr;
     m_aCurrentPasses.clear();
     m_aVisibleModels.clear();
     m_aVisibleLights.clear();
     m_aResources.clear();
-    m_aPersistentResources.clear();
-    m_aWebSurfaces.clear();
     m_aFilters.clear();
     m_aPasses.clear();
-    if (m_pWebSession != nullptr)
-    {
-        m_pWebSession->Release();
-        m_pWebSession = nullptr;
-    }
-
-    Awesomium::WebCore::Shutdown();
-    m_pWebCore = nullptr;
 
     GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
     GetContext()->RemoveCachedClass(CLSID_GEKRenderManager);
@@ -696,7 +435,7 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, bool bPersistent, IUnknown **ppResource)
+STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResource)
 {
     REQUIRE_RETURN(pName, E_INVALIDARG);
     REQUIRE_RETURN(ppResource, E_INVALIDARG);
@@ -709,131 +448,47 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, bool bPersistent, IU
     }
     else
     {
-        pIterator = m_aPersistentResources.find(pName);
-        if (pIterator != m_aPersistentResources.end())
+        GEKFUNCTION(L"Name(%s)", pName);
+        CComPtr<IUnknown> spTexture;
+        if (pName[0] == L'*')
         {
-            hRetVal = (*pIterator).second->QueryInterface(IID_PPV_ARGS(ppResource));
+            int nPosition = 0;
+            CStringW strName = &pName[1];
+            CStringW strType = strName.Tokenize(L":", nPosition);
+            if (strType.CompareNoCase(L"color") == 0)
+            {
+                CStringW strColor = strName.Tokenize(L":", nPosition);
+                GEKLOG(L"Creating Color Texture: %s", strColor.GetString());
+                float4 nColor = StrToFloat4(strColor);
+
+                CComPtr<IGEKVideoTexture> spColorTexture;
+                hRetVal = m_pVideoSystem->CreateTexture(1, 1, 1, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &spColorTexture);
+                if (spColorTexture)
+                {
+                    UINT32 nColorValue = UINT32(UINT8(nColor.r * 255.0f)) |
+                        UINT32(UINT8(nColor.g * 255.0f) << 8) |
+                        UINT32(UINT8(nColor.b * 255.0f) << 16) |
+                        UINT32(UINT8(nColor.a * 255.0f) << 24);
+                    m_pVideoSystem->UpdateTexture(spColorTexture, &nColorValue, 4);
+                    spTexture = spColorTexture;
+                }
+            }
         }
         else
         {
-            GEKFUNCTION(L"Name(%s)", pName);
-            CComPtr<IUnknown> spTexture;
-            if (pName[0] == L'*')
+            GEKLOG(L"Loading Texture: %s", pName);
+            CComPtr<IGEKVideoTexture> spFileTexture;
+            hRetVal = m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spFileTexture);
+            if (spFileTexture)
             {
-                int nPosition = 0;
-                CStringW strName = &pName[1];
-                CStringW strType = strName.Tokenize(L":", nPosition);
-                if (strType.CompareNoCase(L"browser") == 0)
-                {
-                    CStringW strBrowserName = strName.Tokenize(L":", nPosition);
-                    GEKLOG(L"Loading Browser Texture: %s", strBrowserName.GetString());
-
-                    CLibXMLDoc kDocument;
-                    hRetVal = kDocument.Load(L"%root%\\data\\browsers\\" + strBrowserName + L".xml");
-                    if (SUCCEEDED(hRetVal))
-                    {
-                        hRetVal = E_INVALIDARG;
-                        CLibXMLNode kBrowerNode = kDocument.GetRoot();
-                        if (kBrowerNode && kBrowerNode.HasAttribute(L"size"))
-                        {
-                            nPosition = 0;
-                            CStringW strSize = kBrowerNode.GetAttribute(L"size");
-                            CStringW strXSize = strSize.Tokenize(L",", nPosition);
-                            CStringW strYSize = strSize.Tokenize(L",", nPosition);
-                            UINT32 nXSize = m_pSystem->EvaluateValue(strXSize);
-                            UINT32 nYSize = m_pSystem->EvaluateValue(strYSize);
-
-                            CLibXMLNode kSourceNode = kBrowerNode.FirstChildElement(L"source");
-                            if (kSourceNode && kSourceNode.HasAttribute(L"url"))
-                            {
-                                Awesomium::WebView *pView = m_pWebCore->CreateWebView(nXSize, nYSize, m_pWebSession);
-                                if (pView != nullptr)
-                                {
-                                    pView->set_view_listener(this);
-
-                                    CLibXMLNode kFlagsNode = kBrowerNode.FirstChildElement(L"flags");
-                                    if (kFlagsNode)
-                                    {
-                                        if (kFlagsNode.HasAttribute(L"javascript") && StrToBoolean(kFlagsNode.GetAttribute(L"javascript")))
-                                        {
-                                            pView->set_js_method_handler(this);
-                                            Awesomium::JSValue kResult = pView->CreateGlobalJavascriptObject(Awesomium::WSLit("Engine"));
-                                            if (kResult.IsObject())
-                                            {
-                                                Awesomium::JSObject &kEngineObject = kResult.ToObject();
-
-                                                kEngineObject.SetCustomMethod(Awesomium::WSLit("NewGame"), false);
-                                                kEngineObject.SetCustomMethod(Awesomium::WSLit("Quit"), false);
-                                                kEngineObject.SetCustomMethod(Awesomium::WSLit("SetResolution"), false);
-
-                                                kEngineObject.SetCustomMethod(Awesomium::WSLit("GetResolutions"), true);
-                                                kEngineObject.SetCustomMethod(Awesomium::WSLit("GetValue"), true);
-                                            }
-                                        }
-
-                                        if (kFlagsNode.HasAttribute(L"transparent") && StrToBoolean(kFlagsNode.GetAttribute(L"transparent")))
-                                        {
-                                            pView->SetTransparent(true);
-                                        }
-                                    }
-
-                                    CStringW strURL = kSourceNode.GetAttribute(L"url");
-                                    CStringA strURLUTF8 = CW2A(strURL, CP_UTF8);
-                                    pView->LoadURL(Awesomium::WebURL(Awesomium::WSLit(strURLUTF8)));
-                                    CComPtr<CGEKWebView> spWebView(new CGEKWebView(pView));
-                                    GEKRESULT(spWebView, L"Unable to allocate new web view instance");
-                                    if (spWebView)
-                                    {
-                                        hRetVal = spWebView->QueryInterface(IID_PPV_ARGS(&spTexture));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (strType.CompareNoCase(L"color") == 0)
-                {
-                    CStringW strColor = strName.Tokenize(L":", nPosition);
-                    GEKLOG(L"Creating Color Texture: %s", strColor.GetString());
-                    float4 nColor = StrToFloat4(strColor);
-
-                    CComPtr<IGEKVideoTexture> spColorTexture;
-                    hRetVal = m_pVideoSystem->CreateTexture(1, 1, 1, GEKVIDEO::DATA::RGBA_UINT8, GEKVIDEO::TEXTURE::RESOURCE, &spColorTexture);
-                    if (spColorTexture)
-                    {
-                        UINT32 nColorValue = UINT32(UINT8(nColor.r * 255.0f)) |
-                            UINT32(UINT8(nColor.g * 255.0f) << 8) |
-                            UINT32(UINT8(nColor.b * 255.0f) << 16) |
-                            UINT32(UINT8(nColor.a * 255.0f) << 24);
-                        m_pVideoSystem->UpdateTexture(spColorTexture, &nColorValue, 4);
-                        spTexture = spColorTexture;
-                    }
-                }
+                spTexture = spFileTexture;
             }
-            else
-            {
-                GEKLOG(L"Loading Texture: %s", pName);
-                CComPtr<IGEKVideoTexture> spFileTexture;
-                hRetVal = m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spFileTexture);
-                if (spFileTexture)
-                {
-                    spTexture = spFileTexture;
-                }
-            }
+        }
 
-            if (spTexture)
-            {
-                if (bPersistent)
-                {
-                    spTexture->QueryInterface(IID_PPV_ARGS(&m_aPersistentResources[pName]));
-                }
-                else
-                {
-                    spTexture->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
-                }
-
-                hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
-            }
+        if (spTexture)
+        {
+            spTexture->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
+            hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppResource));
         }
     }
 
@@ -843,20 +498,6 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, bool bPersistent, IU
 STDMETHODIMP_(void) CGEKRenderManager::SetResource(IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource)
 {
     CComPtr<IUnknown> spResource(pResource);
-    CComQIPtr<IGEKWebView> spWebView(pResource);
-    if (spWebView)
-    {
-        auto pIterator = m_aWebSurfaces.find(spWebView->GetView());
-        if (pIterator != m_aWebSurfaces.end())
-        {
-            CComQIPtr<IGEKWebSurface> spWebSurface((*pIterator).second);
-            if (spWebSurface)
-            {
-                spResource = spWebSurface->GetTexture();
-            }
-        }
-    }
-
     if (spResource)
     {
         if (pSystem == nullptr)
@@ -883,11 +524,11 @@ STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
     {
         int nPosition = 0;
         CStringW strName = pName;
-        GEKHASH nFilter = strName.Tokenize(L".", nPosition);
+        CStringW strFilter = strName.Tokenize(L".", nPosition);
         CStringW strSource = strName.Tokenize(L".", nPosition);
         for (auto &kPair : m_aFilters)
         {
-            if (kPair.first == nFilter)
+            if (kPair.first == strFilter)
             {
                 hRetVal = kPair.second->GetBuffer(strSource, ppResource);
                 break;
@@ -949,10 +590,10 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CStringW strAlbedo = kAlbedoNode.GetAttribute(L"source");
                         strAlbedo.Replace(L"%material%", pName);
                         strAlbedo.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadResource(strAlbedo, false, &spAlbedoMap);
+                        LoadResource(strAlbedo, &spAlbedoMap);
                         if (!spAlbedoMap)
                         {
-                            LoadResource(L"*color:1,1,1,1", false, &spAlbedoMap);
+                            LoadResource(L"*color:1,1,1,1", &spAlbedoMap);
                         }
 
                         CComPtr<IUnknown> spNormalMap;
@@ -960,10 +601,10 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CStringW strNormal = kNormalNode.GetAttribute(L"source");
                         strNormal.Replace(L"%material%", pName);
                         strNormal.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadResource(strNormal, false, &spNormalMap);
+                        LoadResource(strNormal, &spNormalMap);
                         if (!spNormalMap)
                         {
-                            LoadResource(L"*color:0.5,0.5,1,1", false, &spNormalMap);
+                            LoadResource(L"*color:0.5,0.5,1,1", &spNormalMap);
                         }
 
                         CComPtr<IUnknown> spInfoMap;
@@ -971,10 +612,10 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
                         CStringW strInfo = kInfoNode.GetAttribute(L"source");
                         strInfo.Replace(L"%material%", pName);
                         strInfo.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadResource(strInfo, false, &spInfoMap);
+                        LoadResource(strInfo, &spInfoMap);
                         if (!spInfoMap)
                         {
-                            LoadResource(L"*color:0.5,0,0,0", false, &spInfoMap);
+                            LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
                         }
 
                         CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
@@ -1006,13 +647,13 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
             if (SUCCEEDED(hRetVal))
             {
                 CComPtr<IUnknown> spAlbedoMap;
-                LoadResource(L"*color:1,1,1,1", false, &spAlbedoMap);
+                LoadResource(L"*color:1,1,1,1", &spAlbedoMap);
 
                 CComPtr<IUnknown> spNormalMap;
-                LoadResource(L"*color:0.5,0.5,1,1", false, &spNormalMap);
+                LoadResource(L"*color:0.5,0.5,1,1", &spNormalMap);
 
                 CComPtr<IUnknown> spInfoMap;
-                LoadResource(L"*color:0.5,0,0,0", false, &spInfoMap);
+                LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
 
                 CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(L"Opaque", spAlbedoMap, spNormalMap, spInfoMap));
                 GEKRESULT(spMaterial, L"Unable to allocate material new instance");
@@ -1193,46 +834,27 @@ STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
         m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(spProgram->GetGeometryProgram());
     }
 }
-
-STDMETHODIMP CGEKRenderManager::EnablePass(LPCWSTR pName, INT32 nPriority)
+STDMETHODIMP CGEKRenderManager::SetViewer(const GEKENTITYID &nEntityID)
 {
-    REQUIRE_RETURN(pName, E_INVALIDARG);
-
-    HRESULT hRetVal = LoadPass(pName);
-    if (SUCCEEDED(hRetVal))
-    {
-        auto pIterator = m_aPasses.find(pName);
-        if (pIterator != m_aPasses.end())
-        {
-            m_aCurrentPasses[&(*pIterator).second] = nPriority;
-        }
-    }
-
-    return hRetVal;
+    m_nViewerEntityID = nEntityID;
+    return S_OK;
 }
 
-STDMETHODIMP CGEKRenderManager::SetViewer(IGEKEntity *pEntity)
+STDMETHODIMP_(GEKENTITYID) CGEKRenderManager::GetViewer(void) const
 {
-    HRESULT hRetVal = E_INVALID;
-    if (pEntity != nullptr)
-    {
-        if (pEntity->GetComponent(L"viewer"))
-        {
-            m_pViewer = pEntity;
-            hRetVal = S_OK;
-        }
-    }
-    else
-    {
-        m_pViewer = nullptr;
-    }
-
-    return hRetVal;
+    return m_nViewerEntityID;
 }
 
-STDMETHODIMP_(IGEKEntity *) CGEKRenderManager::GetViewer(void)
+STDMETHODIMP CGEKRenderManager::ShowLight(const GEKENTITYID &nEntityID)
 {
-    return m_pViewer;
+    m_aShownLights.push_back(nEntityID);
+    return S_OK;
+}
+
+STDMETHODIMP CGEKRenderManager::ShowModel(const GEKENTITYID &nEntityID)
+{
+    m_aShownModels.push_back(nEntityID);
+    return S_OK;
 }
 
 STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
@@ -1318,37 +940,26 @@ static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGE
 
 STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
 {
-    REQUIRE_VOID_RETURN(m_pWebCore);
-
-    m_pWebCore->Update();
-    for (auto &kPair : m_aWebSurfaces)
-    {
-        CComQIPtr<IGEKWebSurface> spWebSurface(kPair.second);
-        if (spWebSurface)
-        {
-            spWebSurface->Update();
-        }
-    }
-
     m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
     m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
-    if (m_pViewer != nullptr && bUpdateScreen)
+    if (bUpdateScreen)
     {
-        IGEKComponent *pViewerComponent = m_pViewer->GetComponent(L"viewer");
-        IGEKComponent *pTransformComponent = m_pViewer->GetComponent(L"transform");
-        if (pTransformComponent != nullptr && pViewerComponent != nullptr)
+        CGEKObservable::SendEvent(TGEKEvent<IGEKViewObserver>(std::bind(&IGEKViewObserver::OnRender, std::placeholders::_1)));
+
+        IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+        if (pSceneManager != nullptr)
         {
             GEKVALUE kFieldOfView;
             GEKVALUE kMinViewDistance;
             GEKVALUE kMaxViewDistance;
-            pViewerComponent->GetProperty(L"fieldofview", kFieldOfView);
-            pViewerComponent->GetProperty(L"minviewdistance", kMinViewDistance);
-            pViewerComponent->GetProperty(L"maxviewdistance", kMaxViewDistance);
+            pSceneManager->GetComponent(L"viewer")->GetProperty(m_nViewerEntityID, L"fieldofview", kFieldOfView);
+            pSceneManager->GetComponent(L"viewer")->GetProperty(m_nViewerEntityID, L"minviewdistance", kMinViewDistance);
+            pSceneManager->GetComponent(L"viewer")->GetProperty(m_nViewerEntityID, L"maxviewdistance", kMaxViewDistance);
 
             GEKVALUE kPosition;
             GEKVALUE kRotation;
-            pTransformComponent->GetProperty(L"position", kPosition);
-            pTransformComponent->GetProperty(L"rotation", kRotation);
+            pSceneManager->GetComponent(L"transform")->GetProperty(m_nViewerEntityID, L"position", kPosition);
+            pSceneManager->GetComponent(L"transform")->GetProperty(m_nViewerEntityID, L"rotation", kRotation);
 
             float4x4 nCameraMatrix;
             nCameraMatrix = kRotation.GetQuaternion();
@@ -1371,77 +982,14 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
 
             m_kFrustum.Create(nCameraMatrix, m_kEngineBuffer.m_nProjectionMatrix);
 
-            IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
-            if (pSceneManager != nullptr)
+            m_aVisibleLights.clear();
+            m_aVisibleModels.clear();
+            for (auto &kPair : m_aVisibleModels)
             {
-                concurrency::concurrent_unordered_set<IGEKEntity *> aVisibleEntities;
-                pSceneManager->GetVisible(m_kFrustum, aVisibleEntities);
-
-                concurrency::concurrent_vector<LIGHT> aLights;
-                concurrency::concurrent_vector<std::pair<CComPtr<IGEKModel>, IGEKModel::INSTANCE>> aModels;
-                concurrency::parallel_for_each(aVisibleEntities.begin(), aVisibleEntities.end(), [&](IGEKEntity *pEntity) -> void
-                {
-                    IGEKComponent *pTransformComponent = pEntity->GetComponent(L"transform");
-                    if (pTransformComponent != nullptr)
-                    {
-                        GEKVALUE kPosition;
-                        GEKVALUE kRotation;
-                        pTransformComponent->GetProperty(L"position", kPosition);
-                        pTransformComponent->GetProperty(L"rotation", kRotation);
-
-                        IGEKComponent *pLightComponent = pEntity->GetComponent(L"light");
-                        if (pLightComponent != nullptr)
-                        {
-                            GEKVALUE kColor;
-                            GEKVALUE kRange;
-                            pLightComponent->GetProperty(L"color", kColor);
-                            pLightComponent->GetProperty(L"range", kRange);
-
-                            LIGHT kLight;
-                            kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kPosition.GetFloat3(), 1.0f));
-                            kLight.m_nRange = kRange.GetFloat();
-                            kLight.m_nInvRange = (1.0f / kLight.m_nRange);
-                            kLight.m_nColor = kColor.GetFloat3();
-                            aLights.push_back(kLight);
-                        }
-
-                        IGEKComponent *pModelComponent = pEntity->GetComponent(L"model");
-                        if (pModelComponent != nullptr)
-                        {
-                            GEKVALUE kModel;
-                            pModelComponent->GetProperty(L"model", kModel);
-                            CComQIPtr<IGEKModel> spModel(kModel.GetObject());
-                            if (spModel)
-                            {
-                                IGEKModel::INSTANCE kInstance;
-
-                                GEKVALUE kScale;
-                                pModelComponent->GetProperty(L"scale", kScale);
-                                kInstance.m_nScale = kScale.GetFloat3();
-
-                                kInstance.m_nMatrix = kRotation.GetQuaternion();
-                                kInstance.m_nMatrix.t = kPosition.GetFloat3();
-                                aModels.push_back(std::make_pair(spModel, kInstance));
-                            }
-                        }
-                    }
-                });
-
-                m_aVisibleLights.assign(aLights.begin(), aLights.end());
-
-                m_aVisibleModels.clear();
-                for (auto &kPair : aModels)
-                {
-                    m_aVisibleModels[kPair.first].push_back(kPair.second);
-                }
-
-                for (auto &kPair : m_aVisibleModels)
-                {
-                    kPair.first->Prepare();
-                }
+                kPair.first->Prepare();
             }
         }
-
+    
         m_spEngineBuffer->Update((void *)&m_kEngineBuffer);
         m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
         m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
@@ -1487,7 +1035,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
     m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
     m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetProgram(m_spPixelProgram);
     m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spScreenBuffer);
-    SetResource(m_pVideoSystem->GetImmediateContext()->GetPixelSystem(), 1, m_pEngine->GetOverlay());
+    SetResource(m_pVideoSystem->GetImmediateContext()->GetPixelSystem(), 1, nullptr);
     m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
     m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
     m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
@@ -1496,182 +1044,10 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(bool bUpdateScreen)
     m_pVideoSystem->GetImmediateContext()->ClearResources();
     m_pVideoSystem->Present(true);
 
-    if (m_pViewer != nullptr)
+    while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))
     {
-        while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))
-        {
-            Sleep(0);
-        };
+        Sleep(0);
+    };
 
-        m_pVideoSystem->SetEvent(m_spFrameEvent);
-    }
-}
-
-static const std::map<GEKHASH, CStringA> gs_aDataMimeTypes =
-{
-    { L".htm", "text/html", },
-    { L".html", "text/html", },
-    { L".xml", "text/xml", },
-    { L".js", "text/javascript", },
-    { L".css", "text/css", },
-    { L".png", "image/png", },
-    { L".gif", "image/gif", },
-    { L".bmp", "image/bmp", },
-    { L".jpg", "image/jpg", },
-};
-
-void CGEKRenderManager::OnRequest(int nRequestID, const Awesomium::ResourceRequest &kRequest, const Awesomium::WebString &kPath)
-{
-    CStringW strPath((LPCWSTR)kPath.data());
-
-    std::vector<UINT8> aBuffer;
-    if (SUCCEEDED(GEKLoadFromFile(L"%root%\\data\\" + strPath, aBuffer)))
-    {
-        CStringW strExtension = CPathW(strPath).GetExtension();
-        auto pIterator = gs_aDataMimeTypes.find(strExtension);
-        if (pIterator != gs_aDataMimeTypes.end())
-        {
-            SendResponse(nRequestID, aBuffer.size(), &aBuffer[0], Awesomium::WSLit((*pIterator).second));
-        }
-        else
-        {
-            SendResponse(nRequestID, 0, nullptr, Awesomium::WSLit(""));
-        }
-    }
-    else
-    {
-        SendResponse(nRequestID, 0, nullptr, Awesomium::WSLit(""));
-    }
-}
-
-void CGEKRenderManager::OnMethodCall(Awesomium::WebView *pCaller, unsigned int nRemoteObjectID, const Awesomium::WebString &kMethodName, const Awesomium::JSArray &aArgs)
-{
-    std::vector<CStringW> aParams;
-    for (UINT32 nIndex = 0; nIndex < aArgs.size(); nIndex++)
-    {
-        const Awesomium::JSValue &kValue = aArgs.At(nIndex);
-        aParams.push_back((LPCWSTR)kValue.ToString().data());
-    }
-
-    if (aParams.size() > 0)
-    {
-        std::vector<LPCWSTR> aParamPointers(aParams.begin(), aParams.end());
-        m_pEngine->OnCommand((LPCWSTR)kMethodName.data(), &aParamPointers[0], aParamPointers.size());
-    }
-    else
-    {
-        m_pEngine->OnCommand((LPCWSTR)kMethodName.data(), nullptr, 0);
-    }
-}
-
-Awesomium::JSValue CGEKRenderManager::OnMethodCallWithReturnValue(Awesomium::WebView *pCaller, unsigned int nRemoteObjectID, const Awesomium::WebString &kMethodName, const Awesomium::JSArray &aArgs)
-{
-    if (_wcsicmp((LPCWSTR)kMethodName.data(), L"GetResolutions") == 0)
-    {
-        Awesomium::JSArray aArray;
-        std::vector<GEKMODE> akModes = GEKGetDisplayModes()[32];
-        for (UINT32 nMode = 0; nMode < akModes.size(); nMode++)
-        {
-            GEKMODE &kMode = akModes[nMode];
-
-            CStringA strAspect("");
-            switch (kMode.GetAspect())
-            {
-            case _ASPECT_4x3:
-                strAspect = ", (4x3)";
-                break;
-
-            case _ASPECT_16x9:
-                strAspect = ", (16x9)";
-                break;
-
-            case _ASPECT_16x10:
-                strAspect = ", (16x10)";
-                break;
-            };
-
-            Awesomium::JSObject kObject;
-            kObject.SetProperty(Awesomium::WSLit("Label"), Awesomium::JSValue(Awesomium::WSLit(FormatString("%dx%d%s", kMode.xsize, kMode.ysize, strAspect.GetString()))));
-            kObject.SetProperty(Awesomium::WSLit("XSize"), Awesomium::JSValue(int(kMode.xsize)));
-            kObject.SetProperty(Awesomium::WSLit("YSize"), Awesomium::JSValue(int(kMode.ysize)));
-            aArray.Push(kObject);
-        }
-
-        return aArray;
-    }
-    else if (_wcsicmp((LPCWSTR)kMethodName.data(), L"GetValue") == 0)
-    {
-        if (aArgs.size() == 2)
-        {
-            CStringW strGroup = (LPCWSTR)aArgs.At(0).ToString().data(); 
-            CStringW strName = (LPCWSTR)aArgs.At(1).ToString().data();
-            CStringW strValue = m_pSystem->GetConfig().GetValue(strGroup, strName, L"");
-            return Awesomium::JSValue(Awesomium::WSLit(CW2A(strValue, CP_UTF8)));
-        }
-    }
-
-    return Awesomium::JSValue();
-}
-
-Awesomium::Surface *CGEKRenderManager::CreateSurface(Awesomium::WebView *pView, int nXSize, int nYSize)
-{
-    CComPtr<CGEKWebSurface> spWebSurface(new CGEKWebSurface(m_pVideoSystem, nXSize, nYSize));
-    GEKRESULT(spWebSurface, L"Unable to allocate new web surface instance");
-    if (spWebSurface)
-    {
-        spWebSurface->QueryInterface(IID_PPV_ARGS(&m_aWebSurfaces[pView]));
-        return spWebSurface.Detach();
-    }
-
-    return nullptr;
-}
-
-void CGEKRenderManager::DestroySurface(Awesomium::Surface *pSurface)
-{
-    CComPtr<CGEKWebSurface> spWebSurface;
-    spWebSurface.Attach(dynamic_cast<CGEKWebSurface *>(pSurface));
-    auto pIterator = std::find_if(m_aWebSurfaces.begin(), m_aWebSurfaces.end(), [&](std::map<Awesomium::WebView *, CComPtr<IUnknown>>::value_type &kPair) -> bool
-    {
-        return (spWebSurface.IsEqualObject(kPair.second));
-    });
-
-    if (pIterator != m_aWebSurfaces.end())
-    {
-        m_aWebSurfaces.erase(pIterator);
-    }
-}
-
-void CGEKRenderManager::OnChangeTitle(Awesomium::WebView *pCaller, const Awesomium::WebString &kTitle)
-{
-}
-
-void CGEKRenderManager::OnChangeAddressBar(Awesomium::WebView *pCaller, const Awesomium::WebURL &kURL)
-{
-}
-
-void CGEKRenderManager::OnChangeTooltip(Awesomium::WebView *pCaller, const Awesomium::WebString &kTooltip)
-{
-}
-
-void CGEKRenderManager::OnChangeTargetURL(Awesomium::WebView *pCaller, const Awesomium::WebURL &kURL)
-{
-}
-
-void CGEKRenderManager::OnChangeCursor(Awesomium::WebView *pCaller, Awesomium::Cursor eCursor)
-{
-}
-
-void CGEKRenderManager::OnChangeFocus(Awesomium::WebView *pCaller, Awesomium::FocusedElementType eFocusedType)
-{
-}
-
-void CGEKRenderManager::OnAddConsoleMessage(Awesomium::WebView *pCaller, const Awesomium::WebString &kMessage, int nLineNumber, const Awesomium::WebString &kSource)
-{
-    CStringW strMessage((LPCWSTR)kMessage.data());
-    CStringW strSource((LPCWSTR)kSource.data());
-    GEKLOG(L"Browser Console (%s: %d): %s", strSource.GetString(), nLineNumber, strMessage.GetString());
-}
-
-void CGEKRenderManager::OnShowCreatedWebView(Awesomium::WebView *pCaller, Awesomium::WebView *pNewView, const Awesomium::WebURL &kOpenerURL, const Awesomium::WebURL &kTargetURL, const Awesomium::Rect &nInitialPosition, bool bIsPopup)
-{
+    m_pVideoSystem->SetEvent(m_spFrameEvent);
 }

@@ -495,7 +495,7 @@ HRESULT CGEKRenderFilter::LoadResources(DATA &kData, CLibXMLNode &kNode)
                 else if (kResourceNode.HasAttribute(L"data"))
                 {
                     CComPtr<IUnknown> spResource;
-                    hRetVal = m_pRenderManager->LoadResource(kResourceNode.GetAttribute(L"data"), false, &spResource);
+                    hRetVal = m_pRenderManager->LoadResource(kResourceNode.GetAttribute(L"data"), &spResource);
                     if (SUCCEEDED(hRetVal))
                     {
                         kResource.m_spResource = spResource;

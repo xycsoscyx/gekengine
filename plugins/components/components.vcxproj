@@ -100,7 +100,6 @@
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Source\CGEKComponentLight.cpp" />
-    <ClCompile Include="Source\CGEKComponentLogic.cpp" />
     <ClCompile Include="Source\CGEKComponentModel.cpp" />
     <ClCompile Include="Source\CGEKComponentNewton.cpp" />
     <ClCompile Include="Source\CGEKComponentTransform.cpp" />
@@ -111,20 +110,12 @@
     <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
     <ClInclude Include="..\..\api\GEKVALUE.h" />
     <ClInclude Include="..\..\api\IGEKComponent.h" />
-    <ClInclude Include="..\..\api\IGEKFactory.h" />
-    <ClInclude Include="..\..\api\IGEKInputManager.h" />
-    <ClInclude Include="..\..\api\IGEKLogic.h" />
-    <ClInclude Include="..\..\api\IGEKMaterialManager.h" />
     <ClInclude Include="..\..\api\IGEKModelManager.h" />
-    <ClInclude Include="..\..\api\IGEKProgramManager.h" />
-    <ClInclude Include="..\..\api\IGEKResource.h" />
     <ClInclude Include="..\..\api\IGEKSceneManager.h" />
     <ClInclude Include="..\..\api\IGEKViewManager.h" />
     <ClInclude Include="GEKComponents.h" />
     <ClInclude Include="GEKComponentsCLSIDs.h" />
-    <ClInclude Include="Include\CGEKComponent.h" />
     <ClInclude Include="Include\CGEKComponentLight.h" />
-    <ClInclude Include="Include\CGEKComponentLogic.h" />
     <ClInclude Include="Include\CGEKComponentModel.h" />
     <ClInclude Include="Include\CGEKComponentNewton.h" />
     <ClInclude Include="Include\CGEKComponentTransform.h" />

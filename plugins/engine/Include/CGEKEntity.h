@@ -11,7 +11,7 @@ class CGEKEntity : public CGEKUnknown
 {
 private:
     CStringW m_strFlags;
-    std::map<GEKHASH, CComPtr<IGEKComponent>> m_aComponents;
+    std::map<CStringW, CComPtr<IGEKComponent>> m_aComponents;
 
 public:
     CGEKEntity(LPCWSTR pFlags);

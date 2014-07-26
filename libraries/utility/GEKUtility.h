@@ -47,47 +47,9 @@ public:
 
 std::map<UINT32, std::vector<GEKMODE>> GEKGetDisplayModes(void);
 
-class GEKHASH
-{
-private:
-    std::size_t m_nHash;
-
-public:
-    GEKHASH(void);
-    GEKHASH(LPCWSTR pString);
-    GEKHASH(const CStringW &strString);
-
-    UINT32 GetHash(void) const;
-
-    GEKHASH operator = (LPCWSTR pString);
-    GEKHASH operator = (const CStringW &strString);
-
-    bool operator<(const GEKHASH &nValue) const;
-    bool operator == (const GEKHASH &nValue) const;
-    bool operator == (LPCWSTR pString);
-    bool operator == (const CStringW &strString);
-};
-
 namespace std
 {
-    template <>
-    struct hash<GEKHASH> : public unary_function<GEKHASH, size_t>
-    {
-        size_t operator()(const GEKHASH &kHash) const
-        {
-            return kHash.GetHash();
-        }
-    };
-
-    template <>
-    struct equal_to<GEKHASH> : public unary_function<GEKHASH, bool>
-    {
-        bool operator()(const GEKHASH &kHashA, const GEKHASH &kHashB) const
-        {
-            return (kHashA.GetHash() == kHashB.GetHash());
-        }
-    };
-
+/*
     template <>
     struct hash<GUID> : public unary_function<GUID, size_t>
     {
@@ -101,7 +63,7 @@ namespace std
             return GEKHASH(strGUID).GetHash();
         }
     };
-
+*/
     template <>
     struct equal_to<GUID> : public unary_function<GUID, bool>
     {

@@ -1,5 +1,4 @@
 #include "CGEKComponentModel.h"
-#include "GEKAPI.h"
 #include <algorithm>
 #include <ppl.h>
 
@@ -9,10 +8,9 @@ BEGIN_INTERFACE_LIST(CGEKComponentModel)
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)
 END_INTERFACE_LIST_UNKNOWN
 
-CGEKComponentModel::CGEKComponentModel(IGEKContext *pContext, IGEKEntity *pEntity)
-    : CGEKUnknown(pContext)
-    , CGEKComponent(pEntity)
-    , m_nScale(1.0f)
+REGISTER_CLASS(CGEKComponentModel)
+
+CGEKComponentModel::CGEKComponentModel(void)
 {
 }
 
@@ -20,89 +18,98 @@ CGEKComponentModel::~CGEKComponentModel(void)
 {
 }
 
-STDMETHODIMP_(void) CGEKComponentModel::ListProperties(std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty)
+STDMETHODIMP_(LPCWSTR) CGEKComponentModel::GetName(void) const
 {
-    OnProperty(L"source", m_strSource.GetString());
-    OnProperty(L"params", m_strParams.GetString());
-    OnProperty(L"model", (IUnknown *)m_spModel);
-    OnProperty(L"scale", m_nScale);
+    return L"model";
+};
+
+STDMETHODIMP CGEKComponentModel::AddComponent(const GEKENTITYID &nEntityID)
+{
+    m_aData[nEntityID] = DATA();
+    return S_OK;
 }
 
-static GEKHASH gs_nSource(L"source");
-static GEKHASH gs_nParams(L"params");
-static GEKHASH gs_nModel(L"model");
-static GEKHASH gs_nScale(L"scale");
-STDMETHODIMP_(bool) CGEKComponentModel::GetProperty(LPCWSTR pName, GEKVALUE &kValue) const
+STDMETHODIMP CGEKComponentModel::RemoveComponent(const GEKENTITYID &nEntityID)
 {
-    GEKHASH nHash(pName);
-    if (nHash == gs_nSource)
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
     {
-        kValue = m_strSource.GetString();
-        return true;
-    }
-    else if (nHash == gs_nParams)
-    {
-        kValue = m_strParams.GetString();
-        return true;
-    }
-    else if (nHash == gs_nModel)
-    {
-        kValue = (IUnknown *)m_spModel;
-        return true;
-    }
-    else if (nHash == gs_nScale)
-    {
-        kValue = m_nScale;
-        return true;
+        m_aData.unsafe_erase(pIterator);
     }
 
-    return false;
+    return S_OK;
 }
 
-STDMETHODIMP_(bool) CGEKComponentModel::SetProperty(LPCWSTR pName, const GEKVALUE &kValue)
+STDMETHODIMP_(bool) CGEKComponentModel::HasComponent(const GEKENTITYID &nEntityID) const
 {
-    GEKHASH nHash(pName);
-    if (nHash == gs_nSource)
-    {
-        m_strSource = kValue.GetString();
-        return true;
-    }
-    else if (nHash == gs_nParams)
-    {
-        m_strParams = kValue.GetString();
-        return true;
-    }
-    else if (nHash == gs_nModel)
-    {
-        m_spModel = kValue.GetObject();
-        return true;
-    }
-    else if (nHash == gs_nScale)
-    {
-        m_nScale = kValue.GetFloat3();
-        return true;
-    }
-
-    return false;
+    return (m_aData.find(nEntityID) != m_aData.end());
 }
 
-STDMETHODIMP CGEKComponentModel::OnEntityCreated(void)
+STDMETHODIMP_(void) CGEKComponentModel::ListProperties(const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const
 {
-    HRESULT hRetVal = S_OK;
-    if (!m_strSource.IsEmpty())
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
     {
-        IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKModelManager);
-        if (pModelManager != nullptr)
+        OnProperty(L"source", (*pIterator).second.m_strSource.GetString());
+        OnProperty(L"params", (*pIterator).second.m_strParams.GetString());
+        OnProperty(L"scale", (*pIterator).second.m_nScale);
+    }
+}
+
+STDMETHODIMP_(bool) CGEKComponentModel::GetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const
+{
+    bool bReturn = false;
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
+    {
+        if (wcscmp(pName, L"source") == 0)
         {
-            hRetVal = pModelManager->LoadModel(m_strSource, m_strParams, &m_spModel);
+            kValue = (*pIterator).second.m_strSource.GetString();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"params") == 0)
+        {
+            kValue = (*pIterator).second.m_strParams.GetString();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"scale") == 0)
+        {
+            kValue = (*pIterator).second.m_nScale;
+            bReturn = true;
         }
     }
 
-    return hRetVal;
+    return bReturn;
+}
+
+STDMETHODIMP_(bool) CGEKComponentModel::SetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue)
+{
+    bool bReturn = false;
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
+    {
+        if (wcscmp(pName, L"source") == 0)
+        {
+            (*pIterator).second.m_strSource = kValue.GetString();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"params") == 0)
+        {
+            (*pIterator).second.m_strParams = kValue.GetString();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"scale") == 0)
+        {
+            (*pIterator).second.m_nScale = kValue.GetFloat3();
+            bReturn = true;
+        }
+    }
+
+    return bReturn;
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemModel)
-    INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
+    INTERFACE_LIST_ENTRY_COM(IGEKViewObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -116,85 +123,25 @@ CGEKComponentSystemModel::~CGEKComponentSystemModel(void)
 {
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemModel::OnFree(void)
-{
-    m_aComponents.clear();
-}
-
 STDMETHODIMP CGEKComponentSystemModel::Initialize(void)
 {
-    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    return GetContext()->AddCachedObserver(CLSID_GEKRenderManager, (IGEKViewObserver *)GetUnknown());
 };
 
 STDMETHODIMP_(void) CGEKComponentSystemModel::Destroy(void)
 {
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    GetContext()->RemoveCachedObserver(CLSID_GEKRenderManager, (IGEKViewObserver *)GetUnknown());
 }
 
-STDMETHODIMP_(LPCWSTR) CGEKComponentSystemModel::GetType(void) const
+STDMETHODIMP_(void) CGEKComponentSystemModel::OnRender(void)
 {
-    return L"model";
-}
-
-STDMETHODIMP CGEKComponentSystemModel::Create(const CLibXMLNode &kComponentNode, IGEKEntity *pEntity, IGEKComponent **ppComponent)
-{
-    HRESULT hRetVal = E_OUTOFMEMORY;
-    CComPtr<CGEKComponentModel> spComponent(new CGEKComponentModel(GetContext(), pEntity));
-    GEKRESULT(spComponent, L"Unable to allocate new model component instance");
-    if (spComponent)
+    IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
+    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+    if (pSceneManager != nullptr)
     {
-        hRetVal = spComponent->QueryInterface(IID_PPV_ARGS(ppComponent));
-        if (SUCCEEDED(hRetVal))
+        pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
         {
-            kComponentNode.ListAttributes([&spComponent](LPCWSTR pName, LPCWSTR pValue) -> void
-            {
-                spComponent->SetProperty(pName, pValue);
-            });
-
-            m_aComponents[pEntity] = spComponent;
-        }
+            pViewManager->ShowModel(nEntityID);
+        });
     }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKComponentSystemModel::Destroy(IGEKEntity *pEntity)
-{
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aComponents.find(pEntity);
-    if (pIterator != m_aComponents.end())
-    {
-        m_aComponents.unsafe_erase(pIterator);
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
-
-STDMETHODIMP_(void) CGEKComponentSystemModel::GetVisible(const frustum &kFrustum, concurrency::concurrent_unordered_set<IGEKEntity *> &aVisibleEntities)
-{
-    concurrency::parallel_for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::map<IGEKEntity *, CComPtr<CGEKComponentModel>>::value_type &kPair) -> void
-    {
-        CComQIPtr<IGEKModel> spModel(kPair.second->m_spModel);
-        if (spModel)
-        {
-            IGEKComponent *pTransform = kPair.first->GetComponent(L"transform");
-            if (pTransform != nullptr)
-            {
-                GEKVALUE kPosition;
-                GEKVALUE kRotation;
-                pTransform->GetProperty(L"position", kPosition);
-                pTransform->GetProperty(L"rotation", kRotation);
-
-                IGEKModel::INSTANCE kInstance;
-                kInstance.m_nMatrix = kRotation.GetQuaternion();
-                kInstance.m_nMatrix.t = kPosition.GetFloat3();
-                if (kFrustum.IsVisible(obb(spModel->GetAABB(), kInstance.m_nMatrix)))
-                {
-                    aVisibleEntities.insert(kPair.first);
-                }
-            }
-        }
-    });
 }
