@@ -84,10 +84,7 @@ private:
     IGEKRenderFilter *m_pCurrentFilter;
     std::map<PASS *, INT32> m_aCurrentPasses;
 
-    concurrency::concurrent_vector<GEKENTITYID> m_aShownModels;
     std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aVisibleModels;
-
-    concurrency::concurrent_vector<GEKENTITYID> m_aShownLights;
     std::vector<LIGHT> m_aVisibleLights;
 
 private:
@@ -98,14 +95,14 @@ public:
     virtual ~CGEKRenderManager(void);
     DECLARE_UNKNOWN(CGEKRenderManager);
 
+    // IGEKUnknown
+    STDMETHOD(Initialize)                   (THIS);
+    STDMETHOD_(void, Destroy)               (THIS);
+
     // IGEKSceneObserver
     STDMETHOD_(void, OnLoadBegin)           (THIS);
     STDMETHOD(OnLoadEnd)                    (THIS_ HRESULT hRetVal);
     STDMETHOD_(void, OnFree)                (THIS);
-
-    // IGEKUnknown
-    STDMETHOD(Initialize)                   (THIS);
-    STDMETHOD_(void, Destroy)               (THIS);
 
     // IGEKMaterialManager
     STDMETHOD(LoadMaterial)                 (THIS_ LPCWSTR pName, IUnknown **ppMaterial);
@@ -119,8 +116,6 @@ public:
     // IGEKViewManager
     STDMETHOD(SetViewer)                    (THIS_ const GEKENTITYID &nEntityID);
     STDMETHOD_(GEKENTITYID, GetViewer)      (THIS) const;
-    STDMETHOD(ShowLight)                    (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD(ShowModel)                    (THIS_ const GEKENTITYID &nEntityID);
 
     // IGEKRenderManager
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);
@@ -130,5 +125,5 @@ public:
     STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes);
     STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch);
     STDMETHOD_(void, DrawOverlay)           (THIS);
-    STDMETHOD_(void, Render)                (THIS_ bool bUpdateScreen);
+    STDMETHOD_(void, Render)                (THIS);
 };

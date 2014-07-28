@@ -33,20 +33,3 @@ public:
     STDMETHOD_(bool, GetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const;
     STDMETHOD_(bool, SetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue);
 };
-
-class CGEKComponentSystemModel : public CGEKUnknown
-                               , public IGEKViewObserver
-                               , public IGEKComponentSystem
-{
-public:
-    DECLARE_UNKNOWN(CGEKComponentSystemModel)
-    CGEKComponentSystemModel(void);
-    ~CGEKComponentSystemModel(void);
-
-    // IGEKUnknown
-    STDMETHOD(Initialize)                   (THIS);
-    STDMETHOD_(void, Destroy)               (THIS);
-
-    // IGEKViewObserver
-    STDMETHOD_(void, OnRender)              (THIS);
-};

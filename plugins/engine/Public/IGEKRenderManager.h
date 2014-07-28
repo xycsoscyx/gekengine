@@ -17,5 +17,5 @@ DECLARE_INTERFACE_IID_(IGEKRenderManager, IUnknown, "77161A84-61C4-4C05-9550-4EE
     STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch) PURE;
     STDMETHOD_(void, DrawOverlay)           (THIS) PURE;
 
-    STDMETHOD_(void, Render)                (THIS_ bool bUpdateScreen) PURE;
+    STDMETHOD_(void, Render)                (THIS) PURE;
 };

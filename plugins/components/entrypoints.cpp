@@ -14,8 +14,6 @@ DECLARE_REGISTERED_CLASS(CGEKComponentLight)
 DECLARE_REGISTERED_CLASS(CGEKComponentViewer)
 
 DECLARE_REGISTERED_CLASS(CGEKComponentSystemNewton)
-DECLARE_REGISTERED_CLASS(CGEKComponentSystemModel)
-DECLARE_REGISTERED_CLASS(CGEKComponentSystemLight)
 
 DECLARE_CONTEXT_SOURCE(Components)
     ADD_CONTEXT_CLASS(CLSID_GEKComponentTransform, CGEKComponentTransform)
@@ -26,13 +24,9 @@ DECLARE_CONTEXT_SOURCE(Components)
 
     ADD_CONTEXT_CLASS(CLSID_GEKComponentLight, CGEKComponentLight)
         ADD_CLASS_TYPE(CLSID_GEKComponentType)
-    ADD_CONTEXT_CLASS(CLSID_GEKComponentSystemLight, CGEKComponentSystemLight)
-        ADD_CLASS_TYPE(CLSID_GEKComponentSystemType)
 
     ADD_CONTEXT_CLASS(CLSID_GEKComponentModel, CGEKComponentModel)
         ADD_CLASS_TYPE(CLSID_GEKComponentType)
-    ADD_CONTEXT_CLASS(CLSID_GEKComponentSystemModel, CGEKComponentSystemModel)
-        ADD_CLASS_TYPE(CLSID_GEKComponentSystemType)
 
     ADD_CONTEXT_CLASS(CLSID_GEKComponentNewton, CGEKComponentNewton)
         ADD_CLASS_TYPE(CLSID_GEKComponentType)

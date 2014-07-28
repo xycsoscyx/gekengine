@@ -312,7 +312,7 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
             };
         }
      
-        m_spRenderManager->Render(m_bSendInput);
+        m_spRenderManager->Render();
     }
 }
 

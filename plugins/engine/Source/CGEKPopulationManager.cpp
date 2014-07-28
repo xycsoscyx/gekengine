@@ -131,6 +131,19 @@ STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
 
                 kComponentNode = kComponentNode.NextSiblingElement();
             };
+
+            if (kEntityNode.HasAttribute(L"name") && kEntityNode.GetAttribute(L"name") == pEntry)
+            {
+                AddComponent(nEntityID, L"viewer");
+                SetProperty(nEntityID, L"viewer", L"fieldofview", _DEGTORAD(90.0f));
+                SetProperty(nEntityID, L"viewer", L"minviewdistance", L"0.1");
+                SetProperty(nEntityID, L"viewer", L"maxviewdistance", L"150");
+                IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
+                if (pViewManager)
+                {
+                    pViewManager->SetViewer(nEntityID);
+                }
+            }
         }
     });
 
@@ -175,8 +188,6 @@ STDMETHODIMP CGEKPopulationManager::DestroyEntity(const GEKENTITYID &nEntityID)
 
 STDMETHODIMP CGEKPopulationManager::AddComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent)
 {
-    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentAdded, std::placeholders::_1, nEntityID, pComponent)));
-
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aComponents.find(pComponent);
     if (pIterator != m_aComponents.end())
@@ -184,17 +195,21 @@ STDMETHODIMP CGEKPopulationManager::AddComponent(const GEKENTITYID &nEntityID, L
         hRetVal = (*pIterator).second->AddComponent(nEntityID);
     }
 
+    if (SUCCEEDED(hRetVal))
+    {
+        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentAdded, std::placeholders::_1, nEntityID, pComponent)));
+    }
+
     return hRetVal;
 }
 
 STDMETHODIMP CGEKPopulationManager::RemoveComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent)
 {
-    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentRemoved, std::placeholders::_1, nEntityID, pComponent)));
-    
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aComponents.find(pComponent);
     if (pIterator != m_aComponents.end())
     {
+        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentRemoved, std::placeholders::_1, nEntityID, pComponent)));
         hRetVal = (*pIterator).second->RemoveComponent(nEntityID);
     }
 
