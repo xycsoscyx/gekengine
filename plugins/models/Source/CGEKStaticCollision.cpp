@@ -18,15 +18,19 @@ CGEKStaticCollision::~CGEKStaticCollision(void)
 
 STDMETHODIMP CGEKStaticCollision::Load(const UINT8 *pBuffer, LPCWSTR pParams)
 {
+    GEKFUNCTION(L"Params(%s)", pParams);
     REQUIRE_RETURN(pBuffer, E_INVALIDARG);
 
     UINT32 nGEKX = *((UINT32 *)pBuffer);
+    GEKRESULT(nGEKX == *(UINT32 *)"GEKX", L"Invalid Magic Header: %d", nGEKX);
     pBuffer += sizeof(UINT32);
 
     UINT16 nType = *((UINT16 *)pBuffer);
+    GEKRESULT(nType == 1, L"Invalid Header Type: %d", nType);
     pBuffer += sizeof(UINT16);
 
     UINT16 nVersion = *((UINT16 *)pBuffer);
+    GEKRESULT(nVersion == 2, L"Invalid Header Version: %d", nVersion);
     pBuffer += sizeof(UINT16);
 
     HRESULT hRetVal = E_INVALIDARG;

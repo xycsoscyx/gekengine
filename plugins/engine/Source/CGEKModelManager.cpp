@@ -94,6 +94,7 @@ STDMETHODIMP CGEKModelManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IGE
 
     std::vector<UINT8> aBuffer;
     HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.collision.gek", pName), aBuffer);
+    GEKRESULT(SUCCEEDED(hRetVal), L"Call to Load Collision File failed: 0x%08X", hRetVal);
     if (SUCCEEDED(hRetVal))
     {
         for (auto &spFactory : m_aFactories)
@@ -124,7 +125,6 @@ STDMETHODIMP CGEKModelManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IGE
 STDMETHODIMP CGEKModelManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel)
 {
     concurrency::critical_section::scoped_lock kLock(m_kCritical);
-    GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
     REQUIRE_RETURN(ppModel, E_INVALIDARG);
     REQUIRE_RETURN(pName, E_INVALIDARG);
     REQUIRE_RETURN(pParams, E_INVALIDARG);
@@ -137,8 +137,11 @@ STDMETHODIMP CGEKModelManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknow
     }
     else
     {
+        GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
+
         std::vector<UINT8> aBuffer;
         hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.model.gek", pName), aBuffer);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to Load Model File failed: 0x%08X", hRetVal);
         if (SUCCEEDED(hRetVal))
         {
             for (auto &spFactory : m_aFactories)

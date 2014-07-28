@@ -112,6 +112,7 @@ STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
         }
     }
     
+    GEKENTITYID nPlayerID = 0;
     GEKLOG(L"Num. Entities Found: %d", aEntities.size());
     concurrency::parallel_for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
@@ -134,6 +135,7 @@ STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
 
             if (kEntityNode.HasAttribute(L"name") && kEntityNode.GetAttribute(L"name") == pEntry)
             {
+                nPlayerID = nEntityID;
                 AddComponent(nEntityID, L"viewer");
                 SetProperty(nEntityID, L"viewer", L"fieldofview", _DEGTORAD(90.0f));
                 SetProperty(nEntityID, L"viewer", L"minviewdistance", L"0.1");
@@ -146,6 +148,12 @@ STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
             }
         }
     });
+
+    if (nPlayerID == 0)
+    {
+        hRetVal = E_INVALID;
+        GEKLOG(L"Unable to locate entry point: %s", pEntry);
+    }
 
     return CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
 }
