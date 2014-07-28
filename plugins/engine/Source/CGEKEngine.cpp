@@ -290,10 +290,7 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
             {
                 CheckInput(WM_MOUSEMOVE, float2(float(nCursorMoveX), float(nCursorMoveY)));
             }
-        }
 
-        if (m_bSendInput)
-        {
             UINT32 nFrame = 3;
             m_kTimer.Update();
             m_nTimeAccumulator += m_kTimer.GetUpdateTime();
