@@ -913,11 +913,11 @@ static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGE
 {
     if (aPasses.find(pPass) == aPasses.end())
     {
-        aPasses[pPass] = 1;
+        aPasses[pPass] = -1;
     }
     else
     {
-        aPasses[pPass]++;
+        aPasses[pPass]--;
     }
 
     for (auto &pRequiredPass : pPass->m_aRequiredPasses)
@@ -967,14 +967,13 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
 
         m_kFrustum.Create(nCameraMatrix, m_kEngineBuffer.m_nProjectionMatrix);
 
+        LIGHT kLight;
         m_aVisibleLights.clear();
         pSceneManager->ListComponentsEntities({ L"transform", L"light" }, [&](const GEKENTITYID &nEntityID)->void
         {
-            LIGHT kLight;
-
             GEKVALUE kValue;
             pSceneManager->GetProperty(nEntityID, L"transform", L"position", kValue);
-            kLight.m_nPosition = kValue.GetFloat3();
+            kLight.m_nPosition = (m_kEngineBuffer.m_nViewMatrix * float4(kValue.GetFloat3(), 1.0f));
 
             pSceneManager->GetProperty(nEntityID, L"light", L"range", kValue);
             kLight.m_nInvRange = (1.0f / (kLight.m_nRange = kValue.GetFloat()));
@@ -985,11 +984,12 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
             m_aVisibleLights.push_back(kLight);
         });
 
-        m_aVisibleModels.clear();
-        pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
+        CComQIPtr<IGEKModelManager> spManager(m_spModelManager);
+        if (spManager)
         {
-            CComQIPtr<IGEKModelManager> spManager(m_spModelManager);
-            if (spManager)
+            IGEKModel::INSTANCE kInstance;
+            m_aVisibleModels.clear();
+            pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
             {
                 GEKVALUE kSource;
                 GEKVALUE kParams;
@@ -1003,7 +1003,9 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
                     CComQIPtr<IGEKModel> spModel(spModelUnknown);
                     if (spModel)
                     {
-                        IGEKModel::INSTANCE kInstance;
+                        GEKVALUE kScale;
+                        pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
+                        kInstance.m_nScale = kScale.GetFloat3();
 
                         GEKVALUE kPosition;
                         GEKVALUE kRotation;
@@ -1015,8 +1017,8 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
                         m_aVisibleModels[spModel].push_back(kInstance);
                     }
                 }
-            }
-        });
+            });
+        }
 
         for (auto &kPair : m_aVisibleModels)
         {
@@ -1038,25 +1040,24 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
     std::map<INT32, std::list<PASS *>> aSortedPasses;
     for (auto &kPair : m_aCurrentPasses)
     {
-        aSortedPasses[kPair.second].push_back(kPair.first);
+        aSortedPasses[kPair.second].push_front(kPair.first);
     }
 
-    std::for_each(aSortedPasses.rbegin(), aSortedPasses.rend(), [&](std::map<INT32, std::list<PASS *>>::value_type &kPair) -> void
+    for (auto pPassIndex : aSortedPasses)
     {
-        std::for_each(kPair.second.rbegin(), kPair.second.rend(), [&](PASS *pPass) -> void
+        for (auto pPass : pPassIndex.second)
         {
             m_pCurrentPass = pPass;
-            for (auto &pFilter : m_pCurrentPass->m_aFilters)
+            for (auto &pFilter : pPass->m_aFilters)
             {
                 m_pCurrentFilter = pFilter;
                 pFilter->Draw();
+                m_pCurrentFilter = nullptr;
             }
 
-            m_pCurrentFilter = nullptr;
-        });
-    });
-
-    m_pCurrentPass = nullptr;
+            m_pCurrentPass = nullptr;
+        }
+    }
 
     m_pVideoSystem->SetDefaultTargets();
     m_pVideoSystem->GetImmediateContext()->SetRenderStates(m_spRenderStates);

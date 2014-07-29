@@ -92,12 +92,12 @@ STDMETHODIMP_(bool) CGEKComponentNewton::SetProperty(const GEKENTITYID &nEntityI
     {
         if (wcscmp(pName, L"shape") == 0)
         {
-            (*pIterator).second.m_strShape = kValue.GetString();
+            (*pIterator).second.m_strShape = kValue.GetRawString();
             bReturn = true;
         }
         else if (wcscmp(pName, L"params") == 0)
         {
-            (*pIterator).second.m_strParams = kValue.GetString();
+            (*pIterator).second.m_strParams = kValue.GetRawString();
             bReturn = true;
         }
         else if (wcscmp(pName, L"mass") == 0)

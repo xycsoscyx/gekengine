@@ -180,6 +180,16 @@ public:
         return false;
     }
 
+    LPCWSTR GetRawString(void) const
+    {
+        switch (m_eType)
+        {
+        case STRING:        return m_pString;
+        };
+
+        return nullptr;
+    }
+
     CStringW GetString(void) const
     {
         switch (m_eType)

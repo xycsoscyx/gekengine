@@ -90,12 +90,12 @@ STDMETHODIMP_(bool) CGEKComponentModel::SetProperty(const GEKENTITYID &nEntityID
     {
         if (wcscmp(pName, L"source") == 0)
         {
-            (*pIterator).second.m_strSource = kValue.GetString();
+            (*pIterator).second.m_strSource = kValue.GetRawString();
             bReturn = true;
         }
         else if (wcscmp(pName, L"params") == 0)
         {
-            (*pIterator).second.m_strParams = kValue.GetString();
+            (*pIterator).second.m_strParams = kValue.GetRawString();
             bReturn = true;
         }
         else if (wcscmp(pName, L"scale") == 0)
