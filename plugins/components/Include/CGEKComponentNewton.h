@@ -12,9 +12,16 @@ class CGEKComponentNewton : public CGEKUnknown
 public:
     struct DATA
     {
+    public:
         CStringW m_strShape;
         CStringW m_strParams;
         float m_nMass;
+
+    public:
+        DATA(void)
+            : m_nMass(0.0f)
+        {
+        }
     };
 
 public:

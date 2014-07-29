@@ -11,9 +11,16 @@ class CGEKComponentModel : public CGEKUnknown
 public:
     struct DATA
     {
+    public:
         CStringW m_strSource;
         CStringW m_strParams;
         float3 m_nScale;
+
+    public:
+        DATA(void)
+            : m_nScale(1.0f, 1.0f, 1.0f)
+        {
+        }
     };
 
 public:

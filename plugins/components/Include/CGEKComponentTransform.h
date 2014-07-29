@@ -11,8 +11,14 @@ class CGEKComponentTransform : public CGEKUnknown
 public:
     struct DATA
     {
+    public:
         float3 m_nPosition;
         quaternion m_nRotation;
+
+    public:
+        DATA(void)
+        {
+        }
     };
 
 public:

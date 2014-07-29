@@ -11,9 +11,18 @@ class CGEKComponentViewer : public CGEKUnknown
 public:
     struct DATA
     {
+    public:
         float m_nFieldOfView;
         float m_nMinViewDistance;
         float m_nMaxViewDistance;
+
+    public:
+        DATA(void)
+            : m_nFieldOfView(0.0f)
+            , m_nMinViewDistance(0.0f)
+            , m_nMaxViewDistance(0.0f)
+        {
+        }
     };
 
 public:

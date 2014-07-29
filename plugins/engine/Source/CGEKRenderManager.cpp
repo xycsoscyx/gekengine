@@ -684,7 +684,7 @@ STDMETHODIMP CGEKRenderManager::PrepareMaterial(IUnknown *pMaterial)
         if (pIterator != m_aPasses.end())
         {
             hRetVal = S_OK;
-            m_aCurrentPasses[&(*pIterator).second] = 1;
+            m_aCurrentPasses[&(*pIterator).second] = -1;
         }
     }
 

@@ -11,8 +11,16 @@ class CGEKComponentLight : public CGEKUnknown
 public:
     struct DATA
     {
+    public:
         float3 m_nColor;
         float m_nRange;
+
+    public:
+        DATA(void)
+            : m_nColor(0.0f, 0.0f, 0.0f)
+            , m_nRange(0.0f)
+        {
+        }
     };
 
 public:
