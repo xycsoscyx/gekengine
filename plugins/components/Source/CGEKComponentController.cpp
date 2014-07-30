@@ -111,9 +111,7 @@ STDMETHODIMP_(void) CGEKComponentSystemController::OnPreUpdate(float nGameTime, 
             pSceneManager->GetProperty(pEntity.first, L"transform", L"position", kPosition);
             pSceneManager->GetProperty(pEntity.first, L"transform", L"rotation", kRotation);
 
-            float4x4 nRotation;
-            nRotation = kRotation.GetQuaternion();
-            nRotation *= quaternion(-pEntity.second[L"tilt"] * 0.01f, pEntity.second[L"turn"] * 0.01f, 0.0f);
+            float4x4 nRotation(quaternion(0.0f, pEntity.second[L"turn"] * 0.01f, pEntity.second[L"tilt"] * 0.01f) * kRotation.GetQuaternion());
 
             float3 nForce(0.0f, 0.0f, 0.0f);
             nForce += nRotation.rz * pEntity.second[L"forward"];
