@@ -99,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Source\CGEKComponentController.cpp" />
     <ClCompile Include="Source\CGEKComponentLight.cpp" />
     <ClCompile Include="Source\CGEKComponentModel.cpp" />
     <ClCompile Include="Source\CGEKComponentNewton.cpp" />
@@ -116,6 +117,7 @@
     <ClInclude Include="..\..\api\IGEKViewManager.h" />
     <ClInclude Include="GEKComponents.h" />
     <ClInclude Include="GEKComponentsCLSIDs.h" />
+    <ClInclude Include="Include\CGEKComponentController.h" />
     <ClInclude Include="Include\CGEKComponentLight.h" />
     <ClInclude Include="Include\CGEKComponentModel.h" />
     <ClInclude Include="Include\CGEKComponentNewton.h" />

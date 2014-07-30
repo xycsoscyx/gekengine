@@ -28,6 +28,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Source\CGEKComponentController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKComponents.h" />
@@ -70,6 +73,9 @@
     </ClInclude>
     <ClInclude Include="..\..\api\IGEKInputManager.h">
       <Filter>Interface Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKComponentController.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

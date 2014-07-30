@@ -140,6 +140,7 @@ STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
                 SetProperty(nEntityID, L"viewer", L"fieldofview", _DEGTORAD(90.0f));
                 SetProperty(nEntityID, L"viewer", L"minviewdistance", L"0.1");
                 SetProperty(nEntityID, L"viewer", L"maxviewdistance", L"150");
+                AddComponent(nEntityID, L"controller");
                 IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
                 if (pViewManager)
                 {
