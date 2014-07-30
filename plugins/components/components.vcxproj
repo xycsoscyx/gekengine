@@ -110,6 +110,7 @@
     <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
     <ClInclude Include="..\..\api\GEKVALUE.h" />
     <ClInclude Include="..\..\api\IGEKComponent.h" />
+    <ClInclude Include="..\..\api\IGEKInputManager.h" />
     <ClInclude Include="..\..\api\IGEKModelManager.h" />
     <ClInclude Include="..\..\api\IGEKSceneManager.h" />
     <ClInclude Include="..\..\api\IGEKViewManager.h" />

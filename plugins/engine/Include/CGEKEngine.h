@@ -18,6 +18,7 @@ class CGEKEngine : public CGEKUnknown
                  , public IGEKVideoObserver
                  , public IGEKGameApplication
                  , public IGEKEngine
+                 , public IGEKInputManager
 {
 private:
     HANDLE m_hLogFile;

@@ -18,6 +18,7 @@ BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
     INTERFACE_LIST_ENTRY_COM(IGEKEngine)
+    INTERFACE_LIST_ENTRY_COM(IGEKInputManager)
 END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKEngine)
@@ -71,7 +72,7 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
         if (pIterator != m_aInputBindings.end())
         {
             OnCommand((*pIterator).second, nullptr, 0);
-//            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnAction, std::placeholders::_1, (*pIterator).second, kValue)));
+            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnAction, std::placeholders::_1, (*pIterator).second, kValue)));
         }
     }
 }
