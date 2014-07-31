@@ -47,16 +47,54 @@ STDMETHODIMP_(bool) CGEKComponentController::HasComponent(const GEKENTITYID &nEn
 
 STDMETHODIMP_(void) CGEKComponentController::ListProperties(const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const
 {
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
+    {
+        OnProperty(L"turn", (*pIterator).second.m_nTurn);
+        OnProperty(L"tilt", (*pIterator).second.m_nTilt);
+    }
 }
 
 STDMETHODIMP_(bool) CGEKComponentController::GetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const
 {
-    return false;
+    bool bReturn = false;
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
+    {
+        if (wcscmp(pName, L"turn") == 0)
+        {
+            kValue = (*pIterator).second.m_nTurn;
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"tilt") == 0)
+        {
+            kValue = (*pIterator).second.m_nTilt;
+            bReturn = true;
+        }
+    }
+
+    return bReturn;
 }
 
 STDMETHODIMP_(bool) CGEKComponentController::SetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue)
 {
-    return false;
+    bool bReturn = false;
+    auto pIterator = m_aData.find(nEntityID);
+    if (pIterator != m_aData.end())
+    {
+        if (wcscmp(pName, L"turn") == 0)
+        {
+            (*pIterator).second.m_nTurn = kValue.GetFloat();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"tilt") == 0)
+        {
+            (*pIterator).second.m_nTilt = kValue.GetFloat();
+            bReturn = true;
+        }
+    }
+
+    return bReturn;
 }
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemController)
@@ -111,7 +149,17 @@ STDMETHODIMP_(void) CGEKComponentSystemController::OnPreUpdate(float nGameTime, 
             pSceneManager->GetProperty(pEntity.first, L"transform", L"position", kPosition);
             pSceneManager->GetProperty(pEntity.first, L"transform", L"rotation", kRotation);
 
-            float4x4 nRotation(quaternion(0.0f, pEntity.second[L"turn"] * 0.01f, pEntity.second[L"tilt"] * 0.01f) * kRotation.GetQuaternion());
+            GEKVALUE kTurn;
+            GEKVALUE kTilt;
+            pSceneManager->GetProperty(pEntity.first, L"controller", L"turn", kTurn);
+            pSceneManager->GetProperty(pEntity.first, L"controller", L"tilt", kTilt);
+
+            float nTurn = (kTurn.GetFloat() + pEntity.second[L"turn"] * 0.01f);
+            float nTilt = (kTilt.GetFloat() + pEntity.second[L"tilt"] * 0.01f);
+            pSceneManager->SetProperty(pEntity.first, L"controller", L"turn", nTurn);
+            pSceneManager->SetProperty(pEntity.first, L"controller", L"tilt", nTilt);
+
+            float4x4 nRotation(nTilt, nTurn, 0.0f);
 
             float3 nForce(0.0f, 0.0f, 0.0f);
             nForce += nRotation.rz * pEntity.second[L"forward"];

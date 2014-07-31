@@ -11,6 +11,16 @@ class CGEKComponentController : public CGEKUnknown
 public:
     struct DATA
     {
+    public:
+        float m_nTurn;
+        float m_nTilt;
+
+    public:
+        DATA(void)
+            : m_nTurn(0.0f)
+            , m_nTilt(0.0f)
+        {
+        }
     };
 
 public:
