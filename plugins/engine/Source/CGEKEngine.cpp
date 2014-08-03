@@ -9,7 +9,8 @@
 #include "GEKEngineCLSIDs.h"
 #include "GEKSystemCLSIDs.h"
 
-#pragma comment (lib, "awesomium.lib")
+#define WM_TURN             (WM_USER + 0)
+#define WM_TILT             (WM_USER + 1)
 
 BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
@@ -123,8 +124,8 @@ STDMETHODIMP CGEKEngine::Initialize(void)
         m_aInputBindings['Q'] = L"rise";
         m_aInputBindings['Z'] = L"fall";
         m_aInputBindings[WM_MOUSEWHEEL] = L"height";
-        m_aInputBindings[WM_USER + 0] = L"turn";
-        m_aInputBindings[WM_USER + 1] = L"tilt";
+        m_aInputBindings[WM_TURN] = L"turn";
+        m_aInputBindings[WM_TILT] = L"tilt";
 
         m_aInputBindings[VK_ESCAPE] = L"quit";
 
@@ -290,8 +291,8 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
             INT32 nCursorMoveY = ((kCursor.y - nCenterY) / 2);
             if (nCursorMoveX != 0 || nCursorMoveY != 0)
             {
-                CheckInput(WM_USER + 0, float(nCursorMoveX));
-                CheckInput(WM_USER + 1, float(nCursorMoveY));
+                CheckInput(WM_TURN, float(nCursorMoveX));
+                CheckInput(WM_TILT, float(nCursorMoveY));
             }
 
             UINT32 nFrame = 3;
