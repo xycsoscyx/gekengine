@@ -159,7 +159,7 @@ STDMETHODIMP_(void) CGEKComponentSystemController::OnPreUpdate(float nGameTime, 
             pSceneManager->SetProperty(pEntity.first, L"controller", L"turn", nTurn);
             pSceneManager->SetProperty(pEntity.first, L"controller", L"tilt", nTilt);
 
-            float4x4 nRotation(nTilt, nTurn, 0.0f);
+            float4x4 nRotation = float4x4(nTilt, 0.0f, 0.0f) * float4x4(0.0f, nTurn, 0.0f);
 
             float3 nForce(0.0f, 0.0f, 0.0f);
             nForce += nRotation.rz * pEntity.second[L"forward"];
