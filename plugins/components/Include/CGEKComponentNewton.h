@@ -60,9 +60,19 @@ public:
     CGEKComponentSystemNewton(void);
     ~CGEKComponentSystemNewton(void);
 
+    NewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
+    void OnEntityUpdated(const NewtonBody *pBody, const GEKENTITYID &nEntityID);
+    void OnEntityTransformed(const NewtonBody *pBody, const GEKENTITYID &nEntityID, const float4x4 &nMatrix);
+
     // IGEKUnknown
-    STDMETHOD(Initialize)                   (THIS);
-    STDMETHOD_(void, Destroy)               (THIS);
+    STDMETHOD(Initialize)                       (THIS);
+    STDMETHOD_(void, Destroy)                   (THIS);
 
     // IGEKSceneObserver
+    STDMETHOD(OnLoadEnd)                        (THIS_ HRESULT hRetVal);
+    STDMETHOD_(void, OnFree)                    (THIS);
+    STDMETHOD_(void, OnEntityDestroyed)         (THIS_ const GEKENTITYID &nEntityID);
+    STDMETHOD_(void, OnComponentAdded)          (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
+    STDMETHOD_(void, OnComponentRemoved)        (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
+    STDMETHOD_(void, OnUpdate)                  (THIS_ float nGameTime, float nFrameTime);
 };

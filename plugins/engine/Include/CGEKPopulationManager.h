@@ -36,7 +36,7 @@ public:
     // IGEKSceneManager
     STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID);
     STDMETHOD(DestroyEntity)                    (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
+    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::map<CStringW, CStringW> &aParams);
     STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
     STDMETHOD_(void, ListProperties)            (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const;
     STDMETHOD_(bool, GetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, LPCWSTR pName, GEKVALUE &kValue) const;

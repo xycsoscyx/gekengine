@@ -122,25 +122,25 @@ STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
             CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
             while (kComponentNode)
             {
-                if (SUCCEEDED(AddComponent(nEntityID, kComponentNode.GetType())))
+                std::map<CStringW, CStringW> aParams;
+                kComponentNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
                 {
-                    kComponentNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
-                    {
-                        SetProperty(nEntityID, kComponentNode.GetType(), pName, pValue);
-                    });
-                }
+                    aParams[pName] = pValue;
+                });
 
+                AddComponent(nEntityID, kComponentNode.GetType(), aParams);
                 kComponentNode = kComponentNode.NextSiblingElement();
             };
 
             if (kEntityNode.HasAttribute(L"name") && kEntityNode.GetAttribute(L"name") == pEntry)
             {
                 nPlayerID = nEntityID;
-                AddComponent(nEntityID, L"viewer");
-                SetProperty(nEntityID, L"viewer", L"fieldofview", _DEGTORAD(90.0f));
-                SetProperty(nEntityID, L"viewer", L"minviewdistance", L"0.1");
-                SetProperty(nEntityID, L"viewer", L"maxviewdistance", L"150");
-                AddComponent(nEntityID, L"controller");
+                AddComponent(nEntityID, L"viewer", { { L"fieldofview", FormatString(L"%f", _DEGTORAD(90.0f)) },
+                                                     { L"minviewdistance", L"0.1" },
+                                                     { L"maxviewdistance", L"150" },
+                                                   });
+                AddComponent(nEntityID, L"controller", {});
+
                 IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
                 if (pViewManager)
                 {
@@ -195,18 +195,25 @@ STDMETHODIMP CGEKPopulationManager::DestroyEntity(const GEKENTITYID &nEntityID)
     return S_OK;
 }
 
-STDMETHODIMP CGEKPopulationManager::AddComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent)
+STDMETHODIMP CGEKPopulationManager::AddComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::map<CStringW, CStringW> &aParams)
 {
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aComponents.find(pComponent);
     if (pIterator != m_aComponents.end())
     {
         hRetVal = (*pIterator).second->AddComponent(nEntityID);
-    }
+        if (SUCCEEDED(hRetVal))
+        {
+            for (auto kPair : aParams)
+            {
+                (*pIterator).second->SetProperty(nEntityID, kPair.first, kPair.second.GetString());
+            }
+        }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentAdded, std::placeholders::_1, nEntityID, pComponent)));
+        if (SUCCEEDED(hRetVal))
+        {
+            CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentAdded, std::placeholders::_1, nEntityID, pComponent)));
+        }
     }
 
     return hRetVal;

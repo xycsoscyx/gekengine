@@ -8,6 +8,7 @@
 		<entity class="mesh">
 			<transform position="0,0,0" rotation="0,0,0,1" />
             <model source="sponza" />
+            <newton shape="tree" params="sponza" />
         </entity>
 
         <!-- 0 -->
