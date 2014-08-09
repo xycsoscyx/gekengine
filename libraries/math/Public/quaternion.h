@@ -309,9 +309,3 @@ public:
         return *this;
     }
 };
-
-template <typename TYPE>
-std::ostream & operator << (std::ostream &kStream, const tquaternion<TYPE> &nValue)
-{
-    return (kStream << nValue.x << "," << nValue.y << "," << nValue.z << "," << nValue.w);
-}

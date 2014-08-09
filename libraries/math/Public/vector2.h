@@ -319,9 +319,3 @@ tvector2<TYPE> operator * (TYPE fValue, const tvector2<TYPE> &nVector)
 {
     return tvector2<TYPE>((fValue * nVector.x), (fValue * nVector.y));
 }
-
-template <typename TYPE>
-std::ostream & operator << (std::ostream &kStream, const tvector2<TYPE> &nValue)
-{
-    return (kStream << nValue.x << "," << nValue.y);
-}

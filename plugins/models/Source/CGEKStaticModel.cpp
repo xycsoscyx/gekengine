@@ -43,7 +43,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
     pBuffer += sizeof(UINT32);
 
     UINT16 nType = *((UINT16 *)pBuffer);
-    GEKRESULT(nType ==01, L"Invalid Header Type: %d", nType);
+    GEKRESULT(nType == 0, L"Invalid Header Type: %d", nType);
     pBuffer += sizeof(UINT16);
 
     UINT16 nVersion = *((UINT16 *)pBuffer);

@@ -376,9 +376,3 @@ tvector4<TYPE> operator * (TYPE fValue, const tvector4<TYPE> &nVector)
 {
     return tvector4<TYPE>((fValue * nVector.x), (fValue * nVector.y), (fValue * nVector.z), (fValue * nVector.w));
 }
-
-template <typename TYPE>
-std::ostream & operator << (std::ostream &kStream, const tvector4<TYPE> &nValue)
-{
-    return (kStream << nValue.x << "," << nValue.y << "," << nValue.z << "," << nValue.w);
-}

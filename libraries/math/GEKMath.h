@@ -1,8 +1,5 @@
 #pragma once
 
-#include <xmmintrin.h>
-#include <ostream>
-
 #ifndef max
 #define max(x, y)   ((x) > (y) ? (x) : (y))
 #endif

@@ -123,7 +123,7 @@ STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
             while (kComponentNode)
             {
                 std::map<CStringW, CStringW> aParams;
-                kComponentNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
+                kComponentNode.ListAttributes([&aParams](LPCWSTR pName, LPCWSTR pValue) -> void
                 {
                     aParams[pName] = pValue;
                 });

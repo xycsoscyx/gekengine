@@ -560,12 +560,3 @@ public:
         _41 += nMatrix._41; _42 += nMatrix._42; _43 += nMatrix._43; _44 += nMatrix._44;
     }
 };
-
-template <typename TYPE>
-std::ostream & operator << (std::ostream &kStream, const tmatrix4x4<TYPE> &nValue)
-{
-    return kStream << "[[" << nValue._11 << "," << nValue._12 << "," << nValue._13 << "," << nValue._14 << "]," <<
-                       "[" << nValue._21 << "," << nValue._22 << "," << nValue._23 << "," << nValue._24 << "]," <<
-                       "[" << nValue._31 << "," << nValue._32 << "," << nValue._33 << "," << nValue._34 << "]," <<
-                       "[" << nValue._41 << "," << nValue._42 << "," << nValue._43 << "," << nValue._44 << "]]";
-}
