@@ -10,6 +10,8 @@
 #include "GEKEngineCLSIDs.h"
 #include "GEKSystemCLSIDs.h"
 
+#pragma comment(lib, "FW1FontWrapper.lib")
+
 DECLARE_INTERFACE_IID_(IGEKMaterial, IUnknown, "819CA201-F652-4183-B29D-BB71BB15810E")
 {
     STDMETHOD_(LPCWSTR, GetPass)            (THIS) PURE;
@@ -297,6 +299,23 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = GetContext()->CreateInstance(CLSID_GEKModelManager, IID_PPV_ARGS(&m_spModelManager));
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = FW1CreateFactory(FW1_VERSION, &m_spFontFactory);
+        if (m_spFontFactory)
+        {
+            IGEKVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
+            if (pVideoSystem)
+            {
+                CComQIPtr<ID3D11Device> spDevice(pVideoSystem);
+                if (spDevice)
+                {
+                    hRetVal = m_spFontFactory->CreateFontWrapper(spDevice, L"Arial", &m_spFontWrapper);
+                }
+            }
+        }
     }
 
     return hRetVal;
@@ -1075,7 +1094,38 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
     m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 
+    IGEKVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
+    if (pVideoSystem)
+    {
+        CComQIPtr<ID3D11DeviceContext> spDeviceContext(pVideoSystem->GetImmediateContext());
+        if (spDeviceContext)
+        {
+            static DWORD nLastTime = 0;
+            static DWORD nNumFrames = 0;
+            static DWORD nFPS = 0;
+            nNumFrames++;
+            DWORD nCurrentTime = GetTickCount();
+            if (nCurrentTime - nLastTime > 1000)
+            {
+                nLastTime = nCurrentTime;
+                nFPS = nNumFrames;
+                nNumFrames = 0;
+            }
+
+            m_spFontWrapper->DrawString(
+                spDeviceContext,
+                FormatString(L"FPS: %d", nFPS),
+                32.0f,// Font size
+                0.0f,// X position
+                0.0f,// Y position
+                0xff0099ff,// Text color, 0xAaBbGgRr
+                0// Flags (for example FW1_RESTORESTATE to keep context states unchanged)
+                );
+        }
+    }
+
     m_pVideoSystem->GetImmediateContext()->ClearResources();
+
     m_pVideoSystem->Present(true);
 
     while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))

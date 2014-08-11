@@ -1000,12 +1000,13 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
             kSwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
             kSwapChainDesc.Flags = 0;
 
-            D3D_FEATURE_LEVEL eFeatureLevel = D3D_FEATURE_LEVEL_11_0;
+            UINT nFlags = 0;
 #ifdef _DEBUG
-            hRetVal = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_DEBUG, &eFeatureLevel, 1,
-#else
-            hRetVal = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, &eFeatureLevel, 1,
+            nFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
+
+            D3D_FEATURE_LEVEL eFeatureLevel = D3D_FEATURE_LEVEL_11_0;
+            hRetVal = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, nFlags, &eFeatureLevel, 1,
                 D3D11_SDK_VERSION, &kSwapChainDesc, &m_spSwapChain, &m_spDevice, nullptr, &m_spDeviceContext);
             GEKRESULT(SUCCEEDED(hRetVal), L"Call to D3D11CreateDeviceAndSwapChain failed: 0x%08X", hRetVal);
             if (m_spDevice &&
