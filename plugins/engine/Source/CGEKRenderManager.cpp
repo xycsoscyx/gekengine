@@ -1112,15 +1112,9 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
                 nNumFrames = 0;
             }
 
-            m_spFontWrapper->DrawString(
-                spDeviceContext,
-                FormatString(L"FPS: %d", nFPS),
-                32.0f,// Font size
-                0.0f,// X position
-                0.0f,// Y position
-                0xff0099ff,// Text color, 0xAaBbGgRr
-                0// Flags (for example FW1_RESTORESTATE to keep context states unchanged)
-                );
+            FW1_RECTF kLayoutRect = { 0.0f, 0.0f, 640.0f, 480.0f };
+            FW1_RECTF kClipRect = { 0.0f, 0.0f, 50.0f, 50.0f };
+            m_spFontWrapper->DrawString(spDeviceContext, FormatString(L"FPS: %d", nFPS), L"Arial", 32.0f, &kLayoutRect, 0xFF0099FF, nullptr, nullptr, 0);
         }
     }
 
