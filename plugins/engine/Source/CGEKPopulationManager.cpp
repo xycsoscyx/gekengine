@@ -277,30 +277,72 @@ STDMETHODIMP_(bool) CGEKPopulationManager::SetProperty(const GEKENTITYID &nEntit
     return bReturn;
 }
 
-STDMETHODIMP_(void) CGEKPopulationManager::ListEntities(std::function<void(const GEKENTITYID &)> OnEntity)
+STDMETHODIMP_(void) CGEKPopulationManager::ListEntities(std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel)
 {
-    std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
+    if (bParallel)
     {
-        OnEntity(nEntityID);
-    });
-}
-
-STDMETHODIMP_(void) CGEKPopulationManager::ListComponentsEntities(const std::vector<CStringW> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity)
-{
-    std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
-    {
-        bool bEntityHasAllComponents = true;
-        std::for_each(aComponents.begin(), aComponents.end(), [&](const CStringW &strComponent)-> void
-        {
-            if (!m_aComponents[strComponent]->HasComponent(nEntityID))
-            {
-                bEntityHasAllComponents = false;
-            }
-        });
-
-        if (bEntityHasAllComponents)
+        concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
         {
             OnEntity(nEntityID);
+        });
+    }
+    else
+    {
+        std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
+        {
+            OnEntity(nEntityID);
+        });
+    }
+}
+
+STDMETHODIMP_(void) CGEKPopulationManager::ListComponentsEntities(const std::vector<CStringW> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel)
+{
+    std::list<IGEKComponent *> aComponentList;
+    std::for_each(aComponents.begin(), aComponents.end(), [&](const CStringW &strComponent)-> void
+    {
+        auto pIterator = m_aComponents.find(strComponent);
+        if (pIterator != m_aComponents.end())
+        {
+            aComponentList.push_back((*pIterator).second);
         }
     });
+
+    if (bParallel)
+    {
+        concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
+        {
+            bool bEntityHasAllComponents = true;
+            std::for_each(aComponentList.begin(), aComponentList.end(), [&](IGEKComponent *pComponent)-> void
+            {
+                if (!pComponent->HasComponent(nEntityID))
+                {
+                    bEntityHasAllComponents = false;
+                }
+            });
+
+            if (bEntityHasAllComponents)
+            {
+                OnEntity(nEntityID);
+            }
+        });
+    }
+    else
+    {
+        std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
+        {
+            bool bEntityHasAllComponents = true;
+            std::for_each(aComponentList.begin(), aComponentList.end(), [&](IGEKComponent *pComponent)-> void
+            {
+                if (!pComponent->HasComponent(nEntityID))
+                {
+                    bEntityHasAllComponents = false;
+                }
+            });
+
+            if (bEntityHasAllComponents)
+            {
+                OnEntity(nEntityID);
+            }
+        });
+    }
 }
