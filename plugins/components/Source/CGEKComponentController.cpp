@@ -23,6 +23,11 @@ STDMETHODIMP_(LPCWSTR) CGEKComponentController::GetName(void) const
     return L"controller";
 };
 
+STDMETHODIMP_(void) CGEKComponentController::Clear(void)
+{
+    m_aData.clear();
+}
+
 STDMETHODIMP CGEKComponentController::AddComponent(const GEKENTITYID &nEntityID)
 {
     m_aData[nEntityID] = DATA();

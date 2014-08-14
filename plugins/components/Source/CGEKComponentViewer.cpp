@@ -23,6 +23,11 @@ STDMETHODIMP_(LPCWSTR) CGEKComponentViewer::GetName(void) const
     return L"viewer";
 };
 
+STDMETHODIMP_(void) CGEKComponentViewer::Clear(void)
+{
+    m_aData.clear();
+}
+
 STDMETHODIMP CGEKComponentViewer::AddComponent(const GEKENTITYID &nEntityID)
 {
     m_aData[nEntityID] = DATA();

@@ -33,6 +33,7 @@ public:
 
     // IGEKComponent
     STDMETHOD_(LPCWSTR, GetName)                (THIS) const;
+    STDMETHOD_(void, Clear)                     (THIS);
     STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID);
     STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID);
     STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID) const;

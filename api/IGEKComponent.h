@@ -7,6 +7,7 @@
 DECLARE_INTERFACE_IID_(IGEKComponent, IUnknown, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E")
 {
     STDMETHOD_(LPCWSTR, GetName)                (THIS) const PURE;
+    STDMETHOD_(void, Clear)                     (THIS) PURE;
 
     STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID) PURE;
     STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID) PURE;

@@ -25,6 +25,11 @@ STDMETHODIMP_(LPCWSTR) CGEKComponentNewton::GetName(void) const
     return L"newton";
 };
 
+STDMETHODIMP_(void) CGEKComponentNewton::Clear(void)
+{
+    m_aData.clear();
+}
+
 STDMETHODIMP CGEKComponentNewton::AddComponent(const GEKENTITYID &nEntityID)
 {
     m_aData[nEntityID] = DATA();

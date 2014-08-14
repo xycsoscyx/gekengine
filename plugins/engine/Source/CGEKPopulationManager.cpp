@@ -163,6 +163,11 @@ STDMETHODIMP_(void) CGEKPopulationManager::Free(void)
 {
     m_aHitList.clear();
     m_aPopulation.clear();
+    for (auto pIterator : m_aComponents)
+    {
+        pIterator.second->Clear();
+    }
+
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnFree, std::placeholders::_1)));
 }
 

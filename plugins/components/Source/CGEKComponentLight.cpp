@@ -23,6 +23,11 @@ STDMETHODIMP_(LPCWSTR) CGEKComponentLight::GetName(void) const
     return L"light";
 };
 
+STDMETHODIMP_(void) CGEKComponentLight::Clear(void)
+{
+    m_aData.clear();
+}
+
 STDMETHODIMP CGEKComponentLight::AddComponent(const GEKENTITYID &nEntityID)
 {
     m_aData[nEntityID] = DATA();

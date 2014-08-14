@@ -23,6 +23,11 @@ STDMETHODIMP_(LPCWSTR) CGEKComponentModel::GetName(void) const
     return L"model";
 };
 
+STDMETHODIMP_(void) CGEKComponentModel::Clear(void)
+{
+    m_aData.clear();
+}
+
 STDMETHODIMP CGEKComponentModel::AddComponent(const GEKENTITYID &nEntityID)
 {
     m_aData[nEntityID] = DATA();
