@@ -54,7 +54,7 @@ std::map<UINT32, std::vector<GEKMODE>> GEKGetDisplayModes(void)
     {
         bool bExists = false;
         std::vector<GEKMODE> &akModes = aDisplayModes[kDisplay.dmBitsPerPel];
-        for (UINT32 nSize = 0; nSize < akModes.size(); nSize++)
+        for (UINT32 nSize = 0; nSize < akModes.size(); ++nSize)
         {
             if (akModes[nSize].xsize != kDisplay.dmPelsWidth) continue;
             if (akModes[nSize].ysize != kDisplay.dmPelsHeight) continue;

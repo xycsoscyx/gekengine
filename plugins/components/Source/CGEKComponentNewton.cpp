@@ -240,7 +240,7 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
             if (spCollision)
             {
                 std::vector<float3> aCloud(spCollision->GetNumIndices());
-                for (UINT32 nIndex = 0; nIndex < spCollision->GetNumIndices(); nIndex++)
+                for (UINT32 nIndex = 0; nIndex < spCollision->GetNumIndices(); ++nIndex)
                 {
                     aCloud[nIndex] = spCollision->GetVertices()[spCollision->GetIndices()[nIndex]];
                 }

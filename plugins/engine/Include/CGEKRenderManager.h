@@ -7,7 +7,6 @@
 #include "IGEKPopulationManager.h"
 #include "IGEKEngine.h"
 #include <concurrent_vector.h>
-#include <FW1FontWrapper.h>
 
 DECLARE_INTERFACE(IGEKRenderFilter);
 DECLARE_INTERFACE(IGEKMaterial);
@@ -50,9 +49,6 @@ private:
     IGEKSystem *m_pSystem;
     IGEKVideoSystem *m_pVideoSystem;
     IGEKEngine *m_pEngine;
-
-    CComPtr<IFW1Factory> m_spFontFactory;
-    CComPtr<IFW1FontWrapper> m_spFontWrapper;
 
     CComPtr<IUnknown> m_spModelManager;
 

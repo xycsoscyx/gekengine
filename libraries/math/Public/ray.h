@@ -38,7 +38,7 @@ public:
 	    tvector3<TYPE> nDelta(nBox.position - origin);
         tmatrix4x4<TYPE> nBoxMatrix(nBox.rotation);
         tvector3<TYPE> nHalfSize(nBox.size / TYPE(2));
-        for(UINT32 nAxis = 0; nAxis < 3; nAxis++)
+        for(UINT32 nAxis = 0; nAxis < 3; ++nAxis)
         {
 		    tvector3<TYPE> nMatrixAxis(nBoxMatrix.r[nAxis]);
 		    TYPE nAxisAngle = nMatrixAxis.Dot(nDelta);

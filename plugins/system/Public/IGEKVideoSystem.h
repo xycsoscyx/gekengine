@@ -236,12 +236,13 @@ namespace GEKVIDEO
         float m_nMaxDepth;
     };
 
-    struct SCISSORRECT
+    template <typename TYPE>
+    struct RECT
     {
-        UINT32 m_nMinX;
-        UINT32 m_nMinY;
-        UINT32 m_nMaxX;
-        UINT32 m_nMaxY;
+        TYPE m_nMinX;
+        TYPE m_nMinY;
+        TYPE m_nMaxX;
+        TYPE m_nMaxY;
     };
 
     struct RENDERSTATES
@@ -442,7 +443,7 @@ DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819
     STDMETHOD_(void, ClearResources)                    (THIS) PURE;
 
     STDMETHOD_(void, SetViewports)                      (THIS_ const std::vector<GEKVIDEO::VIEWPORT> &aViewports) PURE;
-    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<GEKVIDEO::SCISSORRECT> &aRects) PURE;
+    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<GEKVIDEO::RECT<UINT32>> &aRects) PURE;
 
     STDMETHOD_(void, ClearRenderTarget)                 (THIS_ IGEKVideoTexture *pTarget, const float4 &kColor) PURE;
     STDMETHOD_(void, ClearDepthStencilTarget)           (THIS_ IUnknown *pTarget, UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;
@@ -516,6 +517,8 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD_(void, ExecuteCommandList)                (THIS_ IUnknown *pUnknown) PURE;
 
     STDMETHOD_(void, Present)                           (THIS_ bool bWaitForVSync) PURE;
+
+    STDMETHOD_(void, Print)                             (THIS_ LPCWSTR pFont, float nSize, UINT32 nColor, const GEKVIDEO::RECT<float> &aLayoutRect, const GEKVIDEO::RECT<float> &kClipRect, LPCWSTR pFormat, ...) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKVideoObserver, IGEKObserver, "2FE17A37-9B0B-4D12-95C9-F5CC5173B565")

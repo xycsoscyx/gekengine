@@ -4,6 +4,7 @@
 #include "GEKContext.h"
 #include "GEKSystem.h"
 #include <D3D11_1.h>
+#include <FW1FontWrapper.h>
 #include <memory>
 
 class CGEKVideoContext : public CGEKUnknown
@@ -29,7 +30,7 @@ public:
     // IGEKVideoContext
     STDMETHOD_(void, ClearResources)                    (THIS);
     STDMETHOD_(void, SetViewports)                      (THIS_ const std::vector<GEKVIDEO::VIEWPORT> &aViewports);
-    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<GEKVIDEO::SCISSORRECT> &aRects);
+    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<GEKVIDEO::RECT<UINT32>> &aRects);
     STDMETHOD_(void, ClearRenderTarget)                 (THIS_ IGEKVideoTexture *pTarget, const float4 &kColor);
     STDMETHOD_(void, ClearDepthStencilTarget)           (THIS_ IUnknown *pTarget, UINT32 nFlags, float fDepth, UINT32 nStencil);
     STDMETHOD_(void, SetRenderTargets)                  (THIS_ const std::vector<IGEKVideoTexture *> &aTargets, IUnknown *pDepth);
@@ -61,6 +62,8 @@ private:
     CComPtr<ID3D11RenderTargetView> m_spRenderTargetView;
     CComPtr<ID3D11DepthStencilView> m_spDepthStencilView;
     CComPtr<IDXGISwapChain> m_spSwapChain;
+    CComPtr<IFW1Factory> m_spFontFactory;
+    CComPtr<IFW1FontWrapper> m_spFontWrapper;
 
 private:
     HRESULT GetDefaultTargets(void);
@@ -108,4 +111,5 @@ public:
     STDMETHOD(GetDefaultDepthStencilTarget)             (THIS_ IUnknown **ppBuffer);
     STDMETHOD_(void, ExecuteCommandList)                (THIS_ IUnknown *pUnknown);
     STDMETHOD_(void, Present)                           (THIS_ bool bWaitForVSync);
+    STDMETHOD_(void, Print)                             (THIS_ LPCWSTR pFont, float nSize, UINT32 nColor, const GEKVIDEO::RECT<float> &aLayoutRect, const GEKVIDEO::RECT<float> &kClipRect, LPCWSTR pFormat, ...);
 };

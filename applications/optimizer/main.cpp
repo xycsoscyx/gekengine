@@ -62,7 +62,7 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
             throw CMyException(__LINE__, L"Invalid node mesh data");
         }
 
-        for (UINT32 nMesh = 0; nMesh < pNode->mNumMeshes; nMesh++)
+        for (UINT32 nMesh = 0; nMesh < pNode->mNumMeshes; ++nMesh)
         {
             UINT32 nMeshIndex = pNode->mMeshes[nMesh];
             if (nMeshIndex >= pScene->mNumMeshes)
@@ -136,7 +136,7 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                 }
 
                 MODEL kModel;
-                for (UINT32 nFace = 0; nFace < pMesh->mNumFaces; nFace++)
+                for (UINT32 nFace = 0; nFace < pMesh->mNumFaces; ++nFace)
                 {
                     const aiFace &kFace = pMesh->mFaces[nFace];
                     if (kFace.mNumIndices == 3)
@@ -147,7 +147,7 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                     }
                 }
 
-                for (UINT32 nVertex = 0; nVertex < pMesh->mNumVertices; nVertex++)
+                for (UINT32 nVertex = 0; nVertex < pMesh->mNumVertices; ++nVertex)
                 {
                     float3 nPosition;
                     nPosition.x = pMesh->mVertices[nVertex].x;
@@ -191,7 +191,7 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
             throw CMyException(__LINE__, L"Invalid node children data");
         }
 
-        for (UINT32 nChild = 0; nChild < pNode->mNumChildren; nChild++)
+        for (UINT32 nChild = 0; nChild < pNode->mNumChildren; ++nChild)
         {
             GetMeshes(pScene, pNode->mChildren[nChild], nTransform, aModels, nAABB);
         }

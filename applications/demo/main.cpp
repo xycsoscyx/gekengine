@@ -28,7 +28,7 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
             UINT32 nSelectID = 0;
             SendDlgItemMessage(hDialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
             std::vector<GEKMODE> akModes = GEKGetDisplayModes()[32];
-            for(UINT32 nMode = 0; nMode < akModes.size(); nMode++)
+            for(UINT32 nMode = 0; nMode < akModes.size(); ++nMode)
             {
                 GEKMODE &kMode = akModes[nMode];
 

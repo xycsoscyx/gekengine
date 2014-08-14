@@ -59,7 +59,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pParams)
         UINT32 nNumMaterials = *((UINT32 *)pBuffer);
         pBuffer += sizeof(UINT32);
 
-        for (UINT32 nMaterial = 0; nMaterial < nNumMaterials; nMaterial++)
+        for (UINT32 nMaterial = 0; nMaterial < nNumMaterials; ++nMaterial)
         {
             CStringA strMaterialUTF8 = pBuffer;
             pBuffer += (strMaterialUTF8.GetLength() + 1);

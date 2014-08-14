@@ -19,6 +19,7 @@
 #pragma comment(lib, "d3dx11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "FW1FontWrapper.lib")
 
 class CGEKVideoComputeContextSystem : public IGEKVideoContextSystem
 {
@@ -690,7 +691,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetViewports(const std::vector<GEKVIDEO::V
     m_spDeviceContext->RSSetViewports(aViewports.size(), (D3D11_VIEWPORT *)&aViewports[0]);
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<GEKVIDEO::SCISSORRECT> &aRects)
+STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<GEKVIDEO::RECT<UINT32>> &aRects)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && aRects.size() > 0);
     m_spDeviceContext->RSSetScissorRects(aRects.size(), (D3D11_RECT *)&aRects[0]);
@@ -1036,6 +1037,15 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
                 hRetVal = m_spSwapChain->SetFullscreenState(true, nullptr);
                 GEKRESULT(SUCCEEDED(hRetVal), L"Call to SetFullscreenState failed: 0x%08X", hRetVal);
             }
+        }
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = FW1CreateFactory(FW1_VERSION, &m_spFontFactory);
+        if (m_spFontFactory)
+        {
+             hRetVal = m_spFontFactory->CreateFontWrapper(m_spDevice, L"Arial", &m_spFontWrapper);
         }
     }
 
@@ -1486,7 +1496,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::INDEPENDENTBLEND
     D3D11_BLEND_DESC kBlendDesc;
     kBlendDesc.AlphaToCoverageEnable = kStates.m_bAlphaToCoverage;
     kBlendDesc.IndependentBlendEnable = true;
-    for(UINT32 nTarget = 0; nTarget < 8; nTarget++)
+    for(UINT32 nTarget = 0; nTarget < 8; ++nTarget)
     {
         kBlendDesc.RenderTarget[nTarget].BlendEnable = kStates.m_aTargetStates[nTarget].m_bEnable;
         kBlendDesc.RenderTarget[nTarget].SrcBlend = GetBlendSource(kStates.m_aTargetStates[nTarget].m_eColorSource);
@@ -2140,7 +2150,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
         {
             GEKVIDEO::INPUT::SOURCE eLastClass = GEKVIDEO::INPUT::UNKNOWN;
             std::vector<D3D11_INPUT_ELEMENT_DESC> aLayoutDesc(aLayout.size());
-            for(UINT32 nIndex = 0; nIndex < aLayout.size() && SUCCEEDED(hRetVal); nIndex++)
+            for(UINT32 nIndex = 0; nIndex < aLayout.size() && SUCCEEDED(hRetVal); ++nIndex)
             {
                 if (eLastClass != aLayout[nIndex].m_eClass)
                 {
@@ -2893,4 +2903,19 @@ STDMETHODIMP_(void) CGEKVideoSystem::Present(bool bWaitForVSync)
 {
     REQUIRE_VOID_RETURN(m_spSwapChain);
     m_spSwapChain->Present(bWaitForVSync ? 1 : 0, 0);
+}
+
+STDMETHODIMP_(void) CGEKVideoSystem::Print(LPCWSTR pFont, float nSize, UINT32 nColor, const GEKVIDEO::RECT<float> &aLayoutRect, const GEKVIDEO::RECT<float> &kClipRect, LPCWSTR pFormat, ...)
+{
+    if (pFormat != nullptr)
+    {
+        CStringW strMessage;
+
+        va_list pArgs;
+        va_start(pArgs, pFormat);
+        strMessage.FormatV(pFormat, pArgs);
+        va_end(pArgs);
+
+        m_spFontWrapper->DrawString(m_spDeviceContext, strMessage, pFont, nSize, (FW1_RECTF *)&aLayoutRect, nColor, (FW1_RECTF *)&kClipRect, nullptr, 0);
+    }
 }
