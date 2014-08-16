@@ -909,7 +909,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
     m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 }
 
-static void CountPasses(std::map<CGEKRenderManager::PASS *, INT32> &aPasses, CGEKRenderManager::PASS *pPass)
+static void CountPasses(std::unordered_map<CGEKRenderManager::PASS *, INT32> &aPasses, CGEKRenderManager::PASS *pPass)
 {
     if (aPasses.find(pPass) == aPasses.end())
     {
@@ -1037,7 +1037,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         CountPasses(m_aCurrentPasses, kPair.first);
     }
 
-    std::map<INT32, std::list<PASS *>> aSortedPasses;
+    std::unordered_map<INT32, std::list<PASS *>> aSortedPasses;
     for (auto &kPair : m_aCurrentPasses)
     {
         aSortedPasses[kPair.second].push_front(kPair.first);
@@ -1078,11 +1078,11 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
     IGEKVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
     if (pVideoSystem)
     {
-        static DWORD nLastTime = 0;
-        static DWORD nNumFrames = 0;
-        static DWORD nFPS = 0;
+        static UINT64 nLastTime = 0;
+        static UINT32 nNumFrames = 0;
+        static UINT32 nFPS = 0;
         nNumFrames++;
-        DWORD nCurrentTime = GetTickCount();
+        UINT64 nCurrentTime = GetTickCount64();
         if (nCurrentTime - nLastTime > 1000)
         {
             nLastTime = nCurrentTime;

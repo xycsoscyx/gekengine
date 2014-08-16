@@ -72,9 +72,9 @@ private:
     CComPtr<IUnknown> m_spDepthStates;
     UINT32 m_nNumLightInstances;
 
-    std::map<CStringW, CComPtr<IUnknown>> m_aResources;
-    std::map<CStringW, CComPtr<IGEKRenderFilter>> m_aFilters;
-    std::map<CStringW, PASS> m_aPasses;
+    std::unordered_map<CStringW, CComPtr<IUnknown>> m_aResources;
+    std::unordered_map<CStringW, CComPtr<IGEKRenderFilter>> m_aFilters;
+    std::unordered_map<CStringW, PASS> m_aPasses;
 
     GEKENTITYID m_nViewerEntityID;
     frustum m_kFrustum;
@@ -82,9 +82,9 @@ private:
 
     PASS *m_pCurrentPass;
     IGEKRenderFilter *m_pCurrentFilter;
-    std::map<PASS *, INT32> m_aCurrentPasses;
+    std::unordered_map<PASS *, INT32> m_aCurrentPasses;
 
-    std::map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aVisibleModels;
+    std::unordered_map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aVisibleModels;
     std::vector<LIGHT> m_aVisibleLights;
 
 private:

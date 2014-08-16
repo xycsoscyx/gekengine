@@ -50,7 +50,7 @@ class CGEKComponentSystemNewton : public CGEKUnknown
 private:
     NewtonWorld *m_pWorld;
     concurrency::concurrent_unordered_map<GEKENTITYID, NewtonBody *> m_aBodies;
-    std::map<CStringW, NewtonCollision *> m_aCollisions;
+    std::unordered_map<CStringW, NewtonCollision *> m_aCollisions;
 
 private:
     static int OnAABBOverlap(const NewtonMaterial *pMaterial, const NewtonBody *pBody0, const NewtonBody *pBody1, int nThreadID);

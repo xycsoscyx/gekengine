@@ -78,8 +78,7 @@ public:
         REQUIRE_VOID_RETURN(m_spBuffer);
 
         DWORD dwStatus = 0;
-        m_spBuffer->GetStatus(&dwStatus);
-        if (!(dwStatus & DSBSTATUS_PLAYING))
+        if(SUCCEEDED(m_spBuffer->GetStatus(&dwStatus)) && !(dwStatus & DSBSTATUS_PLAYING))
         {
             m_spBuffer->Play(0, 0, (bLoop ? DSBPLAY_LOOPING : 0));
         }
@@ -134,8 +133,7 @@ public:
         m_spBuffer3D->SetPosition(kOrigin.x, kOrigin.y, kOrigin.z, DS3D_DEFERRED);
     
         DWORD dwStatus = 0;
-        m_spBuffer->GetStatus(&dwStatus);
-        if (!(dwStatus & DSBSTATUS_PLAYING))
+        if(SUCCEEDED(m_spBuffer->GetStatus(&dwStatus)) && !(dwStatus & DSBSTATUS_PLAYING))
         {
             m_spBuffer->Play(0, 0, (bLoop ? DSBPLAY_LOOPING : 0));
         }
@@ -254,9 +252,14 @@ STDMETHODIMP_(float) CGEKAudioSystem::GetMasterVolume(void)
 {
     REQUIRE_RETURN(m_spPrimary, 0);
 
-    long lVolume = 0;
-    m_spPrimary->GetVolume(&lVolume);
-    return (float(lVolume - DSBVOLUME_MIN) / float(DSBVOLUME_MAX - DSBVOLUME_MIN));
+    float nVolumePercent = 0.0f;
+    long nVolumeNumber = 0;
+    if (SUCCEEDED(m_spPrimary->GetVolume(&nVolumeNumber)))
+    {
+        nVolumePercent = (float(nVolumeNumber - DSBVOLUME_MIN) / float(DSBVOLUME_MAX - DSBVOLUME_MIN));
+    }
+
+    return nVolumePercent;
 }
 
 STDMETHODIMP_(void) CGEKAudioSystem::SetListener(const float4x4 &nMatrix)
@@ -405,9 +408,11 @@ HRESULT CGEKAudioSystem::LoadFromFile(LPCWSTR pFileName, DWORD nFlags, GUID nAlg
                 if (spBuffer)
                 {
                     void *pData = nullptr;
-                    spBuffer->Lock(0, nLength, &pData, &nLength, 0, 0, DSBLOCK_ENTIREBUFFER);
-                    int iRead = spSource->read((nLength / kFormat.nBlockAlign), pData);
-                    spBuffer->Unlock(pData, nLength, 0, 0);
+                    if (SUCCEEDED(spBuffer->Lock(0, nLength, &pData, &nLength, 0, 0, DSBLOCK_ENTIREBUFFER)))
+                    {
+                        int iRead = spSource->read((nLength / kFormat.nBlockAlign), pData);
+                        spBuffer->Unlock(pData, nLength, 0, 0);
+                    }
 
                     hRetVal = spBuffer->QueryInterface(IID_IDirectSoundBuffer, (LPVOID FAR *)ppBuffer);
                 }

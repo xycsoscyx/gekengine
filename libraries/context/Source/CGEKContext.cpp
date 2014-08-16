@@ -96,13 +96,16 @@ STDMETHODIMP CGEKContext::Initialize(void)
             HMODULE hModule = LoadLibrary(pFileName);
             if (hModule)
             {
-                typedef HRESULT (*GEKGETMODULECLASSES)(std::map<CLSID, std::function<HRESULT (IGEKUnknown **)>> &, std::map<CStringW, CLSID> &, std::map<CLSID, std::vector<CLSID>> &);
+                typedef HRESULT(*GEKGETMODULECLASSES)(std::unordered_map<CLSID, std::function<HRESULT(IGEKUnknown **)>> &, 
+                                                      std::unordered_map<CStringW, CLSID> &, 
+                                                      std::unordered_map<CLSID, 
+                                                      std::vector<CLSID>> &);
                 GEKGETMODULECLASSES GEKGetModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(hModule, "GEKGetModuleClasses");
                 if (GEKGetModuleClasses)
                 {
-                    std::map<CLSID, std::function<HRESULT (IGEKUnknown **ppObject)>> aClasses;
-                    std::map<CStringW, CLSID> aNamedClasses;
-                    std::map<CLSID, std::vector<CLSID>> aTypedClasses;
+                    std::unordered_map<CLSID, std::function<HRESULT(IGEKUnknown **ppObject)>> aClasses;
+                    std::unordered_map<CStringW, CLSID> aNamedClasses;
+                    std::unordered_map<CLSID, std::vector<CLSID>> aTypedClasses;
                     if (SUCCEEDED(GEKGetModuleClasses(aClasses, aNamedClasses, aTypedClasses)))
                     {
                         for (auto &kPair : aClasses)

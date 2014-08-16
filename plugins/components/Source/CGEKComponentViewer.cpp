@@ -36,13 +36,7 @@ STDMETHODIMP CGEKComponentViewer::AddComponent(const GEKENTITYID &nEntityID)
 
 STDMETHODIMP CGEKComponentViewer::RemoveComponent(const GEKENTITYID &nEntityID)
 {
-    auto pIterator = m_aData.find(nEntityID);
-    if (pIterator != m_aData.end())
-    {
-        m_aData.unsafe_erase(pIterator);
-    }
-
-    return S_OK;
+    return (m_aData.unsafe_erase(nEntityID) > 0 ? S_OK : E_FAIL);
 }
 
 STDMETHODIMP_(bool) CGEKComponentViewer::HasComponent(const GEKENTITYID &nEntityID) const

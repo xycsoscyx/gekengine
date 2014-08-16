@@ -20,7 +20,7 @@ HRESULT CGEKConfig::Load(LPCWSTR pFileName)
         return hRetVal;
     }
 
-    std::map<CStringW, CStringW> *pGroup = nullptr;
+    std::unordered_map<CStringW, CStringW> *pGroup = nullptr;
     while (kParser.NextToken())
     {
         if (kParser.GetToken()[0] == L'[')
@@ -46,7 +46,7 @@ HRESULT CGEKConfig::Save(LPCWSTR pFileName)
     CStringW strBuffer;
     for (auto &kGroupPair : m_aGroups)
     {
-        std::map<CStringW, CStringW> &aGroup = kGroupPair.second;
+        std::unordered_map<CStringW, CStringW> &aGroup = kGroupPair.second;
         if (aGroup.size() > 0)
         {
             strBuffer += (L"[" + kGroupPair.first + L"]\r\n");
@@ -63,16 +63,12 @@ HRESULT CGEKConfig::Save(LPCWSTR pFileName)
 
 void CGEKConfig::RemoveGroup(LPCWSTR pTitle)
 {
-    auto pIterator = m_aGroups.find(pTitle);
-    if (pIterator != m_aGroups.end())
-    {
-        m_aGroups.erase(pIterator);
-    }
+    m_aGroups.erase(pTitle);
 }
 
 bool CGEKConfig::DoesGroupExists(LPCWSTR pGroup) const
 {
-    return (m_aGroups.find(pGroup) == m_aGroups.end() ? false : true);
+    return (m_aGroups.count(pGroup) > 0);
 }
 
 bool CGEKConfig::DoesValueExists(LPCWSTR pGroup, LPCWSTR pString) const
@@ -81,7 +77,7 @@ bool CGEKConfig::DoesValueExists(LPCWSTR pGroup, LPCWSTR pString) const
     auto pIterator = m_aGroups.find(pGroup);
     if (pIterator != m_aGroups.end())
     {
-        bExists = (((*pIterator).second).find(pString) == ((*pIterator).second).end() ? false : true);
+        bExists = (((*pIterator).second).count(pString) > 0);
     }
 
     return bExists;

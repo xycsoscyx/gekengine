@@ -17,7 +17,7 @@ private:
     std::list<CComPtr<IGEKFactory>> m_aFactories;
 
     concurrency::critical_section m_kCritical;
-    std::map<CStringW, CComPtr<IGEKModel>> m_aModels;
+    std::unordered_map<CStringW, CComPtr<IGEKModel>> m_aModels;
 
 public:
     CGEKModelManager(void);

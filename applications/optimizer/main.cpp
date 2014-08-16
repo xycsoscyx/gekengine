@@ -240,7 +240,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
         MODEL *pCollision = nullptr;
         MODEL *pOcclusion = nullptr;
-        std::map<CStringA, MODEL> aMaterials;
+        std::unordered_map<CStringA, MODEL> aMaterials;
         for (auto &kPair : aScene)
         {
             if (kPair.first.Find("collision") >= 0)

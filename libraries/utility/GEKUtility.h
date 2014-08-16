@@ -8,6 +8,7 @@
 #include <functional>
 #include <vector>
 #include <list>
+#include <map>
 
 #pragma warning(disable:4251)
 
@@ -21,11 +22,6 @@
 
 #define REQUIRE_VOID_RETURN(CHECK)      do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (0)
 #define REQUIRE_RETURN(CHECK, RETURN)   do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (0)
-
-#include "Include\CGEKTimer.h"
-#include "Include\CGEKParser.h"
-#include "Include\CGEKConfig.h"
-#include "Include\CGEKLibXML2.h"
 
 enum GEKMODEASPECT
 {
@@ -49,21 +45,43 @@ std::map<UINT32, std::vector<GEKMODE>> GEKGetDisplayModes(void);
 
 namespace std
 {
-/*
+    template<typename CharType, typename TraitsType>
+    struct hash<ATL::CStringT<CharType, TraitsType>> : public unary_function<ATL::CStringT<CharType, TraitsType>, size_t>
+    {
+        size_t operator()(const ATL::CStringT<CharType, TraitsType> &strString) const
+        {
+            return CStringElementTraits<typename TraitsType>::Hash(strString);
+        }
+    };
+
+    template<typename CharType, typename TraitsType>
+    struct equal_to<ATL::CStringT<CharType, TraitsType>> : public unary_function<ATL::CStringT<CharType, TraitsType>, bool>
+    {
+        bool operator()(const ATL::CStringT<CharType, TraitsType> &strStringA, const ATL::CStringT<CharType, TraitsType> &strStringB) const
+        {
+            return (strStringA == strStringB);
+        }
+    };
+
     template <>
     struct hash<GUID> : public unary_function<GUID, size_t>
     {
         size_t operator()(REFGUID kGUID) const
         {
+            DWORD *pLast = (DWORD *)&kGUID.Data4[0];
+            return (kGUID.Data1 ^ (kGUID.Data2 << 16 | kGUID.Data3) ^ (pLast[0] | pLast[1]));
+/*
             CStringW strGUID;
             strGUID.Format(L"%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
                 kGUID.Data1, kGUID.Data2, kGUID.Data3,
                 kGUID.Data4[0], kGUID.Data4[1], kGUID.Data4[2], kGUID.Data4[3],
                 kGUID.Data4[4], kGUID.Data4[5], kGUID.Data4[6], kGUID.Data4[7]);
-            return GEKHASH(strGUID).GetHash();
+            hash<CStringW> kHash;
+            return kHash(strGUID);
+*/
         }
     };
-*/
+
     template <>
     struct equal_to<GUID> : public unary_function<GUID, bool>
     {
@@ -79,6 +97,11 @@ bool operator < (REFGUID kGUIDA, REFGUID kGUIDB)
 {
     return (memcmp(&kGUIDA, &kGUIDB, sizeof(GUID)) < 0);
 }
+
+#include "Include\CGEKTimer.h"
+#include "Include\CGEKParser.h"
+#include "Include\CGEKConfig.h"
+#include "Include\CGEKLibXML2.h"
 
 double      StrToDouble(LPCWSTR pValue);
 float       StrToFloat(LPCWSTR pValue);

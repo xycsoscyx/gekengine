@@ -29,7 +29,7 @@ private:
     double m_nTotalTime;
     double m_nTimeAccumulator;
 
-    std::map<UINT32, CStringW> m_aInputBindings;
+    std::unordered_map<UINT32, CStringW> m_aInputBindings;
     CComPtr<IGEKPopulationManager> m_spPopulationManager;
     CComPtr<IGEKRenderManager> m_spRenderManager;
 

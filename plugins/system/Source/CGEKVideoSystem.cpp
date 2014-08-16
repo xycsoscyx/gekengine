@@ -1174,14 +1174,18 @@ STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(IUnknown *pEvent)
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, false);
     REQUIRE_RETURN(pEvent, false);
 
-    UINT32 bIsSet = 0;
+    bool bIsSet = false;
     CComQIPtr<ID3D11Query> spEvent(pEvent);
     if (spEvent)
     {
-        m_spDeviceContext->GetData(spEvent, (LPVOID)&bIsSet, sizeof(UINT32), TRUE);
+        UINT32 nIsSet = 0;
+        if (SUCCEEDED(m_spDeviceContext->GetData(spEvent, (LPVOID)&nIsSet, sizeof(UINT32), TRUE)))
+        {
+            bIsSet = (nIsSet == 1);
+        }
     }
 
-    return (bIsSet == 1 ? true : false);
+    return bIsSet;
 }
 
 STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &kStates, IUnknown **ppStates)
@@ -2061,7 +2065,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
+STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -2113,7 +2117,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
+STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -2257,7 +2261,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
+STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -2309,7 +2313,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
+STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -2361,7 +2365,7 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
+STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -2376,7 +2380,7 @@ STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntr
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
+STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -2391,7 +2395,7 @@ STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
+STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -2406,7 +2410,7 @@ STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEnt
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::map<CStringA, CStringA> *pDefines)
+STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);

@@ -36,18 +36,12 @@ STDMETHODIMP CGEKComponentLight::AddComponent(const GEKENTITYID &nEntityID)
 
 STDMETHODIMP CGEKComponentLight::RemoveComponent(const GEKENTITYID &nEntityID)
 {
-    auto pIterator = m_aData.find(nEntityID);
-    if (pIterator != m_aData.end())
-    {
-        m_aData.unsafe_erase(pIterator);
-    }
-
-    return S_OK;
+    return (m_aData.unsafe_erase(nEntityID) > 0 ? S_OK : E_FAIL);
 }
 
 STDMETHODIMP_(bool) CGEKComponentLight::HasComponent(const GEKENTITYID &nEntityID) const
 {
-    return (m_aData.find(nEntityID) != m_aData.end());
+    return (m_aData.count(nEntityID) > 0);
 }
 
 STDMETHODIMP_(void) CGEKComponentLight::ListProperties(const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const

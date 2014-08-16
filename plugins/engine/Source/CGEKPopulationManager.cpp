@@ -122,7 +122,7 @@ STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
             CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
             while (kComponentNode)
             {
-                std::map<CStringW, CStringW> aParams;
+                std::unordered_map<CStringW, CStringW> aParams;
                 kComponentNode.ListAttributes([&aParams](LPCWSTR pName, LPCWSTR pValue) -> void
                 {
                     aParams[pName] = pValue;
@@ -200,7 +200,7 @@ STDMETHODIMP CGEKPopulationManager::DestroyEntity(const GEKENTITYID &nEntityID)
     return S_OK;
 }
 
-STDMETHODIMP CGEKPopulationManager::AddComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::map<CStringW, CStringW> &aParams)
+STDMETHODIMP CGEKPopulationManager::AddComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::unordered_map<CStringW, CStringW> &aParams)
 {
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aComponents.find(pComponent);

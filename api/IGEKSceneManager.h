@@ -13,7 +13,7 @@ DECLARE_INTERFACE_IID_(IGEKSceneManager, IUnknown, "43DF2FD7-3BE2-4333-86ED-CB12
     STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID) PURE;
     STDMETHOD(DestroyEntity)                    (THIS_ const GEKENTITYID &nEntityID) PURE;
 
-    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::map<CStringW, CStringW> &aParams) PURE;
+    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::unordered_map<CStringW, CStringW> &aParams) PURE;
     STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent) PURE;
     STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent) PURE;
 

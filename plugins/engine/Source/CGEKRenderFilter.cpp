@@ -572,7 +572,7 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
                 }
                 else
                 {
-                    std::map<CStringA, CStringA> aDefines(m_aDefines);
+                    std::unordered_map<CStringA, CStringA> aDefines(m_aDefines);
                     aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
                     aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
                     aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
@@ -627,7 +627,7 @@ HRESULT CGEKRenderFilter::LoadPixelProgram(CLibXMLNode &kFilterNode)
             }
             else
             {
-                std::map<CStringA, CStringA> aDefines(m_aDefines);
+                std::unordered_map<CStringA, CStringA> aDefines(m_aDefines);
                 aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
                 aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
                 aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
@@ -854,8 +854,8 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         m_pVideoSystem->SetDefaultTargets(nullptr, (spDepthBuffer ? spDepthBuffer : nullptr));
     }
 
-    std::map<UINT32, IUnknown *> aComputeResources;
-    std::map<UINT32, IUnknown *> aComputeUnorderedAccess;
+    std::unordered_map<UINT32, IUnknown *> aComputeResources;
+    std::unordered_map<UINT32, IUnknown *> aComputeUnorderedAccess;
     for (auto &kPair : m_kComputeData.m_aResources)
     {
         if (kPair.second.m_spResource)
@@ -887,7 +887,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         }
     }
 
-    std::map<UINT32, IUnknown *> aPixelResources;
+    std::unordered_map<UINT32, IUnknown *> aPixelResources;
     for (auto &kPair : m_kPixelData.m_aResources)
     {
         if (kPair.second.m_spResource)

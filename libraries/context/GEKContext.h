@@ -343,9 +343,9 @@ extern HRESULT GEKCreateInstanceOf##CLASS##(IGEKUnknown **ppObject);
 #define DECLARE_CONTEXT_SOURCE(SOURCENAME)                                          \
 extern "C" __declspec(dllexport)                                                    \
 HRESULT GEKGetModuleClasses(                                                        \
-    std::map<CLSID, std::function<HRESULT (IGEKUnknown **)>> &aClasses,             \
-    std::map<CStringW, CLSID> &aNamedClasses,                                       \
-    std::map<CLSID, std::vector<CLSID>> &aTypedClasses)                             \
+    std::unordered_map<CLSID, std::function<HRESULT (IGEKUnknown **)>> &aClasses,   \
+    std::unordered_map<CStringW, CLSID> &aNamedClasses,                             \
+    std::unordered_map<CLSID, std::vector<CLSID>> &aTypedClasses)                   \
 {                                                                                   \
     CLSID kLastCLSID = GUID_NULL;
 

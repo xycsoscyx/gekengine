@@ -1,14 +1,12 @@
 #pragma once
 
-#include <Windows.h>
-#include <atlbase.h>
-#include <atlstr.h>
-#include <map>
+#include "GEKUtility.h"
+#include <unordered_map>
 
 class CGEKConfig
 {
 private:
-    std::map<CStringW, std::map<CStringW, CStringW>> m_aGroups;
+    std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> m_aGroups;
 
 public:
     CGEKConfig(void);

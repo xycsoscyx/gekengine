@@ -1,9 +1,10 @@
 #pragma once
 
 #include "GEKContext.h"
+#include "GEKUtility.h"
 #include "IGEKContext.h"
+#include <unordered_map>
 #include <list>
-#include <map>
 
 #include <concurrent_unordered_map.h>
 
@@ -18,11 +19,10 @@ private:
     std::list<CStringW> m_aSearchPaths;
 
     std::list<HMODULE> m_aModules;
-    std::map<CLSID, std::function<HRESULT(IGEKUnknown **ppObject)>> m_aClasses;
-    std::map<CStringW, CLSID> m_aNamedClasses;
-    std::map<CLSID, std::vector<CLSID>> m_aTypedClasses;
-
-    std::map<CLSID, IUnknown *> m_aCache;
+    std::unordered_map<CLSID, std::function<HRESULT(IGEKUnknown **ppObject)>> m_aClasses;
+    std::unordered_map<CStringW, CLSID> m_aNamedClasses;
+    std::unordered_map<CLSID, std::vector<CLSID>> m_aTypedClasses;
+    std::unordered_map<CLSID, IUnknown *> m_aCache;
 
 public:
     CGEKContext(void);

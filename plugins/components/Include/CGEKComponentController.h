@@ -48,7 +48,7 @@ class CGEKComponentSystemController : public CGEKUnknown
                                     , public IGEKComponentSystem
 {
 private:
-    std::map<GEKENTITYID, std::map<CStringW, float>> m_aActions;
+    std::unordered_map<GEKENTITYID, std::unordered_map<CStringW, float>> m_aActions;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemController)

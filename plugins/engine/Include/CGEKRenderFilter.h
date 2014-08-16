@@ -52,7 +52,7 @@ public:
     struct DATA
     {
         CComPtr<IUnknown> m_spProgram;
-        std::map<UINT32, RESOURCE> m_aResources;
+        std::unordered_map<UINT32, RESOURCE> m_aResources;
     };
 
 private:
@@ -66,7 +66,7 @@ private:
     UINT32 m_nDispatchXSize;
     UINT32 m_nDispatchYSize;
     UINT32 m_nDispatchZSize;
-    std::map<CStringA, CStringA> m_aDefines;
+    std::unordered_map<CStringA, CStringA> m_aDefines;
 
     MODES m_eMode;
     CComPtr<IUnknown> m_spDepthStates;
@@ -77,8 +77,8 @@ private:
     UINT32 m_nClearStencil;
     UINT32 m_nStencilReference;
     std::list<TARGET> m_aTargets;
-    std::map<CStringW, TARGET *> m_aTargetMap;
-    std::map<CStringW, CComPtr<IUnknown>> m_aBufferMap;
+    std::unordered_map<CStringW, TARGET *> m_aTargetMap;
+    std::unordered_map<CStringW, CComPtr<IUnknown>> m_aBufferMap;
     CComPtr<IUnknown> m_spDepthBuffer;
     CStringW m_strDepthSource;
 
