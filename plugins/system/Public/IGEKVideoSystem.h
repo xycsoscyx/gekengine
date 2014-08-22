@@ -517,8 +517,6 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD_(void, ExecuteCommandList)                (THIS_ IUnknown *pUnknown) PURE;
 
     STDMETHOD_(void, Present)                           (THIS_ bool bWaitForVSync) PURE;
-
-    STDMETHOD_(void, Print)                             (THIS_ LPCWSTR pFont, float nSize, UINT32 nColor, const GEKVIDEO::RECT<float> &aLayoutRect, const GEKVIDEO::RECT<float> &kClipRect, LPCWSTR pFormat, ...) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKVideoObserver, IGEKObserver, "2FE17A37-9B0B-4D12-95C9-F5CC5173B565")

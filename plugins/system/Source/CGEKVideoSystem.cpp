@@ -19,7 +19,6 @@
 #pragma comment(lib, "d3dx11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "FW1FontWrapper.lib")
 
 class CGEKVideoComputeContextSystem : public IGEKVideoContextSystem
 {
@@ -1037,15 +1036,6 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
                 hRetVal = m_spSwapChain->SetFullscreenState(true, nullptr);
                 GEKRESULT(SUCCEEDED(hRetVal), L"Call to SetFullscreenState failed: 0x%08X", hRetVal);
             }
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = FW1CreateFactory(FW1_VERSION, &m_spFontFactory);
-        if (m_spFontFactory)
-        {
-             hRetVal = m_spFontFactory->CreateFontWrapper(m_spDevice, L"Arial", &m_spFontWrapper);
         }
     }
 
@@ -2907,19 +2897,4 @@ STDMETHODIMP_(void) CGEKVideoSystem::Present(bool bWaitForVSync)
 {
     REQUIRE_VOID_RETURN(m_spSwapChain);
     m_spSwapChain->Present(bWaitForVSync ? 1 : 0, 0);
-}
-
-STDMETHODIMP_(void) CGEKVideoSystem::Print(LPCWSTR pFont, float nSize, UINT32 nColor, const GEKVIDEO::RECT<float> &aLayoutRect, const GEKVIDEO::RECT<float> &kClipRect, LPCWSTR pFormat, ...)
-{
-    if (pFormat != nullptr)
-    {
-        CStringW strMessage;
-
-        va_list pArgs;
-        va_start(pArgs, pFormat);
-        strMessage.FormatV(pFormat, pArgs);
-        va_end(pArgs);
-
-        m_spFontWrapper->DrawString(m_spDeviceContext, strMessage, pFont, nSize, (FW1_RECTF *)&aLayoutRect, nColor, (FW1_RECTF *)&kClipRect, nullptr, 0);
-    }
 }

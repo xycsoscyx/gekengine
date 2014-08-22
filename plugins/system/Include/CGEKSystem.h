@@ -5,8 +5,8 @@
 #include "IGEKSystem.h"
 
 DECLARE_INTERFACE(IGEKVideoSystem);
+DECLARE_INTERFACE(IGEKInterfaceSystem);
 DECLARE_INTERFACE(IGEKAudioSystem);
-DECLARE_INTERFACE(IGEKInputSystem);
 
 class CGEKSystem : public CGEKUnknown
                  , public CGEKObservable
@@ -22,6 +22,7 @@ protected:
     UINT32 m_nYSize;
 
     CComPtr<IGEKVideoSystem> m_spVideoSystem;
+    CComPtr<IGEKInterfaceSystem> m_spInterfaceSystem;
     CComPtr<IGEKAudioSystem> m_spAudioSystem;
 
 private:

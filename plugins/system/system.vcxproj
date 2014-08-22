@@ -91,6 +91,7 @@
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Source\CGEKAudioSystem.cpp" />
+    <ClCompile Include="Source\CGEKInterfaceSystem.cpp" />
     <ClCompile Include="Source\CGEKSystem.cpp" />
     <ClCompile Include="Source\CGEKVideoSystem.cpp" />
   </ItemGroup>
@@ -98,9 +99,11 @@
     <ClInclude Include="GEKSystem.h" />
     <ClInclude Include="GEKSystemCLSIDs.h" />
     <ClInclude Include="Include\CGEKAudioSystem.h" />
+    <ClInclude Include="Include\CGEKInterfaceSystem.h" />
     <ClInclude Include="Include\CGEKSystem.h" />
     <ClInclude Include="Include\CGEKVideoSystem.h" />
     <ClInclude Include="Public\IGEKAudioSystem.h" />
+    <ClInclude Include="Public\IGEKInterfaceSystem.h" />
     <ClInclude Include="Public\IGEKSystem.h" />
     <ClInclude Include="Public\IGEKVideoSystem.h" />
   </ItemGroup>

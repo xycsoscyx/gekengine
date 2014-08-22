@@ -1075,8 +1075,8 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
     m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 
-    IGEKVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
-    if (pVideoSystem)
+    IGEKInterfaceSystem *pInterfaceSystem = GetContext()->GetCachedClass<IGEKInterfaceSystem>(CLSID_GEKInterfaceSystem);
+    if (pInterfaceSystem)
     {
         static UINT64 nLastTime = 0;
         static UINT32 nNumFrames = 0;
@@ -1091,7 +1091,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
         }
 
         GEKVIDEO::RECT<float> kRect = { 0.0f, 0.0f, 640.0f, 480.0f, };
-        pVideoSystem->Print(L"Arial", 32.0f, 0xFF0099FF, kRect, kRect, L"FPS: %d", nFPS);
+        pInterfaceSystem->Print(L"Arial", 32.0f, 0xFF0099FF, kRect, kRect, L"FPS: %d", nFPS);
     }
 
     m_pVideoSystem->GetImmediateContext()->ClearResources();

@@ -3,8 +3,7 @@
 #include "GEKUtility.h"
 #include "GEKContext.h"
 #include "GEKSystem.h"
-#include <D3D11_1.h>
-#include <FW1FontWrapper.h>
+#include <D3D11.h>
 #include <memory>
 
 class CGEKVideoContext : public CGEKUnknown
@@ -62,8 +61,6 @@ private:
     CComPtr<ID3D11RenderTargetView> m_spRenderTargetView;
     CComPtr<ID3D11DepthStencilView> m_spDepthStencilView;
     CComPtr<IDXGISwapChain> m_spSwapChain;
-    CComPtr<IFW1Factory> m_spFontFactory;
-    CComPtr<IFW1FontWrapper> m_spFontWrapper;
 
 private:
     HRESULT GetDefaultTargets(void);
@@ -111,5 +108,4 @@ public:
     STDMETHOD(GetDefaultDepthStencilTarget)             (THIS_ IUnknown **ppBuffer);
     STDMETHOD_(void, ExecuteCommandList)                (THIS_ IUnknown *pUnknown);
     STDMETHOD_(void, Present)                           (THIS_ bool bWaitForVSync);
-    STDMETHOD_(void, Print)                             (THIS_ LPCWSTR pFont, float nSize, UINT32 nColor, const GEKVIDEO::RECT<float> &aLayoutRect, const GEKVIDEO::RECT<float> &kClipRect, LPCWSTR pFormat, ...);
 };

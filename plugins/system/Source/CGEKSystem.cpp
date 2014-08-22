@@ -1,6 +1,7 @@
 #include "CGEKSystem.h"
-#include "IGEKAudioSystem.h"
 #include "IGEKVideoSystem.h"
+#include "IGEKInterfaceSystem.h"
+#include "IGEKAudioSystem.h"
 #include <time.h>
 
 #include "GEKSystemCLSIDs.h"
@@ -141,6 +142,15 @@ STDMETHODIMP CGEKSystem::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
+        hRetVal = GetContext()->CreateInstance(CLSID_GEKInterfaceSystem, IID_PPV_ARGS(&m_spInterfaceSystem));
+        if (m_spInterfaceSystem)
+        {
+            hRetVal = m_spInterfaceSystem->SetContext(m_spVideoSystem->GetImmediateContext());
+        }
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
         hRetVal = GetContext()->CreateInstance(CLSID_GEKAudioSystem, IID_PPV_ARGS(&m_spAudioSystem));
     }
 
@@ -155,8 +165,9 @@ STDMETHODIMP CGEKSystem::Initialize(void)
 
 STDMETHODIMP_(void) CGEKSystem::Destroy(void)
 {
-    m_spAudioSystem = nullptr;
     m_spVideoSystem = nullptr;
+    m_spInterfaceSystem = nullptr;
+    m_spAudioSystem = nullptr;
     GetContext()->RemoveCachedClass(CLSID_GEKSystem);
 }
 
