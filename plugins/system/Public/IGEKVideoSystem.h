@@ -239,10 +239,10 @@ namespace GEKVIDEO
     template <typename TYPE>
     struct RECT
     {
-        TYPE m_nMinX;
-        TYPE m_nMinY;
-        TYPE m_nMaxX;
-        TYPE m_nMaxY;
+        TYPE left;
+        TYPE top;
+        TYPE right;
+        TYPE bottom;
     };
 
     struct RENDERSTATES

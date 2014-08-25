@@ -188,7 +188,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
             float2(0.0f, 1.0f), float2(-1.0f, -1.0f),
         };
 
-        hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float2)* 2), 4, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
+        hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float2) * 2), 4, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
@@ -1078,6 +1078,10 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
     IGEKInterfaceSystem *pInterfaceSystem = GetContext()->GetCachedClass<IGEKInterfaceSystem>(CLSID_GEKInterfaceSystem);
     if (pInterfaceSystem)
     {
+        GEKVIDEO::RECT<float> kSprite = { 0.0f, 0.0f, 640.0f, 480.0f, };
+        GEKVIDEO::RECT<float> kTexCoords = { 0.0f, 0.0f, 1.0f, 1.0f, };
+        pInterfaceSystem->DrawSprite(kSprite, kTexCoords, float4(1.0f, 0.0f, 0.0f, 1.0f), nullptr);
+
         static UINT64 nLastTime = 0;
         static UINT32 nNumFrames = 0;
         static UINT32 nFPS = 0;
