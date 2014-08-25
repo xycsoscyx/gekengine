@@ -1078,7 +1078,7 @@ STDMETHODIMP_(void) CGEKRenderManager::Render(void)
     IGEKInterfaceSystem *pInterfaceSystem = GetContext()->GetCachedClass<IGEKInterfaceSystem>(CLSID_GEKInterfaceSystem);
     if (pInterfaceSystem)
     {
-        GEKVIDEO::RECT<float> kSprite = { 0.0f, 0.0f, 640.0f, 480.0f, };
+        GEKVIDEO::RECT<float> kSprite = { 0.0f, 0.0f, 320.0f, 240.0f, };
         GEKVIDEO::RECT<float> kTexCoords = { 0.0f, 0.0f, 1.0f, 1.0f, };
         pInterfaceSystem->DrawSprite(kSprite, kTexCoords, float4(1.0f, 0.0f, 0.0f, 1.0f), nullptr);
 

@@ -11,5 +11,13 @@ struct INPUT
 
 float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 {
-    return (kInput.color * gs_pTextureBuffer.Sample(gs_pPointSampler, kInput.texcoord));
+    float4 nTextureColor = 1.0f;
+    float nWidth = 0.0f, nHeight = 0.0f;
+    gs_pTextureBuffer.GetDimensions(nWidth, nHeight);
+    if (nWidth > 0.0f && nHeight > 0.0f)
+    {
+        nTextureColor = gs_pTextureBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+    }
+
+    return (kInput.color * nTextureColor);
 }

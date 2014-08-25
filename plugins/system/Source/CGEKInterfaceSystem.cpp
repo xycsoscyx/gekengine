@@ -57,7 +57,7 @@ STDMETHODIMP CGEKInterfaceSystem::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float2) * 2), 4, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::DYNAMIC, &m_spVertexBuffer);
+        hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float4) * 2), 4, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::DYNAMIC, &m_spVertexBuffer);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
