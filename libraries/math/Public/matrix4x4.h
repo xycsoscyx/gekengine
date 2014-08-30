@@ -331,7 +331,7 @@ public:
         Invert();
     }
 
-    tvector3<TYPE> GetEuler(void)
+    tvector3<TYPE> GetEuler(void) const
     {
         tvector3<TYPE> nEuler;
         nEuler.y = asin(_31);
@@ -458,52 +458,6 @@ public:
                                ry.Dot(nTranspose.rx), ry.Dot(nTranspose.ry), ry.Dot(nTranspose.rz), ry.Dot(nTranspose.rw),
                                rz.Dot(nTranspose.rx), rz.Dot(nTranspose.ry), rz.Dot(nTranspose.rz), rz.Dot(nTranspose.rw),
                                rw.Dot(nTranspose.rx), rw.Dot(nTranspose.ry), rw.Dot(nTranspose.rz), rw.Dot(nTranspose.rw));
-    }
-
-    void OldMulEqual(const tmatrix4x4<TYPE> &nMatrix)
-    {
-        *this = tmatrix4x4<TYPE>(((_11 * nMatrix._11) + (_12 * nMatrix._21) + (_13 * nMatrix._31) + (_14 * nMatrix._41)),
-                                ((_11 * nMatrix._12) + (_12 * nMatrix._22) + (_13 * nMatrix._32) + (_14 * nMatrix._42)),
-                                ((_11 * nMatrix._13) + (_12 * nMatrix._23) + (_13 * nMatrix._33) + (_14 * nMatrix._43)),
-                                ((_11 * nMatrix._14) + (_12 * nMatrix._24) + (_13 * nMatrix._34) + (_14 * nMatrix._44)),
-
-                                ((_21 * nMatrix._11) + (_22 * nMatrix._21) + (_23 * nMatrix._31) + (_24 * nMatrix._41)),
-                                ((_21 * nMatrix._12) + (_22 * nMatrix._22) + (_23 * nMatrix._32) + (_24 * nMatrix._42)),
-                                ((_21 * nMatrix._13) + (_22 * nMatrix._23) + (_23 * nMatrix._33) + (_24 * nMatrix._43)),
-                                ((_21 * nMatrix._14) + (_22 * nMatrix._24) + (_23 * nMatrix._34) + (_24 * nMatrix._44)),
-
-                                ((_31 * nMatrix._11) + (_32 * nMatrix._21) + (_33 * nMatrix._31) + (_34 * nMatrix._41)),
-                                ((_31 * nMatrix._12) + (_32 * nMatrix._22) + (_33 * nMatrix._32) + (_34 * nMatrix._42)),
-                                ((_31 * nMatrix._13) + (_32 * nMatrix._23) + (_33 * nMatrix._33) + (_34 * nMatrix._43)),
-                                ((_31 * nMatrix._14) + (_32 * nMatrix._24) + (_33 * nMatrix._34) + (_34 * nMatrix._44)),
-
-                                ((_41 * nMatrix._11) + (_42 * nMatrix._21) + (_43 * nMatrix._31) + (_44 * nMatrix._41)),
-                                ((_41 * nMatrix._12) + (_42 * nMatrix._22) + (_43 * nMatrix._32) + (_44 * nMatrix._42)),
-                                ((_41 * nMatrix._13) + (_42 * nMatrix._23) + (_43 * nMatrix._33) + (_44 * nMatrix._43)),
-                                ((_41 * nMatrix._14) + (_42 * nMatrix._24) + (_43 * nMatrix._34) + (_44 * nMatrix._44)));
-    }
-
-    tmatrix4x4<TYPE> OldMul(const tmatrix4x4<TYPE> &nMatrix) const
-    {
-        return tmatrix4x4<TYPE>(((_11 * nMatrix._11) + (_12 * nMatrix._21) + (_13 * nMatrix._31) + (_14 * nMatrix._41)),
-                               ((_11 * nMatrix._12) + (_12 * nMatrix._22) + (_13 * nMatrix._32) + (_14 * nMatrix._42)),
-                               ((_11 * nMatrix._13) + (_12 * nMatrix._23) + (_13 * nMatrix._33) + (_14 * nMatrix._43)),
-                               ((_11 * nMatrix._14) + (_12 * nMatrix._24) + (_13 * nMatrix._34) + (_14 * nMatrix._44)),
-
-                               ((_21 * nMatrix._11) + (_22 * nMatrix._21) + (_23 * nMatrix._31) + (_24 * nMatrix._41)),
-                               ((_21 * nMatrix._12) + (_22 * nMatrix._22) + (_23 * nMatrix._32) + (_24 * nMatrix._42)),
-                               ((_21 * nMatrix._13) + (_22 * nMatrix._23) + (_23 * nMatrix._33) + (_24 * nMatrix._43)),
-                               ((_21 * nMatrix._14) + (_22 * nMatrix._24) + (_23 * nMatrix._34) + (_24 * nMatrix._44)),
-
-                               ((_31 * nMatrix._11) + (_32 * nMatrix._21) + (_33 * nMatrix._31) + (_34 * nMatrix._41)),
-                               ((_31 * nMatrix._12) + (_32 * nMatrix._22) + (_33 * nMatrix._32) + (_34 * nMatrix._42)),
-                               ((_31 * nMatrix._13) + (_32 * nMatrix._23) + (_33 * nMatrix._33) + (_34 * nMatrix._43)),
-                               ((_31 * nMatrix._14) + (_32 * nMatrix._24) + (_33 * nMatrix._34) + (_34 * nMatrix._44)),
-
-                               ((_41 * nMatrix._11) + (_42 * nMatrix._21) + (_43 * nMatrix._31) + (_44 * nMatrix._41)),
-                               ((_41 * nMatrix._12) + (_42 * nMatrix._22) + (_43 * nMatrix._32) + (_44 * nMatrix._42)),
-                               ((_41 * nMatrix._13) + (_42 * nMatrix._23) + (_43 * nMatrix._33) + (_44 * nMatrix._43)),
-                               ((_41 * nMatrix._14) + (_42 * nMatrix._24) + (_43 * nMatrix._34) + (_44 * nMatrix._44)));
     }
 
     tmatrix4x4<TYPE> operator = (const tmatrix4x4<TYPE> &nMatrix)

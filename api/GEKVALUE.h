@@ -11,6 +11,7 @@ public:
         FLOAT2,
         FLOAT3,
         FLOAT4,
+        FLOAT4x4,
         QUATERNION,
         BOOLEAN,
         STRING,
@@ -61,6 +62,12 @@ public:
     GEKVALUE(const float4 &nValue)
         : m_eType(FLOAT4)
         , m_pFloat(nValue.xyzw)
+    {
+    }
+
+    GEKVALUE(const float4x4 &nValue)
+        : m_eType(FLOAT4x4)
+        , m_pFloat(nValue.data)
     {
     }
 
@@ -123,9 +130,9 @@ public:
     {
         switch (m_eType)
         {
-        case FLOAT2:        return float2(m_pFloat);
-        case FLOAT3:        return float2(m_pFloat);
-        case FLOAT4:        return float2(m_pFloat);
+        case FLOAT2:        return *(float2 *)m_pFloat;
+        case FLOAT3:        return *(float2 *)m_pFloat;
+        case FLOAT4:        return *(float2 *)m_pFloat;
         case STRING:        return StrToFloat2(m_pString);
         };
 
@@ -136,8 +143,8 @@ public:
     {
         switch (m_eType)
         {
-        case FLOAT3:        return float3(m_pFloat);
-        case FLOAT4:        return float3(m_pFloat);
+        case FLOAT3:        return *(float3 *)m_pFloat;
+        case FLOAT4:        return *(float3 *)m_pFloat;
         case STRING:        return StrToFloat3(m_pString);
         };
 
@@ -148,20 +155,33 @@ public:
     {
         switch (m_eType)
         {
-        case FLOAT4:        return float4(m_pFloat);
-        case QUATERNION:    return float4(m_pFloat);
+        case FLOAT4:        return *(float4 *)m_pFloat;
+        case QUATERNION:    return *(float4 *)m_pFloat;
         case STRING:        return StrToFloat4(m_pString);
         };
 
         return float4();
     }
 
+    float4x4 GetFloat4x4(void) const
+    {
+        switch (m_eType)
+        {
+        case FLOAT4x4:      return *(float4x4 *)m_pFloat;
+        case QUATERNION:    return *(quaternion *)m_pFloat;
+        case STRING:        return StrToQuaternion(m_pString);
+        };
+
+        return quaternion();
+    }
+
     quaternion GetQuaternion(void) const
     {
         switch (m_eType)
         {
-        case FLOAT4:        return quaternion(m_pFloat);
-        case QUATERNION:    return quaternion(m_pFloat);
+        case FLOAT4:        return *(quaternion *)m_pFloat;
+        case FLOAT4x4:      return *(float4x4 *)m_pFloat;
+        case QUATERNION:    return *(quaternion *)m_pFloat;
         case STRING:        return StrToQuaternion(m_pString);
         };
 
