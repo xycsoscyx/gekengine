@@ -22,6 +22,7 @@ private:
     TYPE m_eType;
     union
     {
+        LPCVOID m_pPointer;
         LPCWSTR m_pString;
         const float *m_pFloat;
         const UINT32 *m_pInteger;
@@ -241,19 +242,7 @@ public:
     GEKVALUE &operator = (const GEKVALUE &kProperty)
     {
         m_eType = kProperty.m_eType;
-        switch (m_eType)
-        {
-        case INTEGER:       m_pInteger = kProperty.m_pInteger;  break;
-        case FLOAT:         m_pFloat = kProperty.m_pFloat;      break;
-        case FLOAT2:        m_pFloat = kProperty.m_pFloat;      break;
-        case FLOAT3:        m_pFloat = kProperty.m_pFloat;      break;
-        case FLOAT4:        m_pFloat = kProperty.m_pFloat;      break;
-        case QUATERNION:    m_pFloat = kProperty.m_pFloat;      break;
-        case BOOLEAN:       m_pBoolean = kProperty.m_pBoolean;  break;
-        case STRING:        m_pString = kProperty.m_pString;    break;
-        case OBJECT:        m_pObject = kProperty.m_pObject;    break;
-        };
-
+        m_pPointer = kProperty.m_pPointer;
         return (*this);
     }
 };

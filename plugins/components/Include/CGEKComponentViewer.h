@@ -9,16 +9,26 @@ class CGEKComponentViewer : public CGEKUnknown
                           , public IGEKComponent
 {
 public:
+    enum PROJECTION
+    {
+        _UNKNOWN                 = 0,
+        _PERSPECTIVE,
+        _ORTHOGRAPHIC,
+    };
+
     struct DATA
     {
     public:
+        UINT32 m_nType;
         float m_nFieldOfView;
         float m_nMinViewDistance;
         float m_nMaxViewDistance;
+        float4x4 m_nProjection;
 
     public:
         DATA(void)
-            : m_nFieldOfView(0.0f)
+            : m_nType(_UNKNOWN)
+            , m_nFieldOfView(0.0f)
             , m_nMinViewDistance(0.0f)
             , m_nMaxViewDistance(0.0f)
         {

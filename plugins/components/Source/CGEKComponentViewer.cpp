@@ -49,9 +49,11 @@ STDMETHODIMP_(void) CGEKComponentViewer::ListProperties(const GEKENTITYID &nEnti
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
+        OnProperty(L"type", (*pIterator).second.m_nType);
         OnProperty(L"fieldofview", (*pIterator).second.m_nFieldOfView);
         OnProperty(L"minviewdistance", (*pIterator).second.m_nMinViewDistance);
         OnProperty(L"maxviewdistance", (*pIterator).second.m_nMaxViewDistance);
+        OnProperty(L"projection", (*pIterator).second.m_nProjection);
     }
 }
 
@@ -61,7 +63,12 @@ STDMETHODIMP_(bool) CGEKComponentViewer::GetProperty(const GEKENTITYID &nEntityI
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"fieldofview") == 0)
+        if (wcscmp(pName, L"type") == 0)
+        {
+            kValue = (*pIterator).second.m_nType;
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"fieldofview") == 0)
         {
             kValue = (*pIterator).second.m_nFieldOfView;
             bReturn = true;
@@ -76,6 +83,11 @@ STDMETHODIMP_(bool) CGEKComponentViewer::GetProperty(const GEKENTITYID &nEntityI
             kValue = (*pIterator).second.m_nMaxViewDistance;
             bReturn = true;
         }
+        else if (wcscmp(pName, L"projection") == 0)
+        {
+            kValue = (*pIterator).second.m_nProjection;
+            bReturn = true;
+        }
     }
 
     return bReturn;
@@ -87,6 +99,11 @@ STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(const GEKENTITYID &nEntityI
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
+        if (wcscmp(pName, L"type") == 0)
+        {
+            (*pIterator).second.m_nType = kValue.GetUINT32();
+            bReturn = true;
+        }
         if (wcscmp(pName, L"fieldofview") == 0)
         {
             (*pIterator).second.m_nFieldOfView = kValue.GetFloat();
@@ -101,6 +118,18 @@ STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(const GEKENTITYID &nEntityI
         {
             (*pIterator).second.m_nMaxViewDistance = kValue.GetFloat();
             bReturn = true;
+        }
+
+        if (bReturn)
+        {
+            switch ((*pIterator).second.m_nType)
+            {
+            case _PERSPECTIVE:
+                break;
+
+            case _ORTHOGRAPHIC:
+                break;
+            };
         }
     }
 
