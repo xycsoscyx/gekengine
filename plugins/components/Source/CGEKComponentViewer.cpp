@@ -125,9 +125,14 @@ STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(const GEKENTITYID &nEntityI
             switch ((*pIterator).second.m_nType)
             {
             case _PERSPECTIVE:
+                (*pIterator).second.m_nProjection.SetPerspective(_DEGTORAD((*pIterator).second.m_nFieldOfView),
+                    1.0f, (*pIterator).second.m_nMinViewDistance, (*pIterator).second.m_nMaxViewDistance);
                 break;
 
             case _ORTHOGRAPHIC:
+                (*pIterator).second.m_nProjection.SetOrthographic(-(*pIterator).second.m_nFieldOfView / 2.0f, -(*pIterator).second.m_nFieldOfView / 2.0f,
+                    (*pIterator).second.m_nFieldOfView / 2.0f, (*pIterator).second.m_nFieldOfView / 2.0f,
+                    (*pIterator).second.m_nMinViewDistance, (*pIterator).second.m_nMaxViewDistance);
                 break;
             };
         }

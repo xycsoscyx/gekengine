@@ -17,7 +17,6 @@ class CGEKRenderManager : public CGEKUnknown
                         , public IGEKRenderManager
                         , public IGEKProgramManager
                         , public IGEKMaterialManager
-                        , public IGEKViewManager
 {
 public:
     struct PASS
@@ -76,16 +75,14 @@ private:
     std::unordered_map<CStringW, CComPtr<IGEKRenderFilter>> m_aFilters;
     std::unordered_map<CStringW, PASS> m_aPasses;
 
-    GEKENTITYID m_nViewerEntityID;
-    frustum m_kFrustum;
-    ENGINEBUFFER m_kEngineBuffer;
+    frustum m_nCurrentFrustum;
+    ENGINEBUFFER m_kCurrentBuffer;
+    std::unordered_map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aVisibleModels;
+    std::vector<LIGHT> m_aVisibleLights;
 
     PASS *m_pCurrentPass;
     IGEKRenderFilter *m_pCurrentFilter;
     std::unordered_map<PASS *, INT32> m_aCurrentPasses;
-
-    std::unordered_map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aVisibleModels;
-    std::vector<LIGHT> m_aVisibleLights;
 
 private:
     HRESULT LoadPass(LPCWSTR pName);
@@ -112,10 +109,6 @@ public:
     // IGEKProgramManager
     STDMETHOD(LoadProgram)                  (THIS_ LPCWSTR pName, IUnknown **ppProgram);
     STDMETHOD_(void, EnableProgram)         (THIS_ IUnknown *pProgram);
-
-    // IGEKViewManager
-    STDMETHOD(SetViewer)                    (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD_(GEKENTITYID, GetViewer)      (THIS) const;
 
     // IGEKRenderManager
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);

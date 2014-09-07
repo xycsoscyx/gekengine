@@ -1,330 +1,477 @@
 <?xml version="1.0"?>
 <world name="Demo">
 	<population>
-        <entity name="info_player_start_1" class="info_player_start">
+        <entity>
 			<transform position="-7.200000, -1.200000, 0.000000" rotation="0,0,0,1" />
+            <viewer type="perspective" fieldofview="90" minviewdistance="0.5" maxviewdistance="100" />
+            <controller />
 		</entity>
 
-		<entity class="mesh">
+		<entity>
 			<transform position="0,0,0" rotation="0,0,0,1" />
             <model source="sponza" />
             <newton shape="tree" params="sponza" />
         </entity>
 
         <!-- 0 -->
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <!-- 10 -->
+        <!-- 5 -->
 
         <!-- 0 -->
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <!-- 20 -->
+        <!-- 5 -->
 
         <!-- 0 -->
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <!-- 30 -->
+        <!-- 5 -->
 
         <!-- 0 -->
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <entity class="light">
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
-		</entity>
-        <!-- 40 -->
+        <!-- 5 -->
 
         <!-- 0 -->
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <entity class="light">
+        <entity>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
 			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
-            <logic state="light_move_state" />
-            <model source="light" scale="rand(0.5:2)" />
 		</entity>
-        <!-- 50 -->
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+			<transform position="rand(90),rand(-3:70),rand(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
 
     </population>
 </world>

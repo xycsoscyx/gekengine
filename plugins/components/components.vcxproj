@@ -114,7 +114,6 @@
     <ClInclude Include="..\..\api\IGEKInputManager.h" />
     <ClInclude Include="..\..\api\IGEKModelManager.h" />
     <ClInclude Include="..\..\api\IGEKSceneManager.h" />
-    <ClInclude Include="..\..\api\IGEKViewManager.h" />
     <ClInclude Include="GEKComponents.h" />
     <ClInclude Include="GEKComponentsCLSIDs.h" />
     <ClInclude Include="Include\CGEKComponentController.h" />

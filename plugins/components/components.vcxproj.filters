@@ -68,9 +68,6 @@
     <ClInclude Include="..\..\api\GEKVALUE.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\IGEKViewManager.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\api\IGEKInputManager.h">
       <Filter>Interface Files</Filter>
     </ClInclude>

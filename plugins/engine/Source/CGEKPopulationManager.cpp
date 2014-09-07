@@ -131,30 +131,8 @@ STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
                 AddComponent(nEntityID, kComponentNode.GetType(), aParams);
                 kComponentNode = kComponentNode.NextSiblingElement();
             };
-
-            if (kEntityNode.HasAttribute(L"name") && kEntityNode.GetAttribute(L"name") == pEntry)
-            {
-                nPlayerID = nEntityID;
-                AddComponent(nEntityID, L"viewer", { { L"fieldofview", FormatString(L"%f", _DEGTORAD(90.0f)) },
-                                                     { L"minviewdistance", L"0.1" },
-                                                     { L"maxviewdistance", L"150" },
-                                                   });
-                AddComponent(nEntityID, L"controller", {});
-
-                IGEKViewManager *pViewManager = GetContext()->GetCachedClass<IGEKViewManager>(CLSID_GEKRenderManager);
-                if (pViewManager)
-                {
-                    pViewManager->SetViewer(nEntityID);
-                }
-            }
         }
     });
-
-    if (nPlayerID == 0)
-    {
-        hRetVal = E_INVALID;
-        GEKLOG(L"Unable to locate entry point: %s", pEntry);
-    }
 
     return CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
 }
