@@ -20,7 +20,7 @@ public:
     DECLARE_UNKNOWN(CGEKStaticCollision);
 
     // IGEKResource
-    STDMETHOD(Load)                     (THIS_ const UINT8 *pBuffer, LPCWSTR pParams);
+    STDMETHOD(Load)                     (THIS_ const UINT8 *pBuffer, LPCWSTR pName, LPCWSTR pParams);
 
     // IGEKCollision
     STDMETHOD_(UINT32, GetNumVertices)  (THIS);

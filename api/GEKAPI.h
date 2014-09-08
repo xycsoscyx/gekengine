@@ -13,6 +13,7 @@
 #include "IGEKProgramManager.h"
 #include "IGEKModelManager.h"
 #include "IGEKSceneManager.h"
+#include "IGEKRenderManager.h"
 #include "IGEKInputManager.h"
 
 // Global

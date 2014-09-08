@@ -41,10 +41,10 @@ CGEKEngine::~CGEKEngine(void)
     }
 }
 
-HRESULT CGEKEngine::Load(LPCWSTR pName, LPCWSTR pEntry)
+HRESULT CGEKEngine::Load(LPCWSTR pName)
 {
-    GEKFUNCTION(L"Name(%s), Entry(%s)", pName, pEntry);
-    HRESULT hRetVal = m_spPopulationManager->Load(pName, pEntry);
+    GEKFUNCTION(L"Name(%s)", pName);
+    HRESULT hRetVal = m_spPopulationManager->Load(pName);
     if (FAILED(hRetVal))
     {
         m_spPopulationManager->Free();
@@ -153,7 +153,7 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = Load(L"demo", L"info_player_start_1");
+            hRetVal = Load(L"demo");
         }
     }
 
@@ -340,7 +340,7 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(LPCWSTR pCommand, LPCWSTR *pParams, UI
     }
     else if (_wcsicmp(pCommand, L"newgame") == 0)
     {
-        Load(L"demo", L"info_player_start_1");
+        Load(L"demo");
     }
     else if (_wcsicmp(pCommand, L"setresolution") == 0)
     {

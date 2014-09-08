@@ -16,9 +16,9 @@ CGEKStaticCollision::~CGEKStaticCollision(void)
 {
 }
 
-STDMETHODIMP CGEKStaticCollision::Load(const UINT8 *pBuffer, LPCWSTR pParams)
+STDMETHODIMP CGEKStaticCollision::Load(const UINT8 *pBuffer, LPCWSTR pName, LPCWSTR pParams)
 {
-    GEKFUNCTION(L"Params(%s)", pParams);
+    GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
     REQUIRE_RETURN(pBuffer, E_INVALIDARG);
 
     UINT32 nGEKX = *((UINT32 *)pBuffer);

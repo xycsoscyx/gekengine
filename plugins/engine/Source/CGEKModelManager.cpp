@@ -105,7 +105,7 @@ STDMETHODIMP CGEKModelManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IGE
                 CComQIPtr<IGEKResource> spResource(*ppCollision);
                 if (spResource)
                 {
-                    hRetVal = spResource->Load(&aBuffer[0], pParams);
+                    hRetVal = spResource->Load(&aBuffer[0], pName, pParams);
                     if (SUCCEEDED(hRetVal))
                     {
                         break;
@@ -153,7 +153,7 @@ STDMETHODIMP CGEKModelManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknow
                     CComQIPtr<IGEKResource> spResource(spModel);
                     if (spResource)
                     {
-                        hRetVal = spResource->Load(&aBuffer[0], pParams);
+                        hRetVal = spResource->Load(&aBuffer[0], pName, pParams);
                         if (SUCCEEDED(hRetVal))
                         {
                             m_aModels[FormatString(L"%s|%s", pName, pParams)] = spModel;

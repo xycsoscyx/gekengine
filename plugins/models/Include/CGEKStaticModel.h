@@ -39,7 +39,7 @@ public:
     STDMETHOD(Initialize)           (THIS);
 
     // IGEKResource
-    STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, LPCWSTR pParams);
+    STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, LPCWSTR pName, LPCWSTR pParams);
 
     // IGEKModel
     STDMETHOD_(aabb, GetAABB)       (THIS);

@@ -72,9 +72,9 @@ STDMETHODIMP_(void) CGEKPopulationManager::Destroy(void)
     GetContext()->RemoveCachedClass(CLSID_GEKPopulationManager);
 }
 
-STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName, LPCWSTR pEntry)
+STDMETHODIMP CGEKPopulationManager::Load(LPCWSTR pName)
 {
-    GEKFUNCTION(L"Name(%s), Entry(%s)", pName, pEntry);
+    GEKFUNCTION(L"Name(%s)", pName);
 
     Free();
 
