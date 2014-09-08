@@ -3,7 +3,7 @@
 #include "GEKUtility.h"
 #include "GEKContext.h"
 
-DECLARE_INTERFACE_IID_(IGEKPopulationManager, IUnknown, "15D96F1B-3B38-4EAD-B62A-6AB3DFA2F1DD")
+DECLARE_INTERFACE_IID_(IGEKPopulationSystem, IUnknown, "15D96F1B-3B38-4EAD-B62A-6AB3DFA2F1DD")
 {
     STDMETHOD(Load)                     (THIS_ LPCWSTR pName) PURE;
     STDMETHOD_(void, Free)              (THIS) PURE;

@@ -1,4 +1,4 @@
-﻿#include "CGEKModelManager.h"
+﻿#include "CGEKModelSystem.h"
 #include "IGEKRenderFilter.h"
 #include "CGEKProperties.h"
 #include <windowsx.h>
@@ -9,42 +9,42 @@
 #include "GEKEngineCLSIDs.h"
 #include "GEKSystemCLSIDs.h"
 
-BEGIN_INTERFACE_LIST(CGEKModelManager)
+BEGIN_INTERFACE_LIST(CGEKModelSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKModelManager)
 END_INTERFACE_LIST_UNKNOWN
 
-REGISTER_CLASS(CGEKModelManager)
+REGISTER_CLASS(CGEKModelSystem)
 
-CGEKModelManager::CGEKModelManager(void)
+CGEKModelSystem::CGEKModelSystem(void)
     : m_pSystem(nullptr)
     , m_pVideoSystem(nullptr)
 {
 }
 
-CGEKModelManager::~CGEKModelManager(void)
+CGEKModelSystem::~CGEKModelSystem(void)
 {
 }
 
-STDMETHODIMP_(void) CGEKModelManager::OnBeginLoad(void)
+STDMETHODIMP_(void) CGEKModelSystem::OnBeginLoad(void)
 {
     m_aModels.clear();
 }
 
-STDMETHODIMP CGEKModelManager::OnLoadEnd(HRESULT hRetVal)
+STDMETHODIMP CGEKModelSystem::OnLoadEnd(HRESULT hRetVal)
 {
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKModelManager::OnFree(void)
+STDMETHODIMP_(void) CGEKModelSystem::OnFree(void)
 {
     m_aModels.clear();
 }
 
-STDMETHODIMP CGEKModelManager::Initialize(void)
+STDMETHODIMP CGEKModelSystem::Initialize(void)
 {
     GEKFUNCTION(nullptr);
-    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKModelManager, GetUnknown());
+    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKModelSystem, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = E_FAIL;
@@ -58,7 +58,7 @@ STDMETHODIMP CGEKModelManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
@@ -78,14 +78,14 @@ STDMETHODIMP CGEKModelManager::Initialize(void)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKModelManager::Destroy(void)
+STDMETHODIMP_(void) CGEKModelSystem::Destroy(void)
 {
     m_aModels.clear();
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
-    GetContext()->RemoveCachedClass(CLSID_GEKModelManager);
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
+    GetContext()->RemoveCachedClass(CLSID_GEKModelSystem);
 }
 
-STDMETHODIMP CGEKModelManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IGEKCollision **ppCollision)
+STDMETHODIMP CGEKModelSystem::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IGEKCollision **ppCollision)
 {
     GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
     REQUIRE_RETURN(ppCollision, E_INVALIDARG);
@@ -122,7 +122,7 @@ STDMETHODIMP CGEKModelManager::LoadCollision(LPCWSTR pName, LPCWSTR pParams, IGE
     return hRetVal;
 }
 
-STDMETHODIMP CGEKModelManager::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel)
+STDMETHODIMP CGEKModelSystem::LoadModel(LPCWSTR pName, LPCWSTR pParams, IUnknown **ppModel)
 {
     concurrency::critical_section::scoped_lock kLock(m_kCritical);
     REQUIRE_RETURN(ppModel, E_INVALIDARG);

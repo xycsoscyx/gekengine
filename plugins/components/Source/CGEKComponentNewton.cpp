@@ -226,7 +226,7 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
     }
     else if (_wcsicmp(pShape, L"convex_hull") == 0)
     {
-        IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKModelManager);
+        IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKModelSystem);
         if (pModelManager != nullptr)
         {
             CComPtr<IGEKCollision> spCollision;
@@ -245,7 +245,7 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
     }
     else if (_wcsicmp(pShape, L"tree") == 0)
     {
-        IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKModelManager);
+        IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKModelSystem);
         if (pModelManager != nullptr)
         {
             CComPtr<IGEKCollision> spCollision;
@@ -279,7 +279,7 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
 
 void CGEKComponentSystemNewton::OnEntityUpdated(const NewtonBody *pBody, const GEKENTITYID &nEntityID)
 {
-    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
     if (pSceneManager != nullptr)
     {
         GEKVALUE kMass;
@@ -295,7 +295,7 @@ void CGEKComponentSystemNewton::OnEntityUpdated(const NewtonBody *pBody, const G
 
 void CGEKComponentSystemNewton::OnEntityTransformed(const NewtonBody *pBody, const GEKENTITYID &nEntityID, const float4x4 &nMatrix)
 {
-    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
     if (pSceneManager != nullptr)
     {
         pSceneManager->SetProperty(nEntityID, L"transform", L"position", nMatrix.t);
@@ -312,7 +312,7 @@ STDMETHODIMP CGEKComponentSystemNewton::Initialize(void)
         NewtonWorldSetUserData(m_pWorld, (void *)this);
         int nDefaultID = NewtonMaterialGetDefaultGroupID(m_pWorld);
         NewtonMaterialSetCollisionCallback(m_pWorld, nDefaultID, nDefaultID, (void *)this, OnAABBOverlap, ContactsProcess);
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
     }
 
     return hRetVal;
@@ -328,7 +328,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::Destroy(void)
         m_pWorld = nullptr;
     }
 
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
 }
 
 STDMETHODIMP CGEKComponentSystemNewton::OnLoadEnd(HRESULT hRetVal)
@@ -364,7 +364,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
 {
     if (_wcsicmp(pComponent, L"newton") == 0)
     {
-        IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+        IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
         if (pSceneManager != nullptr)
         {
             if (pSceneManager->HasComponent(nEntityID, L"transform"))

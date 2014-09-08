@@ -3,16 +3,16 @@
 #include "GEKContext.h"
 #include "GEKSystem.h"
 #include "GEKAPI.h"
-#include "IGEKPopulationManager.h"
-#include "IGEKRenderManager.h"
+#include "IGEKPopulationSystem.h"
+#include "IGEKRenderSystem.h"
 #include <concurrent_vector.h>
 #include <unordered_map>
 #include <list>
 
-class CGEKPopulationManager : public CGEKUnknown
-                            , public CGEKObservable
-                            , public IGEKPopulationManager
-                            , public IGEKSceneManager
+class CGEKPopulationSystem : public CGEKUnknown
+                           , public CGEKObservable
+                           , public IGEKPopulationSystem
+                           , public IGEKSceneManager
 {
 private:
     std::unordered_map<CStringW, CComPtr<IGEKComponent>> m_aComponents;
@@ -21,15 +21,15 @@ private:
     concurrency::concurrent_vector<GEKENTITYID> m_aHitList;
 
 public:
-    CGEKPopulationManager(void);
-    virtual ~CGEKPopulationManager(void);
-    DECLARE_UNKNOWN(CGEKPopulationManager);
+    CGEKPopulationSystem(void);
+    virtual ~CGEKPopulationSystem(void);
+    DECLARE_UNKNOWN(CGEKPopulationSystem);
 
     // IGEKUnknown
     STDMETHOD(Initialize)               (THIS);
     STDMETHOD_(void, Destroy)           (THIS);
 
-    // IGEKPopulationManager
+    // IGEKPopulationSystem
     STDMETHOD(Load)                     (THIS_ LPCWSTR pName);
     STDMETHOD_(void, Free)              (THIS);
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);

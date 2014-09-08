@@ -1,4 +1,4 @@
-﻿#include "CGEKRenderManager.h"
+﻿#include "CGEKRenderSystem.h"
 #include "IGEKRenderFilter.h"
 #include "CGEKProperties.h"
 #include <windowsx.h>
@@ -13,7 +13,7 @@
 DECLARE_INTERFACE_IID_(IGEKMaterial, IUnknown, "819CA201-F652-4183-B29D-BB71BB15810E")
 {
     STDMETHOD_(LPCWSTR, GetPass)            (THIS) PURE;
-    STDMETHOD_(void, Enable)                (THIS_ CGEKRenderManager *pManager, IGEKVideoSystem *pSystem) PURE;
+    STDMETHOD_(void, Enable)                (THIS_ CGEKRenderSystem *pManager, IGEKVideoSystem *pSystem) PURE;
 };
 
 class CGEKMaterial : public CGEKUnknown
@@ -47,7 +47,7 @@ public:
         return m_strPass.GetString();
     }
 
-    STDMETHODIMP_(void) Enable(CGEKRenderManager *pManager, IGEKVideoSystem *pSystem)
+    STDMETHODIMP_(void) Enable(CGEKRenderSystem *pManager, IGEKVideoSystem *pSystem)
     {
         pManager->SetResource(nullptr, 0, m_spAlbedoMap);
         pManager->SetResource(nullptr, 1, m_spNormalMap);
@@ -121,18 +121,18 @@ static GEKVIDEO::INPUT::SOURCE GetElementClass(LPCWSTR pValue)
     else return GEKVIDEO::INPUT::UNKNOWN;
 }
 
-BEGIN_INTERFACE_LIST(CGEKRenderManager)
+BEGIN_INTERFACE_LIST(CGEKRenderSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEKRenderManager)
+    INTERFACE_LIST_ENTRY_COM(IGEKRenderSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManager)
     INTERFACE_LIST_ENTRY_COM(IGEKMaterialManager)
     INTERFACE_LIST_ENTRY_COM(IGEKModelManager)
 END_INTERFACE_LIST_UNKNOWN
 
-REGISTER_CLASS(CGEKRenderManager)
+REGISTER_CLASS(CGEKRenderSystem)
 
-CGEKRenderManager::CGEKRenderManager(void)
+CGEKRenderSystem::CGEKRenderSystem(void)
     : m_pSystem(nullptr)
     , m_pVideoSystem(nullptr)
     , m_pEngine(nullptr)
@@ -142,14 +142,14 @@ CGEKRenderManager::CGEKRenderManager(void)
 {
 }
 
-CGEKRenderManager::~CGEKRenderManager(void)
+CGEKRenderSystem::~CGEKRenderSystem(void)
 {
 }
 
-STDMETHODIMP CGEKRenderManager::Initialize(void)
+STDMETHODIMP CGEKRenderSystem::Initialize(void)
 {
     GEKFUNCTION(nullptr);
-    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKRenderManager, GetUnknown());
+    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKRenderSystem, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
         m_pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
@@ -159,7 +159,7 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
@@ -295,13 +295,13 @@ STDMETHODIMP CGEKRenderManager::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKModelManager, IID_PPV_ARGS(&m_spModelManager));
+        hRetVal = GetContext()->CreateInstance(CLSID_GEKModelSystem, IID_PPV_ARGS(&m_spModelManager));
     }
 
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
+STDMETHODIMP_(void) CGEKRenderSystem::Destroy(void)
 {
     m_pCurrentPass = nullptr;
     m_pCurrentFilter = nullptr;
@@ -312,18 +312,18 @@ STDMETHODIMP_(void) CGEKRenderManager::Destroy(void)
     m_aFilters.clear();
     m_aPasses.clear();
 
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
-    GetContext()->RemoveCachedClass(CLSID_GEKRenderManager);
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
+    GetContext()->RemoveCachedClass(CLSID_GEKRenderSystem);
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::OnLoadBegin(void)
+STDMETHODIMP_(void) CGEKRenderSystem::OnLoadBegin(void)
 {
     m_aResources.clear();
     m_aFilters.clear();
     m_aPasses.clear();
 }
 
-STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
+STDMETHODIMP CGEKRenderSystem::OnLoadEnd(HRESULT hRetVal)
 {
     if (SUCCEEDED(hRetVal))
     {
@@ -333,7 +333,7 @@ STDMETHODIMP CGEKRenderManager::OnLoadEnd(HRESULT hRetVal)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::OnFree(void)
+STDMETHODIMP_(void) CGEKRenderSystem::OnFree(void)
 {
     m_aResources.clear();
     m_aFilters.clear();
@@ -345,7 +345,7 @@ STDMETHODIMP_(void) CGEKRenderManager::OnFree(void)
     m_aVisibleLights.clear();
 }
 
-HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
+HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
 {
     GEKFUNCTION(L"Name(%s)", pName);
     HRESULT hRetVal = E_FAIL;
@@ -434,7 +434,7 @@ HRESULT CGEKRenderManager::LoadPass(LPCWSTR pName)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResource)
+STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource)
 {
     REQUIRE_RETURN(pName, E_INVALIDARG);
     REQUIRE_RETURN(ppResource, E_INVALIDARG);
@@ -494,7 +494,7 @@ STDMETHODIMP CGEKRenderManager::LoadResource(LPCWSTR pName, IUnknown **ppResourc
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::SetResource(IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource)
+STDMETHODIMP_(void) CGEKRenderSystem::SetResource(IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource)
 {
     CComPtr<IUnknown> spResource(pResource);
     if (spResource)
@@ -510,7 +510,7 @@ STDMETHODIMP_(void) CGEKRenderManager::SetResource(IGEKVideoContextSystem *pSyst
     }
 }
 
-STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
+STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
 {
     REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
@@ -538,7 +538,7 @@ STDMETHODIMP CGEKRenderManager::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderManager::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuffer)
+STDMETHODIMP CGEKRenderSystem::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuffer)
 {
     HRESULT hRetVal = E_FAIL;
     for (auto &kPair : m_aFilters)
@@ -553,7 +553,7 @@ STDMETHODIMP CGEKRenderManager::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuf
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial)
+STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial)
 {
     REQUIRE_RETURN(ppMaterial, E_INVALIDARG);
 
@@ -671,7 +671,7 @@ STDMETHODIMP CGEKRenderManager::LoadMaterial(LPCWSTR pName, IUnknown **ppMateria
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderManager::PrepareMaterial(IUnknown *pMaterial)
+STDMETHODIMP CGEKRenderSystem::PrepareMaterial(IUnknown *pMaterial)
 {
     REQUIRE_RETURN(pMaterial, E_INVALIDARG);
 
@@ -690,7 +690,7 @@ STDMETHODIMP CGEKRenderManager::PrepareMaterial(IUnknown *pMaterial)
     return hRetVal;
 }
 
-STDMETHODIMP_(bool) CGEKRenderManager::EnableMaterial(IUnknown *pMaterial)
+STDMETHODIMP_(bool) CGEKRenderSystem::EnableMaterial(IUnknown *pMaterial)
 {
     REQUIRE_RETURN(pMaterial, false);
 
@@ -712,7 +712,7 @@ STDMETHODIMP_(bool) CGEKRenderManager::EnableMaterial(IUnknown *pMaterial)
     return bReturn;
 }
 
-STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
+STDMETHODIMP CGEKRenderSystem::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
 {
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -821,7 +821,7 @@ STDMETHODIMP CGEKRenderManager::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
+STDMETHODIMP_(void) CGEKRenderSystem::EnableProgram(IUnknown *pProgram)
 {
     REQUIRE_VOID_RETURN(m_pVideoSystem);
     REQUIRE_VOID_RETURN(pProgram);
@@ -834,7 +834,7 @@ STDMETHODIMP_(void) CGEKRenderManager::EnableProgram(IUnknown *pProgram)
     }
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
+STDMETHODIMP_(void) CGEKRenderSystem::DrawScene(UINT32 nAttributes)
 {
     REQUIRE_VOID_RETURN(m_pCurrentPass);
     REQUIRE_VOID_RETURN(m_pCurrentFilter);
@@ -844,7 +844,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawScene(UINT32 nAttributes)
     }
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLightBatch)
+STDMETHODIMP_(void) CGEKRenderSystem::DrawLights(std::function<void(void)> OnLightBatch)
 {
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
@@ -884,7 +884,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawLights(std::function<void(void)> OnLi
     }
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
+STDMETHODIMP_(void) CGEKRenderSystem::DrawOverlay(void)
 {
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
@@ -898,7 +898,7 @@ STDMETHODIMP_(void) CGEKRenderManager::DrawOverlay(void)
     m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 }
 
-static void CountPasses(std::unordered_map<CGEKRenderManager::PASS *, INT32> &aPasses, CGEKRenderManager::PASS *pPass)
+static void CountPasses(std::unordered_map<CGEKRenderSystem::PASS *, INT32> &aPasses, CGEKRenderSystem::PASS *pPass)
 {
     if (aPasses.find(pPass) == aPasses.end())
     {
@@ -915,12 +915,12 @@ static void CountPasses(std::unordered_map<CGEKRenderManager::PASS *, INT32> &aP
     }
 }
 
-STDMETHODIMP_(void) CGEKRenderManager::Render(void)
+STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 {
     m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
     m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
 
-    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
     if (pSceneManager != nullptr)
     {
         pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void

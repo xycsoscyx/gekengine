@@ -5,19 +5,19 @@
     <ClCompile Include="Source\CGEKEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKRenderManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\CGEKRenderFilter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKPopulationManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\CGEKProperties.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKModelManager.cpp">
+    <ClCompile Include="Source\CGEKModelSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CGEKPopulationSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CGEKRenderSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -27,13 +27,7 @@
     <ClInclude Include="Include\CGEKEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKRenderManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Public\IGEKGameApplication.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\IGEKRenderManager.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
     <ClInclude Include="Public\IGEKRenderFilter.h">
@@ -42,19 +36,25 @@
     <ClInclude Include="Include\CGEKRenderFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKPopulationManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\IGEKPopulationManager.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
     <ClInclude Include="Public\IGEKEngine.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKProperties.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKModelManager.h">
+    <ClInclude Include="Public\IGEKRenderSystem.h">
+      <Filter>Interface Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\IGEKPopulationSystem.h">
+      <Filter>Interface Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKPopulationSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKRenderSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKModelSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -25,7 +25,7 @@ STDMETHODIMP CGEKFactory::Initialize(void)
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKFactory, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
-        IGEKProgramManager *pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderManager);
+        IGEKProgramManager *pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
         if (pProgramManager != nullptr)
         {
             hRetVal = pProgramManager->LoadProgram(L"staticmodel", &m_spVertexProgram);

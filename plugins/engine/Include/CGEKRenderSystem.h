@@ -3,20 +3,20 @@
 #include "GEKContext.h"
 #include "GEKSystem.h"
 #include "GEKAPI.h"
-#include "IGEKRenderManager.h"
-#include "IGEKPopulationManager.h"
+#include "IGEKRenderSystem.h"
+#include "IGEKPopulationSystem.h"
 #include "IGEKEngine.h"
 #include <concurrent_vector.h>
 
 DECLARE_INTERFACE(IGEKRenderFilter);
 DECLARE_INTERFACE(IGEKMaterial);
 
-class CGEKRenderManager : public CGEKUnknown
-                        , public CGEKObservable
-                        , public IGEKSceneObserver
-                        , public IGEKRenderManager
-                        , public IGEKProgramManager
-                        , public IGEKMaterialManager
+class CGEKRenderSystem : public CGEKUnknown
+                       , public CGEKObservable
+                       , public IGEKSceneObserver
+                       , public IGEKRenderSystem
+                       , public IGEKProgramManager
+                       , public IGEKMaterialManager
 {
 public:
     struct PASS
@@ -88,9 +88,9 @@ private:
     HRESULT LoadPass(LPCWSTR pName);
 
 public:
-    CGEKRenderManager(void);
-    virtual ~CGEKRenderManager(void);
-    DECLARE_UNKNOWN(CGEKRenderManager);
+    CGEKRenderSystem(void);
+    virtual ~CGEKRenderSystem(void);
+    DECLARE_UNKNOWN(CGEKRenderSystem);
 
     // IGEKUnknown
     STDMETHOD(Initialize)                   (THIS);
@@ -110,7 +110,7 @@ public:
     STDMETHOD(LoadProgram)                  (THIS_ LPCWSTR pName, IUnknown **ppProgram);
     STDMETHOD_(void, EnableProgram)         (THIS_ IUnknown *pProgram);
 
-    // IGEKRenderManager
+    // IGEKRenderSystem
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);

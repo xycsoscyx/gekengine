@@ -8,8 +8,8 @@
 #include <concurrent_queue.h>
 #include <list>
 
-DECLARE_INTERFACE(IGEKRenderManager);
-DECLARE_INTERFACE(IGEKPopulationManager);
+DECLARE_INTERFACE(IGEKRenderSystem);
+DECLARE_INTERFACE(IGEKPopulationSystem);
 
 class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
@@ -30,8 +30,8 @@ private:
     double m_nTimeAccumulator;
 
     std::unordered_map<UINT32, CStringW> m_aInputBindings;
-    CComPtr<IGEKPopulationManager> m_spPopulationManager;
-    CComPtr<IGEKRenderManager> m_spRenderManager;
+    CComPtr<IGEKPopulationSystem> m_spPopulationManager;
+    CComPtr<IGEKRenderSystem> m_spRenderManager;
 
     bool m_bSendInput;
 

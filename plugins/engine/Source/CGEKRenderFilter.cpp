@@ -122,7 +122,7 @@ STDMETHODIMP CGEKRenderFilter::Initialize(void)
     GEKFUNCTION(nullptr);
     HRESULT hRetVal = E_FAIL;
     m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
-    m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderManager);
+    m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderSystem>(CLSID_GEKRenderSystem);
     if (m_pVideoSystem != nullptr && m_pRenderManager != nullptr)
     {
         hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());

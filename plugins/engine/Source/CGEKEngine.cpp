@@ -1,6 +1,6 @@
 ﻿#include "CGEKEngine.h"
-#include "IGEKRenderManager.h"
-#include "IGEKPopulationManager.h"
+#include "IGEKRenderSystem.h"
+#include "IGEKPopulationSystem.h"
 #include <libxml/parserInternals.h>
 #include <windowsx.h>
 #include <algorithm>
@@ -143,12 +143,12 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationManager, IID_PPV_ARGS(&m_spPopulationManager));
+            hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationSystem, IID_PPV_ARGS(&m_spPopulationManager));
         }
         
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderManager, IID_PPV_ARGS(&m_spRenderManager));
+            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderSystem, IID_PPV_ARGS(&m_spRenderManager));
         }
 
         if (SUCCEEDED(hRetVal))

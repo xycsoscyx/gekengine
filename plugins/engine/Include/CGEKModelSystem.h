@@ -6,9 +6,9 @@
 #include <concurrent_unordered_map.h>
 #include <list>
 
-class CGEKModelManager : public CGEKUnknown
-                       , public IGEKSceneObserver
-                       , public IGEKModelManager
+class CGEKModelSystem : public CGEKUnknown
+                      , public IGEKSceneObserver
+                      , public IGEKModelManager
 {
 private:
     IGEKSystem *m_pSystem;
@@ -20,9 +20,9 @@ private:
     std::unordered_map<CStringW, CComPtr<IGEKModel>> m_aModels;
 
 public:
-    CGEKModelManager(void);
-    virtual ~CGEKModelManager(void);
-    DECLARE_UNKNOWN(CGEKModelManager);
+    CGEKModelSystem(void);
+    virtual ~CGEKModelSystem(void);
+    DECLARE_UNKNOWN(CGEKModelSystem);
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnBeginLoad)           (THIS);

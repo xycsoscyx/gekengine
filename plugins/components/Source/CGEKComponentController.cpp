@@ -115,18 +115,18 @@ CGEKComponentSystemController::~CGEKComponentSystemController(void)
 STDMETHODIMP CGEKComponentSystemController::Initialize(void)
 {
     GetContext()->AddCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
-    return GetContext()->AddCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    return GetContext()->AddCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
 };
 
 STDMETHODIMP_(void) CGEKComponentSystemController::Destroy(void)
 {
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationManager, (IGEKSceneObserver *)GetUnknown());
+    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
     GetContext()->RemoveCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemController::OnAction(LPCWSTR pName, const GEKVALUE &kValue)
 {
-    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
     if (pSceneManager != nullptr)
     {
         pSceneManager->ListComponentsEntities({ L"transform", L"controller" }, [&](const GEKENTITYID &nEntityID)->void
@@ -138,7 +138,7 @@ STDMETHODIMP_(void) CGEKComponentSystemController::OnAction(LPCWSTR pName, const
 
 STDMETHODIMP_(void) CGEKComponentSystemController::OnPreUpdate(float nGameTime, float nFrameTime)
 {
-    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationManager);
+    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
     if (pSceneManager != nullptr)
     {
         for (auto pEntity : m_aActions)

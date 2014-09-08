@@ -2,7 +2,7 @@
 
 #include "GEKContext.h"
 #include "GEKSystem.h"
-#include "IGEKRenderManager.h"
+#include "IGEKRenderSystem.h"
 #include "IGEKRenderFilter.h"
 #include "CGEKProperties.h"
 #include <list>
@@ -57,7 +57,7 @@ public:
 
 private:
     IGEKVideoSystem *m_pVideoSystem;
-    IGEKRenderManager *m_pRenderManager;
+    IGEKRenderSystem *m_pRenderManager;
 
     float m_nScale;
     GEKVIDEO::DATA::FORMAT m_eDepthFormat;

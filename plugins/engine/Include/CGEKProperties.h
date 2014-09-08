@@ -2,7 +2,7 @@
 
 #include "GEKContext.h"
 #include "GEKSystem.h"
-#include "IGEKRenderManager.h"
+#include "IGEKRenderSystem.h"
 #include "IGEKRenderFilter.h"
 
 DECLARE_INTERFACE(IUnknown);
