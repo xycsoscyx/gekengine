@@ -10,8 +10,9 @@ DECLARE_INTERFACE_IID_(IGEKRenderSystem, IUnknown, "77161A84-61C4-4C05-9550-4EEB
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppResource) PURE;
     STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource) PURE;
 
-    STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppResource, GEKVIDEO::VIEWPORT **ppViewPort) PURE;
+    STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppResource) PURE;
     STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppResource) PURE;
+    STDMETHOD_(void, SetScreenTargets)      (THIS_ IUnknown *pDepthBuffer) PURE;
 
     STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes) PURE;
     STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch) PURE;

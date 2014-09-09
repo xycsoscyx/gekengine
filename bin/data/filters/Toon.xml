@@ -1,9 +1,5 @@
 <?xml version="1.0"?>
 <filter>
-    <targets>
-        <target source="Screen" />
-    </targets>
-    
     <pixel>
         <resources>
             <resource stage="0" source="Opaque/Deferred.Albedo" />

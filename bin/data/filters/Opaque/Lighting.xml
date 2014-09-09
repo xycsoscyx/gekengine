@@ -14,10 +14,6 @@
         <alpha source="one" destination="one" operation="add" />
     </blend>
 
-    <targets>
-        <target source="Screen" />
-    </targets>
-    
     <buffers>
         <buffer name="TileIndices" format="R_UINT8" count="ceil(%video.xsize%/gs_nLightTileSize)*ceil(%video.ysize%/gs_nLightTileSize)*gs_nMaxLights" />
     </buffers>

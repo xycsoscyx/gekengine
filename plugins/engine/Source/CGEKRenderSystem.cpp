@@ -481,32 +481,22 @@ STDMETHODIMP_(void) CGEKRenderSystem::SetResource(IGEKVideoContextSystem *pSyste
     }
 }
 
-STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource, GEKVIDEO::VIEWPORT **ppViewPort)
+STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
 {
     REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
-    if (_wcsicmp(pName, L"Screen") == 0)
+
+    int nPosition = 0;
+    CStringW strName = pName;
+    CStringW strFilter = strName.Tokenize(L".", nPosition);
+    CStringW strSource = strName.Tokenize(L".", nPosition);
+    for (auto &kPair : m_aFilters)
     {
-        hRetVal = m_spScreenBuffer->QueryInterface(IID_PPV_ARGS(ppResource));
-        if (ppViewPort)
+        if (kPair.first == strFilter)
         {
-            (*ppViewPort) = &m_kScreenViewPort;
-        }
-    }
-    else
-    {
-        int nPosition = 0;
-        CStringW strName = pName;
-        CStringW strFilter = strName.Tokenize(L".", nPosition);
-        CStringW strSource = strName.Tokenize(L".", nPosition);
-        for (auto &kPair : m_aFilters)
-        {
-            if (kPair.first == strFilter)
-            {
-                hRetVal = kPair.second->GetBuffer(strSource, ppResource);
-                break;
-            }
+            hRetVal = kPair.second->GetBuffer(strSource, ppResource);
+            break;
         }
     }
 
@@ -526,6 +516,14 @@ STDMETHODIMP CGEKRenderSystem::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuff
     }
 
     return hRetVal;
+}
+
+STDMETHODIMP_(void) CGEKRenderSystem::SetScreenTargets(IUnknown *pDepthBuffer)
+{
+    REQUIRE_VOID_RETURN(m_pVideoSystem);
+
+    m_pVideoSystem->GetImmediateContext()->SetRenderTargets({ m_spScreenBuffer }, (pDepthBuffer ? pDepthBuffer : nullptr));
+    m_pVideoSystem->GetImmediateContext()->SetViewports({ m_kScreenViewPort });
 }
 
 STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial)

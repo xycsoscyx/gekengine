@@ -823,7 +823,6 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         for (auto &kTarget : m_aTargets)
         {
             CComQIPtr<IGEKVideoTexture> spTarget;
-            GEKVIDEO::VIEWPORT *pViewPort = nullptr;
             if (kTarget.m_spResource)
             {
                 spTarget = kTarget.m_spResource;
@@ -831,7 +830,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             else if (!kTarget.m_strSource.IsEmpty())
             {
                 CComPtr<IUnknown> spUnknown;
-                m_pRenderManager->GetBuffer(kTarget.m_strSource, &spUnknown, &pViewPort);
+                m_pRenderManager->GetBuffer(kTarget.m_strSource, &spUnknown);
                 if (spUnknown)
                 {
                     spTarget = spUnknown;
@@ -847,21 +846,14 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
 
                 aTargets.push_back(spTarget);
 
-                if (pViewPort)
-                {
-                    aViewPorts.push_back(*pViewPort);
-                }
-                else
-                {
-                    GEKVIDEO::VIEWPORT kViewPort;
-                    kViewPort.m_nTopLeftX = 0.0f;
-                    kViewPort.m_nTopLeftY = 0.0f;
-                    kViewPort.m_nXSize = float(spTarget->GetXSize());
-                    kViewPort.m_nYSize = float(spTarget->GetYSize());
-                    kViewPort.m_nMinDepth = 0.0f;
-                    kViewPort.m_nMaxDepth = 1.0f;
-                    aViewPorts.push_back(kViewPort);
-                }
+                GEKVIDEO::VIEWPORT kViewPort;
+                kViewPort.m_nTopLeftX = 0.0f;
+                kViewPort.m_nTopLeftY = 0.0f;
+                kViewPort.m_nXSize = float(spTarget->GetXSize());
+                kViewPort.m_nYSize = float(spTarget->GetYSize());
+                kViewPort.m_nMinDepth = 0.0f;
+                kViewPort.m_nMaxDepth = 1.0f;
+                aViewPorts.push_back(kViewPort);
             }
         }
 
@@ -870,7 +862,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     }
     else
     {
-        m_pVideoSystem->SetDefaultTargets(nullptr, (spDepthBuffer ? spDepthBuffer : nullptr));
+        m_pRenderManager->SetScreenTargets(spDepthBuffer ? spDepthBuffer : nullptr);
     }
 
     std::unordered_map<UINT32, IUnknown *> aComputeResources;
@@ -891,7 +883,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         else if (!kPair.second.m_strName.IsEmpty())
         {
             CComPtr<IUnknown> spResource;
-            m_pRenderManager->GetBuffer(kPair.second.m_strName, &spResource, nullptr);
+            m_pRenderManager->GetBuffer(kPair.second.m_strName, &spResource);
             if (spResource)
             {
                 if (kPair.second.m_bUnorderedAccess)
@@ -916,7 +908,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         else if (!kPair.second.m_strName.IsEmpty())
         {
             CComPtr<IUnknown> spResource;
-            m_pRenderManager->GetBuffer(kPair.second.m_strName, &spResource, nullptr);
+            m_pRenderManager->GetBuffer(kPair.second.m_strName, &spResource);
             if (spResource)
             {
                 aPixelResources[kPair.first] = spResource;
