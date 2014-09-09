@@ -23,6 +23,7 @@ public:
         float m_nFieldOfView;
         float m_nMinViewDistance;
         float m_nMaxViewDistance;
+        float4 m_nViewPort;
 
     public:
         DATA(void)
@@ -30,6 +31,7 @@ public:
             , m_nFieldOfView(0.0f)
             , m_nMinViewDistance(0.0f)
             , m_nMaxViewDistance(0.0f)
+            , m_nViewPort(0.0f, 0.0f, 1.0f, 1.0f)
         {
         }
     };

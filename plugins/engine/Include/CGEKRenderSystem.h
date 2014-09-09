@@ -78,6 +78,7 @@ private:
 
     frustum m_nCurrentFrustum;
     ENGINEBUFFER m_kCurrentBuffer;
+    GEKVIDEO::VIEWPORT m_kScreenViewPort;
     std::unordered_map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aVisibleModels;
     std::vector<LIGHT> m_aVisibleLights;
 
@@ -114,7 +115,7 @@ public:
     // IGEKRenderSystem
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
-    STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
+    STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture, GEKVIDEO::VIEWPORT **ppViewPort);
     STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppBuffer);
     STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes);
     STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch);

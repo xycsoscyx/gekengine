@@ -510,7 +510,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::SetResource(IGEKVideoContextSystem *pSyste
     }
 }
 
-STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
+STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource, GEKVIDEO::VIEWPORT **ppViewPort)
 {
     REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
@@ -518,6 +518,10 @@ STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
     if (_wcsicmp(pName, L"Screen") == 0)
     {
         hRetVal = m_spScreenBuffer->QueryInterface(IID_PPV_ARGS(ppResource));
+        if (ppViewPort)
+        {
+            (*ppViewPort) = &m_kScreenViewPort;
+        }
     }
     else
     {
@@ -927,15 +931,26 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         {
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPreRender, std::placeholders::_1, nViewerID)));
 
-            GEKVALUE kFieldOfView;
+            GEKVALUE kProjection;
+            pSceneManager->GetProperty(nViewerID, L"viewer", L"projection", kProjection);
+
             GEKVALUE kMinViewDistance;
             GEKVALUE kMaxViewDistance;
-            GEKVALUE kProjection;
-            pSceneManager->GetProperty(nViewerID, L"viewer", L"fieldofview", kFieldOfView);
             pSceneManager->GetProperty(nViewerID, L"viewer", L"minviewdistance", kMinViewDistance);
             pSceneManager->GetProperty(nViewerID, L"viewer", L"maxviewdistance", kMaxViewDistance);
-            pSceneManager->GetProperty(nViewerID, L"viewer", L"projection", kProjection);
+
+            GEKVALUE kFieldOfView;
+            pSceneManager->GetProperty(nViewerID, L"viewer", L"fieldofview", kFieldOfView);
             float nFieldOfView = _DEGTORAD(kFieldOfView.GetFloat());
+
+            GEKVALUE kViewPort;
+            pSceneManager->GetProperty(nViewerID, L"viewer", L"viewport", kViewPort);
+            m_kScreenViewPort.m_nTopLeftX = kViewPort.GetFloat4().x * m_pSystem->GetXSize();
+            m_kScreenViewPort.m_nTopLeftY = kViewPort.GetFloat4().y * m_pSystem->GetYSize();
+            m_kScreenViewPort.m_nXSize = kViewPort.GetFloat4().z * m_pSystem->GetXSize();
+            m_kScreenViewPort.m_nYSize = kViewPort.GetFloat4().w * m_pSystem->GetYSize();
+            m_kScreenViewPort.m_nMinDepth = 0.0f;
+            m_kScreenViewPort.m_nMaxDepth = 1.0f;
 
             GEKVALUE kPosition;
             GEKVALUE kRotation;

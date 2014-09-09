@@ -725,19 +725,9 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEKVid
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
 
-    std::vector<D3D11_VIEWPORT> aViewports;
     std::vector<ID3D11RenderTargetView *> aD3DViews;
     for (auto &pTexture : aTargets)
     {
-        D3D11_VIEWPORT kViewport;
-        kViewport.TopLeftX = 0.0f;
-        kViewport.TopLeftY = 0.0f;
-        kViewport.Width = float(pTexture->GetXSize());
-        kViewport.Height = float(pTexture->GetYSize());
-        kViewport.MinDepth = 0.0f;
-        kViewport.MaxDepth = 1.0f;
-        aViewports.push_back(kViewport);
-
         CComQIPtr<ID3D11RenderTargetView> spD3DView(pTexture);
         aD3DViews.push_back(spD3DView);
     }
@@ -754,8 +744,6 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEKVid
     {
         m_spDeviceContext->OMSetRenderTargets(aD3DViews.size(), &aD3DViews[0], nullptr);
     }
-
-    m_spDeviceContext->RSSetViewports(aViewports.size(), &aViewports[0]);
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(IUnknown *pStates)
