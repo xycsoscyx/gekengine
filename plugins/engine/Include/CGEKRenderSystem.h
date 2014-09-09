@@ -84,7 +84,6 @@ private:
 
     PASS *m_pCurrentPass;
     IGEKRenderFilter *m_pCurrentFilter;
-    std::unordered_map<PASS *, INT32> m_aCurrentPasses;
 
 private:
     HRESULT LoadPass(LPCWSTR pName);
@@ -105,7 +104,6 @@ public:
 
     // IGEKMaterialManager
     STDMETHOD(LoadMaterial)                 (THIS_ LPCWSTR pName, IUnknown **ppMaterial);
-    STDMETHOD(PrepareMaterial)              (THIS_ IUnknown *pMaterial);
     STDMETHOD_(bool, EnableMaterial)        (THIS_ IUnknown *pMaterial);
 
     // IGEKProgramManager

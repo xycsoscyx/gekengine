@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <pass>
     <filters>
+        <filter source="Opaque/Deferred" />
         <filter source="Toon" />
     </filters>
 </pass>

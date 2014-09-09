@@ -12,7 +12,6 @@
 
 DECLARE_INTERFACE_IID_(IGEKMaterial, IUnknown, "819CA201-F652-4183-B29D-BB71BB15810E")
 {
-    STDMETHOD_(LPCWSTR, GetPass)            (THIS) PURE;
     STDMETHOD_(void, Enable)                (THIS_ CGEKRenderSystem *pManager, IGEKVideoSystem *pSystem) PURE;
 };
 
@@ -22,16 +21,14 @@ class CGEKMaterial : public CGEKUnknown
                    , public CGEKBlendStates
 {
 private:
-    CStringW m_strPass;
     CComPtr<IUnknown> m_spAlbedoMap;
     CComPtr<IUnknown> m_spNormalMap;
     CComPtr<IUnknown> m_spInfoMap;
 
 public:
     DECLARE_UNKNOWN(CGEKMaterial);
-    CGEKMaterial(LPCWSTR pPass, IUnknown *pAlbedoMap, IUnknown *pNormalMap, IUnknown *pInfoMap)
-        : m_strPass(pPass)
-        , m_spAlbedoMap(pAlbedoMap)
+    CGEKMaterial(IUnknown *pAlbedoMap, IUnknown *pNormalMap, IUnknown *pInfoMap)
+        : m_spAlbedoMap(pAlbedoMap)
         , m_spNormalMap(pNormalMap)
         , m_spInfoMap(pInfoMap)
     {
@@ -42,11 +39,6 @@ public:
     }
 
     // IGEKMaterial
-    STDMETHODIMP_(LPCWSTR) GetPass(void)
-    {
-        return m_strPass.GetString();
-    }
-
     STDMETHODIMP_(void) Enable(CGEKRenderSystem *pManager, IGEKVideoSystem *pSystem)
     {
         pManager->SetResource(nullptr, 0, m_spAlbedoMap);
@@ -305,7 +297,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::Destroy(void)
 {
     m_pCurrentPass = nullptr;
     m_pCurrentFilter = nullptr;
-    m_aCurrentPasses.clear();
     m_aVisibleModels.clear();
     m_aVisibleLights.clear();
     m_aResources.clear();
@@ -340,7 +331,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::OnFree(void)
     m_aPasses.clear();
     m_pCurrentPass = nullptr;
     m_pCurrentFilter = nullptr;
-    m_aCurrentPasses.clear();
     m_aVisibleModels.clear();
     m_aVisibleLights.clear();
 }
@@ -361,72 +351,53 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
         hRetVal = kDocument.Load(strFileName);
         if (SUCCEEDED(hRetVal))
         {
+            PASS kPassData;
             hRetVal = E_INVALID;
             CLibXMLNode kPassNode = kDocument.GetRoot();
             if (kPassNode)
             {
-                hRetVal = S_OK;
-                PASS &kPassData = m_aPasses[pName];
-                CLibXMLNode kRequiresNode = kPassNode.FirstChildElement(L"requires");
-                if (kRequiresNode)
+                hRetVal = E_INVALID;
+                CLibXMLNode kFiltersNode = kPassNode.FirstChildElement(L"filters");
+                if (kFiltersNode)
                 {
-                    CLibXMLNode kPassNode = kRequiresNode.FirstChildElement(L"pass");
-                    while (kPassNode)
+                    CLibXMLNode kFilterNode = kFiltersNode.FirstChildElement(L"filter");
+                    while (kFilterNode)
                     {
-                        CStringW strRequiredPass = kPassNode.GetAttribute(L"source");
-                        hRetVal = LoadPass(strRequiredPass);
-                        if (SUCCEEDED(hRetVal))
+                        CStringW strFilter = kFilterNode.GetAttribute(L"source");
+                        auto pFilterIterator = m_aFilters.find(strFilter);
+                        if (pFilterIterator != m_aFilters.end())
                         {
-                            kPassData.m_aRequiredPasses.push_back(&m_aPasses[strRequiredPass]);
-                            kPassNode = kPassNode.NextSiblingElement(L"pass");
+                            kPassData.m_aFilters.push_back((*pFilterIterator).second);
+                            hRetVal = S_OK;
                         }
                         else
                         {
-                            break;
-                        }
-                    };
-                }
-
-                if (SUCCEEDED(hRetVal))
-                {
-                    hRetVal = E_INVALID;
-                    CLibXMLNode kFiltersNode = kPassNode.FirstChildElement(L"filters");
-                    if (kFiltersNode)
-                    {
-                        CLibXMLNode kFilterNode = kFiltersNode.FirstChildElement(L"filter");
-                        while (kFilterNode)
-                        {
-                            CStringW strFilter = kFilterNode.GetAttribute(L"source");
-                            auto pFilterIterator = m_aFilters.find(strFilter);
-                            if (pFilterIterator != m_aFilters.end())
+                            CComPtr<IGEKRenderFilter> spFilter;
+                            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderFilter, IID_PPV_ARGS(&spFilter));
+                            if (spFilter)
                             {
-                                kPassData.m_aFilters.push_back((*pFilterIterator).second);
-                                hRetVal = S_OK;
-                            }
-                            else
-                            {
-                                CComPtr<IGEKRenderFilter> spFilter;
-                                hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderFilter, IID_PPV_ARGS(&spFilter));
-                                if (spFilter)
+                                CStringW strFilterFileName(L"%root%\\data\\filters\\" + strFilter + L".xml");
+                                hRetVal = spFilter->Load(strFilterFileName);
+                                if (SUCCEEDED(hRetVal))
                                 {
-                                    CStringW strFilterFileName(L"%root%\\data\\filters\\" + strFilter + L".xml");
-                                    hRetVal = spFilter->Load(strFilterFileName);
-                                    if (SUCCEEDED(hRetVal))
-                                    {
-                                        m_aFilters[strFilter] = spFilter;
-                                        kPassData.m_aFilters.push_back(spFilter);
-                                    }
-                                    else
-                                    {
-                                        break;
-                                    }
+                                    m_aFilters[strFilter] = spFilter;
+                                    kPassData.m_aFilters.push_back(spFilter);
+                                }
+                                else
+                                {
+                                    break;
                                 }
                             }
+                        }
 
-                            kFilterNode = kFilterNode.NextSiblingElement(L"filter");
-                        };
-                    }
+                        kFilterNode = kFilterNode.NextSiblingElement(L"filter");
+                    };
                 }
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
+                m_aPasses[pName] = kPassData;
             }
         }
     }
@@ -579,58 +550,50 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
             CLibXMLNode kMaterialNode = kDocument.GetRoot();
             if (kMaterialNode)
             {
-                if (kMaterialNode.HasAttribute(L"pass"))
+                CPathW kName(pName);
+                kName.RemoveFileSpec();
+
+                CComPtr<IUnknown> spAlbedoMap;
+                CLibXMLNode kAlbedoNode = kMaterialNode.FirstChildElement(L"albedo");
+                CStringW strAlbedo = kAlbedoNode.GetAttribute(L"source");
+                strAlbedo.Replace(L"%material%", pName);
+                strAlbedo.Replace(L"%directory%", kName.m_strPath.GetString());
+                LoadResource(strAlbedo, &spAlbedoMap);
+                if (!spAlbedoMap)
                 {
-                    CStringW strPass = kMaterialNode.GetAttribute(L"pass");
-                    hRetVal = LoadPass(strPass);
-                    if (SUCCEEDED(hRetVal))
-                    {
-                        CPathW kName(pName);
-                        kName.RemoveFileSpec();
+                    LoadResource(L"*color:1,1,1,1", &spAlbedoMap);
+                }
 
-                        CComPtr<IUnknown> spAlbedoMap;
-                        CLibXMLNode kAlbedoNode = kMaterialNode.FirstChildElement(L"albedo");
-                        CStringW strAlbedo = kAlbedoNode.GetAttribute(L"source");
-                        strAlbedo.Replace(L"%material%", pName);
-                        strAlbedo.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadResource(strAlbedo, &spAlbedoMap);
-                        if (!spAlbedoMap)
-                        {
-                            LoadResource(L"*color:1,1,1,1", &spAlbedoMap);
-                        }
+                CComPtr<IUnknown> spNormalMap;
+                CLibXMLNode kNormalNode = kMaterialNode.FirstChildElement(L"normal");
+                CStringW strNormal = kNormalNode.GetAttribute(L"source");
+                strNormal.Replace(L"%material%", pName);
+                strNormal.Replace(L"%directory%", kName.m_strPath.GetString());
+                LoadResource(strNormal, &spNormalMap);
+                if (!spNormalMap)
+                {
+                    LoadResource(L"*color:0.5,0.5,1,1", &spNormalMap);
+                }
 
-                        CComPtr<IUnknown> spNormalMap;
-                        CLibXMLNode kNormalNode = kMaterialNode.FirstChildElement(L"normal");
-                        CStringW strNormal = kNormalNode.GetAttribute(L"source");
-                        strNormal.Replace(L"%material%", pName);
-                        strNormal.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadResource(strNormal, &spNormalMap);
-                        if (!spNormalMap)
-                        {
-                            LoadResource(L"*color:0.5,0.5,1,1", &spNormalMap);
-                        }
+                CComPtr<IUnknown> spInfoMap;
+                CLibXMLNode kInfoNode = kMaterialNode.FirstChildElement(L"info");
+                CStringW strInfo = kInfoNode.GetAttribute(L"source");
+                strInfo.Replace(L"%material%", pName);
+                strInfo.Replace(L"%directory%", kName.m_strPath.GetString());
+                LoadResource(strInfo, &spInfoMap);
+                if (!spInfoMap)
+                {
+                    LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
+                }
 
-                        CComPtr<IUnknown> spInfoMap;
-                        CLibXMLNode kInfoNode = kMaterialNode.FirstChildElement(L"info");
-                        CStringW strInfo = kInfoNode.GetAttribute(L"source");
-                        strInfo.Replace(L"%material%", pName);
-                        strInfo.Replace(L"%directory%", kName.m_strPath.GetString());
-                        LoadResource(strInfo, &spInfoMap);
-                        if (!spInfoMap)
-                        {
-                            LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
-                        }
-
-                        CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(strPass, spAlbedoMap, spNormalMap, spInfoMap));
-                        GEKRESULT(spMaterial, L"Unable to allocate new material instance");
-                        if (spMaterial)
-                        {
-                            spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"render"));
-                            spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"blend"));
-                            spMaterial->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
-                            hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
-                        }
-                    }
+                CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(spAlbedoMap, spNormalMap, spInfoMap));
+                GEKRESULT(spMaterial, L"Unable to allocate new material instance");
+                if (spMaterial)
+                {
+                    spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"render"));
+                    spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"blend"));
+                    spMaterial->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
+                    hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
                 }
             }
         }
@@ -646,48 +609,25 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
         }
         else
         {
-            hRetVal = LoadPass(L"Opaque");
-            if (SUCCEEDED(hRetVal))
+            CComPtr<IUnknown> spAlbedoMap;
+            LoadResource(L"*color:1,1,1,1", &spAlbedoMap);
+
+            CComPtr<IUnknown> spNormalMap;
+            LoadResource(L"*color:0.5,0.5,1,1", &spNormalMap);
+
+            CComPtr<IUnknown> spInfoMap;
+            LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
+
+            CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(spAlbedoMap, spNormalMap, spInfoMap));
+            GEKRESULT(spMaterial, L"Unable to allocate material new instance");
+            if (spMaterial)
             {
-                CComPtr<IUnknown> spAlbedoMap;
-                LoadResource(L"*color:1,1,1,1", &spAlbedoMap);
-
-                CComPtr<IUnknown> spNormalMap;
-                LoadResource(L"*color:0.5,0.5,1,1", &spNormalMap);
-
-                CComPtr<IUnknown> spInfoMap;
-                LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
-
-                CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(L"Opaque", spAlbedoMap, spNormalMap, spInfoMap));
-                GEKRESULT(spMaterial, L"Unable to allocate material new instance");
-                if (spMaterial)
-                {
-                    CLibXMLNode kBlankNode(nullptr);
-                    spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kBlankNode);
-                    spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kBlankNode);
-                    spMaterial->QueryInterface(IID_PPV_ARGS(&m_aResources[L"*default"]));
-                    hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
-                }
+                CLibXMLNode kBlankNode(nullptr);
+                spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kBlankNode);
+                spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kBlankNode);
+                spMaterial->QueryInterface(IID_PPV_ARGS(&m_aResources[L"*default"]));
+                hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
             }
-        }
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKRenderSystem::PrepareMaterial(IUnknown *pMaterial)
-{
-    REQUIRE_RETURN(pMaterial, E_INVALIDARG);
-
-    HRESULT hRetVal = E_FAIL;
-    CComQIPtr<IGEKMaterial> spMaterial(pMaterial);
-    if (spMaterial)
-    {
-        auto pIterator = m_aPasses.find(spMaterial->GetPass());
-        if (pIterator != m_aPasses.end())
-        {
-            hRetVal = S_OK;
-            m_aCurrentPasses[&(*pIterator).second] = -1;
         }
     }
 
@@ -699,18 +639,11 @@ STDMETHODIMP_(bool) CGEKRenderSystem::EnableMaterial(IUnknown *pMaterial)
     REQUIRE_RETURN(pMaterial, false);
 
     bool bReturn = false;
-    if (m_pCurrentPass != nullptr)
+    CComQIPtr<IGEKMaterial> spMaterial(pMaterial);
+    if (spMaterial)
     {
-        CComQIPtr<IGEKMaterial> spMaterial(pMaterial);
-        if (spMaterial)
-        {
-            auto pIterator = m_aPasses.find(spMaterial->GetPass());
-            if (pIterator != m_aPasses.end() && m_pCurrentPass == &(*pIterator).second)
-            {
-                bReturn = true;
-                spMaterial->Enable(this, m_pVideoSystem);
-            }
-        }
+        bReturn = true;
+        spMaterial->Enable(this, m_pVideoSystem);
     }
 
     return bReturn;
@@ -902,23 +835,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::DrawOverlay(void)
     m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 }
 
-static void CountPasses(std::unordered_map<CGEKRenderSystem::PASS *, INT32> &aPasses, CGEKRenderSystem::PASS *pPass)
-{
-    if (aPasses.find(pPass) == aPasses.end())
-    {
-        aPasses[pPass] = -1;
-    }
-    else
-    {
-        aPasses[pPass]--;
-    }
-
-    for (auto &pRequiredPass : pPass->m_aRequiredPasses)
-    {
-        CountPasses(aPasses, pRequiredPass);
-    }
-}
-
 STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 {
     m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
@@ -929,147 +845,129 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     {
         pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void
         {
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPreRender, std::placeholders::_1, nViewerID)));
-
-            GEKVALUE kProjection;
-            pSceneManager->GetProperty(nViewerID, L"viewer", L"projection", kProjection);
-
-            GEKVALUE kMinViewDistance;
-            GEKVALUE kMaxViewDistance;
-            pSceneManager->GetProperty(nViewerID, L"viewer", L"minviewdistance", kMinViewDistance);
-            pSceneManager->GetProperty(nViewerID, L"viewer", L"maxviewdistance", kMaxViewDistance);
-
-            GEKVALUE kFieldOfView;
-            pSceneManager->GetProperty(nViewerID, L"viewer", L"fieldofview", kFieldOfView);
-            float nFieldOfView = _DEGTORAD(kFieldOfView.GetFloat());
-
-            GEKVALUE kViewPort;
-            pSceneManager->GetProperty(nViewerID, L"viewer", L"viewport", kViewPort);
-            m_kScreenViewPort.m_nTopLeftX = kViewPort.GetFloat4().x * m_pSystem->GetXSize();
-            m_kScreenViewPort.m_nTopLeftY = kViewPort.GetFloat4().y * m_pSystem->GetYSize();
-            m_kScreenViewPort.m_nXSize = kViewPort.GetFloat4().z * m_pSystem->GetXSize();
-            m_kScreenViewPort.m_nYSize = kViewPort.GetFloat4().w * m_pSystem->GetYSize();
-            m_kScreenViewPort.m_nMinDepth = 0.0f;
-            m_kScreenViewPort.m_nMaxDepth = 1.0f;
-
-            GEKVALUE kPosition;
-            GEKVALUE kRotation;
-            pSceneManager->GetProperty(nViewerID, L"transform", L"position", kPosition);
-            pSceneManager->GetProperty(nViewerID, L"transform", L"rotation", kRotation);
-
-            float4x4 nCameraMatrix;
-            nCameraMatrix = kRotation.GetQuaternion();
-            nCameraMatrix.t = kPosition.GetFloat3();
-
-            float nXSize = float(m_pSystem->GetXSize());
-            float nYSize = float(m_pSystem->GetYSize());
-            float nAspect = (nXSize / nYSize);
-
-            m_kCurrentBuffer.m_nCameraSize.x = nXSize;
-            m_kCurrentBuffer.m_nCameraSize.y = nYSize;
-            m_kCurrentBuffer.m_nCameraView.x = tan(nFieldOfView * 0.5f);
-            m_kCurrentBuffer.m_nCameraView.y = (m_kCurrentBuffer.m_nCameraView.x / nAspect);
-            m_kCurrentBuffer.m_nCameraViewDistance = kMaxViewDistance.GetFloat();
-            m_kCurrentBuffer.m_nCameraPosition = kPosition.GetFloat3();
-
-            m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
-            m_kCurrentBuffer.m_nProjectionMatrix = kProjection.GetFloat4x4();
-            m_kCurrentBuffer.m_nTransformMatrix = (m_kCurrentBuffer.m_nViewMatrix * m_kCurrentBuffer.m_nProjectionMatrix);
-
-            m_nCurrentFrustum.Create(nCameraMatrix, m_kCurrentBuffer.m_nProjectionMatrix);
-
-            LIGHT kLight;
-            m_aVisibleLights.clear();
-            pSceneManager->ListComponentsEntities({ L"transform", L"light" }, [&](const GEKENTITYID &nEntityID)->void
+            GEKVALUE kPass;
+            pSceneManager->GetProperty(nViewerID, L"viewer", L"pass", kPass);
+            if (SUCCEEDED(LoadPass(kPass.GetRawString())))
             {
-                GEKVALUE kValue;
-                pSceneManager->GetProperty(nEntityID, L"transform", L"position", kValue);
-                kLight.m_nPosition = (m_kCurrentBuffer.m_nViewMatrix * float4(kValue.GetFloat3(), 1.0f));
+                CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPreRender, std::placeholders::_1, nViewerID)));
 
-                pSceneManager->GetProperty(nEntityID, L"light", L"range", kValue);
-                kLight.m_nInvRange = (1.0f / (kLight.m_nRange = kValue.GetFloat()));
+                GEKVALUE kProjection;
+                pSceneManager->GetProperty(nViewerID, L"viewer", L"projection", kProjection);
 
-                pSceneManager->GetProperty(nEntityID, L"light", L"color", kValue);
-                kLight.m_nColor = kValue.GetFloat3();
+                GEKVALUE kMinViewDistance;
+                GEKVALUE kMaxViewDistance;
+                pSceneManager->GetProperty(nViewerID, L"viewer", L"minviewdistance", kMinViewDistance);
+                pSceneManager->GetProperty(nViewerID, L"viewer", L"maxviewdistance", kMaxViewDistance);
 
-                m_aVisibleLights.push_back(kLight);
-            });
+                GEKVALUE kFieldOfView;
+                pSceneManager->GetProperty(nViewerID, L"viewer", L"fieldofview", kFieldOfView);
+                float nFieldOfView = _DEGTORAD(kFieldOfView.GetFloat());
 
-            CComQIPtr<IGEKModelManager> spManager(m_spModelManager);
-            if (spManager)
-            {
-                IGEKModel::INSTANCE kInstance;
-                m_aVisibleModels.clear();
-                pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
+                GEKVALUE kViewPort;
+                pSceneManager->GetProperty(nViewerID, L"viewer", L"viewport", kViewPort);
+                m_kScreenViewPort.m_nTopLeftX = kViewPort.GetFloat4().x * m_pSystem->GetXSize();
+                m_kScreenViewPort.m_nTopLeftY = kViewPort.GetFloat4().y * m_pSystem->GetYSize();
+                m_kScreenViewPort.m_nXSize = kViewPort.GetFloat4().z * m_pSystem->GetXSize();
+                m_kScreenViewPort.m_nYSize = kViewPort.GetFloat4().w * m_pSystem->GetYSize();
+                m_kScreenViewPort.m_nMinDepth = 0.0f;
+                m_kScreenViewPort.m_nMaxDepth = 1.0f;
+
+                GEKVALUE kPosition;
+                GEKVALUE kRotation;
+                pSceneManager->GetProperty(nViewerID, L"transform", L"position", kPosition);
+                pSceneManager->GetProperty(nViewerID, L"transform", L"rotation", kRotation);
+
+                float4x4 nCameraMatrix;
+                nCameraMatrix = kRotation.GetQuaternion();
+                nCameraMatrix.t = kPosition.GetFloat3();
+
+                float nXSize = float(m_pSystem->GetXSize());
+                float nYSize = float(m_pSystem->GetYSize());
+                float nAspect = (nXSize / nYSize);
+
+                m_kCurrentBuffer.m_nCameraSize.x = nXSize;
+                m_kCurrentBuffer.m_nCameraSize.y = nYSize;
+                m_kCurrentBuffer.m_nCameraView.x = tan(nFieldOfView * 0.5f);
+                m_kCurrentBuffer.m_nCameraView.y = (m_kCurrentBuffer.m_nCameraView.x / nAspect);
+                m_kCurrentBuffer.m_nCameraViewDistance = kMaxViewDistance.GetFloat();
+                m_kCurrentBuffer.m_nCameraPosition = kPosition.GetFloat3();
+
+                m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
+                m_kCurrentBuffer.m_nProjectionMatrix = kProjection.GetFloat4x4();
+                m_kCurrentBuffer.m_nTransformMatrix = (m_kCurrentBuffer.m_nViewMatrix * m_kCurrentBuffer.m_nProjectionMatrix);
+
+                m_nCurrentFrustum.Create(nCameraMatrix, m_kCurrentBuffer.m_nProjectionMatrix);
+
+                LIGHT kLight;
+                m_aVisibleLights.clear();
+                pSceneManager->ListComponentsEntities({ L"transform", L"light" }, [&](const GEKENTITYID &nEntityID)->void
                 {
-                    GEKVALUE kSource;
-                    GEKVALUE kParams;
-                    pSceneManager->GetProperty(nEntityID, L"model", L"source", kSource);
-                    pSceneManager->GetProperty(nEntityID, L"model", L"params", kParams);
+                    GEKVALUE kValue;
+                    pSceneManager->GetProperty(nEntityID, L"transform", L"position", kValue);
+                    kLight.m_nPosition = (m_kCurrentBuffer.m_nViewMatrix * float4(kValue.GetFloat3(), 1.0f));
 
-                    CComPtr<IUnknown> spModelUnknown;
-                    spManager->LoadModel(kSource.GetString(), kParams.GetString(), &spModelUnknown);
-                    if (spModelUnknown)
-                    {
-                        CComQIPtr<IGEKModel> spModel(spModelUnknown);
-                        if (spModel)
-                        {
-                            GEKVALUE kScale;
-                            pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
-                            kInstance.m_nScale = kScale.GetFloat3();
+                    pSceneManager->GetProperty(nEntityID, L"light", L"range", kValue);
+                    kLight.m_nInvRange = (1.0f / (kLight.m_nRange = kValue.GetFloat()));
 
-                            GEKVALUE kPosition;
-                            GEKVALUE kRotation;
-                            pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
-                            pSceneManager->GetProperty(nEntityID, L"transform", L"rotation", kRotation);
-                            kInstance.m_nMatrix = kRotation.GetQuaternion();
-                            kInstance.m_nMatrix.t = kPosition.GetFloat3();
+                    pSceneManager->GetProperty(nEntityID, L"light", L"color", kValue);
+                    kLight.m_nColor = kValue.GetFloat3();
 
-                            m_aVisibleModels[spModel].push_back(kInstance);
-                        }
-                    }
+                    m_aVisibleLights.push_back(kLight);
                 });
-            }
 
-            for (auto &kPair : m_aVisibleModels)
-            {
-                kPair.first->Prepare();
-            }
-
-            m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-
-            for (auto &kPair : m_aCurrentPasses)
-            {
-                CountPasses(m_aCurrentPasses, kPair.first);
-            }
-
-            std::unordered_map<INT32, std::list<PASS *>> aSortedPasses;
-            for (auto &kPair : m_aCurrentPasses)
-            {
-                aSortedPasses[kPair.second].push_front(kPair.first);
-            }
-
-            for (auto pPassIndex : aSortedPasses)
-            {
-                for (auto pPass : pPassIndex.second)
+                CComQIPtr<IGEKModelManager> spManager(m_spModelManager);
+                if (spManager)
                 {
-                    m_pCurrentPass = pPass;
-                    for (auto &pFilter : pPass->m_aFilters)
+                    IGEKModel::INSTANCE kInstance;
+                    m_aVisibleModels.clear();
+                    pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
                     {
-                        m_pCurrentFilter = pFilter;
-                        pFilter->Draw();
-                        m_pCurrentFilter = nullptr;
-                    }
+                        GEKVALUE kSource;
+                        GEKVALUE kParams;
+                        pSceneManager->GetProperty(nEntityID, L"model", L"source", kSource);
+                        pSceneManager->GetProperty(nEntityID, L"model", L"params", kParams);
 
-                    m_pCurrentPass = nullptr;
+                        CComPtr<IUnknown> spModelUnknown;
+                        spManager->LoadModel(kSource.GetString(), kParams.GetString(), &spModelUnknown);
+                        if (spModelUnknown)
+                        {
+                            CComQIPtr<IGEKModel> spModel(spModelUnknown);
+                            if (spModel)
+                            {
+                                GEKVALUE kScale;
+                                pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
+                                kInstance.m_nScale = kScale.GetFloat3();
+
+                                GEKVALUE kPosition;
+                                GEKVALUE kRotation;
+                                pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
+                                pSceneManager->GetProperty(nEntityID, L"transform", L"rotation", kRotation);
+                                kInstance.m_nMatrix = kRotation.GetQuaternion();
+                                kInstance.m_nMatrix.t = kPosition.GetFloat3();
+
+                                m_aVisibleModels[spModel].push_back(kInstance);
+                            }
+                        }
+                    });
                 }
-            }
 
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPostRender, std::placeholders::_1, nViewerID)));
+                m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
+                m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+                m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
+                m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+                m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+
+                m_pCurrentPass = &m_aPasses[kPass.GetRawString()];
+                for (auto &pFilter : m_pCurrentPass->m_aFilters)
+                {
+                    m_pCurrentFilter = pFilter;
+                    pFilter->Draw();
+                    m_pCurrentFilter = nullptr;
+                }
+
+                m_pCurrentPass = nullptr;
+                CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPostRender, std::placeholders::_1, nViewerID)));
+            }
         });
 
         m_pVideoSystem->SetDefaultTargets();

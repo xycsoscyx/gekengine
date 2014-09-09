@@ -3,12 +3,18 @@
 	<population>
         <entity>
 			<transform position="-7.200000, -1.200000, 0.000000" rotation="0,0,0,1" />
-            <viewer type="perspective" fieldofview="90" minviewdistance="0.5" maxviewdistance="100" viewport="0,0,1,1"/>
+            <viewer type="perspective" fieldofview="90" minviewdistance="0.5" maxviewdistance="100" viewport="0,0,1,1" pass="opaque"/>
+            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+            <model source="light" />
             <controller />
 		</entity>
         <entity>
 			<transform position="-7.200000, -1.200000, 0.000000" rotation="0,0,0,1" />
-            <viewer type="perspective" fieldofview="90" minviewdistance="0.5" maxviewdistance="100" viewport="0.5,0.1,0.4,0.4"/>
+            <viewer type="perspective" fieldofview="90" minviewdistance="0.5" maxviewdistance="100" viewport="0.5,0.05,0.4,0.4" pass="opaque"/>
+		</entity>
+        <entity>
+			<transform position="-7.200000, -1.200000, 0.000000" rotation="0,0,0,1" />
+            <viewer type="orthographic" fieldofview="150" minviewdistance="0.5" maxviewdistance="100" viewport="0.5,0.55,0.4,0.4" pass="toon"/>
 		</entity>
 
 		<entity>

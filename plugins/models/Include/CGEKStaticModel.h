@@ -43,6 +43,5 @@ public:
 
     // IGEKModel
     STDMETHOD_(aabb, GetAABB)       (THIS) const;
-    STDMETHOD_(void, Prepare)       (THIS);
     STDMETHOD_(void, Draw)          (THIS_ UINT32 nVertexAttributes, const std::vector<IGEKModel::INSTANCE> &aInstances);
 };

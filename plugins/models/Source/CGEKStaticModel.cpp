@@ -126,14 +126,6 @@ STDMETHODIMP_(aabb) CGEKStaticModel::GetAABB(void) const
     return m_nAABB;
 }
 
-STDMETHODIMP_(void) CGEKStaticModel::Prepare(void)
-{
-    for (auto &kPair : m_aMaterials)
-    {
-        m_pMaterialManager->PrepareMaterial(kPair.first);
-    }
-}
-
 STDMETHODIMP_(void) CGEKStaticModel::Draw(UINT32 nVertexAttributes, const std::vector<IGEKModel::INSTANCE> &aInstances)
 {
     if (!(nVertexAttributes & GEK_VERTEX_POSITION) &&

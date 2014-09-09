@@ -24,6 +24,7 @@ public:
         float m_nMinViewDistance;
         float m_nMaxViewDistance;
         float4 m_nViewPort;
+        CStringW m_strPass;
 
     public:
         DATA(void)

@@ -54,6 +54,7 @@ STDMETHODIMP_(void) CGEKComponentViewer::ListProperties(const GEKENTITYID &nEnti
         OnProperty(L"minviewdistance", (*pIterator).second.m_nMinViewDistance);
         OnProperty(L"maxviewdistance", (*pIterator).second.m_nMaxViewDistance);
         OnProperty(L"viewport", (*pIterator).second.m_nViewPort);
+        OnProperty(L"pass", (*pIterator).second.m_strPass.GetString());
     }
 }
 
@@ -86,6 +87,11 @@ STDMETHODIMP_(bool) CGEKComponentViewer::GetProperty(const GEKENTITYID &nEntityI
         else if (wcscmp(pName, L"viewport") == 0)
         {
             kValue = (*pIterator).second.m_nViewPort;
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"pass") == 0)
+        {
+            kValue = (*pIterator).second.m_strPass.GetString();
             bReturn = true;
         }
         else if (wcscmp(pName, L"projection") == 0)
@@ -169,6 +175,11 @@ STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(const GEKENTITYID &nEntityI
         else if (wcscmp(pName, L"viewport") == 0)
         {
             (*pIterator).second.m_nViewPort = kValue.GetFloat4();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"pass") == 0)
+        {
+            (*pIterator).second.m_strPass = kValue.GetString();
             bReturn = true;
         }
     }
