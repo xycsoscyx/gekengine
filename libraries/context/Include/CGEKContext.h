@@ -30,17 +30,18 @@ public:
     DECLARE_UNKNOWN(CGEKContext);
 
     // IGEKContext
-    STDMETHOD_(double, GetTime)             (THIS);
-    STDMETHOD_(void, Log)                   (THIS_ LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...);
-    STDMETHOD_(void, ChangeIndent)          (THIS_ bool bIndent);
-    STDMETHOD(AddSearchPath)                (THIS_ LPCWSTR pPath);
-    STDMETHOD(Initialize)                   (THIS);
-    STDMETHOD(CreateInstance)               (THIS_ REFCLSID kCLSID, REFIID kIID, LPVOID FAR *ppObject);
-    STDMETHOD(CreateNamedInstance)          (THIS_ LPCWSTR pName, REFIID kIID, LPVOID FAR *ppObject);
-    STDMETHOD(CreateEachType)               (THIS_ REFCLSID kTypeCLSID, std::function<HRESULT(IUnknown *pObject)> OnCreate);
-    STDMETHOD(AddCachedClass)               (THIS_ REFCLSID kCLSID, IUnknown * const pObject);
-    STDMETHOD(RemoveCachedClass)            (THIS_ REFCLSID kCLSID);
-    STDMETHOD_(IUnknown *, GetCachedClass)  (THIS_ REFCLSID kCLSID);
-    STDMETHOD(AddCachedObserver)            (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver);
-    STDMETHOD(RemoveCachedObserver)         (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver);
+    STDMETHOD_(double, GetTime)                     (THIS);
+    STDMETHOD_(void, Log)                           (THIS_ LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...);
+    STDMETHOD_(void, ChangeIndent)                  (THIS_ bool bIndent);
+    STDMETHOD(AddSearchPath)                        (THIS_ LPCWSTR pPath);
+    STDMETHOD(Initialize)                           (THIS);
+    STDMETHOD(CreateInstance)                       (THIS_ REFCLSID kCLSID, REFIID kIID, LPVOID FAR *ppObject);
+    STDMETHOD(CreateNamedInstance)                  (THIS_ LPCWSTR pName, REFIID kIID, LPVOID FAR *ppObject);
+    STDMETHOD(CreateEachType)                       (THIS_ REFCLSID kTypeCLSID, std::function<HRESULT(IUnknown *pObject)> OnCreate);
+    STDMETHOD(AddCachedClass)                       (THIS_ REFCLSID kCLSID, IUnknown * const pObject);
+    STDMETHOD(RemoveCachedClass)                    (THIS_ REFCLSID kCLSID);
+    STDMETHOD_(IUnknown *, GetCachedClass)          (THIS_ REFCLSID kCLSID);
+    STDMETHOD_(const IUnknown *, GetCachedClass)    (THIS_ REFCLSID kCLSID) const;
+    STDMETHOD(AddCachedObserver)                    (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver);
+    STDMETHOD(RemoveCachedObserver)                 (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver);
 };

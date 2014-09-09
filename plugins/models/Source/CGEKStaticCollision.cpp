@@ -62,22 +62,22 @@ STDMETHODIMP CGEKStaticCollision::Load(const UINT8 *pBuffer, LPCWSTR pName, LPCW
     return hRetVal;
 }
 
-STDMETHODIMP_(UINT32) CGEKStaticCollision::GetNumVertices(void)
+STDMETHODIMP_(const UINT32) CGEKStaticCollision::GetNumVertices(void) const
 {
     return m_aVertices.size();
 }
 
-STDMETHODIMP_(float3 *) CGEKStaticCollision::GetVertices(void)
+STDMETHODIMP_(const float3 *) CGEKStaticCollision::GetVertices(void) const
 {
     return &m_aVertices[0];
 }
 
-STDMETHODIMP_(UINT32) CGEKStaticCollision::GetNumIndices(void)
+STDMETHODIMP_(const UINT32) CGEKStaticCollision::GetNumIndices(void) const
 {
     return m_aIndices.size();
 }
 
-STDMETHODIMP_(UINT16 *) CGEKStaticCollision::GetIndices(void)
+STDMETHODIMP_(const UINT16 *) CGEKStaticCollision::GetIndices(void) const
 {
     return &m_aIndices[0];
 }

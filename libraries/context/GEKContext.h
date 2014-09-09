@@ -26,12 +26,12 @@ public:
     {
     }
 
-    STDMETHOD_(ULONG, AddRef)               (THIS)
+    STDMETHOD_(ULONG, AddRef)                   (THIS)
     {
         return InterlockedIncrement(&m_nRefCount);
     }
 
-    STDMETHOD_(ULONG, Release)              (THIS)
+    STDMETHOD_(ULONG, Release)                  (THIS)
     {
         LONG nRefCount = InterlockedDecrement(&m_nRefCount);
         if (nRefCount == 0)
@@ -43,7 +43,7 @@ public:
         return nRefCount;
     }
 
-    STDMETHOD(QueryInterface)               (THIS_ REFIID rIID, LPVOID FAR *ppObject)
+    STDMETHOD(QueryInterface)                   (THIS_ REFIID rIID, LPVOID FAR *ppObject)
     {
         REQUIRE_RETURN(ppObject, E_INVALIDARG);
 
@@ -66,31 +66,42 @@ public:
         return hRetVal;
     }
 
-    STDMETHOD(RegisterContext)              (THIS_ IGEKContext *pContext)
+    STDMETHOD(RegisterContext)                  (THIS_ IGEKContext *pContext)
     {
         REQUIRE_RETURN(pContext, E_INVALIDARG);
         m_pContext = pContext;
         return Initialize();
     }
 
-    STDMETHOD(Initialize)                   (THIS)
+    STDMETHOD(Initialize)                       (THIS)
     {
         return S_OK;
     }
 
-    STDMETHOD_(void, Destroy)               (THIS)
+    STDMETHOD_(void, Destroy)                   (THIS)
     {
     }
 
-    STDMETHOD_(IGEKContext *, GetContext)   (THIS)
+    STDMETHOD_(IGEKContext *, GetContext)       (THIS)
     {
         REQUIRE_RETURN(m_pContext, nullptr);
         return m_pContext;
     }
 
-    STDMETHOD_(IUnknown *, GetUnknown)      (THIS)
+    STDMETHOD_(const IGEKContext *, GetContext) (THIS) const
+    {
+        REQUIRE_RETURN(m_pContext, nullptr);
+        return m_pContext;
+    }
+
+    STDMETHOD_(IUnknown *, GetUnknown)          (THIS)
     {
         return dynamic_cast<IUnknown *>(this);
+    }
+
+    STDMETHOD_(const IUnknown *, GetUnknown)    (THIS) const
+    {
+        return dynamic_cast<const IUnknown *>(this);
     }
 };
 

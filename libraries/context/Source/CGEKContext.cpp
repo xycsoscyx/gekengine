@@ -271,6 +271,17 @@ STDMETHODIMP_(IUnknown *) CGEKContext::GetCachedClass(REFCLSID kCLSID)
     return nullptr;
 }
 
+STDMETHODIMP_(const IUnknown *) CGEKContext::GetCachedClass(REFCLSID kCLSID) const
+{
+    auto pIterator = m_aCache.find(kCLSID);
+    if (pIterator != m_aCache.end())
+    {
+        return (*pIterator).second;
+    }
+
+    return nullptr;
+}
+
 STDMETHODIMP CGEKContext::AddCachedObserver(REFCLSID kCLSID, IGEKObserver *pObserver)
 {
     HRESULT hRetVal = E_FAIL;

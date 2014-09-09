@@ -24,7 +24,7 @@ DECLARE_INTERFACE_IID_(IGEKSceneManager, IUnknown, "43DF2FD7-3BE2-4333-86ED-CB12
     STDMETHOD_(void, ListEntities)              (THIS_ std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel = false) PURE;
     STDMETHOD_(void, ListComponentsEntities)    (THIS_ const std::vector<CStringW> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel = false) PURE;
 
-    STDMETHOD_(float3, GetGravity)              (THIS_ const float3 &nPosition) PURE;
+    STDMETHOD_(float3, GetGravity)              (THIS_ const float3 &nPosition) const PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEKSceneObserver, IGEKObserver, "51D6E5E6-2AD3-4D61-A704-8E6515F024F9")

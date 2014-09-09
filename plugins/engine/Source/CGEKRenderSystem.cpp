@@ -925,6 +925,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     {
         pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void
         {
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPreRender, std::placeholders::_1, nViewerID)));
+
             GEKVALUE kFieldOfView;
             GEKVALUE kMinViewDistance;
             GEKVALUE kMaxViewDistance;
@@ -956,7 +958,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             m_kCurrentBuffer.m_nCameraPosition = kPosition.GetFloat3();
 
             m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
-            m_kCurrentBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kMinViewDistance.GetFloat(), kMaxViewDistance.GetFloat());
+            m_kCurrentBuffer.m_nProjectionMatrix = kProjection.GetFloat4x4();
             m_kCurrentBuffer.m_nTransformMatrix = (m_kCurrentBuffer.m_nViewMatrix * m_kCurrentBuffer.m_nProjectionMatrix);
 
             m_nCurrentFrustum.Create(nCameraMatrix, m_kCurrentBuffer.m_nProjectionMatrix);
@@ -1018,40 +1020,42 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             {
                 kPair.first->Prepare();
             }
-        });
 
-        m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
-        m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-        m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
-        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-        m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
 
-        for (auto &kPair : m_aCurrentPasses)
-        {
-            CountPasses(m_aCurrentPasses, kPair.first);
-        }
-
-        std::unordered_map<INT32, std::list<PASS *>> aSortedPasses;
-        for (auto &kPair : m_aCurrentPasses)
-        {
-            aSortedPasses[kPair.second].push_front(kPair.first);
-        }
-
-        for (auto pPassIndex : aSortedPasses)
-        {
-            for (auto pPass : pPassIndex.second)
+            for (auto &kPair : m_aCurrentPasses)
             {
-                m_pCurrentPass = pPass;
-                for (auto &pFilter : pPass->m_aFilters)
-                {
-                    m_pCurrentFilter = pFilter;
-                    pFilter->Draw();
-                    m_pCurrentFilter = nullptr;
-                }
-
-                m_pCurrentPass = nullptr;
+                CountPasses(m_aCurrentPasses, kPair.first);
             }
-        }
+
+            std::unordered_map<INT32, std::list<PASS *>> aSortedPasses;
+            for (auto &kPair : m_aCurrentPasses)
+            {
+                aSortedPasses[kPair.second].push_front(kPair.first);
+            }
+
+            for (auto pPassIndex : aSortedPasses)
+            {
+                for (auto pPass : pPassIndex.second)
+                {
+                    m_pCurrentPass = pPass;
+                    for (auto &pFilter : pPass->m_aFilters)
+                    {
+                        m_pCurrentFilter = pFilter;
+                        pFilter->Draw();
+                        m_pCurrentFilter = nullptr;
+                    }
+
+                    m_pCurrentPass = nullptr;
+                }
+            }
+
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPostRender, std::placeholders::_1, nViewerID)));
+        });
 
         m_pVideoSystem->SetDefaultTargets();
         m_pVideoSystem->GetImmediateContext()->SetRenderStates(m_spRenderStates);
@@ -1099,4 +1103,10 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     };
 
     m_pVideoSystem->SetEvent(m_spFrameEvent);
+}
+
+STDMETHODIMP_(float2) CGEKRenderSystem::GetScreenSize(void) const
+{
+    REQUIRE_RETURN(m_spScreenBuffer, 0.0f);
+    return float2(float(m_spScreenBuffer->GetXSize()), float(m_spScreenBuffer->GetYSize()));
 }

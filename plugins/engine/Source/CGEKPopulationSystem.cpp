@@ -157,7 +157,7 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Update(float nGameTime, float nFrameTi
     m_aHitList.clear();
 }
 
-STDMETHODIMP_(float3) CGEKPopulationSystem::GetGravity(const float3 &nPosition)
+STDMETHODIMP_(float3) CGEKPopulationSystem::GetGravity(const float3 &nPosition) const
 {
     return float3(0.0f, -9.8331f, 0.0f);
 }

@@ -23,7 +23,6 @@ public:
         float m_nFieldOfView;
         float m_nMinViewDistance;
         float m_nMaxViewDistance;
-        float4x4 m_nProjection;
 
     public:
         DATA(void)

@@ -121,7 +121,7 @@ STDMETHODIMP CGEKStaticModel::Load(const UINT8 *pBuffer, LPCWSTR pName, LPCWSTR 
     return hRetVal;
 }
 
-STDMETHODIMP_(aabb) CGEKStaticModel::GetAABB(void)
+STDMETHODIMP_(aabb) CGEKStaticModel::GetAABB(void) const
 {
     return m_nAABB;
 }

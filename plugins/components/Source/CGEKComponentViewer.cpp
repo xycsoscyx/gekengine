@@ -53,7 +53,6 @@ STDMETHODIMP_(void) CGEKComponentViewer::ListProperties(const GEKENTITYID &nEnti
         OnProperty(L"fieldofview", (*pIterator).second.m_nFieldOfView);
         OnProperty(L"minviewdistance", (*pIterator).second.m_nMinViewDistance);
         OnProperty(L"maxviewdistance", (*pIterator).second.m_nMaxViewDistance);
-        OnProperty(L"projection", (*pIterator).second.m_nProjection);
     }
 }
 
@@ -85,7 +84,29 @@ STDMETHODIMP_(bool) CGEKComponentViewer::GetProperty(const GEKENTITYID &nEntityI
         }
         else if (wcscmp(pName, L"projection") == 0)
         {
-            kValue = (*pIterator).second.m_nProjection;
+            float nAspect = 1.0f;
+            const IGEKRenderManager *pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderSystem);
+            if (pRenderManager)
+            {
+                float2 nScreenSize = pRenderManager->GetScreenSize();
+                nAspect = (nScreenSize.x / nScreenSize.y);
+            }
+
+            static float4x4 nProjection;
+            switch ((*pIterator).second.m_nType)
+            {
+            case _PERSPECTIVE:
+                nProjection.SetPerspective(_DEGTORAD((*pIterator).second.m_nFieldOfView), nAspect, (*pIterator).second.m_nMinViewDistance, (*pIterator).second.m_nMaxViewDistance);
+                break;
+
+            case _ORTHOGRAPHIC:
+                nProjection.SetOrthographic(-((*pIterator).second.m_nFieldOfView * nAspect) / 2.0f, -(*pIterator).second.m_nFieldOfView / 2.0f,
+                                             ((*pIterator).second.m_nFieldOfView * nAspect) / 2.0f,  (*pIterator).second.m_nFieldOfView / 2.0f,
+                                              (*pIterator).second.m_nMinViewDistance, (*pIterator).second.m_nMaxViewDistance);
+                break;
+            };
+
+            kValue = nProjection;
             bReturn = true;
         }
     }
@@ -101,7 +122,27 @@ STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(const GEKENTITYID &nEntityI
     {
         if (wcscmp(pName, L"type") == 0)
         {
-            (*pIterator).second.m_nType = kValue.GetUINT32();
+            if (kValue.GetType() == GEKVALUE::STRING)
+            {
+                CStringW strType = kValue.GetString();
+                if (strType.CompareNoCase(L"perspective") == 0)
+                {
+                    (*pIterator).second.m_nType = _PERSPECTIVE;
+                }
+                else if(strType.CompareNoCase(L"orthographic") == 0)
+                {
+                    (*pIterator).second.m_nType = _ORTHOGRAPHIC;
+                }
+                else
+                {
+                    (*pIterator).second.m_nType = _UNKNOWN;
+                }
+            }
+            else
+            {
+                (*pIterator).second.m_nType = kValue.GetUINT32();
+            }
+
             bReturn = true;
         }
         if (wcscmp(pName, L"fieldofview") == 0)
@@ -118,23 +159,6 @@ STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(const GEKENTITYID &nEntityI
         {
             (*pIterator).second.m_nMaxViewDistance = kValue.GetFloat();
             bReturn = true;
-        }
-
-        if (bReturn)
-        {
-            switch ((*pIterator).second.m_nType)
-            {
-            case _PERSPECTIVE:
-                (*pIterator).second.m_nProjection.SetPerspective(_DEGTORAD((*pIterator).second.m_nFieldOfView),
-                    1.0f, (*pIterator).second.m_nMinViewDistance, (*pIterator).second.m_nMaxViewDistance);
-                break;
-
-            case _ORTHOGRAPHIC:
-                (*pIterator).second.m_nProjection.SetOrthographic(-(*pIterator).second.m_nFieldOfView / 2.0f, -(*pIterator).second.m_nFieldOfView / 2.0f,
-                    (*pIterator).second.m_nFieldOfView / 2.0f, (*pIterator).second.m_nFieldOfView / 2.0f,
-                    (*pIterator).second.m_nMinViewDistance, (*pIterator).second.m_nMaxViewDistance);
-                break;
-            };
         }
     }
 

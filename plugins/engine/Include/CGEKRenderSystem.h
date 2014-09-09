@@ -17,6 +17,7 @@ class CGEKRenderSystem : public CGEKUnknown
                        , public IGEKRenderSystem
                        , public IGEKProgramManager
                        , public IGEKMaterialManager
+                       , public IGEKRenderManager
 {
 public:
     struct PASS
@@ -119,4 +120,7 @@ public:
     STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch);
     STDMETHOD_(void, DrawOverlay)           (THIS);
     STDMETHOD_(void, Render)                (THIS);
+
+    // IGEKRenderManager
+    STDMETHOD_(float2, GetScreenSize)       (THIS) const;
 };

@@ -42,7 +42,7 @@ public:
     STDMETHOD(Load)                 (THIS_ const UINT8 *pBuffer, LPCWSTR pName, LPCWSTR pParams);
 
     // IGEKModel
-    STDMETHOD_(aabb, GetAABB)       (THIS);
+    STDMETHOD_(aabb, GetAABB)       (THIS) const;
     STDMETHOD_(void, Prepare)       (THIS);
     STDMETHOD_(void, Draw)          (THIS_ UINT32 nVertexAttributes, const std::vector<IGEKModel::INSTANCE> &aInstances);
 };
