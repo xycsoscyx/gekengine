@@ -88,8 +88,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKFactory.cpp" />
+    <ClCompile Include="Source\CGEKSpriteFactory.cpp" />
+    <ClCompile Include="Source\CGEKSpriteModel.cpp" />
     <ClCompile Include="Source\CGEKStaticCollision.cpp" />
+    <ClCompile Include="Source\CGEKStaticFactory.cpp" />
     <ClCompile Include="Source\CGEKStaticModel.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -103,9 +105,12 @@
   <ItemGroup>
     <ClInclude Include="..\..\api\IGEKModelManager.h" />
     <ClInclude Include="GEKModels.h" />
-    <ClInclude Include="Include\CGEKFactory.h" />
+    <ClInclude Include="Include\CGEKSpriteFactory.h" />
+    <ClInclude Include="Include\CGEKSpriteModel.h" />
     <ClInclude Include="Include\CGEKStaticCollision.h" />
+    <ClInclude Include="Include\CGEKStaticFactory.h" />
     <ClInclude Include="Include\CGEKStaticModel.h" />
+    <ClInclude Include="Include\IGEKSpriteFactory.h" />
     <ClInclude Include="Include\IGEKStaticFactory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

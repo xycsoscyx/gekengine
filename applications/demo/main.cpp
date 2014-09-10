@@ -96,30 +96,8 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
     return FALSE;
 }
 
-template <class ... TYPES>
-class TGEKComponent
-{
-private:
-    CStringW m_strName;
-    std::map<TYPES... args> m_aData;
-
-public:
-    TGEKComponent(LPCWSTR pName)
-        : m_strName(pName)
-    {
-    }
-
-    STDMETHODIMP_(LPCWSTR) GetName(void) const
-    {
-        return m_strName;
-    }
-};
-
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR strCommandLine, int nCmdShow)
 {
-    TGEKComponent<int, float> kTest(L"Test");
-    CStringW strString = kTest.GetName();
-
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
         CComPtr<IGEKContext> spContext;

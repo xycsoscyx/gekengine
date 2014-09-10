@@ -1,28 +1,28 @@
-﻿#include "CGEKFactory.h"
+﻿#include "CGEKStaticFactory.h"
 #include "GEKModels.h"
 
 #include "GEKSystemCLSIDs.h"
 #include "GEKEngineCLSIDs.h"
 
-BEGIN_INTERFACE_LIST(CGEKFactory)
+BEGIN_INTERFACE_LIST(CGEKStaticFactory)
     INTERFACE_LIST_ENTRY_COM(IGEKFactory)
     INTERFACE_LIST_ENTRY_COM(IGEKStaticFactory)
 END_INTERFACE_LIST_UNKNOWN
 
-REGISTER_CLASS(CGEKFactory)
+REGISTER_CLASS(CGEKStaticFactory)
 
-CGEKFactory::CGEKFactory(void)
+CGEKStaticFactory::CGEKStaticFactory(void)
     : m_nNumInstances(50)
 {
 }
 
-CGEKFactory::~CGEKFactory(void)
+CGEKStaticFactory::~CGEKStaticFactory(void)
 {
 }
 
-STDMETHODIMP CGEKFactory::Initialize(void)
+STDMETHODIMP CGEKStaticFactory::Initialize(void)
 {
-    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKFactory, GetUnknown());
+    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKStaticFactory, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
         IGEKProgramManager *pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
@@ -46,12 +46,12 @@ STDMETHODIMP CGEKFactory::Initialize(void)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKFactory::Destroy(void)
+STDMETHODIMP_(void) CGEKStaticFactory::Destroy(void)
 {
-    GetContext()->RemoveCachedClass(CLSID_GEKFactory);
+    GetContext()->RemoveCachedClass(CLSID_GEKStaticFactory);
 }
 
-STDMETHODIMP CGEKFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *ppObject)
+STDMETHODIMP CGEKStaticFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *ppObject)
 {
     UINT32 nGEKX = *((UINT32 *)pBuffer);
     pBuffer += sizeof(UINT32);
@@ -74,17 +74,17 @@ STDMETHODIMP CGEKFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *
     return hRetVal;
 }
 
-STDMETHODIMP_(IUnknown *) CGEKFactory::GetVertexProgram(void)
+STDMETHODIMP_(IUnknown *) CGEKStaticFactory::GetVertexProgram(void)
 {
     return m_spVertexProgram;
 }
 
-STDMETHODIMP_(IGEKVideoBuffer *) CGEKFactory::GetInstanceBuffer(void)
+STDMETHODIMP_(IGEKVideoBuffer *) CGEKStaticFactory::GetInstanceBuffer(void)
 {
     return m_spInstanceBuffer;
 }
 
-STDMETHODIMP_(UINT32) CGEKFactory::GetNumInstances(void)
+STDMETHODIMP_(UINT32) CGEKStaticFactory::GetNumInstances(void)
 {
     return m_nNumInstances;
 }

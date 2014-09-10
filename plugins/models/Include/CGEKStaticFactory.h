@@ -5,7 +5,7 @@
 #include "GEKAPI.h"
 #include "IGEKStaticFactory.h"
 
-class CGEKFactory : public CGEKUnknown
+class CGEKStaticFactory : public CGEKUnknown
                   , public IGEKFactory
                   , public IGEKStaticFactory
 {
@@ -15,9 +15,9 @@ private:
     CComPtr<IUnknown> m_spVertexProgram;
 
 public:
-    CGEKFactory(void);
-    virtual ~CGEKFactory(void);
-    DECLARE_UNKNOWN(CGEKFactory);
+    CGEKStaticFactory(void);
+    virtual ~CGEKStaticFactory(void);
+    DECLARE_UNKNOWN(CGEKStaticFactory);
 
     // IGEKUnknown
     STDMETHOD(Initialize)                                       (THIS);

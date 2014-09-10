@@ -29,7 +29,7 @@ STDMETHODIMP CGEKStaticModel::Initialize(void)
     m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
     m_pMaterialManager = GetContext()->GetCachedClass<IGEKMaterialManager>(CLSID_GEKRenderSystem);
     m_pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
-    m_pStaticFactory = GetContext()->GetCachedClass<IGEKStaticFactory>(CLSID_GEKFactory);
+    m_pStaticFactory = GetContext()->GetCachedClass<IGEKStaticFactory>(CLSID_GEKStaticFactory);
     return ((m_pVideoSystem && m_pMaterialManager && m_pProgramManager && m_pStaticFactory) ? S_OK : E_FAIL);
 }
 
