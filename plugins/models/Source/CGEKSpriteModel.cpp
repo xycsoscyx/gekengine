@@ -45,7 +45,8 @@ STDMETHODIMP CGEKSpriteModel::Load(const UINT8 *pBuffer, LPCWSTR pName, LPCWSTR 
 
 STDMETHODIMP_(aabb) CGEKSpriteModel::GetAABB(void) const
 {
-    return m_nAABB;
+    float2 nHalfSize(m_nSize * 0.5f);
+    return aabb(-nHalfSize, nHalfSize);
 }
 
 STDMETHODIMP_(void) CGEKSpriteModel::Draw(UINT32 nVertexAttributes, const std::vector<IGEKModel::INSTANCE> &aInstances)

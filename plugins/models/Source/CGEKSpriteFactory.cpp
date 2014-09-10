@@ -28,7 +28,7 @@ STDMETHODIMP CGEKSpriteFactory::Initialize(void)
         IGEKProgramManager *pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
         if (pProgramManager != nullptr)
         {
-            hRetVal = pProgramManager->LoadProgram(L"staticmodel", &m_spVertexProgram);
+            hRetVal = pProgramManager->LoadProgram(L"spritemodel", &m_spVertexProgram);
         }
     }
 
@@ -53,23 +53,7 @@ STDMETHODIMP_(void) CGEKSpriteFactory::Destroy(void)
 
 STDMETHODIMP CGEKSpriteFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *ppObject)
 {
-    UINT32 nGEKX = *((UINT32 *)pBuffer);
-    pBuffer += sizeof(UINT32);
-
-    UINT16 nType = *((UINT16 *)pBuffer);
-    pBuffer += sizeof(UINT16);
-
-    UINT16 nVersion = *((UINT16 *)pBuffer);
-
     HRESULT hRetVal = E_INVALIDARG;
-    if (nGEKX == *(UINT32 *)"GEKX" && nType == 0 && nVersion == 2)
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKStaticModel, rIID, ppObject);
-    }
-    else  if (nGEKX == *(UINT32 *)"GEKX" && nType == 1 && nVersion == 2)
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKStaticCollision, rIID, ppObject);
-    }
 
     return hRetVal;
 }

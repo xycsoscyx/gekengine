@@ -15,7 +15,7 @@ private:
     IGEKProgramManager *m_pProgramManager;
     IGEKSpriteFactory *m_pSpriteFactory;
 
-    aabb m_nAABB;
+    float2 m_nSize;
     CComPtr<IUnknown> m_spMaterial;
 
 public:
