@@ -26,27 +26,25 @@ CGEKComponentSystemModel::~CGEKComponentSystemModel(void)
 {
 }
 
-HRESULT CGEKComponentSystemModel::GetModel(LPCWSTR pName, LPCWSTR pParams, MODEL **ppModel)
+CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pName, LPCWSTR pParams)
 {
     concurrency::critical_section::scoped_lock kLock(m_kCritical);
-    REQUIRE_RETURN(m_pVideoSystem && m_pMaterialManager, E_FAIL);
-    REQUIRE_RETURN(ppModel, E_INVALIDARG);
-    REQUIRE_RETURN(pName, E_INVALIDARG);
-    REQUIRE_RETURN(pParams, E_INVALIDARG);
+    REQUIRE_RETURN(m_pVideoSystem && m_pMaterialManager, nullptr);
+    REQUIRE_RETURN(pName, nullptr);
+    REQUIRE_RETURN(pParams, nullptr);
 
-    HRESULT hRetVal = E_FAIL;
+    MODEL *pModel = nullptr;
     auto pIterator = m_aModels.find(FormatString(L"%s|%s", pName, pParams));
     if (pIterator != m_aModels.end())
     {
-        (*ppModel) = &(*pIterator).second;
-        hRetVal = S_OK;
+        pModel = &(*pIterator).second;
     }
     else
     {
         GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
 
         std::vector<UINT8> aBuffer;
-        hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.model.gek", pName), aBuffer);
+        HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.model.gek", pName), aBuffer);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to Load Model File failed: 0x%08X", hRetVal);
         if (SUCCEEDED(hRetVal))
         {
@@ -133,14 +131,13 @@ HRESULT CGEKComponentSystemModel::GetModel(LPCWSTR pName, LPCWSTR pParams, MODEL
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    m_aModels[FormatString(L"%s|%s", pName, pParams)] = kModel;
-                    (*ppModel) = &m_aModels[FormatString(L"%s|%s", pName, pParams)];
+                    pModel = &(m_aModels[FormatString(L"%s|%s", pName, pParams)] = kModel);
                 }
             }
         }
     }
 
-    return hRetVal;
+    return pModel;
 }
 
 STDMETHODIMP CGEKComponentSystemModel::Initialize(void)
@@ -216,23 +213,18 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(void)
         m_pSceneManager->GetProperty(nEntityID, L"model", L"source", kSource);
         m_pSceneManager->GetProperty(nEntityID, L"model", L"params", kParams);
 
-        MODEL *pModel = nullptr;
-        if (SUCCEEDED(GetModel(kSource.GetRawString(), kParams.GetRawString(), &pModel)))
+        MODEL *pModel = GetModel(kSource.GetRawString(), kParams.GetRawString());
+        if (pModel)
         {
-            INSTANCE kInstance;
-
             GEKVALUE kScale;
             m_pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
-            kInstance.m_nScale = kScale.GetFloat3();
 
             GEKVALUE kPosition;
             GEKVALUE kRotation;
             m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
             m_pSceneManager->GetProperty(nEntityID, L"transform", L"rotation", kRotation);
-            kInstance.m_nMatrix = kRotation.GetQuaternion();
-            kInstance.m_nMatrix.t = kPosition.GetFloat3();
 
-            m_aVisible[pModel].push_back(kInstance);
+            m_aVisible[pModel].emplace_back(kPosition.GetFloat3(), kRotation.GetQuaternion(), kScale.GetFloat3());
         }
     });
 }
