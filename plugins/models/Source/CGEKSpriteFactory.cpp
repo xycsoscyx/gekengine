@@ -22,7 +22,7 @@ CGEKSpriteFactory::~CGEKSpriteFactory(void)
 
 STDMETHODIMP CGEKSpriteFactory::Initialize(void)
 {
-    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKStaticFactory, GetUnknown());
+    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKSpriteFactory, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
         IGEKProgramManager *pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
@@ -48,7 +48,7 @@ STDMETHODIMP CGEKSpriteFactory::Initialize(void)
 
 STDMETHODIMP_(void) CGEKSpriteFactory::Destroy(void)
 {
-    GetContext()->RemoveCachedClass(CLSID_GEKStaticFactory);
+    GetContext()->RemoveCachedClass(CLSID_GEKSpriteFactory);
 }
 
 STDMETHODIMP CGEKSpriteFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID FAR *ppObject)
