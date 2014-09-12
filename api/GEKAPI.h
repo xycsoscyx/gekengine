@@ -4,14 +4,9 @@
 #include "GEKVALUE.h"
 
 // Interfaces
-#include "IGEKResource.h"
-#include "IGEKFactory.h"
-
 #include "IGEKComponent.h"
-
 #include "IGEKMaterialManager.h"
 #include "IGEKProgramManager.h"
-#include "IGEKModelManager.h"
 #include "IGEKSceneManager.h"
 #include "IGEKRenderManager.h"
 #include "IGEKInputManager.h"

@@ -177,7 +177,7 @@ STDMETHODIMP CGEKComponentSystemModel::Initialize(void)
         IGEKVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
         if (pVideoSystem != nullptr)
         {
-            hRetVal = pVideoSystem->CreateBuffer(sizeof(IGEKModel::INSTANCE), NUM_INSTANCES, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
+            hRetVal = pVideoSystem->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
             GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
         }
     }
@@ -271,10 +271,10 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(UINT32 nVertexAttribut
         {
             UINT32 nNumInstances = min(NUM_INSTANCES, (kModel.second.size() - nPass));
 
-            IGEKModel::INSTANCE *pInstances = nullptr;
+            INSTANCE *pInstances = nullptr;
             if (SUCCEEDED(m_spInstanceBuffer->Map((LPVOID *)&pInstances)))
             {
-                memcpy(pInstances, &kModel.second[nPass], (sizeof(IGEKModel::INSTANCE) * nNumInstances));
+                memcpy(pInstances, &kModel.second[nPass], (sizeof(INSTANCE) * nNumInstances));
                 m_spInstanceBuffer->UnMap();
 
                 for (auto &kMaterial : kModel.first->m_aMaterials)
