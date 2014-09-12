@@ -49,8 +49,9 @@ private:
     IGEKSystem *m_pSystem;
     IGEKVideoSystem *m_pVideoSystem;
     IGEKEngine *m_pEngine;
+    IGEKSceneManager *m_pSceneManager;
 
-    CComPtr<IUnknown> m_spModelManager;
+    CComPtr<IGEKModelManager> m_spModelManager;
 
     CComPtr<IUnknown> m_spFrameEvent;
 

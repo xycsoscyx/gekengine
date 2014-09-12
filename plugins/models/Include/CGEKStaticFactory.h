@@ -6,13 +6,15 @@
 #include "IGEKStaticFactory.h"
 
 class CGEKStaticFactory : public CGEKUnknown
-                  , public IGEKFactory
-                  , public IGEKStaticFactory
+                        , public IGEKFactory
+                        , public IGEKStaticFactory
+                        , public IGEKRenderManagerObserver
 {
 private:
     UINT32 m_nNumInstances;
     CComPtr<IGEKVideoBuffer> m_spInstanceBuffer;
     CComPtr<IUnknown> m_spVertexProgram;
+    IGEKRenderManager *m_pRenderManager;
 
 public:
     CGEKStaticFactory(void);

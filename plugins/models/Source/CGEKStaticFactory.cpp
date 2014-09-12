@@ -13,6 +13,7 @@ REGISTER_CLASS(CGEKStaticFactory)
 
 CGEKStaticFactory::CGEKStaticFactory(void)
     : m_nNumInstances(50)
+    , m_pRenderManager(nullptr)
 {
 }
 
@@ -25,10 +26,20 @@ STDMETHODIMP CGEKStaticFactory::Initialize(void)
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKStaticFactory, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
-        IGEKProgramManager *pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
-        if (pProgramManager != nullptr)
+        hRetVal = E_FAIL;
+        m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderSystem);
+        if (m_pRenderManager)
         {
-            hRetVal = pProgramManager->LoadProgram(L"staticmodel", &m_spVertexProgram);
+            hRetVal = CGEKObservable::AddObserver(m_pRenderManager, (IGEKRenderManagerObserver *)GetUnknown());
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = E_FAIL;
+                CComQIPtr<IGEKProgramManager> spProgramManager(m_pRenderManager);
+                if (spProgramManager != nullptr)
+                {
+                    hRetVal = spProgramManager->LoadProgram(L"staticmodel", &m_spVertexProgram);
+                }
+            }
         }
     }
 
@@ -48,6 +59,7 @@ STDMETHODIMP CGEKStaticFactory::Initialize(void)
 
 STDMETHODIMP_(void) CGEKStaticFactory::Destroy(void)
 {
+    CGEKObservable::RemoveObserver(m_pRenderManager, (IGEKRenderManagerObserver *)GetUnknown());
     GetContext()->RemoveCachedClass(CLSID_GEKStaticFactory);
 }
 

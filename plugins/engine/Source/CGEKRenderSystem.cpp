@@ -128,6 +128,7 @@ CGEKRenderSystem::CGEKRenderSystem(void)
     : m_pSystem(nullptr)
     , m_pVideoSystem(nullptr)
     , m_pEngine(nullptr)
+    , m_pSceneManager(nullptr)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
     , m_nNumLightInstances(254)
@@ -147,11 +148,19 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
         m_pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
         m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
         m_pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
+        m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
+        if (m_pSystem == nullptr ||
+            m_pVideoSystem == nullptr ||
+            m_pEngine == nullptr ||
+            m_pSceneManager == nullptr)
+        {
+            hRetVal = E_FAIL;
+        }
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
+        hRetVal = CGEKObservable::AddObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
@@ -835,155 +844,153 @@ STDMETHODIMP_(void) CGEKRenderSystem::DrawOverlay(void)
 
 STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 {
+    REQUIRE_VOID_RETURN(m_pSceneManager && m_pVideoSystem);
     m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
     m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
 
-    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
-    if (pSceneManager != nullptr)
+    m_pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void
     {
-        pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void
+        GEKVALUE kPass;
+        m_pSceneManager->GetProperty(nViewerID, L"viewer", L"pass", kPass);
+        if (SUCCEEDED(LoadPass(kPass.GetRawString())))
         {
-            GEKVALUE kPass;
-            pSceneManager->GetProperty(nViewerID, L"viewer", L"pass", kPass);
-            if (SUCCEEDED(LoadPass(kPass.GetRawString())))
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPreRender, std::placeholders::_1, nViewerID)));
+
+            GEKVALUE kProjection;
+            m_pSceneManager->GetProperty(nViewerID, L"viewer", L"projection", kProjection);
+
+            GEKVALUE kMinViewDistance;
+            GEKVALUE kMaxViewDistance;
+            m_pSceneManager->GetProperty(nViewerID, L"viewer", L"minviewdistance", kMinViewDistance);
+            m_pSceneManager->GetProperty(nViewerID, L"viewer", L"maxviewdistance", kMaxViewDistance);
+
+            GEKVALUE kFieldOfView;
+            m_pSceneManager->GetProperty(nViewerID, L"viewer", L"fieldofview", kFieldOfView);
+            float nFieldOfView = _DEGTORAD(kFieldOfView.GetFloat());
+
+            GEKVALUE kViewPort;
+            m_pSceneManager->GetProperty(nViewerID, L"viewer", L"viewport", kViewPort);
+            m_kScreenViewPort.m_nTopLeftX = kViewPort.GetFloat4().x * m_pSystem->GetXSize();
+            m_kScreenViewPort.m_nTopLeftY = kViewPort.GetFloat4().y * m_pSystem->GetYSize();
+            m_kScreenViewPort.m_nXSize = kViewPort.GetFloat4().z * m_pSystem->GetXSize();
+            m_kScreenViewPort.m_nYSize = kViewPort.GetFloat4().w * m_pSystem->GetYSize();
+            m_kScreenViewPort.m_nMinDepth = 0.0f;
+            m_kScreenViewPort.m_nMaxDepth = 1.0f;
+
+            GEKVALUE kPosition;
+            GEKVALUE kRotation;
+            m_pSceneManager->GetProperty(nViewerID, L"transform", L"position", kPosition);
+            m_pSceneManager->GetProperty(nViewerID, L"transform", L"rotation", kRotation);
+
+            float4x4 nCameraMatrix;
+            nCameraMatrix = kRotation.GetQuaternion();
+            nCameraMatrix.t = kPosition.GetFloat3();
+
+            float nXSize = float(m_pSystem->GetXSize());
+            float nYSize = float(m_pSystem->GetYSize());
+            float nAspect = (nXSize / nYSize);
+
+            m_kCurrentBuffer.m_nCameraSize.x = nXSize;
+            m_kCurrentBuffer.m_nCameraSize.y = nYSize;
+            m_kCurrentBuffer.m_nCameraView.x = tan(nFieldOfView * 0.5f);
+            m_kCurrentBuffer.m_nCameraView.y = (m_kCurrentBuffer.m_nCameraView.x / nAspect);
+            m_kCurrentBuffer.m_nCameraViewDistance = kMaxViewDistance.GetFloat();
+            m_kCurrentBuffer.m_nCameraPosition = kPosition.GetFloat3();
+
+            m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
+            m_kCurrentBuffer.m_nProjectionMatrix = kProjection.GetFloat4x4();
+            m_kCurrentBuffer.m_nTransformMatrix = (m_kCurrentBuffer.m_nViewMatrix * m_kCurrentBuffer.m_nProjectionMatrix);
+
+            m_nCurrentFrustum.Create(nCameraMatrix, m_kCurrentBuffer.m_nProjectionMatrix);
+
+            LIGHT kLight;
+            m_aVisibleLights.clear();
+            m_pSceneManager->ListComponentsEntities({ L"transform", L"light" }, [&](const GEKENTITYID &nEntityID)->void
             {
-                CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPreRender, std::placeholders::_1, nViewerID)));
+                GEKVALUE kValue;
+                m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kValue);
+                kLight.m_nPosition = (m_kCurrentBuffer.m_nViewMatrix * float4(kValue.GetFloat3(), 1.0f));
 
-                GEKVALUE kProjection;
-                pSceneManager->GetProperty(nViewerID, L"viewer", L"projection", kProjection);
+                m_pSceneManager->GetProperty(nEntityID, L"light", L"range", kValue);
+                kLight.m_nInvRange = (1.0f / (kLight.m_nRange = kValue.GetFloat()));
 
-                GEKVALUE kMinViewDistance;
-                GEKVALUE kMaxViewDistance;
-                pSceneManager->GetProperty(nViewerID, L"viewer", L"minviewdistance", kMinViewDistance);
-                pSceneManager->GetProperty(nViewerID, L"viewer", L"maxviewdistance", kMaxViewDistance);
+                m_pSceneManager->GetProperty(nEntityID, L"light", L"color", kValue);
+                kLight.m_nColor = kValue.GetFloat3();
 
-                GEKVALUE kFieldOfView;
-                pSceneManager->GetProperty(nViewerID, L"viewer", L"fieldofview", kFieldOfView);
-                float nFieldOfView = _DEGTORAD(kFieldOfView.GetFloat());
+                m_aVisibleLights.push_back(kLight);
+            });
 
-                GEKVALUE kViewPort;
-                pSceneManager->GetProperty(nViewerID, L"viewer", L"viewport", kViewPort);
-                m_kScreenViewPort.m_nTopLeftX = kViewPort.GetFloat4().x * m_pSystem->GetXSize();
-                m_kScreenViewPort.m_nTopLeftY = kViewPort.GetFloat4().y * m_pSystem->GetYSize();
-                m_kScreenViewPort.m_nXSize = kViewPort.GetFloat4().z * m_pSystem->GetXSize();
-                m_kScreenViewPort.m_nYSize = kViewPort.GetFloat4().w * m_pSystem->GetYSize();
-                m_kScreenViewPort.m_nMinDepth = 0.0f;
-                m_kScreenViewPort.m_nMaxDepth = 1.0f;
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnCull, std::placeholders::_1, nViewerID)));
 
-                GEKVALUE kPosition;
-                GEKVALUE kRotation;
-                pSceneManager->GetProperty(nViewerID, L"transform", L"position", kPosition);
-                pSceneManager->GetProperty(nViewerID, L"transform", L"rotation", kRotation);
-
-                float4x4 nCameraMatrix;
-                nCameraMatrix = kRotation.GetQuaternion();
-                nCameraMatrix.t = kPosition.GetFloat3();
-
-                float nXSize = float(m_pSystem->GetXSize());
-                float nYSize = float(m_pSystem->GetYSize());
-                float nAspect = (nXSize / nYSize);
-
-                m_kCurrentBuffer.m_nCameraSize.x = nXSize;
-                m_kCurrentBuffer.m_nCameraSize.y = nYSize;
-                m_kCurrentBuffer.m_nCameraView.x = tan(nFieldOfView * 0.5f);
-                m_kCurrentBuffer.m_nCameraView.y = (m_kCurrentBuffer.m_nCameraView.x / nAspect);
-                m_kCurrentBuffer.m_nCameraViewDistance = kMaxViewDistance.GetFloat();
-                m_kCurrentBuffer.m_nCameraPosition = kPosition.GetFloat3();
-
-                m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
-                m_kCurrentBuffer.m_nProjectionMatrix = kProjection.GetFloat4x4();
-                m_kCurrentBuffer.m_nTransformMatrix = (m_kCurrentBuffer.m_nViewMatrix * m_kCurrentBuffer.m_nProjectionMatrix);
-
-                m_nCurrentFrustum.Create(nCameraMatrix, m_kCurrentBuffer.m_nProjectionMatrix);
-
-                LIGHT kLight;
-                m_aVisibleLights.clear();
-                pSceneManager->ListComponentsEntities({ L"transform", L"light" }, [&](const GEKENTITYID &nEntityID)->void
+            if (m_spModelManager)
+            {
+                IGEKModel::INSTANCE kInstance;
+                m_aVisibleModels.clear();
+                m_pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
                 {
-                    GEKVALUE kValue;
-                    pSceneManager->GetProperty(nEntityID, L"transform", L"position", kValue);
-                    kLight.m_nPosition = (m_kCurrentBuffer.m_nViewMatrix * float4(kValue.GetFloat3(), 1.0f));
+                    GEKVALUE kSource;
+                    GEKVALUE kParams;
+                    m_pSceneManager->GetProperty(nEntityID, L"model", L"source", kSource);
+                    m_pSceneManager->GetProperty(nEntityID, L"model", L"params", kParams);
 
-                    pSceneManager->GetProperty(nEntityID, L"light", L"range", kValue);
-                    kLight.m_nInvRange = (1.0f / (kLight.m_nRange = kValue.GetFloat()));
-
-                    pSceneManager->GetProperty(nEntityID, L"light", L"color", kValue);
-                    kLight.m_nColor = kValue.GetFloat3();
-
-                    m_aVisibleLights.push_back(kLight);
-                });
-
-                CComQIPtr<IGEKModelManager> spManager(m_spModelManager);
-                if (spManager)
-                {
-                    IGEKModel::INSTANCE kInstance;
-                    m_aVisibleModels.clear();
-                    pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
+                    CComPtr<IUnknown> spModelUnknown;
+                    m_spModelManager->LoadModel(kSource.GetString(), kParams.GetString(), &spModelUnknown);
+                    if (spModelUnknown)
                     {
-                        GEKVALUE kSource;
-                        GEKVALUE kParams;
-                        pSceneManager->GetProperty(nEntityID, L"model", L"source", kSource);
-                        pSceneManager->GetProperty(nEntityID, L"model", L"params", kParams);
-
-                        CComPtr<IUnknown> spModelUnknown;
-                        spManager->LoadModel(kSource.GetString(), kParams.GetString(), &spModelUnknown);
-                        if (spModelUnknown)
+                        CComQIPtr<IGEKModel> spModel(spModelUnknown);
+                        if (spModel)
                         {
-                            CComQIPtr<IGEKModel> spModel(spModelUnknown);
-                            if (spModel)
-                            {
-                                GEKVALUE kScale;
-                                pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
-                                kInstance.m_nScale = kScale.GetFloat3();
+                            GEKVALUE kScale;
+                            m_pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
+                            kInstance.m_nScale = kScale.GetFloat3();
 
-                                GEKVALUE kPosition;
-                                GEKVALUE kRotation;
-                                pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
-                                pSceneManager->GetProperty(nEntityID, L"transform", L"rotation", kRotation);
-                                kInstance.m_nMatrix = kRotation.GetQuaternion();
-                                kInstance.m_nMatrix.t = kPosition.GetFloat3();
+                            GEKVALUE kPosition;
+                            GEKVALUE kRotation;
+                            m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
+                            m_pSceneManager->GetProperty(nEntityID, L"transform", L"rotation", kRotation);
+                            kInstance.m_nMatrix = kRotation.GetQuaternion();
+                            kInstance.m_nMatrix.t = kPosition.GetFloat3();
 
-                                m_aVisibleModels[spModel].push_back(kInstance);
-                            }
+                            m_aVisibleModels[spModel].push_back(kInstance);
                         }
-                    });
-                }
-
-                m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
-                m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-                m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
-                m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-                m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-
-                m_pCurrentPass = &m_aPasses[kPass.GetRawString()];
-                for (auto &pFilter : m_pCurrentPass->m_aFilters)
-                {
-                    m_pCurrentFilter = pFilter;
-                    pFilter->Draw();
-                    m_pCurrentFilter = nullptr;
-                }
-
-                m_pCurrentPass = nullptr;
-                CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPostRender, std::placeholders::_1, nViewerID)));
+                    }
+                });
             }
-        });
 
-        m_pVideoSystem->SetDefaultTargets();
-        m_pVideoSystem->GetImmediateContext()->SetRenderStates(m_spRenderStates);
-        m_pVideoSystem->GetImmediateContext()->SetBlendStates(float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
-        m_pVideoSystem->GetImmediateContext()->SetDepthStates(0x0, m_spDepthStates);
-        m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetProgram(nullptr);
-        m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
-        m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
-        m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
-        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetProgram(m_spPixelProgram);
-        m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spScreenBuffer);
-        SetResource(m_pVideoSystem->GetImmediateContext()->GetPixelSystem(), 1, nullptr);
-        m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
-        m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
-        m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
-        m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
-    }
+            m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+
+            m_pCurrentPass = &m_aPasses[kPass.GetRawString()];
+            for (auto &pFilter : m_pCurrentPass->m_aFilters)
+            {
+                m_pCurrentFilter = pFilter;
+                pFilter->Draw();
+                m_pCurrentFilter = nullptr;
+            }
+
+            m_pCurrentPass = nullptr;
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPostRender, std::placeholders::_1, nViewerID)));
+        }
+    });
+
+    m_pVideoSystem->SetDefaultTargets();
+    m_pVideoSystem->GetImmediateContext()->SetRenderStates(m_spRenderStates);
+    m_pVideoSystem->GetImmediateContext()->SetBlendStates(float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
+    m_pVideoSystem->GetImmediateContext()->SetDepthStates(0x0, m_spDepthStates);
+    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetProgram(nullptr);
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
+    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+    m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetProgram(m_spPixelProgram);
+    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spScreenBuffer);
+    SetResource(m_pVideoSystem->GetImmediateContext()->GetPixelSystem(), 1, nullptr);
+    m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
+    m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
+    m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
 
     IGEKInterfaceSystem *pInterfaceSystem = GetContext()->GetCachedClass<IGEKInterfaceSystem>(CLSID_GEKInterfaceSystem);
     if (pInterfaceSystem)
