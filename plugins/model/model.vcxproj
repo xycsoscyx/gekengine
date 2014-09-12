@@ -100,6 +100,15 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\api\GEKAPI.h" />
+    <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
+    <ClInclude Include="..\..\api\GEKVALUE.h" />
+    <ClInclude Include="..\..\api\IGEKComponent.h" />
+    <ClInclude Include="..\..\api\IGEKInputManager.h" />
+    <ClInclude Include="..\..\api\IGEKMaterialManager.h" />
+    <ClInclude Include="..\..\api\IGEKProgramManager.h" />
+    <ClInclude Include="..\..\api\IGEKRenderManager.h" />
+    <ClInclude Include="..\..\api\IGEKSceneManager.h" />
     <ClInclude Include="GEKModel.h" />
     <ClInclude Include="Include\CGEKComponentModel.h" />
     <ClInclude Include="Include\CGEKComponentSystemModel.h" />

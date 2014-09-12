@@ -91,6 +91,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\api\GEKAPI.h" />
+    <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
+    <ClInclude Include="..\..\api\GEKVALUE.h" />
+    <ClInclude Include="..\..\api\IGEKComponent.h" />
+    <ClInclude Include="..\..\api\IGEKInputManager.h" />
+    <ClInclude Include="..\..\api\IGEKMaterialManager.h" />
+    <ClInclude Include="..\..\api\IGEKProgramManager.h" />
+    <ClInclude Include="..\..\api\IGEKRenderManager.h" />
+    <ClInclude Include="..\..\api\IGEKSceneManager.h" />
     <ClInclude Include="GEKEngine.h" />
     <ClInclude Include="GEKEngineCLSIDs.h" />
     <ClInclude Include="Include\CGEKEngine.h" />

@@ -4,11 +4,11 @@
     <Filter Include="Header Files">
       <UniqueIdentifier>{1001397c-78bd-45f8-90d8-ca1bd84a4a19}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Interface Files">
-      <UniqueIdentifier>{4a33b851-61aa-45f7-820b-d92ebfd9bf9b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{dbbe75fd-d0dc-46a0-9e2b-248a58bd112a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="API Files">
+      <UniqueIdentifier>{ace7e109-320b-4a23-906b-a5346117e745}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -44,32 +44,35 @@
     <ClInclude Include="Include\CGEKComponentLight.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\GEKAPI.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\GEKAPICLSIDs.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKComponent.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKModelManager.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKSceneManager.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\GEKVALUE.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKInputManager.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\CGEKComponentController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\api\IGEKRenderManager.h">
-      <Filter>Interface Files</Filter>
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKSceneManager.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\GEKAPI.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\GEKAPICLSIDs.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\GEKVALUE.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKComponent.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKInputManager.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKMaterialManager.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKProgramManager.h">
+      <Filter>API Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

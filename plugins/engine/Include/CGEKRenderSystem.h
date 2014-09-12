@@ -121,4 +121,5 @@ public:
 
     // IGEKRenderManager
     STDMETHOD_(float2, GetScreenSize)       (THIS) const;
+    STDMETHOD_(const frustum &, GetFrustum) (THIS) const;
 };

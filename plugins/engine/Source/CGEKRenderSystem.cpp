@@ -980,3 +980,8 @@ STDMETHODIMP_(float2) CGEKRenderSystem::GetScreenSize(void) const
     REQUIRE_RETURN(m_spScreenBuffer, 0.0f);
     return float2(float(m_spScreenBuffer->GetXSize()), float(m_spScreenBuffer->GetYSize()));
 }
+
+STDMETHODIMP_(const frustum &) CGEKRenderSystem::GetFrustum(void) const
+{
+    return m_nCurrentFrustum;
+}
