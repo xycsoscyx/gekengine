@@ -51,8 +51,6 @@ private:
     IGEKEngine *m_pEngine;
     IGEKSceneManager *m_pSceneManager;
 
-    CComPtr<IGEKModelManager> m_spModelManager;
-
     CComPtr<IUnknown> m_spFrameEvent;
 
     CComPtr<IUnknown> m_spVertexProgram;
@@ -80,7 +78,6 @@ private:
     frustum m_nCurrentFrustum;
     ENGINEBUFFER m_kCurrentBuffer;
     GEKVIDEO::VIEWPORT m_kScreenViewPort;
-    std::unordered_map<IGEKModel *, std::vector<IGEKModel::INSTANCE>> m_aVisibleModels;
     std::vector<LIGHT> m_aVisibleLights;
 
     PASS *m_pCurrentPass;

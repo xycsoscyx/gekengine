@@ -47,20 +47,6 @@ STDMETHODIMP CGEKPopulationSystem::Initialize(void)
         });
     }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentSystemType, [&](IUnknown *pObject) -> HRESULT
-        {
-            CComQIPtr<IGEKComponentSystem> spSystem(pObject);
-            if (spSystem)
-            {
-                m_aComponentSystems.push_back(spSystem);
-            }
-
-            return S_OK;
-        });
-    }
-
     return hRetVal;
 }
 
@@ -70,6 +56,25 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Destroy(void)
     m_aComponents.clear();
     m_aComponentSystems.clear();
     GetContext()->RemoveCachedClass(CLSID_GEKPopulationSystem);
+}
+
+STDMETHODIMP CGEKPopulationSystem::LoadSystems(void)
+{
+    return GetContext()->CreateEachType(CLSID_GEKComponentSystemType, [&](IUnknown *pObject) -> HRESULT
+    {
+        CComQIPtr<IGEKComponentSystem> spSystem(pObject);
+        if (spSystem)
+        {
+            m_aComponentSystems.push_back(spSystem);
+        }
+
+        return S_OK;
+    });
+}
+
+STDMETHODIMP_(void) CGEKPopulationSystem::FreeSystems(void)
+{
+    m_aComponentSystems.clear();
 }
 
 STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)

@@ -30,6 +30,8 @@ public:
     STDMETHOD_(void, Destroy)           (THIS);
 
     // IGEKPopulationSystem
+    STDMETHOD(LoadSystems)              (THIS);
+    STDMETHOD_(void, FreeSystems)       (THIS);
     STDMETHOD(Load)                     (THIS_ LPCWSTR pName);
     STDMETHOD_(void, Free)              (THIS);
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);

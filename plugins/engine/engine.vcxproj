@@ -94,7 +94,6 @@
     <ClInclude Include="GEKEngine.h" />
     <ClInclude Include="GEKEngineCLSIDs.h" />
     <ClInclude Include="Include\CGEKEngine.h" />
-    <ClInclude Include="Include\CGEKModelSystem.h" />
     <ClInclude Include="Include\CGEKPopulationSystem.h" />
     <ClInclude Include="Include\CGEKProperties.h" />
     <ClInclude Include="Include\CGEKRenderFilter.h" />
@@ -108,7 +107,6 @@
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Source\CGEKEngine.cpp" />
-    <ClCompile Include="Source\CGEKModelSystem.cpp" />
     <ClCompile Include="Source\CGEKPopulationSystem.cpp" />
     <ClCompile Include="Source\CGEKProperties.cpp" />
     <ClCompile Include="Source\CGEKRenderFilter.cpp" />

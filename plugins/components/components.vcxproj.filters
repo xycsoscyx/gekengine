@@ -18,9 +18,6 @@
     <ClCompile Include="Source\CGEKComponentNewton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\CGEKComponentViewer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -39,9 +36,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKComponentNewton.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKComponentViewer.h">

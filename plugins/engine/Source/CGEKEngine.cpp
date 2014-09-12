@@ -153,6 +153,11 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
         if (SUCCEEDED(hRetVal))
         {
+            hRetVal = m_spPopulationManager->LoadSystems();
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
             hRetVal = Load(L"demo");
         }
     }
@@ -162,6 +167,11 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
 STDMETHODIMP_(void) CGEKEngine::Destroy(void)
 {
+    if (m_spPopulationManager)
+    {
+        m_spPopulationManager->FreeSystems();
+    }
+
     m_spRenderManager = nullptr;
     m_spPopulationManager = nullptr;
     GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());

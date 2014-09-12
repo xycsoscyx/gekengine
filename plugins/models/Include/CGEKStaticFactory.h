@@ -32,4 +32,10 @@ public:
     STDMETHOD_(IUnknown *, GetVertexProgram)                    (THIS);
     STDMETHOD_(IGEKVideoBuffer *, GetInstanceBuffer)            (THIS);
     STDMETHOD_(UINT32, GetNumInstances)                         (THIS);
+
+    // IGEKRenderManagerObserver
+    STDMETHOD_(void, OnPreRender)                               (THIS);
+    STDMETHOD_(void, OnCullScene)                               (THIS);
+    STDMETHOD_(void, OnDrawScene)                               (THIS);
+    STDMETHOD_(void, OnPostRender)                              (THIS);
 };

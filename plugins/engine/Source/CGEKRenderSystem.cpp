@@ -119,7 +119,6 @@ BEGIN_INTERFACE_LIST(CGEKRenderSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManager)
     INTERFACE_LIST_ENTRY_COM(IGEKMaterialManager)
-    INTERFACE_LIST_ENTRY_COM(IGEKModelManager)
 END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKRenderSystem)
@@ -294,11 +293,6 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateEvent failed: 0x%08X", hRetVal);
     }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKModelSystem, IID_PPV_ARGS(&m_spModelManager));
-    }
-
     return hRetVal;
 }
 
@@ -306,7 +300,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::Destroy(void)
 {
     m_pCurrentPass = nullptr;
     m_pCurrentFilter = nullptr;
-    m_aVisibleModels.clear();
     m_aVisibleLights.clear();
     m_aResources.clear();
     m_aFilters.clear();
@@ -340,7 +333,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::OnFree(void)
     m_aPasses.clear();
     m_pCurrentPass = nullptr;
     m_pCurrentFilter = nullptr;
-    m_aVisibleModels.clear();
     m_aVisibleLights.clear();
 }
 
@@ -780,12 +772,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::EnableProgram(IUnknown *pProgram)
 
 STDMETHODIMP_(void) CGEKRenderSystem::DrawScene(UINT32 nAttributes)
 {
-    REQUIRE_VOID_RETURN(m_pCurrentPass);
-    REQUIRE_VOID_RETURN(m_pCurrentFilter);
-    for (auto &kPair : m_aVisibleModels)
-    {
-        kPair.first->Draw(m_pCurrentFilter->GetVertexAttributes(), kPair.second);
-    }
+    CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnDrawScene, std::placeholders::_1, nAttributes)));
 }
 
 STDMETHODIMP_(void) CGEKRenderSystem::DrawLights(std::function<void(void)> OnLightBatch)
@@ -854,7 +841,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         m_pSceneManager->GetProperty(nViewerID, L"viewer", L"pass", kPass);
         if (SUCCEEDED(LoadPass(kPass.GetRawString())))
         {
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPreRender, std::placeholders::_1, nViewerID)));
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnPreRender, std::placeholders::_1)));
 
             GEKVALUE kProjection;
             m_pSceneManager->GetProperty(nViewerID, L"viewer", L"projection", kProjection);
@@ -920,42 +907,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                 m_aVisibleLights.push_back(kLight);
             });
 
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnCull, std::placeholders::_1, nViewerID)));
-
-            if (m_spModelManager)
-            {
-                IGEKModel::INSTANCE kInstance;
-                m_aVisibleModels.clear();
-                m_pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
-                {
-                    GEKVALUE kSource;
-                    GEKVALUE kParams;
-                    m_pSceneManager->GetProperty(nEntityID, L"model", L"source", kSource);
-                    m_pSceneManager->GetProperty(nEntityID, L"model", L"params", kParams);
-
-                    CComPtr<IUnknown> spModelUnknown;
-                    m_spModelManager->LoadModel(kSource.GetString(), kParams.GetString(), &spModelUnknown);
-                    if (spModelUnknown)
-                    {
-                        CComQIPtr<IGEKModel> spModel(spModelUnknown);
-                        if (spModel)
-                        {
-                            GEKVALUE kScale;
-                            m_pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
-                            kInstance.m_nScale = kScale.GetFloat3();
-
-                            GEKVALUE kPosition;
-                            GEKVALUE kRotation;
-                            m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
-                            m_pSceneManager->GetProperty(nEntityID, L"transform", L"rotation", kRotation);
-                            kInstance.m_nMatrix = kRotation.GetQuaternion();
-                            kInstance.m_nMatrix.t = kPosition.GetFloat3();
-
-                            m_aVisibleModels[spModel].push_back(kInstance);
-                        }
-                    }
-                });
-            }
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1)));
 
             m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
             m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
@@ -972,7 +924,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             }
 
             m_pCurrentPass = nullptr;
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderManagerObserver>(std::bind(&IGEKRenderManagerObserver::OnPostRender, std::placeholders::_1, nViewerID)));
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnPostRender, std::placeholders::_1)));
         }
     });
 

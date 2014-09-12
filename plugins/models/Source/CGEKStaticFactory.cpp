@@ -14,6 +14,7 @@ REGISTER_CLASS(CGEKStaticFactory)
 CGEKStaticFactory::CGEKStaticFactory(void)
     : m_nNumInstances(50)
     , m_pRenderManager(nullptr)
+    , m_pSceneManager(nullptr)
 {
 }
 
@@ -28,7 +29,8 @@ STDMETHODIMP CGEKStaticFactory::Initialize(void)
     {
         hRetVal = E_FAIL;
         m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderSystem);
-        if (m_pRenderManager)
+        m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
+        if (m_pRenderManager && m_pSceneManager)
         {
             hRetVal = CGEKObservable::AddObserver(m_pRenderManager, (IGEKRenderManagerObserver *)GetUnknown());
             if (SUCCEEDED(hRetVal))
@@ -86,17 +88,49 @@ STDMETHODIMP CGEKStaticFactory::Create(const UINT8 *pBuffer, REFIID rIID, LPVOID
     return hRetVal;
 }
 
-STDMETHODIMP_(IUnknown *) CGEKStaticFactory::GetVertexProgram(void)
+STDMETHODIMP_(void) CGEKStaticFactory::OnPreRender(void)
 {
-    return m_spVertexProgram;
 }
 
-STDMETHODIMP_(IGEKVideoBuffer *) CGEKStaticFactory::GetInstanceBuffer(void)
+STDMETHODIMP_(void) CGEKStaticFactory::OnCullScene(void)
 {
-    return m_spInstanceBuffer;
+    REQUIRE_VOID_RETURN(m_pSceneManager);
+
+    m_pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
+    {
+        GEKVALUE kSource;
+        GEKVALUE kParams;
+        m_pSceneManager->GetProperty(nEntityID, L"model", L"source", kSource);
+        m_pSceneManager->GetProperty(nEntityID, L"model", L"params", kParams);
+
+        CComPtr<IUnknown> spModelUnknown;
+        m_spModelManager->LoadModel(kSource.GetString(), kParams.GetString(), &spModelUnknown);
+        if (spModelUnknown)
+        {
+            CComQIPtr<IGEKModel> spModel(spModelUnknown);
+            if (spModel)
+            {
+                GEKVALUE kScale;
+                m_pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
+                kInstance.m_nScale = kScale.GetFloat3();
+
+                GEKVALUE kPosition;
+                GEKVALUE kRotation;
+                m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
+                m_pSceneManager->GetProperty(nEntityID, L"transform", L"rotation", kRotation);
+                kInstance.m_nMatrix = kRotation.GetQuaternion();
+                kInstance.m_nMatrix.t = kPosition.GetFloat3();
+
+                m_aVisibleModels[spModel].push_back(kInstance);
+            }
+        }
+    });
 }
 
-STDMETHODIMP_(UINT32) CGEKStaticFactory::GetNumInstances(void)
+STDMETHODIMP_(void) CGEKStaticFactory::OnDrawScene(void)
 {
-    return m_nNumInstances;
+}
+
+STDMETHODIMP_(void) CGEKStaticFactory::OnPostRender(void)
+{
 }

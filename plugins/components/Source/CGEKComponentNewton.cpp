@@ -227,52 +227,9 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
     }
     else if (_wcsicmp(pShape, L"convex_hull") == 0)
     {
-        IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKModelSystem);
-        if (pModelManager != nullptr)
-        {
-            CComPtr<IGEKCollision> spCollision;
-            pModelManager->LoadCollision(pParams, L"", &spCollision);
-            if (spCollision)
-            {
-                std::vector<float3> aCloud(spCollision->GetNumIndices());
-                for (UINT32 nIndex = 0; nIndex < spCollision->GetNumIndices(); ++nIndex)
-                {
-                    aCloud[nIndex] = spCollision->GetVertices()[spCollision->GetIndices()[nIndex]];
-                }
-
-                pCollision = NewtonCreateConvexHull(m_pWorld, aCloud.size(), aCloud[0].xyz, sizeof(float3), 0.025f, (int)L"convex_hull", nIdentityMatrix.data);
-            }
-        }
     }
     else if (_wcsicmp(pShape, L"tree") == 0)
     {
-        IGEKModelManager *pModelManager = GetContext()->GetCachedClass<IGEKModelManager>(CLSID_GEKModelSystem);
-        if (pModelManager != nullptr)
-        {
-            CComPtr<IGEKCollision> spCollision;
-            pModelManager->LoadCollision(pParams, L"", &spCollision);
-            if (spCollision)
-            {
-                pCollision = NewtonCreateTreeCollision(m_pWorld, (int)L"tree");
-                if (pCollision != nullptr)
-                {
-                    NewtonTreeCollisionBeginBuild(pCollision);
-                    for (UINT32 nIndex = 0; nIndex < spCollision->GetNumIndices(); nIndex += 3)
-                    {
-                        float3 aFace[3] =
-                        {
-                            spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 0]],
-                            spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 1]],
-                            spCollision->GetVertices()[spCollision->GetIndices()[nIndex + 2]],
-                        };
-
-                        NewtonTreeCollisionAddFace(pCollision, 3, aFace[0].xyz, sizeof(float3), 0);
-                    }
-
-                    NewtonTreeCollisionEndBuild(pCollision, true);
-                }
-            }
-        }
     }
 
     return pCollision;
