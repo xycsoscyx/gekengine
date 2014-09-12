@@ -48,6 +48,7 @@ class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public IGEKComponentSystem
 {
 private:
+    IGEKSceneManager *m_pSceneManager;
     NewtonWorld *m_pWorld;
     concurrency::concurrent_unordered_map<GEKENTITYID, NewtonBody *> m_aBodies;
     std::unordered_map<CStringW, NewtonCollision *> m_aCollisions;

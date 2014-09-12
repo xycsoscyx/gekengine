@@ -105,6 +105,7 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKComponentSystemController)
 
 CGEKComponentSystemController::CGEKComponentSystemController(void)
+    : m_pSceneManager(nullptr)
 {
 }
 
@@ -114,65 +115,75 @@ CGEKComponentSystemController::~CGEKComponentSystemController(void)
 
 STDMETHODIMP CGEKComponentSystemController::Initialize(void)
 {
-    GetContext()->AddCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
-    return GetContext()->AddCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
+    HRESULT hRetVal = E_FAIL;
+    m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
+    if (m_pSceneManager)
+    {
+        hRetVal = CGEKObservable::AddObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
+    }
+
+    return hRetVal;
 };
 
 STDMETHODIMP_(void) CGEKComponentSystemController::Destroy(void)
 {
-    GetContext()->RemoveCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
     GetContext()->RemoveCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
+    if (m_pSceneManager)
+    {
+        CGEKObservable::RemoveObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
+    }
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemController::OnAction(LPCWSTR pName, const GEKVALUE &kValue)
 {
-    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
-    if (pSceneManager != nullptr)
+    REQUIRE_VOID_RETURN(m_pSceneManager);
+
+    m_pSceneManager->ListComponentsEntities({ L"transform", L"controller" }, [&](const GEKENTITYID &nEntityID)->void
     {
-        pSceneManager->ListComponentsEntities({ L"transform", L"controller" }, [&](const GEKENTITYID &nEntityID)->void
-        {
-            m_aActions[nEntityID][pName] = kValue.GetFloat();
-        }, true);
-    }
+        m_aActions[nEntityID][pName] = kValue.GetFloat();
+    }, true);
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemController::OnPreUpdate(float nGameTime, float nFrameTime)
 {
-    IGEKSceneManager *pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
-    if (pSceneManager != nullptr)
+    REQUIRE_VOID_RETURN(m_pSceneManager);
+
+    for (auto pEntity : m_aActions)
     {
-        for (auto pEntity : m_aActions)
-        {
-            GEKVALUE kPosition;
-            GEKVALUE kRotation;
-            pSceneManager->GetProperty(pEntity.first, L"transform", L"position", kPosition);
-            pSceneManager->GetProperty(pEntity.first, L"transform", L"rotation", kRotation);
+        GEKVALUE kPosition;
+        GEKVALUE kRotation;
+        m_pSceneManager->GetProperty(pEntity.first, L"transform", L"position", kPosition);
+        m_pSceneManager->GetProperty(pEntity.first, L"transform", L"rotation", kRotation);
 
-            GEKVALUE kTurn;
-            GEKVALUE kTilt;
-            pSceneManager->GetProperty(pEntity.first, L"controller", L"turn", kTurn);
-            pSceneManager->GetProperty(pEntity.first, L"controller", L"tilt", kTilt);
+        GEKVALUE kTurn;
+        GEKVALUE kTilt;
+        m_pSceneManager->GetProperty(pEntity.first, L"controller", L"turn", kTurn);
+        m_pSceneManager->GetProperty(pEntity.first, L"controller", L"tilt", kTilt);
 
-            float nTurn = (kTurn.GetFloat() + pEntity.second[L"turn"] * 0.01f);
-            float nTilt = (kTilt.GetFloat() + pEntity.second[L"tilt"] * 0.01f);
-            pSceneManager->SetProperty(pEntity.first, L"controller", L"turn", nTurn);
-            pSceneManager->SetProperty(pEntity.first, L"controller", L"tilt", nTilt);
+        float nTurn = (kTurn.GetFloat() + pEntity.second[L"turn"] * 0.01f);
+        float nTilt = (kTilt.GetFloat() + pEntity.second[L"tilt"] * 0.01f);
+        m_pSceneManager->SetProperty(pEntity.first, L"controller", L"turn", nTurn);
+        m_pSceneManager->SetProperty(pEntity.first, L"controller", L"tilt", nTilt);
 
-            float4x4 nRotation = float4x4(nTilt, 0.0f, 0.0f) * float4x4(0.0f, nTurn, 0.0f);
+        float4x4 nRotation = float4x4(nTilt, 0.0f, 0.0f) * float4x4(0.0f, nTurn, 0.0f);
 
-            float3 nForce(0.0f, 0.0f, 0.0f);
-            nForce += nRotation.rz * pEntity.second[L"forward"];
-            nForce -= nRotation.rz * pEntity.second[L"backward"];
-            nForce += nRotation.rx * pEntity.second[L"strafe_right"];
-            nForce -= nRotation.rx * pEntity.second[L"strafe_left"];
-            nForce += nRotation.ry * pEntity.second[L"rise"];
-            nForce -= nRotation.ry * pEntity.second[L"fall"];
-            nForce *= 10.0f;
+        float3 nForce(0.0f, 0.0f, 0.0f);
+        nForce += nRotation.rz * pEntity.second[L"forward"];
+        nForce -= nRotation.rz * pEntity.second[L"backward"];
+        nForce += nRotation.rx * pEntity.second[L"strafe_right"];
+        nForce -= nRotation.rx * pEntity.second[L"strafe_left"];
+        nForce += nRotation.ry * pEntity.second[L"rise"];
+        nForce -= nRotation.ry * pEntity.second[L"fall"];
+        nForce *= 10.0f;
 
-            float3 nPosition = (kPosition.GetFloat3() + (nForce * nFrameTime));
-            pSceneManager->SetProperty(pEntity.first, L"transform", L"position", nPosition);
-            pSceneManager->SetProperty(pEntity.first, L"transform", L"rotation", quaternion(nRotation));
-        }
+        float3 nPosition = (kPosition.GetFloat3() + (nForce * nFrameTime));
+        m_pSceneManager->SetProperty(pEntity.first, L"transform", L"position", nPosition);
+        m_pSceneManager->SetProperty(pEntity.first, L"transform", L"rotation", quaternion(nRotation));
     }
 
     m_aActions.clear();

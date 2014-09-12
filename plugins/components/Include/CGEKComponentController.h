@@ -48,6 +48,7 @@ class CGEKComponentSystemController : public CGEKUnknown
                                     , public IGEKComponentSystem
 {
 private:
+    IGEKSceneManager *m_pSceneManager;
     std::unordered_map<GEKENTITYID, std::unordered_map<CStringW, float>> m_aActions;
 
 public:
