@@ -9,9 +9,9 @@
             struct INSTANCE
             {
                 float3      m_nPosition;
-                float       m_nSpin;
                 float       m_nSize;
-                float3      m_nPadding;
+                float3      m_nColor;
+                float       m_nBuffer;
             };
             
             StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);
@@ -23,17 +23,18 @@
                 uint instance                           : SV_InstanceId;
 			};
 
-			VERTEX SourceVertexProgram(in SOURCEVERTEX kSource)
+			WORLDVERTEX GetWorldVertex(in SOURCEVERTEX kSource)
 			{
                 INSTANCE kInstance = gs_aInstances[kSource.instance];
 
-	            float3 kXOffSet = mul(float3(cos(kInstance.m_nSpin), sin(kInstance.m_nSpin), 0.0f), gs_nViewMatrix).xyz;
-	            float3 kYOffSet = mul(float3(sin(kInstance.m_nSpin),-cos(kInstance.m_nSpin), 0.0f), gs_nViewMatrix).xyz;
+	            float3 kXOffSet = mul(float3(0.5, 0.0, 0.0f), gs_nViewMatrix).xyz;
+	            float3 kYOffSet = mul(float3(0.0,-0.5, 0.0f), gs_nViewMatrix).xyz;
 
-				VERTEX kVertex;
+				WORLDVERTEX kVertex;
 	            kVertex.position = float4(kInstance.m_nPosition, 1.0f);
 	            kVertex.position.xyz += (kXOffSet * (kSource.position.x * kInstance.m_nSize));
 	            kVertex.position.xyz += (kYOffSet * (kSource.position.y * kInstance.m_nSize));
+                kVertex.color    = float4(kInstance.m_nColor, 1.0f);
 				kVertex.texcoord = kSource.texcoord;
                 kVertex.texbasis = float3x3(float3(-1.0f, 0.0f, 0.0f), float3(0.0f, -1.0f, 0.0f), float3(0.0f, 0.0f, -1.0f));
 				return kVertex;

@@ -136,6 +136,24 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
                 AddComponent(nEntityID, kComponentNode.GetType(), aParams);
                 kComponentNode = kComponentNode.NextSiblingElement();
             };
+
+#ifdef _DEBUG
+            if (HasComponent(nEntityID, L"viewer"))
+            {
+                AddComponent(nEntityID, L"sprite", { { L"source", "camera" }, { L"size", "5" }, { L"color", L"1,1,1" } });
+            }
+
+            if (HasComponent(nEntityID, L"light"))
+            {
+                GEKVALUE kColor;
+                GetProperty(nEntityID, L"light", L"color", kColor);
+                float3 nColor = kColor.GetFloat3();
+                nColor.Normalize();
+                kColor = nColor;
+
+                AddComponent(nEntityID, L"sprite", { { L"source", "light" }, { L"size", "3" }, { L"color", kColor.GetString() } });
+            }
+#endif
         }
     });
 

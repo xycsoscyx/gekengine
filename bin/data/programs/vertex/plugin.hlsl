@@ -9,16 +9,18 @@ cbuffer ENGINEBUFFER                    : register(b0)
     float4x4 gs_nTransformMatrix        : packoffset(c10);
 };
 
-struct VERTEX
+struct WORLDVERTEX
 {
     float4   position                   : POSITION;
+    float4   color                      : COLOR0;
     float2   texcoord                   : TEXCOORD0;
     float3x3 texbasis                   : TEXCOORD1;
 };
 
-struct OUTPUT
+struct VIEWVERTEX
 {
     float4   position                   : SV_POSITION;
+    float4   color                      : COLOR0;
     float2   texcoord                   : TEXCOORD0;
     float4   worldposition              : TEXCOORD1;
     float3x3 texbasis                   : TEXCOORD2;
@@ -26,12 +28,13 @@ struct OUTPUT
 
 _INSERT_WORLD_PROGRAM
 
-OUTPUT MainVertexProgram(in SOURCEVERTEX kSource)
+VIEWVERTEX MainVertexProgram(in SOURCEVERTEX kSource)
 {
-    VERTEX kVertex = SourceVertexProgram(kSource);
+    WORLDVERTEX kVertex = GetWorldVertex(kSource);
 
-    OUTPUT kOutput;
+    VIEWVERTEX kOutput;
     kOutput.position      = mul(gs_nTransformMatrix, kVertex.position);
+    kOutput.color         = kVertex.color;
     kOutput.texcoord      = kVertex.texcoord;
     kOutput.worldposition = kVertex.position;
     kOutput.texbasis      = kVertex.texbasis;

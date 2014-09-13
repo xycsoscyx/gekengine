@@ -22,6 +22,7 @@ SamplerState  gs_pLinearSampler			: register(s1);
 struct INPUT
 {
     float4   position                   : SV_POSITION;
+    float4   color                      : COLOR0;
     float2   texcoord                   : TEXCOORD0;
     float4   worldposition              : TEXCOORD1;
     float3x3 texbasis                   : TEXCOORD2;

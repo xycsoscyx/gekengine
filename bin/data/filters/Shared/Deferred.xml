@@ -12,7 +12,7 @@
 
     OUTPUT MainPixelProgram(in INPUT kInput)
     {
-        float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord) * gs_nMaterialColor);
+        float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord) * gs_nMaterialColor * kInput.color);
 
         [branch]
         if(nAlbedo.a < 0.5f)

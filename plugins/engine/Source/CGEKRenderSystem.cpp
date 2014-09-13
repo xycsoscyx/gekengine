@@ -702,7 +702,7 @@ STDMETHODIMP CGEKRenderSystem::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
         GEKFUNCTION(L"Name(%s)", pName);
 
         CStringA strDeferredProgram;
-        hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\vertex\\deferred.hlsl", strDeferredProgram);
+        hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\vertex\\plugin.hlsl", strDeferredProgram);
         if (SUCCEEDED(hRetVal))
         {
             if (strDeferredProgram.Find("_INSERT_WORLD_PROGRAM") < 0)
