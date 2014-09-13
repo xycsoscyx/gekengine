@@ -338,7 +338,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::OnFree(void)
 
 HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
 {
-    GEKFUNCTION(L"Name(%s)", pName);
     HRESULT hRetVal = E_FAIL;
     auto pPassIterator = m_aPasses.find(pName);
     if (pPassIterator != m_aPasses.end())
@@ -347,6 +346,8 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
     }
     else
     {
+        GEKFUNCTION(L"Name(%s)", pName);
+
         CLibXMLDoc kDocument;
         CStringW strFileName(FormatString(L"%%root%%\\data\\passes\\%s.xml", pName));
         hRetVal = kDocument.Load(strFileName);

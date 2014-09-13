@@ -2,13 +2,16 @@
 <program>
     <layout>
 		<element type="rg_float" name="POSITION" index="0" class="vertex" slot="0" />
+		<element type="rg_float" name="TEXCOORD" index="0" class="vertex" slot="0" />
     </layout>
     <vertex>
         <![CDATA[
             struct INSTANCE
             {
-                float4      m_nPosition;
-                float2      m_nSize;
+                float3      m_nPosition;
+                float       m_nSpin;
+                float       m_nSize;
+                float3      m_nBuffer;
             };
             
             StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);
@@ -16,6 +19,7 @@
 			struct SOURCEVERTEX
 			{
 				float2 position                         : POSITION;
+				float2 texcoord                         : TEXCOORD0;
                 uint instance                           : SV_InstanceId;
 			};
 
@@ -23,9 +27,15 @@
 			{
                 INSTANCE kInstance = gs_aInstances[kSource.instance];
 
+	            float3 kXOffSet = mul(float3(cos(kInstance.m_nSpin), sin(kInstance.m_nSpin), 0.0f), gs_nViewMatrix).xyz;
+	            float3 kYOffSet = mul(float3(sin(kInstance.m_nSpin),-cos(kInstance.m_nSpin), 0.0f), gs_nViewMatrix).xyz;
+
 				VERTEX kVertex;
-				kVertex.position = kInstance.m_nPosition;
-				kVertex.texcoord = kSource.position;
+	            kVertex.position = float4(kInstance.m_nPosition, 1.0f);
+	            kVertex.position.xyz += (kXOffSet * (kSource.position.x * kInstance.m_nSize));
+	            kVertex.position.xyz += (kYOffSet * (kSource.position.y * kInstance.m_nSize));
+				kVertex.texcoord = kSource.texcoord;
+                kVertex.texbasis = float3x3(float3(-1.0f, 0.0f, 0.0f), float3(0.0f, -1.0f, 0.0f), float3(0.0f, 0.0f, -1.0f));
 				return kVertex;
 			}
         ]]>
