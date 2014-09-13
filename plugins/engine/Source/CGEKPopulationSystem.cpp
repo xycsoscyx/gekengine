@@ -140,15 +140,16 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
 #ifdef _DEBUG
             if (HasComponent(nEntityID, L"viewer"))
             {
-                AddComponent(nEntityID, L"sprite", { { L"source", "camera" }, { L"size", "5" }, { L"color", L"1,1,1" } });
+                AddComponent(nEntityID, L"sprite", { { L"source", "camera" }, { L"size", "5" }, { L"color", L"1,1,1,1" } });
             }
 
             if (HasComponent(nEntityID, L"light"))
             {
                 GEKVALUE kColor;
                 GetProperty(nEntityID, L"light", L"color", kColor);
-                float3 nColor = kColor.GetFloat3();
+                float4 nColor = float4(kColor.GetFloat3(), 0.0f);
                 nColor.Normalize();
+                nColor.a = 1.0f;
                 kColor = nColor;
 
                 AddComponent(nEntityID, L"sprite", { { L"source", "light" }, { L"size", "3" }, { L"color", kColor.GetString() } });

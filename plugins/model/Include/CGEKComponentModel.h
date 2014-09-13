@@ -15,10 +15,12 @@ public:
         CStringW m_strSource;
         CStringW m_strParams;
         float3 m_nScale;
+        float4 m_nColor;
 
     public:
         DATA(void)
             : m_nScale(1.0f, 1.0f, 1.0f)
+            , m_nColor(1.0f, 1.0f, 1.0f, 1.0f)
         {
         }
     };

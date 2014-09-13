@@ -14,6 +14,7 @@
                 float4x4    m_nMatrix;
                 float3      m_nScale;
                 float       m_nPadding;
+                float4      m_nColor;
             };
             
             StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);
@@ -36,7 +37,7 @@
 
 				WORLDVERTEX kVertex;
 				kVertex.position = mul(nObject, float4(kSource.position * kInstance.m_nScale, 1.0f));
-                kVertex.color    = float4(1.0f, 1.0f, 1.0f, 1.0f);
+                kVertex.color    = kInstance.m_nColor;
 				kVertex.texcoord = kSource.texcoord;
 				kVertex.texbasis = float3x3(kSource.tangent, kSource.bitangent, kSource.normal);
 				kVertex.texbasis = mul(kVertex.texbasis, nBasis);

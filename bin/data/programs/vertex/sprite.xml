@@ -10,8 +10,7 @@
             {
                 float3      m_nPosition;
                 float       m_nSize;
-                float3      m_nColor;
-                float       m_nBuffer;
+                float4      m_nColor;
             };
             
             StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);
@@ -34,7 +33,7 @@
 	            kVertex.position = float4(kInstance.m_nPosition, 1.0f);
 	            kVertex.position.xyz += (kXOffSet * (kSource.position.x * kInstance.m_nSize));
 	            kVertex.position.xyz += (kYOffSet * (kSource.position.y * kInstance.m_nSize));
-                kVertex.color    = float4(kInstance.m_nColor, 1.0f);
+                kVertex.color    = kInstance.m_nColor;
 				kVertex.texcoord = kSource.texcoord;
                 kVertex.texbasis = float3x3(float3(-1.0f, 0.0f, 0.0f), float3(0.0f, -1.0f, 0.0f), float3(0.0f, 0.0f, -1.0f));
 				return kVertex;

@@ -52,6 +52,7 @@ STDMETHODIMP_(void) CGEKComponentModel::ListProperties(const GEKENTITYID &nEntit
         OnProperty(L"source", (*pIterator).second.m_strSource.GetString());
         OnProperty(L"params", (*pIterator).second.m_strParams.GetString());
         OnProperty(L"scale", (*pIterator).second.m_nScale);
+        OnProperty(L"color", (*pIterator).second.m_nColor);
     }
 }
 
@@ -74,6 +75,11 @@ STDMETHODIMP_(bool) CGEKComponentModel::GetProperty(const GEKENTITYID &nEntityID
         else if (wcscmp(pName, L"scale") == 0)
         {
             kValue = (*pIterator).second.m_nScale;
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"color") == 0)
+        {
+            kValue = (*pIterator).second.m_nColor;
             bReturn = true;
         }
     }
@@ -100,6 +106,11 @@ STDMETHODIMP_(bool) CGEKComponentModel::SetProperty(const GEKENTITYID &nEntityID
         else if (wcscmp(pName, L"scale") == 0)
         {
             (*pIterator).second.m_nScale = kValue.GetFloat3();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"color") == 0)
+        {
+            (*pIterator).second.m_nColor = kValue.GetFloat4();
             bReturn = true;
         }
     }

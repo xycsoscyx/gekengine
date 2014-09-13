@@ -216,15 +216,18 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(void)
         MODEL *pModel = GetModel(kSource.GetRawString(), kParams.GetRawString());
         if (pModel)
         {
-            GEKVALUE kScale;
-            m_pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
-
             GEKVALUE kPosition;
             GEKVALUE kRotation;
             m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
             m_pSceneManager->GetProperty(nEntityID, L"transform", L"rotation", kRotation);
 
-            m_aVisible[pModel].emplace_back(kPosition.GetFloat3(), kRotation.GetQuaternion(), kScale.GetFloat3());
+            GEKVALUE kScale;
+            m_pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
+
+            GEKVALUE kColor;
+            m_pSceneManager->GetProperty(nEntityID, L"model", L"color", kColor);
+
+            m_aVisible[pModel].emplace_back(kPosition.GetFloat3(), kRotation.GetQuaternion(), kScale.GetFloat3(), kColor.GetFloat4());
         }
     });
 }
