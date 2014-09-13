@@ -10,7 +10,15 @@
 
             float4 MainPixelProgram(in INPUT kInput) : SV_TARGET0
             {
-                return float4(gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord) * 0.05f);
+                float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+
+                [branch]
+                if (nAlbedo.a < 1.0f)
+                {
+                    nAlbedo *= 0.05f;
+                }
+                
+                return nAlbedo;
             }
         ]]>
     </pixel>

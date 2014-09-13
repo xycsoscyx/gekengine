@@ -11,7 +11,7 @@
                 float3      m_nPosition;
                 float       m_nSpin;
                 float       m_nSize;
-                float3      m_nBuffer;
+                float3      m_nPadding;
             };
             
             StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);

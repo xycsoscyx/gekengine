@@ -13,7 +13,7 @@
             {
                 float4x4    m_nMatrix;
                 float3      m_nScale;
-                float       m_nBuffer;
+                float       m_nPadding;
             };
             
             StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);

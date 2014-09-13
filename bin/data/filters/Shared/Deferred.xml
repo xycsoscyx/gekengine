@@ -12,7 +12,7 @@
 
     OUTPUT MainPixelProgram(in INPUT kInput)
     {
-        float4 nAlbedo = gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord);
+        float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord) * gs_nMaterialColor);
 
         [branch]
         if(nAlbedo.a < 0.5f)
@@ -31,10 +31,11 @@
         float4 nViewPosition = mul(gs_nViewMatrix, kInput.worldposition);
 
         OUTPUT kOutput;
-        kOutput.albedo    = nAlbedo;
-        kOutput.world.xyz = nNormal;
-        kOutput.world.w   = nViewPosition.z;
-        kOutput.info      = nInfo;
+        kOutput.albedo.xyz = nAlbedo.xyz;
+        kOutput.albedo.a   = gs_bMaterialFullBright;
+        kOutput.world.xyz  = nNormal;
+        kOutput.world.w    = nViewPosition.z;
+        kOutput.info       = nInfo;
         return kOutput;
     }
 ]]>

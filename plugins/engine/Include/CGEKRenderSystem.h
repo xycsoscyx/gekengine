@@ -45,6 +45,13 @@ public:
         float4x4 m_nTransformMatrix;
     };
 
+    struct MATERIALBUFFER
+    {
+        float4 m_nColor;
+        UINT32 m_bFullBright;
+        float3 m_nPadding;
+    };
+
 private:
     IGEKSystem *m_pSystem;
     IGEKVideoSystem *m_pVideoSystem;
@@ -63,6 +70,7 @@ private:
 
     CComPtr<IGEKVideoBuffer> m_spOrthoBuffer;
     CComPtr<IGEKVideoBuffer> m_spEngineBuffer;
+    CComPtr<IGEKVideoBuffer> m_spMaterialBuffer;
     CComPtr<IGEKVideoBuffer> m_spLightCountBuffer;
     CComPtr<IGEKVideoBuffer> m_spLightBuffer;
     CComPtr<IGEKVideoTexture> m_spScreenBuffer;

@@ -12,6 +12,19 @@ cbuffer ENGINEBUFFER                    : register(b0)
     float4x4 gs_nTransformMatrix        : packoffset(c10);
 };
 
+cbuffer MATERIALBUFFER                  : register(b1)
+{
+    float4  gs_nMaterialColor           : packoffset(c0);
+    bool    gs_bMaterialFullBright      : packoffset(c1);
+    float3  gs_nMaterialPadding         : packoffset(c1.y);
+};
+
+cbuffer LIGHTBUFFER                     : register(b2)
+{
+    uint    gs_nNumLights               : packoffset(c0);
+    uint3   gs_nLightPadding            : packoffset(c0.y);
+};
+
 struct LIGHT
 {
     float3  m_nPosition;
@@ -21,12 +34,6 @@ struct LIGHT
 };
 
 StructuredBuffer<LIGHT> gs_aLights      : register(t0);
-
-cbuffer LIGHTBUFFER                     : register(b1)
-{
-    uint    gs_nNumLights               : packoffset(c0);
-    uint3   gs_nLightPadding            : packoffset(c0.y);
-};
 
 struct INPUT
 {

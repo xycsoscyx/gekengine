@@ -13,6 +13,8 @@
 DECLARE_INTERFACE_IID_(IGEKMaterial, IUnknown, "819CA201-F652-4183-B29D-BB71BB15810E")
 {
     STDMETHOD_(void, Enable)                (THIS_ CGEKRenderSystem *pManager, IGEKVideoSystem *pSystem) PURE;
+    STDMETHOD_(float4, GetColor)            (THIS) PURE;
+    STDMETHOD_(bool, IsFullBright)          (THIS) PURE;
 };
 
 class CGEKMaterial : public CGEKUnknown
@@ -24,13 +26,17 @@ private:
     CComPtr<IUnknown> m_spAlbedoMap;
     CComPtr<IUnknown> m_spNormalMap;
     CComPtr<IUnknown> m_spInfoMap;
+    bool m_bFullBright;
+    float4 m_nColor;
 
 public:
     DECLARE_UNKNOWN(CGEKMaterial);
-    CGEKMaterial(IUnknown *pAlbedoMap, IUnknown *pNormalMap, IUnknown *pInfoMap)
+    CGEKMaterial(IUnknown *pAlbedoMap, IUnknown *pNormalMap, IUnknown *pInfoMap, const float4 &nColor, bool bFullBright)
         : m_spAlbedoMap(pAlbedoMap)
         , m_spNormalMap(pNormalMap)
         , m_spInfoMap(pInfoMap)
+        , m_nColor(nColor)
+        , m_bFullBright(bFullBright)
     {
     }
 
@@ -46,6 +52,16 @@ public:
         pManager->SetResource(nullptr, 2, m_spInfoMap);
         CGEKRenderStates::Enable(pSystem);
         CGEKBlendStates::Enable(pSystem);
+    }
+
+    STDMETHODIMP_(float4) GetColor(void)
+    {
+        return m_nColor;
+    }
+
+    STDMETHODIMP_(bool) IsFullBright(void)
+    {
+        return m_bFullBright;
     }
 };
 
@@ -218,6 +234,12 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(ENGINEBUFFER), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spEngineBuffer);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(MATERIALBUFFER), 1, GEKVIDEO::BUFFER::CONSTANT_BUFFER, &m_spMaterialBuffer);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
@@ -553,6 +575,18 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
                 CPathW kName(pName);
                 kName.RemoveFileSpec();
 
+                bool bFullBright = false;
+                if (kMaterialNode.HasAttribute(L"fullbright"))
+                {
+                    bFullBright = StrToBoolean(kMaterialNode.GetAttribute(L"fullbright"));
+                }
+
+                float4 nColor(1.0f, 1.0f, 1.0f, 1.0f);
+                if (kMaterialNode.HasAttribute(L"color"))
+                {
+                    nColor = StrToFloat4(kMaterialNode.GetAttribute(L"color"));
+                }
+
                 CComPtr<IUnknown> spAlbedoMap;
                 CLibXMLNode kAlbedoNode = kMaterialNode.FirstChildElement(L"albedo");
                 CStringW strAlbedo = kAlbedoNode.GetAttribute(L"source");
@@ -586,7 +620,7 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
                     LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
                 }
 
-                CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(spAlbedoMap, spNormalMap, spInfoMap));
+                CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(spAlbedoMap, spNormalMap, spInfoMap, nColor, bFullBright));
                 GEKRESULT(spMaterial, L"Unable to allocate new material instance");
                 if (spMaterial)
                 {
@@ -618,7 +652,7 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
             CComPtr<IUnknown> spInfoMap;
             LoadResource(L"*color:0.5,0,0,0", &spInfoMap);
 
-            CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(spAlbedoMap, spNormalMap, spInfoMap));
+            CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(spAlbedoMap, spNormalMap, spInfoMap, float4(1.0f, 1.0f, 1.0f, 1.0f), false));
             GEKRESULT(spMaterial, L"Unable to allocate material new instance");
             if (spMaterial)
             {
@@ -643,6 +677,10 @@ STDMETHODIMP_(bool) CGEKRenderSystem::EnableMaterial(IUnknown *pMaterial)
     if (spMaterial)
     {
         bReturn = true;
+        MATERIALBUFFER kMaterial;
+        kMaterial.m_nColor = spMaterial->GetColor();
+        kMaterial.m_bFullBright = spMaterial->IsFullBright();
+        m_spMaterialBuffer->Update((void *)&kMaterial);
         spMaterial->Enable(this, m_pVideoSystem);
     }
 
@@ -779,12 +817,9 @@ STDMETHODIMP_(void) CGEKRenderSystem::DrawScene(UINT32 nAttributes)
 STDMETHODIMP_(void) CGEKRenderSystem::DrawLights(std::function<void(void)> OnLightBatch)
 {
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
-    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
     m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
     m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
-    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
     m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetResource(0, m_spLightBuffer);
-    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
 
     m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
     m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
@@ -819,7 +854,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::DrawLights(std::function<void(void)> OnLig
 STDMETHODIMP_(void) CGEKRenderSystem::DrawOverlay(void)
 {
     m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
-    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
 
     m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
 
@@ -911,10 +945,17 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1)));
 
             m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
             m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+
+            m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+
             m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
+
+            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(1, m_spMaterialBuffer);
+            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(2, m_spLightCountBuffer);
 
             m_pCurrentPass = &m_aPasses[kPass.GetRawString()];
             for (auto &pFilter : m_pCurrentPass->m_aFilters)

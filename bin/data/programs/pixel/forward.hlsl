@@ -9,6 +9,13 @@ cbuffer ENGINEBUFFER                    : register(b0)
     float4x4 gs_nTransformMatrix        : packoffset(c10);
 };
 
+cbuffer MATERIALBUFFER                  : register(b1)
+{
+    float4  gs_nMaterialColor           : packoffset(c0);
+    bool    gs_bMaterialFullBright      : packoffset(c1);
+    float3  gs_nMaterialPadding         : packoffset(c1.y);
+};
+
 SamplerState  gs_pPointSampler			: register(s0);
 SamplerState  gs_pLinearSampler			: register(s1);
 

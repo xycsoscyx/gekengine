@@ -32,12 +32,11 @@ public:
     {
         float4x4 m_nMatrix;
         float3 m_nScale;
-        float m_nBuffer;
+        float m_nPadding;
 
         INSTANCE(const float3 &nPosition, const quaternion &nRotation, const float3 &nScale)
             : m_nMatrix(nRotation, nPosition)
             , m_nScale(nScale)
-            , m_nBuffer(0.0f)
         {
         }
     };
