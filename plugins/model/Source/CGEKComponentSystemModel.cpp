@@ -164,7 +164,7 @@ STDMETHODIMP CGEKComponentSystemModel::Initialize(void)
         CComQIPtr<IGEKProgramManager> spProgramManager(m_pRenderManager);
         if (spProgramManager != nullptr)
         {
-            hRetVal = spProgramManager->LoadProgram(L"staticmodel", &m_spVertexProgram);
+            hRetVal = spProgramManager->LoadProgram(L"model", &m_spVertexProgram);
         }
     }
 

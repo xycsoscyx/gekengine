@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<program>
+    <layout>
+		<element type="rg_float" name="POSITION" index="0" class="vertex" slot="0" />
+    </layout>
+    <vertex>
+        <![CDATA[
+            struct INSTANCE
+            {
+                float4      m_nPosition;
+                float2      m_nSize;
+            };
+            
+            StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);
+
+			struct SOURCEVERTEX
+			{
+				float2 position                         : POSITION;
+                uint instance                           : SV_InstanceId;
+			};
+
+			VERTEX SourceVertexProgram(in SOURCEVERTEX kSource)
+			{
+                INSTANCE kInstance = gs_aInstances[kSource.instance];
+
+				VERTEX kVertex;
+				kVertex.position = kInstance.m_nPosition;
+				kVertex.texcoord = kSource.position;
+				return kVertex;
+			}
+        ]]>
+    </vertex>
+</program>
