@@ -35,7 +35,7 @@
 	            kVertex.position.xyz += (kYOffSet * (kSource.position.y * kInstance.m_nSize));
                 kVertex.color    = kInstance.m_nColor;
 				kVertex.texcoord = kSource.texcoord;
-                kVertex.texbasis = float3x3(float3(-1.0f, 0.0f, 0.0f), float3(0.0f, -1.0f, 0.0f), float3(0.0f, 0.0f, -1.0f));
+                kVertex.texbasis = 0.0f;
 				return kVertex;
 			}
         ]]>
