@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Source\CGEKComponentSystemSprite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CGEKComponentSprite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\solution\gekengine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{71b0140f-1839-4f39-a96d-31b67a9529db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{66ba92d7-0828-4fe9-9d81-e6f572757744}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="API Files">
+      <UniqueIdentifier>{6466b3bf-3ae9-47f9-830e-d89c594d3dab}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GEKSprite.h" />
+    <ClInclude Include="Include\CGEKComponentSprite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKComponentSystemSprite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKRenderManager.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKSceneManager.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\GEKAPI.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\GEKAPICLSIDs.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\GEKVALUE.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKComponent.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKInputManager.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKMaterialManager.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\api\IGEKProgramManager.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
