@@ -75,9 +75,56 @@ STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessag
     }
 }
 
-STDMETHODIMP_(void) CGEKContext::ChangeIndent(bool bIndent)
+STDMETHODIMP_(void) CGEKContext::AdjustLogIndent(bool bIndent)
 {
-    m_nIndent += (bIndent ? 1 : -1);
+    m_nIndent += (bIndent ? 2 : -2);
+}
+
+STDMETHODIMP_(void) CGEKContext::SetMetric(LPCSTR pName, UINT32 nValue)
+{
+    m_aMetrics[pName] = nValue;
+}
+
+STDMETHODIMP_(void) CGEKContext::IncrementMetric(LPCSTR pName)
+{
+    auto pIterator = m_aMetrics.find(pName);
+    if (pIterator == m_aMetrics.end())
+    {
+        m_aMetrics[pName] = 1;
+    }
+    else
+    {
+        (*pIterator).second++;
+    }
+}
+
+STDMETHODIMP_(void) CGEKContext::LogMetrics(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...)
+{
+    if (pMessage != nullptr)
+    {
+        CStringW strMessage;
+        if (m_nIndent > 0)
+        {
+            CStringW strIndent;
+            strIndent.Format(L"%d", m_nIndent);
+            strMessage.Format(L"%" + strIndent + "s", L" ");
+        }
+
+        va_list pArgs;
+        va_start(pArgs, pMessage);
+        strMessage.AppendFormatV(pMessage, pArgs);
+        va_end(pArgs);
+
+        Log(pFile, nLine, strMessage);
+    }
+
+    m_nIndent += 2;
+    for (auto kPair : m_aMetrics)
+    {
+        Log(pFile, nLine, L"- %S: %d", kPair.first.GetString(), kPair.second);
+    }
+
+    m_nIndent -= 2;
 }
 
 STDMETHODIMP CGEKContext::AddSearchPath(LPCWSTR pPath)

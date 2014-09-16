@@ -220,14 +220,26 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(void)
             GEKVALUE kRotation;
             m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
             m_pSceneManager->GetProperty(nEntityID, L"transform", L"rotation", kRotation);
+            
+            float4x4 nMatrix;
+            nMatrix   = kRotation.GetQuaternion();
+            nMatrix.t = kPosition.GetFloat3();
 
             GEKVALUE kScale;
             m_pSceneManager->GetProperty(nEntityID, L"model", L"scale", kScale);
+            float3 nScale(kScale.GetFloat3());
 
             GEKVALUE kColor;
             m_pSceneManager->GetProperty(nEntityID, L"model", L"color", kColor);
 
-            m_aVisible[pModel].emplace_back(kPosition.GetFloat3(), kRotation.GetQuaternion(), kScale.GetFloat3(), kColor.GetFloat4());
+            aabb nAABB(pModel->m_nAABB);
+            nAABB.minimum *= nScale;
+            nAABB.maximum *= nScale;
+            if (m_pRenderManager->GetFrustum().IsVisible(obb(nAABB, nMatrix)))
+            {
+                m_aVisible[pModel].emplace_back(nMatrix, kScale.GetFloat3(), kColor.GetFloat4());
+                GEKINCREMENTMETRIC("NUMOBJECTS");
+            }
         }
     });
 }

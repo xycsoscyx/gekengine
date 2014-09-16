@@ -872,6 +872,9 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
     m_pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void
     {
+        GEKSETMETRIC("NUMLIGHTS", 0);
+        GEKSETMETRIC("NUMOBJECTS", 0);
+
         GEKVALUE kPass;
         m_pSceneManager->GetProperty(nViewerID, L"viewer", L"pass", kPass);
         if (SUCCEEDED(LoadPass(kPass.GetRawString())))
@@ -942,6 +945,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                 m_aVisibleLights.push_back(kLight);
             });
 
+            GEKSETMETRIC("NUMLIGHTS", m_aVisibleLights.size());
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1)));
 
             m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
@@ -968,6 +972,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             m_pCurrentPass = nullptr;
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnPostRender, std::placeholders::_1)));
         }
+
+        GEKLOGMETRICS(L"Viewer: %d", nViewerID);
     });
 
     m_pVideoSystem->SetDefaultTargets();

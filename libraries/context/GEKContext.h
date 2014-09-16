@@ -420,7 +420,7 @@ public:
             }
 
             m_pContext->Log(m_strFile, m_nLine, L"> %20S: %s", m_strFunction.GetString(), m_strMessage.GetString());
-            m_pContext->ChangeIndent(true);
+            m_pContext->AdjustLogIndent(true);
         }
     }
 
@@ -428,7 +428,7 @@ public:
     {
         if (m_pContext != nullptr)
         {
-            m_pContext->ChangeIndent(false);
+            m_pContext->AdjustLogIndent(false);
             double nEndTime = m_pContext->GetTime();
             double nTime = (nEndTime - m_nStartTime);
             m_pContext->Log(m_strFile, m_nLine, L"< %20S: %2.5fs", m_strFunction.GetString(), nTime);
@@ -437,5 +437,11 @@ public:
 };
 
 #define GEKLOG(MESSAGE, ...)                    GetContext()->Log(__FILE__, __LINE__, MESSAGE, __VA_ARGS__)
+
 #define GEKRESULT(RESULT, MESSAGE, ...)         if(!(RESULT)) { GetContext()->Log(__FILE__, __LINE__, MESSAGE, __VA_ARGS__); }
-#define GEKFUNCTION(MESSAGE, ...)               CGEKPerformance kPerformanceTimer(GetContext(), __FILE__, __LINE__, __FUNCTION__, MESSAGE, __VA_ARGS__);
+
+#define GEKFUNCTION(MESSAGE, ...)               CGEKPerformance kPerformanceTimer(GetContext(), __FILE__, __LINE__, __FUNCTION__, MESSAGE, __VA_ARGS__)
+
+#define GEKSETMETRIC(NAME, VALUE)               GetContext()->SetMetric(NAME, VALUE)
+#define GEKINCREMENTMETRIC(NAME)                GetContext()->IncrementMetric(NAME)
+#define GEKLOGMETRICS(MESSAGE, ...)             GetContext()->LogMetrics(__FILE__, __LINE__, MESSAGE, __VA_ARGS__)

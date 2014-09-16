@@ -35,8 +35,8 @@ public:
         float m_nPadding;
         float4 m_nColor;
 
-        INSTANCE(const float3 &nPosition, const quaternion &nRotation, const float3 &nScale, const float4 &nColor)
-            : m_nMatrix(nRotation, nPosition)
+        INSTANCE(const float4x4 &nMatrix, const float3 &nScale, const float4 &nColor)
+            : m_nMatrix(nMatrix)
             , m_nScale(nScale)
             , m_nColor(nColor)
         {

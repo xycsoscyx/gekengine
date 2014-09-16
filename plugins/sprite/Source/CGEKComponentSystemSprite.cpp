@@ -128,14 +128,21 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(void)
         {
             GEKVALUE kPosition;
             m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
+            float3 nPosition(kPosition.GetFloat3());
 
             GEKVALUE kSize;
             m_pSceneManager->GetProperty(nEntityID, L"sprite", L"size", kSize);
+            float nSize = kSize.GetFloat();
+            float nHalfSize = (nSize * 0.5f);
 
             GEKVALUE kColor;
             m_pSceneManager->GetProperty(nEntityID, L"sprite", L"color", kColor);
 
-            m_aVisible[spMaterial].emplace_back(kPosition.GetFloat3(), kSize.GetFloat(), kColor.GetFloat4());
+            if (m_pRenderManager->GetFrustum().IsVisible(aabb(nPosition - nHalfSize, nPosition + nHalfSize)))
+            {
+                m_aVisible[spMaterial].emplace_back(nPosition, nSize, kColor.GetFloat4());
+                GEKINCREMENTMETRIC("NUMOBJECTS");
+            }
         }
     });
 }
