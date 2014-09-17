@@ -81,6 +81,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="GEKShape.h" />
+    <ClInclude Include="Include\GEKAABB.h" />
+    <ClInclude Include="Include\GEKFrustum.h" />
+    <ClInclude Include="Include\GEKOBB.h" />
+    <ClInclude Include="Include\GEKPlane.h" />
+    <ClInclude Include="Include\GEKRay.h" />
+    <ClInclude Include="Include\GEKSphere.h" />
     <ClInclude Include="Public\aabb.h" />
     <ClInclude Include="Public\frustum.h" />
     <ClInclude Include="Public\obb.h" />

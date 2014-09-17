@@ -3,21 +3,39 @@
   <ItemGroup>
     <ClInclude Include="GEKShape.h" />
     <ClInclude Include="Public\aabb.h">
-      <Filter>Header Files</Filter>
+      <Filter>Templates</Filter>
     </ClInclude>
     <ClInclude Include="Public\frustum.h">
-      <Filter>Header Files</Filter>
+      <Filter>Templates</Filter>
     </ClInclude>
     <ClInclude Include="Public\obb.h">
-      <Filter>Header Files</Filter>
+      <Filter>Templates</Filter>
     </ClInclude>
     <ClInclude Include="Public\plane.h">
-      <Filter>Header Files</Filter>
+      <Filter>Templates</Filter>
     </ClInclude>
     <ClInclude Include="Public\ray.h">
-      <Filter>Header Files</Filter>
+      <Filter>Templates</Filter>
     </ClInclude>
     <ClInclude Include="Public\sphere.h">
+      <Filter>Templates</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GEKPlane.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GEKRay.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GEKSphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GEKAABB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GEKFrustum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GEKOBB.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -30,6 +48,9 @@
     </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{20c051f1-47ac-47e0-9fc3-21b33721dca5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Templates">
+      <UniqueIdentifier>{93d18881-a392-4ffe-be4f-4fcf5c7c5517}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
