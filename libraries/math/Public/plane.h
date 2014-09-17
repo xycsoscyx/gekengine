@@ -1,28 +1,27 @@
 #pragma once
 
-template <typename TYPE>
-struct tplane
+struct plane
 {
 public:
-    tvector3<TYPE> normal;
-    TYPE distance;
+    float3 normal;
+    float distance;
 
 public:
-    tplane(void)
+    plane(void)
     {
-        normal.x = TYPE(0);
-        normal.y = TYPE(0);
-        normal.z = TYPE(0);
-        distance = TYPE(0);
+        normal.x = 0.0f;
+        normal.y = 0.0f;
+        normal.z = 0.0f;
+        distance = 0.0f;
     }
 
-    tplane(const tplane<TYPE> &nPlane)
+    plane(const plane &nPlane)
     {
         normal = nPlane.normal;
         distance = nPlane.distance;
     }
 
-    tplane(const tvector4<TYPE> &nPlane)
+    plane(const float4 &nPlane)
     {
         normal.x = nPlane.x;
         normal.y = nPlane.y;
@@ -30,7 +29,7 @@ public:
         distance = nPlane.w;
     }
 
-    tplane(TYPE nA, TYPE nB, TYPE nC, TYPE nD)
+    plane(float nA, float nB, float nC, float nD)
     {
         normal.x = nA;
         normal.y = nB;
@@ -38,29 +37,29 @@ public:
         distance = nD;
     }
 
-    tplane(const tvector3<TYPE> &nNormal, TYPE nDistance)
+    plane(const float3 &nNormal, float nDistance)
     {
         normal = nNormal;
         distance = nDistance;
     }
 
-    tplane(const tvector3<TYPE> &nPointA, const tvector3<TYPE> &nPointB, const tvector3<TYPE> &nPointC)
+    plane(const float3 &nPointA, const float3 &nPointB, const float3 &nPointC)
     {
-        tvector3 kSideA(nPointB - nPointA);
-        tvector3 kSideB(nPointC - nPointA);
-        tvector3 kCross(kSideA.Cross(kSideB));
+        float3 kSideA(nPointB - nPointA);
+        float3 kSideB(nPointC - nPointA);
+        float3 kCross(kSideA.Cross(kSideB));
 
         normal = kCross.GetNormal();
         distance = -normal.Dot(nPointA);
     }
 
-    tplane(const tvector3<TYPE> &nNormal, const tvector3<TYPE> &nPointOnPlane)
+    plane(const float3 &nNormal, const float3 &nPointOnPlane)
     {
         normal = nNormal;
         distance = -normal.Dot(nPointOnPlane);
     }
 
-    tplane<TYPE> operator = (const tplane<TYPE> &nPlane)
+    plane operator = (const plane &nPlane)
     {
         normal = nPlane.normal;
         distance = nPlane.distance;
@@ -69,14 +68,14 @@ public:
 
     void Normalize(void)
     {
-        TYPE nLength = (TYPE(1) / normal.GetLength());
+        float nLength = (1.0f / normal.GetLength());
         normal.x *= nLength;
         normal.y *= nLength;
         normal.z *= nLength;
         distance *= nLength;
     }
 
-    TYPE Distance(const tvector3<TYPE> &nPoint) const
+    float Distance(const float3 &nPoint) const
     {
         return (normal.Dot(nPoint) + distance);
     }

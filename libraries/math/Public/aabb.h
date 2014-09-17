@@ -1,45 +1,44 @@
 #pragma once
 
-template <typename TYPE>
-struct taabb
+struct aabb
 {
 public:
-    tvector3<TYPE> minimum;
-    tvector3<TYPE> maximum;
+    float3 minimum;
+    float3 maximum;
 
 public:
-    taabb(void)
+    aabb(void)
         : minimum( _INFINITY)
         , maximum(-_INFINITY)
     {
     }
 
-    taabb(const taabb<TYPE> &nBox)
+    aabb(const aabb &nBox)
         : minimum(nBox.minimum)
         , maximum(nBox.maximum)
     {
     }
 
-    taabb(TYPE nSize)
-        : minimum(-(nSize / TYPE(2)))
-        , maximum( (nSize / TYPE(2)))
+    aabb(float nSize)
+        : minimum(-(nSize * 0.5f))
+        , maximum( (nSize * 0.5f))
     {
     }
 
-    taabb(const tvector3<TYPE> &nMinimum, const tvector3<TYPE> &nMaximum)
+    aabb(const float3 &nMinimum, const float3 &nMaximum)
         : minimum(nMinimum)
         , maximum(nMaximum)
     {
     }
 
-    taabb operator = (const taabb<TYPE> &nBox)
+    aabb operator = (const aabb &nBox)
     {
         minimum = nBox.minimum;
         maximum = nBox.maximum;
         return (*this);
     }
 
-    void Extend(tvector3<TYPE> &nPoint)
+    void Extend(float3 &nPoint)
     {
         if (nPoint.x < minimum.x)
         {
@@ -72,30 +71,30 @@ public:
         }
     }
 
-    tvector3<TYPE> GetSize(void) const
+    float3 GetSize(void) const
     {
         return (maximum - minimum);
     }
 
-    tvector3<TYPE> GetCenter(void) const
+    float3 GetCenter(void) const
     {
-        return (minimum + (GetSize() / TYPE(2)));
+        return (minimum + (GetSize() * 0.5f));
     }
 
-    int GetPosition(const tplane<TYPE> &nPlane) const
+    int GetPosition(const plane &nPlane) const
     {
-        tvector3<TYPE> nMinimum((nPlane.normal.x > TYPE(0) ? maximum.x : minimum.x),
-                                (nPlane.normal.y > TYPE(0) ? maximum.y : minimum.y),
-                                (nPlane.normal.z > TYPE(0) ? maximum.z : minimum.z));
-        if (nPlane.Distance(nMinimum) < TYPE(0))
+        float3 nMinimum((nPlane.normal.x > 0.0f ? maximum.x : minimum.x),
+                        (nPlane.normal.y > 0.0f ? maximum.y : minimum.y),
+                        (nPlane.normal.z > 0.0f ? maximum.z : minimum.z));
+        if (nPlane.Distance(nMinimum) < 0.0f)
         {
             return -1;
         }
 
-        tvector3<TYPE> nMaximum((nPlane.normal.x < TYPE(0) ? maximum.x : minimum.x),
-                                (nPlane.normal.y < TYPE(0) ? maximum.y : minimum.y),
-                                (nPlane.normal.z < TYPE(0) ? maximum.z : minimum.z));
-        if (nPlane.Distance(nMaximum) < TYPE(0))
+        float3 nMaximum((nPlane.normal.x < 0.0f ? maximum.x : minimum.x),
+                        (nPlane.normal.y < 0.0f ? maximum.y : minimum.y),
+                        (nPlane.normal.z < 0.0f ? maximum.z : minimum.z));
+        if (nPlane.Distance(nMaximum) < 0.0f)
         {
             return 0;
         }

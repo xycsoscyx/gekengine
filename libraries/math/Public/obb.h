@@ -1,40 +1,39 @@
 #pragma once
 
-template <typename TYPE>
-struct tobb
+struct obb
 {
 public:
-    tvector3<TYPE> position;
-    tmatrix4x4<TYPE> rotation;
-    tvector3<TYPE> halfsize;
+    float3 position;
+    float4x4 rotation;
+    float3 halfsize;
 
 public:
-    tobb(void)
+    obb(void)
     {
     }
 
-    tobb(const tobb<TYPE> &nBox)
+    obb(const obb &nBox)
         : position(nBox.position)
         , rotation(nBox.rotation)
-        , halfsize(nBox.size / TYPE(2))
+        , halfsize(nBox.halfsize)
     {
     }
 
-    tobb(const taabb<TYPE> &nBox, const tquaternion<TYPE> &nRotation, const tvector3<TYPE> &nPosition)
+    obb(const aabb &nBox, const quaternion &nRotation, const float3 &nPosition)
     {
         rotation = nRotation;
         position = (nPosition + nBox.GetCenter());
-        halfsize = (nBox.GetSize() / TYPE(2));
+        halfsize = (nBox.GetSize() * 0.5f);
     }
 
-    tobb(const taabb<TYPE> &nBox, const tmatrix4x4<TYPE> &nMatrix)
+    obb(const aabb &nBox, const float4x4 &nMatrix)
     {
         rotation = nMatrix;
         position = (nMatrix.t + nBox.GetCenter());
-        halfsize = (nBox.GetSize() / TYPE(2));
+        halfsize = (nBox.GetSize() * 0.5f);
     }
 
-    tobb operator = (const tobb<TYPE> &nBox)
+    obb operator = (const obb &nBox)
     {
         position = nBox.position;
         rotation = nBox.rotation;
@@ -42,13 +41,13 @@ public:
         return (*this);
     }
 
-    int GetPosition(const tplane<TYPE> &nPlane) const
+    int GetPosition(const plane &nPlane) const
     {
-        TYPE nDistance = nPlane.Distance(position);
-        TYPE nRadiusX = fabs(rotation.rx.Dot(nPlane.normal) * halfsize.x);
-        TYPE nRadiusY = fabs(rotation.ry.Dot(nPlane.normal) * halfsize.y);
-        TYPE nRadiusZ = fabs(rotation.rz.Dot(nPlane.normal) * halfsize.z);
-        TYPE nRadius = (nRadiusX + nRadiusY + nRadiusZ);
+        float nDistance = nPlane.Distance(position);
+        float nRadiusX = fabs(rotation.rx.Dot(nPlane.normal) * halfsize.x);
+        float nRadiusY = fabs(rotation.ry.Dot(nPlane.normal) * halfsize.y);
+        float nRadiusZ = fabs(rotation.rz.Dot(nPlane.normal) * halfsize.z);
+        float nRadius = (nRadiusX + nRadiusY + nRadiusZ);
         if (nDistance < -nRadius)
         {
             return -1;

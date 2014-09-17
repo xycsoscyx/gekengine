@@ -1,104 +1,102 @@
 #pragma once
 
-template <typename TYPE>
-struct tvector4;
+struct float4;
 
-template <typename TYPE>
-struct tvector3
+struct float3
 {
 public:
     union
     {
-        struct { TYPE x, y, z; };
-        struct { TYPE xyz[3]; };
-        struct { TYPE r, g, b; };
-        struct { TYPE rgb[3]; };
+        struct { float x, y, z; };
+        struct { float xyz[3]; };
+        struct { float r, g, b; };
+        struct { float rgb[3]; };
     };
 
 public:
-    tvector3(void)
+    float3(void)
     {
-        x = y = z = TYPE(0);
+        x = y = z = 0.0f;
     }
 
-    tvector3(TYPE fValue)
+    float3(float fValue)
     {
         x = y = z = fValue;
     }
 
-    tvector3(const tvector2<TYPE> &nVector)
+    float3(const float2 &nVector)
     {
         x = nVector.x;
         y = nVector.y;
-        z = TYPE(0);
+        z = 0.0f;
     }
 
-    tvector3(const tvector3<TYPE> &nVector)
-    {
-        x = nVector.x;
-        y = nVector.y;
-        z = nVector.z;
-    }
-
-    tvector3(const tvector4<TYPE> &nVector)
+    float3(const float3 &nVector)
     {
         x = nVector.x;
         y = nVector.y;
         z = nVector.z;
     }
 
-    tvector3(TYPE nX, TYPE nY, TYPE nZ)
+    float3(const float4 &nVector)
+    {
+        x = nVector.x;
+        y = nVector.y;
+        z = nVector.z;
+    }
+
+    float3(float nX, float nY, float nZ)
     {
         x = nX;
         y = nY;
         z = nZ;
     }
 
-    void Set(TYPE nX, TYPE nY)
+    void Set(float nX, float nY)
     {
         x = nX;
         y = nY;
-        z = TYPE(0);
+        z = 0.0f;
     }
 
-    void Set(TYPE nX, TYPE nY, TYPE nZ)
-    {
-        x = nX;
-        y = nY;
-        z = nZ;
-    }
-
-    void Set(TYPE nX, TYPE nY, TYPE nZ, TYPE nW)
+    void Set(float nX, float nY, float nZ)
     {
         x = nX;
         y = nY;
         z = nZ;
     }
 
-    void SetLength(TYPE nLength)
+    void Set(float nX, float nY, float nZ, float nW)
+    {
+        x = nX;
+        y = nY;
+        z = nZ;
+    }
+
+    void SetLength(float nLength)
     {
         (*this) *= (nLength / GetLength());
     }
 
-    TYPE GetLengthSqr(void) const
+    float GetLengthSqr(void) const
     {
         return ((x * x) + (y * y) + (z * z));
     }
 
-    TYPE GetLength(void) const
+    float GetLength(void) const
     {
         return sqrt((x * x) + (y * y) + (z * z));
     }
 
-    TYPE GetMax(void) const
+    float GetMax(void) const
     {
         return max(max(x, y), z);
     }
 
-    tvector3<TYPE> GetNormal(void) const
+    float3 GetNormal(void) const
     {
-        TYPE nLength = GetLength();
-        if (nLength != TYPE(0))
+        float nLength = GetLength();
+        if (nLength != 0.0f)
         {
             return ((*this) * (1.0f / GetLength()));
         }
@@ -106,24 +104,24 @@ public:
         return (*this);
     }
 
-    TYPE Dot(const tvector3<TYPE> &nVector) const
+    float Dot(const float3 &nVector) const
     {
         return ((x * nVector.x) + (y * nVector.y) +  (z * nVector.z));
     }
 
-    TYPE Distance(const tvector3<TYPE> &nVector) const
+    float Distance(const float3 &nVector) const
     {
         return (nVector - (*this)).GetLength();
     }
 
-    tvector3<TYPE> Cross(const tvector3<TYPE> &nVector) const
+    float3 Cross(const float3 &nVector) const
     {
-        return tvector3<TYPE>(((y * nVector.z) - (z * nVector.y)),
+        return float3(((y * nVector.z) - (z * nVector.y)),
                        ((z * nVector.x) - (x * nVector.z)),
                        ((x * nVector.y) - (y * nVector.x)));
     }
 
-    tvector3<TYPE> Lerp(const tvector3<TYPE> &nVector, TYPE nFactor) const
+    float3 Lerp(const float3 &nVector, float nFactor) const
     {
         return ((*this) + ((nVector - (*this)) * nFactor));
     }
@@ -133,17 +131,17 @@ public:
         (*this) = GetNormal();
     }
 
-    TYPE operator [] (int nIndex) const
+    float operator [] (int nIndex) const
     {
         return xyz[nIndex];
     }
 
-    TYPE &operator [] (int nIndex)
+    float &operator [] (int nIndex)
     {
         return xyz[nIndex];
     }
 
-    bool operator < (const tvector3<TYPE> &nVector) const
+    bool operator < (const float3 &nVector) const
     {
         if (x >= nVector.x) return false;
         if (y >= nVector.y) return false;
@@ -151,7 +149,7 @@ public:
         return true;
     }
 
-    bool operator > (const tvector3<TYPE> &nVector) const
+    bool operator > (const float3 &nVector) const
     {
         if (x <= nVector.x) return false;
         if (y <= nVector.y) return false;
@@ -159,7 +157,7 @@ public:
         return true;
     }
 
-    bool operator <= (const tvector3<TYPE> &nVector) const
+    bool operator <= (const float3 &nVector) const
     {
         if (x > nVector.x) return false;
         if (y > nVector.y) return false;
@@ -167,7 +165,7 @@ public:
         return true;
     }
 
-    bool operator >= (const tvector3<TYPE> &nVector) const
+    bool operator >= (const float3 &nVector) const
     {
         if (x < nVector.x) return false;
         if (y < nVector.y) return false;
@@ -175,7 +173,7 @@ public:
         return true;
     }
 
-    bool operator == (const tvector3<TYPE> &nVector) const
+    bool operator == (const float3 &nVector) const
     {
         if (x != nVector.x) return false;
         if (y != nVector.y) return false;
@@ -183,7 +181,7 @@ public:
         return true;
     }
 
-    bool operator != (const tvector3<TYPE> &nVector) const
+    bool operator != (const float3 &nVector) const
     {
         if (x != nVector.x) return true;
         if (y != nVector.y) return true;
@@ -191,29 +189,21 @@ public:
         return false;
     }
 
-    tvector3<TYPE> operator = (float nValue)
+    float3 operator = (float nValue)
     {
         x = y = z = nValue;
         return (*this);
     }
 
-    tvector3<TYPE> operator = (const tvector2<TYPE> &nVector)
+    float3 operator = (const float2 &nVector)
     {
         x = nVector.x;
         y = nVector.y;
-        z = TYPE(0);
+        z = 0.0f;
         return (*this);
     }
 
-    tvector3<TYPE> operator = (const tvector3<TYPE> &nVector)
-    {
-        x = nVector.x;
-        y = nVector.y;
-        z = nVector.z;
-        return (*this);
-    }
-
-    tvector3<TYPE> operator = (const tvector4<TYPE> &nVector)
+    float3 operator = (const float3 &nVector)
     {
         x = nVector.x;
         y = nVector.y;
@@ -221,129 +211,132 @@ public:
         return (*this);
     }
 
-    void operator -= (const tvector3<TYPE> &nVector)
+    float3 operator = (const float4 &nVector)
+    {
+        x = nVector.x;
+        y = nVector.y;
+        z = nVector.z;
+        return (*this);
+    }
+
+    void operator -= (const float3 &nVector)
     {
         x -= nVector.x;
         y -= nVector.y;
         z -= nVector.z;
     }
 
-    void operator += (const tvector3<TYPE> &nVector)
+    void operator += (const float3 &nVector)
     {
         x += nVector.x;
         y += nVector.y;
         z += nVector.z;
     }
 
-    void operator /= (const tvector3<TYPE> &nVector)
+    void operator /= (const float3 &nVector)
     {
         x /= nVector.x;
         y /= nVector.y;
         z /= nVector.z;
     }
 
-    void operator *= (const tvector3<TYPE> &nVector)
+    void operator *= (const float3 &nVector)
     {
         x *= nVector.x;
         y *= nVector.y;
         z *= nVector.z;
     }
 
-    void operator -= (TYPE nScalar)
+    void operator -= (float nScalar)
     {
         x -= nScalar;
         y -= nScalar;
         z -= nScalar;
     }
 
-    void operator += (TYPE nScalar)
+    void operator += (float nScalar)
     {
         x += nScalar;
         y += nScalar;
         z += nScalar;
     }
 
-    void operator /= (TYPE nScalar)
+    void operator /= (float nScalar)
     {
         x /= nScalar;
         y /= nScalar;
         z /= nScalar;
     }
 
-    void operator *= (TYPE nScalar)
+    void operator *= (float nScalar)
     {
         x *= nScalar;
         y *= nScalar;
         z *= nScalar;
     }
 
-    tvector3<TYPE> operator - (const tvector3<TYPE> &nVector) const
+    float3 operator - (const float3 &nVector) const
     {
-        return tvector3<TYPE>((x - nVector.x), (y - nVector.y), (z - nVector.z));
+        return float3((x - nVector.x), (y - nVector.y), (z - nVector.z));
     }
 
-    tvector3<TYPE> operator + (const tvector3<TYPE> &nVector) const
+    float3 operator + (const float3 &nVector) const
     {
-        return tvector3<TYPE>((x + nVector.x), (y + nVector.y), (z + nVector.z));
+        return float3((x + nVector.x), (y + nVector.y), (z + nVector.z));
     }
 
-    tvector3<TYPE> operator / (const tvector3<TYPE> &nVector) const
+    float3 operator / (const float3 &nVector) const
     {
-        return tvector3<TYPE>((x / nVector.x), (y / nVector.y), (z / nVector.z));
+        return float3((x / nVector.x), (y / nVector.y), (z / nVector.z));
     }
 
-    tvector3<TYPE> operator * (const tvector3<TYPE> &nVector) const
+    float3 operator * (const float3 &nVector) const
     {
-        return tvector3<TYPE>((x * nVector.x), (y * nVector.y), (z * nVector.z));
+        return float3((x * nVector.x), (y * nVector.y), (z * nVector.z));
     }
 
-    tvector3<TYPE> operator - (TYPE nScalar) const
+    float3 operator - (float nScalar) const
     {
-        return tvector3<TYPE>((x - nScalar), (y - nScalar), (z - nScalar));
+        return float3((x - nScalar), (y - nScalar), (z - nScalar));
     }
 
-    tvector3<TYPE> operator + (TYPE nScalar) const
+    float3 operator + (float nScalar) const
     {
-        return tvector3<TYPE>((x + nScalar), (y + nScalar), (z + nScalar));
+        return float3((x + nScalar), (y + nScalar), (z + nScalar));
     }
 
-    tvector3<TYPE> operator / (TYPE nScalar) const
+    float3 operator / (float nScalar) const
     {
-        return tvector3<TYPE>((x / nScalar), (y / nScalar), (z / nScalar));
+        return float3((x / nScalar), (y / nScalar), (z / nScalar));
     }
 
-    tvector3<TYPE> operator * (TYPE nScalar) const
+    float3 operator * (float nScalar) const
     {
-        return tvector3<TYPE>((x * nScalar), (y * nScalar), (z * nScalar));
+        return float3((x * nScalar), (y * nScalar), (z * nScalar));
     }
 };
 
-template <typename TYPE>
-tvector3<TYPE> operator - (const tvector3<TYPE> &nVector)
+float3 operator - (const float3 &nVector)
 {
-    return tvector3<TYPE>(-nVector.x, -nVector.y, -nVector.z);
+    return float3(-nVector.x, -nVector.y, -nVector.z);
 }
 
-template <typename TYPE>
-tvector3<TYPE> operator - (TYPE fValue, const tvector3<TYPE> &nVector)
+float3 operator - (float fValue, const float3 &nVector)
 {
-    return tvector3<TYPE>((fValue - nVector.x), (fValue - nVector.y), (fValue - nVector.z));
+    return float3((fValue - nVector.x), (fValue - nVector.y), (fValue - nVector.z));
 }
 
-template <typename TYPE>
-tvector3<TYPE> operator + (TYPE fValue, const tvector3<TYPE> &nVector)
+float3 operator + (float fValue, const float3 &nVector)
 {
-    return tvector3<TYPE>((fValue + nVector.x), (fValue + nVector.y), (fValue + nVector.z));
+    return float3((fValue + nVector.x), (fValue + nVector.y), (fValue + nVector.z));
 }
 
-template <typename TYPE>
-tvector3<TYPE> operator / (TYPE fValue, const tvector3<TYPE> &nVector)
+float3 operator / (float fValue, const float3 &nVector)
 {
-    return tvector3<TYPE>((fValue / nVector.x), (fValue / nVector.y), (fValue / nVector.z));
+    return float3((fValue / nVector.x), (fValue / nVector.y), (fValue / nVector.z));
 }
 
-template <typename TYPE>
-tvector3<TYPE> operator * (TYPE fValue, const tvector3<TYPE> &nVector)
+float3 operator * (float fValue, const float3 &nVector)
 {
-    return tvector3<TYPE>((fValue * nVector.x), (fValue * nVector.y), (fValue * nVector.z));
+    return float3((fValue * nVector.x), (fValue * nVector.y), (fValue * nVector.z));
 }

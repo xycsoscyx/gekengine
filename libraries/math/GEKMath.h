@@ -1,12 +1,6 @@
 #pragma once
 
-#ifndef max
-#define max(x, y)   ((x) > (y) ? (x) : (y))
-#endif
-
-#ifndef min
-#define min(x, y)   ((x) < (y) ? (x) : (y))
-#endif
+#include <amp_math.h>
 
 static union 
 {
@@ -35,15 +29,3 @@ const float _INV_PI             = 0.31830988618379069122f;
 #include "Public\OBB.h"
 #include "Public\Ray.h"
 #include "Public\Frustum.h"
-
-typedef tvector2<float> float2;
-typedef tvector3<float> float3;
-typedef tvector4<float> float4;
-typedef tmatrix4x4<float> float4x4;
-typedef tquaternion<float> quaternion;
-typedef tsphere<float> sphere;
-typedef taabb<float> aabb;
-typedef tobb<float> obb;
-typedef tray<float> ray;
-typedef tplane<float> plane;
-typedef tfrustum<float> frustum;
