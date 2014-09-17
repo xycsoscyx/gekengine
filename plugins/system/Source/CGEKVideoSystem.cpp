@@ -3,18 +3,14 @@
 #include "CGEKVideoSystem.h"
 #include "IGEKSystem.h"
 #include <d3dcompiler.h>
-#include <IL/il.h>
-#include <IL/ilu.h>
+#include <DirectXTex.h>
 #include <algorithm>
 #include <atlpath.h>
 
-#include <DirectXTex.h>
-
 #include "GEKSystemCLSIDs.h"
 
-#pragma comment(lib, "devil.lib")
-#pragma comment(lib, "ilu.lib")
 #pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 class CGEKVideoComputeContextSystem : public IGEKVideoContextSystem
 {
@@ -909,10 +905,6 @@ STDMETHODIMP_(void) CGEKVideoContext::FinishCommandList(IUnknown **ppUnknown)
 
 CGEKVideoSystem::CGEKVideoSystem(void)
 {
-	ilInit();
-	iluInit();
-	ilOriginFunc(IL_ORIGIN_UPPER_LEFT);
-	ilEnable(IL_ORIGIN_SET);
 }
 
 CGEKVideoSystem::~CGEKVideoSystem(void)
@@ -2609,7 +2601,7 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **
         hRetVal = DirectX::LoadFromDDSMemory(&aBuffer[0], aBuffer.size(), 0, &kMetadata, kImage);
         if (FAILED(hRetVal))
         {
-            hRetVal = DirectX::LoadFromTGAMemory(&aBuffer[0], aBuffer.size(), 0, &kMetadata, kImage);
+            hRetVal = DirectX::LoadFromTGAMemory(&aBuffer[0], aBuffer.size(), &kMetadata, kImage);
         }
 
         if (SUCCEEDED(hRetVal))
