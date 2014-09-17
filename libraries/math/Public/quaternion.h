@@ -1,33 +1,30 @@
 #pragma once
 
-struct float3;
-
-struct float4x4;
-
-struct quaternion
+template <typename TYPE>
+struct tquaternion
 {
 public:
     union
     {
-        struct { float xyzw[4]; };
-        struct { float x, y, z, w; };
+        struct { TYPE xyzw[4]; };
+        struct { TYPE x, y, z, w; };
     };
 
 public:
-    quaternion(void)
+    tquaternion(void)
     {
-        x = 0.0f;
-        y = 0.0f;
-        z = 0.0f;
-        w = 1.0f;
+        x = TYPE(0);
+        y = TYPE(0);
+        z = TYPE(0);
+        w = TYPE(1);
     }
 
-    quaternion(float nValue)
+    tquaternion(float nValue)
     {
         x = y = z = w = nValue;
     }
 
-    quaternion(float nX, float nY, float nZ, float nW)
+    tquaternion(float nX, float nY, float nZ, float nW)
     {
         x = nX;
         y = nY;
@@ -35,7 +32,7 @@ public:
         w = nW;
     }
 
-    quaternion(const quaternion &nQuaternion)
+    tquaternion(const tquaternion<TYPE> &nQuaternion)
     {
         x = nQuaternion.x;
         y = nQuaternion.y;
@@ -43,27 +40,27 @@ public:
         w = nQuaternion.w;
     }
 
-    quaternion(const float4x4 &nMatrix)
+    tquaternion(const tmatrix4x4<TYPE> &nMatrix)
     {
         SetMatrix(nMatrix);
     }
 
-    quaternion(const float3 &nAxis, float nAngle)
+    tquaternion(const tvector3<TYPE> &nAxis, TYPE nAngle)
     {
         SetRotation(nAxis, nAngle);
     }
 
-    quaternion(float nX, float nY, float nZ)
+    tquaternion(TYPE nX, TYPE nY, TYPE nZ)
     {
         SetEuler(nX, nY, nZ);
     }
 
-    quaternion(const float3 &nEuler)
+    tquaternion(const tvector3<TYPE> &nEuler)
     {
         SetEuler(nEuler);
     }
 
-    quaternion(const float4 &nVector)
+    tquaternion(const tvector4<TYPE> &nVector)
     {
         x = nVector.x;
         y = nVector.y;
@@ -73,11 +70,11 @@ public:
 
     void SetIdentity(void)
     {
-        x = y = z = 0.0f;
-        w = 1.0f;
+        x = y = z = TYPE(0);
+        w = TYPE(1);
     }
 
-    void SetLength(float nLength)
+    void SetLength(TYPE nLength)
     {
         nLength = (nLength / GetLength());
         x *= nLength;
@@ -86,42 +83,42 @@ public:
         w *= nLength;
     }
 
-    void SetEuler(const float3 &nEuler)
+    void SetEuler(const tvector3<TYPE> &nEuler)
     {
         SetEuler(nEuler.x, nEuler.y, nEuler.z);
     }
 
-    void SetEuler(float nX, float nY, float nZ)
+    void SetEuler(TYPE nX, TYPE nY, TYPE nZ)
     {
-        float nSinX, nCosX;
-        float nSinY, nCosY;
-        float nSinZ, nCosZ;
-        Concurrency::precise_math::sincos(nX * 0.5f, &nSinX, &nSinY);
-        Concurrency::precise_math::sincos(nY * 0.5f, &nSinY, &nSinY);
-        Concurrency::precise_math::sincos(nZ * 0.5f, &nSinZ, &nSinZ);
+        TYPE nSinX = sin(nX * TYPE(0.5));
+        TYPE nSinY = sin(nY * TYPE(0.5));
+        TYPE nSinZ = sin(nZ * TYPE(0.5));
+        TYPE nCosX = cos(nX * TYPE(0.5));
+        TYPE nCosY = cos(nY * TYPE(0.5));
+        TYPE nCosZ = cos(nZ * TYPE(0.5));
         x = ((nSinX * nCosY * nCosZ) - (nCosX * nSinY * nSinZ));
         y = ((nSinX * nCosY * nSinZ) + (nCosX * nSinY * nCosZ));
         z = ((nCosX * nCosY * nSinZ) - (nSinX * nSinY * nCosZ));
         w = ((nCosX * nCosY * nCosZ) + (nSinX * nSinY * nSinZ));
     }
 
-    void SetRotation(const float3 &nAxis, float nAngle)
+    void SetRotation(const tvector3<TYPE> &nAxis, TYPE nAngle)
     {
-        float nSin;
-        Concurrency::precise_math::sincos(nAngle * 0.5f, &nSin, &w);
-        float3 nNormal(nAxis.GetNormal());
+        tvector3<TYPE> nNormal(nAxis.GetNormal());
+        TYPE nSin = sin(nAngle * TYPE(0.5));
         x = (nNormal.x * nSin);
         y = (nNormal.y * nSin);
         z = (nNormal.z * nSin);
+        w = cos(nAngle * TYPE(0.5));
     }
 
-    void SetMatrix(const float4x4 &nMatrix)
+    void SetMatrix(const tmatrix4x4<TYPE> &nMatrix)
     {
-        float nTrace = (nMatrix.matrix[0][0] + nMatrix.matrix[1][1] + nMatrix.matrix[2][2] + 1.0f);  
+        TYPE nTrace = (nMatrix.matrix[0][0] + nMatrix.matrix[1][1] + nMatrix.matrix[2][2] + TYPE(1));  
         if (nTrace > _EPSILON) 
         {
-            float nInverse = (0.5f / sqrt(nTrace));
-            w =  (0.25f / nInverse);
+            TYPE nInverse = (TYPE(0.5) / sqrt(nTrace));
+            w =  (TYPE(0.25) / nInverse);
             x = ((nMatrix.matrix[1][2] - nMatrix.matrix[2][1] ) * nInverse);
             y = ((nMatrix.matrix[2][0] - nMatrix.matrix[0][2] ) * nInverse);
             z = ((nMatrix.matrix[0][1] - nMatrix.matrix[1][0] ) * nInverse);
@@ -130,26 +127,26 @@ public:
         {
             if ((nMatrix.matrix[0][0] > nMatrix.matrix[1][1])&&(nMatrix.matrix[0][0] > nMatrix.matrix[2][2])) 
             {
-                float nInverse = (2.0f * sqrt(1.0f + nMatrix.matrix[0][0] - nMatrix.matrix[1][1] - nMatrix.matrix[2][2]));
-                x =  (0.25f * nInverse);
+                TYPE nInverse = (TYPE(2) * sqrt(TYPE(1) + nMatrix.matrix[0][0] - nMatrix.matrix[1][1] - nMatrix.matrix[2][2]));
+                x =  (TYPE(0.25) * nInverse);
                 y = ((nMatrix.matrix[1][0] + nMatrix.matrix[0][1]) / nInverse);
                 z = ((nMatrix.matrix[2][0] + nMatrix.matrix[0][2]) / nInverse);
                 w = ((nMatrix.matrix[2][1] - nMatrix.matrix[1][2]) / nInverse);    
             } 
             else if (nMatrix.matrix[1][1] > nMatrix.matrix[2][2]) 
             {
-                float nInverse = 2.0f * (sqrt(1.0f + nMatrix.matrix[1][1] - nMatrix.matrix[0][0] - nMatrix.matrix[2][2]));
+                TYPE nInverse = TYPE(2) * (sqrt(TYPE(1) + nMatrix.matrix[1][1] - nMatrix.matrix[0][0] - nMatrix.matrix[2][2]));
                 x = ((nMatrix.matrix[1][0] + nMatrix.matrix[0][1]) / nInverse);
-                y =  (0.25f * nInverse);
+                y =  (TYPE(0.25) * nInverse);
                 z = ((nMatrix.matrix[2][1] + nMatrix.matrix[1][2]) / nInverse);
                 w = ((nMatrix.matrix[2][0] - nMatrix.matrix[0][2]) / nInverse);   
             }
             else 
             {
-                float nInverse = 2.0f * (sqrt(1.0f + nMatrix.matrix[2][2] - nMatrix.matrix[0][0] - nMatrix.matrix[1][1]));
+                TYPE nInverse = TYPE(2) * (sqrt(TYPE(1) + nMatrix.matrix[2][2] - nMatrix.matrix[0][0] - nMatrix.matrix[1][1]));
                 x = ((nMatrix.matrix[2][0] + nMatrix.matrix[0][2]) / nInverse);
                 y = ((nMatrix.matrix[2][1] + nMatrix.matrix[1][2]) / nInverse);
-                z =  (0.25f * nInverse);
+                z =  (TYPE(0.25) * nInverse);
                 w = ((nMatrix.matrix[1][0] - nMatrix.matrix[0][1]) / nInverse);
             }
         }
@@ -162,41 +159,41 @@ public:
         return ((x * x) + (y * y) + (z * z) + (w * w));
     }
 
-    float GetLength(void) const
+    TYPE GetLength(void) const
     {
         return sqrt((x * x) + (y * y) + (z * z) + (w * w));
     }
 
-    float3 GetEuler(void) const
+    tvector3<TYPE> GetEuler(void) const
     {
-        float sqw = (w * w);
-        float sqx = (x * x);
-        float sqy = (y * y);
-        float sqz = (z * z);
-        return float3(Concurrency::precise_math::atan2(2.0f * ((y * z) + (x * w)), (-sqx - sqy + sqz + sqw)),
-                      Concurrency::precise_math::asin(-2.0f * ((x * z) - (y * w))),
-                      Concurrency::precise_math::atan2(2.0f * ((x * y) + (z * w)), ( sqx - sqy - sqz + sqw)));
+        TYPE sqw = (w * w);
+        TYPE sqx = (x * x);
+        TYPE sqy = (y * y);
+        TYPE sqz = (z * z);
+        return tvector3<TYPE>(TYPE(atan2(TYPE(2) * ((y * z) + (x * w)), (-sqx - sqy + sqz + sqw))),
+                              TYPE(asin(-TYPE(2) * ((x * z) - (y * w)))),
+                              TYPE(atan2(TYPE(2) * ((x * y) + (z * w)), ( sqx - sqy - sqz + sqw))));
     }
 
-    float4x4 GetMatrix(void) const
+    tmatrix4x4<TYPE> GetMatrix(void) const
     {
-        return float4x4(*this);
+        return tmatrix4x4<TYPE>(*this);
     }
 
-    quaternion GetNormal(void) const
+    tquaternion<TYPE> GetNormal(void) const
     {
-        float nLength = (1.0f / GetLength());
-        return quaternion((x * nLength), (y * nLength), (z * nLength), (w * nLength));
+        TYPE nLength = (TYPE(1) / GetLength());
+        return tquaternion<TYPE>((x * nLength), (y * nLength), (z * nLength), (w * nLength));
     }
 
-    quaternion GetInverse(void) const
+    tquaternion<TYPE> GetInverse(void) const
     {
-        return quaternion(-x, -y, -z, w);
+        return tquaternion<TYPE>(-x, -y, -z, w);
     }
 
     void Normalize(void)
     {
-        float nLength = (1.0f / GetLength());
+        TYPE nLength = (TYPE(1) / GetLength());
         x *= nLength;
         y *= nLength;
         z *= nLength;
@@ -211,16 +208,16 @@ public:
         w =  w;
     }
 
-    float Dot(const quaternion &nQuaternion) const
+    float Dot(const tquaternion<TYPE> &nQuaternion) const
     {
         return ((x * nQuaternion.x) + (y * nQuaternion.y) + (z * nQuaternion.z) + (w * nQuaternion.w));
     }
 
-    quaternion Slerp(const quaternion &nQuaternion, float nFactor) const
+    tquaternion<TYPE> Slerp(const tquaternion<TYPE> &nQuaternion, TYPE nFactor) const
     {
-        quaternion nOriginal(nQuaternion);
-        float nCos = nQuaternion.Dot(*this);
-        if (nCos < 0.0f)
+        tquaternion<TYPE> nOriginal(nQuaternion);
+        TYPE nCos = nQuaternion.Dot(*this);
+        if (nCos < TYPE(0))
         {
             nCos = -nCos;
             nOriginal.x = -nOriginal.x;
@@ -229,60 +226,60 @@ public:
             nOriginal.w = -nOriginal.w;
         }
 
-        float nScale0;
-        float nScale1;
-        if (abs(1.0f - nCos) < _EPSILON)
+        TYPE nScale0;
+        TYPE nScale1;
+        if (abs(TYPE(1) - nCos) < _EPSILON)
         {
-            nScale0 = (1.0f - nFactor);
+            nScale0 = (TYPE(1) - nFactor);
             nScale1 = nFactor;
         }
         else
         {
-            float nOmega = Concurrency::precise_math::acos(nCos);
-            float nSinom = Concurrency::precise_math::sin(nOmega);
+            TYPE nOmega = acos(nCos);
+            TYPE nSinom = sin(nOmega);
 
-            nScale0 = (Concurrency::precise_math::sin((1.0f - nFactor) * nOmega) / nSinom);
-            nScale1 = (Concurrency::precise_math::sin(nFactor * nOmega) / nSinom);
+            nScale0 = (sin((TYPE(1) - nFactor) * nOmega) / nSinom);
+            nScale1 = (sin(nFactor * nOmega) / nSinom);
         }
 
-        return quaternion(((nScale0 * x) + (nScale1 * nOriginal.x)),
+        return tquaternion<TYPE>(((nScale0 * x) + (nScale1 * nOriginal.x)),
                                     ((nScale0 * y) + (nScale1 * nOriginal.y)),
                                     ((nScale0 * z) + (nScale1 * nOriginal.z)),
                                     ((nScale0 * w) + (nScale1 * nOriginal.w)));
     }
 
-    float3 operator * (const float3 &nVector) const
+    tvector3<TYPE> operator * (const tvector3<TYPE> &nVector) const
     {
-        return (float4x4(*this) * nVector);
+        return (tmatrix4x4<TYPE>(*this) * nVector);
     }
 
-    float4 operator * (const float4 &nVector) const
+    tvector4<TYPE> operator * (const tvector4<TYPE> &nVector) const
     {
-        return (float4x4(*this) * nVector);
+        return (tmatrix4x4<TYPE>(*this) * nVector);
     }
 
-    quaternion operator * (const quaternion &nQuaternion) const
+    tquaternion<TYPE> operator * (const tquaternion<TYPE> &nQuaternion) const
     {
-        float nW = ((w * nQuaternion.w) - (x * nQuaternion.x) - (y * nQuaternion.y) - (z * nQuaternion.z));
-        float nX = ((w * nQuaternion.x) + (x * nQuaternion.w) + (y * nQuaternion.z) - (z * nQuaternion.y));
-        float nY = ((w * nQuaternion.y) + (y * nQuaternion.w) + (z * nQuaternion.x) - (x * nQuaternion.z));
-        float nZ = ((w * nQuaternion.z) + (z * nQuaternion.w) + (x * nQuaternion.y) - (y * nQuaternion.x));
-        return quaternion(nX, nY, nZ, nW);
+        TYPE nW = ((w * nQuaternion.w) - (x * nQuaternion.x) - (y * nQuaternion.y) - (z * nQuaternion.z));
+        TYPE nX = ((w * nQuaternion.x) + (x * nQuaternion.w) + (y * nQuaternion.z) - (z * nQuaternion.y));
+        TYPE nY = ((w * nQuaternion.y) + (y * nQuaternion.w) + (z * nQuaternion.x) - (x * nQuaternion.z));
+        TYPE nZ = ((w * nQuaternion.z) + (z * nQuaternion.w) + (x * nQuaternion.y) - (y * nQuaternion.x));
+        return tquaternion<TYPE>(nX, nY, nZ, nW);
     }
 
-    void operator *= (const quaternion &nQuaternion)
+    void operator *= (const tquaternion<TYPE> &nQuaternion)
     {
-        float nW = ((w * nQuaternion.w) - (x * nQuaternion.x) - (y * nQuaternion.y) - (z * nQuaternion.z));
-        float nX = ((w * nQuaternion.x) + (x * nQuaternion.w) + (y * nQuaternion.z) - (z * nQuaternion.y));
-        float nY = ((w * nQuaternion.y) + (y * nQuaternion.w) + (z * nQuaternion.x) - (x * nQuaternion.z));
-        float nZ = ((w * nQuaternion.z) + (z * nQuaternion.w) + (x * nQuaternion.y) - (y * nQuaternion.x));
+        TYPE nW = ((w * nQuaternion.w) - (x * nQuaternion.x) - (y * nQuaternion.y) - (z * nQuaternion.z));
+        TYPE nX = ((w * nQuaternion.x) + (x * nQuaternion.w) + (y * nQuaternion.z) - (z * nQuaternion.y));
+        TYPE nY = ((w * nQuaternion.y) + (y * nQuaternion.w) + (z * nQuaternion.x) - (x * nQuaternion.z));
+        TYPE nZ = ((w * nQuaternion.z) + (z * nQuaternion.w) + (x * nQuaternion.y) - (y * nQuaternion.x));
         x = nX;
         y = nY;
         z = nZ;
         w = nW;
     }
 
-    quaternion operator = (const float4 &nVector)
+    tquaternion<TYPE> operator = (const tvector4<TYPE> &nVector)
     {
         x = nVector.x;
         y = nVector.y;
@@ -291,7 +288,7 @@ public:
         return *this;
     }
 
-    quaternion operator = (const quaternion &nQuaternion)
+    tquaternion<TYPE> operator = (const tquaternion<TYPE> &nQuaternion)
     {
         x = nQuaternion.x;
         y = nQuaternion.y;
@@ -300,7 +297,7 @@ public:
         return *this;
     }
 
-    quaternion operator = (const float4x4 &nMatrix)
+    tquaternion<TYPE> operator = (const tmatrix4x4<TYPE> &nMatrix)
     {
         SetMatrix(nMatrix);
         return *this;

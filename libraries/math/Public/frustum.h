@@ -1,23 +1,24 @@
 #pragma once
 
-struct frustum
+template <typename TYPE>
+struct tfrustum
 {
 public:
-    float3 origin;
-    plane planes[6];
+    tvector3<TYPE> origin;
+    tplane<TYPE> planes[6];
 
 public:
-    frustum(void)
+    tfrustum(void)
     {
     }
 
-    void Create(const float4x4 &nMatrix, const float4x4 &nProjection)
+    void Create(const tmatrix4x4<TYPE> &nMatrix, const tmatrix4x4<TYPE> &nProjection)
     {
         // Extract the origin;
         origin = nMatrix.t;
 
-        float4x4 nView = nMatrix.GetInverse();
-        float4x4 nTransform = (nView * nProjection);
+        tmatrix4x4<TYPE> nView = nMatrix.GetInverse();
+        tmatrix4x4<TYPE> nTransform = (nView * nProjection);
         
         // Calculate near plane of frustum.
         planes[0].normal.x = nTransform._14 + nTransform._13;

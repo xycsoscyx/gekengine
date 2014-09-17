@@ -1,6 +1,12 @@
 #pragma once
 
-#include <amp_math.h>
+#ifndef max
+#define max(x, y)   ((x) > (y) ? (x) : (y))
+#endif
+
+#ifndef min
+#define min(x, y)   ((x) < (y) ? (x) : (y))
+#endif
 
 static union 
 {
@@ -18,6 +24,12 @@ const float _INV_PI             = 0.31830988618379069122f;
 #define _DEGTORAD(x)            ((x) * (_PI / 180.0f))
 #define _RADTODEG(x)            ((x) * (180.0f / _PI))
 
+template <typename TYPE> struct tvector2;
+template <typename TYPE> struct tvector3;
+template <typename TYPE> struct tvector4;
+template <typename TYPE> struct tquaternion;
+template <typename TYPE> struct tmatrix4x4;
+
 #include "Public\Vector2.h"
 #include "Public\Vector3.h"
 #include "Public\Vector4.h"
@@ -29,3 +41,15 @@ const float _INV_PI             = 0.31830988618379069122f;
 #include "Public\OBB.h"
 #include "Public\Ray.h"
 #include "Public\Frustum.h"
+
+typedef tvector2<float> float2;
+typedef tvector3<float> float3;
+typedef tvector4<float> float4;
+typedef tmatrix4x4<float> float4x4;
+typedef tquaternion<float> quaternion;
+typedef tsphere<float> sphere;
+typedef taabb<float> aabb;
+typedef tobb<float> obb;
+typedef tray<float> ray;
+typedef tplane<float> plane;
+typedef tfrustum<float> frustum;

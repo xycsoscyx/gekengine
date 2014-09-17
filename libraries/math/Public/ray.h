@@ -1,53 +1,49 @@
 #pragma once
 
-struct float3;
-
-struct obb;
-
-struct ray
+template <typename TYPE>
+struct tray
 {
 public:
-    float3 origin;
-    float3 normal;
+    tvector3<TYPE> origin;
+    tvector3<TYPE> normal;
 
 public:
-    ray(void)
+    tray(void)
     {
     }
 
-    ray(const float3 &nOrigin, const float3 &nNormal)
+    tray(const tvector3<TYPE> &nOrigin, const tvector3<TYPE> &nNormal)
         : origin(nOrigin)
         , normal(nNormal)
     {
     }
 
-    ray operator = (const ray &nRay)
+    tray operator = (const tray<TYPE> &nRay)
     {
         origin = nRay.origin;
         normal = nRay.normal;
         return (*this);
     }
 
-    float GetDistance(const obb &nBox) const
+    TYPE GetDistance(const tobb<TYPE> &nBox) const
     {
-	    float nMin = 0.0f;
-	    float nMax = 100000.0f;
-	    float3 nDelta(nBox.position - origin);
-        float4x4 nBoxMatrix(nBox.rotation);
-        float3 nHalfSize(nBox.halfsize);
-
+	    TYPE nMin = TYPE(0);
+	    TYPE nMax = TYPE(100000);
+	    tvector3<TYPE> nDelta(nBox.position - origin);
+        tmatrix4x4<TYPE> nBoxMatrix(nBox.rotation);
+        tvector3<TYPE> nHalfSize(nBox.size * TYPE(0.5));
         for(UINT32 nAxis = 0; nAxis < 3; ++nAxis)
         {
-		    float3 nMatrixAxis(nBoxMatrix.r[nAxis]);
-		    float nAxisAngle = nMatrixAxis.Dot(nDelta);
-		    float nRayAngle = normal.Dot(nMatrixAxis);
-		    if (fabs(nRayAngle) > 0.001.0f)
+		    tvector3<TYPE> nMatrixAxis(nBoxMatrix.r[nAxis]);
+		    TYPE nAxisAngle = nMatrixAxis.Dot(nDelta);
+		    TYPE nRayAngle = normal.Dot(nMatrixAxis);
+		    if (fabs(nRayAngle) > TYPE(0.001))
             {
-                float nDelta1 = ((nAxisAngle - nHalfSize.xyz[nAxis]) / nRayAngle);
-			    float nDelta2 = ((nAxisAngle + nHalfSize.xyz[nAxis]) / nRayAngle);
+                TYPE nDelta1 = ((nAxisAngle - nHalfSize.xyz[nAxis]) / nRayAngle);
+			    TYPE nDelta2 = ((nAxisAngle + nHalfSize.xyz[nAxis]) / nRayAngle);
 			    if (nDelta1 > nDelta2)
                 {
-				    float nDeltaSwap = nDelta1;
+				    TYPE nDeltaSwap = nDelta1;
                     nDelta1 = nDelta2;
                     nDelta2 = nDeltaSwap;
 			    }
@@ -64,15 +60,15 @@ public:
 
 			    if (nMax < nMin)
                 {
-				    return -1.0f;
+				    return TYPE(-1);
                 }
 		    }
             else
             {
-			    if ((-nAxisAngle - nHalfSize.xyz[nAxis]) > 0.0f ||
-                    (-nAxisAngle + nHalfSize.xyz[nAxis]) < 0.0f)
+			    if ((-nAxisAngle - nHalfSize.xyz[nAxis]) > TYPE(0) ||
+                   (-nAxisAngle + nHalfSize.xyz[nAxis]) < TYPE(0))
                 {
-				    return -1.0f;
+				    return TYPE(-1);
                 }
 		    }
 	    }

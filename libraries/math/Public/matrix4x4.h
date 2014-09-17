@@ -1,19 +1,20 @@
 #pragma once
 
-struct float4x4
+template <typename TYPE>
+struct tmatrix4x4
 {
 public:
     union
     {
-        struct { float data[16]; };
-        struct { float matrix[4][4]; };
+        struct { TYPE data[16]; };
+        struct { TYPE matrix[4][4]; };
 
         struct
         {
-            float _11, _12, _13, _14;    
-            float _21, _22, _23, _24;
-            float _31, _32, _33, _34;
-            float _41, _42, _43, _44;
+            TYPE _11, _12, _13, _14;    
+            TYPE _21, _22, _23, _24;
+            TYPE _31, _32, _33, _34;
+            TYPE _41, _42, _43, _44;
         };
 
         struct
@@ -22,44 +23,44 @@ public:
             {
                 struct
                 {
-                    float4 rx;
-                    float4 ry;
-                    float4 rz;
+                    tvector4<TYPE> rx;
+                    tvector4<TYPE> ry;
+                    tvector4<TYPE> rz;
                 };
 
                 struct
                 {
-                    float4 r[3];
+                    tvector4<TYPE> r[3];
                 };
             };
             union
             {
                 struct
                 {
-                    float4 rw;
+                    tvector4<TYPE> rw;
                 };
 
                 struct
                 {
-                    float3 t;
-                    float w;
+                    tvector3<TYPE> t;
+                    TYPE w;
                 };
 
                 struct
                 {
-                    float x, y, z, w;
+                    TYPE x, y, z, w;
                 };
             };
         };
     };
 
 public:
-    float4x4(void)
+    tmatrix4x4(void)
     {
         SetIdentity();
     }
 
-    float4x4(const float4x4 &nMatrix)
+    tmatrix4x4(const tmatrix4x4<TYPE> &nMatrix)
     {
         _11 = nMatrix._11;    _12 = nMatrix._12;    _13 = nMatrix._13;    _14 = nMatrix._14;
         _21 = nMatrix._21;    _22 = nMatrix._22;    _23 = nMatrix._23;    _24 = nMatrix._24;
@@ -67,10 +68,10 @@ public:
         _41 = nMatrix._41;    _42 = nMatrix._42;    _43 = nMatrix._43;    _44 = nMatrix._44;
     }
 
-    float4x4(float f11, float f12, float f13, float f14,
-               float f21, float f22, float f23, float f24,
-               float f31, float f32, float f33, float f34,
-               float f41, float f42, float f43, float f44)
+    tmatrix4x4(TYPE f11, TYPE f12, TYPE f13, TYPE f14,
+               TYPE f21, TYPE f22, TYPE f23, TYPE f24,
+               TYPE f31, TYPE f32, TYPE f33, TYPE f34,
+               TYPE f41, TYPE f42, TYPE f43, TYPE f44)
     {
         _11 = f11;    _12 = f12;    _13 = f13;    _14 = f14;
         _21 = f21;    _22 = f22;    _23 = f23;    _24 = f24;
@@ -78,27 +79,27 @@ public:
         _41 = f41;    _42 = f42;    _43 = f43;    _44 = f44;
     }
 
-    float4x4(const float3 &nEuler)
+    tmatrix4x4(const tvector3<TYPE> &nEuler)
     {
         SetEuler(nEuler);
     }
 
-    float4x4(float nX, float nY, float nZ)
+    tmatrix4x4(TYPE nX, TYPE nY, TYPE nZ)
     {
         SetEuler(nX, nY, nZ);
     }
 
-    float4x4(const float3 &nAxis, float nAngle)
+    tmatrix4x4(const tvector3<TYPE> &nAxis, TYPE nAngle)
     {
         SetRotation(nAxis, nAngle);
     }
 
-    float4x4(const quaternion &nRotation)
+    tmatrix4x4(const tquaternion<TYPE> &nRotation)
     {
         SetQuaternion(nRotation);
     }
 
-    float4x4(const quaternion &nRotation, const float3 &nTranslation)
+    tmatrix4x4(const tquaternion<TYPE> &nRotation, const tvector3<TYPE> &nTranslation)
     {
         SetQuaternion(nRotation);
         t = nTranslation;
@@ -106,267 +107,267 @@ public:
 
     void SetZero(void)
     {
-        _11 = _12 = _13 = _14 = 0.0f;
-        _21 = _22 = _23 = _24 = 0.0f;
-        _31 = _32 = _33 = _34 = 0.0f;
-        _41 = _42 = _43 = _44 = 0.0f;
+        _11 = _12 = _13 = _14 = TYPE(0);
+        _21 = _22 = _23 = _24 = TYPE(0);
+        _31 = _32 = _33 = _34 = TYPE(0);
+        _41 = _42 = _43 = _44 = TYPE(0);
     }
 
     void SetIdentity(void)
     {
-        _11 = _22 = _33 = _44 = 1.0f;
-        _12 = _13 = _14 = 0.0f;
-        _21 = _23 = _24 = 0.0f;
-        _31 = _32 = _34 = 0.0f;
-        _41 = _42 = _43 = 0.0f;
+        _11 = _22 = _33 = _44 = TYPE(1);
+        _12 = _13 = _14 = TYPE(0);
+        _21 = _23 = _24 = TYPE(0);
+        _31 = _32 = _34 = TYPE(0);
+        _41 = _42 = _43 = TYPE(0);
     }
 
-    void SetScaling(float nScale)
+    void SetScaling(TYPE nScale)
     {
         _11 = nScale;
         _22 = nScale;
         _33 = nScale;
     }
 
-    void SetScaling(const float3 &nScale)
+    void SetScaling(const tvector3<TYPE> &nScale)
     {
         _11 = nScale.x;
         _22 = nScale.y;
         _33 = nScale.z;
     }
 
-    void SetTranslation(const float3 &nTranslation)
+    void SetTranslation(const tvector3<TYPE> &nTranslation)
     {
         _41 = nTranslation.x;
         _42 = nTranslation.y;
         _43 = nTranslation.z;
     }
 
-    void SetEuler(const float3 &nEuler)
+    void SetEuler(const tvector3<TYPE> &nEuler)
     {
         SetEuler(nEuler.x, nEuler.y, nEuler.z);
     }
 
-    void SetEuler(float nX, float nY, float nZ)
+    void SetEuler(TYPE nX, TYPE nY, TYPE nZ)
     {
-        float nSinX, nCosX;
-        float nSinY, nCosY;
-        float nSinZ, nCosZ;
-        Concurrency::precise_math::sincos(nX, &nSinX, &nSinY);
-        Concurrency::precise_math::sincos(nY, &nSinY, &nSinY);
-        Concurrency::precise_math::sincos(nZ, &nSinZ, &nSinZ);
-        float nCosX_SinY = nCosX * nSinY;
-        float nSinX_SinY = nSinX * nSinY;
+        TYPE nCosX     = cos(nX);
+        TYPE nSinX     = sin(nX);
+        TYPE nCosY     = cos(nY);
+        TYPE nSinY     = sin(nY);
+        TYPE nCosZ     = cos(nZ);
+        TYPE nSinZ     = sin(nZ);
+        TYPE nCosX_SinY = nCosX * nSinY;
+        TYPE nSinX_SinY = nSinX * nSinY;
 
         matrix[0][0] =  nCosY * nCosZ;
         matrix[1][0] = -nCosY * nSinZ;
         matrix[2][0] =  nSinY;
-        matrix[3][0] = 0.0f;
+        matrix[3][0] = TYPE(0);
 
         matrix[0][1] =  nSinX_SinY * nCosZ + nCosX * nSinZ;
         matrix[1][1] = -nSinX_SinY * nSinZ + nCosX * nCosZ;
         matrix[2][1] = -nSinX * nCosY;
-        matrix[3][1] = 0.0f;
+        matrix[3][1] = TYPE(0);
 
         matrix[0][2] = -nCosX_SinY * nCosZ + nSinX * nSinZ;
         matrix[1][2] =  nCosX_SinY * nSinZ + nSinX * nCosZ;
         matrix[2][2] =  nCosX * nCosY;
-        matrix[3][2] = 0.0f;
+        matrix[3][2] = TYPE(0);
 
-        matrix[0][3] = 0.0f;
-        matrix[1][3] = 0.0f;
-        matrix[2][3] = 0.0f;
-        matrix[3][3] = 1.0f;
+        matrix[0][3] = TYPE(0);
+        matrix[1][3] = TYPE(0);
+        matrix[2][3] = TYPE(0);
+        matrix[3][3] = TYPE(1);
     }
 
-    void SetRotation(const float3 &nAxis, float nAngle)
+    void SetRotation(const tvector3<TYPE> &nAxis, TYPE nAngle)
     {
-        float nSin, nCos;
-        Concurrency::precise_math::sincos(nAngle, &nSin, &nSin);
+        TYPE nCos = cos(nAngle);
+        TYPE nSin = sin(nAngle);
 
-        matrix[0][0] = (            nCos + nAxis.x * nAxis.x * (1.0f - nCos));
-        matrix[0][1] = (  nAxis.z * nSin + nAxis.y * nAxis.x * (1.0f - nCos));
-        matrix[0][2] = (- nAxis.y * nSin + nAxis.z * nAxis.x * (1.0f - nCos));
-        matrix[0][3] = 0.0f;
+        matrix[0][0] = (            nCos + nAxis.x * nAxis.x * (TYPE(1) - nCos));
+        matrix[0][1] = (  nAxis.z * nSin + nAxis.y * nAxis.x * (TYPE(1) - nCos));
+        matrix[0][2] = (- nAxis.y * nSin + nAxis.z * nAxis.x * (TYPE(1) - nCos));
+        matrix[0][3] = TYPE(0);
 
-        matrix[1][0] = (- nAxis.z * nSin + nAxis.x * nAxis.y * (1.0f - nCos));
-        matrix[1][1] = (            nCos + nAxis.y * nAxis.y * (1.0f - nCos));
-        matrix[1][2] = (  nAxis.x * nSin + nAxis.z * nAxis.y * (1.0f - nCos));
-        matrix[1][3] = 0.0f;
+        matrix[1][0] = (- nAxis.z * nSin + nAxis.x * nAxis.y * (TYPE(1) - nCos));
+        matrix[1][1] = (            nCos + nAxis.y * nAxis.y * (TYPE(1) - nCos));
+        matrix[1][2] = (  nAxis.x * nSin + nAxis.z * nAxis.y * (TYPE(1) - nCos));
+        matrix[1][3] = TYPE(0);
 
-        matrix[2][0] = (  nAxis.y * nSin + nAxis.x * nAxis.z * (1.0f - nCos));
-        matrix[2][1] = (- nAxis.x * nSin + nAxis.y * nAxis.z * (1.0f - nCos));
-        matrix[2][2] = (            nCos + nAxis.z * nAxis.z * (1.0f - nCos));
-        matrix[2][3] = 0.0f;
+        matrix[2][0] = (  nAxis.y * nSin + nAxis.x * nAxis.z * (TYPE(1) - nCos));
+        matrix[2][1] = (- nAxis.x * nSin + nAxis.y * nAxis.z * (TYPE(1) - nCos));
+        matrix[2][2] = (            nCos + nAxis.z * nAxis.z * (TYPE(1) - nCos));
+        matrix[2][3] = TYPE(0);
 
-        matrix[3][0] = 0.0f;
-        matrix[3][1] = 0.0f;
-        matrix[3][2] = 0.0f;
-        matrix[3][3] = 1.0f;
+        matrix[3][0] = TYPE(0);
+        matrix[3][1] = TYPE(0);
+        matrix[3][2] = TYPE(0);
+        matrix[3][3] = TYPE(1);
     }
 
-    void SetQuaternion(const quaternion &nQuaternion)
+    void SetQuaternion(const tquaternion<TYPE> &nQuaternion)
     {
         SetIdentity();
 
-        float nSquareX = (nQuaternion.x * nQuaternion.x);
-        float nSquareY = (nQuaternion.y * nQuaternion.y);
-        float nSquareZ = (nQuaternion.z * nQuaternion.z);
-        float nSquareW = (nQuaternion.w * nQuaternion.w);
+        TYPE nSquareX = (nQuaternion.x * nQuaternion.x);
+        TYPE nSquareY = (nQuaternion.y * nQuaternion.y);
+        TYPE nSquareZ = (nQuaternion.z * nQuaternion.z);
+        TYPE nSquareW = (nQuaternion.w * nQuaternion.w);
 
-        float nInverse = (1.0f / (nSquareX + nSquareY + nSquareZ + nSquareW));
+        TYPE nInverse = (TYPE(1) / (nSquareX + nSquareY + nSquareZ + nSquareW));
         matrix[0][0] = (( nSquareX - nSquareY - nSquareZ + nSquareW) * nInverse);
         matrix[1][1] = ((-nSquareX + nSquareY - nSquareZ + nSquareW) * nInverse);
         matrix[2][2] = ((-nSquareX - nSquareY + nSquareZ + nSquareW) * nInverse);
 
-        float nXY = (nQuaternion.x * nQuaternion.y);
-        float nZW = (nQuaternion.z * nQuaternion.w);
-        matrix[0][1] = (2.0f * (nXY + nZW) * nInverse);
-        matrix[1][0] = (2.0f * (nXY - nZW) * nInverse);
+        TYPE nXY = (nQuaternion.x * nQuaternion.y);
+        TYPE nZW = (nQuaternion.z * nQuaternion.w);
+        matrix[0][1] = (TYPE(2) * (nXY + nZW) * nInverse);
+        matrix[1][0] = (TYPE(2) * (nXY - nZW) * nInverse);
 
         nXY = (nQuaternion.x * nQuaternion.z);
         nZW = (nQuaternion.y * nQuaternion.w);
-        matrix[0][2] = (2.0f * (nXY - nZW) * nInverse);
-        matrix[2][0] = (2.0f * (nXY + nZW) * nInverse);
+        matrix[0][2] = (TYPE(2) * (nXY - nZW) * nInverse);
+        matrix[2][0] = (TYPE(2) * (nXY + nZW) * nInverse);
 
         nXY = (nQuaternion.y * nQuaternion.z);
         nZW = (nQuaternion.x * nQuaternion.w);
-        matrix[1][2] = (2.0f * (nXY + nZW) * nInverse);
-        matrix[2][1] = (2.0f * (nXY - nZW) * nInverse);
+        matrix[1][2] = (TYPE(2) * (nXY + nZW) * nInverse);
+        matrix[2][1] = (TYPE(2) * (nXY - nZW) * nInverse);
     }
 
-    void SetXAngle(float nAngle)
+    void SetXAngle(TYPE nAngle)
     {
-        float nSin, nCos;
-        Concurrency::precise_math::sincos(nAngle, &nSin, &nSin);
-        matrix[0][0] = 1.0f; matrix[0][1] = 0.0f; matrix[0][2] = 0.0f; matrix[0][3] = 0.0f;
-        matrix[1][0] = 0.0f; matrix[1][1] = nCos;    matrix[1][2] = nSin;    matrix[1][3] = 0.0f;
-        matrix[2][0] = 0.0f; matrix[2][1] =-nSin;    matrix[2][2] = nCos;    matrix[2][3] = 0.0f;
-        matrix[3][0] = 0.0f; matrix[3][1] = 0.0f; matrix[3][2] = 0.0f; matrix[3][3] = 1.0f;
+        TYPE nCos = cos(nAngle);
+        TYPE nSin = sin(nAngle);
+        matrix[0][0] = TYPE(1); matrix[0][1] = TYPE(0); matrix[0][2] = TYPE(0); matrix[0][3] = TYPE(0);
+        matrix[1][0] = TYPE(0); matrix[1][1] = nCos;    matrix[1][2] = nSin;    matrix[1][3] = TYPE(0);
+        matrix[2][0] = TYPE(0); matrix[2][1] =-nSin;    matrix[2][2] = nCos;    matrix[2][3] = TYPE(0);
+        matrix[3][0] = TYPE(0); matrix[3][1] = TYPE(0); matrix[3][2] = TYPE(0); matrix[3][3] = TYPE(1);
     }
 
-    void SetYAngle(float nAngle)
+    void SetYAngle(TYPE nAngle)
     {
-        float nSin, nCos;
-        Concurrency::precise_math::sincos(nAngle, &nSin, &nSin);
-        matrix[0][0] = nCos;    matrix[0][1] = 0.0f; matrix[0][2] =-nSin;    matrix[0][3] = 0.0f;
-        matrix[1][0] = 0.0f; matrix[1][1] = 1.0f; matrix[1][2] = 0.0f; matrix[1][3] = 0.0f;
-        matrix[2][0] = nSin;    matrix[2][1] = 0.0f; matrix[2][2] = nCos;    matrix[2][3] = 0.0f;
-        matrix[3][0] = 0.0f; matrix[3][1] = 0.0f; matrix[3][2] = 0.0f; matrix[3][3] = 1.0f;
+        TYPE nCos = cos(nAngle);
+        TYPE nSin = sin(nAngle);
+        matrix[0][0] = nCos;    matrix[0][1] = TYPE(0); matrix[0][2] =-nSin;    matrix[0][3] = TYPE(0);
+        matrix[1][0] = TYPE(0); matrix[1][1] = TYPE(1); matrix[1][2] = TYPE(0); matrix[1][3] = TYPE(0);
+        matrix[2][0] = nSin;    matrix[2][1] = TYPE(0); matrix[2][2] = nCos;    matrix[2][3] = TYPE(0);
+        matrix[3][0] = TYPE(0); matrix[3][1] = TYPE(0); matrix[3][2] = TYPE(0); matrix[3][3] = TYPE(1);
     }
 
-    void SetZAngle(float nAngle)
+    void SetZAngle(TYPE nAngle)
     {
-        float nSin, nCos;
-        Concurrency::precise_math::sincos(nAngle, &nSin, &nSin);
-        matrix[0][0] = nCos;    matrix[0][1] = nSin;    matrix[0][2] = 0.0f; matrix[0][3] = 0.0f;
-        matrix[1][0] =-nSin;    matrix[1][1] = nCos;    matrix[1][2] = 0.0f; matrix[1][3] = 0.0f;
-        matrix[2][0] = 0.0f; matrix[2][1] = 0.0f; matrix[2][2] = 1.0f; matrix[2][3] = 0.0f;
-        matrix[3][0] = 0.0f; matrix[3][1] = 0.0f; matrix[3][2] = 0.0f; matrix[3][3] = 1.0f;
+        TYPE nCos = cos(nAngle);
+        TYPE nSin = sin(nAngle);
+        matrix[0][0] = nCos;    matrix[0][1] = nSin;    matrix[0][2] = TYPE(0); matrix[0][3] = TYPE(0);
+        matrix[1][0] =-nSin;    matrix[1][1] = nCos;    matrix[1][2] = TYPE(0); matrix[1][3] = TYPE(0);
+        matrix[2][0] = TYPE(0); matrix[2][1] = TYPE(0); matrix[2][2] = TYPE(1); matrix[2][3] = TYPE(0);
+        matrix[3][0] = TYPE(0); matrix[3][1] = TYPE(0); matrix[3][2] = TYPE(0); matrix[3][3] = TYPE(1);
     }
 
-    void SetOrthographic(float nMinX, float nMinY, float nMaxX, float nMaxY, float nMinZ, float nMaxZ)
+    void SetOrthographic(TYPE nMinX, TYPE nMinY, TYPE nMaxX, TYPE nMaxY, TYPE nMinZ, TYPE nMaxZ)
     {
-        float nScaleX = ( 2.0f / (nMaxX - nMinX));
-        float nScaleY = ( 2.0f / (nMinY - nMaxY));
-        float nScaleZ = (-2.0f / (nMaxZ - nMinZ));
-        float nTranslationX = -((nMaxX + nMinX) / (nMaxX - nMinX));
-        float nTranslationY = -((nMinY + nMaxY) / (nMinY - nMaxY));
-        float nTranslationZ = -((nMaxZ + nMinZ) / (nMaxZ - nMinZ));
+        TYPE nScaleX = ( TYPE(2) / (nMaxX - nMinX));
+        TYPE nScaleY = ( TYPE(2) / (nMinY - nMaxY));
+        TYPE nScaleZ = (-TYPE(2) / (nMaxZ - nMinZ));
+        TYPE nTranslationX = -((nMaxX + nMinX) / (nMaxX - nMinX));
+        TYPE nTranslationY = -((nMinY + nMaxY) / (nMinY - nMaxY));
+        TYPE nTranslationZ = -((nMaxZ + nMinZ) / (nMaxZ - nMinZ));
 
         SetIdentity();
         SetScaling(float3(nScaleX, nScaleY, nScaleZ));
         SetTranslation(float3(nTranslationX, nTranslationY, nTranslationZ));
     }
 
-    void SetPerspective(float nFOV, float nAspect, float nNear, float nFar)
+    void SetPerspective(TYPE nFOV, TYPE nAspect, TYPE nNear, TYPE nFar)
     {
-        float nX = (1.0f / Concurrency::precise_math::tan(nFOV * 0.5f));
-	    float nY = (nX * nAspect); 
-	    float nDistance = (nFar - nNear);
+	    TYPE nX = (TYPE(1) / tan(nFOV * TYPE(0.5)));
+	    TYPE nY = (nX * nAspect); 
+	    TYPE nDistance = (nFar - nNear);
 
 	    matrix[0][0] = nX;
-	    matrix[0][1] = 0.0f;
-	    matrix[0][2] = 0.0f;
-	    matrix[0][3] = 0.0f;
+	    matrix[0][1] = TYPE(0);
+	    matrix[0][2] = TYPE(0);
+	    matrix[0][3] = TYPE(0);
 
-	    matrix[1][0] = 0.0f;
+	    matrix[1][0] = TYPE(0);
 	    matrix[1][1] = nY;
-	    matrix[1][2] = 0.0f;
-	    matrix[1][3] = 0.0f;
+	    matrix[1][2] = TYPE(0);
+	    matrix[1][3] = TYPE(0);
 
-	    matrix[2][0] = 0.0f;
-	    matrix[2][1] = 0.0f;
+	    matrix[2][0] = TYPE(0);
+	    matrix[2][1] = TYPE(0);
 	    matrix[2][2] = ((nFar + nNear) / nDistance);
-	    matrix[2][3] = 1.0f;
+	    matrix[2][3] = TYPE(1);
 
-	    matrix[3][0] = 0.0f;
-	    matrix[3][1] = 0.0f;
-	    matrix[3][2] =-((2.0f * nFar * nNear) / nDistance);
-	    matrix[3][3] = 0.0f;
+	    matrix[3][0] = TYPE(0);
+	    matrix[3][1] = TYPE(0);
+	    matrix[3][2] =-((TYPE(2) * nFar * nNear) / nDistance);
+	    matrix[3][3] = TYPE(0);
 
     }
 
-    void LookAt(const float3 &nViewDirection, const float3 &nWorldYGEKDEVICEAXIS)
+    void LookAt(const tvector3<TYPE> &nViewDirection, const tvector3<TYPE> &nWorldYGEKDEVICEAXIS)
     {
-        float3 nAxisZ(nViewDirection.GetNormal());
-        float3 nAxisX(nWorldYGEKDEVICEAXIS.Cross(nAxisZ).GetNormal());
-        float3 nAxisY(nAxisZ.Cross(nAxisX).GetNormal());
+        tvector3<TYPE> nGEKDEVICEAXISZ(nViewDirection.GetNormal());
+        tvector3<TYPE> nGEKDEVICEAXISX(nWorldYGEKDEVICEAXIS.Cross(nGEKDEVICEAXISZ).GetNormal());
+        tvector3<TYPE> nGEKDEVICEAXISY(nGEKDEVICEAXISZ.Cross(nGEKDEVICEAXISX).GetNormal());
 
         SetIdentity();
 
-        _11 = nAxisX.x;
-        _21 = nAxisX.y;
-        _31 = nAxisX.z;
+        _11 = nGEKDEVICEAXISX.x;
+        _21 = nGEKDEVICEAXISX.y;
+        _31 = nGEKDEVICEAXISX.z;
 
-        _12 = nAxisY.x;
-        _22 = nAxisY.y;
-        _32 = nAxisY.z;
+        _12 = nGEKDEVICEAXISY.x;
+        _22 = nGEKDEVICEAXISY.y;
+        _32 = nGEKDEVICEAXISY.z;
 
-        _13 = nAxisZ.x;
-        _23 = nAxisZ.y;
-        _33 = nAxisZ.z;
+        _13 = nGEKDEVICEAXISZ.x;
+        _23 = nGEKDEVICEAXISZ.y;
+        _33 = nGEKDEVICEAXISZ.z;
 
         Invert();
     }
 
-    float3 GetEuler(void) const
+    tvector3<TYPE> GetEuler(void) const
     {
-        float3 nEuler;
-        nEuler.y = Concurrency::precise_math::asin(_31);
+        tvector3<TYPE> nEuler;
+        nEuler.y = asin(_31);
 
-        float nX, nY;
-        float nCos = Concurrency::precise_math::cos(nEuler.y);
+        TYPE nX, nY;
+        TYPE nCos = cos(nEuler.y);
         if (abs(nCos) > 0.005)
         {
             nX = (_33 / nCos);
             nY =-(_32 / nCos);
-            nEuler.x = Concurrency::precise_math::atan2(nY, nX);
+            nEuler.x = atan2(nY, nX);
 
             nX = (_11 / nCos);
             nY =-(_21 / nCos);
-            nEuler.z = Concurrency::precise_math::atan2(nY, nX);
+            nEuler.z = atan2(nY, nX);
         }
         else
         {
-            nEuler.x = 0.0f;
+            nEuler.x = TYPE(0);
 
             nX = _22;
             nY = _12;
-            nEuler.y = Concurrency::precise_math::atan2(nY, nX);
+            nEuler.y = atan2(nY, nX);
         }
 
-        if (nEuler.x < 0.0f)
+        if (nEuler.x < TYPE(0))
         {
             nEuler.x += _2_PI;
         }
 
-        if (nEuler.y < 0.0f)
+        if (nEuler.y < TYPE(0))
         {
             nEuler.y += _2_PI;
         }
 
-        if (nEuler.z < 0.0f)
+        if (nEuler.z < TYPE(0))
         {
             nEuler.z += _2_PI;
         }
@@ -374,12 +375,12 @@ public:
         return nEuler;
     }
 
-    float3 GetScaling(void) const
+    tvector3<TYPE> GetScaling(void) const
     {
-        return float3(_11, _22, _33);
+        return tvector3<TYPE>(_11, _22, _33);
     }
 
-    float GetDeterminant(void) const
+    TYPE GetDeterminant(void) const
     {
         return ((matrix[0][0] * matrix[1][1] - matrix[1][0] * matrix[0][1]) * 
                 (matrix[2][2] * matrix[3][3] - matrix[3][2] * matrix[2][3]) - 
@@ -395,26 +396,26 @@ public:
                 (matrix[0][2] * matrix[1][3] - matrix[1][2] * matrix[0][3]));
     }
 
-    float4x4 GetTranspose(void) const
+    tmatrix4x4<TYPE> GetTranspose(void) const
     {
-        return float4x4(_11, _21, _31, _41,
+        return tmatrix4x4<TYPE>(_11, _21, _31, _41,
                                _12, _22, _32, _42,
                                _13, _23, _33, _43,
                                _14, _24, _34, _44);
     }
 
-    float4x4 GetInverse(void) const
+    tmatrix4x4<TYPE> GetInverse(void) const
     {
-        float nDerminant = GetDeterminant();
+        TYPE nDerminant = GetDeterminant();
         if (abs(nDerminant) < _EPSILON) 
         {
-            return float4x4();
+            return tmatrix4x4<TYPE>();
         }
         else
         {
-            nDerminant = (1.0f / nDerminant);
+            nDerminant = (TYPE(1) / nDerminant);
 
-            float4x4 nMatrix;
+            tmatrix4x4<TYPE> nMatrix;
             nMatrix.matrix[0][0] = (nDerminant * (matrix[1][1] * (matrix[2][2] * matrix[3][3] - matrix[3][2] * matrix[2][3]) + matrix[2][1] * (matrix[3][2] * matrix[1][3] - matrix[1][2] * matrix[3][3]) + matrix[3][1] * (matrix[1][2] * matrix[2][3] - matrix[2][2] * matrix[1][3])));
             nMatrix.matrix[1][0] = (nDerminant * (matrix[1][2] * (matrix[2][0] * matrix[3][3] - matrix[3][0] * matrix[2][3]) + matrix[2][2] * (matrix[3][0] * matrix[1][3] - matrix[1][0] * matrix[3][3]) + matrix[3][2] * (matrix[1][0] * matrix[2][3] - matrix[2][0] * matrix[1][3])));
             nMatrix.matrix[2][0] = (nDerminant * (matrix[1][3] * (matrix[2][0] * matrix[3][1] - matrix[3][0] * matrix[2][1]) + matrix[2][3] * (matrix[3][0] * matrix[1][1] - matrix[1][0] * matrix[3][1]) + matrix[3][3] * (matrix[1][0] * matrix[2][1] - matrix[2][0] * matrix[1][1])));
@@ -445,21 +446,21 @@ public:
         (*this) = GetInverse();
     }
 
-    void operator *= (const float4x4 &nMatrix)
+    void operator *= (const tmatrix4x4<TYPE> &nMatrix)
     {
         (*this) = ((*this) * nMatrix);
     }
 
-    float4x4 operator * (const float4x4 &nMatrix) const
+    tmatrix4x4<TYPE> operator * (const tmatrix4x4<TYPE> &nMatrix) const
     {
-        float4x4 nTranspose(nMatrix.GetTranspose());
-        return float4x4(rx.Dot(nTranspose.rx), rx.Dot(nTranspose.ry), rx.Dot(nTranspose.rz), rx.Dot(nTranspose.rw),
+        tmatrix4x4<TYPE> nTranspose(nMatrix.GetTranspose());
+        return tmatrix4x4<TYPE>(rx.Dot(nTranspose.rx), rx.Dot(nTranspose.ry), rx.Dot(nTranspose.rz), rx.Dot(nTranspose.rw),
                                ry.Dot(nTranspose.rx), ry.Dot(nTranspose.ry), ry.Dot(nTranspose.rz), ry.Dot(nTranspose.rw),
                                rz.Dot(nTranspose.rx), rz.Dot(nTranspose.ry), rz.Dot(nTranspose.rz), rz.Dot(nTranspose.rw),
                                rw.Dot(nTranspose.rx), rw.Dot(nTranspose.ry), rw.Dot(nTranspose.rz), rw.Dot(nTranspose.rw));
     }
 
-    float4x4 operator = (const float4x4 &nMatrix)
+    tmatrix4x4<TYPE> operator = (const tmatrix4x4<TYPE> &nMatrix)
     {
         _11 = nMatrix._11;    _12 = nMatrix._12;    _13 = nMatrix._13;    _14 = nMatrix._14;
         _21 = nMatrix._21;    _22 = nMatrix._22;    _23 = nMatrix._23;    _24 = nMatrix._24;
@@ -468,44 +469,44 @@ public:
         return *this;
     }
 
-    float4x4 operator = (const quaternion &nQuaternion)
+    tmatrix4x4<TYPE> operator = (const tquaternion<TYPE> &nQuaternion)
     {
         SetQuaternion(nQuaternion);
         return *this;
     }
 
-    float3 operator * (const float3 &nVector) const
+    tvector3<TYPE> operator * (const tvector3<TYPE> &nVector) const
     {
-        return float3(((nVector.x * _11) + (nVector.y * _21) + (nVector.z * _31)),
+        return tvector3<TYPE>(((nVector.x * _11) + (nVector.y * _21) + (nVector.z * _31)),
                             ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32)),
                             ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33)));
     }
 
-    float4 operator * (const float4 &nVector) const
+    tvector4<TYPE> operator * (const tvector4<TYPE> &nVector) const
     {
-        return float4(((nVector.x * _11) + (nVector.y * _21) + (nVector.z * _31) + (nVector.w * _41)),
+        return tvector4<TYPE>(((nVector.x * _11) + (nVector.y * _21) + (nVector.z * _31) + (nVector.w * _41)),
                             ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32) + (nVector.w * _42)),
                             ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33) + (nVector.w * _43)),
                             ((nVector.x * _14) + (nVector.y * _24) + (nVector.z * _34) + (nVector.w * _44)));
     }
 
-    float4x4 operator * (float nScalar) const
+    tmatrix4x4<TYPE> operator * (TYPE nScalar) const
     {
-        return float4x4((_11 * nScalar), (_12 * nScalar), (_13 * nScalar), (_14 * nScalar),
+        return tmatrix4x4<TYPE>((_11 * nScalar), (_12 * nScalar), (_13 * nScalar), (_14 * nScalar),
                                (_21 * nScalar), (_22 * nScalar), (_23 * nScalar), (_24 * nScalar),
                                (_31 * nScalar), (_32 * nScalar), (_33 * nScalar), (_34 * nScalar),
                                (_41 * nScalar), (_42 * nScalar), (_43 * nScalar), (_44 * nScalar));
     }
 
-    float4x4 operator + (const float4x4 &nMatrix) const
+    tmatrix4x4<TYPE> operator + (const tmatrix4x4<TYPE> &nMatrix) const
     {
-        return float4x4(_11 + nMatrix._11, _12 + nMatrix._12, _13 + nMatrix._13, _14 + nMatrix._14,
+        return tmatrix4x4<TYPE>(_11 + nMatrix._11, _12 + nMatrix._12, _13 + nMatrix._13, _14 + nMatrix._14,
                                _21 + nMatrix._21, _22 + nMatrix._22, _23 + nMatrix._23, _24 + nMatrix._24,
                                _31 + nMatrix._31, _32 + nMatrix._32, _33 + nMatrix._33, _34 + nMatrix._34,
                                _41 + nMatrix._41, _42 + nMatrix._42, _43 + nMatrix._43, _44 + nMatrix._44);
     }
 
-    void operator += (const float4x4 &nMatrix)
+    void operator += (const tmatrix4x4<TYPE> &nMatrix)
     {
         _11 += nMatrix._11; _12 += nMatrix._12; _13 += nMatrix._13; _14 += nMatrix._14;
         _21 += nMatrix._21; _22 += nMatrix._22; _23 += nMatrix._23; _24 += nMatrix._24;

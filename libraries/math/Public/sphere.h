@@ -1,39 +1,40 @@
 #pragma once
 
-struct sphere
+template <typename TYPE>
+struct tsphere
 {
 public:
-    float3 position;
-    float radius;
+    tvector3<TYPE> position;
+    TYPE radius;
 
 public:
-    sphere(void)
-        : radius(0.0f)
+    tsphere(void)
+        : radius(TYPE(0))
     {
     }
 
-    sphere(const sphere &nSphere)
+    tsphere(const tsphere<TYPE> &nSphere)
         : position(nSphere.position)
         , radius(nSphere.radius)
     {
     }
 
-    sphere(const float3 &nPosition, float nRadius)
+    tsphere(const tvector3<TYPE> &nPosition, TYPE nRadius)
         : position(nPosition)
         , radius(nRadius)
     {
     }
 
-    sphere operator = (const sphere &nSphere)
+    tsphere operator = (const tsphere<TYPE> &nSphere)
     {
         position = nBox.position;
         radius = nBox.radius;
         return (*this);
     }
 
-    int GetPosition(const plane &nPlane) const
+    int GetPosition(const tplane<TYPE> &nPlane) const
     {
-        float nDistance = nPlane.Distance(position);
+        TYPE nDistance = nPlane.Distance(position);
         if (nDistance < -radius)
         {
             return -1;
