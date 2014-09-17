@@ -29,6 +29,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "model", "..\plugins\model\m
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sprite", "..\plugins\sprite\sprite.vcxproj", "{894BC8E4-A490-4DC6-94D3-3D134788E209}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shape", "..\libraries\shape\shape.vcxproj", "{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -97,6 +99,12 @@ Global
 		{894BC8E4-A490-4DC6-94D3-3D134788E209}.Release|Win32.ActiveCfg = Release|Win32
 		{894BC8E4-A490-4DC6-94D3-3D134788E209}.Release|Win32.Build.0 = Release|Win32
 		{894BC8E4-A490-4DC6-94D3-3D134788E209}.Release|x64.ActiveCfg = Release|Win32
+		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}.Debug|Win32.Build.0 = Debug|Win32
+		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}.Debug|x64.ActiveCfg = Debug|Win32
+		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}.Release|Win32.ActiveCfg = Release|Win32
+		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}.Release|Win32.Build.0 = Release|Win32
+		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -112,5 +120,6 @@ Global
 		{CD1F62C9-8032-40A9-9749-594249AEE5E9} = {0804103F-967E-4D50-A657-99A350E0937C}
 		{D703B82C-12A3-499D-92D7-B22A27C72625} = {AC11844F-2CAD-41FC-81EB-A4E330694748}
 		{894BC8E4-A490-4DC6-94D3-3D134788E209} = {AC11844F-2CAD-41FC-81EB-A4E330694748}
+		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B} = {92314300-2CD5-4C87-923C-06D0BFD0135D}
 	EndGlobalSection
 EndGlobal

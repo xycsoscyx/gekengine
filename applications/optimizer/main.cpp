@@ -1,4 +1,5 @@
 #include "GEKMath.h"
+#include "GEKShape.h"
 #include "GEKUtility.h"
 #include <atlpath.h>
 #include <algorithm>

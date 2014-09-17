@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEKContext.h"
+#include "GEKShape.h"
 
 DECLARE_INTERFACE_IID_(IGEKRenderManager, IUnknown, "5226EB5A-DC03-465C-8393-0F947A0DDC24")
 {
