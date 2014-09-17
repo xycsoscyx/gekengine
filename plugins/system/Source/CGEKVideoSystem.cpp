@@ -2604,6 +2604,21 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **
             hRetVal = DirectX::LoadFromTGAMemory(&aBuffer[0], aBuffer.size(), &kMetadata, kImage);
         }
 
+        if (FAILED(hRetVal))
+        {
+            DWORD aFormats[] =
+            {
+                DirectX::WIC_CODEC_PNG,              // Portable Network Graphics (.png)
+                DirectX::WIC_CODEC_BMP,              // Windows Bitmap (.bmp)
+                DirectX::WIC_CODEC_JPEG,             // Joint Photographic Experts Group (.jpg, .jpeg)
+            };
+
+            for (UINT32 nFormat = 0; nFormat < _ARRAYSIZE(aFormats) && FAILED(hRetVal); nFormat++)
+            {
+                hRetVal = DirectX::LoadFromWICMemory(&aBuffer[0], aBuffer.size(), aFormats[nFormat], &kMetadata, kImage);
+            }
+        }
+
         if (SUCCEEDED(hRetVal))
         {
             CComPtr<ID3D11ShaderResourceView> spResourceView;
