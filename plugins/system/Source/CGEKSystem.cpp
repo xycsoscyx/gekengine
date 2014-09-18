@@ -1,6 +1,5 @@
 #include "CGEKSystem.h"
 #include "IGEKVideoSystem.h"
-#include "IGEKInterfaceSystem.h"
 #include "IGEKAudioSystem.h"
 #include <time.h>
 
