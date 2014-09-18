@@ -3,7 +3,9 @@
 #include "GEKUtility.h"
 #include "GEKContext.h"
 #include "GEKSystem.h"
-#include <D3D11.h>
+#include <d3d11_1.h>
+#include <d2d1_1.h>
+#include <dwrite.h>
 #include <memory>
 
 class CGEKVideoContext : public CGEKUnknown
@@ -61,6 +63,10 @@ private:
     CComPtr<ID3D11RenderTargetView> m_spRenderTargetView;
     CComPtr<ID3D11DepthStencilView> m_spDepthStencilView;
     CComPtr<IDXGISwapChain> m_spSwapChain;
+
+    CComPtr<ID2D1Factory1> m_spD2DFactory;
+    CComPtr<ID2D1DeviceContext> m_spD2DDeviceContext;
+    CComPtr<IDWriteFactory> m_spDWriteFactory;
 
 private:
     HRESULT GetDefaultTargets(void);

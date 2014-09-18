@@ -81,14 +81,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="GEKMath.h" />
-    <ClInclude Include="Public\aabb.h" />
-    <ClInclude Include="Public\frustum.h" />
     <ClInclude Include="Public\matrix4x4.h" />
-    <ClInclude Include="Public\obb.h" />
-    <ClInclude Include="Public\plane.h" />
     <ClInclude Include="Public\quaternion.h" />
-    <ClInclude Include="Public\ray.h" />
-    <ClInclude Include="Public\sphere.h" />
     <ClInclude Include="Public\vector2.h" />
     <ClInclude Include="Public\vector3.h" />
     <ClInclude Include="Public\vector4.h" />

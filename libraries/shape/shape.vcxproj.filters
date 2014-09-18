@@ -40,9 +40,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Base Types">
-      <UniqueIdentifier>{305cb4dd-997c-487e-8f64-59268196a569}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{ea999d33-a37e-45fe-9875-369b68a8d1f9}</UniqueIdentifier>
     </Filter>

@@ -2,46 +2,25 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="GEKMath.h" />
-    <ClInclude Include="Public\aabb.h">
-      <Filter>Shape Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\frustum.h">
-      <Filter>Shape Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\obb.h">
-      <Filter>Shape Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\plane.h">
-      <Filter>Shape Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\ray.h">
-      <Filter>Shape Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\sphere.h">
-      <Filter>Shape Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\matrix4x4.h">
-      <Filter>Base Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\quaternion.h">
-      <Filter>Base Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\vector2.h">
-      <Filter>Base Types</Filter>
-    </ClInclude>
     <ClInclude Include="Public\vector3.h">
-      <Filter>Base Types</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Public\vector4.h">
-      <Filter>Base Types</Filter>
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\matrix4x4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\quaternion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\vector2.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Base Types">
-      <UniqueIdentifier>{305cb4dd-997c-487e-8f64-59268196a569}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shape Types">
-      <UniqueIdentifier>{8a80125e-84bc-4fb5-ab8e-681ffc0b154a}</UniqueIdentifier>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{bfee6e85-7675-45ac-9899-2d9620b1f584}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

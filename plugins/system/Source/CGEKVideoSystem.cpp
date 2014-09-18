@@ -11,6 +11,8 @@
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "dwrite.lib")
 
 class CGEKVideoComputeContextSystem : public IGEKVideoContextSystem
 {
@@ -918,28 +920,56 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
     IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
     if (pSystem != nullptr)
     {
-        CComPtr<ID3D11Texture2D> spBackBuffer;
-        hRetVal = m_spSwapChain->GetBuffer(0, IID_ID3D11Texture2D, (LPVOID FAR *)&spBackBuffer);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to GetBuffer failed: 0x%08X", hRetVal);
-        if (spBackBuffer)
+        CComPtr<IDXGISurface> spSurface;
+        hRetVal = m_spSwapChain->GetBuffer(0, IID_PPV_ARGS(&spSurface));
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to GetBuffer (IDXGISurface) failed: 0x%08X", hRetVal);
+        if (spSurface)
         {
-            hRetVal = m_spDevice->CreateRenderTargetView(spBackBuffer, nullptr, &m_spRenderTargetView);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateRenderTargetView failed: 0x%08X", hRetVal);
-            if (m_spRenderTargetView)
+            FLOAT nDPIX = 0.0f;
+            FLOAT nDPIY = 0.0f;
+            m_spD2DFactory->GetDesktopDpi(&nDPIX, &nDPIY);
+
+            D2D1_BITMAP_PROPERTIES1 kBitmapProps;
+            kBitmapProps.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            kBitmapProps.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
+            kBitmapProps.dpiX = nDPIX;
+            kBitmapProps.dpiY = nDPIY;
+            kBitmapProps.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
+            kBitmapProps.colorContext = nullptr;
+
+            CComPtr<ID2D1Bitmap1> spBitmap;
+            hRetVal = m_spD2DDeviceContext->CreateBitmapFromDxgiSurface(spSurface, &kBitmapProps, &spBitmap);
+            if (spBitmap)
             {
-                m_spDefaultTarget = new CGEKVideoRenderTarget(m_spDeviceContext, nullptr, nullptr, m_spRenderTargetView, pSystem->GetXSize(), pSystem->GetYSize(), 0);
-                GEKRESULT(m_spDefaultTarget, L"Unable to allocate new default target instance");
-                if (m_spDefaultTarget)
+                m_spD2DDeviceContext->SetTarget(spBitmap);
+            }
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            CComPtr<ID3D11Texture2D> spTexture2D;
+            hRetVal = m_spSwapChain->GetBuffer(0, IID_PPV_ARGS(&spTexture2D));
+            GEKRESULT(SUCCEEDED(hRetVal), L"Call to GetBuffer (ID3D11Texture2D) failed: 0x%08X", hRetVal);
+            if (spTexture2D)
+            {
+                hRetVal = m_spDevice->CreateRenderTargetView(spTexture2D, nullptr, &m_spRenderTargetView);
+                GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateRenderTargetView failed: 0x%08X", hRetVal);
+                if (m_spRenderTargetView)
                 {
-                    CComPtr<IUnknown> spDepthView;
-                    hRetVal = CreateDepthTarget(pSystem->GetXSize(), pSystem->GetYSize(), GEKVIDEO::DATA::D24_S8, &spDepthView);
-                    if (spDepthView)
+                    m_spDefaultTarget = new CGEKVideoRenderTarget(m_spDeviceContext, nullptr, nullptr, m_spRenderTargetView, pSystem->GetXSize(), pSystem->GetYSize(), 0);
+                    GEKRESULT(m_spDefaultTarget, L"Unable to allocate new default target instance");
+                    if (m_spDefaultTarget)
                     {
-                        hRetVal = spDepthView->QueryInterface(IID_ID3D11DepthStencilView, (LPVOID FAR *)&m_spDepthStencilView);
-                        if (m_spDepthStencilView)
+                        CComPtr<IUnknown> spDepthView;
+                        hRetVal = CreateDepthTarget(pSystem->GetXSize(), pSystem->GetYSize(), GEKVIDEO::DATA::D24_S8, &spDepthView);
+                        if (spDepthView)
                         {
-                            ID3D11RenderTargetView *pRenderTargetView = m_spRenderTargetView;
-                            m_spDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, m_spDepthStencilView);
+                            hRetVal = spDepthView->QueryInterface(IID_ID3D11DepthStencilView, (LPVOID FAR *)&m_spDepthStencilView);
+                            if (m_spDepthStencilView)
+                            {
+                                ID3D11RenderTargetView *pRenderTargetView = m_spRenderTargetView;
+                                m_spDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, m_spDepthStencilView);
+                            }
                         }
                     }
                 }
@@ -962,7 +992,7 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
             DXGI_SWAP_CHAIN_DESC kSwapChainDesc;
             kSwapChainDesc.BufferDesc.Width = pSystem->GetXSize();
             kSwapChainDesc.BufferDesc.Height = pSystem->GetYSize();
-            kSwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            kSwapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
             kSwapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
             kSwapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
             kSwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
@@ -976,26 +1006,55 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
             kSwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
             kSwapChainDesc.Flags = 0;
 
-            UINT nFlags = 0;
+            UINT nFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
             nFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
             D3D_FEATURE_LEVEL aFeatureLevelList[] = 
             {
-                D3D_FEATURE_LEVEL_11_1,
+                D3D_FEATURE_LEVEL_11_0,
             };
 
             D3D_FEATURE_LEVEL eFeatureLevel;
             hRetVal = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, nFlags, aFeatureLevelList, _ARRAYSIZE(aFeatureLevelList),
                 D3D11_SDK_VERSION, &kSwapChainDesc, &m_spSwapChain, &m_spDevice, &eFeatureLevel, &m_spDeviceContext);
             GEKRESULT(SUCCEEDED(hRetVal), L"Call to D3D11CreateDeviceAndSwapChain failed: 0x%08X", hRetVal);
-            GEKRESULT(eFeatureLevel == D3D_FEATURE_LEVEL_11_1, L"Unable to create D3D 11.1 Device");
+            GEKRESULT(eFeatureLevel == D3D_FEATURE_LEVEL_11_0, L"Unable to create D3D 11.0 Device");
             if (m_spDevice &&
                 m_spDeviceContext &&
                 m_spSwapChain)
             {
-                hRetVal = GetDefaultTargets();
+                hRetVal = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&m_spD2DFactory));
+                GEKRESULT(SUCCEEDED(hRetVal), L"Call to D2D1CreateFactory failed: 0x%08X", hRetVal);
+                if (m_spD2DFactory)
+                {
+                    hRetVal = E_FAIL;
+                    CComQIPtr<IDXGIDevice1> spDXGIDevice(m_spDevice);
+                    if (spDXGIDevice)
+                    {
+                        spDXGIDevice->SetMaximumFrameLatency(1);
+
+                        CComPtr<ID2D1Device> spD2DDevice;
+                        hRetVal = m_spD2DFactory->CreateDevice(spDXGIDevice, &spD2DDevice);
+                        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateDevice failed: 0x%08X", hRetVal);
+                        if (spD2DDevice)
+                        {
+                            hRetVal = spD2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &m_spD2DDeviceContext);
+                            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateDeviceContext failed: 0x%08X", hRetVal);
+                        }
+                    }
+                }
+
+                if (SUCCEEDED(hRetVal))
+                {
+                    hRetVal = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&m_spDWriteFactory));
+                }
+
+                if (SUCCEEDED(hRetVal))
+                {
+                    hRetVal = GetDefaultTargets();
+                }
             }
 
             if (SUCCEEDED(hRetVal))
@@ -2858,5 +2917,21 @@ STDMETHODIMP_(void) CGEKVideoSystem::ExecuteCommandList(IUnknown *pUnknown)
 STDMETHODIMP_(void) CGEKVideoSystem::Present(bool bWaitForVSync)
 {
     REQUIRE_VOID_RETURN(m_spSwapChain);
+
+    CComPtr<ID2D1SolidColorBrush> spBrush;
+    m_spD2DDeviceContext->CreateSolidColorBrush({ 1.0f, 0.0f, 0.0f, 1.0f }, &spBrush);
+    if (spBrush)
+    {
+        CComPtr<IDWriteTextFormat> spFormat;
+        m_spDWriteFactory->CreateTextFormat(L"Arial", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 25.0f, L"", &spFormat);
+        if (spFormat)
+        {
+            m_spD2DDeviceContext->BeginDraw();
+            m_spD2DDeviceContext->DrawRectangle({ 0.0f, 0.0f, 200.0f, 50.0f }, spBrush);
+            m_spD2DDeviceContext->DrawText(L"Test", 4, spFormat, { 12.5f, 12.5f, 187.5f, 37.5f }, spBrush);
+            m_spD2DDeviceContext->EndDraw();
+        }
+    }
+
     m_spSwapChain->Present(bWaitForVSync ? 1 : 0, 0);
 }
