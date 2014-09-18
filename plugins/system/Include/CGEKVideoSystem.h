@@ -29,6 +29,10 @@ public:
     DECLARE_UNKNOWN(CGEKVideoContext);
     
     // IGEKVideoContext
+    STDMETHOD_(IGEKVideoContextSystem *, GetComputeSystem)  (THIS);
+    STDMETHOD_(IGEKVideoContextSystem *, GetVertexSystem)   (THIS);
+    STDMETHOD_(IGEKVideoContextSystem *, GetGeometrySystem) (THIS);
+    STDMETHOD_(IGEKVideoContextSystem *, GetPixelSystem)    (THIS);
     STDMETHOD_(void, ClearResources)                    (THIS);
     STDMETHOD_(void, SetViewports)                      (THIS_ const std::vector<GEKVIDEO::VIEWPORT> &aViewports);
     STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<GEKVIDEO::RECT<UINT32>> &aRects);
@@ -38,10 +42,6 @@ public:
     STDMETHOD_(void, SetRenderStates)                   (THIS_ IUnknown *pStates);
     STDMETHOD_(void, SetDepthStates)                    (THIS_ UINT32 nStencilReference, IUnknown *pStates);
     STDMETHOD_(void, SetBlendStates)                    (THIS_ const float4 &kBlendFactor, UINT32 nMask, IUnknown *pStates);
-    STDMETHOD_(IGEKVideoContextSystem *, GetComputeSystem)  (THIS);
-    STDMETHOD_(IGEKVideoContextSystem *, GetVertexSystem)   (THIS);
-    STDMETHOD_(IGEKVideoContextSystem *, GetGeometrySystem) (THIS);
-    STDMETHOD_(IGEKVideoContextSystem *, GetPixelSystem)    (THIS);
     STDMETHOD_(void, SetVertexBuffer)                   (THIS_ UINT32 nSlot, UINT32 nOffset, IGEKVideoBuffer *pBuffer);
     STDMETHOD_(void, SetIndexBuffer)                    (THIS_ UINT32 nOffset, IGEKVideoBuffer *pBuffer);
     STDMETHOD_(void, SetPrimitiveType)                  (THIS_ GEKVIDEO::PRIMITIVE::TYPE eType);

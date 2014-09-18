@@ -657,19 +657,39 @@ CGEKVideoContext::~CGEKVideoContext(void)
 {
 }
 
-static ID3D11ShaderResourceView *const gs_pNullTextures[] =
+STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetComputeSystem(void)
 {
-    nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr,
-};
+    return m_spComputeSystem.get();
+}
 
-static ID3D11RenderTargetView  *const gs_pNumTargets[] =
+STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetVertexSystem(void)
 {
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-};
+    return m_spVertexSystem.get();
+}
+
+STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetGeometrySystem(void)
+{
+    return m_spGeometrySystem.get();
+}
+
+STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetPixelSystem(void)
+{
+    return m_spPixelSystem.get();
+}
 
 STDMETHODIMP_(void) CGEKVideoContext::ClearResources(void)
 {
+    static ID3D11ShaderResourceView *const gs_pNullTextures[] =
+    {
+        nullptr, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, nullptr,
+    };
+
+    static ID3D11RenderTargetView  *const gs_pNumTargets[] =
+    {
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+    };
+
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->CSSetShaderResources(0, 10, gs_pNullTextures);
     m_spDeviceContext->VSSetShaderResources(0, 10, gs_pNullTextures);
@@ -774,26 +794,6 @@ STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &kBlendFactor,
     {
         m_spDeviceContext->OMSetBlendState(spStates, kBlendFactor.rgba, nMask);
     }
-}
-
-STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetComputeSystem(void)
-{
-    return m_spComputeSystem.get();
-}
-
-STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetVertexSystem(void)
-{
-    return m_spVertexSystem.get();
-}
-
-STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetGeometrySystem(void)
-{
-    return m_spGeometrySystem.get();
-}
-
-STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetPixelSystem(void)
-{
-    return m_spPixelSystem.get();
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::SetVertexBuffer(UINT32 nSlot, UINT32 nOffset, IGEKVideoBuffer *pBuffer)

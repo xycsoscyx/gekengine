@@ -440,6 +440,11 @@ DECLARE_INTERFACE(IGEKVideoContextSystem)
 
 DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819E68B372E")
 {
+    STDMETHOD_(IGEKVideoContextSystem *, GetComputeSystem)  (THIS) PURE;
+    STDMETHOD_(IGEKVideoContextSystem *, GetVertexSystem)   (THIS) PURE;
+    STDMETHOD_(IGEKVideoContextSystem *, GetGeometrySystem) (THIS) PURE;
+    STDMETHOD_(IGEKVideoContextSystem *, GetPixelSystem)    (THIS) PURE;
+
     STDMETHOD_(void, ClearResources)                    (THIS) PURE;
 
     STDMETHOD_(void, SetViewports)                      (THIS_ const std::vector<GEKVIDEO::VIEWPORT> &aViewports) PURE;
@@ -452,11 +457,6 @@ DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819
     STDMETHOD_(void, SetRenderStates)                   (THIS_ IUnknown *pStates) PURE;
     STDMETHOD_(void, SetDepthStates)                    (THIS_ UINT32 nStencilReference, IUnknown *pStates) PURE;
     STDMETHOD_(void, SetBlendStates)                    (THIS_ const float4 &kBlendFactor, UINT32 nMask, IUnknown *pStates) PURE;
-
-    STDMETHOD_(IGEKVideoContextSystem *, GetComputeSystem)  (THIS) PURE;
-    STDMETHOD_(IGEKVideoContextSystem *, GetVertexSystem)   (THIS) PURE;
-    STDMETHOD_(IGEKVideoContextSystem *, GetGeometrySystem) (THIS) PURE;
-    STDMETHOD_(IGEKVideoContextSystem *, GetPixelSystem)    (THIS) PURE;
 
     STDMETHOD_(void, SetVertexBuffer)                   (THIS_ UINT32 nSlot, UINT32 nOffset, IGEKVideoBuffer *pBuffer) PURE;
     STDMETHOD_(void, SetIndexBuffer)                    (THIS_ UINT32 nOffset, IGEKVideoBuffer *pBuffer) PURE;
