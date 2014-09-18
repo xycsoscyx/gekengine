@@ -45,7 +45,6 @@ public:
     }
 
     // IGEKMaterial
-
     STDMETHODIMP_(void) Enable(CGEKRenderSystem *pManager, IGEKVideoContext *pContext)
     {
         pManager->SetResource(pContext->GetPixelSystem(), 0, m_spAlbedoMap);
