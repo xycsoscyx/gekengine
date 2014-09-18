@@ -110,21 +110,21 @@ public:
 
     // IGEKMaterialManager
     STDMETHOD(LoadMaterial)                 (THIS_ LPCWSTR pName, IUnknown **ppMaterial);
-    STDMETHOD_(bool, EnableMaterial)        (THIS_ IUnknown *pMaterial);
+    STDMETHOD_(bool, EnableMaterial)        (THIS_ IGEKVideoContext *pContext, IUnknown *pMaterial);
 
     // IGEKProgramManager
     STDMETHOD(LoadProgram)                  (THIS_ LPCWSTR pName, IUnknown **ppProgram);
-    STDMETHOD_(void, EnableProgram)         (THIS_ IUnknown *pProgram);
+    STDMETHOD_(void, EnableProgram)         (THIS_ IGEKVideoContext *pContext, IUnknown *pProgram);
 
     // IGEKRenderSystem
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppBuffer);
-    STDMETHOD_(void, SetScreenTargets)      (THIS_ IUnknown *pDepthBuffer);
-    STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes);
-    STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch);
-    STDMETHOD_(void, DrawOverlay)           (THIS);
+    STDMETHOD_(void, SetScreenTargets)      (THIS_ IGEKVideoContext *pContext, IUnknown *pDepthBuffer);
+    STDMETHOD_(void, DrawScene)             (THIS_ IGEKVideoContext *pContext, UINT32 nAttributes);
+    STDMETHOD_(void, DrawLights)            (THIS_ IGEKVideoContext *pContext, std::function<void(void)> OnLightBatch);
+    STDMETHOD_(void, DrawOverlay)           (THIS_ IGEKVideoContext *pContext);
     STDMETHOD_(void, Render)                (THIS);
 
     // IGEKRenderManager

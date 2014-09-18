@@ -100,9 +100,9 @@
     <ClInclude Include="Include\CGEKAudioSystem.h" />
     <ClInclude Include="Include\CGEKSystem.h" />
     <ClInclude Include="Include\CGEKVideoSystem.h" />
+    <ClInclude Include="Public\IGEK3DVideoSystem.h" />
     <ClInclude Include="Public\IGEKAudioSystem.h" />
     <ClInclude Include="Public\IGEKSystem.h" />
-    <ClInclude Include="Public\IGEKVideoSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\external\DirectXTex\DirectXTex_Desktop_2013.vcxproj">

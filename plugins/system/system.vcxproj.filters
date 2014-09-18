@@ -30,7 +30,7 @@
     <ClInclude Include="Public\IGEKSystem.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
-    <ClInclude Include="Public\IGEKVideoSystem.h">
+    <ClInclude Include="Public\IGEK3DVideoSystem.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
   </ItemGroup>

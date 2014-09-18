@@ -116,5 +116,5 @@ public:
     STDMETHOD_(UINT32, GetVertexAttributes)                 (THIS);
     STDMETHOD(GetBuffer)                                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)                               (THIS_ IUnknown **ppBuffer);
-    STDMETHOD_(void, Draw)                                  (THIS);
+    STDMETHOD_(void, Draw)                                  (THIS_ IGEKVideoContext *pContext);
 };

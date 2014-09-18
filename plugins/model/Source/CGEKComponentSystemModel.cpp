@@ -244,8 +244,10 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(void)
     });
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(UINT32 nVertexAttributes)
+STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(IGEKVideoContext *pContext, UINT32 nVertexAttributes)
 {
+    REQUIRE_VOID_RETURN(pContext);
+
     if (!(nVertexAttributes & GEK_VERTEX_POSITION) &&
         !(nVertexAttributes & GEK_VERTEX_TEXCOORD) &&
         !(nVertexAttributes & GEK_VERTEX_BASIS))
@@ -253,27 +255,27 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(UINT32 nVertexAttribut
         return;
     }
 
-    m_pProgramManager->EnableProgram(m_spVertexProgram);
-    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetResource(0, m_spInstanceBuffer);
-    m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    m_pProgramManager->EnableProgram(pContext, m_spVertexProgram);
+    pContext->GetVertexSystem()->SetResource(0, m_spInstanceBuffer);
+    pContext->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
     for (auto kModel : m_aVisible)
     {
         if (nVertexAttributes & GEK_VERTEX_POSITION)
         {
-            m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, kModel.first->m_spPositionBuffer);
+            pContext->SetVertexBuffer(0, 0, kModel.first->m_spPositionBuffer);
         }
 
         if (nVertexAttributes & GEK_VERTEX_TEXCOORD)
         {
-            m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(1, 0, kModel.first->m_spTexCoordBuffer);
+            pContext->SetVertexBuffer(1, 0, kModel.first->m_spTexCoordBuffer);
         }
 
         if (nVertexAttributes & GEK_VERTEX_BASIS)
         {
-            m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(2, 0, kModel.first->m_spBasisBuffer);
+            pContext->SetVertexBuffer(2, 0, kModel.first->m_spBasisBuffer);
         }
 
-        m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, kModel.first->m_spIndexBuffer);
+        pContext->SetIndexBuffer(0, kModel.first->m_spIndexBuffer);
         for (UINT32 nPass = 0; nPass < kModel.second.size(); nPass += NUM_INSTANCES)
         {
             UINT32 nNumInstances = min(NUM_INSTANCES, (kModel.second.size() - nPass));
@@ -286,9 +288,9 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(UINT32 nVertexAttribut
 
                 for (auto &kMaterial : kModel.first->m_aMaterials)
                 {
-                    if (m_pMaterialManager->EnableMaterial(kMaterial.first))
+                    if (m_pMaterialManager->EnableMaterial(pContext, kMaterial.first))
                     {
-                        m_pVideoSystem->GetImmediateContext()->DrawInstancedIndexedPrimitive(kMaterial.second.m_nNumIndices, nNumInstances, kMaterial.second.m_nFirstIndex, kMaterial.second.m_nFirstVertex, 0);
+                        pContext->DrawInstancedIndexedPrimitive(kMaterial.second.m_nNumIndices, nNumInstances, kMaterial.second.m_nFirstIndex, kMaterial.second.m_nFirstVertex, 0);
                     }
                 }
             }

@@ -82,7 +82,6 @@ public:
 
     // IGEKVideoSystem
     STDMETHOD(Reset)                                    (THIS);
-    STDMETHOD_(IGEKVideoContext *, GetImmediateContext) (THIS);
     STDMETHOD(CreateDeferredContext)                    (THIS_ IGEKVideoContext **ppContext);
     STDMETHOD(CreateEvent)                              (THIS_ IUnknown **ppEvent);
     STDMETHOD_(void, SetEvent)                          (THIS_ IUnknown *pEvent);

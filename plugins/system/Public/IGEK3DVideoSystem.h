@@ -475,7 +475,6 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
 {
     STDMETHOD(Reset)                                    (THIS) PURE;
 
-    STDMETHOD_(IGEKVideoContext *, GetImmediateContext) (THIS) PURE;
     STDMETHOD(CreateDeferredContext)                    (THIS_ IGEKVideoContext **ppContext) PURE;
 
     STDMETHOD(CreateEvent)                              (THIS_ IUnknown **ppEvent) PURE;

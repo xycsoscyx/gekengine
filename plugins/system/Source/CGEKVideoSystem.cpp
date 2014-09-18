@@ -1139,11 +1139,6 @@ STDMETHODIMP CGEKVideoSystem::Reset(void)
     return hRetVal;
 }
 
-STDMETHODIMP_(IGEKVideoContext *) CGEKVideoSystem::GetImmediateContext(void)
-{
-    return dynamic_cast<IGEKVideoContext *>(this);
-}
-
 STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEKVideoContext **ppContext)
 {
     GEKFUNCTION(nullptr);

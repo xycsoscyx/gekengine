@@ -785,8 +785,10 @@ STDMETHODIMP CGEKRenderFilter::GetDepthBuffer(IUnknown **ppBuffer)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
+STDMETHODIMP_(void) CGEKRenderFilter::Draw(IGEKVideoContext *pContext)
 {
+    REQUIRE_VOID_RETURN(pContext);
+
     CComPtr<IUnknown> spDepthBuffer;
     if (m_spDepthBuffer)
     {
@@ -812,7 +814,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
 
         if (nFlags > 0)
         {
-            m_pVideoSystem->GetImmediateContext()->ClearDepthStencilTarget(spDepthBuffer, nFlags, m_nClearDepth, m_nClearStencil);
+            pContext->ClearDepthStencilTarget(spDepthBuffer, nFlags, m_nClearDepth, m_nClearStencil);
         }
     }
 
@@ -841,7 +843,7 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             {
                 if (kTarget.m_bClear)
                 {
-                    m_pVideoSystem->GetImmediateContext()->ClearRenderTarget(spTarget, kTarget.m_nClearColor);
+                    pContext->ClearRenderTarget(spTarget, kTarget.m_nClearColor);
                 }
 
                 aTargets.push_back(spTarget);
@@ -857,12 +859,12 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
             }
         }
 
-        m_pVideoSystem->GetImmediateContext()->SetRenderTargets(aTargets, (spDepthBuffer ? spDepthBuffer : nullptr));
-        m_pVideoSystem->GetImmediateContext()->SetViewports(aViewPorts);
+        pContext->SetRenderTargets(aTargets, (spDepthBuffer ? spDepthBuffer : nullptr));
+        pContext->SetViewports(aViewPorts);
     }
     else
     {
-        m_pRenderManager->SetScreenTargets(spDepthBuffer ? spDepthBuffer : nullptr);
+        m_pRenderManager->SetScreenTargets(pContext, spDepthBuffer ? spDepthBuffer : nullptr);
     }
 
     std::unordered_map<UINT32, IUnknown *> aComputeResources;
@@ -916,61 +918,61 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
         }
     }
 
-    CGEKRenderStates::Enable(m_pVideoSystem);
-    CGEKBlendStates::Enable(m_pVideoSystem);
-    m_pVideoSystem->GetImmediateContext()->SetDepthStates(m_nStencilReference, m_spDepthStates);
-    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetProgram(m_kPixelData.m_spProgram);
+    CGEKRenderStates::Enable(pContext);
+    CGEKBlendStates::Enable(pContext);
+    pContext->SetDepthStates(m_nStencilReference, m_spDepthStates);
+    pContext->GetPixelSystem()->SetProgram(m_kPixelData.m_spProgram);
     if (m_eMode == FORWARD)
     {
         for (auto &kPair : aPixelResources)
         {
-            m_pRenderManager->SetResource(m_pVideoSystem->GetImmediateContext()->GetPixelSystem(), kPair.first, kPair.second);
+            m_pRenderManager->SetResource(pContext->GetPixelSystem(), kPair.first, kPair.second);
         }
 
-        m_pRenderManager->DrawScene(m_nVertexAttributes);
+        m_pRenderManager->DrawScene(pContext, m_nVertexAttributes);
     }
     else if (m_eMode == LIGHTING)
     {
         if (m_nDispatchXSize > 0)
         {
-            m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetProgram(m_kComputeData.m_spProgram);
+            pContext->GetComputeSystem()->SetProgram(m_kComputeData.m_spProgram);
         }
 
-        m_pRenderManager->DrawLights([&](void) -> void
+        m_pRenderManager->DrawLights(pContext, [&](void) -> void
         {
             if (m_nDispatchXSize > 0)
             {
                 for (auto &kPair : aPixelResources)
                 {
-                    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(kPair.first, nullptr);
+                    pContext->GetPixelSystem()->SetResource(kPair.first, nullptr);
                 }
 
                 for (auto &kPair : aComputeResources)
                 {
-                    m_pRenderManager->SetResource(m_pVideoSystem->GetImmediateContext()->GetComputeSystem(), kPair.first, kPair.second);
+                    m_pRenderManager->SetResource(pContext->GetComputeSystem(), kPair.first, kPair.second);
                 }
 
                 for (auto &kPair : aComputeUnorderedAccess)
                 {
-                    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.first, kPair.second);
+                    pContext->GetComputeSystem()->SetUnorderedAccess(kPair.first, kPair.second);
                 }
 
-                m_pVideoSystem->GetImmediateContext()->Dispatch(m_nDispatchXSize, m_nDispatchYSize, m_nDispatchZSize);
+                pContext->Dispatch(m_nDispatchXSize, m_nDispatchYSize, m_nDispatchZSize);
 
                 for (auto &kPair : aComputeResources)
                 {
-                    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetResource(kPair.first, nullptr);
+                    pContext->GetComputeSystem()->SetResource(kPair.first, nullptr);
                 }
 
                 for (auto &kPair : aComputeUnorderedAccess)
                 {
-                    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetUnorderedAccess(kPair.first, nullptr);
+                    pContext->GetComputeSystem()->SetUnorderedAccess(kPair.first, nullptr);
                 }
             }
 
             for (auto &kPair : aPixelResources)
             {
-                m_pRenderManager->SetResource(m_pVideoSystem->GetImmediateContext()->GetPixelSystem(), kPair.first, kPair.second);
+                m_pRenderManager->SetResource(pContext->GetPixelSystem(), kPair.first, kPair.second);
             }
         });
     }
@@ -978,11 +980,11 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(void)
     {
         for (auto &kPair : aPixelResources)
         {
-            m_pRenderManager->SetResource(m_pVideoSystem->GetImmediateContext()->GetPixelSystem(), kPair.first, kPair.second);
+            m_pRenderManager->SetResource(pContext->GetPixelSystem(), kPair.first, kPair.second);
         }
 
-        m_pRenderManager->DrawOverlay();
+        m_pRenderManager->DrawOverlay(pContext);
     }
 
-    m_pVideoSystem->GetImmediateContext()->ClearResources();
+    pContext->ClearResources();
 }

@@ -4,6 +4,7 @@
 #include "GEKContext.h"
 
 DECLARE_INTERFACE(IGEKVideoContextSystem);
+DECLARE_INTERFACE(IGEKVideoContext);
 
 DECLARE_INTERFACE_IID_(IGEKRenderSystem, IUnknown, "77161A84-61C4-4C05-9550-4EEB74EF3CB1")
 {
@@ -12,11 +13,11 @@ DECLARE_INTERFACE_IID_(IGEKRenderSystem, IUnknown, "77161A84-61C4-4C05-9550-4EEB
 
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppResource) PURE;
     STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppResource) PURE;
-    STDMETHOD_(void, SetScreenTargets)      (THIS_ IUnknown *pDepthBuffer) PURE;
+    STDMETHOD_(void, SetScreenTargets)      (THIS_ IGEKVideoContext *pContext, IUnknown *pDepthBuffer) PURE;
 
-    STDMETHOD_(void, DrawScene)             (THIS_ UINT32 nAttributes) PURE;
-    STDMETHOD_(void, DrawLights)            (THIS_ std::function<void(void)> OnLightBatch) PURE;
-    STDMETHOD_(void, DrawOverlay)           (THIS) PURE;
+    STDMETHOD_(void, DrawScene)             (THIS_ IGEKVideoContext *pContext, UINT32 nAttributes) PURE;
+    STDMETHOD_(void, DrawLights)            (THIS_ IGEKVideoContext *pContext, std::function<void(void)> OnLightBatch) PURE;
+    STDMETHOD_(void, DrawOverlay)           (THIS_ IGEKVideoContext *pContext) PURE;
 
     STDMETHOD_(void, Render)                (THIS) PURE;
 };

@@ -56,6 +56,6 @@ public:
     // IGEKRenderObserver
     STDMETHOD_(void, OnPreRender)               (THIS);
     STDMETHOD_(void, OnCullScene)               (THIS);
-    STDMETHOD_(void, OnDrawScene)               (THIS_ UINT32 nVertexAttributes);
+    STDMETHOD_(void, OnDrawScene)               (THIS_ IGEKVideoContext *pContext, UINT32 nVertexAttributes);
     STDMETHOD_(void, OnPostRender)              (THIS);
 };

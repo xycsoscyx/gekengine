@@ -12,7 +12,7 @@
 
 DECLARE_INTERFACE_IID_(IGEKMaterial, IUnknown, "819CA201-F652-4183-B29D-BB71BB15810E")
 {
-    STDMETHOD_(void, Enable)                (THIS_ CGEKRenderSystem *pManager, IGEKVideoSystem *pSystem) PURE;
+    STDMETHOD_(void, Enable)                (THIS_ CGEKRenderSystem *pManager, IGEKVideoContext *pContext) PURE;
     STDMETHOD_(float4, GetColor)            (THIS) PURE;
     STDMETHOD_(bool, IsFullBright)          (THIS) PURE;
 };
@@ -45,13 +45,14 @@ public:
     }
 
     // IGEKMaterial
-    STDMETHODIMP_(void) Enable(CGEKRenderSystem *pManager, IGEKVideoSystem *pSystem)
+
+    STDMETHODIMP_(void) Enable(CGEKRenderSystem *pManager, IGEKVideoContext *pContext)
     {
-        pManager->SetResource(nullptr, 0, m_spAlbedoMap);
-        pManager->SetResource(nullptr, 1, m_spNormalMap);
-        pManager->SetResource(nullptr, 2, m_spInfoMap);
-        CGEKRenderStates::Enable(pSystem);
-        CGEKBlendStates::Enable(pSystem);
+        pManager->SetResource(pContext->GetPixelSystem(), 0, m_spAlbedoMap);
+        pManager->SetResource(pContext->GetPixelSystem(), 1, m_spNormalMap);
+        pManager->SetResource(pContext->GetPixelSystem(), 2, m_spInfoMap);
+        CGEKRenderStates::Enable(pContext);
+        CGEKBlendStates::Enable(pContext);
     }
 
     STDMETHODIMP_(float4) GetColor(void)
@@ -491,17 +492,11 @@ STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource
 
 STDMETHODIMP_(void) CGEKRenderSystem::SetResource(IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource)
 {
+    REQUIRE_VOID_RETURN(pSystem);
     CComPtr<IUnknown> spResource(pResource);
     if (spResource)
     {
-        if (pSystem == nullptr)
-        {
-            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(nStage, spResource);
-        }
-        else
-        {
-            pSystem->SetResource(nStage, spResource);
-        }
+        pSystem->SetResource(nStage, spResource);
     }
 }
 
@@ -542,12 +537,12 @@ STDMETHODIMP CGEKRenderSystem::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuff
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderSystem::SetScreenTargets(IUnknown *pDepthBuffer)
+STDMETHODIMP_(void) CGEKRenderSystem::SetScreenTargets(IGEKVideoContext *pContext, IUnknown *pDepthBuffer)
 {
     REQUIRE_VOID_RETURN(m_pVideoSystem);
 
-    m_pVideoSystem->GetImmediateContext()->SetRenderTargets({ m_spScreenBuffer }, (pDepthBuffer ? pDepthBuffer : nullptr));
-    m_pVideoSystem->GetImmediateContext()->SetViewports({ m_kScreenViewPort });
+    pContext->SetRenderTargets({ m_spScreenBuffer }, (pDepthBuffer ? pDepthBuffer : nullptr));
+    pContext->SetViewports({ m_kScreenViewPort });
 }
 
 STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial)
@@ -668,9 +663,9 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
     return hRetVal;
 }
 
-STDMETHODIMP_(bool) CGEKRenderSystem::EnableMaterial(IUnknown *pMaterial)
+STDMETHODIMP_(bool) CGEKRenderSystem::EnableMaterial(IGEKVideoContext *pContext, IUnknown *pMaterial)
 {
-    REQUIRE_RETURN(pMaterial, false);
+    REQUIRE_RETURN(pContext && pMaterial, false);
 
     bool bReturn = false;
     CComQIPtr<IGEKMaterial> spMaterial(pMaterial);
@@ -681,7 +676,7 @@ STDMETHODIMP_(bool) CGEKRenderSystem::EnableMaterial(IUnknown *pMaterial)
         kMaterial.m_nColor = spMaterial->GetColor();
         kMaterial.m_bFullBright = spMaterial->IsFullBright();
         m_spMaterialBuffer->Update((void *)&kMaterial);
-        spMaterial->Enable(this, m_pVideoSystem);
+        spMaterial->Enable(this, pContext);
     }
 
     return bReturn;
@@ -796,7 +791,7 @@ STDMETHODIMP CGEKRenderSystem::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderSystem::EnableProgram(IUnknown *pProgram)
+STDMETHODIMP_(void) CGEKRenderSystem::EnableProgram(IGEKVideoContext *pContext, IUnknown *pProgram)
 {
     REQUIRE_VOID_RETURN(m_pVideoSystem);
     REQUIRE_VOID_RETURN(pProgram);
@@ -804,26 +799,26 @@ STDMETHODIMP_(void) CGEKRenderSystem::EnableProgram(IUnknown *pProgram)
     CComQIPtr<IGEKProgram> spProgram(pProgram);
     if (spProgram)
     {
-        m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(spProgram->GetVertexProgram());
-        m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(spProgram->GetGeometryProgram());
+        pContext->GetVertexSystem()->SetProgram(spProgram->GetVertexProgram());
+        pContext->GetGeometrySystem()->SetProgram(spProgram->GetGeometryProgram());
     }
 }
 
-STDMETHODIMP_(void) CGEKRenderSystem::DrawScene(UINT32 nAttributes)
+STDMETHODIMP_(void) CGEKRenderSystem::DrawScene(IGEKVideoContext *pContext, UINT32 nAttributes)
 {
-    CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnDrawScene, std::placeholders::_1, nAttributes)));
+    CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnDrawScene, std::placeholders::_1, pContext, nAttributes)));
 }
 
-STDMETHODIMP_(void) CGEKRenderSystem::DrawLights(std::function<void(void)> OnLightBatch)
+STDMETHODIMP_(void) CGEKRenderSystem::DrawLights(IGEKVideoContext *pContext, std::function<void(void)> OnLightBatch)
 {
-    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
-    m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
-    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spLightBuffer);
-    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetResource(0, m_spLightBuffer);
+    pContext->GetVertexSystem()->SetProgram(m_spVertexProgram);
+    pContext->GetGeometrySystem()->SetProgram(nullptr);
+    pContext->GetPixelSystem()->SetResource(0, m_spLightBuffer);
+    pContext->GetComputeSystem()->SetResource(0, m_spLightBuffer);
 
-    m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
-    m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
-    m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    pContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
+    pContext->SetIndexBuffer(0, m_spIndexBuffer);
+    pContext->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
 
     for (UINT32 nPass = 0; nPass < m_aVisibleLights.size(); nPass += m_nNumLightInstances)
     {
@@ -845,30 +840,32 @@ STDMETHODIMP_(void) CGEKRenderSystem::DrawLights(std::function<void(void)> OnLig
 
                 OnLightBatch();
 
-                m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+                pContext->DrawIndexedPrimitive(6, 0, 0);
             }
         }
     }
 }
 
-STDMETHODIMP_(void) CGEKRenderSystem::DrawOverlay(void)
+STDMETHODIMP_(void) CGEKRenderSystem::DrawOverlay(IGEKVideoContext *pContext)
 {
-    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
+    pContext->GetVertexSystem()->SetProgram(m_spVertexProgram);
 
-    m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
+    pContext->GetGeometrySystem()->SetProgram(nullptr);
 
-    m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
-    m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
-    m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    pContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
+    pContext->SetIndexBuffer(0, m_spIndexBuffer);
+    pContext->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
 
-    m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+    pContext->DrawIndexedPrimitive(6, 0, 0);
 }
 
 STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager && m_pVideoSystem);
-    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
-    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
+
+    CComQIPtr<IGEKVideoContext> spContext(m_pVideoSystem);
+    spContext->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
+    spContext->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
 
     m_pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void
     {
@@ -949,23 +946,23 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1)));
 
             m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            spContext->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
 
-            m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+            spContext->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            spContext->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
 
-            m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
+            spContext->GetComputeSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            spContext->GetComputeSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
 
-            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(1, m_spMaterialBuffer);
-            m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetConstantBuffer(2, m_spLightCountBuffer);
+            spContext->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
+            spContext->GetPixelSystem()->SetConstantBuffer(1, m_spMaterialBuffer);
+            spContext->GetPixelSystem()->SetConstantBuffer(2, m_spLightCountBuffer);
 
             m_pCurrentPass = &m_aPasses[kPass.GetRawString()];
             for (auto &pFilter : m_pCurrentPass->m_aFilters)
             {
                 m_pCurrentFilter = pFilter;
-                pFilter->Draw();
+                pFilter->Draw(spContext);
                 m_pCurrentFilter = nullptr;
             }
 
@@ -976,23 +973,23 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         GEKLOGMETRICS(L"Viewer: %d", nViewerID);
     });
 
-    m_pVideoSystem->SetDefaultTargets();
-    m_pVideoSystem->GetImmediateContext()->SetRenderStates(m_spRenderStates);
-    m_pVideoSystem->GetImmediateContext()->SetBlendStates(float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
-    m_pVideoSystem->GetImmediateContext()->SetDepthStates(0x0, m_spDepthStates);
-    m_pVideoSystem->GetImmediateContext()->GetComputeSystem()->SetProgram(nullptr);
-    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetProgram(m_spVertexProgram);
-    m_pVideoSystem->GetImmediateContext()->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
-    m_pVideoSystem->GetImmediateContext()->GetGeometrySystem()->SetProgram(nullptr);
-    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetProgram(m_spPixelProgram);
-    m_pVideoSystem->GetImmediateContext()->GetPixelSystem()->SetResource(0, m_spScreenBuffer);
-    SetResource(m_pVideoSystem->GetImmediateContext()->GetPixelSystem(), 1, nullptr);
-    m_pVideoSystem->GetImmediateContext()->SetVertexBuffer(0, 0, m_spVertexBuffer);
-    m_pVideoSystem->GetImmediateContext()->SetIndexBuffer(0, m_spIndexBuffer);
-    m_pVideoSystem->GetImmediateContext()->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
-    m_pVideoSystem->GetImmediateContext()->DrawIndexedPrimitive(6, 0, 0);
+    m_pVideoSystem->SetDefaultTargets(spContext);
+    spContext->SetRenderStates(m_spRenderStates);
+    spContext->SetBlendStates(float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
+    spContext->SetDepthStates(0x0, m_spDepthStates);
+    spContext->GetComputeSystem()->SetProgram(nullptr);
+    spContext->GetVertexSystem()->SetProgram(m_spVertexProgram);
+    spContext->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+    spContext->GetGeometrySystem()->SetProgram(nullptr);
+    spContext->GetPixelSystem()->SetProgram(m_spPixelProgram);
+    spContext->GetPixelSystem()->SetResource(0, m_spScreenBuffer);
+    SetResource(spContext->GetPixelSystem(), 1, nullptr);
+    spContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
+    spContext->SetIndexBuffer(0, m_spIndexBuffer);
+    spContext->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    spContext->DrawIndexedPrimitive(6, 0, 0);
 
-    m_pVideoSystem->GetImmediateContext()->ClearResources();
+    spContext->ClearResources();
 
     m_pVideoSystem->Present(true);
 
