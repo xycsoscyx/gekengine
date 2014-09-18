@@ -22,7 +22,6 @@ protected:
     UINT32 m_nYSize;
 
     CComPtr<IGEKVideoSystem> m_spVideoSystem;
-    CComPtr<IGEKInterfaceSystem> m_spInterfaceSystem;
     CComPtr<IGEKAudioSystem> m_spAudioSystem;
 
 private:

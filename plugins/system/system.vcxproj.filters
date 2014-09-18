@@ -11,9 +11,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKInterfaceSystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKSystem.h" />
@@ -35,12 +32,6 @@
     </ClInclude>
     <ClInclude Include="Public\IGEKVideoSystem.h">
       <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\IGEKInterfaceSystem.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKInterfaceSystem.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
