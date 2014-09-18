@@ -2927,8 +2927,8 @@ STDMETHODIMP_(void) CGEKVideoSystem::Present(bool bWaitForVSync)
         if (spFormat)
         {
             m_spD2DDeviceContext->BeginDraw();
-            m_spD2DDeviceContext->DrawRectangle({ 0.0f, 0.0f, 200.0f, 50.0f }, spBrush);
-            m_spD2DDeviceContext->DrawText(L"Test", 4, spFormat, { 12.5f, 12.5f, 187.5f, 37.5f }, spBrush);
+            m_spD2DDeviceContext->DrawRoundedRectangle({ { 10.0f, 10.0f, 210.0f, 60.0f }, 5.0f, 5.0f }, spBrush);
+            m_spD2DDeviceContext->DrawText(L"Test", 4, spFormat, { 22.5f, 22.5f, 197.5f, 47.5f }, spBrush);
             m_spD2DDeviceContext->EndDraw();
         }
     }

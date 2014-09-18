@@ -119,7 +119,7 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
     
     GEKENTITYID nPlayerID = 0;
     GEKLOG(L"Num. Entities Found: %d", aEntities.size());
-    concurrency::parallel_for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
+    std::for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
         GEKENTITYID nEntityID;
         if (SUCCEEDED(CreateEntity(nEntityID)))
