@@ -16,7 +16,7 @@ BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
     INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoObserver)
+    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
     INTERFACE_LIST_ENTRY_COM(IGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKInputManager)
@@ -138,7 +138,7 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
+            hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEK3DVideoObserver *)GetUnknown());
         }
 
         if (SUCCEEDED(hRetVal))
@@ -174,7 +174,7 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
 
     m_spRenderManager = nullptr;
     m_spPopulationManager = nullptr;
-    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEKVideoObserver *)GetUnknown());
+    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEK3DVideoObserver *)GetUnknown());
     CGEKObservable::RemoveObserver(m_spSystem, (IGEKSystemObserver *)this);
     CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
     m_spSystem = nullptr;

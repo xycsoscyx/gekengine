@@ -4,7 +4,7 @@
 #include "GEKUtility.h"
 #include <list>
 
-DECLARE_INTERFACE(IGEKVideoContext);
+DECLARE_INTERFACE(IGEK3DVideoContext);
 
 DECLARE_INTERFACE_IID_(IGEKRenderFilter, IUnknown, "9A3945DA-2E02-49A1-8107-FA08351A54A2")
 {
@@ -14,5 +14,5 @@ DECLARE_INTERFACE_IID_(IGEKRenderFilter, IUnknown, "9A3945DA-2E02-49A1-8107-FA08
     STDMETHOD(GetBuffer)                                    (THIS_ LPCWSTR pName, IUnknown **ppTexture) PURE;
     STDMETHOD(GetDepthBuffer)                               (THIS_ IUnknown **ppBuffer) PURE;
 
-    STDMETHOD_(void, Draw)                                  (THIS_ IGEKVideoContext *pContext) PURE;
+    STDMETHOD_(void, Draw)                                  (THIS_ IGEK3DVideoContext *pContext) PURE;
 };

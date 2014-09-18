@@ -5,7 +5,7 @@
 #include <atlbase.h>
 #include <atlstr.h>
 
-namespace GEKVIDEO
+namespace GEK3DVIDEO
 {
     namespace DATA
     {
@@ -411,7 +411,7 @@ namespace GEKVIDEO
     };
 };
 
-DECLARE_INTERFACE_IID_(IGEKVideoBuffer, IUnknown, "8542B213-0F5E-4BF7-88E2-80DE06A40D45")
+DECLARE_INTERFACE_IID_(IGEK3DVideoBuffer, IUnknown, "8542B213-0F5E-4BF7-88E2-80DE06A40D45")
 {
     STDMETHOD_(UINT32, GetStride)                       (THIS) PURE;
     STDMETHOD_(UINT32, GetCount)                        (THIS) PURE;
@@ -422,45 +422,45 @@ DECLARE_INTERFACE_IID_(IGEKVideoBuffer, IUnknown, "8542B213-0F5E-4BF7-88E2-80DE0
     STDMETHOD_(void, UnMap)                             (THIS) PURE;
 };
 
-DECLARE_INTERFACE_IID_(IGEKVideoTexture, IUnknown, "9477396F-28D6-414B-81A3-A44AD00A4409")
+DECLARE_INTERFACE_IID_(IGEK3DVideoTexture, IUnknown, "9477396F-28D6-414B-81A3-A44AD00A4409")
 {
     STDMETHOD_(UINT32, GetXSize)                        (THIS) PURE;
     STDMETHOD_(UINT32, GetYSize)                        (THIS) PURE;
     STDMETHOD_(UINT32, GetZSize)                        (THIS) PURE;
 };
 
-DECLARE_INTERFACE(IGEKVideoContextSystem)
+DECLARE_INTERFACE(IGEK3DVideoContextSystem)
 {
     STDMETHOD_(void, SetProgram)                        (THIS_ IUnknown *pProgram) PURE;
-    STDMETHOD_(void, SetConstantBuffer)                 (THIS_ UINT32 nIndex, IGEKVideoBuffer *pBuffer) PURE;
+    STDMETHOD_(void, SetConstantBuffer)                 (THIS_ UINT32 nIndex, IGEK3DVideoBuffer *pBuffer) PURE;
     STDMETHOD_(void, SetSamplerStates)                  (THIS_ UINT32 nStage, IUnknown *pStates) PURE;
     STDMETHOD_(void, SetResource)                       (THIS_ UINT32 nIndex, IUnknown *pResource) PURE;
     STDMETHOD_(void, SetUnorderedAccess)                (THIS_ UINT32 nStage, IUnknown *pResource) { };
 };
 
-DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819E68B372E")
+DECLARE_INTERFACE_IID_(IGEK3DVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819E68B372E")
 {
-    STDMETHOD_(IGEKVideoContextSystem *, GetComputeSystem)  (THIS) PURE;
-    STDMETHOD_(IGEKVideoContextSystem *, GetVertexSystem)   (THIS) PURE;
-    STDMETHOD_(IGEKVideoContextSystem *, GetGeometrySystem) (THIS) PURE;
-    STDMETHOD_(IGEKVideoContextSystem *, GetPixelSystem)    (THIS) PURE;
+    STDMETHOD_(IGEK3DVideoContextSystem *, GetComputeSystem)  (THIS) PURE;
+    STDMETHOD_(IGEK3DVideoContextSystem *, GetVertexSystem)   (THIS) PURE;
+    STDMETHOD_(IGEK3DVideoContextSystem *, GetGeometrySystem) (THIS) PURE;
+    STDMETHOD_(IGEK3DVideoContextSystem *, GetPixelSystem)    (THIS) PURE;
 
     STDMETHOD_(void, ClearResources)                    (THIS) PURE;
 
-    STDMETHOD_(void, SetViewports)                      (THIS_ const std::vector<GEKVIDEO::VIEWPORT> &aViewports) PURE;
-    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<GEKVIDEO::RECT<UINT32>> &aRects) PURE;
+    STDMETHOD_(void, SetViewports)                      (THIS_ const std::vector<GEK3DVIDEO::VIEWPORT> &aViewports) PURE;
+    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<GEK3DVIDEO::RECT<UINT32>> &aRects) PURE;
 
-    STDMETHOD_(void, ClearRenderTarget)                 (THIS_ IGEKVideoTexture *pTarget, const float4 &kColor) PURE;
+    STDMETHOD_(void, ClearRenderTarget)                 (THIS_ IGEK3DVideoTexture *pTarget, const float4 &kColor) PURE;
     STDMETHOD_(void, ClearDepthStencilTarget)           (THIS_ IUnknown *pTarget, UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;
-    STDMETHOD_(void, SetRenderTargets)                  (THIS_ const std::vector<IGEKVideoTexture *> &aTargets, IUnknown *pDepth) PURE;
+    STDMETHOD_(void, SetRenderTargets)                  (THIS_ const std::vector<IGEK3DVideoTexture *> &aTargets, IUnknown *pDepth) PURE;
 
     STDMETHOD_(void, SetRenderStates)                   (THIS_ IUnknown *pStates) PURE;
     STDMETHOD_(void, SetDepthStates)                    (THIS_ UINT32 nStencilReference, IUnknown *pStates) PURE;
     STDMETHOD_(void, SetBlendStates)                    (THIS_ const float4 &kBlendFactor, UINT32 nMask, IUnknown *pStates) PURE;
 
-    STDMETHOD_(void, SetVertexBuffer)                   (THIS_ UINT32 nSlot, UINT32 nOffset, IGEKVideoBuffer *pBuffer) PURE;
-    STDMETHOD_(void, SetIndexBuffer)                    (THIS_ UINT32 nOffset, IGEKVideoBuffer *pBuffer) PURE;
-    STDMETHOD_(void, SetPrimitiveType)                  (THIS_ GEKVIDEO::PRIMITIVE::TYPE eType) PURE;
+    STDMETHOD_(void, SetVertexBuffer)                   (THIS_ UINT32 nSlot, UINT32 nOffset, IGEK3DVideoBuffer *pBuffer) PURE;
+    STDMETHOD_(void, SetIndexBuffer)                    (THIS_ UINT32 nOffset, IGEK3DVideoBuffer *pBuffer) PURE;
+    STDMETHOD_(void, SetPrimitiveType)                  (THIS_ GEK3DVIDEO::PRIMITIVE::TYPE eType) PURE;
     STDMETHOD_(void, DrawIndexedPrimitive)              (THIS_ UINT32 nNumIndices, UINT32 nStartIndex, UINT32 nBaseVertex) PURE;
     STDMETHOD_(void, DrawPrimitive)                     (THIS_ UINT32 nNumVertices, UINT32 nStartVertex) PURE;
     STDMETHOD_(void, DrawInstancedIndexedPrimitive)     (THIS_ UINT32 nNumIndices, UINT32 nNumInstances, UINT32 nStartIndex, UINT32 nBaseVertex, UINT32 nStartInstance) PURE;
@@ -471,46 +471,46 @@ DECLARE_INTERFACE_IID_(IGEKVideoContext, IUnknown, "95262C77-0F56-4447-9337-5819
     STDMETHOD_(void, FinishCommandList)                 (THIS_ IUnknown **ppUnknown) PURE;
 };
 
-DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6")
+DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6")
 {
     STDMETHOD(Reset)                                    (THIS) PURE;
 
-    STDMETHOD(CreateDeferredContext)                    (THIS_ IGEKVideoContext **ppContext) PURE;
+    STDMETHOD(CreateDeferredContext)                    (THIS_ IGEK3DVideoContext **ppContext) PURE;
 
     STDMETHOD(CreateEvent)                              (THIS_ IUnknown **ppEvent) PURE;
     STDMETHOD_(void, SetEvent)                          (THIS_ IUnknown *pEvent) PURE;
     STDMETHOD_(bool, IsEventSet)                        (THIS_ IUnknown *pEvent) PURE;
 
-    STDMETHOD(CreateRenderStates)                       (THIS_ const GEKVIDEO::RENDERSTATES &kStates, IUnknown **ppStates) PURE;
-    STDMETHOD(CreateDepthStates)                        (THIS_ const GEKVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates) PURE;
-    STDMETHOD(CreateBlendStates)                        (THIS_ const GEKVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates) PURE;
-    STDMETHOD(CreateBlendStates)                        (THIS_ const GEKVIDEO::INDEPENDENTBLENDSTATES &kStates, IUnknown **ppStates) PURE;
+    STDMETHOD(CreateRenderStates)                       (THIS_ const GEK3DVIDEO::RENDERSTATES &kStates, IUnknown **ppStates) PURE;
+    STDMETHOD(CreateDepthStates)                        (THIS_ const GEK3DVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates) PURE;
+    STDMETHOD(CreateBlendStates)                        (THIS_ const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates) PURE;
+    STDMETHOD(CreateBlendStates)                        (THIS_ const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates, IUnknown **ppStates) PURE;
 
-    STDMETHOD(CreateRenderTarget)                       (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IGEKVideoTexture **ppTarget) PURE;
-    STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget) PURE;
+    STDMETHOD(CreateRenderTarget)                       (THIS_ UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IGEK3DVideoTexture **ppTarget) PURE;
+    STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget) PURE;
 
-    STDMETHOD(CreateBuffer)                             (THIS_ UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData = nullptr) PURE;
-    STDMETHOD(CreateBuffer)                             (THIS_ GEKVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData = nullptr) PURE;
+    STDMETHOD(CreateBuffer)                             (THIS_ UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEK3DVideoBuffer **ppBuffer, LPCVOID pData = nullptr) PURE;
+    STDMETHOD(CreateBuffer)                             (THIS_ GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, IGEK3DVideoBuffer **ppBuffer, LPCVOID pData = nullptr) PURE;
 
     STDMETHOD(CompileComputeProgram)                    (THIS_ LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
-    STDMETHOD(CompileVertexProgram)                     (THIS_ LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
+    STDMETHOD(CompileVertexProgram)                     (THIS_ LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
     STDMETHOD(CompileGeometryProgram)                   (THIS_ LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
     STDMETHOD(CompilePixelProgram)                      (THIS_ LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
     STDMETHOD(LoadComputeProgram)                       (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
-    STDMETHOD(LoadVertexProgram)                        (THIS_ LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
+    STDMETHOD(LoadVertexProgram)                        (THIS_ LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
     STDMETHOD(LoadGeometryProgram)                      (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
     STDMETHOD(LoadPixelProgram)                         (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
 
-    STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEKVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEKVideoTexture **ppTexture) PURE;
-    STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEKVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT *pDestRect = nullptr) PURE;
-    STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, IGEKVideoTexture **ppTexture) PURE;
-    STDMETHOD(CreateSamplerStates)                      (THIS_ const GEKVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates) PURE;
+    STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEK3DVideoTexture **ppTexture) PURE;
+    STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT *pDestRect = nullptr) PURE;
+    STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, IGEK3DVideoTexture **ppTexture) PURE;
+    STDMETHOD(CreateSamplerStates)                      (THIS_ const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates) PURE;
 
     STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor) PURE;
     STDMETHOD_(void, ClearDefaultDepthStencilTarget)    (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;
-    STDMETHOD_(void, SetDefaultTargets)                 (THIS_ IGEKVideoContext *pContext = nullptr, IUnknown *pDepth = nullptr) PURE;
+    STDMETHOD_(void, SetDefaultTargets)                 (THIS_ IGEK3DVideoContext *pContext = nullptr, IUnknown *pDepth = nullptr) PURE;
 
-    STDMETHOD(GetDefaultRenderTarget)                   (THIS_ IGEKVideoTexture **ppTarget) PURE;
+    STDMETHOD(GetDefaultRenderTarget)                   (THIS_ IGEK3DVideoTexture **ppTarget) PURE;
     STDMETHOD(GetDefaultDepthStencilTarget)             (THIS_ IUnknown **ppBuffer) PURE;
 
     STDMETHOD_(void, ExecuteCommandList)                (THIS_ IUnknown *pUnknown) PURE;
@@ -518,7 +518,7 @@ DECLARE_INTERFACE_IID_(IGEKVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B
     STDMETHOD_(void, Present)                           (THIS_ bool bWaitForVSync) PURE;
 };
 
-DECLARE_INTERFACE_IID_(IGEKVideoObserver, IGEKObserver, "2FE17A37-9B0B-4D12-95C9-F5CC5173B565")
+DECLARE_INTERFACE_IID_(IGEK3DVideoObserver, IGEKObserver, "2FE17A37-9B0B-4D12-95C9-F5CC5173B565")
 {
     STDMETHOD_(void, OnPreReset)                        (THIS) PURE;
     STDMETHOD(OnPostReset)                              (THIS) PURE;

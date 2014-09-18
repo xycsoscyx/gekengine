@@ -7,14 +7,14 @@
 #include "CGEKProperties.h"
 #include <list>
 
-DECLARE_INTERFACE(IGEKVideoTexture);
+DECLARE_INTERFACE(IGEK3DVideoTexture);
 DECLARE_INTERFACE(IUnknown);
 DECLARE_INTERFACE(IUnknown);
 DECLARE_INTERFACE(IUnknown);
 DECLARE_INTERFACE(IUnknown);
 
 class CGEKRenderFilter : public CGEKUnknown
-                       , public IGEKVideoObserver
+                       , public IGEK3DVideoObserver
                        , public IGEKRenderFilter
                        , public CGEKRenderStates
                        , public CGEKBlendStates
@@ -31,13 +31,13 @@ public:
     {
         bool m_bClear;
         float4 m_nClearColor;
-        GEKVIDEO::DATA::FORMAT m_eFormat;
-        CComPtr<IGEKVideoTexture> m_spResource;
+        GEK3DVIDEO::DATA::FORMAT m_eFormat;
+        CComPtr<IGEK3DVideoTexture> m_spResource;
         CStringW m_strSource;
 
         TARGET(void)
             : m_bClear(false)
-            , m_eFormat(GEKVIDEO::DATA::UNKNOWN)
+            , m_eFormat(GEK3DVIDEO::DATA::UNKNOWN)
         {
         }
     };
@@ -56,11 +56,11 @@ public:
     };
 
 private:
-    IGEKVideoSystem *m_pVideoSystem;
+    IGEK3DVideoSystem *m_pVideoSystem;
     IGEKRenderSystem *m_pRenderManager;
 
     float m_nScale;
-    GEKVIDEO::DATA::FORMAT m_eDepthFormat;
+    GEK3DVIDEO::DATA::FORMAT m_eDepthFormat;
     UINT32 m_nVertexAttributes;
 
     UINT32 m_nDispatchXSize;
@@ -107,7 +107,7 @@ public:
     STDMETHOD(Initialize)                                   (THIS);
     STDMETHOD_(void, Destroy)                               (THIS);
 
-    // IGEKVideoObserver
+    // IGEK3DVideoObserver
     STDMETHOD_(void, OnPreReset)                            (THIS);
     STDMETHOD(OnPostReset)                                  (THIS);
 
@@ -116,5 +116,5 @@ public:
     STDMETHOD_(UINT32, GetVertexAttributes)                 (THIS);
     STDMETHOD(GetBuffer)                                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)                               (THIS_ IUnknown **ppBuffer);
-    STDMETHOD_(void, Draw)                                  (THIS_ IGEKVideoContext *pContext);
+    STDMETHOD_(void, Draw)                                  (THIS_ IGEK3DVideoContext *pContext);
 };

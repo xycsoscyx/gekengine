@@ -29,7 +29,7 @@ CGEKComponentSystemSprite::~CGEKComponentSystemSprite(void)
 STDMETHODIMP CGEKComponentSystemSprite::Initialize(void)
 {
     HRESULT hRetVal = E_FAIL;
-    m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
+    m_pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
     m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
     m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderSystem);
     m_pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
@@ -57,10 +57,10 @@ STDMETHODIMP CGEKComponentSystemSprite::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = E_FAIL;
-        IGEKVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
+        IGEK3DVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
         if (pVideoSystem != nullptr)
         {
-            hRetVal = pVideoSystem->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
+            hRetVal = pVideoSystem->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
             GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
         }
     }
@@ -75,7 +75,7 @@ STDMETHODIMP CGEKComponentSystemSprite::Initialize(void)
             float2(-0.5f,  0.5f), float2(0.0f, 1.0f),
         };
 
-        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float4), 4, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
+        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float4), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
@@ -87,7 +87,7 @@ STDMETHODIMP CGEKComponentSystemSprite::Initialize(void)
             0, 2, 3,
         };
 
-        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), 6, GEKVIDEO::BUFFER::INDEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
+        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), 6, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
@@ -147,13 +147,13 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(void)
     });
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemSprite::OnDrawScene(IGEKVideoContext *pContext, UINT32 nVertexAttributes)
+STDMETHODIMP_(void) CGEKComponentSystemSprite::OnDrawScene(IGEK3DVideoContext *pContext, UINT32 nVertexAttributes)
 {
     REQUIRE_VOID_RETURN(pContext);
 
     m_pProgramManager->EnableProgram(pContext, m_spVertexProgram);
     pContext->GetVertexSystem()->SetResource(0, m_spInstanceBuffer);
-    pContext->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    pContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);
     pContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
     pContext->SetIndexBuffer(0, m_spIndexBuffer);
     for (auto kModel : m_aVisible)

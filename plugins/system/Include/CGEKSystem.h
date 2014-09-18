@@ -4,7 +4,7 @@
 #include "GEKContext.h"
 #include "IGEKSystem.h"
 
-DECLARE_INTERFACE(IGEKVideoSystem);
+DECLARE_INTERFACE(IGEK3DVideoSystem);
 DECLARE_INTERFACE(IGEKInterfaceSystem);
 DECLARE_INTERFACE(IGEKAudioSystem);
 
@@ -21,7 +21,7 @@ protected:
     UINT32 m_nXSize;
     UINT32 m_nYSize;
 
-    CComPtr<IGEKVideoSystem> m_spVideoSystem;
+    CComPtr<IGEK3DVideoSystem> m_spVideoSystem;
     CComPtr<IGEKAudioSystem> m_spAudioSystem;
 
 private:

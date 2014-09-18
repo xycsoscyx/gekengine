@@ -104,19 +104,19 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float3), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &kModel.m_spPositionBuffer, pBuffer);
+                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spPositionBuffer, pBuffer);
                     pBuffer += (sizeof(float3) * nNumVertices);
                 }
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float2), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &kModel.m_spTexCoordBuffer, pBuffer);
+                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float2), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spTexCoordBuffer, pBuffer);
                     pBuffer += (sizeof(float2) * nNumVertices);
                 }
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float3) * 3), nNumVertices, GEKVIDEO::BUFFER::VERTEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &kModel.m_spBasisBuffer, pBuffer);
+                    hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float3) * 3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spBasisBuffer, pBuffer);
                     pBuffer += (sizeof(float3) * 3 * nNumVertices);
                 }
 
@@ -125,7 +125,7 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
                     UINT32 nNumIndices = *((UINT32 *)pBuffer);
                     pBuffer += sizeof(UINT32);
 
-                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), nNumIndices, GEKVIDEO::BUFFER::INDEX_BUFFER | GEKVIDEO::BUFFER::STATIC, &kModel.m_spIndexBuffer, pBuffer);
+                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), nNumIndices, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spIndexBuffer, pBuffer);
                     pBuffer += (sizeof(UINT16) * nNumIndices);
                 }
 
@@ -143,7 +143,7 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
 STDMETHODIMP CGEKComponentSystemModel::Initialize(void)
 {
     HRESULT hRetVal = E_FAIL;
-    m_pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
+    m_pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
     m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
     m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderSystem);
     m_pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
@@ -171,10 +171,10 @@ STDMETHODIMP CGEKComponentSystemModel::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = E_FAIL;
-        IGEKVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEKVideoSystem>(CLSID_GEKVideoSystem);
+        IGEK3DVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
         if (pVideoSystem != nullptr)
         {
-            hRetVal = pVideoSystem->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEKVIDEO::BUFFER::DYNAMIC | GEKVIDEO::BUFFER::STRUCTURED_BUFFER | GEKVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
+            hRetVal = pVideoSystem->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
             GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
         }
     }
@@ -244,7 +244,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(void)
     });
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(IGEKVideoContext *pContext, UINT32 nVertexAttributes)
+STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(IGEK3DVideoContext *pContext, UINT32 nVertexAttributes)
 {
     REQUIRE_VOID_RETURN(pContext);
 
@@ -257,7 +257,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(IGEKVideoContext *pCon
 
     m_pProgramManager->EnableProgram(pContext, m_spVertexProgram);
     pContext->GetVertexSystem()->SetResource(0, m_spInstanceBuffer);
-    pContext->SetPrimitiveType(GEKVIDEO::PRIMITIVE::TRIANGLELIST);
+    pContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);
     for (auto kModel : m_aVisible)
     {
         if (nVertexAttributes & GEK_VERTEX_POSITION)

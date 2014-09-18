@@ -15,7 +15,7 @@ class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
                  , public IGEKContextObserver
                  , public IGEKSystemObserver
-                 , public IGEKVideoObserver
+                 , public IGEK3DVideoObserver
                  , public IGEKGameApplication
                  , public IGEKEngine
                  , public IGEKInputManager
@@ -57,7 +57,7 @@ public:
     STDMETHOD_(void, OnStop)                    (THIS);
     STDMETHOD_(void, OnStep)                    (THIS);
 
-    // IGEKVideoObserver
+    // IGEK3DVideoObserver
     STDMETHOD_(void, OnPreReset)                (THIS);
     STDMETHOD(OnPostReset)                      (THIS);
 

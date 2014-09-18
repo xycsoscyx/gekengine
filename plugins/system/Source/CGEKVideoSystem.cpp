@@ -14,7 +14,7 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 
-class CGEKVideoComputeContextSystem : public IGEKVideoContextSystem
+class CGEKVideoComputeContextSystem : public IGEK3DVideoContextSystem
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -39,7 +39,7 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEKVideoBuffer *pBuffer)
+    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEK3DVideoBuffer *pBuffer)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pBuffer);
@@ -94,7 +94,7 @@ public:
     }
 };
 
-class CGEKVideoVertexContextSystem : public IGEKVideoContextSystem
+class CGEKVideoVertexContextSystem : public IGEK3DVideoContextSystem
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -122,7 +122,7 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEKVideoBuffer *pBuffer)
+    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEK3DVideoBuffer *pBuffer)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pBuffer);
@@ -164,7 +164,7 @@ public:
     }
 };
 
-class CGEKVideoGeometryContextSystem : public IGEKVideoContextSystem
+class CGEKVideoGeometryContextSystem : public IGEK3DVideoContextSystem
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -189,7 +189,7 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEKVideoBuffer *pBuffer)
+    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEK3DVideoBuffer *pBuffer)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pBuffer);
@@ -231,7 +231,7 @@ public:
     }
 };
 
-class CGEKVideoPixelContextSystem : public IGEKVideoContextSystem
+class CGEKVideoPixelContextSystem : public IGEK3DVideoContextSystem
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -256,7 +256,7 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEKVideoBuffer *pBuffer)
+    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEK3DVideoBuffer *pBuffer)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
         REQUIRE_VOID_RETURN(pBuffer);
@@ -436,7 +436,7 @@ public:
 };
 
 class CGEKVideoBuffer : public CGEKUnknown
-    , public IGEKVideoBuffer
+    , public IGEK3DVideoBuffer
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -507,7 +507,7 @@ public:
 };
 
 class CGEKVideoTexture : public CGEKUnknown
-                       , public IGEKVideoTexture
+                       , public IGEK3DVideoTexture
 {
 protected:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -604,14 +604,14 @@ BEGIN_INTERFACE_LIST(CGEKVideoPixelProgram)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoBuffer)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoBuffer)
+    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Buffer, m_spBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, m_spShaderView)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, m_spUnorderedView)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoTexture)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoTexture)
+    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoTexture)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, m_spShaderView)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, m_spUnorderedView)
 END_INTERFACE_LIST_UNKNOWN
@@ -621,13 +621,14 @@ BEGIN_INTERFACE_LIST(CGEKVideoRenderTarget)
 END_INTERFACE_LIST_BASE(CGEKVideoTexture)
 
 BEGIN_INTERFACE_LIST(CGEKVideoContext)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoContext)
+    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoContext)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DeviceContext, m_spDeviceContext)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
-    INTERFACE_LIST_ENTRY_COM(IGEKVideoSystem)
+    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoSystem)
+    INTERFACE_LIST_ENTRY_COM(IGEK2DVideoSystem)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Device, m_spDevice)
 END_INTERFACE_LIST_BASE(CGEKVideoContext)
 
@@ -657,22 +658,22 @@ CGEKVideoContext::~CGEKVideoContext(void)
 {
 }
 
-STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetComputeSystem(void)
+STDMETHODIMP_(IGEK3DVideoContextSystem *) CGEKVideoContext::GetComputeSystem(void)
 {
     return m_spComputeSystem.get();
 }
 
-STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetVertexSystem(void)
+STDMETHODIMP_(IGEK3DVideoContextSystem *) CGEKVideoContext::GetVertexSystem(void)
 {
     return m_spVertexSystem.get();
 }
 
-STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetGeometrySystem(void)
+STDMETHODIMP_(IGEK3DVideoContextSystem *) CGEKVideoContext::GetGeometrySystem(void)
 {
     return m_spGeometrySystem.get();
 }
 
-STDMETHODIMP_(IGEKVideoContextSystem *) CGEKVideoContext::GetPixelSystem(void)
+STDMETHODIMP_(IGEK3DVideoContextSystem *) CGEKVideoContext::GetPixelSystem(void)
 {
     return m_spPixelSystem.get();
 }
@@ -698,19 +699,19 @@ STDMETHODIMP_(void) CGEKVideoContext::ClearResources(void)
     m_spDeviceContext->OMSetRenderTargets(6, gs_pNumTargets, nullptr);
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetViewports(const std::vector<GEKVIDEO::VIEWPORT> &aViewports)
+STDMETHODIMP_(void) CGEKVideoContext::SetViewports(const std::vector<GEK3DVIDEO::VIEWPORT> &aViewports)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && aViewports.size() > 0);
     m_spDeviceContext->RSSetViewports(aViewports.size(), (D3D11_VIEWPORT *)&aViewports[0]);
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<GEKVIDEO::RECT<UINT32>> &aRects)
+STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<GEK3DVIDEO::RECT<UINT32>> &aRects)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && aRects.size() > 0);
     m_spDeviceContext->RSSetScissorRects(aRects.size(), (D3D11_RECT *)&aRects[0]);
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::ClearRenderTarget(IGEKVideoTexture *pTarget, const float4 &kColor)
+STDMETHODIMP_(void) CGEKVideoContext::ClearRenderTarget(IGEK3DVideoTexture *pTarget, const float4 &kColor)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && pTarget);
 
@@ -729,13 +730,13 @@ STDMETHODIMP_(void) CGEKVideoContext::ClearDepthStencilTarget(IUnknown *pTarget,
     if (spD3DDepth)
     {
         m_spDeviceContext->ClearDepthStencilView(spD3DDepth, 
-            ((nFlags & GEKVIDEO::CLEAR::DEPTH ? D3D11_CLEAR_DEPTH : 0) | 
-            (nFlags & GEKVIDEO::CLEAR::STENCIL ? D3D11_CLEAR_STENCIL : 0)), 
+            ((nFlags & GEK3DVIDEO::CLEAR::DEPTH ? D3D11_CLEAR_DEPTH : 0) | 
+            (nFlags & GEK3DVIDEO::CLEAR::STENCIL ? D3D11_CLEAR_STENCIL : 0)), 
             fDepth, nStencil);
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEKVideoTexture *> &aTargets, IUnknown *pDepth)
+STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEK3DVideoTexture *> &aTargets, IUnknown *pDepth)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
 
@@ -796,7 +797,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &kBlendFactor,
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetVertexBuffer(UINT32 nSlot, UINT32 nOffset, IGEKVideoBuffer *pBuffer)
+STDMETHODIMP_(void) CGEKVideoContext::SetVertexBuffer(UINT32 nSlot, UINT32 nOffset, IGEK3DVideoBuffer *pBuffer)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pBuffer);
@@ -810,7 +811,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetVertexBuffer(UINT32 nSlot, UINT32 nOffs
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetIndexBuffer(UINT32 nOffset, IGEKVideoBuffer *pBuffer)
+STDMETHODIMP_(void) CGEKVideoContext::SetIndexBuffer(UINT32 nOffset, IGEK3DVideoBuffer *pBuffer)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pBuffer);
@@ -831,29 +832,29 @@ STDMETHODIMP_(void) CGEKVideoContext::SetIndexBuffer(UINT32 nOffset, IGEKVideoBu
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetPrimitiveType(GEKVIDEO::PRIMITIVE::TYPE eType)
+STDMETHODIMP_(void) CGEKVideoContext::SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TYPE eType)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     D3D11_PRIMITIVE_TOPOLOGY eTopology = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
     switch (eType)
     {
-    case GEKVIDEO::PRIMITIVE::LINELIST:
+    case GEK3DVIDEO::PRIMITIVE::LINELIST:
         eTopology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
         break;
 
-    case GEKVIDEO::PRIMITIVE::LINESTRIP:
+    case GEK3DVIDEO::PRIMITIVE::LINESTRIP:
         eTopology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
         break;
 
-    case GEKVIDEO::PRIMITIVE::TRIANGLELIST:
+    case GEK3DVIDEO::PRIMITIVE::TRIANGLELIST:
         eTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         break;
 
-    case GEKVIDEO::PRIMITIVE::TRIANGLESTRIP:
+    case GEK3DVIDEO::PRIMITIVE::TRIANGLESTRIP:
         eTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
         break;
 
-    case GEKVIDEO::PRIMITIVE::POINTLIST:
+    case GEK3DVIDEO::PRIMITIVE::POINTLIST:
     default:
         eTopology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
         break;
@@ -961,7 +962,7 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
                     if (m_spDefaultTarget)
                     {
                         CComPtr<IUnknown> spDepthView;
-                        hRetVal = CreateDepthTarget(pSystem->GetXSize(), pSystem->GetYSize(), GEKVIDEO::DATA::D24_S8, &spDepthView);
+                        hRetVal = CreateDepthTarget(pSystem->GetXSize(), pSystem->GetYSize(), GEK3DVIDEO::DATA::D24_S8, &spDepthView);
                         if (spDepthView)
                         {
                             hRetVal = spDepthView->QueryInterface(IID_ID3D11DepthStencilView, (LPVOID FAR *)&m_spDepthStencilView);
@@ -1095,7 +1096,7 @@ STDMETHODIMP CGEKVideoSystem::Reset(void)
     REQUIRE_RETURN(m_spDevice, E_FAIL);
     REQUIRE_RETURN(m_spDeviceContext, E_FAIL);
 
-    CGEKObservable::SendEvent(TGEKEvent<IGEKVideoObserver>(std::bind(&IGEKVideoObserver::OnPreReset, std::placeholders::_1)));
+    CGEKObservable::SendEvent(TGEKEvent<IGEK3DVideoObserver>(std::bind(&IGEK3DVideoObserver::OnPreReset, std::placeholders::_1)));
 
     m_spDefaultTarget = nullptr;
     m_spRenderTargetView = nullptr;
@@ -1132,14 +1133,14 @@ STDMETHODIMP CGEKVideoSystem::Reset(void)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEKVideoObserver>(std::bind(&IGEKVideoObserver::OnPostReset, std::placeholders::_1)));
+            hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEK3DVideoObserver>(std::bind(&IGEK3DVideoObserver::OnPostReset, std::placeholders::_1)));
         }
     }
 
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEKVideoContext **ppContext)
+STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEK3DVideoContext **ppContext)
 {
     GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice, E_FAIL);
@@ -1214,7 +1215,7 @@ STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(IUnknown *pEvent)
     return bIsSet;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &kStates, IUnknown **ppStates)
+STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES &kStates, IUnknown **ppStates)
 {
     GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -1231,11 +1232,11 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &k
     kRasterDesc.AntialiasedLineEnable = kStates.m_bAntialiasedLineEnable;
     switch (kStates.m_eFillMode)
     {
-    case GEKVIDEO::FILL::WIREFRAME:
+    case GEK3DVIDEO::FILL::WIREFRAME:
         kRasterDesc.FillMode = D3D11_FILL_WIREFRAME;
         break;
 
-    case GEKVIDEO::FILL::SOLID:
+    case GEK3DVIDEO::FILL::SOLID:
     default:
         kRasterDesc.FillMode = D3D11_FILL_SOLID;
         break;
@@ -1243,15 +1244,15 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &k
         
     switch (kStates.m_eCullMode)
     {
-    case GEKVIDEO::CULL::FRONT:
+    case GEK3DVIDEO::CULL::FRONT:
         kRasterDesc.CullMode = D3D11_CULL_FRONT;
         break;
 
-    case GEKVIDEO::CULL::BACK:
+    case GEK3DVIDEO::CULL::BACK:
         kRasterDesc.CullMode = D3D11_CULL_BACK;
         break;
 
-    case GEKVIDEO::CULL::NONE:
+    case GEK3DVIDEO::CULL::NONE:
     default:
         kRasterDesc.CullMode = D3D11_CULL_NONE;
         break;
@@ -1274,69 +1275,69 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEKVIDEO::RENDERSTATES &k
     return hRetVal;
 }
 
-static D3D11_COMPARISON_FUNC GetComparisonFunction(GEKVIDEO::COMPARISON::FUNCTION eFunction)
+static D3D11_COMPARISON_FUNC GetComparisonFunction(GEK3DVIDEO::COMPARISON::FUNCTION eFunction)
 {
     switch (eFunction)
     {
-    case GEKVIDEO::COMPARISON::NEVER:
+    case GEK3DVIDEO::COMPARISON::NEVER:
         return D3D11_COMPARISON_NEVER;
 
-    case GEKVIDEO::COMPARISON::EQUAL:
+    case GEK3DVIDEO::COMPARISON::EQUAL:
         return D3D11_COMPARISON_EQUAL;
 
-    case GEKVIDEO::COMPARISON::NOT_EQUAL:
+    case GEK3DVIDEO::COMPARISON::NOT_EQUAL:
         return D3D11_COMPARISON_NOT_EQUAL;
 
-    case GEKVIDEO::COMPARISON::LESS:
+    case GEK3DVIDEO::COMPARISON::LESS:
         return D3D11_COMPARISON_LESS;
 
-    case GEKVIDEO::COMPARISON::LESS_EQUAL:
+    case GEK3DVIDEO::COMPARISON::LESS_EQUAL:
         return D3D11_COMPARISON_LESS_EQUAL;
 
-    case GEKVIDEO::COMPARISON::GREATER:
+    case GEK3DVIDEO::COMPARISON::GREATER:
         return D3D11_COMPARISON_GREATER;
 
-    case GEKVIDEO::COMPARISON::GREATER_EQUAL:
+    case GEK3DVIDEO::COMPARISON::GREATER_EQUAL:
         return D3D11_COMPARISON_GREATER_EQUAL;
 
-    case GEKVIDEO::COMPARISON::ALWAYS:
+    case GEK3DVIDEO::COMPARISON::ALWAYS:
     default:
         return D3D11_COMPARISON_ALWAYS;
     };
 }
 
-static D3D11_STENCIL_OP GetStencilOperation(GEKVIDEO::STENCIL::OPERATION eOperation)
+static D3D11_STENCIL_OP GetStencilOperation(GEK3DVIDEO::STENCIL::OPERATION eOperation)
 {
     switch (eOperation)
     {
-    case GEKVIDEO::STENCIL::KEEP:
+    case GEK3DVIDEO::STENCIL::KEEP:
         return D3D11_STENCIL_OP_KEEP;
 
-    case GEKVIDEO::STENCIL::REPLACE:
+    case GEK3DVIDEO::STENCIL::REPLACE:
         return D3D11_STENCIL_OP_REPLACE;
 
-    case GEKVIDEO::STENCIL::INVERT:
+    case GEK3DVIDEO::STENCIL::INVERT:
         return D3D11_STENCIL_OP_INVERT;
 
-    case GEKVIDEO::STENCIL::INCREASE:
+    case GEK3DVIDEO::STENCIL::INCREASE:
         return D3D11_STENCIL_OP_INCR;
 
-    case GEKVIDEO::STENCIL::INCREASE_SATURATED:
+    case GEK3DVIDEO::STENCIL::INCREASE_SATURATED:
         return D3D11_STENCIL_OP_INCR_SAT;
 
-    case GEKVIDEO::STENCIL::DECREASE:
+    case GEK3DVIDEO::STENCIL::DECREASE:
         return D3D11_STENCIL_OP_DECR;
 
-    case GEKVIDEO::STENCIL::DECREASE_SATURATED:
+    case GEK3DVIDEO::STENCIL::DECREASE_SATURATED:
         return D3D11_STENCIL_OP_DECR_SAT;
 
-    case GEKVIDEO::STENCIL::ZERO:
+    case GEK3DVIDEO::STENCIL::ZERO:
     default:
         return D3D11_STENCIL_OP_ZERO;
     };
 };
 
-STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEKVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates)
+STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates)
 {
     GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -1358,11 +1359,11 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEKVIDEO::DEPTHSTATES &kSt
     kDepthStencilDesc.BackFace.StencilFunc = GetComparisonFunction(kStates.m_kStencilBackStates.m_eStencilComparison);
     switch (kStates.m_eDepthWriteMask)
     {
-    case GEKVIDEO::DEPTHWRITE::ZERO:
+    case GEK3DVIDEO::DEPTHWRITE::ZERO:
         kDepthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
         break;
 
-    case GEKVIDEO::DEPTHWRITE::ALL:
+    case GEK3DVIDEO::DEPTHWRITE::ALL:
     default:
         kDepthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
         break;
@@ -1384,87 +1385,87 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEKVIDEO::DEPTHSTATES &kSt
     return hRetVal;
 }
 
-static D3D11_BLEND GetBlendSource(GEKVIDEO::BLEND::FACTOR::SOURCE eSource)
+static D3D11_BLEND GetBlendSource(GEK3DVIDEO::BLEND::FACTOR::SOURCE eSource)
 {
     switch (eSource)
     {
-    case GEKVIDEO::BLEND::FACTOR::ONE:
+    case GEK3DVIDEO::BLEND::FACTOR::ONE:
         return D3D11_BLEND_ONE;
 
-    case GEKVIDEO::BLEND::FACTOR::BLENDFACTOR:
+    case GEK3DVIDEO::BLEND::FACTOR::BLENDFACTOR:
         return D3D11_BLEND_BLEND_FACTOR;
 
-    case GEKVIDEO::BLEND::FACTOR::INVERSE_BLENDFACTOR:
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_BLENDFACTOR:
         return D3D11_BLEND_INV_BLEND_FACTOR;
 
-    case GEKVIDEO::BLEND::FACTOR::SOURCE_COLOR:
+    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_COLOR:
         return D3D11_BLEND_SRC_COLOR;
 
-    case GEKVIDEO::BLEND::FACTOR::INVERSE_SOURCE_COLOR:
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SOURCE_COLOR:
         return D3D11_BLEND_INV_SRC_COLOR;
 
-    case GEKVIDEO::BLEND::FACTOR::SOURCE_ALPHA:
+    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_ALPHA:
         return D3D11_BLEND_SRC_ALPHA;
 
-    case GEKVIDEO::BLEND::FACTOR::INVERSE_SOURCE_ALPHA:
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SOURCE_ALPHA:
         return D3D11_BLEND_INV_SRC_ALPHA;
 
-    case GEKVIDEO::BLEND::FACTOR::SOURCE_ALPHA_SATURATE:
+    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_ALPHA_SATURATE:
         return D3D11_BLEND_SRC_ALPHA_SAT;
 
-    case GEKVIDEO::BLEND::FACTOR::DESTINATION_COLOR:
+    case GEK3DVIDEO::BLEND::FACTOR::DESTINATION_COLOR:
         return D3D11_BLEND_DEST_COLOR;
 
-    case GEKVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_COLOR:
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_COLOR:
         return D3D11_BLEND_INV_DEST_COLOR;
 
-    case GEKVIDEO::BLEND::FACTOR::DESTINATION_ALPHA:
+    case GEK3DVIDEO::BLEND::FACTOR::DESTINATION_ALPHA:
         return D3D11_BLEND_DEST_ALPHA;
 
-    case GEKVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_ALPHA:
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_ALPHA:
         return D3D11_BLEND_INV_DEST_ALPHA;
 
-    case GEKVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_COLOR:
+    case GEK3DVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_COLOR:
         return D3D11_BLEND_SRC1_COLOR;
 
-    case GEKVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_COLOR:
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_COLOR:
         return D3D11_BLEND_INV_SRC1_COLOR;
 
-    case GEKVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_ALPHA:
+    case GEK3DVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_ALPHA:
         return D3D11_BLEND_SRC1_ALPHA;
 
-    case GEKVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_ALPHA:
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_ALPHA:
         return D3D11_BLEND_INV_SRC1_ALPHA;
 
-    case GEKVIDEO::BLEND::FACTOR::ZERO:
+    case GEK3DVIDEO::BLEND::FACTOR::ZERO:
     default:
         return D3D11_BLEND_ZERO;
     };
 }
 
-static D3D11_BLEND_OP GetBlendOperation(GEKVIDEO::BLEND::OPERATION eOperation)
+static D3D11_BLEND_OP GetBlendOperation(GEK3DVIDEO::BLEND::OPERATION eOperation)
 {
     switch (eOperation)
     {
-    case GEKVIDEO::BLEND::SUBTRACT:
+    case GEK3DVIDEO::BLEND::SUBTRACT:
         return D3D11_BLEND_OP_SUBTRACT;
 
-    case GEKVIDEO::BLEND::REVERSE_SUBTRACT:
+    case GEK3DVIDEO::BLEND::REVERSE_SUBTRACT:
         return D3D11_BLEND_OP_REV_SUBTRACT;
 
-    case GEKVIDEO::BLEND::MINIMUM:
+    case GEK3DVIDEO::BLEND::MINIMUM:
         return D3D11_BLEND_OP_MIN;
 
-    case GEKVIDEO::BLEND::MAXIMUM:
+    case GEK3DVIDEO::BLEND::MAXIMUM:
         return D3D11_BLEND_OP_MAX;
 
-    case GEKVIDEO::BLEND::ADD:
+    case GEK3DVIDEO::BLEND::ADD:
     default:
         return D3D11_BLEND_OP_ADD;
     };
 };
 
-STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates)
+STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates)
 {
     GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -1481,22 +1482,22 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::UNIFIEDBLENDSTAT
     kBlendDesc.RenderTarget[0].DestBlendAlpha = GetBlendSource(kStates.m_eAlphaDestination);
     kBlendDesc.RenderTarget[0].BlendOpAlpha = GetBlendOperation(kStates.m_eAlphaOperation);
     kBlendDesc.RenderTarget[0].RenderTargetWriteMask = 0;
-    if (kStates.m_nWriteMask & GEKVIDEO::COLOR::R) 
+    if (kStates.m_nWriteMask & GEK3DVIDEO::COLOR::R) 
     {
         kBlendDesc.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
     }
     
-    if (kStates.m_nWriteMask & GEKVIDEO::COLOR::G) 
+    if (kStates.m_nWriteMask & GEK3DVIDEO::COLOR::G) 
     {
         kBlendDesc.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
     }
     
-    if (kStates.m_nWriteMask & GEKVIDEO::COLOR::B) 
+    if (kStates.m_nWriteMask & GEK3DVIDEO::COLOR::B) 
     {
         kBlendDesc.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
     }
     
-    if (kStates.m_nWriteMask & GEKVIDEO::COLOR::A) 
+    if (kStates.m_nWriteMask & GEK3DVIDEO::COLOR::A) 
     {
         kBlendDesc.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
     }
@@ -1517,7 +1518,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::UNIFIEDBLENDSTAT
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::INDEPENDENTBLENDSTATES &kStates, IUnknown **ppStates)
+STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates, IUnknown **ppStates)
 {
     GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -1536,22 +1537,22 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::INDEPENDENTBLEND
         kBlendDesc.RenderTarget[nTarget].DestBlendAlpha = GetBlendSource(kStates.m_aTargetStates[nTarget].m_eAlphaDestination);
         kBlendDesc.RenderTarget[nTarget].BlendOpAlpha = GetBlendOperation(kStates.m_aTargetStates[nTarget].m_eAlphaOperation);
         kBlendDesc.RenderTarget[nTarget].RenderTargetWriteMask = 0;
-        if (kStates.m_aTargetStates[nTarget].m_nWriteMask & GEKVIDEO::COLOR::R) 
+        if (kStates.m_aTargetStates[nTarget].m_nWriteMask & GEK3DVIDEO::COLOR::R) 
         {
             kBlendDesc.RenderTarget[nTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
         }
     
-        if (kStates.m_aTargetStates[nTarget].m_nWriteMask & GEKVIDEO::COLOR::G) 
+        if (kStates.m_aTargetStates[nTarget].m_nWriteMask & GEK3DVIDEO::COLOR::G) 
         {
             kBlendDesc.RenderTarget[nTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
         }
     
-        if (kStates.m_aTargetStates[nTarget].m_nWriteMask & GEKVIDEO::COLOR::B) 
+        if (kStates.m_aTargetStates[nTarget].m_nWriteMask & GEK3DVIDEO::COLOR::B) 
         {
             kBlendDesc.RenderTarget[nTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
         }
     
-        if (kStates.m_aTargetStates[nTarget].m_nWriteMask & GEKVIDEO::COLOR::A) 
+        if (kStates.m_aTargetStates[nTarget].m_nWriteMask & GEK3DVIDEO::COLOR::A) 
         {
             kBlendDesc.RenderTarget[nTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
         }
@@ -1573,7 +1574,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEKVIDEO::INDEPENDENTBLEND
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IGEKVideoTexture **ppTarget)
+STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IGEK3DVideoTexture **ppTarget)
 {
     GEKFUNCTION(L"XSize(%d), YSize(%d), Format(%d)", nXSize, nYSize, eFormat);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -1594,35 +1595,35 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
     HRESULT hRetVal = S_OK;
     switch (eFormat)
     {
-    case GEKVIDEO::DATA::RGBA_UINT8:
+    case GEK3DVIDEO::DATA::RGBA_UINT8:
         kTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         break;
 
-    case GEKVIDEO::DATA::R_FLOAT:
+    case GEK3DVIDEO::DATA::R_FLOAT:
         kTextureDesc.Format = DXGI_FORMAT_R32_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::RG_FLOAT:
+    case GEK3DVIDEO::DATA::RG_FLOAT:
         kTextureDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::RGB_FLOAT:
+    case GEK3DVIDEO::DATA::RGB_FLOAT:
         kTextureDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::RGBA_FLOAT:
+    case GEK3DVIDEO::DATA::RGBA_FLOAT:
         kTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::R_HALF:
+    case GEK3DVIDEO::DATA::R_HALF:
         kTextureDesc.Format = DXGI_FORMAT_R16_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::RG_HALF:
+    case GEK3DVIDEO::DATA::RG_HALF:
         kTextureDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::RGBA_HALF:
+    case GEK3DVIDEO::DATA::RGBA_HALF:
         kTextureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
         break;
 
@@ -1674,7 +1675,7 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GEKVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget)
+STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget)
 {
     GEKFUNCTION(L"XSize(%d), YSize(%d)", nXSize, nYSize);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -1695,15 +1696,15 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GE
     HRESULT hRetVal = S_OK;
     switch (eFormat)
     {
-    case GEKVIDEO::DATA::D16:
+    case GEK3DVIDEO::DATA::D16:
         kDepthBufferDesc.Format = DXGI_FORMAT_D16_UNORM;
         break;
 
-    case GEKVIDEO::DATA::D24_S8:
+    case GEK3DVIDEO::DATA::D24_S8:
         kDepthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
         break;
 
-    case GEKVIDEO::DATA::D32:
+    case GEK3DVIDEO::DATA::D32:
         kDepthBufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
         break;
 
@@ -1738,7 +1739,7 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GE
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData)
+STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEK3DVideoBuffer **ppBuffer, LPCVOID pData)
 {
     GEKFUNCTION(L"Stride(%d), Count(%d), Flags(%d)", nStride, nCount, nFlags);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -1746,7 +1747,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
 
     D3D11_BUFFER_DESC kBufferDesc;
     kBufferDesc.ByteWidth = (nStride * nCount);
-    if (nFlags & GEKVIDEO::BUFFER::STATIC)
+    if (nFlags & GEK3DVIDEO::BUFFER::STATIC)
     {
         if (pData == nullptr)
         {
@@ -1755,7 +1756,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
 
         kBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
     }
-    else if (nFlags & GEKVIDEO::BUFFER::DYNAMIC)
+    else if (nFlags & GEK3DVIDEO::BUFFER::DYNAMIC)
     {
         kBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
     }
@@ -1764,15 +1765,15 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         kBufferDesc.Usage = D3D11_USAGE_DEFAULT;
     }
 
-    if (nFlags & GEKVIDEO::BUFFER::VERTEX_BUFFER)
+    if (nFlags & GEK3DVIDEO::BUFFER::VERTEX_BUFFER)
     {
         kBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     }
-    else if (nFlags & GEKVIDEO::BUFFER::INDEX_BUFFER)
+    else if (nFlags & GEK3DVIDEO::BUFFER::INDEX_BUFFER)
     {
         kBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     }
-    else if (nFlags & GEKVIDEO::BUFFER::CONSTANT_BUFFER)
+    else if (nFlags & GEK3DVIDEO::BUFFER::CONSTANT_BUFFER)
     {
         kBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     }
@@ -1781,17 +1782,17 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         kBufferDesc.BindFlags = 0;
     }
 
-    if (nFlags & GEKVIDEO::BUFFER::RESOURCE)
+    if (nFlags & GEK3DVIDEO::BUFFER::RESOURCE)
     {
         kBufferDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
     }
 
-    if (nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
+    if (nFlags & GEK3DVIDEO::BUFFER::UNORDERED_ACCESS)
     {
         kBufferDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
     }
 
-    if (nFlags & GEKVIDEO::BUFFER::DYNAMIC)
+    if (nFlags & GEK3DVIDEO::BUFFER::DYNAMIC)
     {
         kBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     }
@@ -1800,7 +1801,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         kBufferDesc.CPUAccessFlags = 0;
     }
 
-    if (nFlags & GEKVIDEO::BUFFER::STRUCTURED_BUFFER)
+    if (nFlags & GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER)
     {
         kBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
         kBufferDesc.StructureByteStride = nStride;
@@ -1831,7 +1832,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
     if (spBuffer)
     {
         CComPtr<ID3D11ShaderResourceView> spShaderView;
-        if (nFlags & GEKVIDEO::BUFFER::RESOURCE)
+        if (nFlags & GEK3DVIDEO::BUFFER::RESOURCE)
         {
             D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
             kViewDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -1844,7 +1845,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         }
 
         CComPtr<ID3D11UnorderedAccessView> spUnorderedView;
-        if (SUCCEEDED(hRetVal) && nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
+        if (SUCCEEDED(hRetVal) && nFlags & GEK3DVIDEO::BUFFER::UNORDERED_ACCESS)
         {
             D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
             kViewDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -1872,98 +1873,98 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, IGEKVideoBuffer **ppBuffer, LPCVOID pData)
+STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, IGEK3DVideoBuffer **ppBuffer, LPCVOID pData)
 {
     GEKFUNCTION(L"Format(%d), Count(%d)", eFormat, nCount);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(eFormat != GEKVIDEO::DATA::UNKNOWN && nCount > 0 && ppBuffer, E_INVALIDARG);
+    REQUIRE_RETURN(eFormat != GEK3DVIDEO::DATA::UNKNOWN && nCount > 0 && ppBuffer, E_INVALIDARG);
 
     UINT32 nStride = 0;
     DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
     HRESULT hRetVal = S_OK;
     switch (eFormat)
     {
-    case GEKVIDEO::DATA::R_UINT8:
+    case GEK3DVIDEO::DATA::R_UINT8:
         eNewFormat = DXGI_FORMAT_R8_UINT;
         nStride = sizeof(UINT8);
         break;
 
-    case GEKVIDEO::DATA::RG_UINT8:
+    case GEK3DVIDEO::DATA::RG_UINT8:
         eNewFormat = DXGI_FORMAT_R8G8_UINT;
         nStride = (sizeof(UINT8) * 2);
         break;
 
-    case GEKVIDEO::DATA::RGBA_UINT8:
+    case GEK3DVIDEO::DATA::RGBA_UINT8:
         eNewFormat = DXGI_FORMAT_R8G8B8A8_UINT;
         nStride = (sizeof(UINT8) * 4);
         break;
 
-    case GEKVIDEO::DATA::R_UINT16:
+    case GEK3DVIDEO::DATA::R_UINT16:
         eNewFormat = DXGI_FORMAT_R16_UINT;
         nStride = sizeof(UINT16);
         break;
 
-    case GEKVIDEO::DATA::RG_UINT16:
+    case GEK3DVIDEO::DATA::RG_UINT16:
         eNewFormat = DXGI_FORMAT_R16G16_UINT;
         nStride = (sizeof(UINT16) * 2);
         break;
 
-    case GEKVIDEO::DATA::RGBA_UINT16:
+    case GEK3DVIDEO::DATA::RGBA_UINT16:
         eNewFormat = DXGI_FORMAT_R16G16B16A16_UINT;
         nStride = (sizeof(UINT16) * 4);
         break;
 
-    case GEKVIDEO::DATA::R_UINT32:
+    case GEK3DVIDEO::DATA::R_UINT32:
         eNewFormat = DXGI_FORMAT_R32_UINT;
         nStride = sizeof(UINT32);
         break;
 
-    case GEKVIDEO::DATA::RG_UINT32:
+    case GEK3DVIDEO::DATA::RG_UINT32:
         eNewFormat = DXGI_FORMAT_R32G32_UINT;
         nStride = (sizeof(UINT32) * 2);
         break;
 
-    case GEKVIDEO::DATA::RGB_UINT32:
+    case GEK3DVIDEO::DATA::RGB_UINT32:
         eNewFormat = DXGI_FORMAT_R32G32B32_UINT;
         nStride = (sizeof(UINT32) * 3);
         break;
 
-    case GEKVIDEO::DATA::RGBA_UINT32:
+    case GEK3DVIDEO::DATA::RGBA_UINT32:
         eNewFormat = DXGI_FORMAT_R32G32B32A32_UINT;
         nStride = (sizeof(UINT32) * 4);
         break;
 
-    case GEKVIDEO::DATA::R_FLOAT:
+    case GEK3DVIDEO::DATA::R_FLOAT:
         eNewFormat = DXGI_FORMAT_R32_FLOAT;
         nStride = sizeof(float);
         break;
 
-    case GEKVIDEO::DATA::RG_FLOAT:
+    case GEK3DVIDEO::DATA::RG_FLOAT:
         eNewFormat = DXGI_FORMAT_R32G32_FLOAT;
         nStride = (sizeof(float) * 2);
         break;
 
-    case GEKVIDEO::DATA::RGB_FLOAT:
+    case GEK3DVIDEO::DATA::RGB_FLOAT:
         eNewFormat = DXGI_FORMAT_R32G32B32_FLOAT;
         nStride = (sizeof(float) * 3);
         break;
 
-    case GEKVIDEO::DATA::RGBA_FLOAT:
+    case GEK3DVIDEO::DATA::RGBA_FLOAT:
         eNewFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
         nStride = (sizeof(float) * 4);
         break;
 
-    case GEKVIDEO::DATA::R_HALF:
+    case GEK3DVIDEO::DATA::R_HALF:
         eNewFormat = DXGI_FORMAT_R16_FLOAT;
         nStride = (sizeof(float) / 2);
         break;
 
-    case GEKVIDEO::DATA::RG_HALF:
+    case GEK3DVIDEO::DATA::RG_HALF:
         eNewFormat = DXGI_FORMAT_R16G16_FLOAT;
         nStride = sizeof(float);
         break;
 
-    case GEKVIDEO::DATA::RGBA_HALF:
+    case GEK3DVIDEO::DATA::RGBA_HALF:
         eNewFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
         nStride = (sizeof(float) * 2);
         break;
@@ -1977,7 +1978,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
     {
         D3D11_BUFFER_DESC kBufferDesc;
         kBufferDesc.ByteWidth = (nStride * nCount);
-        if (nFlags & GEKVIDEO::BUFFER::STATIC)
+        if (nFlags & GEK3DVIDEO::BUFFER::STATIC)
         {
             if (pData == nullptr)
             {
@@ -1991,15 +1992,15 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
             kBufferDesc.Usage = D3D11_USAGE_DEFAULT;
         }
 
-        if (nFlags & GEKVIDEO::BUFFER::VERTEX_BUFFER)
+        if (nFlags & GEK3DVIDEO::BUFFER::VERTEX_BUFFER)
         {
             kBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
         }
-        else if (nFlags & GEKVIDEO::BUFFER::INDEX_BUFFER)
+        else if (nFlags & GEK3DVIDEO::BUFFER::INDEX_BUFFER)
         {
             kBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
         }
-        else if (nFlags & GEKVIDEO::BUFFER::CONSTANT_BUFFER)
+        else if (nFlags & GEK3DVIDEO::BUFFER::CONSTANT_BUFFER)
         {
             kBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         }
@@ -2008,18 +2009,18 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
             kBufferDesc.BindFlags = 0;
         }
 
-        if (nFlags & GEKVIDEO::BUFFER::RESOURCE)
+        if (nFlags & GEK3DVIDEO::BUFFER::RESOURCE)
         {
             kBufferDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
         }
 
-        if (nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
+        if (nFlags & GEK3DVIDEO::BUFFER::UNORDERED_ACCESS)
         {
             kBufferDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
         }
 
         kBufferDesc.CPUAccessFlags = 0;
-        if (nFlags & GEKVIDEO::BUFFER::STRUCTURED_BUFFER)
+        if (nFlags & GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER)
         {
             kBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
             kBufferDesc.StructureByteStride = nStride;
@@ -2049,7 +2050,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
         if (spBuffer)
         {
             CComPtr<ID3D11ShaderResourceView> spShaderView;
-            if (nFlags & GEKVIDEO::BUFFER::RESOURCE)
+            if (nFlags & GEK3DVIDEO::BUFFER::RESOURCE)
             {
                 D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
                 kViewDesc.Format = eNewFormat;
@@ -2062,7 +2063,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEKVIDEO::DATA::FORMAT eFormat, UINT3
             }
 
             CComPtr<ID3D11UnorderedAccessView> spUnorderedView;
-            if (SUCCEEDED(hRetVal) && nFlags & GEKVIDEO::BUFFER::UNORDERED_ACCESS)
+            if (SUCCEEDED(hRetVal) && nFlags & GEK3DVIDEO::BUFFER::UNORDERED_ACCESS)
             {
                 D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
                 kViewDesc.Format = eNewFormat;
@@ -2143,7 +2144,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
+STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -2178,7 +2179,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateVertexShader failed: 0x%08X", hRetVal);
         if (spProgram)
         {
-            GEKVIDEO::INPUT::SOURCE eLastClass = GEKVIDEO::INPUT::UNKNOWN;
+            GEK3DVIDEO::INPUT::SOURCE eLastClass = GEK3DVIDEO::INPUT::UNKNOWN;
             std::vector<D3D11_INPUT_ELEMENT_DESC> aLayoutDesc(aLayout.size());
             for(UINT32 nIndex = 0; nIndex < aLayout.size() && SUCCEEDED(hRetVal); ++nIndex)
             {
@@ -2197,12 +2198,12 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
                 aLayoutDesc[nIndex].InputSlot = aLayout[nIndex].m_nSlot;
                 switch (aLayout[nIndex].m_eClass)
                 {
-                case GEKVIDEO::INPUT::INSTANCE:
+                case GEK3DVIDEO::INPUT::INSTANCE:
                     aLayoutDesc[nIndex].InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
                     aLayoutDesc[nIndex].InstanceDataStepRate = 1;
                     break;
 
-                case GEKVIDEO::INPUT::VERTEX:
+                case GEK3DVIDEO::INPUT::VERTEX:
                 default:
                     aLayoutDesc[nIndex].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
                     aLayoutDesc[nIndex].InstanceDataStepRate = 0;
@@ -2210,47 +2211,47 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
 
                 switch (aLayout[nIndex].m_eType)
                 {
-                case GEKVIDEO::DATA::R_FLOAT:
+                case GEK3DVIDEO::DATA::R_FLOAT:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::RG_FLOAT:
+                case GEK3DVIDEO::DATA::RG_FLOAT:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::RGB_FLOAT:
+                case GEK3DVIDEO::DATA::RGB_FLOAT:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::RGBA_FLOAT:
+                case GEK3DVIDEO::DATA::RGBA_FLOAT:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::R_HALF:
+                case GEK3DVIDEO::DATA::R_HALF:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R16_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::RG_HALF:
+                case GEK3DVIDEO::DATA::RG_HALF:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R16G16_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::RGBA_HALF:
+                case GEK3DVIDEO::DATA::RGBA_HALF:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
                     break;
 
-                case GEKVIDEO::DATA::R_UINT32:
+                case GEK3DVIDEO::DATA::R_UINT32:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32_UINT;
                     break;
 
-                case GEKVIDEO::DATA::RG_UINT32:
+                case GEK3DVIDEO::DATA::RG_UINT32:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32_UINT;
                     break;
 
-                case GEKVIDEO::DATA::RGB_UINT32:
+                case GEK3DVIDEO::DATA::RGB_UINT32:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32_UINT;
                     break;
 
-                case GEKVIDEO::DATA::RGBA_UINT32:
+                case GEK3DVIDEO::DATA::RGBA_UINT32:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32A32_UINT;
                     break;
 
@@ -2406,7 +2407,7 @@ STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntr
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEKVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
+STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -2451,7 +2452,7 @@ STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry,
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEKVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEKVideoTexture **ppTexture)
+STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEK3DVideoTexture **ppTexture)
 {
     GEKFUNCTION(L"XSize(%d), YSize(%d), ZSize(%d), Format(%d)", nXSize, nYSize, nZSize, eFormat);
 
@@ -2459,39 +2460,39 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
     DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
     switch (eFormat)
     {
-    case GEKVIDEO::DATA::RGBA_UINT8:
+    case GEK3DVIDEO::DATA::RGBA_UINT8:
         eNewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
         break;
 
-    case GEKVIDEO::DATA::BGRA_UINT8:
+    case GEK3DVIDEO::DATA::BGRA_UINT8:
         eNewFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
         break;
 
-    case GEKVIDEO::DATA::R_FLOAT:
+    case GEK3DVIDEO::DATA::R_FLOAT:
         eNewFormat = DXGI_FORMAT_R32_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::RG_FLOAT:
+    case GEK3DVIDEO::DATA::RG_FLOAT:
         eNewFormat = DXGI_FORMAT_R32G32_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::RGB_FLOAT:
+    case GEK3DVIDEO::DATA::RGB_FLOAT:
         eNewFormat = DXGI_FORMAT_R32G32B32_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::RGBA_FLOAT:
+    case GEK3DVIDEO::DATA::RGBA_FLOAT:
         eNewFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::R_HALF:
+    case GEK3DVIDEO::DATA::R_HALF:
         eNewFormat = DXGI_FORMAT_R16_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::RG_HALF:
+    case GEK3DVIDEO::DATA::RG_HALF:
         eNewFormat = DXGI_FORMAT_R16G16_FLOAT;
         break;
 
-    case GEKVIDEO::DATA::RGBA_HALF:
+    case GEK3DVIDEO::DATA::RGBA_HALF:
         eNewFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
         break;
 
@@ -2503,12 +2504,12 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
     if (SUCCEEDED(hRetVal))
     {
         UINT32 nBindFlags = 0;
-        if (nFlags & GEKVIDEO::TEXTURE::RESOURCE)
+        if (nFlags & GEK3DVIDEO::TEXTURE::RESOURCE)
         {
             nBindFlags |= D3D11_BIND_SHADER_RESOURCE;
         }
 
-        if (nFlags & GEKVIDEO::TEXTURE::UNORDERED_ACCESS)
+        if (nFlags & GEK3DVIDEO::TEXTURE::UNORDERED_ACCESS)
         {
             nBindFlags |= D3D11_BIND_UNORDERED_ACCESS;
         }
@@ -2562,14 +2563,14 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
         if (spResource)
         {
             CComPtr<ID3D11ShaderResourceView> spResourceView;
-            if (nFlags & GEKVIDEO::TEXTURE::RESOURCE)
+            if (nFlags & GEK3DVIDEO::TEXTURE::RESOURCE)
             {
                 hRetVal = m_spDevice->CreateShaderResourceView(spResource, nullptr, &spResourceView);
                 GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateShaderResourceView failed: 0x%08X", hRetVal);
             }
 
             CComPtr<ID3D11UnorderedAccessView> spUnderedView;
-            if (SUCCEEDED(hRetVal) && nFlags & GEKVIDEO::TEXTURE::UNORDERED_ACCESS)
+            if (SUCCEEDED(hRetVal) && nFlags & GEK3DVIDEO::TEXTURE::UNORDERED_ACCESS)
             {
                 D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
                 kViewDesc.Format = eNewFormat;
@@ -2606,7 +2607,7 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEKVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT *pDestRect)
+STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT *pDestRect)
 {
     REQUIRE_VOID_RETURN(m_spDevice && m_spDeviceContext);
     REQUIRE_VOID_RETURN(pTexture);
@@ -2640,7 +2641,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEKVideoTexture *pTexture, v
     }
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **ppTexture)
+STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEK3DVideoTexture **ppTexture)
 {
     GEKFUNCTION(L"Name(%s)", pFileName);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -2737,29 +2738,29 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEKVideoTexture **
     return hRetVal;
 }
 
-static D3D11_TEXTURE_ADDRESS_MODE GetAddressMode(GEKVIDEO::ADDRESS::MODE eMode)
+static D3D11_TEXTURE_ADDRESS_MODE GetAddressMode(GEK3DVIDEO::ADDRESS::MODE eMode)
 {
     switch (eMode)
     {
-    case GEKVIDEO::ADDRESS::WRAP:
+    case GEK3DVIDEO::ADDRESS::WRAP:
         return D3D11_TEXTURE_ADDRESS_WRAP;
 
-    case GEKVIDEO::ADDRESS::MIRROR:
+    case GEK3DVIDEO::ADDRESS::MIRROR:
         return D3D11_TEXTURE_ADDRESS_MIRROR;
 
-    case GEKVIDEO::ADDRESS::MIRROR_ONCE:
+    case GEK3DVIDEO::ADDRESS::MIRROR_ONCE:
         return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
 
-    case GEKVIDEO::ADDRESS::BORDER:
+    case GEK3DVIDEO::ADDRESS::BORDER:
         return D3D11_TEXTURE_ADDRESS_BORDER;
 
-    case GEKVIDEO::ADDRESS::CLAMP:
+    case GEK3DVIDEO::ADDRESS::CLAMP:
     default:
         return D3D11_TEXTURE_ADDRESS_CLAMP;
     };
 };
 
-STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEKVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates)
+STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates)
 {
     GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -2780,39 +2781,39 @@ STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEKVIDEO::SAMPLERSTATES 
     kSamplerStates.MaxLOD = kStates.m_nMaxLOD;
     switch (kStates.m_eFilter)
     {
-    case GEKVIDEO::FILTER::MIN_MAG_POINT_MIP_LINEAR:
+    case GEK3DVIDEO::FILTER::MIN_MAG_POINT_MIP_LINEAR:
         kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
         break;
 
-    case GEKVIDEO::FILTER::MIN_POINT_MAG_LINEAR_MIP_POINT:
+    case GEK3DVIDEO::FILTER::MIN_POINT_MAG_LINEAR_MIP_POINT:
         kSamplerStates.Filter = D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
         break;
 
-    case GEKVIDEO::FILTER::MIN_POINT_MAG_MIP_LINEAR:
+    case GEK3DVIDEO::FILTER::MIN_POINT_MAG_MIP_LINEAR:
         kSamplerStates.Filter = D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
         break;
 
-    case GEKVIDEO::FILTER::MIN_LINEAR_MAG_MIP_POINT:
+    case GEK3DVIDEO::FILTER::MIN_LINEAR_MAG_MIP_POINT:
         kSamplerStates.Filter = D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
         break;
 
-    case GEKVIDEO::FILTER::MIN_LINEAR_MAG_POINT_MIP_LINEAR:
+    case GEK3DVIDEO::FILTER::MIN_LINEAR_MAG_POINT_MIP_LINEAR:
         kSamplerStates.Filter = D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
         break;
 
-    case GEKVIDEO::FILTER::MIN_MAG_LINEAR_MIP_POINT:
+    case GEK3DVIDEO::FILTER::MIN_MAG_LINEAR_MIP_POINT:
         kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
         break;
 
-    case GEKVIDEO::FILTER::MIN_MAG_MIP_LINEAR:
+    case GEK3DVIDEO::FILTER::MIN_MAG_MIP_LINEAR:
         kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
         break;
 
-    case GEKVIDEO::FILTER::ANISOTROPIC:
+    case GEK3DVIDEO::FILTER::ANISOTROPIC:
         kSamplerStates.Filter = D3D11_FILTER_ANISOTROPIC;
         break;
 
-    case GEKVIDEO::FILTER::MIN_MAG_MIP_POINT:
+    case GEK3DVIDEO::FILTER::MIN_MAG_MIP_POINT:
     default:
         kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
         break;
@@ -2846,12 +2847,12 @@ STDMETHODIMP_(void) CGEKVideoSystem::ClearDefaultDepthStencilTarget(UINT32 nFlag
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && m_spDepthStencilView);
     m_spDeviceContext->ClearDepthStencilView(m_spDepthStencilView, 
-        ((nFlags & GEKVIDEO::CLEAR::DEPTH ? D3D11_CLEAR_DEPTH : 0) | 
-        (nFlags & GEKVIDEO::CLEAR::STENCIL ? D3D11_CLEAR_STENCIL : 0)), 
+        ((nFlags & GEK3DVIDEO::CLEAR::DEPTH ? D3D11_CLEAR_DEPTH : 0) | 
+        (nFlags & GEK3DVIDEO::CLEAR::STENCIL ? D3D11_CLEAR_STENCIL : 0)), 
         fDepth, nStencil);
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::SetDefaultTargets(IGEKVideoContext *pContext, IUnknown *pDepth)
+STDMETHODIMP_(void) CGEKVideoSystem::SetDefaultTargets(IGEK3DVideoContext *pContext, IUnknown *pDepth)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext || pContext);
     REQUIRE_VOID_RETURN(m_spRenderTargetView);
@@ -2886,7 +2887,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::SetDefaultTargets(IGEKVideoContext *pContex
     }
 }
 
-STDMETHODIMP CGEKVideoSystem::GetDefaultRenderTarget(IGEKVideoTexture **ppTarget)
+STDMETHODIMP CGEKVideoSystem::GetDefaultRenderTarget(IGEK3DVideoTexture **ppTarget)
 {
     REQUIRE_RETURN(m_spRenderTargetView, E_FAIL);
     return m_spDefaultTarget->QueryInterface(IID_PPV_ARGS(ppTarget));

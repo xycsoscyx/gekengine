@@ -54,7 +54,7 @@ public:
 
 private:
     IGEKSystem *m_pSystem;
-    IGEKVideoSystem *m_pVideoSystem;
+    IGEK3DVideoSystem *m_pVideoSystem;
     IGEKEngine *m_pEngine;
     IGEKSceneManager *m_pSceneManager;
 
@@ -62,18 +62,18 @@ private:
 
     CComPtr<IUnknown> m_spVertexProgram;
     CComPtr<IUnknown> m_spPixelProgram;
-    CComPtr<IGEKVideoBuffer> m_spVertexBuffer;
-    CComPtr<IGEKVideoBuffer> m_spIndexBuffer;
+    CComPtr<IGEK3DVideoBuffer> m_spVertexBuffer;
+    CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
 
     CComPtr<IUnknown> m_spPointSampler;
     CComPtr<IUnknown> m_spLinearSampler;
 
-    CComPtr<IGEKVideoBuffer> m_spOrthoBuffer;
-    CComPtr<IGEKVideoBuffer> m_spEngineBuffer;
-    CComPtr<IGEKVideoBuffer> m_spMaterialBuffer;
-    CComPtr<IGEKVideoBuffer> m_spLightCountBuffer;
-    CComPtr<IGEKVideoBuffer> m_spLightBuffer;
-    CComPtr<IGEKVideoTexture> m_spScreenBuffer;
+    CComPtr<IGEK3DVideoBuffer> m_spOrthoBuffer;
+    CComPtr<IGEK3DVideoBuffer> m_spEngineBuffer;
+    CComPtr<IGEK3DVideoBuffer> m_spMaterialBuffer;
+    CComPtr<IGEK3DVideoBuffer> m_spLightCountBuffer;
+    CComPtr<IGEK3DVideoBuffer> m_spLightBuffer;
+    CComPtr<IGEK3DVideoTexture> m_spScreenBuffer;
     CComPtr<IUnknown> m_spBlendStates;
     CComPtr<IUnknown> m_spRenderStates;
     CComPtr<IUnknown> m_spDepthStates;
@@ -85,7 +85,7 @@ private:
 
     frustum m_nCurrentFrustum;
     ENGINEBUFFER m_kCurrentBuffer;
-    GEKVIDEO::VIEWPORT m_kScreenViewPort;
+    GEK3DVIDEO::VIEWPORT m_kScreenViewPort;
     std::vector<LIGHT> m_aVisibleLights;
 
     PASS *m_pCurrentPass;
@@ -110,21 +110,21 @@ public:
 
     // IGEKMaterialManager
     STDMETHOD(LoadMaterial)                 (THIS_ LPCWSTR pName, IUnknown **ppMaterial);
-    STDMETHOD_(bool, EnableMaterial)        (THIS_ IGEKVideoContext *pContext, IUnknown *pMaterial);
+    STDMETHOD_(bool, EnableMaterial)        (THIS_ IGEK3DVideoContext *pContext, IUnknown *pMaterial);
 
     // IGEKProgramManager
     STDMETHOD(LoadProgram)                  (THIS_ LPCWSTR pName, IUnknown **ppProgram);
-    STDMETHOD_(void, EnableProgram)         (THIS_ IGEKVideoContext *pContext, IUnknown *pProgram);
+    STDMETHOD_(void, EnableProgram)         (THIS_ IGEK3DVideoContext *pContext, IUnknown *pProgram);
 
     // IGEKRenderSystem
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);
-    STDMETHOD_(void, SetResource)           (THIS_ IGEKVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
+    STDMETHOD_(void, SetResource)           (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppBuffer);
-    STDMETHOD_(void, SetScreenTargets)      (THIS_ IGEKVideoContext *pContext, IUnknown *pDepthBuffer);
-    STDMETHOD_(void, DrawScene)             (THIS_ IGEKVideoContext *pContext, UINT32 nAttributes);
-    STDMETHOD_(void, DrawLights)            (THIS_ IGEKVideoContext *pContext, std::function<void(void)> OnLightBatch);
-    STDMETHOD_(void, DrawOverlay)           (THIS_ IGEKVideoContext *pContext);
+    STDMETHOD_(void, SetScreenTargets)      (THIS_ IGEK3DVideoContext *pContext, IUnknown *pDepthBuffer);
+    STDMETHOD_(void, DrawScene)             (THIS_ IGEK3DVideoContext *pContext, UINT32 nAttributes);
+    STDMETHOD_(void, DrawLights)            (THIS_ IGEK3DVideoContext *pContext, std::function<void(void)> OnLightBatch);
+    STDMETHOD_(void, DrawOverlay)           (THIS_ IGEK3DVideoContext *pContext);
     STDMETHOD_(void, Render)                (THIS);
 
     // IGEKRenderManager

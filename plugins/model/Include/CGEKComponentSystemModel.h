@@ -21,10 +21,10 @@ public:
     struct MODEL
     {
         aabb m_nAABB;
-        CComPtr<IGEKVideoBuffer> m_spPositionBuffer;
-        CComPtr<IGEKVideoBuffer> m_spTexCoordBuffer;
-        CComPtr<IGEKVideoBuffer> m_spBasisBuffer;
-        CComPtr<IGEKVideoBuffer> m_spIndexBuffer;
+        CComPtr<IGEK3DVideoBuffer> m_spPositionBuffer;
+        CComPtr<IGEK3DVideoBuffer> m_spTexCoordBuffer;
+        CComPtr<IGEK3DVideoBuffer> m_spBasisBuffer;
+        CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
         std::multimap<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
     };
 
@@ -44,11 +44,11 @@ public:
     };
 
 private:
-    CComPtr<IGEKVideoBuffer> m_spInstanceBuffer;
+    CComPtr<IGEK3DVideoBuffer> m_spInstanceBuffer;
     CComPtr<IUnknown> m_spVertexProgram;
     IGEKSceneManager *m_pSceneManager;
     IGEKRenderManager *m_pRenderManager;
-    IGEKVideoSystem *m_pVideoSystem;
+    IGEK3DVideoSystem *m_pVideoSystem;
     IGEKMaterialManager *m_pMaterialManager;
     IGEKProgramManager *m_pProgramManager;
 
@@ -74,6 +74,6 @@ public:
     // IGEKRenderObserver
     STDMETHOD_(void, OnPreRender)               (THIS);
     STDMETHOD_(void, OnCullScene)               (THIS);
-    STDMETHOD_(void, OnDrawScene)               (THIS_ IGEKVideoContext *pContext, UINT32 nVertexAttributes);
+    STDMETHOD_(void, OnDrawScene)               (THIS_ IGEK3DVideoContext *pContext, UINT32 nVertexAttributes);
     STDMETHOD_(void, OnPostRender)              (THIS);
 };
