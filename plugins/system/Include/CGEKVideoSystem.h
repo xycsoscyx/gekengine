@@ -116,9 +116,11 @@ public:
     STDMETHOD_(void, Present)                           (THIS_ bool bWaitForVSync);
 
     // IGEK2DVideoSystem
-    STDMETHOD(CreateBrush)                              (THIS_ const float4 &nColor, IUnknown **ppBrush);
     STDMETHOD(CreateFont)                               (THIS_ LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize, IUnknown **ppFont);
     STDMETHOD_(void, Print)                             (THIS_ const trect<float> &kLayout, IUnknown *pFont, IUnknown *pBrush, LPCWSTR pMessage, ...);
+    STDMETHOD(CreateBrush)                              (THIS_ const float4 &nColor, IUnknown **ppBrush);
+    STDMETHOD_(void, DrawRectangle)                     (THIS_ const trect<float> &kRect, IUnknown *pBrush, bool bFilled);
+    STDMETHOD_(void, DrawRectangle)                     (THIS_ const trect<float> &kRect, const float2 &nRadius, IUnknown *pBrush, bool bFilled);
     STDMETHOD_(void, Begin)                             (THIS);
     STDMETHOD(End)                                      (THIS);
 };

@@ -2916,21 +2916,6 @@ STDMETHODIMP_(void) CGEKVideoSystem::Present(bool bWaitForVSync)
     m_spSwapChain->Present(bWaitForVSync ? 1 : 0, 0);
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBrush(const float4 &nColor, IUnknown **ppBrush)
-{
-    REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppBrush, E_INVALIDARG);
-
-    CComPtr<ID2D1SolidColorBrush> spBrush;
-    HRESULT hRetVal = m_spD2DDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&nColor, &spBrush);
-    if (spBrush)
-    {
-        hRetVal = spBrush->QueryInterface(IID_PPV_ARGS(ppBrush));
-    }
-
-    return hRetVal;
-}
-
 STDMETHODIMP CGEKVideoSystem::CreateFont(LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize, IUnknown **ppFont)
 {
     REQUIRE_RETURN(m_spDWriteFactory, E_FAIL);
@@ -2978,6 +2963,59 @@ STDMETHODIMP_(void) CGEKVideoSystem::Print(const trect<float> &kLayout, IUnknown
         if (spFormat && spBrush)
         {
             m_spD2DDeviceContext->DrawText(strMessage, strMessage.GetLength(), spFormat, *(D2D1_RECT_F *)&kLayout, spBrush);
+        }
+    }
+}
+
+STDMETHODIMP CGEKVideoSystem::CreateBrush(const float4 &nColor, IUnknown **ppBrush)
+{
+    REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
+    REQUIRE_RETURN(ppBrush, E_INVALIDARG);
+
+    CComPtr<ID2D1SolidColorBrush> spBrush;
+    HRESULT hRetVal = m_spD2DDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&nColor, &spBrush);
+    if (spBrush)
+    {
+        hRetVal = spBrush->QueryInterface(IID_PPV_ARGS(ppBrush));
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, IUnknown *pBrush, bool bFilled)
+{
+    REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
+    REQUIRE_VOID_RETURN(pBrush);
+
+    CComQIPtr<ID2D1SolidColorBrush> spBrush(pBrush);
+    if (spBrush)
+    {
+        if (bFilled)
+        {
+            m_spD2DDeviceContext->FillRectangle(*(D2D1_RECT_F *)&kRect, spBrush);
+        }
+        else
+        {
+            m_spD2DDeviceContext->DrawRectangle(*(D2D1_RECT_F *)&kRect, spBrush);
+        }
+    }
+}
+
+STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, const float2 &nRadius, IUnknown *pBrush, bool bFilled)
+{
+    REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
+    REQUIRE_VOID_RETURN(pBrush);
+
+    CComQIPtr<ID2D1SolidColorBrush> spBrush(pBrush);
+    if (spBrush)
+    {
+        if (bFilled)
+        {
+            m_spD2DDeviceContext->FillRoundedRectangle({ *(D2D1_RECT_F *)&kRect, nRadius.x, nRadius.y }, spBrush);
+        }
+        else
+        {
+            m_spD2DDeviceContext->DrawRoundedRectangle({ *(D2D1_RECT_F *)&kRect, nRadius.x, nRadius.y }, spBrush);
         }
     }
 }

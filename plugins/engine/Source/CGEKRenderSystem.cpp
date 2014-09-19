@@ -995,13 +995,18 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     {
         sp2DVideoSystem->Begin();
 
-        CComPtr<IUnknown> spBrush;
-        sp2DVideoSystem->CreateBrush(float4(1.0f, 0.0f, 0.0f, 1.0f), &spBrush);
+        CComPtr<IUnknown> spRed;
+        sp2DVideoSystem->CreateBrush(float4(1.0f, 0.0f, 0.0f, 1.0f), &spRed);
+
+        CComPtr<IUnknown> spGray;
+        sp2DVideoSystem->CreateBrush(float4(0.5f, 0.25f, 0.25f, 1.0f), &spGray);
 
         CComPtr<IUnknown> spFont;
         sp2DVideoSystem->CreateFont(L"Arial", 400, GEK2DVIDEO::FONT::NORMAL, 25.0f, &spFont);
 
-        sp2DVideoSystem->Print({ 25.0f, 25.0f, 225.0f, 50.0f }, spFont, spBrush, L"Test: %d", 1);
+        sp2DVideoSystem->DrawRectangle({ 10.0f, 10.0f, 240.0f, 65.f }, float2(5.0f, 5.0f), spGray, true);
+        sp2DVideoSystem->DrawRectangle({ 15.0f, 15.0f, 235.0f, 60.f }, float2(5.0f, 5.0f), spRed, true);
+        sp2DVideoSystem->Print({ 25.0f, 25.0f, 225.0f, 50.0f }, spFont, spGray, L"Test: %d", 1);
 
         sp2DVideoSystem->End();
     }
