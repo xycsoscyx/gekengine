@@ -990,6 +990,22 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
     spContext->ClearResources();
 
+    CComQIPtr<IGEK2DVideoSystem> sp2DVideoSystem(m_pVideoSystem);
+    if (sp2DVideoSystem)
+    {
+        sp2DVideoSystem->Begin();
+
+        CComPtr<IUnknown> spBrush;
+        sp2DVideoSystem->CreateBrush(float4(1.0f, 0.0f, 0.0f, 1.0f), &spBrush);
+
+        CComPtr<IUnknown> spFont;
+        sp2DVideoSystem->CreateFont(L"Arial", 400, GEK2DVIDEO::FONT::NORMAL, 25.0f, &spFont);
+
+        sp2DVideoSystem->Print({ 25.0f, 25.0f, 225.0f, 50.0f }, spFont, spBrush, L"Test: %d", 1);
+
+        sp2DVideoSystem->End();
+    }
+
     m_pVideoSystem->Present(true);
 
     while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))

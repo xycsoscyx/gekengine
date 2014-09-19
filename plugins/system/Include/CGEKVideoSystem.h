@@ -35,7 +35,7 @@ public:
     STDMETHOD_(IGEK3DVideoContextSystem *, GetPixelSystem)    (THIS);
     STDMETHOD_(void, ClearResources)                    (THIS);
     STDMETHOD_(void, SetViewports)                      (THIS_ const std::vector<GEK3DVIDEO::VIEWPORT> &aViewports);
-    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<GEK3DVIDEO::RECT<UINT32>> &aRects);
+    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<trect<UINT32>> &aRects);
     STDMETHOD_(void, ClearRenderTarget)                 (THIS_ IGEK3DVideoTexture *pTarget, const float4 &kColor);
     STDMETHOD_(void, ClearDepthStencilTarget)           (THIS_ IUnknown *pTarget, UINT32 nFlags, float fDepth, UINT32 nStencil);
     STDMETHOD_(void, SetRenderTargets)                  (THIS_ const std::vector<IGEK3DVideoTexture *> &aTargets, IUnknown *pDepth);
@@ -104,7 +104,7 @@ public:
     STDMETHOD(LoadGeometryProgram)                      (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines);
     STDMETHOD(LoadPixelProgram)                         (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines);
     STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEK3DVideoTexture **ppTexture);
-    STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT *pDestRect);
+    STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect);
     STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, IGEK3DVideoTexture **ppTexture);
     STDMETHOD(CreateSamplerStates)                      (THIS_ const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates);
     STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor);
@@ -114,4 +114,11 @@ public:
     STDMETHOD(GetDefaultDepthStencilTarget)             (THIS_ IUnknown **ppBuffer);
     STDMETHOD_(void, ExecuteCommandList)                (THIS_ IUnknown *pUnknown);
     STDMETHOD_(void, Present)                           (THIS_ bool bWaitForVSync);
+
+    // IGEK2DVideoSystem
+    STDMETHOD(CreateBrush)                              (THIS_ const float4 &nColor, IUnknown **ppBrush);
+    STDMETHOD(CreateFont)                               (THIS_ LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize, IUnknown **ppFont);
+    STDMETHOD_(void, Print)                             (THIS_ const trect<float> &kLayout, IUnknown *pFont, IUnknown *pBrush, LPCWSTR pMessage, ...);
+    STDMETHOD_(void, Begin)                             (THIS);
+    STDMETHOD(End)                                      (THIS);
 };

@@ -236,15 +236,6 @@ namespace GEK3DVIDEO
         float m_nMaxDepth;
     };
 
-    template <typename TYPE>
-    struct RECT
-    {
-        TYPE left;
-        TYPE top;
-        TYPE right;
-        TYPE bottom;
-    };
-
     struct RENDERSTATES
     {
         FILL::MODE  m_eFillMode;
@@ -448,7 +439,7 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoContext, IUnknown, "95262C77-0F56-4447-9337-58
     STDMETHOD_(void, ClearResources)                    (THIS) PURE;
 
     STDMETHOD_(void, SetViewports)                      (THIS_ const std::vector<GEK3DVIDEO::VIEWPORT> &aViewports) PURE;
-    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<GEK3DVIDEO::RECT<UINT32>> &aRects) PURE;
+    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<trect<UINT32>> &aRects) PURE;
 
     STDMETHOD_(void, ClearRenderTarget)                 (THIS_ IGEK3DVideoTexture *pTarget, const float4 &kColor) PURE;
     STDMETHOD_(void, ClearDepthStencilTarget)           (THIS_ IUnknown *pTarget, UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;
@@ -502,7 +493,7 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF
     STDMETHOD(LoadPixelProgram)                         (THIS_ LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
 
     STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEK3DVideoTexture **ppTexture) PURE;
-    STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT *pDestRect = nullptr) PURE;
+    STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect = nullptr) PURE;
     STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, IGEK3DVideoTexture **ppTexture) PURE;
     STDMETHOD(CreateSamplerStates)                      (THIS_ const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates) PURE;
 

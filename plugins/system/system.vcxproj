@@ -100,6 +100,7 @@
     <ClInclude Include="Include\CGEKAudioSystem.h" />
     <ClInclude Include="Include\CGEKSystem.h" />
     <ClInclude Include="Include\CGEKVideoSystem.h" />
+    <ClInclude Include="Public\IGEK2DVideoSystem.h" />
     <ClInclude Include="Public\IGEK3DVideoSystem.h" />
     <ClInclude Include="Public\IGEKAudioSystem.h" />
     <ClInclude Include="Public\IGEKSystem.h" />

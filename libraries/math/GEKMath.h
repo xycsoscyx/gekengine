@@ -16,6 +16,15 @@ const float _INV_PI             = 0.31830988618379069122f;
 #define _DEGTORAD(x)            ((x) * (_PI / 180.0f))
 #define _RADTODEG(x)            ((x) * (180.0f / _PI))
 
+template <typename TYPE>
+struct trect
+{
+    TYPE left;
+    TYPE top;
+    TYPE right;
+    TYPE bottom;
+};
+
 template <typename TYPE> struct tvector2;
 template <typename TYPE> struct tvector3;
 template <typename TYPE> struct tvector4;

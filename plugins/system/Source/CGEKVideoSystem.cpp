@@ -705,7 +705,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetViewports(const std::vector<GEK3DVIDEO:
     m_spDeviceContext->RSSetViewports(aViewports.size(), (D3D11_VIEWPORT *)&aViewports[0]);
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<GEK3DVIDEO::RECT<UINT32>> &aRects)
+STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<trect<UINT32>> &aRects)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && aRects.size() > 0);
     m_spDeviceContext->RSSetScissorRects(aRects.size(), (D3D11_RECT *)&aRects[0]);
@@ -2607,7 +2607,7 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, RECT *pDestRect)
+STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect)
 {
     REQUIRE_VOID_RETURN(m_spDevice && m_spDeviceContext);
     REQUIRE_VOID_RETURN(pTexture);
@@ -2913,21 +2913,84 @@ STDMETHODIMP_(void) CGEKVideoSystem::ExecuteCommandList(IUnknown *pUnknown)
 STDMETHODIMP_(void) CGEKVideoSystem::Present(bool bWaitForVSync)
 {
     REQUIRE_VOID_RETURN(m_spSwapChain);
-
-    CComPtr<ID2D1SolidColorBrush> spBrush;
-    m_spD2DDeviceContext->CreateSolidColorBrush({ 1.0f, 0.0f, 0.0f, 1.0f }, &spBrush);
-    if (spBrush)
-    {
-        CComPtr<IDWriteTextFormat> spFormat;
-        m_spDWriteFactory->CreateTextFormat(L"Arial", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 25.0f, L"", &spFormat);
-        if (spFormat)
-        {
-            m_spD2DDeviceContext->BeginDraw();
-            m_spD2DDeviceContext->DrawRoundedRectangle({ { 10.0f, 10.0f, 210.0f, 60.0f }, 5.0f, 5.0f }, spBrush);
-            m_spD2DDeviceContext->DrawText(L"Test", 4, spFormat, { 22.5f, 22.5f, 197.5f, 47.5f }, spBrush);
-            m_spD2DDeviceContext->EndDraw();
-        }
-    }
-
     m_spSwapChain->Present(bWaitForVSync ? 1 : 0, 0);
 }
+
+STDMETHODIMP CGEKVideoSystem::CreateBrush(const float4 &nColor, IUnknown **ppBrush)
+{
+    REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
+    REQUIRE_RETURN(ppBrush, E_INVALIDARG);
+
+    CComPtr<ID2D1SolidColorBrush> spBrush;
+    HRESULT hRetVal = m_spD2DDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&nColor, &spBrush);
+    if (spBrush)
+    {
+        hRetVal = spBrush->QueryInterface(IID_PPV_ARGS(ppBrush));
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP CGEKVideoSystem::CreateFont(LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize, IUnknown **ppFont)
+{
+    REQUIRE_RETURN(m_spDWriteFactory, E_FAIL);
+    REQUIRE_RETURN(pFace && ppFont, E_INVALIDARG);
+
+    DWRITE_FONT_WEIGHT eD2DWeight = DWRITE_FONT_WEIGHT(nWeight);
+    DWRITE_FONT_STYLE eD2DStyle;
+    switch (eStyle)
+    {
+    case GEK2DVIDEO::FONT::NORMAL:
+        eD2DStyle = DWRITE_FONT_STYLE_NORMAL;
+        break;
+
+    case GEK2DVIDEO::FONT::ITALIC:
+        eD2DStyle = DWRITE_FONT_STYLE_ITALIC;
+        break;
+    };
+
+    CComPtr<IDWriteTextFormat> spFormat;
+    HRESULT hRetVal = m_spDWriteFactory->CreateTextFormat(pFace, nullptr, eD2DWeight, eD2DStyle, DWRITE_FONT_STRETCH_NORMAL, nSize, L"", &spFormat);
+    if (spFormat)
+    {
+        hRetVal = spFormat->QueryInterface(IID_PPV_ARGS(ppFont));
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP_(void) CGEKVideoSystem::Print(const trect<float> &kLayout, IUnknown *pFont, IUnknown *pBrush, LPCWSTR pMessage, ...)
+{
+    REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
+    REQUIRE_VOID_RETURN(pFont && pBrush && pMessage);
+
+    CStringW strMessage;
+
+    va_list pArgs;
+    va_start(pArgs, pMessage);
+    strMessage.AppendFormatV(pMessage, pArgs);
+    va_end(pArgs);
+
+    if (!strMessage.IsEmpty())
+    {
+        CComQIPtr<IDWriteTextFormat> spFormat(pFont);
+        CComQIPtr<ID2D1SolidColorBrush> spBrush(pBrush);
+        if (spFormat && spBrush)
+        {
+            m_spD2DDeviceContext->DrawText(strMessage, strMessage.GetLength(), spFormat, *(D2D1_RECT_F *)&kLayout, spBrush);
+        }
+    }
+}
+
+STDMETHODIMP_(void) CGEKVideoSystem::Begin(void)
+{
+    REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
+    m_spD2DDeviceContext->BeginDraw();
+}
+
+STDMETHODIMP CGEKVideoSystem::End(void)
+{
+    REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
+    return m_spD2DDeviceContext->EndDraw();
+}
+
