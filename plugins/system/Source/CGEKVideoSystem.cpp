@@ -567,6 +567,45 @@ public:
     }
 };
 
+class CGEKVideoGeometry : public CGEKUnknown
+                        , public IGEK2DVideoGeometry
+{
+private:
+    CComPtr<ID2D1PathGeometry> m_spGeometry;
+    CComPtr<ID2D1GeometrySink> m_spSink;
+
+public:
+    DECLARE_UNKNOWN(CGEKVideoGeometry);
+    CGEKVideoGeometry(ID2D1PathGeometry *pGeometry)
+        : m_spGeometry(pGeometry)
+    {
+    }
+
+    virtual ~CGEKVideoGeometry(void)
+    {
+    }
+
+    STDMETHODIMP Begin(const float2 &nPoint, bool bFilled)
+    {
+        REQUIRE_RETURN(m_spGeometry, E_FAIL);
+
+        m_spSink = nullptr;
+        return m_spGeometry->Open(&m_spSink);
+    }
+
+    STDMETHODIMP_(void) AddLine(const float2 &nPoint)
+    {
+        REQUIRE_VOID_RETURN(m_spSink);
+        m_spSink->AddLine(*(D2D1_POINT_2F *)&nPoint);
+    }
+
+    STDMETHODIMP_(void) End(bool bOpenEnded)
+    {
+        REQUIRE_VOID_RETURN(m_spGeometry && m_spSink);
+        m_spSink->EndFigure(bOpenEnded ? D2D1_FIGURE_END_OPEN : D2D1_FIGURE_END_CLOSED);
+    }
+};
+
 BEGIN_INTERFACE_LIST(CGEKVideoRenderStates)
     INTERFACE_LIST_ENTRY_COM(IUnknown)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11RasterizerState, m_spStates)
@@ -619,6 +658,11 @@ END_INTERFACE_LIST_UNKNOWN
 BEGIN_INTERFACE_LIST(CGEKVideoRenderTarget)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11RenderTargetView, m_spRenderView)
 END_INTERFACE_LIST_BASE(CGEKVideoTexture)
+
+BEGIN_INTERFACE_LIST(CGEKVideoGeometry)
+    INTERFACE_LIST_ENTRY_COM(IGEK2DVideoGeometry)
+    INTERFACE_LIST_ENTRY_MEMBER(IID_ID2D1PathGeometry, m_spGeometry)
+END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoContext)
     INTERFACE_LIST_ENTRY_COM(IGEK3DVideoContext)
@@ -2916,6 +2960,21 @@ STDMETHODIMP_(void) CGEKVideoSystem::Present(bool bWaitForVSync)
     m_spSwapChain->Present(bWaitForVSync ? 1 : 0, 0);
 }
 
+STDMETHODIMP CGEKVideoSystem::CreateBrush(const float4 &nColor, IUnknown **ppBrush)
+{
+    REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
+    REQUIRE_RETURN(ppBrush, E_INVALIDARG);
+
+    CComPtr<ID2D1SolidColorBrush> spBrush;
+    HRESULT hRetVal = m_spD2DDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&nColor, &spBrush);
+    if (spBrush)
+    {
+        hRetVal = spBrush->QueryInterface(IID_PPV_ARGS(ppBrush));
+    }
+
+    return hRetVal;
+}
+
 STDMETHODIMP CGEKVideoSystem::CreateFont(LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize, IUnknown **ppFont)
 {
     REQUIRE_RETURN(m_spDWriteFactory, E_FAIL);
@@ -2944,6 +3003,26 @@ STDMETHODIMP CGEKVideoSystem::CreateFont(LPCWSTR pFace, UINT32 nWeight, GEK2DVID
     return hRetVal;
 }
 
+STDMETHODIMP CGEKVideoSystem::CreateGeometry(IGEK2DVideoGeometry **ppGeometry)
+{
+    REQUIRE_RETURN(m_spDWriteFactory, E_FAIL);
+    REQUIRE_RETURN(ppGeometry, E_INVALIDARG);
+
+    CComPtr<ID2D1PathGeometry> spPathGeometry;
+    HRESULT hRetVal = m_spD2DFactory->CreatePathGeometry(&spPathGeometry);
+    if (spPathGeometry)
+    {
+        hRetVal = E_OUTOFMEMORY;
+        CComPtr<CGEKVideoGeometry> spGeometry(new CGEKVideoGeometry(spPathGeometry));
+        if (spGeometry)
+        {
+            hRetVal = spGeometry->QueryInterface(IID_PPV_ARGS(ppGeometry));
+        }
+    }
+
+    return hRetVal;
+}
+
 STDMETHODIMP_(void) CGEKVideoSystem::Print(const trect<float> &kLayout, IUnknown *pFont, IUnknown *pBrush, LPCWSTR pMessage, ...)
 {
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
@@ -2965,21 +3044,6 @@ STDMETHODIMP_(void) CGEKVideoSystem::Print(const trect<float> &kLayout, IUnknown
             m_spD2DDeviceContext->DrawText(strMessage, strMessage.GetLength(), spFormat, *(D2D1_RECT_F *)&kLayout, spBrush);
         }
     }
-}
-
-STDMETHODIMP CGEKVideoSystem::CreateBrush(const float4 &nColor, IUnknown **ppBrush)
-{
-    REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppBrush, E_INVALIDARG);
-
-    CComPtr<ID2D1SolidColorBrush> spBrush;
-    HRESULT hRetVal = m_spD2DDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&nColor, &spBrush);
-    if (spBrush)
-    {
-        hRetVal = spBrush->QueryInterface(IID_PPV_ARGS(ppBrush));
-    }
-
-    return hRetVal;
 }
 
 STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, IUnknown *pBrush, bool bFilled)
@@ -3016,6 +3080,26 @@ STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, co
         else
         {
             m_spD2DDeviceContext->DrawRoundedRectangle({ *(D2D1_RECT_F *)&kRect, nRadius.x, nRadius.y }, spBrush);
+        }
+    }
+}
+
+STDMETHODIMP_(void) CGEKVideoSystem::DrawGeometry(IGEK2DVideoGeometry *pGeometry, IUnknown *pBrush, bool bFilled)
+{
+    REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
+    REQUIRE_VOID_RETURN(pGeometry && pBrush);
+
+    CComQIPtr<ID2D1PathGeometry> spGeometry(pGeometry);
+    CComQIPtr<ID2D1SolidColorBrush> spBrush(pBrush);
+    if (spGeometry && spBrush)
+    {
+        if (bFilled)
+        {
+            m_spD2DDeviceContext->FillGeometry(spGeometry, spBrush);
+        }
+        else
+        {
+            m_spD2DDeviceContext->DrawGeometry(spGeometry, spBrush);
         }
     }
 }

@@ -1008,6 +1008,15 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         sp2DVideoSystem->DrawRectangle({ 15.0f, 15.0f, 235.0f, 60.f }, float2(5.0f, 5.0f), spRed, true);
         sp2DVideoSystem->Print({ 25.0f, 25.0f, 225.0f, 50.0f }, spFont, spGray, L"Test: %d", 1);
 
+        CComPtr<IGEK2DVideoGeometry> spGeometry;
+        sp2DVideoSystem->CreateGeometry(&spGeometry);
+        spGeometry->Begin(float2(500.0f, 500.0f), true);
+        spGeometry->AddLine(float2(600.0f, 500.0f));
+        spGeometry->AddLine(float2(550.0f, 550.0f));
+        spGeometry->End(false);
+
+        sp2DVideoSystem->DrawGeometry(spGeometry, spGray, true);
+
         sp2DVideoSystem->End();
     }
 
