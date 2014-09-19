@@ -117,6 +117,7 @@ public:
 
     // IGEK2DVideoSystem
     STDMETHOD(CreateBrush)                              (THIS_ const float4 &nColor, IUnknown **ppBrush);
+    STDMETHOD(CreateBrush)                              (THIS_ const std::vector<GEK2DVIDEO::GRADIENT::STOP> &aStops, const trect<float> &kRect, IUnknown **ppBrush);
     STDMETHOD(CreateFont)                               (THIS_ LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize, IUnknown **ppFont);
     STDMETHOD(CreateGeometry)                           (THIS_ IGEK2DVideoGeometry **ppGeometry);
     STDMETHOD_(void, Print)                             (THIS_ const trect<float> &kLayout, IUnknown *pFont, IUnknown *pBrush, LPCWSTR pMessage, ...);

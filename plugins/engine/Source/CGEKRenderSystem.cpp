@@ -1001,6 +1001,9 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         CComPtr<IUnknown> spGray;
         sp2DVideoSystem->CreateBrush(float4(0.5f, 0.25f, 0.25f, 1.0f), &spGray);
 
+        CComPtr<IUnknown> spGradient;
+        sp2DVideoSystem->CreateBrush({ { 0.0f, float4(0.0f, 1.0f, 0.0f, 1.0f) }, { 1.0f, float4(0.0f, 0.0f, 1.0f, 1.0f) } }, { 0.0f, 0.0f, 1000.0f, 1000.0f }, &spGradient);
+
         CComPtr<IUnknown> spFont;
         sp2DVideoSystem->CreateFont(L"Arial", 400, GEK2DVIDEO::FONT::NORMAL, 25.0f, &spFont);
 
@@ -1024,7 +1027,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         CComPtr<IGEK2DVideoGeometry> spWideGeometry;
         spGeometry->Widen(5.0f, 0.0f, &spWideGeometry);
 
-        sp2DVideoSystem->DrawGeometry(spGeometry, spRed, true);
+        sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
         sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
 
         sp2DVideoSystem->End();

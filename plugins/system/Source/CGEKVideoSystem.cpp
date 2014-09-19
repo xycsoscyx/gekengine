@@ -3055,6 +3055,26 @@ STDMETHODIMP CGEKVideoSystem::CreateBrush(const float4 &nColor, IUnknown **ppBru
     return hRetVal;
 }
 
+STDMETHODIMP CGEKVideoSystem::CreateBrush(const std::vector<GEK2DVIDEO::GRADIENT::STOP> &aStops, const trect<float> &kRect, IUnknown **ppBrush)
+{
+    REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
+    REQUIRE_RETURN(ppBrush, E_INVALIDARG);
+
+    CComPtr<ID2D1GradientStopCollection> spStops;
+    HRESULT hRetVal = m_spD2DDeviceContext->CreateGradientStopCollection((D2D1_GRADIENT_STOP *)&aStops[0], aStops.size(), &spStops);
+    if (spStops)
+    {
+        CComPtr<ID2D1LinearGradientBrush> spBrush;
+        hRetVal = m_spD2DDeviceContext->CreateLinearGradientBrush(*(D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES *)&kRect, spStops, &spBrush);
+        if (spBrush)
+        {
+            hRetVal = spBrush->QueryInterface(IID_PPV_ARGS(ppBrush));
+        }
+    }
+
+    return hRetVal;
+}
+
 STDMETHODIMP CGEKVideoSystem::CreateFont(LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize, IUnknown **ppFont)
 {
     REQUIRE_RETURN(m_spDWriteFactory, E_FAIL);
@@ -3131,7 +3151,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, IU
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
     REQUIRE_VOID_RETURN(pBrush);
 
-    CComQIPtr<ID2D1SolidColorBrush> spBrush(pBrush);
+    CComQIPtr<ID2D1Brush> spBrush(pBrush);
     if (spBrush)
     {
         if (bFilled)
@@ -3150,7 +3170,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, co
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
     REQUIRE_VOID_RETURN(pBrush);
 
-    CComQIPtr<ID2D1SolidColorBrush> spBrush(pBrush);
+    CComQIPtr<ID2D1Brush> spBrush(pBrush);
     if (spBrush)
     {
         if (bFilled)
@@ -3169,9 +3189,9 @@ STDMETHODIMP_(void) CGEKVideoSystem::DrawGeometry(IGEK2DVideoGeometry *pGeometry
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
     REQUIRE_VOID_RETURN(pGeometry && pBrush);
 
+    CComQIPtr<ID2D1Brush> spBrush(pBrush);
     CComQIPtr<ID2D1PathGeometry> spGeometry(pGeometry);
-    CComQIPtr<ID2D1SolidColorBrush> spBrush(pBrush);
-    if (spGeometry && spBrush)
+    if (spBrush && spGeometry)
     {
         if (bFilled)
         {

@@ -15,6 +15,15 @@ namespace GEK2DVIDEO
             ITALIC,
         };
     };
+
+    namespace GRADIENT
+    {
+        struct STOP
+        {
+            float m_nPosition;
+            float4 m_nColor;
+        };
+    };
 };
 
 DECLARE_INTERFACE_IID_(IGEK2DVideoGeometry, IUnknown, "4CA2D559-66C1-46F3-ADFF-9B919AAB4575")
@@ -34,6 +43,7 @@ DECLARE_INTERFACE_IID_(IGEK2DVideoGeometry, IUnknown, "4CA2D559-66C1-46F3-ADFF-9
 DECLARE_INTERFACE_IID_(IGEK2DVideoSystem, IUnknown, "D3B65773-4EB1-46F8-A38D-009CA43CE77F")
 {
     STDMETHOD(CreateBrush)                  (THIS_ const float4 &nColor, IUnknown **ppBrush) PURE;
+    STDMETHOD(CreateBrush)                  (THIS_ const std::vector<GEK2DVIDEO::GRADIENT::STOP> &aStops, const trect<float> &kRect, IUnknown **ppBrush) PURE;
 
     STDMETHOD(CreateFont)                   (THIS_ LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize, IUnknown **ppFont) PURE;
 
