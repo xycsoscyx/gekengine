@@ -2,22 +2,22 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="GEKShape.h" />
-    <ClInclude Include="Include\GEKPlane.h">
+    <ClInclude Include="Public\plane.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\GEKRay.h">
+    <ClInclude Include="Public\ray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\GEKSphere.h">
+    <ClInclude Include="Public\sphere.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\GEKAABB.h">
+    <ClInclude Include="Public\aabb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\GEKFrustum.h">
+    <ClInclude Include="Public\frustum.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\GEKOBB.h">
+    <ClInclude Include="Public\obb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
