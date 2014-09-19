@@ -19,9 +19,16 @@ namespace GEK2DVIDEO
 
 DECLARE_INTERFACE_IID_(IGEK2DVideoGeometry, IUnknown, "4CA2D559-66C1-46F3-ADFF-9B919AAB4575")
 {
-    STDMETHOD(Begin)                        (THIS_ const float2 &nPoint, bool bFilled) PURE;
-    STDMETHOD_(void, AddLine)               (THIS_ const float2 &nPoint) PURE;
+    STDMETHOD(Open)                         (THIS) PURE;
+    STDMETHOD(Close)                        (THIS) PURE;
+
+    STDMETHOD_(void, Begin)                 (THIS_ const float2 &nPoint, bool bFilled) PURE;
     STDMETHOD_(void, End)                   (THIS_ bool bOpenEnded) PURE;
+
+    STDMETHOD_(void, AddLine)               (THIS_ const float2 &nPoint) PURE;
+    STDMETHOD_(void, AddBezier)             (THIS_ const float2 &nPoint1, const float2 &nPoint2, const float2 &nPoint3) PURE;
+
+    STDMETHOD(Widen)                        (THIS_ float nWidth, float nTolerance, IGEK2DVideoGeometry **ppGeometry) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEK2DVideoSystem, IUnknown, "D3B65773-4EB1-46F8-A38D-009CA43CE77F")

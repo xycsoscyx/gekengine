@@ -1010,12 +1010,22 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
         CComPtr<IGEK2DVideoGeometry> spGeometry;
         sp2DVideoSystem->CreateGeometry(&spGeometry);
+        spGeometry->Open();
         spGeometry->Begin(float2(500.0f, 500.0f), true);
         spGeometry->AddLine(float2(600.0f, 500.0f));
         spGeometry->AddLine(float2(550.0f, 550.0f));
         spGeometry->End(false);
+        spGeometry->Begin(float2(200.0f, 500.0f), true);
+        spGeometry->AddLine(float2(300.0f, 500.0f));
+        spGeometry->AddLine(float2(250.0f, 550.0f));
+        spGeometry->End(false);
+        spGeometry->Close();
+        
+        CComPtr<IGEK2DVideoGeometry> spWideGeometry;
+        spGeometry->Widen(5.0f, 0.0f, &spWideGeometry);
 
-        sp2DVideoSystem->DrawGeometry(spGeometry, spGray, true);
+        sp2DVideoSystem->DrawGeometry(spGeometry, spRed, true);
+        sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
 
         sp2DVideoSystem->End();
     }

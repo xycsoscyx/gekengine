@@ -573,19 +573,21 @@ class CGEKVideoGeometry : public CGEKUnknown
 private:
     CComPtr<ID2D1PathGeometry> m_spGeometry;
     CComPtr<ID2D1GeometrySink> m_spSink;
+    bool m_bFigureBegun;
 
 public:
     DECLARE_UNKNOWN(CGEKVideoGeometry);
     CGEKVideoGeometry(ID2D1PathGeometry *pGeometry)
         : m_spGeometry(pGeometry)
+        , m_bFigureBegun(false)
     {
     }
 
-    virtual ~CGEKVideoGeometry(void)
+    ~CGEKVideoGeometry(void)
     {
     }
 
-    STDMETHODIMP Begin(const float2 &nPoint, bool bFilled)
+    STDMETHODIMP Open(void)
     {
         REQUIRE_RETURN(m_spGeometry, E_FAIL);
 
@@ -593,16 +595,94 @@ public:
         return m_spGeometry->Open(&m_spSink);
     }
 
-    STDMETHODIMP_(void) AddLine(const float2 &nPoint)
+    STDMETHODIMP Close(void)
     {
-        REQUIRE_VOID_RETURN(m_spSink);
-        m_spSink->AddLine(*(D2D1_POINT_2F *)&nPoint);
+        REQUIRE_RETURN(m_spGeometry && m_spSink, E_FAIL);
+
+        HRESULT hRetVal = m_spSink->Close();
+        if (SUCCEEDED(hRetVal))
+        {
+            m_spSink = nullptr;
+        }
+
+        return hRetVal;
+    }
+
+    STDMETHODIMP_(void) Begin(const float2 &nPoint, bool bFilled)
+    {
+        REQUIRE_VOID_RETURN(m_spGeometry && m_spSink);
+
+        if (!m_bFigureBegun)
+        {
+            m_bFigureBegun = true;
+            m_spSink->BeginFigure(*(D2D1_POINT_2F *)&nPoint, bFilled ? D2D1_FIGURE_BEGIN_FILLED : D2D1_FIGURE_BEGIN_HOLLOW);
+        }
     }
 
     STDMETHODIMP_(void) End(bool bOpenEnded)
     {
         REQUIRE_VOID_RETURN(m_spGeometry && m_spSink);
-        m_spSink->EndFigure(bOpenEnded ? D2D1_FIGURE_END_OPEN : D2D1_FIGURE_END_CLOSED);
+
+        if (m_bFigureBegun)
+        {
+            m_bFigureBegun = false;
+            m_spSink->EndFigure(bOpenEnded ? D2D1_FIGURE_END_OPEN : D2D1_FIGURE_END_CLOSED);
+        }
+    }
+
+    STDMETHODIMP_(void) AddLine(const float2 &nPoint)
+    {
+        REQUIRE_VOID_RETURN(m_spSink);
+
+        if (m_bFigureBegun)
+        {
+            m_spSink->AddLine(*(D2D1_POINT_2F *)&nPoint);
+        }
+    }
+
+    STDMETHODIMP_(void) AddBezier(const float2 &nPoint1, const float2 &nPoint2, const float2 &nPoint3)
+    {
+        REQUIRE_VOID_RETURN(m_spSink);
+
+        if (m_bFigureBegun)
+        {
+            m_spSink->AddBezier({ *(D2D1_POINT_2F *)&nPoint1, *(D2D1_POINT_2F *)&nPoint2, *(D2D1_POINT_2F *)&nPoint3 });
+        }
+    }
+
+    STDMETHODIMP Widen(float nWidth, float nTolerance, IGEK2DVideoGeometry **ppGeometry)
+    {
+        REQUIRE_RETURN(m_spGeometry && ppGeometry, E_INVALIDARG);
+
+        HRESULT hRetVal = E_FAIL;
+        CComPtr<ID2D1Factory> spFactory;
+        m_spGeometry->GetFactory(&spFactory);
+        if (spFactory)
+        {
+            CComPtr<ID2D1PathGeometry> spPathGeometry;
+            hRetVal = spFactory->CreatePathGeometry(&spPathGeometry);
+            if (spPathGeometry)
+            {
+                CComPtr<ID2D1GeometrySink> spSink;
+                hRetVal = spPathGeometry->Open(&spSink);
+                if (spSink)
+                {
+                    hRetVal = m_spGeometry->Widen(nWidth, nullptr, nullptr, nTolerance, spSink);
+                    if (SUCCEEDED(hRetVal))
+                    {
+                        spSink->Close();
+                        hRetVal = E_OUTOFMEMORY;
+                        CComPtr<CGEKVideoGeometry> spGeometry(new CGEKVideoGeometry(spPathGeometry));
+                        if (spGeometry)
+                        {
+                            hRetVal = spGeometry->QueryInterface(IID_PPV_ARGS(ppGeometry));
+                        }
+                    }
+                }
+            }
+        }
+
+        return hRetVal;
     }
 };
 
