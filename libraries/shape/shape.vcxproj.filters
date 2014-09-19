@@ -2,24 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="GEKShape.h" />
-    <ClInclude Include="Public\aabb.h">
-      <Filter>Templates</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\frustum.h">
-      <Filter>Templates</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\obb.h">
-      <Filter>Templates</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\plane.h">
-      <Filter>Templates</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\ray.h">
-      <Filter>Templates</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\sphere.h">
-      <Filter>Templates</Filter>
-    </ClInclude>
     <ClInclude Include="Include\GEKPlane.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -45,9 +27,6 @@
     </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{20c051f1-47ac-47e0-9fc3-21b33721dca5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Templates">
-      <UniqueIdentifier>{93d18881-a392-4ffe-be4f-4fcf5c7c5517}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
