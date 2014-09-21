@@ -29,16 +29,19 @@ template <typename TYPE> struct tvector2;
 template <typename TYPE> struct tvector3;
 template <typename TYPE> struct tvector4;
 template <typename TYPE> struct tquaternion;
+template <typename TYPE> struct tmatrix3x2;
 template <typename TYPE> struct tmatrix4x4;
 
 #include "Public\Vector2.h"
 #include "Public\Vector3.h"
 #include "Public\Vector4.h"
 #include "Public\Quaternion.h"
+#include "Public\Matrix3x2.h"
 #include "Public\Matrix4x4.h"
 
 typedef tvector2<float> float2;
 typedef tvector3<float> float3;
 typedef tvector4<float> float4;
+typedef tmatrix3x2<float> float3x2;
 typedef tmatrix4x4<float> float4x4;
 typedef tquaternion<float> quaternion;

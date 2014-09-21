@@ -81,6 +81,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="GEKMath.h" />
+    <ClInclude Include="Public\matrix3x2.h" />
     <ClInclude Include="Public\matrix4x4.h" />
     <ClInclude Include="Public\quaternion.h" />
     <ClInclude Include="Public\vector2.h" />

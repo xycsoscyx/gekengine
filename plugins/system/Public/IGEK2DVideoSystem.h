@@ -49,7 +49,9 @@ DECLARE_INTERFACE_IID_(IGEK2DVideoSystem, IUnknown, "D3B65773-4EB1-46F8-A38D-009
 
     STDMETHOD(CreateGeometry)               (THIS_ IGEK2DVideoGeometry **ppGeometry) PURE;
 
-    STDMETHOD_(void, Print)                 (THIS_ const trect<float> &kLayout, IUnknown *pFont, IUnknown *pBrush, LPCWSTR pMessage, ...) PURE;
+    STDMETHOD_(void, SetTransform)          (THIS_ const float3x2 &nTransform) PURE;
+
+    STDMETHOD_(void, DrawText)              (THIS_ const trect<float> &kLayout, IUnknown *pFont, IUnknown *pBrush, LPCWSTR pMessage, ...) PURE;
 
     STDMETHOD_(void, DrawRectangle)         (THIS_ const trect<float> &kRect, IUnknown *pBrush, bool bFilled) PURE;
     STDMETHOD_(void, DrawRectangle)         (THIS_ const trect<float> &kRect, const float2 &nRadius, IUnknown *pBrush, bool bFilled) PURE;

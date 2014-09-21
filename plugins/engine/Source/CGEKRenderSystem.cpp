@@ -1012,26 +1012,36 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         CComPtr<IUnknown> spFont;
         sp2DVideoSystem->CreateFont(L"Arial", 400, GEK2DVIDEO::FONT::NORMAL, 25.0f, &spFont);
 
+        float3x2 nTransform;
+        sp2DVideoSystem->SetTransform(nTransform);
         sp2DVideoSystem->DrawRectangle({ 10.0f, 10.0f, 240.0f, 65.f }, float2(5.0f, 5.0f), spGradient1, true);
         sp2DVideoSystem->DrawRectangle({ 15.0f, 15.0f, 235.0f, 60.f }, float2(5.0f, 5.0f), spGradient2, true);
-        sp2DVideoSystem->Print({ 25.0f, 25.0f, 225.0f, 50.0f }, spFont, spGray, L"Test: %d", 1);
+        sp2DVideoSystem->DrawText({ 25.0f, 25.0f, 225.0f, 50.0f }, spFont, spGray, L"Test: %d", 1);
 
         CComPtr<IGEK2DVideoGeometry> spGeometry;
         sp2DVideoSystem->CreateGeometry(&spGeometry);
         spGeometry->Open();
-        spGeometry->Begin(float2(500.0f, 500.0f), true);
-        spGeometry->AddLine(float2(600.0f, 500.0f));
-        spGeometry->AddLine(float2(550.0f, 550.0f));
-        spGeometry->End(false);
-        spGeometry->Begin(float2(200.0f, 500.0f), true);
-        spGeometry->AddLine(float2(300.0f, 500.0f));
-        spGeometry->AddLine(float2(250.0f, 550.0f));
+        spGeometry->Begin(float2(0.0f, 0.0f), true);
+        spGeometry->AddLine(float2(100.0f, 0.0f));
+        spGeometry->AddLine(float2(50.0f, 50.0f));
         spGeometry->End(false);
         spGeometry->Close();
         
         CComPtr<IGEK2DVideoGeometry> spWideGeometry;
         spGeometry->Widen(5.0f, 0.0f, &spWideGeometry);
 
+        nTransform.SetTranslation(float2(500.0f, 500.0f));
+        sp2DVideoSystem->SetTransform(nTransform);
+        sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
+        sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
+
+        nTransform.SetTranslation(float2(700.0f, 500.0f));
+        sp2DVideoSystem->SetTransform(nTransform);
+        sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
+        sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
+
+        nTransform.SetTranslation(float2(600.0f, 600.0f));
+        sp2DVideoSystem->SetTransform(nTransform);
         sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
         sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
 

@@ -3123,7 +3123,14 @@ STDMETHODIMP CGEKVideoSystem::CreateGeometry(IGEK2DVideoGeometry **ppGeometry)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::Print(const trect<float> &kLayout, IUnknown *pFont, IUnknown *pBrush, LPCWSTR pMessage, ...)
+STDMETHODIMP_(void) CGEKVideoSystem::SetTransform(const float3x2 &nTransform)
+{
+    REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
+
+    m_spD2DDeviceContext->SetTransform(*(D2D1_MATRIX_3X2_F *)&nTransform);
+}
+
+STDMETHODIMP_(void) CGEKVideoSystem::DrawText(const trect<float> &kLayout, IUnknown *pFont, IUnknown *pBrush, LPCWSTR pMessage, ...)
 {
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
     REQUIRE_VOID_RETURN(pFont && pBrush && pMessage);

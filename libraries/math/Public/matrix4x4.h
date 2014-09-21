@@ -455,9 +455,9 @@ public:
     {
         tmatrix4x4<TYPE> nTranspose(nMatrix.GetTranspose());
         return tmatrix4x4<TYPE>(rx.Dot(nTranspose.rx), rx.Dot(nTranspose.ry), rx.Dot(nTranspose.rz), rx.Dot(nTranspose.rw),
-                               ry.Dot(nTranspose.rx), ry.Dot(nTranspose.ry), ry.Dot(nTranspose.rz), ry.Dot(nTranspose.rw),
-                               rz.Dot(nTranspose.rx), rz.Dot(nTranspose.ry), rz.Dot(nTranspose.rz), rz.Dot(nTranspose.rw),
-                               rw.Dot(nTranspose.rx), rw.Dot(nTranspose.ry), rw.Dot(nTranspose.rz), rw.Dot(nTranspose.rw));
+                                ry.Dot(nTranspose.rx), ry.Dot(nTranspose.ry), ry.Dot(nTranspose.rz), ry.Dot(nTranspose.rw),
+                                rz.Dot(nTranspose.rx), rz.Dot(nTranspose.ry), rz.Dot(nTranspose.rz), rz.Dot(nTranspose.rw),
+                                rw.Dot(nTranspose.rx), rw.Dot(nTranspose.ry), rw.Dot(nTranspose.rz), rw.Dot(nTranspose.rw));
     }
 
     tmatrix4x4<TYPE> operator = (const tmatrix4x4<TYPE> &nMatrix)
@@ -478,32 +478,32 @@ public:
     tvector3<TYPE> operator * (const tvector3<TYPE> &nVector) const
     {
         return tvector3<TYPE>(((nVector.x * _11) + (nVector.y * _21) + (nVector.z * _31)),
-                            ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32)),
-                            ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33)));
+                             ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32)),
+                             ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33)));
     }
 
     tvector4<TYPE> operator * (const tvector4<TYPE> &nVector) const
     {
         return tvector4<TYPE>(((nVector.x * _11) + (nVector.y * _21) + (nVector.z * _31) + (nVector.w * _41)),
-                            ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32) + (nVector.w * _42)),
-                            ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33) + (nVector.w * _43)),
-                            ((nVector.x * _14) + (nVector.y * _24) + (nVector.z * _34) + (nVector.w * _44)));
+                             ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32) + (nVector.w * _42)),
+                             ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33) + (nVector.w * _43)),
+                             ((nVector.x * _14) + (nVector.y * _24) + (nVector.z * _34) + (nVector.w * _44)));
     }
 
     tmatrix4x4<TYPE> operator * (TYPE nScalar) const
     {
         return tmatrix4x4<TYPE>((_11 * nScalar), (_12 * nScalar), (_13 * nScalar), (_14 * nScalar),
-                               (_21 * nScalar), (_22 * nScalar), (_23 * nScalar), (_24 * nScalar),
-                               (_31 * nScalar), (_32 * nScalar), (_33 * nScalar), (_34 * nScalar),
-                               (_41 * nScalar), (_42 * nScalar), (_43 * nScalar), (_44 * nScalar));
+                                (_21 * nScalar), (_22 * nScalar), (_23 * nScalar), (_24 * nScalar),
+                                (_31 * nScalar), (_32 * nScalar), (_33 * nScalar), (_34 * nScalar),
+                                (_41 * nScalar), (_42 * nScalar), (_43 * nScalar), (_44 * nScalar));
     }
 
     tmatrix4x4<TYPE> operator + (const tmatrix4x4<TYPE> &nMatrix) const
     {
         return tmatrix4x4<TYPE>(_11 + nMatrix._11, _12 + nMatrix._12, _13 + nMatrix._13, _14 + nMatrix._14,
-                               _21 + nMatrix._21, _22 + nMatrix._22, _23 + nMatrix._23, _24 + nMatrix._24,
-                               _31 + nMatrix._31, _32 + nMatrix._32, _33 + nMatrix._33, _34 + nMatrix._34,
-                               _41 + nMatrix._41, _42 + nMatrix._42, _43 + nMatrix._43, _44 + nMatrix._44);
+                                _21 + nMatrix._21, _22 + nMatrix._22, _23 + nMatrix._23, _24 + nMatrix._24,
+                                _31 + nMatrix._31, _32 + nMatrix._32, _33 + nMatrix._33, _34 + nMatrix._34,
+                                _41 + nMatrix._41, _42 + nMatrix._42, _43 + nMatrix._43, _44 + nMatrix._44);
     }
 
     void operator += (const tmatrix4x4<TYPE> &nMatrix)
