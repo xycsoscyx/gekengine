@@ -90,6 +90,17 @@ public:
         _32 = nTranslation.y;
     }
 
+    void SetRotation(float nAngle)
+    {
+        matrix[0][0] = cos(nAngle);
+        matrix[1][0] = sin(nAngle);
+        matrix[2][0] = TYPE(0);
+
+        matrix[0][1] = -sin(nAngle);
+        matrix[1][1] = cos(nAngle);
+        matrix[2][1] = TYPE(0);
+    }
+
     tvector2<TYPE> GetScaling(void) const
     {
         return tvector2<TYPE>(_11, _22);

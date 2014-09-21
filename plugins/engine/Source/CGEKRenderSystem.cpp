@@ -1040,6 +1040,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
         sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
 
+        nTransform.SetRotation(_DEGTORAD(90.0f));
         nTransform.SetTranslation(float2(600.0f, 600.0f));
         sp2DVideoSystem->SetTransform(nTransform);
         sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
