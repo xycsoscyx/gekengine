@@ -1021,9 +1021,9 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         CComPtr<IGEK2DVideoGeometry> spGeometry;
         sp2DVideoSystem->CreateGeometry(&spGeometry);
         spGeometry->Open();
-        spGeometry->Begin(float2(0.0f, 0.0f), true);
-        spGeometry->AddLine(float2(100.0f, 0.0f));
-        spGeometry->AddLine(float2(50.0f, 50.0f));
+        spGeometry->Begin(float2(-50.0f, -50.0f), true);
+        spGeometry->AddLine(float2(50.0f, -50.0f));
+        spGeometry->AddLine(float2(0.0f, 50.0f));
         spGeometry->End(false);
         spGeometry->Close();
         
@@ -1040,7 +1040,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
         sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
 
-        nTransform.SetRotation(_DEGTORAD(90.0f));
+        nTransform.SetRotation(_DEGTORAD(180.0f));
         nTransform.SetTranslation(float2(600.0f, 600.0f));
         sp2DVideoSystem->SetTransform(nTransform);
         sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
