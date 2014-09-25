@@ -99,7 +99,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentController.cpp" />
+    <ClCompile Include="Source\CGEKComponentControl.cpp" />
+    <ClCompile Include="Source\CGEKComponentFollow.cpp" />
     <ClCompile Include="Source\CGEKComponentLight.cpp" />
     <ClCompile Include="Source\CGEKComponentNewton.cpp" />
     <ClCompile Include="Source\CGEKComponentTransform.cpp" />
@@ -117,7 +118,8 @@
     <ClInclude Include="..\..\api\IGEKSceneManager.h" />
     <ClInclude Include="GEKComponents.h" />
     <ClInclude Include="GEKComponentsCLSIDs.h" />
-    <ClInclude Include="Include\CGEKComponentController.h" />
+    <ClInclude Include="Include\CGEKComponentControl.h" />
+    <ClInclude Include="Include\CGEKComponentFollow.h" />
     <ClInclude Include="Include\CGEKComponentLight.h" />
     <ClInclude Include="Include\CGEKComponentNewton.h" />
     <ClInclude Include="Include\CGEKComponentTransform.h" />

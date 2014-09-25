@@ -1,11 +1,15 @@
 <?xml version="1.0"?>
 <world name="Demo">
 	<population>
-        <entity>
+        <entity name="player">
 			<transform position="-7.200000, -1.200000, 0.000000" rotation="0,0,0,1" />
-            <viewer type="perspective" fieldofview="90" minviewdistance="0.5" maxviewdistance="100" viewport="0,0,1,1" pass="opaque"/>
             <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-            <controller />
+            <control />
+		</entity>
+        <entity>
+			<transform />
+            <viewer type="perspective" fieldofview="90" minviewdistance="0.5" maxviewdistance="100" viewport="0,0,1,1" pass="opaque"/>
+            <follow target="player" offset="0,10,-5" />
 		</entity>
         <entity>
 			<transform position="-7.200000, -1.200000, 0.000000" rotation="0,0,0,1" />

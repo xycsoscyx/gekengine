@@ -5,20 +5,18 @@
 #include "GEKAPI.h"
 #include <concurrent_unordered_map.h>
 
-class CGEKComponentController : public CGEKUnknown
-                              , public IGEKComponent
+class CGEKComponentFollow : public CGEKUnknown
+                          , public IGEKComponent
 {
 public:
     struct DATA
     {
     public:
-        float m_nTurn;
-        float m_nTilt;
+        CStringW m_strTarget;
+        float3 m_nOffset;
 
     public:
         DATA(void)
-            : m_nTurn(0.0f)
-            , m_nTilt(0.0f)
         {
         }
     };
@@ -27,9 +25,9 @@ public:
     concurrency::concurrent_unordered_map<GEKENTITYID, DATA> m_aData;
 
 public:
-    DECLARE_UNKNOWN(CGEKComponentController)
-    CGEKComponentController(void);
-    ~CGEKComponentController(void);
+    DECLARE_UNKNOWN(CGEKComponentFollow)
+    CGEKComponentFollow(void);
+    ~CGEKComponentFollow(void);
 
     // IGEKComponent
     STDMETHOD_(LPCWSTR, GetName)                (THIS) const;
@@ -42,27 +40,22 @@ public:
     STDMETHOD_(bool, SetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue);
 };
 
-class CGEKComponentSystemController : public CGEKUnknown
-                                    , public IGEKInputObserver
-                                    , public IGEKSceneObserver
-                                    , public IGEKComponentSystem
+class CGEKComponentSystemFollow : public CGEKUnknown
+                                , public IGEKSceneObserver
+                                , public IGEKComponentSystem
 {
 private:
     IGEKSceneManager *m_pSceneManager;
-    std::unordered_map<GEKENTITYID, std::unordered_map<CStringW, float>> m_aActions;
 
 public:
-    DECLARE_UNKNOWN(CGEKComponentSystemController)
-    CGEKComponentSystemController(void);
-    ~CGEKComponentSystemController(void);
+    DECLARE_UNKNOWN(CGEKComponentSystemFollow)
+    CGEKComponentSystemFollow(void);
+    ~CGEKComponentSystemFollow(void);
 
     // IGEKUnknown
     STDMETHOD(Initialize)                   (THIS);
     STDMETHOD_(void, Destroy)               (THIS);
 
-    // IGEKInputObserver
-    STDMETHOD_(void, OnAction)              (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
-
     // IGEKSceneObserver
-    STDMETHOD_(void, OnPreUpdate)           (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD_(void, OnPostUpdate)          (THIS_ float nGameTime, float nFrameTime);
 };

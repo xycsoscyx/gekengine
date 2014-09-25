@@ -10,10 +10,12 @@
 DECLARE_REGISTERED_CLASS(CGEKComponentTransform)
 DECLARE_REGISTERED_CLASS(CGEKComponentViewer)
 DECLARE_REGISTERED_CLASS(CGEKComponentLight)
-DECLARE_REGISTERED_CLASS(CGEKComponentController)
+DECLARE_REGISTERED_CLASS(CGEKComponentControl)
+DECLARE_REGISTERED_CLASS(CGEKComponentFollow)
 DECLARE_REGISTERED_CLASS(CGEKComponentNewton)
 
-DECLARE_REGISTERED_CLASS(CGEKComponentSystemController)
+DECLARE_REGISTERED_CLASS(CGEKComponentSystemControl)
+DECLARE_REGISTERED_CLASS(CGEKComponentSystemFollow)
 DECLARE_REGISTERED_CLASS(CGEKComponentSystemNewton)
 
 DECLARE_CONTEXT_SOURCE(Components)
@@ -26,9 +28,14 @@ DECLARE_CONTEXT_SOURCE(Components)
     ADD_CONTEXT_CLASS(CLSID_GEKComponentLight, CGEKComponentLight)
         ADD_CLASS_TYPE(CLSID_GEKComponentType)
 
-    ADD_CONTEXT_CLASS(CLSID_GEKComponentController, CGEKComponentController)
+    ADD_CONTEXT_CLASS(CLSID_GEKComponentControl, CGEKComponentControl)
         ADD_CLASS_TYPE(CLSID_GEKComponentType)
-    ADD_CONTEXT_CLASS(CLSID_GEKComponentSystemController, CGEKComponentSystemController)
+    ADD_CONTEXT_CLASS(CLSID_GEKComponentSystemControl, CGEKComponentSystemControl)
+        ADD_CLASS_TYPE(CLSID_GEKComponentSystemType)
+
+    ADD_CONTEXT_CLASS(CLSID_GEKComponentFollow, CGEKComponentFollow)
+        ADD_CLASS_TYPE(CLSID_GEKComponentType)
+    ADD_CONTEXT_CLASS(CLSID_GEKComponentSystemFollow, CGEKComponentSystemFollow)
         ADD_CLASS_TYPE(CLSID_GEKComponentSystemType)
 
     ADD_CONTEXT_CLASS(CLSID_GEKComponentNewton, CGEKComponentNewton)
