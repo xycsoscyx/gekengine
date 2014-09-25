@@ -9,8 +9,34 @@
 #include "GEKEngineCLSIDs.h"
 #include "GEKSystemCLSIDs.h"
 
+#include "resource.h"
+
 #define WM_TURN             (WM_USER + 0)
 #define WM_TILT             (WM_USER + 1)
+
+HCURSOR LoadAnimatedCursor(HINSTANCE hInstance, UINT nID, LPCTSTR pszResouceType)
+{
+    HCURSOR hCursor = NULL;
+    HRSRC hResource = FindResource(hInstance, MAKEINTRESOURCE(nID), pszResouceType);
+    DWORD dwResourceSize = SizeofResource(hInstance, hResource);
+    if (dwResourceSize > 0)
+    {
+        HGLOBAL hRsrcGlobal = LoadResource(hInstance, hResource);
+        if (hRsrcGlobal)
+        {
+            LPBYTE pResource = (LPBYTE)LockResource(hRsrcGlobal);
+            if (pResource)
+            {
+                hCursor = (HCURSOR)CreateIconFromResource(pResource, dwResourceSize, FALSE, 0x00030000);
+                UnlockResource(pResource);
+            }
+
+            FreeResource(hRsrcGlobal);
+        }
+    }
+
+    return hCursor;
+}
 
 BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
@@ -28,6 +54,7 @@ CGEKEngine::CGEKEngine(void)
     : m_hLogFile(nullptr)
     , m_bWindowActive(false)
     , m_bSendInput(false)
+    , m_hCursorPointer(nullptr)
 {
     DeleteFile(L"log.txt");
     m_hLogFile = CreateFile(L"log.txt", GENERIC_ALL, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -35,6 +62,11 @@ CGEKEngine::CGEKEngine(void)
 
 CGEKEngine::~CGEKEngine(void)
 {
+    if (m_hCursorPointer)
+    {
+        DestroyIcon(m_hCursorPointer);
+    }
+
     if (m_hLogFile != nullptr && m_hLogFile != INVALID_HANDLE_VALUE)
     {
         CloseHandle(m_hLogFile);
@@ -158,6 +190,15 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
         if (SUCCEEDED(hRetVal))
         {
+#ifdef _DEBUG
+            m_hCursorPointer = LoadAnimatedCursor(GetModuleHandle(L"engine.debug.dll"), IDR_CURSOR_POINTER, L"ANIMATEDCURSOR");
+#else
+            m_hCursorPointer = LoadAnimatedCursor(GetModuleHandle(L"engine.dll"), IDR_CURSOR_POINTER, L"ANIMATEDCURSOR");
+#endif
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
             hRetVal = Load(L"demo");
         }
     }
@@ -206,7 +247,7 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
     switch (nMessage)
     {
     case WM_SETCURSOR:
-        SetCursor(nullptr);
+        SetCursor(m_hCursorPointer);
         nResult = 1;
         break;
 

@@ -78,9 +78,11 @@
     <ClInclude Include="..\..\api\IGEKProgramManager.h">
       <Filter>API Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
+    <ResourceCompile Include="engine.rc" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -95,5 +97,9 @@
     <Filter Include="API Files">
       <UniqueIdentifier>{38381644-ca93-4d78-bdd0-b63af13fa34c}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cursor1.cur" />
+    <None Include="cursor.ani" />
   </ItemGroup>
 </Project>

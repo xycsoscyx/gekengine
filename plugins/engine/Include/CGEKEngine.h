@@ -34,6 +34,7 @@ private:
     CComPtr<IGEKRenderSystem> m_spRenderManager;
 
     bool m_bSendInput;
+    HCURSOR m_hCursorPointer;
 
 private:
     void CheckInput(UINT32 nKey, const GEKVALUE &kValue);

@@ -112,6 +112,7 @@
     <ClInclude Include="Public\IGEKPopulationSystem.h" />
     <ClInclude Include="Public\IGEKRenderFilter.h" />
     <ClInclude Include="Public\IGEKRenderSystem.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
@@ -123,11 +124,16 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
+    <ResourceCompile Include="engine.rc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\utility\utility.vcxproj">
       <Project>{be4f1e7f-e045-4d30-aed6-02a60c83bd97}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cursor.ani" />
+    <None Include="cursor1.cur" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
