@@ -163,7 +163,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnPostUpdate(float nGameTime, flo
                 float3 nPosition(kPosition.GetFloat3() + kOffset.GetFloat3());
                 nRotation.LookAt(-kOffset.GetFloat3(), float3(0.0f, 1.0f, 0.0f));
                 m_pSceneManager->SetProperty(nEntityID, L"transform", L"position", nPosition);
-                m_pSceneManager->SetProperty(nEntityID, L"transform", L"rotation", kRotation);
+                m_pSceneManager->SetProperty(nEntityID, L"transform", L"rotation", nRotation);
             }
         }
     }, true);
