@@ -6,6 +6,7 @@
 #include "IGEKPopulationSystem.h"
 #include "IGEKRenderSystem.h"
 #include <concurrent_vector.h>
+#include <concurrent_unordered_map.h>
 #include <unordered_map>
 #include <list>
 
@@ -18,6 +19,7 @@ private:
     std::unordered_map<CStringW, CComPtr<IGEKComponent>> m_aComponents;
     std::list<CComPtr<IGEKComponentSystem>> m_aComponentSystems;
     concurrency::concurrent_vector<GEKENTITYID> m_aPopulation;
+    concurrency::concurrent_unordered_map<CStringW, GEKENTITYID> m_aNamedEntities;
     concurrency::concurrent_vector<GEKENTITYID> m_aHitList;
 
 public:
@@ -37,8 +39,9 @@ public:
     STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);
 
     // IGEKSceneManager
-    STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID);
+    STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID, LPCWSTR pName = nullptr);
     STDMETHOD(DestroyEntity)                    (THIS_ const GEKENTITYID &nEntityID);
+    STDMETHOD(GetNamedEntity)                   (THIS_ LPCWSTR pName, GEKENTITYID *pEntityID);
     STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::unordered_map<CStringW, CStringW> &aParams);
     STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
     STDMETHOD_(void, ListProperties)            (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const;

@@ -144,5 +144,27 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnPostUpdate(float nGameTime, flo
 
     m_pSceneManager->ListComponentsEntities({ L"transform", L"follow" }, [&](const GEKENTITYID &nEntityID)->void
     {
+        GEKVALUE kTarget;
+        GEKVALUE kOffset;
+        m_pSceneManager->GetProperty(nEntityID, L"follow", L"target", kTarget);
+        m_pSceneManager->GetProperty(nEntityID, L"follow", L"offset", kOffset);
+
+        GEKENTITYID nTargetID = GEKINVALIDENTITYID;
+        if (SUCCEEDED(m_pSceneManager->GetNamedEntity(kTarget.GetRawString(), &nTargetID)))
+        {
+            if (m_pSceneManager->HasComponent(nTargetID, L"transform"))
+            {
+                GEKVALUE kPosition;
+                GEKVALUE kRotation;
+                m_pSceneManager->GetProperty(nTargetID, L"transform", L"position", kPosition);
+                m_pSceneManager->GetProperty(nTargetID, L"transform", L"rotation", kRotation);
+                
+                float4x4 nRotation(kRotation.GetQuaternion());
+                float3 nPosition(kPosition.GetFloat3() + kOffset.GetFloat3());
+                nRotation.LookAt(-kOffset.GetFloat3(), float3(0.0f, 1.0f, 0.0f));
+                m_pSceneManager->SetProperty(nEntityID, L"transform", L"position", nPosition);
+                m_pSceneManager->SetProperty(nEntityID, L"transform", L"rotation", kRotation);
+            }
+        }
     }, true);
 }

@@ -117,12 +117,17 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
         }
     }
     
-    GEKENTITYID nPlayerID = 0;
     GEKLOG(L"Num. Entities Found: %d", aEntities.size());
     std::for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
-        GEKENTITYID nEntityID;
-        if (SUCCEEDED(CreateEntity(nEntityID)))
+        CStringW strName;
+        if (kEntityNode.HasAttribute(L"name"))
+        {
+            strName = kEntityNode.GetAttribute(L"name");
+        }
+
+        GEKENTITYID nEntityID = GEKINVALIDENTITYID;
+        if (SUCCEEDED(CreateEntity(nEntityID, (strName.IsEmpty() ? nullptr : strName.GetString()))))
         {
             CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
             while (kComponentNode)
@@ -165,6 +170,7 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Free(void)
 {
     m_aHitList.clear();
     m_aPopulation.clear();
+    m_aNamedEntities.clear();
     for (auto pIterator : m_aComponents)
     {
         pIterator.second->Clear();
@@ -186,11 +192,25 @@ STDMETHODIMP_(float3) CGEKPopulationSystem::GetGravity(const float3 &nPosition) 
     return float3(0.0f, -9.8331f, 0.0f);
 }
 
-STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID)
+STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID, LPCWSTR pName)
 {
-    static GEKENTITYID nNextEntityID = 0;
+    if (pName)
+    {
+        auto pIterator = m_aNamedEntities.find(pName);
+        if (pIterator != m_aNamedEntities.end())
+        {
+            return E_FAIL;
+        }
+    }
+
+    static GEKENTITYID nNextEntityID = GEKINVALIDENTITYID;
     m_aPopulation.push_back(++nNextEntityID);
     nEntityID = nNextEntityID;
+    if (pName)
+    {
+        m_aNamedEntities[pName] = nEntityID;
+    }
+
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityCreated, std::placeholders::_1, nEntityID)));
     return S_OK;
 }
@@ -200,6 +220,21 @@ STDMETHODIMP CGEKPopulationSystem::DestroyEntity(const GEKENTITYID &nEntityID)
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityDestroyed, std::placeholders::_1, nEntityID)));
     m_aHitList.push_back(nEntityID);
     return S_OK;
+}
+
+STDMETHODIMP CGEKPopulationSystem::GetNamedEntity(LPCWSTR pName, GEKENTITYID *pEntityID)
+{
+    REQUIRE_RETURN(pName && pEntityID, E_INVALIDARG);
+
+    HRESULT hRetVal = E_FAIL;
+    auto pIterator = m_aNamedEntities.find(pName);
+    if (pIterator != m_aNamedEntities.end())
+    {
+        (*pEntityID) = (*pIterator).second;
+        hRetVal = S_OK;
+    }
+
+    return hRetVal;
 }
 
 STDMETHODIMP CGEKPopulationSystem::AddComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::unordered_map<CStringW, CStringW> &aParams)
@@ -286,6 +321,7 @@ STDMETHODIMP_(bool) CGEKPopulationSystem::SetProperty(const GEKENTITYID &nEntity
 
 STDMETHODIMP_(void) CGEKPopulationSystem::ListEntities(std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel)
 {
+    bParallel = false;
     if (bParallel)
     {
         concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
@@ -314,6 +350,7 @@ STDMETHODIMP_(void) CGEKPopulationSystem::ListComponentsEntities(const std::vect
         }
     });
 
+    bParallel = false;
     if (bParallel)
     {
         concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void

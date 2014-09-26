@@ -308,25 +308,25 @@ public:
 
     }
 
-    void LookAt(const tvector3<TYPE> &nViewDirection, const tvector3<TYPE> &nWorldYGEKDEVICEAXIS)
+    void LookAt(const tvector3<TYPE> &nViewDirection, const tvector3<TYPE> &nWorldYAxis)
     {
-        tvector3<TYPE> nGEKDEVICEAXISZ(nViewDirection.GetNormal());
-        tvector3<TYPE> nGEKDEVICEAXISX(nWorldYGEKDEVICEAXIS.Cross(nGEKDEVICEAXISZ).GetNormal());
-        tvector3<TYPE> nGEKDEVICEAXISY(nGEKDEVICEAXISZ.Cross(nGEKDEVICEAXISX).GetNormal());
+        tvector3<TYPE> nAxisZ(nViewDirection.GetNormal());
+        tvector3<TYPE> nAxisX(nWorldYAxis.Cross(nAxisZ).GetNormal());
+        tvector3<TYPE> nAxisY(nAxisZ.Cross(nAxisX).GetNormal());
 
         SetIdentity();
 
-        _11 = nGEKDEVICEAXISX.x;
-        _21 = nGEKDEVICEAXISX.y;
-        _31 = nGEKDEVICEAXISX.z;
+        _11 = nAxisX.x;
+        _21 = nAxisX.y;
+        _31 = nAxisX.z;
 
-        _12 = nGEKDEVICEAXISY.x;
-        _22 = nGEKDEVICEAXISY.y;
-        _32 = nGEKDEVICEAXISY.z;
+        _12 = nAxisY.x;
+        _22 = nAxisY.y;
+        _32 = nAxisY.z;
 
-        _13 = nGEKDEVICEAXISZ.x;
-        _23 = nGEKDEVICEAXISZ.y;
-        _33 = nGEKDEVICEAXISZ.z;
+        _13 = nAxisZ.x;
+        _23 = nAxisZ.y;
+        _33 = nAxisZ.z;
 
         Invert();
     }

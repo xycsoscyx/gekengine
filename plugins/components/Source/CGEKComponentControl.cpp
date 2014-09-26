@@ -143,7 +143,7 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnAction(LPCWSTR pName, const GE
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    m_pSceneManager->ListComponentsEntities({ L"transform", L"Control" }, [&](const GEKENTITYID &nEntityID)->void
+    m_pSceneManager->ListComponentsEntities({ L"transform", L"control" }, [&](const GEKENTITYID &nEntityID)->void
     {
         m_aActions[nEntityID][pName] = kValue.GetFloat();
     }, true);

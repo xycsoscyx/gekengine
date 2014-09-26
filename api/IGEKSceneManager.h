@@ -5,13 +5,15 @@
 DECLARE_INTERFACE(IGEKComponent);
 
 typedef UINT32 GEKENTITYID;
+const GEKENTITYID GEKINVALIDENTITYID = 0;
 
 DECLARE_INTERFACE_IID_(IGEKSceneManager, IUnknown, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B")
 {
     STDMETHOD(Load)                             (THIS_ LPCWSTR pName) PURE;
 
-    STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID) PURE;
+    STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID, LPCWSTR pName = nullptr) PURE;
     STDMETHOD(DestroyEntity)                    (THIS_ const GEKENTITYID &nEntityID) PURE;
+    STDMETHOD(GetNamedEntity)                   (THIS_ LPCWSTR pName, GEKENTITYID *pEntityID) PURE;
 
     STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::unordered_map<CStringW, CStringW> &aParams) PURE;
     STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent) PURE;
