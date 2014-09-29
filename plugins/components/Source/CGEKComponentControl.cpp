@@ -162,13 +162,13 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnPreUpdate(float nGameTime, flo
 
         GEKVALUE kTurn;
         GEKVALUE kTilt;
-        m_pSceneManager->GetProperty(pEntity.first, L"Control", L"turn", kTurn);
-        m_pSceneManager->GetProperty(pEntity.first, L"Control", L"tilt", kTilt);
+        m_pSceneManager->GetProperty(pEntity.first, L"control", L"turn", kTurn);
+        m_pSceneManager->GetProperty(pEntity.first, L"control", L"tilt", kTilt);
 
         float nTurn = (kTurn.GetFloat() + pEntity.second[L"turn"] * 0.01f);
-        float nTilt = (kTilt.GetFloat() + pEntity.second[L"tilt"] * 0.01f);
-        m_pSceneManager->SetProperty(pEntity.first, L"Control", L"turn", nTurn);
-        m_pSceneManager->SetProperty(pEntity.first, L"Control", L"tilt", nTilt);
+        float nTilt = 0.0f;// (kTilt.GetFloat() + pEntity.second[L"tilt"] * 0.01f);
+        m_pSceneManager->SetProperty(pEntity.first, L"control", L"turn", nTurn);
+        m_pSceneManager->SetProperty(pEntity.first, L"control", L"tilt", nTilt);
 
         float4x4 nRotation = float4x4(nTilt, 0.0f, 0.0f) * float4x4(0.0f, nTurn, 0.0f);
 
