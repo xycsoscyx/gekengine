@@ -145,7 +145,21 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnAction(LPCWSTR pName, const GE
 
     m_pSceneManager->ListComponentsEntities({ L"transform", L"control" }, [&](const GEKENTITYID &nEntityID)->void
     {
-        m_aActions[nEntityID][pName] = kValue.GetFloat();
+        if (kValue.GetType() == GEKVALUE::BOOLEAN)
+        {
+            if (kValue.GetBoolean())
+            {
+                m_aConstantActions[nEntityID][pName] = 1.0f;
+            }
+            else
+            {
+                m_aConstantActions[nEntityID][pName] = 0.0f;
+            }
+        }
+        else
+        {
+            m_aSingleActions[nEntityID][pName] = kValue.GetFloat();
+        }
     }, true);
 }
 
@@ -153,38 +167,44 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnPreUpdate(float nGameTime, flo
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    for (auto pEntity : m_aActions)
+    std::function<void(concurrency::concurrent_unordered_map<GEKENTITYID, concurrency::concurrent_unordered_map<CStringW, float>> &)> DoActions = 
+        [&](concurrency::concurrent_unordered_map<GEKENTITYID, concurrency::concurrent_unordered_map<CStringW, float>> &aActions) -> void
     {
-        GEKVALUE kPosition;
-        GEKVALUE kRotation;
-        m_pSceneManager->GetProperty(pEntity.first, L"transform", L"position", kPosition);
-        m_pSceneManager->GetProperty(pEntity.first, L"transform", L"rotation", kRotation);
+        for (auto pEntity : aActions)
+        {
+            GEKVALUE kPosition;
+            GEKVALUE kRotation;
+            m_pSceneManager->GetProperty(pEntity.first, L"transform", L"position", kPosition);
+            m_pSceneManager->GetProperty(pEntity.first, L"transform", L"rotation", kRotation);
 
-        GEKVALUE kTurn;
-        GEKVALUE kTilt;
-        m_pSceneManager->GetProperty(pEntity.first, L"control", L"turn", kTurn);
-        m_pSceneManager->GetProperty(pEntity.first, L"control", L"tilt", kTilt);
+            GEKVALUE kTurn;
+            GEKVALUE kTilt;
+            m_pSceneManager->GetProperty(pEntity.first, L"control", L"turn", kTurn);
+            m_pSceneManager->GetProperty(pEntity.first, L"control", L"tilt", kTilt);
 
-        float nTurn = (kTurn.GetFloat() + pEntity.second[L"turn"] * 0.01f);
-        float nTilt = 0.0f;// (kTilt.GetFloat() + pEntity.second[L"tilt"] * 0.01f);
-        m_pSceneManager->SetProperty(pEntity.first, L"control", L"turn", nTurn);
-        m_pSceneManager->SetProperty(pEntity.first, L"control", L"tilt", nTilt);
+            float nTurn = (kTurn.GetFloat() + pEntity.second[L"turn"] * 0.01f);
+            float nTilt = 0.0f;// (kTilt.GetFloat() + pEntity.second[L"tilt"] * 0.01f);
+            m_pSceneManager->SetProperty(pEntity.first, L"control", L"turn", nTurn);
+            m_pSceneManager->SetProperty(pEntity.first, L"control", L"tilt", nTilt);
 
-        float4x4 nRotation = float4x4(nTilt, 0.0f, 0.0f) * float4x4(0.0f, nTurn, 0.0f);
+            float4x4 nRotation = float4x4(nTilt, 0.0f, 0.0f) * float4x4(0.0f, nTurn, 0.0f);
 
-        float3 nForce(0.0f, 0.0f, 0.0f);
-        nForce += nRotation.rz * pEntity.second[L"forward"];
-        nForce -= nRotation.rz * pEntity.second[L"backward"];
-        nForce += nRotation.rx * pEntity.second[L"strafe_right"];
-        nForce -= nRotation.rx * pEntity.second[L"strafe_left"];
-        nForce += nRotation.ry * pEntity.second[L"rise"];
-        nForce -= nRotation.ry * pEntity.second[L"fall"];
-        nForce *= 10.0f;
+            float3 nForce(0.0f, 0.0f, 0.0f);
+            nForce += nRotation.rz * pEntity.second[L"forward"];
+            nForce -= nRotation.rz * pEntity.second[L"backward"];
+            nForce += nRotation.rx * pEntity.second[L"strafe_right"];
+            nForce -= nRotation.rx * pEntity.second[L"strafe_left"];
+            nForce += nRotation.ry * pEntity.second[L"rise"];
+            nForce -= nRotation.ry * pEntity.second[L"fall"];
+            nForce *= 10.0f;
 
-        float3 nPosition = (kPosition.GetFloat3() + (nForce * nFrameTime));
-        m_pSceneManager->SetProperty(pEntity.first, L"transform", L"position", nPosition);
-        m_pSceneManager->SetProperty(pEntity.first, L"transform", L"rotation", quaternion(nRotation));
-    }
+            float3 nPosition = (kPosition.GetFloat3() + (nForce * nFrameTime));
+            m_pSceneManager->SetProperty(pEntity.first, L"transform", L"position", nPosition);
+            m_pSceneManager->SetProperty(pEntity.first, L"transform", L"rotation", quaternion(nRotation));
+        }
+    };
 
-    m_aActions.clear();
+    DoActions(m_aSingleActions);
+    m_aSingleActions.clear();
+    DoActions(m_aConstantActions);
 }

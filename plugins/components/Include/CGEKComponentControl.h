@@ -49,7 +49,8 @@ class CGEKComponentSystemControl : public CGEKUnknown
 {
 private:
     IGEKSceneManager *m_pSceneManager;
-    concurrency::concurrent_unordered_map<GEKENTITYID, concurrency::concurrent_unordered_map<CStringW, float>> m_aActions;
+    concurrency::concurrent_unordered_map<GEKENTITYID, concurrency::concurrent_unordered_map<CStringW, float>> m_aConstantActions;
+    concurrency::concurrent_unordered_map<GEKENTITYID, concurrency::concurrent_unordered_map<CStringW, float>> m_aSingleActions;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemControl)
