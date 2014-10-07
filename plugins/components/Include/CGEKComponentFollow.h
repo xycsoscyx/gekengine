@@ -14,6 +14,7 @@ public:
     public:
         CStringW m_strTarget;
         float3 m_nOffset;
+        quaternion m_nRotation;
 
     public:
         DATA(void)

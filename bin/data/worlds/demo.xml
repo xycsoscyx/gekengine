@@ -9,7 +9,7 @@
         <entity>
 			<transform />
             <viewer type="perspective" fieldofview="90" minviewdistance="0.5" maxviewdistance="100" viewport="0,0,1,1" pass="opaque"/>
-            <follow target="player" offset="0,10,-5" />
+            <follow target="player" offset="0,2,-10" />
 		</entity>
 
         <entity>

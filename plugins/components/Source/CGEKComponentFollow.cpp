@@ -51,6 +51,7 @@ STDMETHODIMP_(void) CGEKComponentFollow::ListProperties(const GEKENTITYID &nEnti
     {
         OnProperty(L"target", (*pIterator).second.m_strTarget.GetString());
         OnProperty(L"offset", (*pIterator).second.m_nOffset);
+        OnProperty(L"rotation", (*pIterator).second.m_nRotation);
     }
 }
 
@@ -68,6 +69,11 @@ STDMETHODIMP_(bool) CGEKComponentFollow::GetProperty(const GEKENTITYID &nEntityI
         else if (wcscmp(pName, L"offset") == 0)
         {
             kValue = (*pIterator).second.m_nOffset;
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"rotation") == 0)
+        {
+            kValue = (*pIterator).second.m_nRotation;
             bReturn = true;
         }
     }
@@ -89,6 +95,11 @@ STDMETHODIMP_(bool) CGEKComponentFollow::SetProperty(const GEKENTITYID &nEntityI
         else if (wcscmp(pName, L"offset") == 0)
         {
             (*pIterator).second.m_nOffset = kValue.GetFloat3();
+            bReturn = true;
+        }
+        else if (wcscmp(pName, L"rotation") == 0)
+        {
+            (*pIterator).second.m_nRotation = kValue.GetQuaternion();
             bReturn = true;
         }
     }
@@ -145,24 +156,33 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnPostUpdate(float nGameTime, flo
     m_pSceneManager->ListComponentsEntities({ L"transform", L"follow" }, [&](const GEKENTITYID &nEntityID)->void
     {
         GEKVALUE kTarget;
-        GEKVALUE kOffset;
         m_pSceneManager->GetProperty(nEntityID, L"follow", L"target", kTarget);
-        m_pSceneManager->GetProperty(nEntityID, L"follow", L"offset", kOffset);
 
         GEKENTITYID nTargetID = GEKINVALIDENTITYID;
         if (SUCCEEDED(m_pSceneManager->GetNamedEntity(kTarget.GetRawString(), &nTargetID)))
         {
             if (m_pSceneManager->HasComponent(nTargetID, L"transform"))
             {
+                GEKVALUE kOffset;
+                m_pSceneManager->GetProperty(nEntityID, L"follow", L"offset", kOffset);
+
                 GEKVALUE kPosition;
                 GEKVALUE kRotation;
                 m_pSceneManager->GetProperty(nTargetID, L"transform", L"position", kPosition);
                 m_pSceneManager->GetProperty(nTargetID, L"transform", L"rotation", kRotation);
                 
-                float4x4 nRotation(kRotation.GetQuaternion());
+                quaternion nRotation(kRotation.GetQuaternion());
+                m_pSceneManager->GetProperty(nEntityID, L"follow", L"rotation", kRotation);
+                nRotation = kRotation.GetQuaternion().Slerp(nRotation, 0.5f);
+                m_pSceneManager->SetProperty(nEntityID, L"follow", L"rotation", nRotation);
+
                 float3 nPosition(kPosition.GetFloat3() + nRotation * kOffset.GetFloat3());
+                
+                float4x4 nLookAt;
+                nLookAt.LookAt(nPosition, kPosition.GetFloat3(), float3(0.0f, 1.0f, 0.0f));
+
                 m_pSceneManager->SetProperty(nEntityID, L"transform", L"position", nPosition);
-                m_pSceneManager->SetProperty(nEntityID, L"transform", L"rotation", nRotation);
+                m_pSceneManager->SetProperty(nEntityID, L"transform", L"rotation", quaternion(nLookAt));
             }
         }
     }, true);

@@ -305,30 +305,62 @@ public:
 	    matrix[3][1] = TYPE(0);
 	    matrix[3][2] =-((TYPE(2) * nFar * nNear) / nDistance);
 	    matrix[3][3] = TYPE(0);
-
     }
 
-    void LookAt(const tvector3<TYPE> &nViewDirection, const tvector3<TYPE> &nWorldYAxis)
+    void LookAt(const tvector3<TYPE> &nPointSource, const tvector3<TYPE> &nPointTarget, const tvector3<TYPE> &nUpDirection)
     {
-        tvector3<TYPE> nAxisZ(nViewDirection.GetNormal());
-        tvector3<TYPE> nAxisX(nWorldYAxis.Cross(nAxisZ).GetNormal());
+        tvector3<TYPE> nAxisZ((nPointTarget - nPointSource).GetNormal());
+        tvector3<TYPE> nAxisX(nUpDirection.Cross(nAxisZ).GetNormal());
         tvector3<TYPE> nAxisY(nAxisZ.Cross(nAxisX).GetNormal());
-
-        SetIdentity();
 
         _11 = nAxisX.x;
         _21 = nAxisX.y;
         _31 = nAxisX.z;
+        _41 = 0.0f;
 
         _12 = nAxisY.x;
         _22 = nAxisY.y;
         _32 = nAxisY.z;
+        _42 = 0.0f;
 
         _13 = nAxisZ.x;
         _23 = nAxisZ.y;
         _33 = nAxisZ.z;
+        _43 = 0.0f;
+
+        _14 = 0.0f;
+        _24 = 0.0f;
+        _34 = 0.0f;
+        _44 = 1.0f;
 
         Invert();
+    }
+
+    void LookAt(const tvector3<TYPE> &nViewDirection, const tvector3<TYPE> &nUpDirection)
+    {
+        tvector3<TYPE> nAxisZ(nViewDirection.GetNormal());
+        tvector3<TYPE> nAxisX(nUpDirection.Cross(nAxisZ).GetNormal());
+        tvector3<TYPE> nAxisY(nAxisZ.Cross(nAxisX).GetNormal());
+
+        _11 = nAxisX.x;
+        _21 = nAxisX.y;
+        _31 = nAxisX.z;
+        _41 = 0.0f;
+
+        _12 = nAxisY.x;
+        _22 = nAxisY.y;
+        _32 = nAxisY.z;
+        _42 = 0.0f;
+
+        _13 = nAxisZ.x;
+        _23 = nAxisZ.y;
+        _33 = nAxisZ.z;
+        _43 = 0.0f;
+
+        _14 = 0.0f;
+        _24 = 0.0f;
+        _34 = 0.0f;
+        _44 = 1.0f;
     }
 
     tvector3<TYPE> GetEuler(void) const
