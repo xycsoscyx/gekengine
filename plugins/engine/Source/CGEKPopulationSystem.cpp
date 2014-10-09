@@ -152,12 +152,10 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
             {
                 GEKVALUE kColor;
                 GetProperty(nEntityID, L"light", L"color", kColor);
-                float4 nColor = float4(kColor.GetFloat3(), 0.0f);
+                float3 nColor = kColor.GetFloat3();
                 nColor.Normalize();
-                nColor.a = 1.0f;
-                kColor = nColor;
 
-                AddComponent(nEntityID, L"sprite", { { L"source", "light" }, { L"size", "3" }, { L"color", kColor.GetString() } });
+                AddComponent(nEntityID, L"sprite", { { L"source", "light" }, { L"size", "3" }, { L"color", FormatString(L"%f, %f, %f, 1.0f", nColor.r, nColor.g, nColor.b).GetString() } });
             }
 #endif
         }
