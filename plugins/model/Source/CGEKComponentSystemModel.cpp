@@ -44,7 +44,7 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
         GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
 
         std::vector<UINT8> aBuffer;
-        HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.model.gek", pName), aBuffer);
+        HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pName), aBuffer);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to Load Model File failed: 0x%08X", hRetVal);
         if (SUCCEEDED(hRetVal))
         {

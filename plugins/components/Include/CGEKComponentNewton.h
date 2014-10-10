@@ -47,6 +47,14 @@ class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public IGEKSceneObserver
                                 , public IGEKComponentSystem
 {
+public:
+    struct MATERIAL
+    {
+        UINT32 m_nFirstVertex;
+        UINT32 m_nFirstIndex;
+        UINT32 m_nNumIndices;
+    };
+
 private:
     IGEKSceneManager *m_pSceneManager;
     NewtonWorld *m_pWorld;

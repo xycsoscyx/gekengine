@@ -241,7 +241,7 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
         GEKFUNCTION(L"Shape(%s), Params(%s)", pShape, pParams);
 
         std::vector<UINT8> aBuffer;
-        HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.collision.gek", pParams), aBuffer);
+        HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pParams), aBuffer);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to Load Collision File failed: 0x%08X", hRetVal);
         if (SUCCEEDED(hRetVal))
         {
@@ -251,17 +251,39 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
             pBuffer += sizeof(UINT32);
 
             UINT16 nType = *((UINT16 *)pBuffer);
-            GEKRESULT(nType == 1, L"Invalid Header Type: %d", nType);
+            GEKRESULT(nType == 0, L"Invalid Header Type: %d", nType);
             pBuffer += sizeof(UINT16);
 
             UINT16 nVersion = *((UINT16 *)pBuffer);
             GEKRESULT(nVersion == 2, L"Invalid Header Version: %d", nVersion);
             pBuffer += sizeof(UINT16);
 
-            if (nGEKX == *(UINT32 *)"GEKX" && nType == 1 && nVersion == 2)
+            if (nGEKX == *(UINT32 *)"GEKX" && nType == 0 && nVersion == 2)
             {
                 aabb nAABB = *(aabb *)pBuffer;
                 pBuffer += sizeof(aabb);
+
+                UINT32 nNumMaterials = *((UINT32 *)pBuffer);
+                GEKLOG(L"Number of Materials: %d", nNumMaterials);
+                pBuffer += sizeof(UINT32);
+
+                std::vector<MATERIAL> aMaterials(nNumMaterials);
+                for (UINT32 nMaterial = 0; nMaterial < nNumMaterials; ++nMaterial)
+                {
+                    CStringA strMaterialUTF8 = pBuffer;
+                    pBuffer += (strMaterialUTF8.GetLength() + 1);
+                    CStringW strMaterial = CA2W(strMaterialUTF8, CP_UTF8);
+
+                    MATERIAL &kMaterial = aMaterials[nMaterial];
+                    kMaterial.m_nFirstVertex = *((UINT32 *)pBuffer);
+                    pBuffer += sizeof(UINT32);
+
+                    kMaterial.m_nFirstIndex = *((UINT32 *)pBuffer);
+                    pBuffer += sizeof(UINT32);
+
+                    kMaterial.m_nNumIndices = *((UINT32 *)pBuffer);
+                    pBuffer += sizeof(UINT32);
+                }
 
                 UINT32 nNumVertices = *((UINT32 *)pBuffer);
                 GEKLOG(L"Number of Vertices: %d", nNumVertices);
@@ -269,6 +291,8 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
 
                 float3 *pVertices = (float3 *)pBuffer;
                 pBuffer += (sizeof(float3) * nNumVertices);
+                pBuffer += (sizeof(float2) * nNumVertices);
+                pBuffer += (sizeof(float3) * 3 * nNumVertices);
 
                 UINT32 nNumIndices = *((UINT32 *)pBuffer);
                 GEKLOG(L"Number of Indices: %d", nNumIndices);
@@ -292,16 +316,20 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
                     if (pCollision != nullptr)
                     {
                         NewtonTreeCollisionBeginBuild(pCollision);
-                        for (UINT32 nIndex = 0; nIndex < nNumIndices; nIndex += 3)
+                        for (UINT32 nMaterial = 0; nMaterial < aMaterials.size(); nMaterial++)
                         {
-                            float3 aFace[3] =
+                            MATERIAL &kMaterial = aMaterials[nMaterial];
+                            for (UINT32 nIndex = 0; nIndex < kMaterial.m_nNumIndices; nIndex += 3)
                             {
-                                pVertices[pIndices[nIndex + 0]],
-                                pVertices[pIndices[nIndex + 1]],
-                                pVertices[pIndices[nIndex + 2]],
-                            };
+                                float3 aFace[3] =
+                                {
+                                    pVertices[kMaterial.m_nFirstVertex + pIndices[kMaterial.m_nFirstIndex + nIndex + 0]],
+                                    pVertices[kMaterial.m_nFirstVertex + pIndices[kMaterial.m_nFirstIndex + nIndex + 1]],
+                                    pVertices[kMaterial.m_nFirstVertex + pIndices[kMaterial.m_nFirstIndex + nIndex + 2]],
+                                };
 
-                            NewtonTreeCollisionAddFace(pCollision, 3, aFace[0].xyz, sizeof(float3), 0);
+                                NewtonTreeCollisionAddFace(pCollision, 3, aFace[0].xyz, sizeof(float3), nMaterial);
+                            }
                         }
 
                         NewtonTreeCollisionEndBuild(pCollision, false);
