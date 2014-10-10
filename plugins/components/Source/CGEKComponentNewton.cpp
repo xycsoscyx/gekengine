@@ -183,53 +183,137 @@ CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
 
 NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWSTR pParams)
 {
+    CStringW strIdentity;
+    strIdentity.Format(L"%s|%s", pShape, pParams);
+    auto pIterator = m_aCollisions.find(strIdentity);
+    if (pIterator != m_aCollisions.end())
+    {
+        return (*pIterator).second;
+    }
+
+    size_t nHash = std::hash<LPCWSTR>()(strIdentity.GetString());
+
     float4x4 nIdentityMatrix;
     NewtonCollision *pCollision = nullptr;
     if (_wcsicmp(pShape, L"cube") == 0)
     {
         float3 nSize = StrToFloat3(pParams);
-        pCollision = NewtonCreateBox(m_pWorld, nSize.x, nSize.y, nSize.z, (int)L"cube", nIdentityMatrix.data);
+        pCollision = NewtonCreateBox(m_pWorld, nSize.x, nSize.y, nSize.z, nHash, nIdentityMatrix.data);
     }
     else if (_wcsicmp(pShape, L"sphere") == 0)
     {
         float nSize = StrToFloat(pParams);
-        pCollision = NewtonCreateSphere(m_pWorld, nSize, (int)L"sphere", nIdentityMatrix.data);
+        pCollision = NewtonCreateSphere(m_pWorld, nSize, nHash, nIdentityMatrix.data);
     }
     else if (_wcsicmp(pShape, L"cone") == 0)
     {
         float2 nSize = StrToFloat2(pParams);
-        pCollision = NewtonCreateCone(m_pWorld, nSize.x, nSize.y, (int)L"cone", nIdentityMatrix.data);
+        pCollision = NewtonCreateCone(m_pWorld, nSize.x, nSize.y, nHash, nIdentityMatrix.data);
     }
     else if (_wcsicmp(pShape, L"capsule") == 0)
     {
         float2 nSize = StrToFloat2(pParams);
-        pCollision = NewtonCreateCapsule(m_pWorld, nSize.x, nSize.y, (int)L"capsule", nIdentityMatrix.data);
+        pCollision = NewtonCreateCapsule(m_pWorld, nSize.x, nSize.y, nHash, nIdentityMatrix.data);
     }
     else if (_wcsicmp(pShape, L"cylinder") == 0)
     {
         float2 nSize = StrToFloat2(pParams);
-        pCollision = NewtonCreateCylinder(m_pWorld, nSize.x, nSize.y, (int)L"cylinder", nIdentityMatrix.data);
+        pCollision = NewtonCreateCylinder(m_pWorld, nSize.x, nSize.y, nHash, nIdentityMatrix.data);
     }
     else if (_wcsicmp(pShape, L"tapered_capsule") == 0)
     {
         float3 nSize = StrToFloat3(pParams);
-        pCollision = NewtonCreateTaperedCapsule(m_pWorld, nSize.x, nSize.y, nSize.z, (int)L"tapered_capsule", nIdentityMatrix.data);
+        pCollision = NewtonCreateTaperedCapsule(m_pWorld, nSize.x, nSize.y, nSize.z, nHash, nIdentityMatrix.data);
     }
     else if (_wcsicmp(pShape, L"tapered_cylinder") == 0)
     {
         float3 nSize = StrToFloat3(pParams);
-        pCollision = NewtonCreateTaperedCylinder(m_pWorld, nSize.x, nSize.y, nSize.z, (int)L"tapered_cylinder", nIdentityMatrix.data);
+        pCollision = NewtonCreateTaperedCylinder(m_pWorld, nSize.x, nSize.y, nSize.z, nHash, nIdentityMatrix.data);
     }
     else if (_wcsicmp(pShape, L"chamfer_cylinder") == 0)
     {
         float2 nSize = StrToFloat2(pParams);
-        pCollision = NewtonCreateChamferCylinder(m_pWorld, nSize.x, nSize.y, (int)L"chamfer_cylinder", nIdentityMatrix.data);
+        pCollision = NewtonCreateChamferCylinder(m_pWorld, nSize.x, nSize.y, nHash, nIdentityMatrix.data);
     }
-    else if (_wcsicmp(pShape, L"convex_hull") == 0)
+    else if (_wcsicmp(pShape, L"convex_hull") == 0 ||
+             _wcsicmp(pShape, L"tree") == 0)
     {
+        GEKFUNCTION(L"Shape(%s), Params(%s)", pShape, pParams);
+
+        std::vector<UINT8> aBuffer;
+        HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.collision.gek", pParams), aBuffer);
+        GEKRESULT(SUCCEEDED(hRetVal), L"Call to Load Collision File failed: 0x%08X", hRetVal);
+        if (SUCCEEDED(hRetVal))
+        {
+            UINT8 *pBuffer = &aBuffer[0];
+            UINT32 nGEKX = *((UINT32 *)pBuffer);
+            GEKRESULT(nGEKX == *(UINT32 *)"GEKX", L"Invalid Magic Header: %d", nGEKX);
+            pBuffer += sizeof(UINT32);
+
+            UINT16 nType = *((UINT16 *)pBuffer);
+            GEKRESULT(nType == 1, L"Invalid Header Type: %d", nType);
+            pBuffer += sizeof(UINT16);
+
+            UINT16 nVersion = *((UINT16 *)pBuffer);
+            GEKRESULT(nVersion == 2, L"Invalid Header Version: %d", nVersion);
+            pBuffer += sizeof(UINT16);
+
+            if (nGEKX == *(UINT32 *)"GEKX" && nType == 1 && nVersion == 2)
+            {
+                aabb nAABB = *(aabb *)pBuffer;
+                pBuffer += sizeof(aabb);
+
+                UINT32 nNumVertices = *((UINT32 *)pBuffer);
+                GEKLOG(L"Number of Vertices: %d", nNumVertices);
+                pBuffer += sizeof(UINT32);
+
+                float3 *pVertices = (float3 *)pBuffer;
+                pBuffer += (sizeof(float3) * nNumVertices);
+
+                UINT32 nNumIndices = *((UINT32 *)pBuffer);
+                GEKLOG(L"Number of Indices: %d", nNumIndices);
+                pBuffer += sizeof(UINT32);
+
+                UINT16 *pIndices = (UINT16 *)pBuffer;
+
+                if (_wcsicmp(pShape, L"convex_hull") == 0)
+                {
+                    std::vector<float3> aCloud(nNumIndices);
+                    for (UINT32 nIndex = 0; nIndex < nNumIndices; ++nIndex)
+                    {
+                        aCloud[nIndex] = pVertices[pIndices[nIndex]];
+                    }
+
+                    pCollision = NewtonCreateConvexHull(m_pWorld, aCloud.size(), aCloud[0].xyz, sizeof(float3), 0.025f, nHash, nIdentityMatrix.data);
+                }
+                else if (_wcsicmp(pShape, L"tree") == 0)
+                {
+                    pCollision = NewtonCreateTreeCollision(m_pWorld, nHash);
+                    if (pCollision != nullptr)
+                    {
+                        NewtonTreeCollisionBeginBuild(pCollision);
+                        for (UINT32 nIndex = 0; nIndex < nNumIndices; nIndex += 3)
+                        {
+                            float3 aFace[3] =
+                            {
+                                pVertices[pIndices[nIndex + 0]],
+                                pVertices[pIndices[nIndex + 1]],
+                                pVertices[pIndices[nIndex + 2]],
+                            };
+
+                            NewtonTreeCollisionAddFace(pCollision, 3, aFace[0].xyz, sizeof(float3), 0);
+                        }
+
+                        NewtonTreeCollisionEndBuild(pCollision, false);
+                    }
+                }
+            }
+        }
     }
-    else if (_wcsicmp(pShape, L"tree") == 0)
+
+    if (pCollision)
     {
+        m_aCollisions[strIdentity] = pCollision;
     }
 
     return pCollision;
@@ -289,10 +373,15 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::Destroy(void)
         CGEKObservable::RemoveObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
     }
 
-    m_aBodies.clear();
-    m_aCollisions.clear();
     if (m_pWorld != nullptr)
     {
+        for (auto kPair : m_aCollisions)
+        {
+            NewtonDestroyCollision(kPair.second);
+        }
+
+        m_aBodies.clear();
+        m_aCollisions.clear();
         NewtonDestroy(m_pWorld);
         m_pWorld = nullptr;
     }
@@ -310,9 +399,15 @@ STDMETHODIMP CGEKComponentSystemNewton::OnLoadEnd(HRESULT hRetVal)
 
 STDMETHODIMP_(void) CGEKComponentSystemNewton::OnFree(void)
 {
-    m_aBodies.clear();
     if (m_pWorld != nullptr)
     {
+        for (auto kPair : m_aCollisions)
+        {
+            NewtonDestroyCollision(kPair.second);
+        }
+
+        m_aBodies.clear();
+        m_aCollisions.clear();
         NewtonDestroyAllBodies(m_pWorld);
     }
 }
@@ -394,8 +489,6 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
 
                         m_aBodies[nEntityID] = pBody;
                     }
-
-                    NewtonDestroyCollision(pCollision);
                 }
             }
         }

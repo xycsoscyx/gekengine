@@ -69,6 +69,7 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
                 pBuffer += sizeof(aabb);
 
                 UINT32 nNumMaterials = *((UINT32 *)pBuffer);
+                GEKLOG(L"Number of Materials: %d", nNumMaterials);
                 pBuffer += sizeof(UINT32);
 
                 for (UINT32 nMaterial = 0; nMaterial < nNumMaterials; ++nMaterial)
@@ -100,6 +101,7 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
                 }
 
                 UINT32 nNumVertices = *((UINT32 *)pBuffer);
+                GEKLOG(L"Number of Vertices: %d", nNumVertices);
                 pBuffer += sizeof(UINT32);
 
                 if (SUCCEEDED(hRetVal))
@@ -123,6 +125,7 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
                 if (SUCCEEDED(hRetVal))
                 {
                     UINT32 nNumIndices = *((UINT32 *)pBuffer);
+                    GEKLOG(L"Number of Indices: %d", nNumIndices);
                     pBuffer += sizeof(UINT32);
 
                     hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), nNumIndices, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spIndexBuffer, pBuffer);
