@@ -11,6 +11,9 @@
 #include <assimp/postprocess.h>
 #pragma comment(lib, "assimp.lib")
 
+static bool gs_bForceMeshAsCollision = false;
+static bool gs_bForceMeshAsOcclusion = false;
+
 struct MODEL
 {
     std::vector<UINT16> m_aIndices;
@@ -105,6 +108,8 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                 }
 
                 CStringA strMaterial;
+                bool bCollision = gs_bForceMeshAsCollision;
+                bool bOcclusion = gs_bForceMeshAsOcclusion;
                 if (pScene->mMaterials != nullptr)
                 {
                     const aiMaterial *pMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
@@ -117,11 +122,11 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
 
                         if (strNameString.Find("collision") >= 0)
                         {
-                            strMaterial = strNameString;
+                            bCollision = true;
                         }
                         else if (strNameString.Find("occlusion") >= 0)
                         {
-                            strMaterial = strNameString;
+                            bOcclusion = true;
                         }
                         else
                         {
@@ -180,7 +185,20 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                     kModel.m_aBasis.push_back(nTexBasis.rz.GetNormal());
                 }
 
-                aModels.insert(std::make_pair(strMaterial, kModel));
+                if (!strMaterial.IsEmpty())
+                {
+                    aModels.insert(std::make_pair(strMaterial, kModel));
+                }
+
+                if (bCollision)
+                {
+                    aModels.insert(std::make_pair("collision", kModel));
+                }
+
+                if (bOcclusion)
+                {
+                    aModels.insert(std::make_pair("occlusion", kModel));
+                }
             }
         }
     }
@@ -202,14 +220,25 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
 int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentVariables)
 {
     printf("GEK Mesh Optimizer\r\n");
+    MessageBox(NULL, L"", L"", MB_OK);
 
-    if (nNumArguments < 1)
+    CStringW strInput;
+    for (int nArgument = 1; nArgument < nNumArguments; nArgument++)
     {
-        printf("optimizer <filename>\r\n");
-        return -1;
+        if (_wcsicmp(astrArguments[nArgument], L"-forcecollision") == 0)
+        {
+            gs_bForceMeshAsCollision = true;
+        }
+        else if (_wcsicmp(astrArguments[nArgument], L"-forceocclusion") == 0)
+        {
+            gs_bForceMeshAsOcclusion = true;
+        }
+        else
+        {
+            strInput = astrArguments[nArgument];
+        }
     }
 
-    CStringW strInput = astrArguments[1];
     try
     {
         aiPropertyStore *pPropertyStore = aiCreatePropertyStore();
@@ -239,31 +268,33 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         GetMeshes(pScene, pScene->mRootNode, float4x4(), aScene, nAABB);
         printf("< Num. Materials: %d\r\n", aScene.size());
 
-        MODEL *pCollision = nullptr;
-        MODEL *pOcclusion = nullptr;
+        MODEL kCollision;
+        MODEL kOcclusion;
         std::unordered_map<CStringA, MODEL> aMaterials;
         for (auto &kPair : aScene)
         {
-            if (kPair.first.Find("collision") >= 0)
+            MODEL *pModel = nullptr;
+            if (kPair.first == "collision")
             {
-                pCollision = &kPair.second;
+                pModel = &kCollision;
             }
-            else if (kPair.first.Find("occlusion") >= 0)
+            else if (kPair.first == "occlusion")
             {
-                pOcclusion = &kPair.second;
+                pModel = &kOcclusion;
             }
             else
             {
-                MODEL &kModel = aMaterials[kPair.first];
-                for (auto &nIndex : kPair.second.m_aIndices)
-                {
-                    kModel.m_aIndices.push_back(nIndex + kModel.m_aVertices.size());
-                }
-
-                kModel.m_aVertices.insert(kModel.m_aVertices.end(), kPair.second.m_aVertices.begin(), kPair.second.m_aVertices.end());
-                kModel.m_aTexCoords.insert(kModel.m_aTexCoords.end(), kPair.second.m_aTexCoords.begin(), kPair.second.m_aTexCoords.end());
-                kModel.m_aBasis.insert(kModel.m_aBasis.end(), kPair.second.m_aBasis.begin(), kPair.second.m_aBasis.end());
+                pModel = &aMaterials[kPair.first];
             }
+
+            for (auto &nIndex : kPair.second.m_aIndices)
+            {
+                pModel->m_aIndices.push_back(nIndex + pModel->m_aVertices.size());
+            }
+
+            pModel->m_aVertices.insert(pModel->m_aVertices.end(), kPair.second.m_aVertices.begin(), kPair.second.m_aVertices.end());
+            pModel->m_aTexCoords.insert(pModel->m_aTexCoords.end(), kPair.second.m_aTexCoords.begin(), kPair.second.m_aTexCoords.end());
+            pModel->m_aBasis.insert(pModel->m_aBasis.end(), kPair.second.m_aBasis.begin(), kPair.second.m_aBasis.end());
         }
 
         CPathW kPath = strInput;
@@ -345,7 +376,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             throw CMyException(__LINE__, L"! Unable to Save Output: %S\r\n", strOutput.GetString());
         }
 
-        if (pCollision != nullptr)
+        if (kCollision.m_aVertices.size() > 0 && kCollision.m_aIndices.size() > 0)
         {
             strOutput = (kPath.m_strPath + ".collision.gek");
             _wfopen_s(&pFile, strOutput, L"wb");
@@ -359,15 +390,15 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                 fwrite(&nVersion, sizeof(UINT16), 1, pFile);
                 fwrite(&nAABB, sizeof(aabb), 1, pFile);
 
-                UINT32 nNumVertices = pCollision->m_aVertices.size();
+                UINT32 nNumVertices = kCollision.m_aVertices.size();
                 fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
-                printf("-< Num. Collision Vertices: %d\r\n", pCollision->m_aVertices.size());
-                fwrite(&pCollision->m_aVertices[0], sizeof(float3), pCollision->m_aVertices.size(), pFile);
+                printf("-< Num. Collision Vertices: %d\r\n", kCollision.m_aVertices.size());
+                fwrite(&kCollision.m_aVertices[0], sizeof(float3), kCollision.m_aVertices.size(), pFile);
 
-                UINT32 nNumIndices = pCollision->m_aIndices.size();
+                UINT32 nNumIndices = kCollision.m_aIndices.size();
                 fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
-                printf("-< Num. Collision Indices: %d\r\n", pCollision->m_aIndices.size());
-                fwrite(&pCollision->m_aIndices[0], sizeof(UINT16), pCollision->m_aIndices.size(), pFile);
+                printf("-< Num. Collision Indices: %d\r\n", kCollision.m_aIndices.size());
+                fwrite(&kCollision.m_aIndices[0], sizeof(UINT16), kCollision.m_aIndices.size(), pFile);
 
                 fclose(pFile);
                 printf("< Output Collision Saved: %S\r\n", strOutput.GetString());
@@ -382,7 +413,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             printf("< No Collision Data Found\r\n");
         }
 
-        if (pOcclusion != nullptr)
+        if (kOcclusion.m_aVertices.size() > 0 && kOcclusion.m_aIndices.size() > 0)
         {
             strOutput = (kPath.m_strPath + ".occlusion.gek");
             _wfopen_s(&pFile, strOutput, L"wb");
@@ -396,15 +427,15 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                 fwrite(&nVersion, sizeof(UINT16), 1, pFile);
                 fwrite(&nAABB, sizeof(aabb), 1, pFile);
 
-                UINT32 nNumVertices = pOcclusion->m_aVertices.size();
+                UINT32 nNumVertices = kOcclusion.m_aVertices.size();
                 fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
-                printf("-< Num. Collision Vertices: %d\r\n", pOcclusion->m_aVertices.size());
-                fwrite(&pOcclusion->m_aVertices[0], sizeof(float3), pOcclusion->m_aVertices.size(), pFile);
+                printf("-< Num. Collision Vertices: %d\r\n", kOcclusion.m_aVertices.size());
+                fwrite(&kOcclusion.m_aVertices[0], sizeof(float3), kOcclusion.m_aVertices.size(), pFile);
 
-                UINT32 nNumIndices = pOcclusion->m_aIndices.size();
+                UINT32 nNumIndices = kOcclusion.m_aIndices.size();
                 fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
-                printf("-< Num. Collision Indices: %d\r\n", pOcclusion->m_aIndices.size());
-                fwrite(&pOcclusion->m_aIndices[0], sizeof(UINT16), pOcclusion->m_aIndices.size(), pFile);
+                printf("-< Num. Collision Indices: %d\r\n", kOcclusion.m_aIndices.size());
+                fwrite(&kOcclusion.m_aIndices[0], sizeof(UINT16), kOcclusion.m_aIndices.size(), pFile);
 
                 fclose(pFile);
                 printf("< Output Collision Saved: %S\r\n", strOutput.GetString());

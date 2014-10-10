@@ -1,4 +1,3 @@
-.\debug\optimizer.debug data\models\sponza.dae
-.\debug\optimizer.debug data\models\light.dae
+.\debug\optimizer.debug data\models\sponza.dae -forcecollision -forceocclusion
 
 pause
