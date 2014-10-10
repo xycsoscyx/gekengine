@@ -9,7 +9,7 @@
             struct INSTANCE
             {
                 float3      m_nPosition;
-                float       m_nSize;
+                float       m_nHalfSize;
                 float4      m_nColor;
             };
             
@@ -26,13 +26,13 @@
 			{
                 INSTANCE kInstance = gs_aInstances[kSource.instance];
 
-	            float3 kXOffSet = mul(float3(0.5, 0.0, 0.0f), gs_nViewMatrix).xyz;
-	            float3 kYOffSet = mul(float3(0.0,-0.5, 0.0f), gs_nViewMatrix).xyz;
+	            float3 kXOffSet = mul(float3(kInstance.m_nHalfSize, 0.0, 0.0f), gs_nViewMatrix).xyz;
+	            float3 kYOffSet = mul(float3(0.0,-kInstance.m_nHalfSize, 0.0f), gs_nViewMatrix).xyz;
 
 				WORLDVERTEX kVertex;
 	            kVertex.position = float4(kInstance.m_nPosition, 1.0f);
-	            kVertex.position.xyz += (kXOffSet * (kSource.position.x * kInstance.m_nSize));
-	            kVertex.position.xyz += (kYOffSet * (kSource.position.y * kInstance.m_nSize));
+	            kVertex.position.xyz += (kXOffSet * kSource.position.x);
+	            kVertex.position.xyz += (kYOffSet * kSource.position.y);
                 kVertex.color    = kInstance.m_nColor;
 				kVertex.texcoord = kSource.texcoord;
                 kVertex.texbasis = 0.0f;

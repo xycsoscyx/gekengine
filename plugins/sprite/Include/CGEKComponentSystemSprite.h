@@ -14,12 +14,12 @@ public:
     struct INSTANCE
     {
         float3 m_nPosition;
-        float m_nSize;
+        float m_nHalfSize;
         float4 m_nColor;
 
-        INSTANCE(const float3 &nPosition, float nSize, const float4 &nColor)
+        INSTANCE(const float3 &nPosition, float nHalfSize, const float4 &nColor)
             : m_nPosition(nPosition)
-            , m_nSize(nSize)
+            , m_nHalfSize(nHalfSize)
             , m_nColor(nColor)
         {
         }
