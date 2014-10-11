@@ -22,8 +22,8 @@ class CGEKRenderSystem : public CGEKUnknown
 public:
     struct PASS
     {
-        std::vector<PASS *> m_aRequiredPasses;
         std::vector<IGEKRenderFilter *> m_aFilters;
+        std::vector<CStringW> m_aData;
     };
 
     struct LIGHT
