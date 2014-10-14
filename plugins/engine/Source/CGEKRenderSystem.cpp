@@ -52,6 +52,10 @@ public:
                 bHasData = true;
                 pManager->SetResource(pContext->GetPixelSystem(), nStage, (*pIterator).second);
             }
+            else
+            {
+                pManager->SetResource(pContext->GetPixelSystem(), nStage, nullptr);
+            }
         }
 
         if (bHasData)
