@@ -48,6 +48,28 @@ struct CGEKRandomRange : public exprtk::ifunction<TYPE>
     }
 };
 
+static CGEKRandomValue<float> gs_kRandomValueFloat;
+static CGEKRandomRange<float> gs_kRandomRangeFloat;
+static exprtk::symbol_table<float> gs_kSymbolTableFloat;
+static CGEKRandomValue<double> gs_kRandomValueDouble;
+static CGEKRandomRange<double> gs_kRandomRangeDouble;
+static exprtk::symbol_table<double> gs_kSymbolTableDouble;
+void InitSymbolTables(void)
+{
+    static bool bInitialized = false;
+    if (!bInitialized)
+    {
+        bInitialized = true;
+        gs_kSymbolTableDouble.add_function("rvalue", gs_kRandomValueDouble);
+        gs_kSymbolTableDouble.add_function("rrange", gs_kRandomRangeDouble);
+        gs_kSymbolTableDouble.add_constants();
+
+        gs_kSymbolTableFloat.add_function("rvalue", gs_kRandomValueFloat);
+        gs_kSymbolTableFloat.add_function("rrange", gs_kRandomRangeFloat);
+        gs_kSymbolTableFloat.add_constants();
+    }
+}
+
 static __forceinline float ClipFloat(float nValue)
 {
     INT32 nInteger = INT32(nValue * 100.0f);
@@ -320,17 +342,9 @@ HRESULT GEKSaveToFile(LPCWSTR pFileName, LPCWSTR pString, bool bConvertToUTF8)
 
 bool EvaluateDouble(LPCWSTR pValue, double &nValue)
 {
-    exprtk::symbol_table<double> kSymbolTable;
-
-    CGEKRandomValue<double> kRandomValue;
-    CGEKRandomRange<double> kRandomRange;
-    kSymbolTable.add_function("rvalue", kRandomValue);
-    kSymbolTable.add_function("rrange", kRandomRange);
-
-    kSymbolTable.add_constants();
-
+    InitSymbolTables();
     exprtk::expression<double> kExpression;
-    kExpression.register_symbol_table(kSymbolTable);
+    kExpression.register_symbol_table(gs_kSymbolTableDouble);
 
     exprtk::parser<double> kParser;
     if (kParser.compile(CW2A(pValue).m_psz, kExpression))
@@ -346,17 +360,9 @@ bool EvaluateDouble(LPCWSTR pValue, double &nValue)
 
 bool EvaluateFloat(LPCWSTR pValue, float &nValue)
 {
-    exprtk::symbol_table<float> kSymbolTable;
-
-    CGEKRandomValue<float> kRandomValue;
-    CGEKRandomRange<float> kRandomRange;
-    kSymbolTable.add_function("rvalue", kRandomValue);
-    kSymbolTable.add_function("rrange", kRandomRange);
-
-    kSymbolTable.add_constants();
-
+    InitSymbolTables();
     exprtk::expression<float> kExpression;
-    kExpression.register_symbol_table(kSymbolTable);
+    kExpression.register_symbol_table(gs_kSymbolTableFloat);
 
     exprtk::parser<float> kParser;
     if (kParser.compile(CW2A(pValue).m_psz, kExpression))
@@ -372,84 +378,63 @@ bool EvaluateFloat(LPCWSTR pValue, float &nValue)
 
 bool EvaluateFloat2(LPCWSTR pValue, float2 &nValue)
 {
-    exprtk::symbol_table<float> kSymbolTable;
-
-    CGEKRandomValue<float> kRandomValue;
-    CGEKRandomRange<float> kRandomRange;
-    kSymbolTable.add_function("rvalue", kRandomValue);
-    kSymbolTable.add_function("rrange", kRandomRange);
-
-    kSymbolTable.add_vector("output", nValue.xy);
-
-    kSymbolTable.add_constants();
-
+    InitSymbolTables();
     exprtk::expression<float> kExpression;
-    kExpression.register_symbol_table(kSymbolTable);
+    gs_kSymbolTableFloat.add_vector("output", nValue.xy);
+    kExpression.register_symbol_table(gs_kSymbolTableFloat);
 
     exprtk::parser<float> kParser;
     if (kParser.compile(FormatString("var result[2] := {%S}; output := result;", pValue).GetString(), kExpression))
     {
         kExpression.value();
+        gs_kSymbolTableFloat.remove_vector("output");
         return true;
     }
     else
     {
+        gs_kSymbolTableFloat.remove_vector("output");
         return false;
     }
 }
 
 bool EvaluateFloat3(LPCWSTR pValue, float3 &nValue)
 {
-    exprtk::symbol_table<float> kSymbolTable;
-
-    CGEKRandomValue<float> kRandomValue;
-    CGEKRandomRange<float> kRandomRange;
-    kSymbolTable.add_function("rvalue", kRandomValue);
-    kSymbolTable.add_function("rrange", kRandomRange);
-
-    kSymbolTable.add_vector("output", nValue.xyz);
-
-    kSymbolTable.add_constants();
-
+    InitSymbolTables();
     exprtk::expression<float> kExpression;
-    kExpression.register_symbol_table(kSymbolTable);
+    gs_kSymbolTableFloat.add_vector("output", nValue.xyz);
+    kExpression.register_symbol_table(gs_kSymbolTableFloat);
 
     exprtk::parser<float> kParser;
     if (kParser.compile(FormatString("var result[3] := {%S}; output := result;", pValue).GetString(), kExpression))
     {
         kExpression.value();
+        gs_kSymbolTableFloat.remove_vector("output");
         return true;
     }
     else
     {
+        gs_kSymbolTableFloat.remove_vector("output");
         return false;
     }
 }
 
 bool EvaluateFloat4(LPCWSTR pValue, float4 &nValue)
 {
-    exprtk::symbol_table<float> kSymbolTable;
-
-    CGEKRandomValue<float> kRandomValue;
-    CGEKRandomRange<float> kRandomRange;
-    kSymbolTable.add_function("rvalue", kRandomValue);
-    kSymbolTable.add_function("rrange", kRandomRange);
-
-    kSymbolTable.add_vector("output", nValue.xyzw);
-
-    kSymbolTable.add_constants();
-
+    InitSymbolTables();
     exprtk::expression<float> kExpression;
-    kExpression.register_symbol_table(kSymbolTable);
+    gs_kSymbolTableFloat.add_vector("output", nValue.xyzw);
+    kExpression.register_symbol_table(gs_kSymbolTableFloat);
 
     exprtk::parser<float> kParser;
     if (kParser.compile(FormatString("var result[4] := {%S}; output := result;", pValue).GetString(), kExpression))
     {
         kExpression.value();
+        gs_kSymbolTableFloat.remove_vector("output");
         return true;
     }
     else
     {
+        gs_kSymbolTableFloat.remove_vector("output");
         return false;
     }
 }
