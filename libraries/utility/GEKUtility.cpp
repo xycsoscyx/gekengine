@@ -48,27 +48,58 @@ struct CGEKRandomRange : public exprtk::ifunction<TYPE>
     }
 };
 
-static CGEKRandomValue<float> gs_kRandomValueFloat;
-static CGEKRandomRange<float> gs_kRandomRangeFloat;
-static exprtk::symbol_table<float> gs_kSymbolTableFloat;
-static CGEKRandomValue<double> gs_kRandomValueDouble;
-static CGEKRandomRange<double> gs_kRandomRangeDouble;
-static exprtk::symbol_table<double> gs_kSymbolTableDouble;
-void InitSymbolTables(void)
+template <typename TYPE>
+class TGEKEvaluateValue
 {
-    static bool bInitialized = false;
-    if (!bInitialized)
-    {
-        bInitialized = true;
-        gs_kSymbolTableDouble.add_function("rvalue", gs_kRandomValueDouble);
-        gs_kSymbolTableDouble.add_function("rrange", gs_kRandomRangeDouble);
-        gs_kSymbolTableDouble.add_constants();
+private:
+    CGEKRandomValue<TYPE> m_kRandomValueFloat;
+    CGEKRandomRange<TYPE> m_kRandomRangeFloat;
+    exprtk::symbol_table<TYPE> m_kSymbolTableFloat;
+    exprtk::expression<TYPE> m_kExpressionFloat;
+    exprtk::parser<TYPE> m_kParserFloat;
 
-        gs_kSymbolTableFloat.add_function("rvalue", gs_kRandomValueFloat);
-        gs_kSymbolTableFloat.add_function("rrange", gs_kRandomRangeFloat);
-        gs_kSymbolTableFloat.add_constants();
+public:
+    TGEKEvaluateValue(void)
+    {
+        m_kSymbolTableFloat.add_function("rvalue", m_kRandomValueFloat);
+        m_kSymbolTableFloat.add_function("rrange", m_kRandomRangeFloat);
+        m_kSymbolTableFloat.add_constants();
+        m_kExpressionFloat.register_symbol_table(m_kSymbolTableFloat);
     }
-}
+
+    bool EvaluateValue(LPCWSTR pExpression, TYPE &nValue)
+    {
+        m_kSymbolTableFloat.remove_vector("value");
+        if (m_kParserFloat.compile(CW2A(pExpression).m_psz, m_kExpressionFloat))
+        {
+            nValue = m_kExpressionFloat.value();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    template <std::size_t SIZE>
+    bool EvaluateVector(LPCWSTR pExpression, TYPE (&aValue)[SIZE])
+    {
+        m_kSymbolTableFloat.remove_vector("value");
+        m_kSymbolTableFloat.add_vector("value", aValue);
+        if (m_kParserFloat.compile(FormatString("var vector[%d] := {%S}; value := vector;", SIZE, pExpression).GetString(), m_kExpressionFloat))
+        {
+            m_kExpressionFloat.value();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+};
+
+static TGEKEvaluateValue<float> gs_kEvalulateFloat;
+static TGEKEvaluateValue<double> gs_kEvalulateDouble;
 
 static __forceinline float ClipFloat(float nValue)
 {
@@ -340,114 +371,40 @@ HRESULT GEKSaveToFile(LPCWSTR pFileName, LPCWSTR pString, bool bConvertToUTF8)
     return GEKSaveToFile(pFileName, strMultiString);
 }
 
-bool EvaluateDouble(LPCWSTR pValue, double &nValue)
+bool EvaluateDouble(LPCWSTR pExpression, double &nValue)
 {
-    InitSymbolTables();
-    exprtk::expression<double> kExpression;
-    kExpression.register_symbol_table(gs_kSymbolTableDouble);
-
-    exprtk::parser<double> kParser;
-    if (kParser.compile(CW2A(pValue).m_psz, kExpression))
-    {
-        nValue = kExpression.value();
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return gs_kEvalulateDouble.EvaluateValue(pExpression, nValue);
 }
 
-bool EvaluateFloat(LPCWSTR pValue, float &nValue)
+bool EvaluateFloat(LPCWSTR pExpression, float &nValue)
 {
-    InitSymbolTables();
-    exprtk::expression<float> kExpression;
-    kExpression.register_symbol_table(gs_kSymbolTableFloat);
-
-    exprtk::parser<float> kParser;
-    if (kParser.compile(CW2A(pValue).m_psz, kExpression))
-    {
-        nValue =  kExpression.value();
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return gs_kEvalulateFloat.EvaluateValue(pExpression, nValue);
 }
 
-bool EvaluateFloat2(LPCWSTR pValue, float2 &nValue)
+bool EvaluateFloat2(LPCWSTR pExpression, float2 &nValue)
 {
-    InitSymbolTables();
-    exprtk::expression<float> kExpression;
-    gs_kSymbolTableFloat.add_vector("output", nValue.xy);
-    kExpression.register_symbol_table(gs_kSymbolTableFloat);
-
-    exprtk::parser<float> kParser;
-    if (kParser.compile(FormatString("var result[2] := {%S}; output := result;", pValue).GetString(), kExpression))
-    {
-        kExpression.value();
-        gs_kSymbolTableFloat.remove_vector("output");
-        return true;
-    }
-    else
-    {
-        gs_kSymbolTableFloat.remove_vector("output");
-        return false;
-    }
+    return gs_kEvalulateFloat.EvaluateVector(pExpression, nValue.xy);
 }
 
-bool EvaluateFloat3(LPCWSTR pValue, float3 &nValue)
+bool EvaluateFloat3(LPCWSTR pExpression, float3 &nValue)
 {
-    InitSymbolTables();
-    exprtk::expression<float> kExpression;
-    gs_kSymbolTableFloat.add_vector("output", nValue.xyz);
-    kExpression.register_symbol_table(gs_kSymbolTableFloat);
-
-    exprtk::parser<float> kParser;
-    if (kParser.compile(FormatString("var result[3] := {%S}; output := result;", pValue).GetString(), kExpression))
-    {
-        kExpression.value();
-        gs_kSymbolTableFloat.remove_vector("output");
-        return true;
-    }
-    else
-    {
-        gs_kSymbolTableFloat.remove_vector("output");
-        return false;
-    }
+    return gs_kEvalulateFloat.EvaluateVector(pExpression, nValue.xyz);
 }
 
-bool EvaluateFloat4(LPCWSTR pValue, float4 &nValue)
+bool EvaluateFloat4(LPCWSTR pExpression, float4 &nValue)
 {
-    InitSymbolTables();
-    exprtk::expression<float> kExpression;
-    gs_kSymbolTableFloat.add_vector("output", nValue.xyzw);
-    kExpression.register_symbol_table(gs_kSymbolTableFloat);
-
-    exprtk::parser<float> kParser;
-    if (kParser.compile(FormatString("var result[4] := {%S}; output := result;", pValue).GetString(), kExpression))
-    {
-        kExpression.value();
-        gs_kSymbolTableFloat.remove_vector("output");
-        return true;
-    }
-    else
-    {
-        gs_kSymbolTableFloat.remove_vector("output");
-        return false;
-    }
+    return gs_kEvalulateFloat.EvaluateVector(pExpression, nValue.xyzw);
 }
 
-bool EvaluateQuaternion(LPCWSTR pValue, quaternion &nValue)
+bool EvaluateQuaternion(LPCWSTR pExpression, quaternion &nValue)
 {
-    if (EvaluateFloat4(pValue, *(float4 *)&nValue))
+    if (EvaluateFloat4(pExpression, *(float4 *)&nValue))
     {
         return true;
     }
 
     float3 nEuler;
-    if (EvaluateFloat3(pValue, nEuler))
+    if (EvaluateFloat3(pExpression, nEuler))
     {
         nValue.SetEuler(nEuler);
         return true;
@@ -456,10 +413,10 @@ bool EvaluateQuaternion(LPCWSTR pValue, quaternion &nValue)
     return false;
 }
 
-bool EvaluateINT32(LPCWSTR pValue, INT32 &nValue)
+bool EvaluateINT32(LPCWSTR pExpression, INT32 &nValue)
 {
     float nFloatValue = 0.0f;
-    if (EvaluateFloat(pValue, nFloatValue))
+    if (EvaluateFloat(pExpression, nFloatValue))
     {
         nValue = INT32(nFloatValue);
         return true;
@@ -470,10 +427,10 @@ bool EvaluateINT32(LPCWSTR pValue, INT32 &nValue)
     }
 }
 
-bool EvaluateUINT32(LPCWSTR pValue, UINT32 &nValue)
+bool EvaluateUINT32(LPCWSTR pExpression, UINT32 &nValue)
 {
     float nFloatValue = 0.0f;
-    if (EvaluateFloat(pValue, nFloatValue))
+    if (EvaluateFloat(pExpression, nFloatValue))
     {
         nValue = UINT32(nFloatValue);
         return true;
@@ -484,10 +441,10 @@ bool EvaluateUINT32(LPCWSTR pValue, UINT32 &nValue)
     }
 }
 
-bool EvaluateINT64(LPCWSTR pValue, INT64 &nValue)
+bool EvaluateINT64(LPCWSTR pExpression, INT64 &nValue)
 {
     double nDoubleValue = 0.0;
-    if (EvaluateDouble(pValue, nDoubleValue))
+    if (EvaluateDouble(pExpression, nDoubleValue))
     {
         nValue = INT64(nDoubleValue);
         return true;
@@ -498,10 +455,10 @@ bool EvaluateINT64(LPCWSTR pValue, INT64 &nValue)
     }
 }
 
-bool EvaluateUINT64(LPCWSTR pValue, UINT64 &nValue)
+bool EvaluateUINT64(LPCWSTR pExpression, UINT64 &nValue)
 {
     double nDoubleValue = 0.0;
-    if (EvaluateDouble(pValue, nDoubleValue))
+    if (EvaluateDouble(pExpression, nDoubleValue))
     {
         nValue = UINT64(nDoubleValue);
         return true;
@@ -512,16 +469,16 @@ bool EvaluateUINT64(LPCWSTR pValue, UINT64 &nValue)
     }
 }
 
-bool EvaluateBoolean(LPCWSTR pValue, bool &nValue)
+bool EvaluateBoolean(LPCWSTR pExpression, bool &nValue)
 {
-    if (_wcsicmp(pValue, L"true") == 0 ||
-        _wcsicmp(pValue, L"yes") == 0)
+    if (_wcsicmp(pExpression, L"true") == 0 ||
+        _wcsicmp(pExpression, L"yes") == 0)
     {
         return true;
     }
 
     INT32 nIntValue = 0;
-    if (EvaluateINT32(pValue, nIntValue))
+    if (EvaluateINT32(pExpression, nIntValue))
     {
         nValue = (nIntValue == 0 ? false : true);
         return true;
@@ -532,80 +489,80 @@ bool EvaluateBoolean(LPCWSTR pValue, bool &nValue)
     }
 }
 
-double StrToDouble(LPCWSTR pValue)
+double StrToDouble(LPCWSTR pExpression)
 {
     double nValue = 0.0;
-    EvaluateDouble(pValue, nValue);
+    EvaluateDouble(pExpression, nValue);
     return nValue;
 }
 
-float StrToFloat(LPCWSTR pValue)
+float StrToFloat(LPCWSTR pExpression)
 {
     float nValue = 0.0f;
-    EvaluateFloat(pValue, nValue);
+    EvaluateFloat(pExpression, nValue);
     return nValue;
 }
 
-float2 StrToFloat2(LPCWSTR pValue)
+float2 StrToFloat2(LPCWSTR pExpression)
 {
     float2 nValue;
-    EvaluateFloat2(pValue, nValue);
+    EvaluateFloat2(pExpression, nValue);
     return nValue;
 }
 
-float3 StrToFloat3(LPCWSTR pValue)
+float3 StrToFloat3(LPCWSTR pExpression)
 {
     float3 nValue;
-    EvaluateFloat3(pValue, nValue);
+    EvaluateFloat3(pExpression, nValue);
     return nValue;
 }
 
-float4 StrToFloat4(LPCWSTR pValue)
+float4 StrToFloat4(LPCWSTR pExpression)
 {
     float4 nValue;
-    EvaluateFloat4(pValue, nValue);
+    EvaluateFloat4(pExpression, nValue);
     return nValue;
 }
 
-quaternion StrToQuaternion(LPCWSTR pValue)
+quaternion StrToQuaternion(LPCWSTR pExpression)
 {
     quaternion nValue;
-    EvaluateQuaternion(pValue, nValue);
+    EvaluateQuaternion(pExpression, nValue);
     return nValue;
 }
 
-INT32 StrToINT32(LPCWSTR pValue)
+INT32 StrToINT32(LPCWSTR pExpression)
 {
     INT32 nValue = 0;
-    EvaluateINT32(pValue, nValue);
+    EvaluateINT32(pExpression, nValue);
     return nValue;
 }
 
-UINT32 StrToUINT32(LPCWSTR pValue)
+UINT32 StrToUINT32(LPCWSTR pExpression)
 {
     UINT32 nValue = 0;
-    EvaluateUINT32(pValue, nValue);
+    EvaluateUINT32(pExpression, nValue);
     return nValue;
 }
 
-INT64 StrToINT64(LPCWSTR pValue)
+INT64 StrToINT64(LPCWSTR pExpression)
 {
     INT64 nValue = 0;
-    EvaluateINT64(pValue, nValue);
+    EvaluateINT64(pExpression, nValue);
     return nValue;
 }
 
-UINT64 StrToUINT64(LPCWSTR pValue)
+UINT64 StrToUINT64(LPCWSTR pExpression)
 {
     UINT64 nValue = 0;
-    EvaluateUINT64(pValue, nValue);
+    EvaluateUINT64(pExpression, nValue);
     return nValue;
 }
 
-bool StrToBoolean(LPCWSTR pValue)
+bool StrToBoolean(LPCWSTR pExpression)
 {
     bool nValue = false;
-    EvaluateBoolean(pValue, nValue);
+    EvaluateBoolean(pExpression, nValue);
     return nValue;
 }
 

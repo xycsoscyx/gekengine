@@ -94,29 +94,29 @@ bool operator < (REFGUID kGUIDA, REFGUID kGUIDB)
 #include "Include\CGEKConfig.h"
 #include "Include\CGEKLibXML2.h"
 
-bool EvaluateDouble(LPCWSTR pValue,     double &nValue);
-bool EvaluateFloat(LPCWSTR pValue,      float &nValue);
-bool EvaluateFloat2(LPCWSTR pValue,     float2 &nValue);
-bool EvaluateFloat3(LPCWSTR pValue,     float3 &nValue);
-bool EvaluateFloat4(LPCWSTR pValue,     float4 &nValue);
-bool EvaluateQuaternion(LPCWSTR pValue, quaternion &nValue);
-bool EvaluateINT32(LPCWSTR pValue,      INT32 &nValue);
-bool EvaluateUINT32(LPCWSTR pValue,     UINT32 &nValue);
-bool EvaluateINT64(LPCWSTR pValue,      INT64 &nValue);
-bool EvaluateUINT64(LPCWSTR pValue,     UINT64 &nValue);
-bool EvaluateBoolean(LPCWSTR pValue,    bool &nValue);
+bool EvaluateDouble(LPCWSTR pExpression,     double &nValue);
+bool EvaluateFloat(LPCWSTR pExpression,      float &nValue);
+bool EvaluateFloat2(LPCWSTR pExpression,     float2 &nValue);
+bool EvaluateFloat3(LPCWSTR pExpression,     float3 &nValue);
+bool EvaluateFloat4(LPCWSTR pExpression,     float4 &nValue);
+bool EvaluateQuaternion(LPCWSTR pExpression, quaternion &nValue);
+bool EvaluateINT32(LPCWSTR pExpression,      INT32 &nValue);
+bool EvaluateUINT32(LPCWSTR pExpression,     UINT32 &nValue);
+bool EvaluateINT64(LPCWSTR pExpression,      INT64 &nValue);
+bool EvaluateUINT64(LPCWSTR pExpression,     UINT64 &nValue);
+bool EvaluateBoolean(LPCWSTR pExpression,    bool &nValue);
 
-double      StrToDouble(LPCWSTR pValue);
-float       StrToFloat(LPCWSTR pValue);
-float2      StrToFloat2(LPCWSTR pValue);
-float3      StrToFloat3(LPCWSTR pValue);
-float4      StrToFloat4(LPCWSTR pValue);
-quaternion  StrToQuaternion(LPCWSTR pValue);
-INT32       StrToINT32(LPCWSTR pValue);
-UINT32      StrToUINT32(LPCWSTR pValue);
-INT64       StrToINT64(LPCWSTR pValue);
-UINT64      StrToUINT64(LPCWSTR pValue);
-bool        StrToBoolean(LPCWSTR pValue);
+double      StrToDouble(LPCWSTR pExpression);
+float       StrToFloat(LPCWSTR pExpression);
+float2      StrToFloat2(LPCWSTR pExpression);
+float3      StrToFloat3(LPCWSTR pExpression);
+float4      StrToFloat4(LPCWSTR pExpression);
+quaternion  StrToQuaternion(LPCWSTR pExpression);
+INT32       StrToINT32(LPCWSTR pExpression);
+UINT32      StrToUINT32(LPCWSTR pExpression);
+INT64       StrToINT64(LPCWSTR pExpression);
+UINT64      StrToUINT64(LPCWSTR pExpression);
+bool        StrToBoolean(LPCWSTR pExpression);
 
 CStringA    FormatString(LPCSTR pFormat, ...);
 CStringW    FormatString(LPCWSTR pFormat, ...);
