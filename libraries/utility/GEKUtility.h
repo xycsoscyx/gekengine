@@ -70,15 +70,6 @@ namespace std
         {
             DWORD *pLast = (DWORD *)&kGUID.Data4[0];
             return (kGUID.Data1 ^ (kGUID.Data2 << 16 | kGUID.Data3) ^ (pLast[0] | pLast[1]));
-/*
-            CStringW strGUID;
-            strGUID.Format(L"%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
-                kGUID.Data1, kGUID.Data2, kGUID.Data3,
-                kGUID.Data4[0], kGUID.Data4[1], kGUID.Data4[2], kGUID.Data4[3],
-                kGUID.Data4[4], kGUID.Data4[5], kGUID.Data4[6], kGUID.Data4[7]);
-            hash<CStringW> kHash;
-            return kHash(strGUID);
-*/
         }
     };
 
@@ -103,17 +94,29 @@ bool operator < (REFGUID kGUIDA, REFGUID kGUIDB)
 #include "Include\CGEKConfig.h"
 #include "Include\CGEKLibXML2.h"
 
-double      StrToDouble(LPCWSTR pValue);
-float       StrToFloat(LPCWSTR pValue);
-float2      StrToFloat2(LPCWSTR pValue);
-float3      StrToFloat3(LPCWSTR pValue);
-float4      StrToFloat4(LPCWSTR pValue);
-quaternion  StrToQuaternion(LPCWSTR pValue);
-INT32       StrToINT32(LPCWSTR pValue);
-UINT32      StrToUINT32(LPCWSTR pValue);
-INT64       StrToINT64(LPCWSTR pValue);
-UINT64      StrToUINT64(LPCWSTR pValue);
-bool        StrToBoolean(LPCWSTR pValue);
+bool EvaluateDouble(LPCWSTR pValue,     double &nValue);
+bool EvaluateFloat(LPCWSTR pValue,      float &nValue);
+bool EvaluateFloat2(LPCWSTR pValue,     float2 &nValue);
+bool EvaluateFloat3(LPCWSTR pValue,     float3 &nValue);
+bool EvaluateFloat4(LPCWSTR pValue,     float4 &nValue);
+bool EvaluateQuaternion(LPCWSTR pValue, quaternion &nValue);
+bool EvaluateINT32(LPCWSTR pValue,      INT32 &nValue);
+bool EvaluateUINT32(LPCWSTR pValue,     UINT32 &nValue);
+bool EvaluateINT64(LPCWSTR pValue,      INT64 &nValue);
+bool EvaluateUINT64(LPCWSTR pValue,     UINT64 &nValue);
+bool EvaluateBoolean(LPCWSTR pValue,    bool &nValue);
+
+__forceinline double      StrToDouble(LPCWSTR pValue)       { double nValue = 0.0;  EvaluateDouble(pValue, nValue);     return nValue; }
+__forceinline float       StrToFloat(LPCWSTR pValue)        { float nValue = 0.0f;  EvaluateFloat(pValue, nValue);      return nValue; }
+__forceinline float2      StrToFloat2(LPCWSTR pValue)       { float2 nValue;        EvaluateFloat2(pValue, nValue);     return nValue; }
+__forceinline float3      StrToFloat3(LPCWSTR pValue)       { float3 nValue;        EvaluateFloat3(pValue, nValue);     return nValue; }
+__forceinline float4      StrToFloat4(LPCWSTR pValue)       { float4 nValue;        EvaluateFloat4(pValue, nValue);     return nValue; }
+__forceinline quaternion  StrToQuaternion(LPCWSTR pValue)   { quaternion nValue;    float3 nEuler;        if (EvaluateFloat3(pValue, nEuler)) { nValue.SetEuler(nEuler); } else EvaluateQuaternion(pValue, nValue); return nValue; }
+__forceinline INT32       StrToINT32(LPCWSTR pValue)        { INT32 nValue = 0;     EvaluateINT32(pValue, nValue);      return nValue; }
+__forceinline UINT32      StrToUINT32(LPCWSTR pValue)       { UINT32 nValue = 0;    EvaluateUINT32(pValue, nValue);     return nValue; }
+__forceinline INT64       StrToINT64(LPCWSTR pValue)        { INT64 nValue = 0;     EvaluateINT64(pValue, nValue);      return nValue; }
+__forceinline UINT64      StrToUINT64(LPCWSTR pValue)       { UINT64 nValue = 0;    EvaluateUINT64(pValue, nValue);     return nValue; }
+__forceinline bool        StrToBoolean(LPCWSTR pValue)      { bool nValue = false;  EvaluateBoolean(pValue, nValue);    return nValue; }
 
 CStringA    FormatString(LPCSTR pFormat, ...);
 CStringW    FormatString(LPCWSTR pFormat, ...);

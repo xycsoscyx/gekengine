@@ -50,7 +50,7 @@ public:
     STDMETHOD_(void, Destroy)                   (THIS);
 
     // IGEKContextObserver
-    STDMETHOD_(void, OnLog)                     (THIS_ LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage);
+    STDMETHOD_(void, OnLog)                     (THIS_ LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eType, LPCWSTR pMessage);
 
     // IGEKSystemObserver
     STDMETHOD_(void, OnEvent)                   (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);

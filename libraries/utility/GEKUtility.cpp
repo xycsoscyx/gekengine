@@ -6,27 +6,60 @@
 #include <algorithm>
 #include <random>
 
+#ifdef min
+#undef min
+#undef max
+#endif
+
+#include "exprtk.hpp"
+
 static std::random_device kRandomDevice;
 static std::mt19937 kMersine(kRandomDevice());
-static std::uniform_real_distribution<double> kRandomDouble(0.0, 1.0);
-static std::uniform_real_distribution<float> kRandomFloat(0.0f, 1.0f);
 
-float ClipFloat(float fValue, UINT32 nNumDecimals)
+template <typename TYPE>
+struct CGEKRandomValue : public exprtk::ifunction<TYPE>
 {
-    CStringW strFormat;
-    strFormat.Format(L"%%.%df", nNumDecimals);
+    std::uniform_real_distribution<TYPE> m_kRandom;
+    CGEKRandomValue() : exprtk::ifunction<TYPE>(1)
+                      , m_kRandom(TYPE(0), TYPE(1))
+    {
+    }
 
-    CStringW strValue;
-    strValue.Format(strFormat, fValue);
-    return StrToFloat(strValue);
+    inline TYPE operator()(const TYPE& nRange)
+    {
+        TYPE nValue = m_kRandom(kMersine);
+        return ((nValue * nRange * TYPE(2)) - nRange);
+    }
+};
+
+template <typename TYPE>
+struct CGEKRandomRange : public exprtk::ifunction<TYPE>
+{
+    std::uniform_real_distribution<TYPE> m_kRandom;
+    CGEKRandomRange() : exprtk::ifunction<TYPE>(2)
+                      , m_kRandom(TYPE(0), TYPE(1))
+    {
+    }
+
+    inline TYPE operator()(const TYPE& nMinimum, const TYPE& nMaximum)
+    {
+        TYPE nValue = m_kRandom(kMersine);
+        return ((nValue * (nMaximum - nMinimum)) + nMinimum);
+    }
+};
+
+static __forceinline float ClipFloat(float nValue)
+{
+    INT32 nInteger = INT32(nValue * 100.0f);
+    return (float(nInteger) / 100.0f);
 }
 
 GEKMODEASPECT GEKMODE::GetAspect(void)
 {
-    const float fAspect4x3 = ClipFloat((4.0f / 3.0f), 2);
-    const float fAspect16x9 = ClipFloat((16.0f / 9.0f), 2);
-    const float fAspect16x10 = ClipFloat((16.0f / 10.0f), 2);
-    float nAspect = ClipFloat((float(xsize) / float(ysize)), 2);
+    const float fAspect4x3 = ClipFloat(4.0f / 3.0f);
+    const float fAspect16x9 = ClipFloat(16.0f / 9.0f);
+    const float fAspect16x10 = ClipFloat(16.0f / 10.0f);
+    float nAspect = ClipFloat(float(xsize) / float(ysize));
     if (nAspect == fAspect4x3)
     {
         return _ASPECT_4x3;
@@ -285,188 +318,180 @@ HRESULT GEKSaveToFile(LPCWSTR pFileName, LPCWSTR pString, bool bConvertToUTF8)
     return GEKSaveToFile(pFileName, strMultiString);
 }
 
-double StrToDouble(LPCWSTR pValue)
+bool EvaluateDouble(LPCWSTR pValue, double &nValue)
 {
-    if (_wcsnicmp(pValue, L"rand(", 5) == 0)
+    exprtk::symbol_table<double> kSymbolTable;
+
+    CGEKRandomValue<double> kRandomValue;
+    CGEKRandomRange<double> kRandomRange;
+    kSymbolTable.add_function("rvalue", kRandomValue);
+    kSymbolTable.add_function("rrange", kRandomRange);
+
+    kSymbolTable.add_constants();
+
+    exprtk::expression<double> kExpression;
+    kExpression.register_symbol_table(kSymbolTable);
+
+    exprtk::parser<double> kParser;
+    if (kParser.compile(CW2A(pValue).m_psz, kExpression))
     {
-        CStringW strRange = pValue;
-        strRange.Replace(L"rand", L"");
-        strRange.TrimLeft(L'(');
-        strRange.TrimRight(L')');
-        if (strRange.Find(L":") >= 0)
-        {
-            int nPosition = 0;
-            CStringW strMinimum = strRange.Tokenize(L":", nPosition);
-            CStringW strMaximum = strRange.Tokenize(L":", nPosition);
-            double nMinimum = wcstod(strMinimum, nullptr);
-            double nMaximum = wcstod(strMaximum, nullptr);
-            double nValue = kRandomDouble(kMersine);
-            return ((nValue * (nMaximum - nMinimum)) + nMinimum);
-        }
-        else
-        {
-            double nRange = wcstod(strRange, nullptr);
-            double nValue = kRandomDouble(kMersine);
-            return ((nValue * nRange * 2.0) - nRange);
-        }
+        nValue = kExpression.value();
+        return true;
     }
     else
     {
-        return wcstod(pValue, nullptr);
+        return false;
     }
 }
 
-float StrToFloat(LPCWSTR pValue)
+bool EvaluateFloat(LPCWSTR pValue, float &nValue)
 {
-    if (_wcsnicmp(pValue, L"rand(", 5) == 0)
+    exprtk::symbol_table<float> kSymbolTable;
+
+    CGEKRandomValue<float> kRandomValue;
+    CGEKRandomRange<float> kRandomRange;
+    kSymbolTable.add_function("rvalue", kRandomValue);
+    kSymbolTable.add_function("rrange", kRandomRange);
+
+    kSymbolTable.add_constants();
+
+    exprtk::expression<float> kExpression;
+    kExpression.register_symbol_table(kSymbolTable);
+
+    exprtk::parser<float> kParser;
+    if (kParser.compile(CW2A(pValue).m_psz, kExpression))
     {
-        CStringW strRange = pValue;
-        strRange.Replace(L"rand", L"");
-        strRange.TrimLeft(L'(');
-        strRange.TrimRight(L')');
-        if (strRange.Find(L":") >= 0)
-        {
-            int nPosition = 0;
-            CStringW strMinimum = strRange.Tokenize(L":", nPosition);
-            CStringW strMaximum = strRange.Tokenize(L":", nPosition);
-            float nMinimum = wcstof(strMinimum, nullptr);
-            float nMaximum = wcstof(strMaximum, nullptr);
-            float nValue = kRandomFloat(kMersine);
-            return ((nValue * (nMaximum - nMinimum)) + nMinimum);
-        }
-        else
-        {
-            float nRange = wcstof(strRange, nullptr);
-            float nValue = kRandomFloat(kMersine);
-            return ((nValue * nRange * 2.0f) - nRange);
-        }
+        nValue =  kExpression.value();
+        return true;
     }
     else
     {
-        return wcstof(pValue, nullptr);
+        return false;
     }
 }
 
-
-float2 StrToFloat2(LPCWSTR pValue)
+bool EvaluateFloat2(LPCWSTR pValue, float2 &nValue)
 {
-    float2 nValue(0.0f);
-    if (wcschr(pValue, L',') == nullptr)
+    exprtk::symbol_table<float> kSymbolTable;
+
+    CGEKRandomValue<float> kRandomValue;
+    CGEKRandomRange<float> kRandomRange;
+    kSymbolTable.add_function("rvalue", kRandomValue);
+    kSymbolTable.add_function("rrange", kRandomRange);
+
+    kSymbolTable.add_vector("output", nValue.xy);
+
+    kSymbolTable.add_constants();
+
+    exprtk::expression<float> kExpression;
+    kExpression.register_symbol_table(kSymbolTable);
+
+    exprtk::parser<float> kParser;
+    return kParser.compile(FormatString("var result[2] := {%S}; output := result;", pValue).GetString(), kExpression);
+}
+
+bool EvaluateFloat3(LPCWSTR pValue, float3 &nValue)
+{
+    exprtk::symbol_table<float> kSymbolTable;
+
+    CGEKRandomValue<float> kRandomValue;
+    CGEKRandomRange<float> kRandomRange;
+    kSymbolTable.add_function("rvalue", kRandomValue);
+    kSymbolTable.add_function("rrange", kRandomRange);
+
+    kSymbolTable.add_vector("output", nValue.xyz);
+
+    kSymbolTable.add_constants();
+
+    exprtk::expression<float> kExpression;
+    kExpression.register_symbol_table(kSymbolTable);
+
+    exprtk::parser<float> kParser;
+    return kParser.compile(FormatString("var result[3] := {%S}; output := result;", pValue).GetString(), kExpression);
+}
+
+bool EvaluateFloat4(LPCWSTR pValue, float4 &nValue)
+{
+    exprtk::symbol_table<float> kSymbolTable;
+
+    CGEKRandomValue<float> kRandomValue;
+    CGEKRandomRange<float> kRandomRange;
+    kSymbolTable.add_function("rvalue", kRandomValue);
+    kSymbolTable.add_function("rrange", kRandomRange);
+
+    kSymbolTable.add_vector("output", nValue.xyzw);
+
+    kSymbolTable.add_constants();
+
+    exprtk::expression<float> kExpression;
+    kExpression.register_symbol_table(kSymbolTable);
+
+    exprtk::parser<float> kParser;
+    return kParser.compile(FormatString("var result[4] := {%S}; output := result;", pValue).GetString(), kExpression);
+}
+
+bool EvaluateQuaternion(LPCWSTR pValue, quaternion &nValue)
+{
+    return EvaluateFloat4(pValue, *(float4 *)&nValue);
+}
+
+bool EvaluateINT32(LPCWSTR pValue, INT32 &nValue)
+{
+    float nFloatValue = 0.0f;
+    if (EvaluateFloat(pValue, nFloatValue))
     {
-        nValue = StrToFloat(pValue);
+        nValue = INT32(nFloatValue);
+        return true;
     }
     else
     {
-        int nAxis = 0;
-        int nPosition = 0;
-        CString strValue(pValue);
-        CStringW strToken = strValue.Tokenize(L",", nPosition);
-        while (!strToken.IsEmpty() && nAxis < 2)
-        {
-            strToken.Trim();
-            nValue[nAxis++] = StrToFloat(strToken);
-            strToken = strValue.Tokenize(L",", nPosition);
-        };
+        return false;
     }
-
-    return nValue;
 }
 
-float3 StrToFloat3(LPCWSTR pValue)
+bool EvaluateUINT32(LPCWSTR pValue, UINT32 &nValue)
 {
-    float3 nValue(0.0f);
-    if (wcschr(pValue, L',') == nullptr)
+    float nFloatValue = 0.0f;
+    if (EvaluateFloat(pValue, nFloatValue))
     {
-        nValue = StrToFloat(pValue);
+        nValue = UINT32(nFloatValue);
+        return true;
     }
     else
     {
-        int nAxis = 0;
-        int nPosition = 0;
-        CString strValue(pValue);
-        CStringW strToken = strValue.Tokenize(L",", nPosition);
-        while (!strToken.IsEmpty() && nAxis < 3)
-        {
-            strToken.Trim();
-            nValue[nAxis++] = StrToFloat(strToken);
-            strToken = strValue.Tokenize(L",", nPosition);
-        };
+        return false;
     }
-
-    return nValue;
 }
 
-float4 StrToFloat4(LPCWSTR pValue)
+bool EvaluateINT64(LPCWSTR pValue, INT64 &nValue)
 {
-    float4 nValue(0.0f);
-    if (wcschr(pValue, L',') == nullptr)
+    double nDoubleValue = 0.0;
+    if (EvaluateDouble(pValue, nDoubleValue))
     {
-        nValue = StrToFloat(pValue);
+        nValue = INT64(nDoubleValue);
+        return true;
     }
     else
     {
-        int nAxis = 0;
-        int nPosition = 0;
-        CString strValue(pValue);
-        CStringW strToken = strValue.Tokenize(L",", nPosition);
-        while (!strToken.IsEmpty() && nAxis < 4)
-        {
-            nValue[nAxis++] = StrToFloat(strToken);
-            strToken = strValue.Tokenize(L",", nPosition);
-        };
+        return false;
     }
-
-    return nValue;
 }
 
-quaternion StrToQuaternion(LPCWSTR pValue)
+bool EvaluateUINT64(LPCWSTR pValue, UINT64 &nValue)
 {
-    float4 nValue(0.0f);
-
-    int nAxis = 0;
-    int nPosition = 0;
-    CString strValue(pValue);
-    CStringW strToken = strValue.Tokenize(L",", nPosition);
-    while (!strToken.IsEmpty() && nAxis < 4)
+    double nDoubleValue = 0.0;
+    if (EvaluateDouble(pValue, nDoubleValue))
     {
-        nValue[nAxis++] = StrToFloat(strToken);
-        strToken = strValue.Tokenize(L",", nPosition);
-    };
-
-    quaternion nQuaternion;
-    if (nAxis == 4)
-    {
-        nQuaternion = nValue;
+        nValue = UINT64(nDoubleValue);
+        return true;
     }
     else
     {
-        nQuaternion.SetEuler(nValue);
+        return false;
     }
-
-    return nQuaternion;
 }
 
-INT32 StrToINT32(LPCWSTR pValue)
-{
-    return wcstol(pValue, nullptr, 0);
-}
-
-UINT32 StrToUINT32(LPCWSTR pValue)
-{
-    return wcstoul(pValue, nullptr, 0);
-}
-
-INT64 StrToINT64(LPCWSTR pValue)
-{
-    return _wcstoi64(pValue, nullptr, 0);
-}
-
-UINT64 StrToUINT64(LPCWSTR pValue)
-{
-    return _wcstoui64(pValue, nullptr, 0);
-}
-
-bool StrToBoolean(LPCWSTR pValue)
+bool EvaluateBoolean(LPCWSTR pValue, bool &nValue)
 {
     if (_wcsicmp(pValue, L"true") == 0 ||
         _wcsicmp(pValue, L"yes") == 0)
@@ -474,5 +499,14 @@ bool StrToBoolean(LPCWSTR pValue)
         return true;
     }
 
-    return (StrToINT32(pValue) ? true : false);
+    INT32 nIntValue = 0;
+    if (EvaluateINT32(pValue, nIntValue))
+    {
+        nValue = (nIntValue == 0 ? false : true);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }

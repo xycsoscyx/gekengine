@@ -419,8 +419,7 @@ public:
                 va_end(pArgs);
             }
 
-            m_pContext->Log(m_strFile, m_nLine, L"> %20S: %s", m_strFunction.GetString(), m_strMessage.GetString());
-            m_pContext->AdjustLogIndent(true);
+            m_pContext->Log(m_strFile, m_nLine, GEK_LOGSTART, L"%20S: %s", m_strFunction.GetString(), m_strMessage.GetString());
         }
     }
 
@@ -428,17 +427,16 @@ public:
     {
         if (m_pContext != nullptr)
         {
-            m_pContext->AdjustLogIndent(false);
             double nEndTime = m_pContext->GetTime();
             double nTime = (nEndTime - m_nStartTime);
-            m_pContext->Log(m_strFile, m_nLine, L"< %20S: %2.5fs", m_strFunction.GetString(), nTime);
+            m_pContext->Log(m_strFile, m_nLine, GEK_LOGEND, L"%20S: %2.5fs", m_strFunction.GetString(), nTime);
         }
     }
 };
 
-#define GEKLOG(MESSAGE, ...)                    GetContext()->Log(__FILE__, __LINE__, MESSAGE, __VA_ARGS__)
+#define GEKLOG(MESSAGE, ...)                    GetContext()->Log(__FILE__, __LINE__, GEK_LOG, MESSAGE, __VA_ARGS__)
 
-#define GEKRESULT(RESULT, MESSAGE, ...)         if(!(RESULT)) { GetContext()->Log(__FILE__, __LINE__, MESSAGE, __VA_ARGS__); }
+#define GEKRESULT(RESULT, MESSAGE, ...)         if(!(RESULT)) { GetContext()->Log(__FILE__, __LINE__, GEK_LOG, MESSAGE, __VA_ARGS__); }
 
 #define GEKFUNCTION(MESSAGE, ...)               CGEKPerformance kPerformanceTimer(GetContext(), __FILE__, __LINE__, __FUNCTION__, MESSAGE, __VA_ARGS__)
 

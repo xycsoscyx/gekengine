@@ -56,8 +56,14 @@ CGEKEngine::CGEKEngine(void)
     , m_bSendInput(false)
     , m_hCursorPointer(nullptr)
 {
-    DeleteFile(L"log.txt");
-    m_hLogFile = CreateFile(L"log.txt", GENERIC_ALL, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    DeleteFile(L"log.xml");
+    m_hLogFile = CreateFile(L"log.xml", GENERIC_ALL, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (m_hLogFile != nullptr && m_hLogFile != INVALID_HANDLE_VALUE)
+    {
+        DWORD nNumWritten = 0;
+        CStringA strMessage("<?xml version=\"1.0\"?>\r\n<logging>\r\n");
+        WriteFile(m_hLogFile, strMessage.GetString(), strMessage.GetLength(), &nNumWritten, nullptr);
+    }
 }
 
 CGEKEngine::~CGEKEngine(void)
@@ -69,6 +75,9 @@ CGEKEngine::~CGEKEngine(void)
 
     if (m_hLogFile != nullptr && m_hLogFile != INVALID_HANDLE_VALUE)
     {
+        DWORD nNumWritten = 0;
+        CStringA strMessage("</logging>\r\n");
+        WriteFile(m_hLogFile, strMessage.GetString(), strMessage.GetLength(), &nNumWritten, nullptr);
         CloseHandle(m_hLogFile);
     }
 }
@@ -223,7 +232,7 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
     xmlCleanupParser();
 }
 
-STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage)
+STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eType, LPCWSTR pMessage)
 {
     if (m_hLogFile != nullptr && m_hLogFile != INVALID_HANDLE_VALUE)
     {
@@ -231,11 +240,20 @@ STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessa
         kFile.StripPath();
 
         CStringA strFile = kFile.m_strPath;
-        strFile.Replace("cgek", "");
-        strFile = strFile.Mid(0, 20);
 
         CStringA strMessage;
-        strMessage.Format("(%20s:%4d): %S\r\n", strFile.GetString(), nLine, pMessage);
+        if (eType == GEK_LOGSTART)
+        {
+            strMessage.Format("<%s line=\"%d\">%S\r\n", strFile.GetString(), nLine, pMessage);
+        }
+        else if (eType == GEK_LOGEND)
+        {
+            strMessage.Format("%S</%s>\r\n", pMessage, strFile.GetString());
+        }
+        else
+        {
+            strMessage.Format("<%s line=\"%d\">%S</%s>\r\n", strFile.GetString(), nLine, pMessage, strFile.GetString());
+        }
 
         DWORD nNumWritten = 0;
         WriteFile(m_hLogFile, strMessage.GetString(), strMessage.GetLength(), &nNumWritten, nullptr);

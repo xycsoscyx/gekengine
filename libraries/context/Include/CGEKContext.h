@@ -14,7 +14,6 @@ class CGEKContext : public CGEKUnknown
 {
 private:
     double m_nFrequency;
-    UINT32 m_nIndent;
     std::map<CStringA, UINT32> m_aMetrics;
 
     std::list<CStringW> m_aSearchPaths;
@@ -32,8 +31,7 @@ public:
 
     // IGEKContext
     STDMETHOD_(double, GetTime)                     (THIS);
-    STDMETHOD_(void, Log)                           (THIS_ LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...);
-    STDMETHOD_(void, AdjustLogIndent)               (THIS_ bool bIndent);
+    STDMETHOD_(void, Log)                           (THIS_ LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eType, LPCWSTR pMessage, ...);
     STDMETHOD_(void, SetMetric)                     (THIS_ LPCSTR pName, UINT32 nValue);
     STDMETHOD_(void, IncrementMetric)               (THIS_ LPCSTR pName);
     STDMETHOD_(void, LogMetrics)                    (THIS_ LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...);

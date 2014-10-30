@@ -26,7 +26,6 @@ END_INTERFACE_LIST_UNKNOWN
 
 CGEKContext::CGEKContext(void)
     : m_nFrequency(0.0)
-    , m_nIndent(0)
 {
     UINT64 nFrequency = 0;
     QueryPerformanceFrequency((LARGE_INTEGER *)&nFrequency);
@@ -51,17 +50,11 @@ STDMETHODIMP_(double) CGEKContext::GetTime(void)
     return (double(nCounter) / m_nFrequency);
 }
 
-STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...)
+STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eType, LPCWSTR pMessage, ...)
 {
     if (pMessage != nullptr)
     {
         CStringW strMessage;
-        if (m_nIndent > 0)
-        {
-            CStringW strIndent;
-            strIndent.Format(L"%d", m_nIndent);
-            strMessage.Format(L"%" + strIndent + "s", L" ");
-        }
 
         va_list pArgs;
         va_start(pArgs, pMessage);
@@ -70,14 +63,9 @@ STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessag
 
         if (!strMessage.IsEmpty())
         {
-            CGEKObservable::SendEvent(TGEKEvent<IGEKContextObserver>(std::bind(&IGEKContextObserver::OnLog, std::placeholders::_1, pFile, nLine, strMessage.GetString())));
+            CGEKObservable::SendEvent(TGEKEvent<IGEKContextObserver>(std::bind(&IGEKContextObserver::OnLog, std::placeholders::_1, pFile, nLine, eType, strMessage.GetString())));
         }
     }
-}
-
-STDMETHODIMP_(void) CGEKContext::AdjustLogIndent(bool bIndent)
-{
-    m_nIndent += (bIndent ? 2 : -2);
 }
 
 STDMETHODIMP_(void) CGEKContext::SetMetric(LPCSTR pName, UINT32 nValue)
@@ -103,28 +91,21 @@ STDMETHODIMP_(void) CGEKContext::LogMetrics(LPCSTR pFile, UINT32 nLine, LPCWSTR 
     if (pMessage != nullptr)
     {
         CStringW strMessage;
-        if (m_nIndent > 0)
-        {
-            CStringW strIndent;
-            strIndent.Format(L"%d", m_nIndent);
-            strMessage.Format(L"%" + strIndent + "s", L" ");
-        }
 
         va_list pArgs;
         va_start(pArgs, pMessage);
         strMessage.AppendFormatV(pMessage, pArgs);
         va_end(pArgs);
 
-        Log(pFile, nLine, strMessage);
+        Log(pFile, nLine, GEK_LOGSTART, strMessage);
     }
 
-    m_nIndent += 2;
     for (auto kPair : m_aMetrics)
     {
-        Log(pFile, nLine, L"- %S: %d", kPair.first.GetString(), kPair.second);
+        Log(pFile, nLine, GEK_LOG, L"- %S: %d", kPair.first.GetString(), kPair.second);
     }
-
-    m_nIndent -= 2;
+ 
+    Log(pFile, nLine, GEK_LOGEND, L"");
 }
 
 STDMETHODIMP CGEKContext::AddSearchPath(LPCWSTR pPath)

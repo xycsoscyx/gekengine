@@ -3,7 +3,7 @@
 	<population>
         <entity name="player">
 			<transform position="-7.200000, -1.200000, 0.000000" rotation="0,0,0,1" />
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
             <control />
 		</entity>
         <entity>
@@ -25,601 +25,601 @@
 
         <!-- 0 -->
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
-        </entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
-        </entity>
-        <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
-        </entity>
-        <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
-        </entity>
-        <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
-        </entity>
-        <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
-        </entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
-        </entity>
-        <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
-        </entity>
-        <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
-        </entity>
-        <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
-        </entity>
-        <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <entity>
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-			<sprite source="rock" size="rand(5:10)" color="rand(0.5:1),rand(0.5:1),rand(0.5:1),1" />
-            <newton shape="sphere" params="1" mass="rand(25:50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
         </entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
+        </entity>
+        <entity>
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
+        </entity>
+        <entity>
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
+        </entity>
+        <entity>
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
+        </entity>
+        <entity>
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
+        </entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
+        </entity>
+        <entity>
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
+        </entity>
+        <entity>
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
+        </entity>
+        <entity>
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
+        </entity>
+        <entity>
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+			<sprite source="rock" size="rrange(5,10)" color="rrange(.5,1),rrange(.5,1),rrange(.5,1),1" />
+            <newton shape="sphere" params="1" mass="rrange(25,50)" />
+        </entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
-		</entity>
-        <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <entity>
-            <light color="rand(0.5:3),rand(0.5:3),rand(0.5:3)" range="rand(25:50)" />
-			<transform position="rand(90),rand(0:100),rand(60)" rotation="0,0,0,1" />
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
+		</entity>
+        <entity>
+            <light color="rrange(.5,3),rrange(.5,3),rrange(.5,3)" range="rrange(25,50)" />
+			<transform position="rvalue(90),rrange(0,100),rvalue(60)" rotation="0,0,0,1" />
 		</entity>
         <!-- 5 -->
 
