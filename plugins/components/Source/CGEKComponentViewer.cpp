@@ -179,7 +179,7 @@ STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(const GEKENTITYID &nEntityI
         }
         else if (wcscmp(pName, L"pass") == 0)
         {
-            (*pIterator).second.m_strPass = kValue.GetString();
+            (*pIterator).second.m_strPass = kValue.GetRawString();
             bReturn = true;
         }
     }

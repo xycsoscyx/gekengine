@@ -387,7 +387,15 @@ bool EvaluateFloat2(LPCWSTR pValue, float2 &nValue)
     kExpression.register_symbol_table(kSymbolTable);
 
     exprtk::parser<float> kParser;
-    return kParser.compile(FormatString("var result[2] := {%S}; output := result;", pValue).GetString(), kExpression);
+    if (kParser.compile(FormatString("var result[2] := {%S}; output := result;", pValue).GetString(), kExpression))
+    {
+        kExpression.value();
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool EvaluateFloat3(LPCWSTR pValue, float3 &nValue)
@@ -407,7 +415,15 @@ bool EvaluateFloat3(LPCWSTR pValue, float3 &nValue)
     kExpression.register_symbol_table(kSymbolTable);
 
     exprtk::parser<float> kParser;
-    return kParser.compile(FormatString("var result[3] := {%S}; output := result;", pValue).GetString(), kExpression);
+    if (kParser.compile(FormatString("var result[3] := {%S}; output := result;", pValue).GetString(), kExpression))
+    {
+        kExpression.value();
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool EvaluateFloat4(LPCWSTR pValue, float4 &nValue)
@@ -427,12 +443,32 @@ bool EvaluateFloat4(LPCWSTR pValue, float4 &nValue)
     kExpression.register_symbol_table(kSymbolTable);
 
     exprtk::parser<float> kParser;
-    return kParser.compile(FormatString("var result[4] := {%S}; output := result;", pValue).GetString(), kExpression);
+    if (kParser.compile(FormatString("var result[4] := {%S}; output := result;", pValue).GetString(), kExpression))
+    {
+        kExpression.value();
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool EvaluateQuaternion(LPCWSTR pValue, quaternion &nValue)
 {
-    return EvaluateFloat4(pValue, *(float4 *)&nValue);
+    if (EvaluateFloat4(pValue, *(float4 *)&nValue))
+    {
+        return true;
+    }
+
+    float3 nEuler;
+    if (EvaluateFloat3(pValue, nEuler))
+    {
+        nValue.SetEuler(nEuler);
+        return true;
+    }
+
+    return false;
 }
 
 bool EvaluateINT32(LPCWSTR pValue, INT32 &nValue)
@@ -510,3 +546,81 @@ bool EvaluateBoolean(LPCWSTR pValue, bool &nValue)
         return false;
     }
 }
+
+double StrToDouble(LPCWSTR pValue)
+{
+    double nValue = 0.0;
+    EvaluateDouble(pValue, nValue);
+    return nValue;
+}
+
+float StrToFloat(LPCWSTR pValue)
+{
+    float nValue = 0.0f;
+    EvaluateFloat(pValue, nValue);
+    return nValue;
+}
+
+float2 StrToFloat2(LPCWSTR pValue)
+{
+    float2 nValue;
+    EvaluateFloat2(pValue, nValue);
+    return nValue;
+}
+
+float3 StrToFloat3(LPCWSTR pValue)
+{
+    float3 nValue;
+    EvaluateFloat3(pValue, nValue);
+    return nValue;
+}
+
+float4 StrToFloat4(LPCWSTR pValue)
+{
+    float4 nValue;
+    EvaluateFloat4(pValue, nValue);
+    return nValue;
+}
+
+quaternion StrToQuaternion(LPCWSTR pValue)
+{
+    quaternion nValue;
+    EvaluateQuaternion(pValue, nValue);
+    return nValue;
+}
+
+INT32 StrToINT32(LPCWSTR pValue)
+{
+    INT32 nValue = 0;
+    EvaluateINT32(pValue, nValue);
+    return nValue;
+}
+
+UINT32 StrToUINT32(LPCWSTR pValue)
+{
+    UINT32 nValue = 0;
+    EvaluateUINT32(pValue, nValue);
+    return nValue;
+}
+
+INT64 StrToINT64(LPCWSTR pValue)
+{
+    INT64 nValue = 0;
+    EvaluateINT64(pValue, nValue);
+    return nValue;
+}
+
+UINT64 StrToUINT64(LPCWSTR pValue)
+{
+    UINT64 nValue = 0;
+    EvaluateUINT64(pValue, nValue);
+    return nValue;
+}
+
+bool StrToBoolean(LPCWSTR pValue)
+{
+    bool nValue = false;
+    EvaluateBoolean(pValue, nValue);
+    return nValue;
+}
+
