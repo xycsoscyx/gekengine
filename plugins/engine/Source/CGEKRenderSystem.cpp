@@ -976,7 +976,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
     spContext->ClearResources();
 
-    CComQIPtr<IGEK2DVideoSystem> sp2DVideoSystem(m_pVideoSystem);
+    /*CComQIPtr<IGEK2DVideoSystem> sp2DVideoSystem(m_pVideoSystem);
     if (sp2DVideoSystem)
     {
         sp2DVideoSystem->Begin();
@@ -1033,7 +1033,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
 
         sp2DVideoSystem->End();
-    }
+    }*/
 
     m_pVideoSystem->Present(true);
 

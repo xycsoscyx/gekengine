@@ -83,7 +83,7 @@ STDMETHODIMP_(bool) CGEKComponentLight::SetProperty(const GEKENTITYID &nEntityID
     {
         if (wcscmp(pName, L"color") == 0)
         {
-            (*pIterator).second.m_nColor = kValue.GetFloat4();
+            (*pIterator).second.m_nColor = kValue.GetFloat3();
             bReturn = true;
         }
         else if (wcscmp(pName, L"range") == 0)

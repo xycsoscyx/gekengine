@@ -17,34 +17,31 @@ static std::random_device kRandomDevice;
 static std::mt19937 kMersine(kRandomDevice());
 
 template <typename TYPE>
-struct CGEKRandomValue : public exprtk::ifunction<TYPE>
+struct CGEKRandom : public exprtk::ifunction<TYPE>
 {
     std::uniform_real_distribution<TYPE> m_kRandom;
-    CGEKRandomValue() : exprtk::ifunction<TYPE>(1)
-                      , m_kRandom(TYPE(0), TYPE(1))
+    CGEKRandom(TYPE nMin, TYPE nMax) 
+        : exprtk::ifunction<TYPE>(1)
+        , m_kRandom(nMin, nMax)
     {
     }
 
     inline TYPE operator()(const TYPE& nRange)
     {
-        TYPE nValue = m_kRandom(kMersine);
-        return ((nValue * nRange * TYPE(2)) - nRange);
+        return (nRange * m_kRandom(kMersine));
     }
 };
 
 template <typename TYPE>
-struct CGEKRandomRange : public exprtk::ifunction<TYPE>
+struct CGEKLerp : public exprtk::ifunction<TYPE>
 {
-    std::uniform_real_distribution<TYPE> m_kRandom;
-    CGEKRandomRange() : exprtk::ifunction<TYPE>(2)
-                      , m_kRandom(TYPE(0), TYPE(1))
+    CGEKLerp(void) : exprtk::ifunction<TYPE>(3)
     {
     }
 
-    inline TYPE operator()(const TYPE& nMinimum, const TYPE& nMaximum)
+    inline TYPE operator()(const TYPE& nMinimum, const TYPE& nMaximum, const TYPE& nFactor)
     {
-        TYPE nValue = m_kRandom(kMersine);
-        return ((nValue * (nMaximum - nMinimum)) + nMinimum);
+        return ((nFactor * (nMaximum - nMinimum)) + nMinimum);
     }
 };
 
@@ -52,27 +49,32 @@ template <typename TYPE>
 class TGEKEvaluateValue
 {
 private:
-    CGEKRandomValue<TYPE> m_kRandomValueFloat;
-    CGEKRandomRange<TYPE> m_kRandomRangeFloat;
-    exprtk::symbol_table<TYPE> m_kSymbolTableFloat;
-    exprtk::expression<TYPE> m_kExpressionFloat;
-    exprtk::parser<TYPE> m_kParserFloat;
+    CGEKRandom<TYPE> m_kRand;
+    CGEKRandom<TYPE> m_kAbsRand;
+    CGEKLerp<TYPE> m_kLerp;
+    exprtk::symbol_table<TYPE> m_kSymbolTable;
+    exprtk::expression<TYPE> m_kExpression;
+    exprtk::parser<TYPE> m_kParser;
 
 public:
     TGEKEvaluateValue(void)
+        : m_kRand(TYPE(-1), TYPE(1))
+        , m_kAbsRand(TYPE(0), TYPE(1))
     {
-        m_kSymbolTableFloat.add_function("rvalue", m_kRandomValueFloat);
-        m_kSymbolTableFloat.add_function("rrange", m_kRandomRangeFloat);
-        m_kSymbolTableFloat.add_constants();
-        m_kExpressionFloat.register_symbol_table(m_kSymbolTableFloat);
+        m_kSymbolTable.add_function("rand", m_kRand);
+        m_kSymbolTable.add_function("arand", m_kAbsRand);
+        m_kSymbolTable.add_function("lerp", m_kLerp);
+
+        m_kSymbolTable.add_constants();
+        m_kExpression.register_symbol_table(m_kSymbolTable);
     }
 
     bool EvaluateValue(LPCWSTR pExpression, TYPE &nValue)
     {
-        m_kSymbolTableFloat.remove_vector("value");
-        if (m_kParserFloat.compile(CW2A(pExpression).m_psz, m_kExpressionFloat))
+        m_kSymbolTable.remove_vector("value");
+        if (m_kParser.compile(CW2A(pExpression).m_psz, m_kExpression))
         {
-            nValue = m_kExpressionFloat.value();
+            nValue = m_kExpression.value();
             return true;
         }
         else
@@ -84,11 +86,11 @@ public:
     template <std::size_t SIZE>
     bool EvaluateVector(LPCWSTR pExpression, TYPE (&aValue)[SIZE])
     {
-        m_kSymbolTableFloat.remove_vector("value");
-        m_kSymbolTableFloat.add_vector("value", aValue);
-        if (m_kParserFloat.compile(FormatString("var vector[%d] := {%S}; value := vector;", SIZE, pExpression).GetString(), m_kExpressionFloat))
+        m_kSymbolTable.remove_vector("value");
+        m_kSymbolTable.add_vector("value", aValue);
+        if (m_kParser.compile(FormatString("var vector[%d] := {%S}; value := vector;", SIZE, pExpression).GetString(), m_kExpression))
         {
-            m_kExpressionFloat.value();
+            m_kExpression.value();
             return true;
         }
         else
@@ -393,7 +395,19 @@ bool EvaluateFloat3(LPCWSTR pExpression, float3 &nValue)
 
 bool EvaluateFloat4(LPCWSTR pExpression, float4 &nValue)
 {
-    return gs_kEvalulateFloat.EvaluateVector(pExpression, nValue.xyzw);
+    if (gs_kEvalulateFloat.EvaluateVector(pExpression, nValue.xyzw))
+    {
+        return true;
+    }
+
+    float3 nPartValue;
+    if (EvaluateFloat3(pExpression, nPartValue))
+    {
+        nValue = float4(nPartValue, 1.0f);
+        return true;
+    }
+
+    return false;
 }
 
 bool EvaluateQuaternion(LPCWSTR pExpression, quaternion &nValue)

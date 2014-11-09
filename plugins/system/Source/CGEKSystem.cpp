@@ -244,12 +244,6 @@ STDMETHODIMP_(void) CGEKSystem::ParseValue(CStringW &strValue)
     };
 }
 
-#ifdef min
-#undef min
-#undef max
-#endif
-
-#include "exprtk.hpp"
 STDMETHODIMP_(UINT32) CGEKSystem::EvaluateValue(LPCWSTR pValue)
 {
     REQUIRE_RETURN(pValue, 0);
@@ -257,12 +251,7 @@ STDMETHODIMP_(UINT32) CGEKSystem::EvaluateValue(LPCWSTR pValue)
     CStringW strValue(pValue);
     ParseValue(strValue);
 
-    exprtk::expression<double> kExpression;
-
-    exprtk::parser<double> kParser;
-    kParser.compile((LPCSTR)CW2A(strValue), kExpression);
-
-    return UINT32(kExpression.value());
+    return StrToUINT32(strValue);
 }
 
 STDMETHODIMP_(bool) CGEKSystem::IsRunning(void)
