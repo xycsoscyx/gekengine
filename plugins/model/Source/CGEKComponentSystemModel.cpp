@@ -241,7 +241,6 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(void)
             if (m_pRenderManager->GetFrustum().IsVisible(obb(nAABB, nMatrix)))
             {
                 m_aVisible[pModel].emplace_back(nMatrix, kScale.GetFloat3(), kColor.GetFloat4());
-                GEKINCREMENTMETRIC("NUMOBJECTS");
             }
         }
     });

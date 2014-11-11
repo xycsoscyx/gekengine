@@ -439,7 +439,3 @@ public:
 #define GEKRESULT(RESULT, MESSAGE, ...)         if(!(RESULT)) { GetContext()->Log(__FILE__, __LINE__, GEK_LOG, MESSAGE, __VA_ARGS__); }
 
 #define GEKFUNCTION(MESSAGE, ...)               CGEKPerformance kPerformanceTimer(GetContext(), __FILE__, __LINE__, __FUNCTION__, MESSAGE, __VA_ARGS__)
-
-#define GEKSETMETRIC(NAME, VALUE)               GetContext()->SetMetric(NAME, VALUE)
-#define GEKINCREMENTMETRIC(NAME)                GetContext()->IncrementMetric(NAME)
-#define GEKLOGMETRICS(MESSAGE, ...)             GetContext()->LogMetrics(__FILE__, __LINE__, MESSAGE, __VA_ARGS__)

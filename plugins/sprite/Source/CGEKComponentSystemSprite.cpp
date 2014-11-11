@@ -140,7 +140,6 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(void)
             if (m_pRenderManager->GetFrustum().IsVisible(aabb(nPosition - nHalfSize, nPosition + nHalfSize)))
             {
                 m_aVisible[spMaterial].emplace_back(nPosition, nHalfSize, kColor.GetFloat4());
-                GEKINCREMENTMETRIC("NUMOBJECTS");
             }
         }
     });

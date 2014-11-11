@@ -60,12 +60,12 @@ STDMETHODIMP_(bool) CGEKComponentControl::GetProperty(const GEKENTITYID &nEntity
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"turn") == 0)
+        if (_wcsicmp(pName, L"turn") == 0)
         {
             kValue = (*pIterator).second.m_nTurn;
             bReturn = true;
         }
-        else if (wcscmp(pName, L"tilt") == 0)
+        else if (_wcsicmp(pName, L"tilt") == 0)
         {
             kValue = (*pIterator).second.m_nTilt;
             bReturn = true;
@@ -81,12 +81,12 @@ STDMETHODIMP_(bool) CGEKComponentControl::SetProperty(const GEKENTITYID &nEntity
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"turn") == 0)
+        if (_wcsicmp(pName, L"turn") == 0)
         {
             (*pIterator).second.m_nTurn = kValue.GetFloat();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"tilt") == 0)
+        else if (_wcsicmp(pName, L"tilt") == 0)
         {
             (*pIterator).second.m_nTilt = kValue.GetFloat();
             bReturn = true;

@@ -68,46 +68,6 @@ STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eTyp
     }
 }
 
-STDMETHODIMP_(void) CGEKContext::SetMetric(LPCSTR pName, UINT32 nValue)
-{
-    m_aMetrics[pName] = nValue;
-}
-
-STDMETHODIMP_(void) CGEKContext::IncrementMetric(LPCSTR pName)
-{
-    auto pIterator = m_aMetrics.find(pName);
-    if (pIterator == m_aMetrics.end())
-    {
-        m_aMetrics[pName] = 1;
-    }
-    else
-    {
-        (*pIterator).second++;
-    }
-}
-
-STDMETHODIMP_(void) CGEKContext::LogMetrics(LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...)
-{
-    if (pMessage != nullptr)
-    {
-        CStringW strMessage;
-
-        va_list pArgs;
-        va_start(pArgs, pMessage);
-        strMessage.AppendFormatV(pMessage, pArgs);
-        va_end(pArgs);
-
-        Log(pFile, nLine, GEK_LOGSTART, strMessage);
-    }
-
-    for (auto kPair : m_aMetrics)
-    {
-        Log(pFile, nLine, GEK_LOG, L"- %S: %d", kPair.first.GetString(), kPair.second);
-    }
- 
-    Log(pFile, nLine, GEK_LOGEND, L"");
-}
-
 STDMETHODIMP CGEKContext::AddSearchPath(LPCWSTR pPath)
 {
     m_aSearchPaths.push_back(pPath);

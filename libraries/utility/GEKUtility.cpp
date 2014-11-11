@@ -488,6 +488,7 @@ bool EvaluateBoolean(LPCWSTR pExpression, bool &nValue)
     if (_wcsicmp(pExpression, L"true") == 0 ||
         _wcsicmp(pExpression, L"yes") == 0)
     {
+        nValue = true;
         return true;
     }
 

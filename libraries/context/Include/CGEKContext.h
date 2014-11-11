@@ -32,9 +32,6 @@ public:
     // IGEKContext
     STDMETHOD_(double, GetTime)                     (THIS);
     STDMETHOD_(void, Log)                           (THIS_ LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eType, LPCWSTR pMessage, ...);
-    STDMETHOD_(void, SetMetric)                     (THIS_ LPCSTR pName, UINT32 nValue);
-    STDMETHOD_(void, IncrementMetric)               (THIS_ LPCSTR pName);
-    STDMETHOD_(void, LogMetrics)                    (THIS_ LPCSTR pFile, UINT32 nLine, LPCWSTR pMessage, ...);
     STDMETHOD(AddSearchPath)                        (THIS_ LPCWSTR pPath);
     STDMETHOD(Initialize)                           (THIS);
     STDMETHOD(CreateInstance)                       (THIS_ REFCLSID kCLSID, REFIID kIID, LPVOID FAR *ppObject);

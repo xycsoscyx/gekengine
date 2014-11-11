@@ -63,17 +63,17 @@ STDMETHODIMP_(bool) CGEKComponentNewton::GetProperty(const GEKENTITYID &nEntityI
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"shape") == 0)
+        if (_wcsicmp(pName, L"shape") == 0)
         {
             kValue = (*pIterator).second.m_strShape.GetString();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"params") == 0)
+        else if (_wcsicmp(pName, L"params") == 0)
         {
             kValue = (*pIterator).second.m_strParams.GetString();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"mass") == 0)
+        else if (_wcsicmp(pName, L"mass") == 0)
         {
             kValue = (*pIterator).second.m_nMass;
             bReturn = true;
@@ -89,17 +89,17 @@ STDMETHODIMP_(bool) CGEKComponentNewton::SetProperty(const GEKENTITYID &nEntityI
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"shape") == 0)
+        if (_wcsicmp(pName, L"shape") == 0)
         {
             (*pIterator).second.m_strShape = kValue.GetRawString();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"params") == 0)
+        else if (_wcsicmp(pName, L"params") == 0)
         {
             (*pIterator).second.m_strParams = kValue.GetRawString();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"mass") == 0)
+        else if (_wcsicmp(pName, L"mass") == 0)
         {
             (*pIterator).second.m_nMass = kValue.GetFloat();
             bReturn = true;

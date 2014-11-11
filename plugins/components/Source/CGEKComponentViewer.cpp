@@ -64,37 +64,37 @@ STDMETHODIMP_(bool) CGEKComponentViewer::GetProperty(const GEKENTITYID &nEntityI
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"type") == 0)
+        if (_wcsicmp(pName, L"type") == 0)
         {
             kValue = (*pIterator).second.m_nType;
             bReturn = true;
         }
-        else if (wcscmp(pName, L"fieldofview") == 0)
+        else if (_wcsicmp(pName, L"fieldofview") == 0)
         {
             kValue = (*pIterator).second.m_nFieldOfView;
             bReturn = true;
         }
-        else if (wcscmp(pName, L"minviewdistance") == 0)
+        else if (_wcsicmp(pName, L"minviewdistance") == 0)
         {
             kValue = (*pIterator).second.m_nMinViewDistance;
             bReturn = true;
         }
-        else if (wcscmp(pName, L"maxviewdistance") == 0)
+        else if (_wcsicmp(pName, L"maxviewdistance") == 0)
         {
             kValue = (*pIterator).second.m_nMaxViewDistance;
             bReturn = true;
         }
-        else if (wcscmp(pName, L"viewport") == 0)
+        else if (_wcsicmp(pName, L"viewport") == 0)
         {
             kValue = (*pIterator).second.m_nViewPort;
             bReturn = true;
         }
-        else if (wcscmp(pName, L"pass") == 0)
+        else if (_wcsicmp(pName, L"pass") == 0)
         {
             kValue = (*pIterator).second.m_strPass.GetString();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"projection") == 0)
+        else if (_wcsicmp(pName, L"projection") == 0)
         {
             float nAspect = 1.0f;
             const IGEKRenderManager *pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderSystem);
@@ -132,7 +132,7 @@ STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(const GEKENTITYID &nEntityI
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"type") == 0)
+        if (_wcsicmp(pName, L"type") == 0)
         {
             if (kValue.GetType() == GEKVALUE::STRING)
             {
@@ -157,27 +157,27 @@ STDMETHODIMP_(bool) CGEKComponentViewer::SetProperty(const GEKENTITYID &nEntityI
 
             bReturn = true;
         }
-        if (wcscmp(pName, L"fieldofview") == 0)
+        if (_wcsicmp(pName, L"fieldofview") == 0)
         {
             (*pIterator).second.m_nFieldOfView = kValue.GetFloat();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"minviewdistance") == 0)
+        else if (_wcsicmp(pName, L"minviewdistance") == 0)
         {
             (*pIterator).second.m_nMinViewDistance = kValue.GetFloat();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"maxviewdistance") == 0)
+        else if (_wcsicmp(pName, L"maxviewdistance") == 0)
         {
             (*pIterator).second.m_nMaxViewDistance = kValue.GetFloat();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"viewport") == 0)
+        else if (_wcsicmp(pName, L"viewport") == 0)
         {
             (*pIterator).second.m_nViewPort = kValue.GetFloat4();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"pass") == 0)
+        else if (_wcsicmp(pName, L"pass") == 0)
         {
             (*pIterator).second.m_strPass = kValue.GetRawString();
             bReturn = true;

@@ -62,22 +62,22 @@ STDMETHODIMP_(bool) CGEKComponentModel::GetProperty(const GEKENTITYID &nEntityID
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"source") == 0)
+        if (_wcsicmp(pName, L"source") == 0)
         {
             kValue = (*pIterator).second.m_strSource.GetString();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"params") == 0)
+        else if (_wcsicmp(pName, L"params") == 0)
         {
             kValue = (*pIterator).second.m_strParams.GetString();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"scale") == 0)
+        else if (_wcsicmp(pName, L"scale") == 0)
         {
             kValue = (*pIterator).second.m_nScale;
             bReturn = true;
         }
-        else if (wcscmp(pName, L"color") == 0)
+        else if (_wcsicmp(pName, L"color") == 0)
         {
             kValue = (*pIterator).second.m_nColor;
             bReturn = true;
@@ -93,22 +93,22 @@ STDMETHODIMP_(bool) CGEKComponentModel::SetProperty(const GEKENTITYID &nEntityID
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"source") == 0)
+        if (_wcsicmp(pName, L"source") == 0)
         {
             (*pIterator).second.m_strSource = kValue.GetRawString();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"params") == 0)
+        else if (_wcsicmp(pName, L"params") == 0)
         {
             (*pIterator).second.m_strParams = kValue.GetRawString();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"scale") == 0)
+        else if (_wcsicmp(pName, L"scale") == 0)
         {
             (*pIterator).second.m_nScale = kValue.GetFloat3();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"color") == 0)
+        else if (_wcsicmp(pName, L"color") == 0)
         {
             (*pIterator).second.m_nColor = kValue.GetFloat4();
             bReturn = true;

@@ -60,12 +60,12 @@ STDMETHODIMP_(bool) CGEKComponentLight::GetProperty(const GEKENTITYID &nEntityID
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"color") == 0)
+        if (_wcsicmp(pName, L"color") == 0)
         {
             kValue = (*pIterator).second.m_nColor;
             bReturn = true;
         }
-        else if (wcscmp(pName, L"range") == 0)
+        else if (_wcsicmp(pName, L"range") == 0)
         {
             kValue = (*pIterator).second.m_nRange;
             bReturn = true;
@@ -81,12 +81,12 @@ STDMETHODIMP_(bool) CGEKComponentLight::SetProperty(const GEKENTITYID &nEntityID
     auto pIterator = m_aData.find(nEntityID);
     if (pIterator != m_aData.end())
     {
-        if (wcscmp(pName, L"color") == 0)
+        if (_wcsicmp(pName, L"color") == 0)
         {
             (*pIterator).second.m_nColor = kValue.GetFloat3();
             bReturn = true;
         }
-        else if (wcscmp(pName, L"range") == 0)
+        else if (_wcsicmp(pName, L"range") == 0)
         {
             (*pIterator).second.m_nRange = kValue.GetFloat();
             bReturn = true;

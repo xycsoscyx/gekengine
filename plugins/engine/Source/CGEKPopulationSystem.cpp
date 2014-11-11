@@ -120,22 +120,32 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
     GEKLOG(L"Num. Entities Found: %d", aEntities.size());
     std::for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
-        CStringW strName;
-        if (kEntityNode.HasAttribute(L"name"))
+        std::map<CStringW, CStringW> aValues;
+        kEntityNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
         {
-            strName = kEntityNode.GetAttribute(L"name");
-        }
+            CStringW strName = FormatString(L"%%%s%%", pName);
+            strName.MakeLower();
 
+            aValues[strName] = pValue;
+        });
+
+        auto pName = aValues.find(L"%name%");
         GEKENTITYID nEntityID = GEKINVALIDENTITYID;
-        if (SUCCEEDED(CreateEntity(nEntityID, (strName.IsEmpty() ? nullptr : strName.GetString()))))
+        if (SUCCEEDED(CreateEntity(nEntityID, (pName != aValues.end() ? (*pName).second.GetString() : nullptr))))
         {
             CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
             while (kComponentNode)
             {
                 std::unordered_map<CStringW, CStringW> aParams;
-                kComponentNode.ListAttributes([&aParams](LPCWSTR pName, LPCWSTR pValue) -> void
+                kComponentNode.ListAttributes([&aValues, &aParams](LPCWSTR pName, LPCWSTR pValue) -> void
                 {
-                    aParams[pName] = pValue;
+                    CStringW strValue(pValue);
+                    for (auto kPair : aValues)
+                    {
+                        strValue.Replace(kPair.first, kPair.second);
+                    }
+
+                    aParams[pName] = strValue;
                 });
 
                 AddComponent(nEntityID, kComponentNode.GetType(), aParams);
