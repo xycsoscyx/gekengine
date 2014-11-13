@@ -24,142 +24,142 @@
         </entity>
 
         <!-- 0 -->
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
-        </entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
-        </entity>
-        <entity>
-			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
-        </entity>
-        <entity>
-			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
-        </entity>
-        <entity>
-			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
-        </entity>
-        <entity>
-			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
-        </entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
-        </entity>
-        <entity>
-			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
-        </entity>
-        <entity>
-			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
-        </entity>
-        <entity>
-			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
-        </entity>
-        <entity>
-			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
-        <entity>
+        <entity size="lerp(5,10,arand(1))">
 			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
-			<sprite source="rock" size="lerp(5,10,arand(1))" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="1" mass="lerp(25,50,arand(1))" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
+        </entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity size="lerp(5,10,arand(1))">
+			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
+        </entity>
+        <entity size="lerp(5,10,arand(1))">
+			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
+        </entity>
+        <entity size="lerp(5,10,arand(1))">
+			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
+        </entity>
+        <entity size="lerp(5,10,arand(1))">
+			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
+        </entity>
+        <entity size="lerp(5,10,arand(1))">
+			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
+        </entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity size="lerp(5,10,arand(1))">
+			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
+        </entity>
+        <entity size="lerp(5,10,arand(1))">
+			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
+        </entity>
+        <entity size="lerp(5,10,arand(1))">
+			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
+        </entity>
+        <entity size="lerp(5,10,arand(1))">
+			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
+        </entity>
+        <entity size="lerp(5,10,arand(1))">
+			<transform position="rand(40),lerp(50,70,arand(1)),rand(40)" rotation="0,0,0,1" />
+			<sprite source="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" />
         </entity>
         <!-- 5 -->
 

@@ -215,8 +215,9 @@ STDMETHODIMP_(UINT32) CGEKSystem::GetYSize(void)
     return m_nYSize;
 }
 
-STDMETHODIMP_(void) CGEKSystem::ParseValue(CStringW &strValue)
+STDMETHODIMP_(CStringW) CGEKSystem::ParseValue(LPCWSTR pValue)
 {
+    CStringW strValue(pValue);
     while (strValue.Find(L"%") >= 0)
     {
         CStringW strLeft;
@@ -238,20 +239,15 @@ STDMETHODIMP_(void) CGEKSystem::ParseValue(CStringW &strValue)
                 nPosition = 0;
                 CStringW strGroup = strMiddle.Tokenize(L".", nPosition);
                 CStringW strName = strMiddle.Tokenize(L".", nPosition);
-                strValue.Replace((L"%" + strMiddle + L"%"), GetConfig().GetValue(strGroup, strName, L"0"));
+                if (GetConfig().DoesValueExists(strGroup, strName))
+                {
+                    strValue.Replace((L"%" + strMiddle + L"%"), GetConfig().GetValue(strGroup, strName, L"0"));
+                }
             }
         }
     };
-}
 
-STDMETHODIMP_(UINT32) CGEKSystem::EvaluateValue(LPCWSTR pValue)
-{
-    REQUIRE_RETURN(pValue, 0);
-
-    CStringW strValue(pValue);
-    ParseValue(strValue);
-
-    return StrToUINT32(strValue);
+    return strValue;
 }
 
 STDMETHODIMP_(bool) CGEKSystem::IsRunning(void)

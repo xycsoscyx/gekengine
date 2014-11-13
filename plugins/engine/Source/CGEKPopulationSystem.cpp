@@ -120,18 +120,22 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
     GEKLOG(L"Num. Entities Found: %d", aEntities.size());
     std::for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
+        CStringW strName;
         std::map<CStringW, CStringW> aValues;
         kEntityNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
         {
-            CStringW strName = FormatString(L"%%%s%%", pName);
-            strName.MakeLower();
-
-            aValues[strName] = pValue;
+            if (_wcsicmp(pName, L"name"))
+            {
+                strName = pValue;
+            }
+            else
+            {
+                aValues[FormatString(L"%%%s%%", pName).MakeLower()] = FormatString(L"%f", StrToFloat(pValue));
+            }
         });
 
-        auto pName = aValues.find(L"%name%");
         GEKENTITYID nEntityID = GEKINVALIDENTITYID;
-        if (SUCCEEDED(CreateEntity(nEntityID, (pName != aValues.end() ? (*pName).second.GetString() : nullptr))))
+        if (SUCCEEDED(CreateEntity(nEntityID, (strName.IsEmpty() ? nullptr : strName.GetString()))))
         {
             CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
             while (kComponentNode)

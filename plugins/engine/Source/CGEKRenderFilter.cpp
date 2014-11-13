@@ -176,22 +176,21 @@ STDMETHODIMP CGEKRenderFilter::OnPostReset(void)
     return hRetVal;
 }
 
-UINT32 CGEKRenderFilter::EvaluateValue(LPCWSTR pValue)
+CStringW CGEKRenderFilter::ParseValue(LPCWSTR pValue)
 {
-    UINT32 nValue = 0;
+    CStringW strValue(pValue);
+    for (auto &kPair : m_aDefines)
+    {
+        strValue.Replace(CA2W(kPair.first), CA2W(kPair.second));
+    }
+
     IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
     if (pSystem != nullptr)
     {
-        CStringW strValue(pValue);
-        for (auto &kPair : m_aDefines)
-        {
-            strValue.Replace(CA2W(kPair.first), CA2W(kPair.second));
-        }
-
-        nValue = pSystem->EvaluateValue(strValue);
+        strValue = pSystem->ParseValue(strValue);
     }
 
-    return nValue;
+    return strValue;
 }
 
 HRESULT CGEKRenderFilter::LoadDefines(CLibXMLNode &kFilterNode)
@@ -344,7 +343,7 @@ HRESULT CGEKRenderFilter::LoadBuffers(CLibXMLNode &kFilterNode)
                 kBufferNode.HasAttribute(L"count"))
             {
                 CStringW strName = kBufferNode.GetAttribute(L"name");
-                UINT32 nCount = EvaluateValue(kBufferNode.GetAttribute(L"count"));
+                UINT32 nCount = StrToUINT32(ParseValue(kBufferNode.GetAttribute(L"count")));
                 if (kBufferNode.HasAttribute(L"stride"))
                 {
                     UINT32 nStride = StrToUINT32(kBufferNode.GetAttribute(L"stride"));
@@ -543,10 +542,10 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
         if (kComputeNode.HasAttribute(L"dispatch"))
         {
             int nPosition = 0;
-            CStringW strDispatch = kComputeNode.GetAttribute(L"dispatch");
-            m_nDispatchXSize = EvaluateValue(strDispatch.Tokenize(L",", nPosition));
-            m_nDispatchYSize = EvaluateValue(strDispatch.Tokenize(L",", nPosition));
-            m_nDispatchZSize = EvaluateValue(strDispatch.Tokenize(L",", nPosition));
+            float3 nDispatchSize = StrToFloat3(ParseValue(kComputeNode.GetAttribute(L"dispatch")));
+            m_nDispatchXSize = UINT32(nDispatchSize.x);
+            m_nDispatchYSize = UINT32(nDispatchSize.y);
+            m_nDispatchZSize = UINT32(nDispatchSize.z);
 
             CStringA strProgram;
             switch (m_eMode)

@@ -86,7 +86,7 @@ private:
     DATA m_kPixelData;
 
 private:
-    UINT32 EvaluateValue(LPCWSTR pValue);
+    CStringW ParseValue(LPCWSTR pValue);
 
     HRESULT LoadDefines(CLibXMLNode &kNode);
     HRESULT LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSize, UINT32 nYSize);
