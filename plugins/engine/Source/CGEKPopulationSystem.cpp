@@ -124,7 +124,7 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
         std::map<CStringW, CStringW> aValues;
         kEntityNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
         {
-            if (_wcsicmp(pName, L"name"))
+            if (_wcsicmp(pName, L"name") == 0)
             {
                 strName = pValue;
             }
