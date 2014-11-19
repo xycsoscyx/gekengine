@@ -913,15 +913,22 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             {
                 GEKVALUE kValue;
                 m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kValue);
-                kLight.m_nPosition = (m_kCurrentBuffer.m_nViewMatrix * float4(kValue.GetFloat3(), 1.0f));
+                float3 nPosition(kValue.GetFloat3());
 
                 m_pSceneManager->GetProperty(nEntityID, L"light", L"range", kValue);
-                kLight.m_nInvRange = (1.0f / (kLight.m_nRange = kValue.GetFloat()));
+                float nRange = kValue.GetFloat();
 
-                m_pSceneManager->GetProperty(nEntityID, L"light", L"color", kValue);
-                kLight.m_nColor = kValue.GetFloat3();
+                if (m_nCurrentFrustum.IsVisible(sphere(nPosition, nRange)))
+                {
+                    kLight.m_nPosition = (m_kCurrentBuffer.m_nViewMatrix * float4(nPosition, 1.0f));
 
-                m_aVisibleLights.push_back(kLight);
+                    kLight.m_nInvRange = (1.0f / (kLight.m_nRange = nRange));
+
+                    m_pSceneManager->GetProperty(nEntityID, L"light", L"color", kValue);
+                    kLight.m_nColor = kValue.GetFloat3();
+
+                    m_aVisibleLights.push_back(kLight);
+                }
             });
 
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1)));
