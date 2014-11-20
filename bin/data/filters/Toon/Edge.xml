@@ -48,8 +48,7 @@
 
                 float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
-                return nAverageEdgeNormal * nAverageEdgeDepth;
-                //return float4((nAlbedo.xyz * nAverageEdgeDepth * nAverageEdgeNormal), 1.0f);
+                return float4((nAlbedo.xyz * nAverageEdgeDepth * nAverageEdgeNormal), 1.0f);
             }
         ]]>
     </pixel>
