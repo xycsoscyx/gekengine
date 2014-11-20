@@ -26,8 +26,9 @@
 			{
                 INSTANCE kInstance = gs_aInstances[kSource.instance];
 
-	            float3 kXOffSet = mul(float3(kInstance.m_nHalfSize, 0.0, 0.0f), gs_nViewMatrix).xyz;
-	            float3 kYOffSet = mul(float3(0.0,-kInstance.m_nHalfSize, 0.0f), gs_nViewMatrix).xyz;
+                float3x3 nViewMatrix = (float3x3)gs_nViewMatrix;
+	            float3 kXOffSet = mul(float3(kInstance.m_nHalfSize, 0.0, 0.0f), nViewMatrix);
+	            float3 kYOffSet = mul(float3(0.0,-kInstance.m_nHalfSize, 0.0f), nViewMatrix);
 
 				WORLDVERTEX kVertex;
 	            kVertex.position = float4(kInstance.m_nPosition, 1.0f);

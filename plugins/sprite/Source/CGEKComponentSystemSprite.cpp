@@ -69,10 +69,10 @@ STDMETHODIMP CGEKComponentSystemSprite::Initialize(void)
     {
         float2 aVertices[8] =
         {
-            float2(-0.5f, -0.5f), float2(0.0f, 0.0f),
-            float2( 0.5f, -0.5f), float2(1.0f, 0.0f),
-            float2( 0.5f,  0.5f), float2(1.0f, 1.0f),
-            float2(-0.5f,  0.5f), float2(0.0f, 1.0f),
+            float2(-1.0f, -1.0f), float2(0.0f, 0.0f),
+            float2( 1.0f, -1.0f), float2(1.0f, 0.0f),
+            float2( 1.0f,  1.0f), float2(1.0f, 1.0f),
+            float2(-1.0f,  1.0f), float2(0.0f, 1.0f),
         };
 
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float4), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
