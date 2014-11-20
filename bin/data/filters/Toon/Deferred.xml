@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<filter mode="forward">
+    <render cullmode="back" />
+    
+    <targets>
+        <target name="Albedo" format="RGBA_UINT8"/>
+        <target name="World" format="RGBA_HALF"/>
+        <depth format="D24S8" comparison="lessequal" writemask="all" clear="1" />
+    </targets>
+    
+    <pixel>
+        <![CDATA[
+            Texture2D     gs_pAlbedoMap             : register(t0);
+            Texture2D     gs_pNormalMap             : register(t1);
+
+            struct OUTPUT
+            {
+                float4 albedo                       : SV_TARGET0;
+                float4 world                        : SV_TARGET1;
+            };
+
+            OUTPUT MainPixelProgram(in INPUT kInput)
+            {
+                float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord) * gs_nMaterialColor * kInput.color);
+
+                [branch]
+                if(nAlbedo.a < 0.5f)
+                {
+                    discard;
+                }
+
+                float3 nNormal;
+                nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xy * 2.0) - 1.0f);
+                nNormal.z = sqrt(1.0 - dot(nNormal.xy, nNormal.xy));
+                nNormal = (mul(nNormal, kInput.texbasis) * (kInput.frontface ? 1 : -1));
+                nNormal = normalize(mul((float3x3)gs_nViewMatrix, nNormal));
+
+                float4 nViewPosition = mul(gs_nViewMatrix, kInput.worldposition);
+
+                OUTPUT kOutput;
+                kOutput.albedo.xyz = nAlbedo.xyz;
+                kOutput.albedo.a   = gs_bMaterialFullBright;
+                kOutput.world.xyz  = nNormal;
+                kOutput.world.w    = nViewPosition.z;
+                return kOutput;
+            }
+        ]]>
+    </pixel>
+</filter>

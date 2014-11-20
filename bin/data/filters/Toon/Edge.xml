@@ -2,15 +2,13 @@
 <filter>
     <pixel>
         <resources>
-            <resource stage="0" source="Opaque/Deferred.Albedo" />
-            <resource stage="1" source="Opaque/Deferred.World" />
-            <resource stage="2" source="Opaque/Deferred.Info" />
+            <resource stage="0" source="Toon/Deferred.Albedo" />
+            <resource stage="1" source="Toon/Deferred.World" />
         </resources>
         
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t0);
             Texture2D     gs_pWorldBuffer           : register(t1);
-            Texture2D     gs_pInfoBuffer            : register(t2);
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
@@ -46,7 +44,7 @@
 
                 float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
-                return float4((nAlbedo.xyz * nAverageEdgeDepth * nAverageEdgeNormal), 1.0f);
+                return float4(nCenter.xyz, 1.0f);//float4((nAlbedo.xyz * nAverageEdgeDepth * nAverageEdgeNormal), 1.0f);
             }
         ]]>
     </pixel>
