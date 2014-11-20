@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <filter>
+    <defines>
+        <define name="gs_nRadius" value="3" />
+    </defines>
+
     <pixel>
         <resources>
             <resource stage="0" source="Toon/Deferred.Albedo" />
@@ -12,7 +16,7 @@
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
-                float2 nInverseCameraSize = rcp(gs_nCameraSize);
+                float2 nInverseCameraSize = (rcp(gs_nCameraSize) * gs_nRadius);
                 float nInverseCameraViewDistance = rcp(gs_nCameraViewDistance);
 	            float4 nCenter = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord) * float4(1,1,1,nInverseCameraViewDistance);
                 float4 nPointP0 = gs_pWorldBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, 0.0f))) * float4(1,1,1,nInverseCameraViewDistance);
@@ -38,13 +42,14 @@
                 nEdgeDepth.y = (nPoint0P.w + nPoint0N.w);
                 nEdgeDepth.z = (nPointNN.w + nPointPP.w);
                 nEdgeDepth.w = (nPointNP.w + nPointPN.w);
-                nEdgeDepth = (abs((2.0f * nCenter.w) - nEdgeDepth) - 0.01f);
+                nEdgeDepth = (abs((2.0f * nCenter.w) - nEdgeDepth) - 0.001f);
                 nEdgeDepth = step(nEdgeDepth, 0);
                 float nAverageEdgeDepth = saturate(dot(nEdgeDepth, 0.4f));
 
                 float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
-                return float4(nCenter.xyz, 1.0f);//float4((nAlbedo.xyz * nAverageEdgeDepth * nAverageEdgeNormal), 1.0f);
+                return nAverageEdgeNormal * nAverageEdgeDepth;
+                //return float4((nAlbedo.xyz * nAverageEdgeDepth * nAverageEdgeNormal), 1.0f);
             }
         ]]>
     </pixel>
