@@ -1,74 +1,102 @@
 <?xml version="1.0"?>
 <filter>
     <defines>
-        <define name="gs_nNumSamples" value="16" />
-        <define name="gs_nNumSpiralTurns" value="10" />
-        <define name="gs_nRadius" value="0.10" />
-        <define name="gs_nBeta" value="0.2" />
-        <define name="gs_nEpsilon" value="0.01" />
-        <define name="gs_nPi" value=" 3.14159265" />
+        <!--define name="gs_nPi" value=" 3.14159265" /-->
     </defines>
 
     <pixel>
         <resources>
             <resource stage="1" source="Opaque/Deferred.Albedo" />
             <resource stage="2" source="Opaque/Deferred.World" />
-            <resource stage="3" source="Opaque/Deferred.Info" />
         </resources>
 
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t1);
             Texture2D     gs_pWorldBuffer           : register(t2);
-            Texture2D     gs_pInfoBuffer            : register(t3);
 
-            float2 tapLocation(int nSampleIndex, float spinAngle)
+            static const float gNumSamples = 11.0;
+            static const float gRadius = 1.0;
+            static const float gRadius2 = gRadius * gRadius;
+            static const float gProjScale = 500.0;
+            static const float gNumSpiralTurns = 7;
+            static const float gBias = 0.01;
+            static const float gIntensity = 1.0;
+            static const float2 gScreenSize = float2(1280, 800);
+
+            float3 reconstructNormal(float3 positionViewSpace)
             {
-	            float alpha = float(nSampleIndex + 0.5) * (1.0 / gs_nNumSamples);
-	            float angle = alpha * (gs_nNumSpiralTurns * 2 * gs_nPi) + spinAngle;
-	            float radius = alpha;
-	            return radius * float2(cos(angle), sin(angle));
+                return normalize(cross(ddx(positionViewSpace), ddy(positionViewSpace)));
+            }
+
+            float3 getOffsetPosition(INPUT kInput, const int2 ssC, const float2 unitOffset, const float ssR)
+            {
+                uint2 ssP = uint2(ssR*unitOffset) + ssC;
+
+                const float2 texCoord = float2(ssP.x / gScreenSize.x, ssP.y / gScreenSize.y);
+
+	            float4 nSampleInfo = gs_pWorldBuffer.Sample(gs_pPointSampler, texCoord);
+                float nSampleDepth = nSampleInfo.w;
+	            return (nSampleDepth * kInput.view);
+            }
+
+            float2 tapLocation(int sampleNumber, float spinAngle, out float ssR)
+            {
+                // Radius relative to ssR
+                float alpha = float(sampleNumber + 0.5) * (1.0 / gNumSamples);
+                float angle = alpha * (gNumSpiralTurns * 6.28) + spinAngle;
+
+                ssR = alpha;
+                return float2(cos(angle), sin(angle));
+            }
+
+            float sampleAO(INPUT kInput, uint2 screenSpacePos, float3 originPos, float3 normal, float ssDiskRadius, int tapIndex, float randomPatternRotationAngle)
+            {
+                float ssR;
+                float2 unitOffset = tapLocation(tapIndex, randomPatternRotationAngle, ssR);
+                ssR *= ssDiskRadius;
+
+                // The occluding point in camera space
+                float3 Q = getOffsetPosition(kInput, screenSpacePos, unitOffset, ssR);
+
+                float3 v = Q - originPos;
+
+                float vv = dot(v, v);
+                float vn = dot(v, normal);
+
+                const float epsilon = 0.01;
+                float f = max(gRadius2 - vv, 0.0); 
+    
+                return f * f * f * max((vn - gBias) / (epsilon + vv), 0.0);
             }
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET0
             {
-	            float4 nPixelInfo = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-                float nPixelDepth = nPixelInfo.w;
-                float nLinearPixelDepth = (nPixelInfo.w / gs_nCameraViewDistance);
-	            float3 nPixelPosition = (nPixelDepth * kInput.view);
-	            float3 nPixelNormal = nPixelInfo.xyz;
+	            float4 nCenterInfo = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                float nCenterDepth = nCenterInfo.w;
+	            float3 nCenterPosition = (nCenterDepth * kInput.view);
+	            float3 nCenterNormal = nCenterInfo.xyz;
 
                 float nWidth, nHeight;
                 gs_pWorldBuffer.GetDimensions(nWidth, nHeight);
-	            float2 nTexel = kInput.texcoord * float2(nWidth, nHeight);
-	            float nRandom = (3*int(nTexel.x)^int(nTexel.y)+int(nTexel.x)*int(nTexel.y))*10.0;
-	            float nDiskRadius = gs_nRadius / (2 * nPixelDepth * tan(1.57079633));
 
-                float nAmbientOcclusion = 0;
+                // Hash function used in the HPG12 AlchemyAO paper
+                float randomPatternRotationAngle = (3 * int(kInput.position.x) ^ int(kInput.position.y) + int(kInput.position.x) * int(kInput.position.y)) * 10;
+                float ssDiskRadius = -gProjScale * gRadius / nCenterPosition.z;
 
+                float ao = 0.0;
+                
                 [unroll]
-	            for(int nSampleIndex = 0; nSampleIndex < gs_nNumSamples; nSampleIndex++)
-	            {
-		            float2 nOffset = tapLocation(nSampleIndex, nRandom);
-		            float2 nSampleCoord = kInput.texcoord + nDiskRadius * nOffset;
+                for (int i = 0; i < gNumSamples; i++)
+                {
+                    ao += sampleAO(kInput, kInput.position.xy, nCenterPosition, nCenterNormal, ssDiskRadius, i, randomPatternRotationAngle);
+                }
 
-	                float4 nSampleInfo = gs_pWorldBuffer.Sample(gs_pPointSampler, nSampleCoord);
-                    float nSampleDepth = nSampleInfo.w;
-    	            float3 nSamplePosition = (nSampleDepth * kInput.view);
+                float temp = gRadius2 * gRadius;
+                ao /= temp * temp;
 
-		            float3 v = nSamplePosition - nPixelPosition;
-		            float vv = dot(v, v);
-		            float vn = dot(v, nPixelNormal);
-                    
-                    [branch]
-		            if(nLinearPixelDepth < 1) //do not AO for far plane
-                    {
-			            nAmbientOcclusion += max(0, vn + nLinearPixelDepth * 0.001) / (vv + gs_nEpsilon);
-                    }
-	            }
+                float A = max(0.0, 1.0 - ao * gIntensity * (8.0 / gNumSamples));
 
-	            nAmbientOcclusion *= 2.0 * gs_nPi * gs_nRadius * gs_nBeta / gs_nNumSamples;
-	            nAmbientOcclusion = min(1, max(0, 1 - nAmbientOcclusion));
-	            return nAmbientOcclusion;
+                return A;
 			}
         ]]>
     </pixel>
