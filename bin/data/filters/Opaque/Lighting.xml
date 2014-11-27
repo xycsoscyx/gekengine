@@ -242,7 +242,7 @@
                     nLighting = GetLightingContribution(kInput, nAlbedo.xyz);
                 }
                 
-                return 0.0f;//float4(nLighting, 0.0f);
+                return float4(nLighting, 0.0f);
             }
         ]]>
     </pixel>
