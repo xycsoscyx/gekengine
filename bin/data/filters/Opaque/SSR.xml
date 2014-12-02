@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <filter>
     <blend>
-        <color source="one" destination="zero" operation="add" />
+        <color source="source_alpha" destination="inverse_source_alpha" operation="add" />
         <alpha source="destination_alpha" destination="zero" operation="add" />
     </blend>
 
@@ -31,15 +31,15 @@
                 float3 nPixelPosition = (nPixelDepth * kInput.view);
 	            float3 nPixelNormal = nWorld.xyz;
 
-                float nShine = (1.0f - nPixelInfo.x);
-	            if (nShine > 0.01f)
+                float nReflectivity = nPixelInfo.w;
+	            if (nReflectivity > 0.0f)
                 {
                     float3 nViewNormal = normalize(nPixelPosition);
 		            float3 nReflection = reflect(nViewNormal, nPixelNormal);
 		            float nViewDotNormal = (dot(nViewNormal, nPixelNormal));
 
 		            // FRESNEL
-		            nShine = nShine * pow(1.0 - abs(nViewDotNormal), 1.0);
+		            nReflectivity = nReflectivity * pow(1.0 - abs(nViewDotNormal), 1.0);
 		
 		            float nStepSize = 1;
 		            float nNumSteps = 50.0;
@@ -91,23 +91,23 @@
 		            }
 		
 		            // FADING REFLECTION DEPENDING ON RAY LENGTH
-		            nShine =  nShine * (1.0 - nRealStep / nNumSteps);
+		            nReflectivity =  nReflectivity * (1.0 - nRealStep / nNumSteps);
 		
 		            // FADING REFLECTION ON SCREEN BORDER // AVOIDS ABRUPT REFLECTION ENDINGS
 		            float2 tAtt = nTexCoord.xy;
 		            if(tAtt.x > 0.5) tAtt.x = 1.0 - tAtt.x;
 		            if(tAtt.y > 0.5) tAtt.y = 1.0 - tAtt.y;
 		
-		            nShine = nShine * clamp (tAtt.x * 10.0 , 0.0 , 1.0 );
-		            nShine = nShine * clamp (tAtt.y * 10.0 , 0.0 , 1.0 );
+		            nReflectivity = nReflectivity * clamp (tAtt.x * 10.0 , 0.0 , 1.0 );
+		            nReflectivity = nReflectivity * clamp (tAtt.y * 10.0 , 0.0 , 1.0 );
 		
 		            // AVOIDING REFLECTION OF OBJECTS IN FOREGROUND 
-		            nShine = nShine * 1.0 / (1.0 + abs(nSamplePosition.z - nCurrentPosition.z) * 20);
+		            nReflectivity = nReflectivity * 1.0 / (1.0 + abs(nSamplePosition.z - nCurrentPosition.z) * 20);
 		
 		            // COMBINING REFLECTION TO THE ORIGINAL PIXEL COLOR
-		            if (nShine > 0.01)
+		            if (nReflectivity > 0.0)
                     {
-                        return float4(gs_pAlbedoBuffer.Sample(gs_pPointSampler, nTexCoord.xy).xyz, nShine);
+                        return float4(gs_pAlbedoBuffer.Sample(gs_pPointSampler, nTexCoord.xy).xyz, nReflectivity);
 		            }
 	            }
                 
