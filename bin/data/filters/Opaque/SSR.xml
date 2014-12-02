@@ -25,25 +25,24 @@
                 }
                 
                 float4 nPixelInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-
-	            float4 nWorld = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-                float nPixelDepth = nWorld.w;
-                float3 nPixelPosition = (nPixelDepth * kInput.view);
-	            float3 nPixelNormal = nWorld.xyz;
-
                 float nReflectivity = nPixelInfo.w;
-	            if (nReflectivity > 0.0f)
+	            if(nReflectivity > 0.0f)
                 {
+	                float4 nWorld = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                    float nPixelDepth = nWorld.w;
+                    float3 nPixelPosition = (nPixelDepth * kInput.view);
+	                float3 nPixelNormal = nWorld.xyz;
+
                     float3 nViewNormal = normalize(nPixelPosition);
 		            float3 nReflection = reflect(nViewNormal, nPixelNormal);
-		            float nViewDotNormal = (dot(nViewNormal, nPixelNormal));
+		            float nViewDotNormal = dot(nViewNormal, nPixelNormal);
 
 		            // FRESNEL
-		            nReflectivity = nReflectivity * pow(1.0 - abs(nViewDotNormal), 1.0);
+		            nReflectivity = (nReflectivity * pow((1.0 - abs(nViewDotNormal)), 1.0));
 		
 		            float nStepSize = 1;
-		            float nNumSteps = 50.0;
-		            float nNumStepsBack = 25.0;
+		            float nNumSteps = 25.0;
+		            float nNumStepsBack = 10.0;
 		            float nStep = 0;
 		
 		            float3 nCurrentPosition = nPixelPosition;
@@ -54,11 +53,11 @@
 		            // FOLLOWING THE REFLECTED RAY 
 		            while(nStep < nNumSteps)
                     {
-			            nCurrentPosition += nReflection.xyz * nStepSize;
+			            nCurrentPosition += (nReflection.xyz * nStepSize);
 			            nTexCoord = mul(gs_nProjectionMatrix, float4(nCurrentPosition, 1));
                         nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
-	                    nSamplePosition = gs_pWorldBuffer.Sample(gs_pPointSampler, nTexCoord.xy).w * kInput.view;
-                        if (nSamplePosition.z <= nCurrentPosition.z)
+	                    nSamplePosition = (gs_pWorldBuffer.Sample(gs_pPointSampler, nTexCoord.xy).w * kInput.view);
+                        if(nSamplePosition.z <= nCurrentPosition.z)
                         {
 				            nRealStep = nStep;
 				            nStep = nNumSteps;				
@@ -70,16 +69,16 @@
 		            }
 
 		            // IF WE HAVE HIT SOMETHING - FOLLOWING THE RAY BACKWARD USING SMALL STEP FOR BETTER PRECISION
-		            if (nRealStep < nNumSteps)
+		            if(nRealStep < nNumSteps)
                     {
 			            nStep = 0;		
 			            while(nStep < nNumStepsBack)
                         {	
-				            nCurrentPosition -= nReflection.xyz * nStepSize / nNumStepsBack;
+				            nCurrentPosition -= (nReflection.xyz * nStepSize / nNumStepsBack);
 				            nTexCoord = mul(gs_nProjectionMatrix, float4(nCurrentPosition, 1));
 		                    nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
-	                        nSamplePosition = gs_pWorldBuffer.Sample(gs_pPointSampler, nTexCoord.xy).w * kInput.view;
-				            if (nSamplePosition.z > nCurrentPosition.z)
+	                        nSamplePosition = (gs_pWorldBuffer.Sample(gs_pPointSampler, nTexCoord.xy).w * kInput.view);
+				            if(nSamplePosition.z > nCurrentPosition.z)
                             {
 					            nStep = nNumStepsBack;				
                             }
@@ -91,21 +90,21 @@
 		            }
 		
 		            // FADING REFLECTION DEPENDING ON RAY LENGTH
-		            nReflectivity =  nReflectivity * (1.0 - nRealStep / nNumSteps);
+		            nReflectivity = (nReflectivity * (1.0 - (nRealStep / nNumSteps)));
 		
 		            // FADING REFLECTION ON SCREEN BORDER // AVOIDS ABRUPT REFLECTION ENDINGS
 		            float2 tAtt = nTexCoord.xy;
-		            if(tAtt.x > 0.5) tAtt.x = 1.0 - tAtt.x;
-		            if(tAtt.y > 0.5) tAtt.y = 1.0 - tAtt.y;
+		            if(tAtt.x > 0.5) tAtt.x = (1.0 - tAtt.x);
+		            if(tAtt.y > 0.5) tAtt.y = (1.0 - tAtt.y);
 		
-		            nReflectivity = nReflectivity * clamp (tAtt.x * 10.0 , 0.0 , 1.0 );
-		            nReflectivity = nReflectivity * clamp (tAtt.y * 10.0 , 0.0 , 1.0 );
+		            nReflectivity = (nReflectivity * clamp((tAtt.x * 10.0), 0.0, 1.0));
+		            nReflectivity = (nReflectivity * clamp((tAtt.y * 10.0), 0.0, 1.0));
 		
 		            // AVOIDING REFLECTION OF OBJECTS IN FOREGROUND 
-		            nReflectivity = nReflectivity * 1.0 / (1.0 + abs(nSamplePosition.z - nCurrentPosition.z) * 20);
+		            nReflectivity = (nReflectivity * 1.0 / (1.0 + (abs(nSamplePosition.z - nCurrentPosition.z) * 20)));
 		
 		            // COMBINING REFLECTION TO THE ORIGINAL PIXEL COLOR
-		            if (nReflectivity > 0.0)
+		            if(nReflectivity > 0.0)
                     {
                         return float4(gs_pAlbedoBuffer.Sample(gs_pPointSampler, nTexCoord.xy).xyz, nReflectivity);
 		            }
