@@ -121,7 +121,6 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
 
 STDMETHODIMP CGEKEngine::Initialize(void)
 {
-    GEKFUNCTION(nullptr);
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKEngine, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
@@ -130,6 +129,8 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
+        GEKFUNCTION(nullptr);
+
         LIBXML_TEST_VERSION;
         static xmlExternalEntityLoader kDefaultXMLLoader = xmlGetExternalEntityLoader();
         xmlSetExternalEntityLoader([](LPCSTR pURL, LPCSTR pID, xmlParserCtxtPtr pContext) -> xmlParserInputPtr
