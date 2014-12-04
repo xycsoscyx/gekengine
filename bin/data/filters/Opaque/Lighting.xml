@@ -127,9 +127,9 @@
     
             // Diffuse & Specular Term
             // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
-            bool GetBRDF(in float3 nAlbedo, in float3 nPixelNormal, in float3 nLightNormal, in float3 nViewNormal, in float4 nInfo, out float3 nPixelDiffuse, out float3 nPixelSpecular)
+            bool GetBRDF(in float3 nAlbedo, in float3 nCenterNormal, in float3 nLightNormal, in float3 nViewNormal, in float4 nInfo, out float3 nLightDiffuse, out float3 nLightSpecular)
             {
-                float nNormalLightAngle = saturate(dot(nPixelNormal, nLightNormal));
+                float nNormalLightAngle = saturate(dot(nCenterNormal, nLightNormal));
 
                 [branch]
                 if(nNormalLightAngle <= 0.0f)
@@ -142,23 +142,23 @@
                 float nSpecular = nInfo.y;
                 float nMetalness = nInfo.z;
 
-                float3 Ks = lerp(nSpecular, nAlbedo, nMetalness);
-                float3 Kd = lerp(nAlbedo, 0, nMetalness);
-                float3 Fd = 1.0 - Ks;
+                float3 nKs = lerp(nSpecular, nAlbedo, nMetalness);
+                float3 nKd = lerp(nAlbedo, 0, nMetalness);
+                float3 nFd = 1.0 - nKs;
 
-                float nNormalViewAngle = dot(nPixelNormal, nViewNormal);
+                float nNormalViewAngle = dot(nCenterNormal, nViewNormal);
                 float nNormalViewAngleSquared = (nNormalViewAngle * nNormalViewAngle);
                 float nInvNormalViewAngleSquared = (1.0 - nNormalViewAngleSquared);
 
                 float3 nHalfVector = normalize(nLightNormal + nViewNormal);
-                float nNormalHalfAngle = saturate(dot(nPixelNormal, nHalfVector));
+                float nNormalHalfAngle = saturate(dot(nCenterNormal, nHalfVector));
                 float nLightHalfAngle = saturate(dot(nLightNormal, nHalfVector));
 
                 float nNormalLightAngleSquared = (nNormalLightAngle * nNormalLightAngle);
                 float nNormalHalfAngleSquared = (nNormalHalfAngle * nNormalHalfAngle);
                 float nInvNormalLightAngleSquared = (1.0 - nNormalLightAngleSquared);
 
-                nPixelDiffuse = (Kd * Fd * gs_nReciprocalPI * saturate((1 - nRoughness) * 0.5 + 0.5 + nRoughnessSquared * (8 - nRoughness) * 0.023));
+                nLightDiffuse = (nKd * nFd * gs_nReciprocalPI * saturate((1 - nRoughness) * 0.5 + 0.5 + nRoughnessSquared * (8 - nRoughness) * 0.023));
 
                 float nCenteredNormalViewAngle = (nNormalViewAngle * 0.5 + 0.5);
                 float nCenteredNormalLightAngle = (nNormalLightAngle * 0.5 + 0.5);
@@ -170,22 +170,22 @@
                 float nDiffuseDelta = lerp((1 / (0.1 + nRoughness)), (-nRoughnessSquared * 2), saturate(nRoughness));
                 float nDiffuseViewAngle = (1 - (pow(1 - nCenteredNormalViewAngle, 4) * nDiffuseDelta));
                 float nDiffuseLightAngle = (1 - (pow(1 - nCenteredNormalLightAngle, 4) * nDiffuseDelta));
-                nPixelDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle * nNormalLightAngle);
+                nLightDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle * nNormalLightAngle);
 
-                float3 Fs = (Ks + Fd * pow((1 - nLightHalfAngle), 5));
-                float3 D = (pow(nRoughness / (nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
-                nPixelSpecular = (Fs * D * nNormalLightAngle);
+                float3 nFs = (nKs + nFd * pow((1 - nLightHalfAngle), 5));
+                float3 nD = (pow(nRoughness / (nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
+                nLightSpecular = (nFs * nD * nNormalLightAngle);
                 return true;
             }
     
             float3 GetLightingContribution(in INPUT kInput, in float3 nAlbedo)
             {
-                float4 nPixelInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
-	            float4 nWorld = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-                float nPixelDepth = nWorld.w;
-                float3 nPixelPosition = (nPixelDepth * kInput.view);
-	            float3 nPixelNormal = nWorld.xyz;
+	            float4 nCenterData = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                float nCenterDepth = nCenterData.w;
+                float3 nCenterPosition = (nCenterDepth * kInput.view);
+	            float3 nCenterNormal = nCenterData.xyz;
 
                 float3 nViewNormal = -kInput.view;
 
@@ -207,7 +207,7 @@
                         break;
                     }
 
-                    float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nPixelPosition);
+                    float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nCenterPosition);
                     float nDistance = length(nLightVector);
                     float3 nLightNormal = normalize(nLightVector);
 	
@@ -216,14 +216,14 @@
                     [branch]
                     if(nAttenuation > 0.0f)
                     {
-                        float3 nPixelDiffuse = 0.0f;
-                        float3 nPixelSpecular = 0.0f;
+                        float3 nLightDiffuse = 0.0f;
+                        float3 nLightSpecular = 0.0f;
 
                         [branch]
-                        if(GetBRDF(nAlbedo, nPixelNormal, nLightNormal, nViewNormal, nPixelInfo, nPixelDiffuse, nPixelSpecular))
+                        if(GetBRDF(nAlbedo, nCenterNormal, nLightNormal, nViewNormal, nCenterInfo, nLightDiffuse, nLightSpecular))
                         {
-                            nTotalDiffuse += saturate(gs_aLights[nLight].m_nColor * nPixelDiffuse * nAttenuation);
-                            nTotalSpecular += saturate(gs_aLights[nLight].m_nColor * nPixelSpecular * nAttenuation);
+                            nTotalDiffuse += saturate(gs_aLights[nLight].m_nColor * nLightDiffuse * nAttenuation);
+                            nTotalSpecular += saturate(gs_aLights[nLight].m_nColor * nLightSpecular * nAttenuation);
                         }
                     }
                 }
