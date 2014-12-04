@@ -24,8 +24,6 @@
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
-                return gs_pAmbientBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-
                 float2 nSize;
                 gs_pAmbientBuffer.GetDimensions(nSize.x, nSize.y);
                 nSize = rcp(nSize);                

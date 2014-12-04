@@ -19,8 +19,8 @@
                 float4 nScreen = gs_pScreenBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 if(gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord).w < 1.0f)
                 {
-                    float4 nPixelInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-                    float nReflectivity = nPixelInfo.w;
+                    float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                    float nReflectivity = nCenterInfo.w;
 	                if(nReflectivity > 0.0f)
                     {
 	                    float4 nCenterData = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
@@ -35,9 +35,9 @@
 		                // FRESNEL
 		                nReflectivity = (nReflectivity * pow((1.0 - abs(nViewDotNormal)), 1.0));
 		
-		                float nStepSize = 1;
-		                float nNumSteps = 25.0;
-		                float nNumStepsBack = 10.0;
+		                float nStepSize = 0.1;
+		                float nNumSteps = 40.0;
+		                float nNumStepsBack = 20.0;
 		                float nStep = 0;
 		
 		                float3 nRayPosition = nCenterPosition;
@@ -59,7 +59,7 @@
 			                }
 			                else
                             {
-				                nStep ++;
+				                nStep++;
                             }
 		                };
 
@@ -79,7 +79,7 @@
                                 }
 				                else
                                 {
-					                nStep ++;
+					                nStep++;
                                 }
 			                };
 		                }

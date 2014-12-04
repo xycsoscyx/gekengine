@@ -9,89 +9,65 @@
             <resource stage="1" source="Opaque/Deferred.Albedo" />
             <resource stage="2" source="Opaque/Deferred.World" />
             <resource stage="3" source="Opaque/Deferred.Info" />
-            <resource stage="4" data="random.dds" />
         </resources>
 
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t1);
             Texture2D     gs_pWorldBuffer           : register(t2);
             Texture2D     gs_pInfoBuffer            : register(t3);
-            Texture2D     gs_pRandomMap             : register(t4);
 
-            static const float gs_nContrast = 1.0f;
-            static const float gs_nBrightness = 2.0f;
-            static const float gs_nSampleRadius = 0.01f;
-            static const int gs_nKernelSize = 16;
-            static const float3 gs_aKernelOffsets[gs_nKernelSize] = 
+            #define PI 3.14159265
+
+            static const float halfFOV = 1.57079633 / 2;
+
+            static const int samplesCount = 16;
+            static const int spiralTurns = 10;
+
+            static const float radius = 0.1;
+            static const float beta = 0.4;
+            static const float epsilon = 0.01;
+
+            float2 tapLocation(int sampleNumber, float spinAngle)
             {
-                float3(0.064171, 0.028123, 0.071352),
-                float3(-0.002624, -0.091130, 0.049030),
-                float3(-0.103684, 0.039205, 0.026885),
-                float3(0.041034, -0.109509, 0.060442),
-                float3(-0.008815, -0.130935, 0.084807),
-                float3(-0.057811, 0.131786, 0.120802),
-                float3(0.121322, 0.055887, 0.182998),
-                float3(0.016811, 0.039633, 0.268840),
-                float3(0.176160, -0.206903, 0.178280),
-                float3(0.189422, 0.213562, 0.257982),
-                float3(0.234230, -0.229385, 0.310528),
-                float3(-0.367306, -0.344664, 0.149425),
-                float3(0.329652, -0.503043, 0.076269),
-                float3(-0.436293, 0.052148, 0.537364),
-                float3(-0.261795, -0.735105, 0.117065),
-                float3(-0.702385, -0.186397, 0.515578),
-            };
+	            float alpha = float(sampleNumber + 0.5) * (1.0 / samplesCount);
+	            float angle = alpha * (spiralTurns * 2 * PI) + spinAngle;
+	            return alpha * float2(cos(angle), sin(angle));
+            }
             
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
-	            float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+	            float4 nCenterData = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                float nCenterDepth = nCenterData.w;
+                float nCenterLinearDepth = (nCenterData.w / gs_nCameraViewDistance);
+                float3 nCenterPosition = (nCenterDepth * kInput.view);
+	            float3 nCenterNormal = nCenterData.xyz;
+
+                float2 nSize;
+                gs_pWorldBuffer.GetDimensions(nSize.x, nSize.y);
+	            float2 pixelPosition = kInput.texcoord * nSize;
+	            float random = (3*int(pixelPosition.x)^int(pixelPosition.y)+int(pixelPosition.x)*int(pixelPosition.y))*10.0;
+	            float diskRadius = radius / (2 * nCenterDepth * tan(halfFOV));
                 
-                [branch]
-                if(nAlbedo.a == 1.0f)
-                {
-                    return 1.0f;
-                }
+                float ao = 0;
 
-                float4 nPixelInfo = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-                float nPixelDepth = nPixelInfo.w;
-                float nLinearPixelDepth = (nPixelInfo.w / gs_nCameraViewDistance);
-	            float3 nPixelPosition = (nPixelDepth * kInput.view);
-	            float3 nPixelNormal = nPixelInfo.xyz;
-
-                float2 nNoiseSize;
-                float2 nScreenSize;
-                gs_pRandomMap.GetDimensions(nNoiseSize.x, nNoiseSize.y);
-                gs_pWorldBuffer.GetDimensions(nScreenSize.x, nScreenSize.y);
-
-	            float2 nNoiseTexCoord = (kInput.texcoord * (nScreenSize / nNoiseSize));
-	            float3 nNoiseVector = ((gs_pRandomMap.Sample(gs_pLinearSampler, nNoiseTexCoord).xyz * 2.0f) - 1.0f);
-
-	            float3 nTangent = normalize(nNoiseVector - (nPixelNormal * dot(nNoiseVector, nPixelNormal)));
-	            float3 nBiTangent = cross(nTangent, nPixelNormal);
-	            float3x3 nKernelBasis = float3x3(nTangent, nBiTangent, nPixelNormal);
-	
-	            float nOcclusion = 0.0;
-                
-                [unroll]
-	            for(int nSample = 0; nSample < gs_nKernelSize; ++nSample)
-                {
-		            float3 nSampleRay = mul(gs_aKernelOffsets[nSample], nKernelBasis) / nLinearPixelDepth;
-		            float3 nSamplePosition = ((nSampleRay * gs_nSampleRadius) + nPixelPosition);
-		            float4 nSampleOffset = mul(gs_nProjectionMatrix, float4(nSamplePosition, 1.0f));
-		            nSampleOffset.xy = ((((nSampleOffset.xy * float2(1.0f, -1.0f)) / nSampleOffset.w) * 0.5f) + 0.5f);
-		
-                    float4 nSampleColor = gs_pAlbedoBuffer.Sample(gs_pPointSampler, nSampleOffset.xy);
-		            float4 nSampleInfo = gs_pWorldBuffer.Sample(gs_pPointSampler, nSampleOffset.xy);
-                    float nSampleDepth = nSampleInfo.w;
-		            
-                    float nRangeCheck = smoothstep(0.0f, 0.1f, (gs_nSampleRadius / abs(nPixelPosition.z - nSampleDepth)));
-                    nOcclusion += (nRangeCheck * step(nSampleDepth, nSamplePosition.z));
+	            [unroll]
+	            for(int sampleIndex=0; sampleIndex < samplesCount; sampleIndex++)
+	            {
+		            float2 offset = tapLocation(sampleIndex, random);
+		            float2 samplePosition = kInput.texcoord + diskRadius * offset;
+	                float3 samplePoint = gs_pWorldBuffer.Sample(gs_pPointSampler, samplePosition).w * kInput.view;
+		            float3 v = samplePoint - nCenterPosition;
+		            float vv = dot(v, v);
+		            float vn = dot(v, nCenterNormal);
+		            if(nCenterLinearDepth < 1) //do not AO for far plane
+                    {
+			            ao += max(0, vn + nCenterLinearDepth * 0.001) / (vv + epsilon);
+                    }
 	            }
-	
-	            nOcclusion = (1.0f - (nOcclusion / float(gs_nKernelSize)));
-	            nOcclusion = saturate(pow(nOcclusion, gs_nBrightness));
-                nOcclusion = (((nOcclusion - 0.5f) * max(gs_nContrast, 0.0f)) + 0.5f);
-                return nOcclusion;
+
+	            ao *= 2.0 * PI * radius * beta / samplesCount;
+	            ao = min(1, max(0, 1 - ao));
+	            return ao;
             }
         ]]>
     </pixel>
