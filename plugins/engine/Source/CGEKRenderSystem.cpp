@@ -160,6 +160,7 @@ CGEKRenderSystem::CGEKRenderSystem(void)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
     , m_nNumLightInstances(254)
+    , m_nCurrentScreenBuffer(0)
 {
 }
 
@@ -301,7 +302,11 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
     {
         UINT32 nXSize = m_pSystem->GetXSize();
         UINT32 nYSize = m_pSystem->GetYSize();
-        hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &m_spScreenBuffer);
+        hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &m_spScreenBuffer[0]);
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &m_spScreenBuffer[1]);
+        }
     }
 
     if (SUCCEEDED(hRetVal))
@@ -532,16 +537,23 @@ STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
 
     HRESULT hRetVal = E_FAIL;
 
-    int nPosition = 0;
     CStringW strName = pName;
-    CStringW strFilter = strName.Tokenize(L".", nPosition);
-    CStringW strSource = strName.Tokenize(L".", nPosition);
-    for (auto &kPair : m_aFilters)
+    if (strName.CompareNoCase(L"screen") == 0)
     {
-        if (kPair.first == strFilter)
+        hRetVal = m_spScreenBuffer[!m_nCurrentScreenBuffer]->QueryInterface(IID_PPV_ARGS(ppResource));
+    }
+    else
+    {
+        int nPosition = 0;
+        CStringW strFilter = strName.Tokenize(L".", nPosition);
+        CStringW strSource = strName.Tokenize(L".", nPosition);
+        for (auto &kPair : m_aFilters)
         {
-            hRetVal = kPair.second->GetBuffer(strSource, ppResource);
-            break;
+            if (kPair.first == strFilter)
+            {
+                hRetVal = kPair.second->GetBuffer(strSource, ppResource);
+                break;
+            }
         }
     }
 
@@ -563,11 +575,16 @@ STDMETHODIMP CGEKRenderSystem::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuff
     return hRetVal;
 }
 
+STDMETHODIMP_(void) CGEKRenderSystem::FlipScreens(void)
+{
+    m_nCurrentScreenBuffer = !m_nCurrentScreenBuffer;
+}
+
 STDMETHODIMP_(void) CGEKRenderSystem::SetScreenTargets(IGEK3DVideoContext *pContext, IUnknown *pDepthBuffer)
 {
     REQUIRE_VOID_RETURN(m_pVideoSystem);
 
-    pContext->SetRenderTargets({ m_spScreenBuffer }, (pDepthBuffer ? pDepthBuffer : nullptr));
+    pContext->SetRenderTargets({ m_spScreenBuffer[m_nCurrentScreenBuffer] }, (pDepthBuffer ? pDepthBuffer : nullptr));
     pContext->SetViewports({ m_kScreenViewPort });
 }
 
@@ -848,6 +865,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     REQUIRE_VOID_RETURN(m_pSceneManager && m_pVideoSystem);
     GEKFUNCTION(nullptr);
 
+    m_nCurrentScreenBuffer = 0;
     CComQIPtr<IGEK3DVideoContext> spContext(m_pVideoSystem);
     spContext->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
     spContext->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
@@ -968,7 +986,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     spContext->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
     spContext->GetGeometrySystem()->SetProgram(nullptr);
     spContext->GetPixelSystem()->SetProgram(m_spPixelProgram);
-    spContext->GetPixelSystem()->SetResource(0, m_spScreenBuffer);
+    spContext->GetPixelSystem()->SetResource(0, m_spScreenBuffer[m_nCurrentScreenBuffer]);
     SetResource(spContext->GetPixelSystem(), 1, nullptr);
     spContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
     spContext->SetIndexBuffer(0, m_spIndexBuffer);
@@ -976,66 +994,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     spContext->DrawIndexedPrimitive(6, 0, 0);
 
     spContext->ClearResources();
-
-    /*CComQIPtr<IGEK2DVideoSystem> sp2DVideoSystem(m_pVideoSystem);
-    if (sp2DVideoSystem)
-    {
-        sp2DVideoSystem->Begin();
-
-        CComPtr<IUnknown> spRed;
-        sp2DVideoSystem->CreateBrush(float4(1.0f, 0.0f, 0.0f, 1.0f), &spRed);
-
-        CComPtr<IUnknown> spGray;
-        sp2DVideoSystem->CreateBrush(float4(0.5f, 0.25f, 0.25f, 1.0f), &spGray);
-
-        CComPtr<IUnknown> spGradient;
-        sp2DVideoSystem->CreateBrush({ { 0.0f, float4(0.0f, 1.0f, 0.0f, 1.0f) }, { 1.0f, float4(0.0f, 0.0f, 1.0f, 1.0f) } }, { 0.0f, 0.0f, 1000.0f, 1000.0f }, &spGradient);
-
-        CComPtr<IUnknown> spGradient1;
-        sp2DVideoSystem->CreateBrush({ { 0.0f, float4(0.5f, 0.0f, 0.0f, 1.0f) }, { 1.0f, float4(1.0f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 250.0f, 0.0f }, &spGradient1);
-        CComPtr<IUnknown> spGradient2;
-        sp2DVideoSystem->CreateBrush({ { 0.0f, float4(1.0f, 0.0f, 0.0f, 1.0f) }, { 1.0f, float4(0.5f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 250.0f, 0.0f }, &spGradient2);
-
-        CComPtr<IUnknown> spFont;
-        sp2DVideoSystem->CreateFont(L"Arial", 400, GEK2DVIDEO::FONT::NORMAL, 25.0f, &spFont);
-
-        float3x2 nTransform;
-        sp2DVideoSystem->SetTransform(nTransform);
-        sp2DVideoSystem->DrawRectangle({ 10.0f, 10.0f, 240.0f, 65.f }, float2(5.0f, 5.0f), spGradient1, true);
-        sp2DVideoSystem->DrawRectangle({ 15.0f, 15.0f, 235.0f, 60.f }, float2(5.0f, 5.0f), spGradient2, true);
-        sp2DVideoSystem->DrawText({ 25.0f, 25.0f, 225.0f, 50.0f }, spFont, spGray, L"Test: %d", 1);
-
-        CComPtr<IGEK2DVideoGeometry> spGeometry;
-        sp2DVideoSystem->CreateGeometry(&spGeometry);
-        spGeometry->Open();
-        spGeometry->Begin(float2(-50.0f, -50.0f), true);
-        spGeometry->AddLine(float2(50.0f, -50.0f));
-        spGeometry->AddLine(float2(0.0f, 50.0f));
-        spGeometry->End(false);
-        spGeometry->Close();
-        
-        CComPtr<IGEK2DVideoGeometry> spWideGeometry;
-        spGeometry->Widen(5.0f, 0.0f, &spWideGeometry);
-
-        nTransform.SetTranslation(float2(500.0f, 500.0f));
-        sp2DVideoSystem->SetTransform(nTransform);
-        sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
-        sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
-
-        nTransform.SetTranslation(float2(700.0f, 500.0f));
-        sp2DVideoSystem->SetTransform(nTransform);
-        sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
-        sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
-
-        nTransform.SetRotation(_DEGTORAD(180.0f));
-        nTransform.SetTranslation(float2(600.0f, 600.0f));
-        sp2DVideoSystem->SetTransform(nTransform);
-        sp2DVideoSystem->DrawGeometry(spGeometry, spGradient, true);
-        sp2DVideoSystem->DrawGeometry(spWideGeometry, spGray, true);
-
-        sp2DVideoSystem->End();
-    }*/
-
     m_pVideoSystem->Present(true);
 
     while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))
@@ -1048,8 +1006,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
 STDMETHODIMP_(float2) CGEKRenderSystem::GetScreenSize(void) const
 {
-    REQUIRE_RETURN(m_spScreenBuffer, 0.0f);
-    return float2(float(m_spScreenBuffer->GetXSize()), float(m_spScreenBuffer->GetYSize()));
+    REQUIRE_RETURN(m_spScreenBuffer[0], 0.0f);
+    return float2(float(m_spScreenBuffer[0]->GetXSize()), float(m_spScreenBuffer[0]->GetYSize()));
 }
 
 STDMETHODIMP_(const frustum &) CGEKRenderSystem::GetFrustum(void) const

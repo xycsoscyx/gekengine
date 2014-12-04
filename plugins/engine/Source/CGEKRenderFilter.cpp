@@ -105,6 +105,7 @@ CGEKRenderFilter::CGEKRenderFilter(void)
     , m_nDispatchXSize(0)
     , m_nDispatchYSize(0)
     , m_nDispatchZSize(0)
+    , m_bFlipScreens(false)
     , m_bClearDepth(false)
     , m_bClearStencil(false)
     , m_nClearDepth(0.0f)
@@ -655,6 +656,11 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName)
         CLibXMLNode kFilterNode = kDocument.GetRoot();
         if (kFilterNode)
         {
+            if (kFilterNode.HasAttribute(L"flipscreens"))
+            {
+                m_bFlipScreens = StrToBoolean(kFilterNode.GetAttribute(L"flipscreens"));
+            }
+
             CStringW strVertexAttributes = kFilterNode.GetAttribute(L"vertexattributes");
             if (strVertexAttributes.IsEmpty())
             {
@@ -787,6 +793,11 @@ STDMETHODIMP CGEKRenderFilter::GetDepthBuffer(IUnknown **ppBuffer)
 STDMETHODIMP_(void) CGEKRenderFilter::Draw(IGEK3DVideoContext *pContext)
 {
     REQUIRE_VOID_RETURN(pContext);
+
+    if (m_bFlipScreens)
+    {
+        m_pRenderManager->FlipScreens();
+    }
 
     CComPtr<IUnknown> spDepthBuffer;
     if (m_spDepthBuffer)

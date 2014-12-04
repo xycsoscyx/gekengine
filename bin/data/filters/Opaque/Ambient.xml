@@ -2,8 +2,7 @@
 <filter>
     <pixel>
         <resources>
-            <resource stage="1"
-                      source="Opaque/Deferred.Albedo" />
+            <resource stage="1" source="Opaque/Deferred.Albedo" />
         </resources>
 
         <![CDATA[

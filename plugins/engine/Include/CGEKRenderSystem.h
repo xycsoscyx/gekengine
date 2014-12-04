@@ -73,7 +73,8 @@ private:
     CComPtr<IGEK3DVideoBuffer> m_spMaterialBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spLightCountBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spLightBuffer;
-    CComPtr<IGEK3DVideoTexture> m_spScreenBuffer;
+    CComPtr<IGEK3DVideoTexture> m_spScreenBuffer[2];
+    UINT8 m_nCurrentScreenBuffer;
     CComPtr<IUnknown> m_spBlendStates;
     CComPtr<IUnknown> m_spRenderStates;
     CComPtr<IUnknown> m_spDepthStates;
@@ -121,6 +122,7 @@ public:
     STDMETHOD_(void, SetResource)           (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppBuffer);
+    STDMETHOD_(void, FlipScreens)           (THIS);
     STDMETHOD_(void, SetScreenTargets)      (THIS_ IGEK3DVideoContext *pContext, IUnknown *pDepthBuffer);
     STDMETHOD_(void, DrawScene)             (THIS_ IGEK3DVideoContext *pContext, UINT32 nAttributes);
     STDMETHOD_(void, DrawLights)            (THIS_ IGEK3DVideoContext *pContext, std::function<void(void)> OnLightBatch);

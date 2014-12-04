@@ -71,6 +71,7 @@ private:
     MODES m_eMode;
     CComPtr<IUnknown> m_spDepthStates;
 
+    bool m_bFlipScreens;
     bool m_bClearDepth;
     bool m_bClearStencil;
     float m_nClearDepth;
