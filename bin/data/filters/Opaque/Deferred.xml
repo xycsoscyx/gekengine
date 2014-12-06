@@ -51,14 +51,14 @@
                     discard;
                 }
 
-                float3x3 nCoTangentFrame = GetCoTangentFrame(kInput.viewnormal, kInput.viewposition, kInput.texcoord);
+                float3x3 nCoTangentFrame = GetCoTangentFrame(normalize(kInput.viewnormal), normalize(-kInput.viewposition.xyz), kInput.texcoord);
                 float3 nNormal = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xyz * 2.0) - 1.0f);
-                nNormal = (mul(nCoTangentFrame, nNormal) * (kInput.frontface ? 1 : -1));
+                nNormal = normalize(mul(nNormal, nCoTangentFrame) * (kInput.frontface ? 1 : -1));
 
                 OUTPUT kOutput;
                 kOutput.albedo.xyz = nAlbedo.xyz;
                 kOutput.albedo.a   = gs_bMaterialFullBright;
-                kOutput.world.xyz  = kInput.viewnormal;
+                kOutput.world.xyz  = nNormal;
                 kOutput.world.w    = kInput.viewposition.z;
                 kOutput.info       = gs_pInfoMap.Sample(gs_pLinearSampler, kInput.texcoord);
                 return kOutput;

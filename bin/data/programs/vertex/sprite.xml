@@ -33,7 +33,7 @@
 	            kVertex.position.xyz += (kXOffSet * kSource.position.x);
 	            kVertex.position.xyz += (kYOffSet * kSource.position.y);
 				kVertex.texcoord      = kSource.texcoord;
-                kVertex.normal        = float3(-gs_nViewMatrix._31_32_33);
+                kVertex.normal        = mul(float3(0,0,-1), gs_nViewMatrix);
                 kVertex.color         = kInstance.m_nColor;
 				return kVertex;
 			}
