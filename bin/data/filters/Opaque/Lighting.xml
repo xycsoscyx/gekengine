@@ -228,6 +228,7 @@
                     }
                 }
 
+                return nCenterNormal;
                 return (saturate(nTotalDiffuse) + saturate(nTotalSpecular));
             }
 

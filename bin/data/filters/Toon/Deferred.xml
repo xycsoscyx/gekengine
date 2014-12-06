@@ -32,16 +32,14 @@
                 float3 nNormal;
                 nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xy * 2.0) - 1.0f);
                 nNormal.z = sqrt(1.0 - dot(nNormal.xy, nNormal.xy));
-                nNormal = (mul(nNormal, kInput.texbasis) * (kInput.frontface ? 1 : -1));
+                //nNormal = (mul(nNormal, kInput.viewnormal) * (kInput.frontface ? 1 : -1));
                 nNormal = normalize(mul((float3x3)gs_nViewMatrix, nNormal));
-
-                float4 nViewPosition = mul(gs_nViewMatrix, kInput.worldposition);
 
                 OUTPUT kOutput;
                 kOutput.albedo.xyz = nAlbedo.xyz;
                 kOutput.albedo.a   = gs_bMaterialFullBright;
                 kOutput.world.xyz  = nNormal;
-                kOutput.world.w    = nViewPosition.z;
+                kOutput.world.w    = kInput.viewposition.z;
                 return kOutput;
             }
         ]]>

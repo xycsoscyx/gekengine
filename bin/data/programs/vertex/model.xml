@@ -33,14 +33,12 @@
 			{
                 INSTANCE kInstance = gs_aInstances[kSource.instance];
                 float4x4 nObject = kInstance.m_nMatrix;
-				float3x3 nBasis  = transpose(nObject);
 
 				WORLDVERTEX kVertex;
-				kVertex.position = mul(nObject, float4(kSource.position * kInstance.m_nScale, 1.0f));
-                kVertex.color    = kInstance.m_nColor;
-				kVertex.texcoord = kSource.texcoord;
-				kVertex.texbasis = float3x3(kSource.tangent, kSource.bitangent, kSource.normal);
-				kVertex.texbasis = mul(kVertex.texbasis, nBasis);
+				kVertex.position    = mul(nObject, float4(kSource.position * kInstance.m_nScale, 1.0f));
+				kVertex.texcoord    = kSource.texcoord;
+				kVertex.normal      = mul((float3x3)nObject, kSource.normal);
+                kVertex.color       = kInstance.m_nColor;
 				return kVertex;
 			}
         ]]>

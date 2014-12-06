@@ -21,12 +21,12 @@ SamplerState  gs_pLinearSampler			: register(s1);
 
 struct INPUT
 {
-    float4   position                   : SV_POSITION;
-    float4   color                      : COLOR0;
-    float2   texcoord                   : TEXCOORD0;
-    float4   worldposition              : TEXCOORD1;
-    float3x3 texbasis                   : TEXCOORD2;
-    bool     frontface                  : SV_ISFRONTFACE;
+    float4 position                     : SV_POSITION;
+    float4 viewposition                 : TEXCOORD0;
+    float2 texcoord                     : TEXCOORD1;
+    float3 viewnormal                   : NORMAL0;
+    float4 color                        : COLOR0;
+    bool   frontface                    : SV_ISFRONTFACE;
 };
 
 _INSERT_PIXEL_PROGRAM
