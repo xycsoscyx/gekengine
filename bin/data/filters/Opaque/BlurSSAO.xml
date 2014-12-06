@@ -8,12 +8,12 @@
     <pixel>
         <resources>
             <resource stage="1" source="Opaque/SSAO.Ambient" />
-            <resource stage="2" source="Opaque/Deferred.World" />
+            <resource stage="2" source="Opaque/Deferred.Depth" />
         </resources>
         
         <![CDATA[
             Texture2D     gs_pAmbientBuffer         : register(t1);
-            Texture2D     gs_pWorldBuffer           : register(t2);
+            Texture2D     gs_pDepthBuffer           : register(t2);
 
             static const float gs_nDomainSigma = 18.0f;
             static const float gs_nDomainSigmaSquared = (gs_nDomainSigma * gs_nDomainSigma);
@@ -30,14 +30,14 @@
 
                 float3 nResult = 0.0f;
                 float nIntensitySum = 0.0f;
-                float nCurrentDepth = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord).w;
+                float nCurrentDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord).x;
                 for(float nXPos = -gs_nBiLaterialSize; nXPos <= gs_nBiLaterialSize; nXPos += 1.0f)
                 {
                     float nXCoord = (kInput.texcoord.x + (nXPos * nSize.x));
                     for(float nYPos = -gs_nBiLaterialSize; nYPos <= gs_nBiLaterialSize; nYPos += 1.0f)
                     {
                         float nYCoord = (kInput.texcoord.y + (nYPos * nSize.y));
-                        float nSampleDepth = gs_pWorldBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord)).w;
+                        float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord)).x;
                         float3 nSampleColor = gs_pAmbientBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord)).rgb;
 
                         float nDistance = (float(nXPos * nXPos) + float(nYPos * nYPos));

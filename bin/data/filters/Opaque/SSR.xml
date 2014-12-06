@@ -3,16 +3,27 @@
     <pixel>
         <resources>
             <resource stage="1" source="Opaque/Deferred.Albedo" />
-            <resource stage="2" source="Opaque/Deferred.World" />
-            <resource stage="3" source="Opaque/Deferred.Info" />
-            <resource stage="4" source="screen" />
+            <resource stage="2" source="Opaque/Deferred.Normal" />
+            <resource stage="3" source="Opaque/Deferred.Depth" />
+            <resource stage="4" source="Opaque/Deferred.Info" />
+            <resource stage="5" source="screen" />
         </resources>
 
         <![CDATA[
             Texture2D     gs_pAlbedoBuffer          : register(t1);
-            Texture2D     gs_pWorldBuffer           : register(t2);
-            Texture2D     gs_pInfoBuffer            : register(t3);
-            Texture2D     gs_pScreenBuffer          : register(t4);
+            Texture2D     gs_pNormalBuffer          : register(t2);
+            Texture2D     gs_pDepthBuffer           : register(t3);
+            Texture2D     gs_pInfoBuffer            : register(t4);
+            Texture2D     gs_pScreenBuffer          : register(t5);
+
+            half3 decode (half4 enc)
+            {
+                half4 nn = enc*half4(2,2,0,0) + half4(-1,-1,1,-1);
+                half l = dot(nn.xyz,-nn.xyw);
+                nn.z = l;
+                nn.xy *= sqrt(l);
+                return nn.xyz * 2 + half3(0,0,-1);
+            }
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
@@ -23,10 +34,9 @@
                     float nReflectivity = nCenterInfo.w;
 	                if(nReflectivity > 0.0f)
                     {
-	                    float4 nCenterData = gs_pWorldBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-                        float nCenterDepth = nCenterData.w;
+                        float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord).x;
                         float3 nCenterPosition = (nCenterDepth * kInput.view);
-	                    float3 nCenterNormal = nCenterData.xyz;
+	                    float3 nCenterNormal = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
 
                         float3 nViewNormal = normalize(nCenterPosition);
 		                float3 nReflection = reflect(nViewNormal, nCenterNormal);
@@ -51,7 +61,7 @@
 			                nRayPosition += (nReflection.xyz * nStepSize);
 			                nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
                             nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
-	                        nSamplePosition = (gs_pWorldBuffer.Sample(gs_pPointSampler, nTexCoord.xy).w * kInput.view);
+	                        nSamplePosition = (gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy).x * kInput.view);
                             if(nSamplePosition.z <= nRayPosition.z)
                             {
 				                nRealStep = nStep;
@@ -72,7 +82,7 @@
 				                nRayPosition -= (nReflection.xyz * nStepSize / nNumStepsBack);
 				                nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
 		                        nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
-	                            nSamplePosition = (gs_pWorldBuffer.Sample(gs_pPointSampler, nTexCoord.xy).w * kInput.view);
+	                            nSamplePosition = (gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy).x * kInput.view);
 				                if(nSamplePosition.z > nRayPosition.z)
                                 {
 					                nStep = nNumStepsBack;				
