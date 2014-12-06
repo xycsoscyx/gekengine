@@ -35,9 +35,9 @@
 		                // FRESNEL
 		                nReflectivity = (nReflectivity * pow((1.0 - abs(nViewDotNormal)), 1.0));
 		
-		                float nStepSize = 0.1;
-		                float nNumSteps = 40.0;
-		                float nNumStepsBack = 20.0;
+		                float nStepSize = .5;
+		                float nNumSteps = 30.0;
+		                float nNumStepsBack = 15.0;
 		                float nStep = 0;
 		
 		                float3 nRayPosition = nCenterPosition;

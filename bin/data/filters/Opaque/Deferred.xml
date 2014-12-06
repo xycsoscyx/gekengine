@@ -51,13 +51,16 @@
                     discard;
                 }
 
+                // Viewspace vertex normal
+                float3 nViewNormal = (normalize(kInput.viewnormal) * (kInput.frontface ? 1 : -1));
+                
                 float3 nNormal;
                 // Normals stored as 3Dc format, so [0,1] XY components only
-                nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xy * 2.0) - 1.0f);
+                nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).yx * 2.0) - 1.0);
                 nNormal.z = sqrt(1.0 - dot(nNormal.xy, nNormal.xy));
 
-                float3x3 nCoTangentFrame = GetCoTangentFrame(kInput.viewnormal, -kInput.viewposition.xyz, kInput.texcoord);
-                nNormal = normalize(mul(nNormal, nCoTangentFrame) * (kInput.frontface ? 1 : -1));
+                float3x3 nCoTangentFrame = GetCoTangentFrame(nViewNormal, -kInput.viewposition.xyz, kInput.texcoord);
+                nNormal = mul(nNormal, nCoTangentFrame);
 
                 OUTPUT kOutput;
                 kOutput.albedo.xyz = nAlbedo.xyz;
