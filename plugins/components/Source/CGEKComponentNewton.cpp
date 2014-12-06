@@ -292,7 +292,7 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
                 float3 *pVertices = (float3 *)pBuffer;
                 pBuffer += (sizeof(float3) * nNumVertices);
                 pBuffer += (sizeof(float2) * nNumVertices);
-                pBuffer += (sizeof(float3) * 3 * nNumVertices);
+                pBuffer += (sizeof(float3) * nNumVertices);
 
                 UINT32 nNumIndices = *((UINT32 *)pBuffer);
                 GEKLOG(L"Number of Indices: %d", nNumIndices);

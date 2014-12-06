@@ -16,7 +16,7 @@ struct MODEL
     std::vector<UINT16> m_aIndices;
     std::vector<float3> m_aVertices;
     std::vector<float2> m_aTexCoords;
-    std::vector<float3> m_aBasis;
+    std::vector<float3> m_aNormals;
 };
 
 struct LIGHT
@@ -89,16 +89,6 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                     throw CMyException(__LINE__, L"Mesh missing texcoord0 information");
                 }
 
-                if (pMesh->mTangents == nullptr)
-                {
-                    throw CMyException(__LINE__, L"Mesh missing tangent information");
-                }
-
-                if (pMesh->mBitangents == nullptr)
-                {
-                    throw CMyException(__LINE__, L"Mesh missing bitangent information");
-                }
-
                 if (pMesh->mNormals == nullptr)
                 {
                     throw CMyException(__LINE__, L"Mesh missing normal information");
@@ -152,21 +142,13 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                     nTexCoord.y = pMesh->mTextureCoords[0][nVertex].y;
                     kModel.m_aTexCoords.push_back(nTexCoord);
 
-                    float4x4 nTexBasis;
-                    nTexBasis.rx.x = pMesh->mTangents[nVertex].x;
-                    nTexBasis.rx.y = pMesh->mTangents[nVertex].y;
-                    nTexBasis.rx.z = pMesh->mTangents[nVertex].z;
-                    nTexBasis.ry.x = pMesh->mBitangents[nVertex].x;
-                    nTexBasis.ry.y = pMesh->mBitangents[nVertex].y;
-                    nTexBasis.ry.z = pMesh->mBitangents[nVertex].z;
-                    nTexBasis.rz.x = pMesh->mNormals[nVertex].x;
-                    nTexBasis.rz.y = pMesh->mNormals[nVertex].y;
-                    nTexBasis.rz.z = pMesh->mNormals[nVertex].z;
-                    nTexBasis = (nTexBasis * nRotation);
+                    float3 nNormal;
+                    nNormal.x = pMesh->mNormals[nVertex].x;
+                    nNormal.y = pMesh->mNormals[nVertex].y;
+                    nNormal.z = pMesh->mNormals[nVertex].z;
+                    nNormal = (nRotation * nNormal);
 
-                    kModel.m_aBasis.push_back(nTexBasis.rx.GetNormal());
-                    kModel.m_aBasis.push_back(nTexBasis.ry.GetNormal());
-                    kModel.m_aBasis.push_back(nTexBasis.rz.GetNormal());
+                    kModel.m_aNormals.push_back(nNormal.GetNormal());
                 }
 
                 if (!strMaterial.IsEmpty())
@@ -206,7 +188,6 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         aiPropertyStore *pPropertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(pPropertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
         aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
-        //aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, 80.0f);
 
         const aiScene *pScene = aiImportFileExWithProperties(CW2A(strInput, CP_UTF8), aiProcess_RemoveComponent | aiProcess_FlipUVs | aiProcess_TransformUVCoords, nullptr, pPropertyStore);
         if (pScene == nullptr)
@@ -221,7 +202,6 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
         aiApplyPostProcessing(pScene, aiProcess_FindInvalidData | aiProcess_Triangulate | aiProcess_RemoveRedundantMaterials);
         aiApplyPostProcessing(pScene, aiProcess_GenSmoothNormals);
-        aiApplyPostProcessing(pScene, aiProcess_CalcTangentSpace);
         aiApplyPostProcessing(pScene, aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices);
         aiReleasePropertyStore(pPropertyStore);
 
@@ -241,7 +221,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
             pModel->m_aVertices.insert(pModel->m_aVertices.end(), kPair.second.m_aVertices.begin(), kPair.second.m_aVertices.end());
             pModel->m_aTexCoords.insert(pModel->m_aTexCoords.end(), kPair.second.m_aTexCoords.begin(), kPair.second.m_aTexCoords.end());
-            pModel->m_aBasis.insert(pModel->m_aBasis.end(), kPair.second.m_aBasis.begin(), kPair.second.m_aBasis.end());
+            pModel->m_aNormals.insert(pModel->m_aNormals.end(), kPair.second.m_aNormals.begin(), kPair.second.m_aNormals.end());
         }
 
         CPathW kPath = strInput;
@@ -298,7 +278,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
                 kFinal.m_aVertices.insert(kFinal.m_aVertices.end(), kPair.second.m_aVertices.begin(), kPair.second.m_aVertices.end());
                 kFinal.m_aTexCoords.insert(kFinal.m_aTexCoords.end(), kPair.second.m_aTexCoords.begin(), kPair.second.m_aTexCoords.end());
-                kFinal.m_aBasis.insert(kFinal.m_aBasis.end(), kPair.second.m_aBasis.begin(), kPair.second.m_aBasis.end());
+                kFinal.m_aNormals.insert(kFinal.m_aNormals.end(), kPair.second.m_aNormals.begin(), kPair.second.m_aNormals.end());
                 kFinal.m_aIndices.insert(kFinal.m_aIndices.end(), kPair.second.m_aIndices.begin(), kPair.second.m_aIndices.end());
             }
 
@@ -307,7 +287,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             printf("-< Num. Total Vertices: %d\r\n", kFinal.m_aVertices.size());
             fwrite(&kFinal.m_aVertices[0], sizeof(float3), kFinal.m_aVertices.size(), pFile);
             fwrite(&kFinal.m_aTexCoords[0], sizeof(float2), kFinal.m_aTexCoords.size(), pFile);
-            fwrite(&kFinal.m_aBasis[0], sizeof(float3), kFinal.m_aBasis.size(), pFile);
+            fwrite(&kFinal.m_aNormals[0], sizeof(float3), kFinal.m_aNormals.size(), pFile);
 
             UINT32 nNumIndices = kFinal.m_aIndices.size();
             fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);

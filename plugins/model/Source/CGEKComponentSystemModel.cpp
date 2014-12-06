@@ -118,8 +118,8 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float3) * 3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spBasisBuffer, pBuffer);
-                    pBuffer += (sizeof(float3) * 3 * nNumVertices);
+                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spNormalBuffer, pBuffer);
+                    pBuffer += (sizeof(float3) * nNumVertices);
                 }
 
                 if (SUCCEEDED(hRetVal))
@@ -252,7 +252,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(IGEK3DVideoContext *pC
 
     if (!(nVertexAttributes & GEK_VERTEX_POSITION) &&
         !(nVertexAttributes & GEK_VERTEX_TEXCOORD) &&
-        !(nVertexAttributes & GEK_VERTEX_BASIS))
+        !(nVertexAttributes & GEK_VERTEX_NORMAL))
     {
         return;
     }
@@ -272,9 +272,9 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(IGEK3DVideoContext *pC
             pContext->SetVertexBuffer(1, 0, kModel.first->m_spTexCoordBuffer);
         }
 
-        if (nVertexAttributes & GEK_VERTEX_BASIS)
+        if (nVertexAttributes & GEK_VERTEX_NORMAL)
         {
-            pContext->SetVertexBuffer(2, 0, kModel.first->m_spBasisBuffer);
+            pContext->SetVertexBuffer(2, 0, kModel.first->m_spNormalBuffer);
         }
 
         pContext->SetIndexBuffer(0, kModel.first->m_spIndexBuffer);

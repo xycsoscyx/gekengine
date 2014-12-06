@@ -3,9 +3,7 @@
     <layout>
 		<element type="rgb_float" name="POSITION" index="0" class="vertex" slot="0" />
 		<element type="rg_float" name="TEXCOORD" index="0" class="vertex" slot="1" />
-		<element type="rgb_float" name="TEXCOORD" index="1" class="vertex" slot="2" />
-		<element type="rgb_float" name="TEXCOORD" index="2" class="vertex" slot="2" />
-		<element type="rgb_float" name="TEXCOORD" index="3" class="vertex" slot="2" />
+		<element type="rgb_float" name="NORMAL" index="0" class="vertex" slot="2" />
     </layout>
     <vertex>
         <![CDATA[
@@ -23,9 +21,7 @@
 			{
 				float3 position                         : POSITION;
 				float2 texcoord                         : TEXCOORD0;
-				float3 tangent                          : TEXCOORD1;
-				float3 bitangent                        : TEXCOORD2;
-				float3 normal                           : TEXCOORD3;
+				float3 normal                           : NORMAL0;
                 uint instance                           : SV_InstanceId;
 			};
 

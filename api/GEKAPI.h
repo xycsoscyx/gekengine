@@ -16,5 +16,5 @@ enum GEKVERTEXATTRIBUTES
 {
     GEK_VERTEX_POSITION         = 1 << 0,
     GEK_VERTEX_TEXCOORD         = 1 << 1,
-    GEK_VERTEX_BASIS            = 1 << 2,
+    GEK_VERTEX_NORMAL           = 1 << 2,
 };

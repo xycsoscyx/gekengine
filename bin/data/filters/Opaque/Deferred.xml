@@ -25,16 +25,16 @@
             float3x3 GetCoTangentFrame( float3 nNormal, float3 nPosition, float2 nTexCoord )
             {
                 // get edge vectors of the pixel triangle
-                float3 nPositionDDX = ddx( nPosition );
-                float3 nPositionDDY = ddy( nPosition );
-                float2 nTexCoordDDX = ddx( nTexCoord );
-                float2 nTexCoordDDY = ddy( nTexCoord );
+                float3 nPositionDX = ddx( nPosition );
+                float3 nPositionDY = ddy( nPosition );
+                float2 nTexCoordDX = ddx( nTexCoord );
+                float2 nTexCoordDY = ddy( nTexCoord );
  
                 // solve the linear system
-                float3 nPerpendicularDDX = cross( nNormal, nPositionDDX );
-                float3 nPerpendicularDDY = cross( nPositionDDY, nNormal );
-                float3 nTangent = nPerpendicularDDY * nTexCoordDDX.x + nPerpendicularDDX * nTexCoordDDY.x;
-                float3 nBiTangent = nPerpendicularDDY * nTexCoordDDX.y + nPerpendicularDDX * nTexCoordDDY.y;
+                float3 nPerpendicularDX = cross( nNormal, nPositionDX );
+                float3 nPerpendicularDY = cross( nPositionDY, nNormal );
+                float3 nTangent = nPerpendicularDY * nTexCoordDX.x + nPerpendicularDX * nTexCoordDY.x;
+                float3 nBiTangent = nPerpendicularDY * nTexCoordDX.y + nPerpendicularDX * nTexCoordDY.y;
  
                 // construct a scale-invariant frame 
                 float nReciprocal = rsqrt( max( dot(nTangent,nTangent), dot(nBiTangent,nBiTangent) ) );
@@ -51,8 +51,12 @@
                     discard;
                 }
 
-                float3x3 nCoTangentFrame = GetCoTangentFrame(normalize(kInput.viewnormal), normalize(-kInput.viewposition.xyz), kInput.texcoord);
-                float3 nNormal = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xyz * 2.0) - 1.0f);
+                float3 nNormal;
+                // Normals stored as 3Dc format, so [0,1] XY components only
+                nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).xy * 2.0) - 1.0f);
+                nNormal.z = sqrt(1.0 - dot(nNormal.xy, nNormal.xy));
+
+                float3x3 nCoTangentFrame = GetCoTangentFrame(kInput.viewnormal, -kInput.viewposition.xyz, kInput.texcoord);
                 nNormal = normalize(mul(nNormal, nCoTangentFrame) * (kInput.frontface ? 1 : -1));
 
                 OUTPUT kOutput;

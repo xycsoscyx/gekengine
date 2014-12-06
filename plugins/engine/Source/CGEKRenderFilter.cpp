@@ -678,13 +678,13 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName)
                     {
                         m_nVertexAttributes |= GEK_VERTEX_POSITION;
                     }
-                    else if (strAttribute.CompareNoCase(L"position") == 0)
+                    else if (strAttribute.CompareNoCase(L"texcoord") == 0)
                     {
                         m_nVertexAttributes |= GEK_VERTEX_TEXCOORD;
                     }
-                    else if (strAttribute.CompareNoCase(L"position") == 0)
+                    else if (strAttribute.CompareNoCase(L"normal") == 0)
                     {
-                        m_nVertexAttributes |= GEK_VERTEX_BASIS;
+                        m_nVertexAttributes |= GEK_VERTEX_NORMAL;
                     }
 
                     strAttribute = strVertexAttributes.Tokenize(L",", nPosition);

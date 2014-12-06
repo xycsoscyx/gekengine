@@ -23,7 +23,7 @@ public:
         aabb m_nAABB;
         CComPtr<IGEK3DVideoBuffer> m_spPositionBuffer;
         CComPtr<IGEK3DVideoBuffer> m_spTexCoordBuffer;
-        CComPtr<IGEK3DVideoBuffer> m_spBasisBuffer;
+        CComPtr<IGEK3DVideoBuffer> m_spNormalBuffer;
         CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
         std::multimap<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
     };
