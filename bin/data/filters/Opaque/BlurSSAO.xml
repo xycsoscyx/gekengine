@@ -20,7 +20,7 @@
             static const float gs_nRangeSigma = 0.07f;
             static const float gs_nRangeSigmaSquared = (gs_nRangeSigma * gs_nRangeSigma);
             static const float gs_nPI = 3.14159f;
-            static const int gs_nBiLaterialSize = 3;
+            static const int gs_nBiLateralSize = 3;
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
@@ -31,10 +31,10 @@
                 float3 nResult = 0.0f;
                 float nIntensitySum = 0.0f;
                 float nCurrentDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord).x;
-                for(float nXPos = -gs_nBiLaterialSize; nXPos <= gs_nBiLaterialSize; nXPos += 1.0f)
+                for(float nXPos = -gs_nBiLateralSize; nXPos <= gs_nBiLateralSize; nXPos += 1.0f)
                 {
                     float nXCoord = (kInput.texcoord.x + (nXPos * nSize.x));
-                    for(float nYPos = -gs_nBiLaterialSize; nYPos <= gs_nBiLaterialSize; nYPos += 1.0f)
+                    for(float nYPos = -gs_nBiLateralSize; nYPos <= gs_nBiLateralSize; nYPos += 1.0f)
                     {
                         float nYCoord = (kInput.texcoord.y + (nYPos * nSize.y));
                         float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord)).x;

@@ -4,7 +4,8 @@
     
     <targets>
         <target name="Albedo" format="RGBA_UINT8"/>
-        <target name="World" format="RGBA_HALF"/>
+        <target name="Normal" format="RG_HALF"/>
+        <target name="Depth" format="R_FLOAT"/>
         <depth format="D24S8" comparison="lessequal" writemask="all" clear="1" />
     </targets>
     
@@ -16,7 +17,8 @@
             struct OUTPUT
             {
                 float4 albedo                       : SV_TARGET0;
-                float4 world                        : SV_TARGET1;
+                float2 normal                       : SV_TARGET1;
+                float  depth                        : SV_TARGET2;
             };
 
             float3x3 GetCoTangentFrame( float3 nNormal, float3 nPosition, float2 nTexCoord )
@@ -36,6 +38,22 @@
                 // construct a scale-invariant frame 
                 float nReciprocal = rsqrt( max( dot(nTangent,nTangent), dot(nBiTangent,nBiTangent) ) );
                 return float3x3( nTangent * nReciprocal, nBiTangent * nReciprocal, nNormal );
+            }
+
+            half2 encode (half3 n)
+            {
+                half2 enc = normalize(n.xy) * (sqrt(-n.z*0.5+0.5));
+                enc = enc*0.5+0.5;
+                return enc;
+            }
+            
+            half3 decode (half4 enc)
+            {
+                half4 nn = enc*half4(2,2,0,0) + half4(-1,-1,1,-1);
+                half l = dot(nn.xyz,-nn.xyw);
+                nn.z = l;
+                nn.xy *= sqrt(l);
+                return nn.xyz * 2 + half3(0,0,-1);
             }
 
             OUTPUT MainPixelProgram(in INPUT kInput)
@@ -62,8 +80,8 @@
                 OUTPUT kOutput;
                 kOutput.albedo.xyz = nAlbedo.xyz;
                 kOutput.albedo.a   = gs_bMaterialFullBright;
-                kOutput.world.xyz  = nNormal;
-                kOutput.world.w    = kInput.viewposition.z;
+                kOutput.normal     = encode(nNormal);
+                kOutput.depth      = kInput.viewposition.z;
                 return kOutput;
             }
         ]]>
