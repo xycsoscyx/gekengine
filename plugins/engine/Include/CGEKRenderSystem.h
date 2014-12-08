@@ -43,6 +43,7 @@ public:
         float m_nBuffer;
         float4x4 m_nViewMatrix;
         float4x4 m_nProjectionMatrix;
+        float4x4 m_nInvProjectionMatrix;
         float4x4 m_nTransformMatrix;
     };
 

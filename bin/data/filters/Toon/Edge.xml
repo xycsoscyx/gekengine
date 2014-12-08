@@ -16,7 +16,7 @@
             Texture2D     gs_pNormalBuffer          : register(t2);
             Texture2D     gs_pDepthBuffer           : register(t3);
 
-            half3 decode (half4 enc)
+            half3 DecodeNormal (half4 enc)
             {
                 half4 nn = enc*half4(2,2,0,0) + half4(-1,-1,1,-1);
                 half l = dot(nn.xyz,-nn.xyw);
@@ -31,14 +31,14 @@
                 gs_pDepthBuffer.GetDimensions(nSize.x, nSize.y);
                 float2 nInverseCameraSize = (rcp(nSize) * gs_nRadius);
 
-                float3 nSampleNormalP0 = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, 0.0f))));
-                float3 nSampleNormalN0 = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, 0.0f))));
-                float3 nSampleNormal0P = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f, nInverseCameraSize.y))));
-                float3 nSampleNormal0N = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f,-nInverseCameraSize.y))));
-                float3 nSampleNormalNN = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x,-nInverseCameraSize.y))));
-                float3 nSampleNormalPP = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, nInverseCameraSize.y))));
-                float3 nSampleNormalNP = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, nInverseCameraSize.y))));
-                float3 nSampleNormalPN = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x,-nInverseCameraSize.y))));
+                float3 nSampleNormalP0 = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, 0.0f))));
+                float3 nSampleNormalN0 = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, 0.0f))));
+                float3 nSampleNormal0P = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f, nInverseCameraSize.y))));
+                float3 nSampleNormal0N = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f,-nInverseCameraSize.y))));
+                float3 nSampleNormalNN = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x,-nInverseCameraSize.y))));
+                float3 nSampleNormalPP = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, nInverseCameraSize.y))));
+                float3 nSampleNormalNP = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, nInverseCameraSize.y))));
+                float3 nSampleNormalPN = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x,-nInverseCameraSize.y))));
 
                 float4 nEdgeNormal;
                 nEdgeNormal.x = dot(nSampleNormalP0, nSampleNormalN0);

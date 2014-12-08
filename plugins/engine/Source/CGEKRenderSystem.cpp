@@ -920,6 +920,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
             m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
             m_kCurrentBuffer.m_nProjectionMatrix = kProjection.GetFloat4x4();
+            m_kCurrentBuffer.m_nInvProjectionMatrix = kProjection.GetFloat4x4().GetInverse();
             m_kCurrentBuffer.m_nTransformMatrix = (m_kCurrentBuffer.m_nViewMatrix * m_kCurrentBuffer.m_nProjectionMatrix);
 
             m_nCurrentFrustum.Create(nCameraMatrix, m_kCurrentBuffer.m_nProjectionMatrix);

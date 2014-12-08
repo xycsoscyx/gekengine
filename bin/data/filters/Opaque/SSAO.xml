@@ -32,7 +32,7 @@
 	            return alpha * float2(cos(angle), sin(angle));
             }
             
-            half3 decode (half4 enc)
+            half3 DecodeNormal (half4 enc)
             {
                 half4 nn = enc*half4(2,2,0,0) + half4(-1,-1,1,-1);
                 half l = dot(nn.xyz,-nn.xyw);
@@ -46,7 +46,7 @@
                 float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord).x;
                 float nCenterLinearDepth = ((nCenterDepth - gs_nCameraMinDistance) / (gs_nCameraMaxDistance - gs_nCameraMinDistance));
                 float3 nCenterPosition = (nCenterDepth * kInput.view);
-	            float3 nCenterNormal = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
+	            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
 
                 float2 nSize;
                 gs_pDepthBuffer.GetDimensions(nSize.x, nSize.y);
