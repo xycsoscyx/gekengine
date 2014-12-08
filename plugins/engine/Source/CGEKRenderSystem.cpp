@@ -912,11 +912,10 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             float nYSize = float(m_pSystem->GetYSize());
             float nAspect = (nXSize / nYSize);
 
-            m_kCurrentBuffer.m_nCameraSize.x = nXSize;
-            m_kCurrentBuffer.m_nCameraSize.y = nYSize;
-            m_kCurrentBuffer.m_nCameraView.x = tan(nFieldOfView * 0.5f);
-            m_kCurrentBuffer.m_nCameraView.y = (m_kCurrentBuffer.m_nCameraView.x / nAspect);
-            m_kCurrentBuffer.m_nCameraViewDistance = kMaxViewDistance.GetFloat();
+            m_kCurrentBuffer.m_nCameraFieldOfView.x = tan(nFieldOfView * 0.5f);
+            m_kCurrentBuffer.m_nCameraFieldOfView.y = (m_kCurrentBuffer.m_nCameraFieldOfView.x / nAspect);
+            m_kCurrentBuffer.m_nCameraMinDistance = kMinViewDistance.GetFloat();
+            m_kCurrentBuffer.m_nCameraMaxDistance = kMaxViewDistance.GetFloat();
             m_kCurrentBuffer.m_nCameraPosition = kPosition.GetFloat3();
 
             m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();

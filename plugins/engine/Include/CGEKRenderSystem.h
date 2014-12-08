@@ -36,10 +36,11 @@ public:
 
     struct ENGINEBUFFER
     {
-        float2 m_nCameraSize;
-        float2 m_nCameraView;
-        float m_nCameraViewDistance;
+        float2 m_nCameraFieldOfView;
+        float m_nCameraMinDistance;
+        float m_nCameraMaxDistance;
         float3 m_nCameraPosition;
+        float m_nBuffer;
         float4x4 m_nViewMatrix;
         float4x4 m_nProjectionMatrix;
         float4x4 m_nTransformMatrix;

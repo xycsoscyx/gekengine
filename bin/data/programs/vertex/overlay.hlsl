@@ -1,9 +1,9 @@
 cbuffer ENGINEBUFFER                    : register(b0)
 {
-    float2   gs_nCameraSize             : packoffset(c0);
-    float2   gs_nCameraView             : packoffset(c0.z);
-    float    gs_nCameraViewDistance     : packoffset(c1);
-    float3   gs_nCameraPosition         : packoffset(c1.y);
+    float2   gs_nCameraFieldOfView      : packoffset(c0);
+    float    gs_nCameraMinDistance      : packoffset(c0.z);
+    float    gs_nCameraMaxDistance      : packoffset(c0.w);
+    float3   gs_nCameraPosition         : packoffset(c1);
     float4x4 gs_nViewMatrix             : packoffset(c2);
     float4x4 gs_nProjectionMatrix       : packoffset(c6);
     float4x4 gs_nTransformMatrix        : packoffset(c10);
@@ -32,7 +32,7 @@ PIXEL MainVertexProgram(in VERTEX kVertex)
     PIXEL kPixel;
     kPixel.position = mul(gs_nOrthoMatrix, float4(kVertex.position, 0.0f, 1.0f));
     kPixel.texcoord = kVertex.position.xy;
-	kPixel.view.xy = (kVertex.view * gs_nCameraView);
+	kPixel.view.xy = (kVertex.view * gs_nCameraFieldOfView);
 	kPixel.view.z = 1.0f;
     return kPixel;
 }

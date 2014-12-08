@@ -27,8 +27,9 @@
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
-                float2 nInverseCameraSize = (rcp(gs_nCameraSize) * gs_nRadius);
-                float nInverseCameraViewDistance = rcp(gs_nCameraViewDistance);
+                float2 nSize;
+                gs_pDepthBuffer.GetDimensions(nSize.x, nSize.y);
+                float2 nInverseCameraSize = (rcp(nSize) * gs_nRadius);
 
                 float3 nSampleNormalP0 = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, 0.0f))));
                 float3 nSampleNormalN0 = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, 0.0f))));
@@ -47,16 +48,17 @@
                 nEdgeNormal -= 0.7f;
                 nEdgeNormal = step(0, nEdgeNormal);
                 float nAverageEdgeNormal = saturate(dot(nEdgeNormal, 0.3f));
- 
-	            float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord).x * nInverseCameraViewDistance;
-                float nSampleDepthP0 = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, 0.0f))).x * nInverseCameraViewDistance;
-                float nSampleDepthN0 = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, 0.0f))).x * nInverseCameraViewDistance;
-                float nSampleDepth0P = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f, nInverseCameraSize.y))).x * nInverseCameraViewDistance;
-                float nSampleDepth0N = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f,-nInverseCameraSize.y))).x * nInverseCameraViewDistance;
-                float nSampleDepthNN = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x,-nInverseCameraSize.y))).x * nInverseCameraViewDistance;
-                float nSampleDepthPP = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, nInverseCameraSize.y))).x * nInverseCameraViewDistance;
-                float nSampleDepthNP = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, nInverseCameraSize.y))).x * nInverseCameraViewDistance;
-                float nSampleDepthPN = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x,-nInverseCameraSize.y))).x * nInverseCameraViewDistance;
+
+                float nInverseCameraViewDistance = rcp(gs_nCameraMaxDistance - gs_nCameraMinDistance);
+	            float nCenterDepth =   ((gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord).x - gs_nCameraMinDistance) * nInverseCameraViewDistance);
+                float nSampleDepthP0 = ((gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, 0.0f))).x - gs_nCameraMinDistance) * nInverseCameraViewDistance);
+                float nSampleDepthN0 = ((gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, 0.0f))).x - gs_nCameraMinDistance) * nInverseCameraViewDistance);
+                float nSampleDepth0P = ((gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f, nInverseCameraSize.y))).x - gs_nCameraMinDistance) * nInverseCameraViewDistance);
+                float nSampleDepth0N = ((gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( 0.0f,-nInverseCameraSize.y))).x - gs_nCameraMinDistance) * nInverseCameraViewDistance);
+                float nSampleDepthNN = ((gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x,-nInverseCameraSize.y))).x - gs_nCameraMinDistance) * nInverseCameraViewDistance);
+                float nSampleDepthPP = ((gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x, nInverseCameraSize.y))).x - gs_nCameraMinDistance) * nInverseCameraViewDistance);
+                float nSampleDepthNP = ((gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2(-nInverseCameraSize.x, nInverseCameraSize.y))).x - gs_nCameraMinDistance) * nInverseCameraViewDistance);
+                float nSampleDepthPN = ((gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texcoord + float2( nInverseCameraSize.x,-nInverseCameraSize.y))).x - gs_nCameraMinDistance) * nInverseCameraViewDistance);
  
                 float4 nEdgeDepth;
                 nEdgeDepth.x = (nSampleDepthP0 + nSampleDepthN0);

@@ -18,8 +18,6 @@
 
             #define PI 3.14159265
 
-            static const float halfFOV = 1.57079633 / 2;
-
             static const int samplesCount = 16;
             static const int spiralTurns = 10;
 
@@ -46,7 +44,7 @@
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
                 float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord).x;
-                float nCenterLinearDepth = (nCenterDepth / gs_nCameraViewDistance);
+                float nCenterLinearDepth = ((nCenterDepth - gs_nCameraMinDistance) / (gs_nCameraMaxDistance - gs_nCameraMinDistance));
                 float3 nCenterPosition = (nCenterDepth * kInput.view);
 	            float3 nCenterNormal = decode(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
 
@@ -54,7 +52,7 @@
                 gs_pDepthBuffer.GetDimensions(nSize.x, nSize.y);
 	            float2 pixelPosition = kInput.texcoord * nSize;
 	            float random = (3*int(pixelPosition.x)^int(pixelPosition.y)+int(pixelPosition.x)*int(pixelPosition.y))*10.0;
-	            float diskRadius = radius / (2 * nCenterDepth * tan(halfFOV));
+	            float diskRadius = radius / (2 * nCenterDepth * gs_nCameraFieldOfView.x);
                 
                 float ao = 0;
 
