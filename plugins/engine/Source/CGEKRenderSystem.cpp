@@ -209,15 +209,15 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        float2 aVertices[8] =
+        float2 aVertices[] =
         {
-            float2(0.0f, 0.0f), float2(-1.0f, 1.0f),
-            float2(1.0f, 0.0f), float2(1.0f, 1.0f),
-            float2(1.0f, 1.0f), float2(1.0f, -1.0f),
-            float2(0.0f, 1.0f), float2(-1.0f, -1.0f),
+            float2(0.0f, 0.0f),
+            float2(1.0f, 0.0f),
+            float2(1.0f, 1.0f),
+            float2(0.0f, 1.0f),
         };
 
-        hRetVal = m_pVideoSystem->CreateBuffer((sizeof(float2) * 2), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
+        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float2), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 

@@ -120,11 +120,11 @@
             <resource stage="5" source="Opaque/Lighting.TileIndices" />
         </resources>
         <![CDATA[
-            Texture2D     gs_pAlbedoBuffer          : register(t1);
-            Texture2D     gs_pNormalBuffer          : register(t2);
-            Texture2D     gs_pDepthBuffer           : register(t3);
-            Texture2D     gs_pInfoBuffer            : register(t4);
-            Buffer<uint>  gs_pTileIndices           : register(t5);
+            Texture2D           gs_pAlbedoBuffer        : register(t1);
+            Texture2D<half2>    gs_pNormalBuffer        : register(t2);
+            Texture2D<float>    gs_pDepthBuffer         : register(t3);
+            Texture2D           gs_pInfoBuffer          : register(t4);
+            Buffer<uint>        gs_pTileIndices         : register(t5);
     
             static const float gs_nPI = 3.14159265358979323846;
             static const float gs_nReciprocalPI = rcp(gs_nPI);
@@ -182,29 +182,11 @@
                 return true;
             }
     
-            half3 DecodeNormal(half4 nEncoded)
-            {
-                half4 nNormal = ((nEncoded * half4(2, 2, 0, 0)) + half4(-1, -1, 1, -1));
-                half nLength = dot(nNormal.xyz, -nNormal.xyw);
-                nNormal.z = nLength;
-                nNormal.xy *= sqrt(nLength);
-                return ((nNormal.xyz * 2.0f) + half3(0, 0, -1));
-            }
-
-            float3 GetViewPosition(float2 nTexCoord, float nLinearDepth)
-            {
-                float nX = nTexCoord.x * 2 - 1;
-                float nY = (1 - nTexCoord.y) * 2 - 1;
-                float4 nScreenCoord = float4(nX, nY, nLinearDepth, 1.0f);
-                float4 nViewPosition = mul(gs_nInvProjectionMatrix, nScreenCoord);  
-                return nViewPosition.xyz / nViewPosition.w;  
-            }
-
             float3 GetLightingContribution(in INPUT kInput, in float3 nAlbedo)
             {
                 float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
-                float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord).x;
+                float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
 	            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
 

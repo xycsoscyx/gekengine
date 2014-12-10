@@ -19,7 +19,6 @@ struct INPUT
 {
     float4 position                     : SV_POSITION;
     float2 texcoord                     : TEXCOORD0;
-    float3 view                         : TEXCOORD1;
 }; 
 
 float4 MainPixelProgram(INPUT kInput) : SV_TARGET

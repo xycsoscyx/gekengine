@@ -10,20 +10,11 @@
         </resources>
 
         <![CDATA[
-            Texture2D     gs_pAlbedoBuffer          : register(t1);
-            Texture2D     gs_pNormalBuffer          : register(t2);
-            Texture2D     gs_pDepthBuffer           : register(t3);
-            Texture2D     gs_pInfoBuffer            : register(t4);
-            Texture2D     gs_pScreenBuffer          : register(t5);
-
-            half3 DecodeNormal(half4 nEncoded)
-            {
-                half4 nNormal = ((nEncoded * half4(2, 2, 0, 0)) + half4(-1, -1, 1, -1));
-                half nLength = dot(nNormal.xyz, -nNormal.xyw);
-                nNormal.z = nLength;
-                nNormal.xy *= sqrt(nLength);
-                return ((nNormal.xyz * 2.0f) + half3(0, 0, -1));
-            }
+            Texture2D           gs_pAlbedoBuffer        : register(t1);
+            Texture2D<half2>    gs_pNormalBuffer        : register(t2);
+            Texture2D<float>    gs_pDepthBuffer         : register(t3);
+            Texture2D           gs_pInfoBuffer          : register(t4);
+            Texture2D           gs_pScreenBuffer        : register(t5);
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
@@ -34,8 +25,8 @@
                     float nReflectivity = nCenterInfo.w;
 	                if(nReflectivity > 0.0f)
                     {
-                        float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord).x;
-                        float3 nCenterPosition = (nCenterDepth * kInput.view);
+                        float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                        float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
 	                    float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
 
                         float3 nViewNormal = normalize(nCenterPosition);
@@ -51,17 +42,16 @@
 		                float nStep = 0;
 		
 		                float3 nRayPosition = nCenterPosition;
-		                float4 nTexCoord;
-		                float3 nSamplePosition;
 		                float nRealStep = nNumSteps;
 		
 		                // FOLLOWING THE REFLECTED RAY 
 		                while(nStep < nNumSteps)
                         {
 			                nRayPosition += (nReflection.xyz * nStepSize);
-			                nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
+			                float4 nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
                             nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
-	                        nSamplePosition = (gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy).x * kInput.view);
+                            float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
+	                        float2 nSamplePosition = GetViewPosition(nTexCoord, nSampleDepth);
                             if(nSamplePosition.z <= nRayPosition.z)
                             {
 				                nRealStep = nStep;
@@ -80,9 +70,10 @@
 			                while(nStep < nNumStepsBack)
                             {	
 				                nRayPosition -= (nReflection.xyz * nStepSize / nNumStepsBack);
-				                nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
+				                float4 nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
 		                        nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
-	                            nSamplePosition = (gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy).x * kInput.view);
+                                float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
+	                            float2 nSamplePosition = GetViewPosition(nTexCoord, nSampleDepth);
 				                if(nSamplePosition.z > nRayPosition.z)
                                 {
 					                nStep = nNumStepsBack;				

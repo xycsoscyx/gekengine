@@ -21,50 +21,6 @@
                 float  depth                        : SV_TARGET2;
             };
 
-            float3x3 GetCoTangentFrame( float3 nNormal, float3 nPosition, float2 nTexCoord )
-            {
-                // get edge vectors of the pixel triangle
-                float3 nPositionDX = ddx( nPosition );
-                float3 nPositionDY = ddy( nPosition );
-                float2 nTexCoordDX = ddx( nTexCoord );
-                float2 nTexCoordDY = ddy( nTexCoord );
- 
-                // solve the linear system
-                float3 nPerpendicularDX = cross( nNormal, nPositionDX );
-                float3 nPerpendicularDY = cross( nPositionDY, nNormal );
-                float3 nTangent = nPerpendicularDY * nTexCoordDX.x + nPerpendicularDX * nTexCoordDY.x;
-                float3 nBiTangent = nPerpendicularDY * nTexCoordDX.y + nPerpendicularDX * nTexCoordDY.y;
- 
-                // construct a scale-invariant frame 
-                float nReciprocal = rsqrt( max( dot(nTangent,nTangent), dot(nBiTangent,nBiTangent) ) );
-                return float3x3( nTangent * nReciprocal, nBiTangent * nReciprocal, nNormal );
-            }
-
-            half2 EncodeNormal(half3 nNormal)
-            {
-                half2 nEncoded = (normalize(nNormal.xy) * (sqrt((-nNormal.z * 0.5) + 0.5)));
-                nEncoded = ((nEncoded * 0.5) + 0.5);
-                return nEncoded;
-            }
-            
-            half3 DecodeNormal(half4 nEncoded)
-            {
-                half4 nNormal = ((nEncoded * half4(2, 2, 0, 0)) + half4(-1, -1, 1, -1));
-                half nLength = dot(nNormal.xyz, -nNormal.xyw);
-                nNormal.z = nLength;
-                nNormal.xy *= sqrt(nLength);
-                return ((nNormal.xyz * 2.0f) + half3(0, 0, -1));
-            }
-
-            float3 GetViewPosition(float2 nTexCoord, float nLinearDepth)
-            {
-                float nX = nTexCoord.x * 2 - 1;
-                float nY = (1 - nTexCoord.y) * 2 - 1;
-                float4 nScreenCoord = float4(nX, nY, nLinearDepth, 1.0f);
-                float4 nViewPosition = mul(gs_nInvProjectionMatrix, nScreenCoord);  
-                return nViewPosition.xyz / nViewPosition.w;  
-            }
-
             OUTPUT MainPixelProgram(in INPUT kInput)
             {
                 float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord) * gs_nMaterialColor * kInput.color);
@@ -83,16 +39,14 @@
                 nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).yx * 2.0) - 1.0);
                 nNormal.z = sqrt(1.0 - dot(nNormal.xy, nNormal.xy));
 
-                float nLinearDepth = kInput.depth.x / kInput.depth.y;
-                float3 nViewPosition = GetViewPosition(kInput.texcoord, nLinearDepth);
-                float3x3 nCoTangentFrame = GetCoTangentFrame(nViewNormal, -nViewPosition, kInput.texcoord);
+                float3x3 nCoTangentFrame = GetCoTangentFrame(-kInput.viewposition.xyz, nViewNormal, kInput.texcoord);
                 nNormal = mul(nNormal, nCoTangentFrame);
 
                 OUTPUT kOutput;
                 kOutput.albedo.xyz = nAlbedo.xyz;
                 kOutput.albedo.a   = gs_bMaterialFullBright;
                 kOutput.normal     = EncodeNormal(nNormal);
-                kOutput.depth      = nLinearDepth;
+                kOutput.depth      = (kInput.viewposition.z / gs_nCameraMaxDistance);
                 return kOutput;
             }
         ]]>
