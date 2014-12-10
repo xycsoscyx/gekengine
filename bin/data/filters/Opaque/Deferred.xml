@@ -43,20 +43,20 @@
                 return float3x3( nTangent * nReciprocal, nBiTangent * nReciprocal, nNormal );
             }
 
-            half2 EncodeNormal (half3 n)
+            half2 EncodeNormal(half3 nNormal)
             {
-                half2 enc = normalize(n.xy) * (sqrt(-n.z*0.5+0.5));
-                enc = enc*0.5+0.5;
-                return enc;
+                half2 nEncoded = (normalize(nNormal.xy) * (sqrt((-nNormal.z * 0.5) + 0.5)));
+                nEncoded = ((nEncoded * 0.5) + 0.5);
+                return nEncoded;
             }
             
-            half3 DecodeNormal (half4 enc)
+            half3 DecodeNormal(half4 nEncoded)
             {
-                half4 nn = enc*half4(2,2,0,0) + half4(-1,-1,1,-1);
-                half l = dot(nn.xyz,-nn.xyw);
-                nn.z = l;
-                nn.xy *= sqrt(l);
-                return nn.xyz * 2 + half3(0,0,-1);
+                half4 nNormal = ((nEncoded * half4(2, 2, 0, 0)) + half4(-1, -1, 1, -1));
+                half nLength = dot(nNormal.xyz, -nNormal.xyw);
+                nNormal.z = nLength;
+                nNormal.xy *= sqrt(nLength);
+                return ((nNormal.xyz * 2.0f) + half3(0, 0, -1));
             }
 
             OUTPUT MainPixelProgram(in INPUT kInput)

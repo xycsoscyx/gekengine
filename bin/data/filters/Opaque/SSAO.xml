@@ -18,27 +18,33 @@
 
             #define PI 3.14159265
 
-            static const int samplesCount = 16;
-            static const int spiralTurns = 10;
+            static const int gs_nNumSamples = 16;
+            static const int gs_nNumSpirals = 10;
 
-            static const float radius = 0.1;
-            static const float beta = 0.4;
-            static const float epsilon = 0.01;
+            static const float gs_nRadius = 0.1f;
+            static const float gs_nRadiusSquared = (gs_nRadius * gs_nRadius);
+            static const float gs_nIntensity = 1.0f;
+            static const float gs_nBias = 0.01f;
+            static const float gs_nBeta = 0.4f;
+            static const float gs_nEpsilon = 0.01f;
 
-            float2 tapLocation(int sampleNumber, float spinAngle)
+            float2 TapLocation(int sampleNumber, float spinAngle, out float ssR)
             {
-	            float alpha = float(sampleNumber + 0.5) * (1.0 / samplesCount);
-	            float angle = alpha * (spiralTurns * 2 * PI) + spinAngle;
-	            return alpha * float2(cos(angle), sin(angle));
+	            // Radius relative to ssR
+	            float alpha = float(sampleNumber + 0.5) * (1.0 / gs_nNumSamples);
+	            float angle = alpha * (gs_nNumSpirals * 6.28) + spinAngle;
+
+	            ssR = alpha;
+	            return float2(cos(angle), sin(angle));
             }
             
-            half3 DecodeNormal (half4 enc)
+            half3 DecodeNormal(half4 nEncoded)
             {
-                half4 nn = enc*half4(2,2,0,0) + half4(-1,-1,1,-1);
-                half l = dot(nn.xyz,-nn.xyw);
-                nn.z = l;
-                nn.xy *= sqrt(l);
-                return nn.xyz * 2 + half3(0,0,-1);
+                half4 nNormal = ((nEncoded * half4(2, 2, 0, 0)) + half4(-1, -1, 1, -1));
+                half nLength = dot(nNormal.xyz, -nNormal.xyw);
+                nNormal.z = nLength;
+                nNormal.xy *= sqrt(nLength);
+                return ((nNormal.xyz * 2.0f) + half3(0, 0, -1));
             }
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
@@ -50,30 +56,34 @@
 
                 float2 nSize;
                 gs_pDepthBuffer.GetDimensions(nSize.x, nSize.y);
-	            float2 pixelPosition = kInput.texcoord * nSize;
-	            float random = (3*int(pixelPosition.x)^int(pixelPosition.y)+int(pixelPosition.x)*int(pixelPosition.y))*10.0;
-	            float diskRadius = radius / (2 * nCenterDepth * gs_nCameraFieldOfView.x);
-                
-                float ao = 0;
+	            int2 nPixelCoord = kInput.texcoord * nSize;
+	            float nRandomAngle = (3 * nPixelCoord.x ^ nPixelCoord.y + nPixelCoord.x * nPixelCoord.y) * 10;
+
+	            float nDiskRadius = -500 * gs_nRadius / nCenterDepth;
+
+	            float nOcclusion = 0;
 
 	            [unroll]
-	            for(int sampleIndex=0; sampleIndex < samplesCount; sampleIndex++)
+	            for(int nSample = 0; nSample < gs_nNumSamples; nSample++)
 	            {
-		            float2 offset = tapLocation(sampleIndex, random);
-		            float2 samplePosition = kInput.texcoord + diskRadius * offset;
-	                float3 samplePoint = gs_pDepthBuffer.Sample(gs_pPointSampler, samplePosition).x * kInput.view;
-		            float3 v = samplePoint - nCenterPosition;
-		            float vv = dot(v, v);
-		            float vn = dot(v, nCenterNormal);
-		            if(nCenterLinearDepth < 1) //do not AO for far plane
-                    {
-			            ao += max(0, vn + nCenterLinearDepth * 0.001) / (vv + epsilon);
-                    }
+	                float nSampleRadius;
+	                float2 nSampleOffset = TapLocation(nSample, nRandomAngle, nSampleRadius);
+	                nSampleRadius *= nDiskRadius;
+                    float2 nSampleCoord = kInput.texcoord + (nSampleOffset * nSampleRadius);
+                    float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nSampleCoord).x;
+                    float3 nSamplePosition = (nSampleDepth * kInput.view);
+
+	                float3 v = nSamplePosition - nCenterPosition;
+	                float vv = dot(v, v);
+	                float vn = dot(v, nCenterNormal);
+                    float f = max(gs_nRadiusSquared - vv, 0.0);
+                    nOcclusion += f * f * f * max((vn - gs_nBias) / (gs_nEpsilon + vv), 0.0);
 	            }
 
-	            ao *= 2.0 * PI * radius * beta / samplesCount;
-	            ao = min(1, max(0, 1 - ao));
-	            return ao;
+                float nTemp = gs_nRadiusSquared * gs_nRadius;
+                nOcclusion /= nTemp * nTemp;
+	            nOcclusion = max(0.0, 1.0 - nOcclusion * gs_nIntensity * (5.0 / gs_nNumSamples));
+	            return float4(nOcclusion, nOcclusion, nOcclusion, 1);
             }
         ]]>
     </pixel>
