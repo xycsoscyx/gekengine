@@ -56,6 +56,15 @@
                 return ((nNormal.xyz * 2.0f) + half3(0, 0, -1));
             }
 
+            float3 GetViewPosition(float2 nTexCoord, float nLinearDepth)
+            {
+                float nX = nTexCoord.x * 2 - 1;
+                float nY = (1 - nTexCoord.y) * 2 - 1;
+                float4 nScreenCoord = float4(nX, nY, nLinearDepth, 1.0f);
+                float4 nViewPosition = mul(gs_nInvProjectionMatrix, nScreenCoord);  
+                return nViewPosition.xyz / nViewPosition.w;  
+            }
+
             OUTPUT MainPixelProgram(in INPUT kInput)
             {
                 float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord) * gs_nMaterialColor * kInput.color);
@@ -74,14 +83,16 @@
                 nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).yx * 2.0) - 1.0);
                 nNormal.z = sqrt(1.0 - dot(nNormal.xy, nNormal.xy));
 
-                float3x3 nCoTangentFrame = GetCoTangentFrame(nViewNormal, -kInput.viewposition.xyz, kInput.texcoord);
+                float nLinearDepth = kInput.depth.x / kInput.depth.y;
+                float3 nViewPosition = GetViewPosition(kInput.texcoord, nLinearDepth);
+                float3x3 nCoTangentFrame = GetCoTangentFrame(nViewNormal, -nViewPosition, kInput.texcoord);
                 nNormal = mul(nNormal, nCoTangentFrame);
 
                 OUTPUT kOutput;
                 kOutput.albedo.xyz = nAlbedo.xyz;
                 kOutput.albedo.a   = gs_bMaterialFullBright;
                 kOutput.normal     = EncodeNormal(nNormal);
-                kOutput.depth      = kInput.viewposition.z;
+                kOutput.depth      = nLinearDepth;
                 return kOutput;
             }
         ]]>

@@ -191,15 +191,24 @@
                 return ((nNormal.xyz * 2.0f) + half3(0, 0, -1));
             }
 
+            float3 GetViewPosition(float2 nTexCoord, float nLinearDepth)
+            {
+                float nX = nTexCoord.x * 2 - 1;
+                float nY = (1 - nTexCoord.y) * 2 - 1;
+                float4 nScreenCoord = float4(nX, nY, nLinearDepth, 1.0f);
+                float4 nViewPosition = mul(gs_nInvProjectionMatrix, nScreenCoord);  
+                return nViewPosition.xyz / nViewPosition.w;  
+            }
+
             float3 GetLightingContribution(in INPUT kInput, in float3 nAlbedo)
             {
                 float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
                 float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord).x;
-                float3 nCenterPosition = (nCenterDepth * kInput.view);
+                float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
 	            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
 
-                float3 nViewNormal = -kInput.view;
+                float3 nViewNormal = -normalize(nCenterPosition);
 
                 const uint2 nTileID = uint2(floor(kInput.position.xy / float(gs_nLightTileSize).xx));
                 const uint nTileIndex = ((nTileID.y * gs_nDispatchXSize) + nTileID.x);
