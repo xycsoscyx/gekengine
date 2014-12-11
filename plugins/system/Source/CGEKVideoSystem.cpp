@@ -1719,6 +1719,14 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
     HRESULT hRetVal = S_OK;
     switch (eFormat)
     {
+    case GEK3DVIDEO::DATA::R_UINT8:
+        kTextureDesc.Format = DXGI_FORMAT_R8_UNORM;
+        break;
+
+    case GEK3DVIDEO::DATA::RG_UINT8:
+        kTextureDesc.Format = DXGI_FORMAT_R8G8_UNORM;
+        break;
+
     case GEK3DVIDEO::DATA::RGBA_UINT8:
         kTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         break;

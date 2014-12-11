@@ -18,7 +18,7 @@
         </resources>
         
         <![CDATA[
-            Texture2D           gs_pAmbientBuffer       : register(t1);
+            Texture2D<float>    gs_pAmbientBuffer       : register(t1);
             Texture2D<float>    gs_pDepthBuffer         : register(t2);
 
             static const float gs_nDomainSigmaSquared = (gs_nDomainSigma * gs_nDomainSigma);
@@ -30,8 +30,8 @@
                 gs_pAmbientBuffer.GetDimensions(nSize.x, nSize.y);
                 nSize = rcp(nSize);                
 
-                float3 nResult = 0.0f;
-                float nIntensitySum = 0.0f;
+                float3 nTotalAmbient = 0.0f;
+                float nTotalIntensity = 0.0f;
                 float nCurrentDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 for(float nXPos = -gs_nBiLateralSize; nXPos <= gs_nBiLateralSize; nXPos += 1.0f)
                 {
@@ -40,17 +40,17 @@
                     {
                         float nYCoord = (kInput.texcoord.y + (nYPos * nSize.y));
                         float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord));
-                        float3 nSampleColor = gs_pAmbientBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord)).rgb;
+                        float nSampleAmbient = gs_pAmbientBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord));
 
                         float nDistance = (float(nXPos * nXPos) + float(nYPos * nYPos));
                         float nIntensity = exp((-1.0 * nDistance / (2.0 * gs_nDomainSigmaSquared))) / ( 2.0f * gs_nPI *  gs_nDomainSigmaSquared) *
                                            exp((-1.0 * (nCurrentDepth - nSampleDepth) * (nCurrentDepth - nSampleDepth) / (gs_nRangeSigmaSquared)));
-                        nIntensitySum += nIntensity;
-                        nResult += (nIntensity * nSampleColor);
+                        nTotalIntensity += nIntensity;
+                        nTotalAmbient += (nIntensity * nSampleAmbient);
                     }
                 }
 
-                return float4((nResult / nIntensitySum), 1.0f);
+                return float4((nTotalAmbient / nTotalIntensity), 1.0f);
             }
         ]]>
     </pixel>

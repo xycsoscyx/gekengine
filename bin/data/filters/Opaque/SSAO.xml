@@ -9,7 +9,7 @@
     </defines>
 
     <targets>
-        <target name="Ambient" format="RGBA_UINT8"/>
+        <target name="Ambient" format="R_UINT8"/>
     </targets>
 
     <pixel>
@@ -31,7 +31,7 @@
 	            return nAlpha * float2(cos(nAngle), sin(nAngle));
             }
             
-            float4 MainPixelProgram(INPUT kInput) : SV_TARGET
+            float MainPixelProgram(INPUT kInput) : SV_TARGET
             {
                 float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
@@ -61,8 +61,7 @@
 	            }
 
 	            nAmbientOcclusion *= 2.0 * gs_nPI * gs_nRadius * gs_nBeta / gs_nNumSamples;
-	            nAmbientOcclusion = min(1, max(0, 1 - nAmbientOcclusion));
-	            return float4(nAmbientOcclusion, nAmbientOcclusion, nAmbientOcclusion, 1);
+	            return min(1, max(0, 1 - nAmbientOcclusion));
             }
         ]]>
     </pixel>
