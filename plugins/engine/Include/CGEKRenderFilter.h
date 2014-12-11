@@ -9,12 +9,8 @@
 
 DECLARE_INTERFACE(IGEK3DVideoTexture);
 DECLARE_INTERFACE(IUnknown);
-DECLARE_INTERFACE(IUnknown);
-DECLARE_INTERFACE(IUnknown);
-DECLARE_INTERFACE(IUnknown);
 
 class CGEKRenderFilter : public CGEKUnknown
-                       , public IGEK3DVideoObserver
                        , public IGEKRenderFilter
                        , public CGEKRenderStates
                        , public CGEKBlendStates
@@ -31,13 +27,10 @@ public:
     {
         bool m_bClear;
         float4 m_nClearColor;
-        GEK3DVIDEO::DATA::FORMAT m_eFormat;
-        CComPtr<IGEK3DVideoTexture> m_spResource;
         CStringW m_strSource;
 
         TARGET(void)
             : m_bClear(false)
-            , m_eFormat(GEK3DVIDEO::DATA::UNKNOWN)
         {
         }
     };
@@ -59,8 +52,6 @@ private:
     IGEK3DVideoSystem *m_pVideoSystem;
     IGEKRenderSystem *m_pRenderManager;
 
-    float m_nScale;
-    GEK3DVIDEO::DATA::FORMAT m_eDepthFormat;
     UINT32 m_nVertexAttributes;
 
     UINT32 m_nDispatchXSize;
@@ -78,9 +69,6 @@ private:
     UINT32 m_nClearStencil;
     UINT32 m_nStencilReference;
     std::list<TARGET> m_aTargets;
-    std::unordered_map<CStringW, TARGET *> m_aTargetMap;
-    std::unordered_map<CStringW, CComPtr<IUnknown>> m_aBufferMap;
-    CComPtr<IUnknown> m_spDepthBuffer;
     CStringW m_strDepthSource;
 
     DATA m_kComputeData;
@@ -108,14 +96,8 @@ public:
     STDMETHOD(Initialize)                                   (THIS);
     STDMETHOD_(void, Destroy)                               (THIS);
 
-    // IGEK3DVideoObserver
-    STDMETHOD_(void, OnPreReset)                            (THIS);
-    STDMETHOD(OnPostReset)                                  (THIS);
-
     // IGEKRenderFilter
     STDMETHOD(Load)                                         (THIS_ LPCWSTR pFileName, const std::unordered_map<CStringA, CStringA> &aDefines);
     STDMETHOD_(UINT32, GetVertexAttributes)                 (THIS);
-    STDMETHOD(GetBuffer)                                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
-    STDMETHOD(GetDepthBuffer)                               (THIS_ IUnknown **ppBuffer);
     STDMETHOD_(void, Draw)                                  (THIS_ IGEK3DVideoContext *pContext);
 };

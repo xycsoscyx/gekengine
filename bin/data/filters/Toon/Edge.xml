@@ -6,9 +6,9 @@
 
     <pixel>
         <resources>
-            <resource stage="1" source="Toon/Deferred.Albedo" />
-            <resource stage="2" source="Toon/Deferred.Normal" />
-            <resource stage="3" source="Toon/Deferred.Depth" />
+            <resource stage="1" source="Toon.Albedo" />
+            <resource stage="2" source="Toon.Normal" />
+            <resource stage="3" source="Toon.Depth" />
         </resources>
         
         <![CDATA[

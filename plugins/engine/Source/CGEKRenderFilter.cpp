@@ -89,7 +89,6 @@ static void GetStentilStates(GEK3DVIDEO::STENCILSTATES &kStates, CLibXMLNode &kN
 }
 
 BEGIN_INTERFACE_LIST(CGEKRenderFilter)
-    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderFilter)
 END_INTERFACE_LIST_UNKNOWN
 
@@ -98,8 +97,6 @@ REGISTER_CLASS(CGEKRenderFilter)
 CGEKRenderFilter::CGEKRenderFilter(void)
     : m_pVideoSystem(nullptr)
     , m_pRenderManager(nullptr)
-    , m_nScale(1.0f)
-    , m_eDepthFormat(GEK3DVIDEO::DATA::UNKNOWN)
     , m_nVertexAttributes(0xFFFFFFFF)
     , m_eMode(STANDARD)
     , m_nDispatchXSize(0)
@@ -120,13 +117,12 @@ CGEKRenderFilter::~CGEKRenderFilter(void)
 
 STDMETHODIMP CGEKRenderFilter::Initialize(void)
 {
-    GEKFUNCTION(nullptr);
     HRESULT hRetVal = E_FAIL;
     m_pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
     m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderSystem>(CLSID_GEKRenderSystem);
     if (m_pVideoSystem != nullptr && m_pRenderManager != nullptr)
     {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEK3DVideoObserver *)GetUnknown());
+        hRetVal = S_OK;
     }
 
     return hRetVal;
@@ -134,47 +130,6 @@ STDMETHODIMP CGEKRenderFilter::Initialize(void)
 
 STDMETHODIMP_(void) CGEKRenderFilter::Destroy(void)
 {
-    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEK3DVideoObserver *)GetUnknown());
-}
-
-STDMETHODIMP_(void) CGEKRenderFilter::OnPreReset(void)
-{
-    for (auto &kTarget : m_aTargets)
-    {
-        kTarget.m_spResource = nullptr;
-    }
-
-    m_spDepthBuffer = nullptr;
-}
-
-STDMETHODIMP CGEKRenderFilter::OnPostReset(void)
-{
-    HRESULT hRetVal = E_FAIL;
-    IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
-    if (pSystem != nullptr)
-    {
-        hRetVal = S_OK;
-        UINT32 nXSize = UINT32(float(pSystem->GetXSize()) * m_nScale);
-        UINT32 nYSize = UINT32(float(pSystem->GetYSize()) * m_nScale);
-        for (auto &kTarget : m_aTargets)
-        {
-            if (kTarget.m_eFormat != GEK3DVIDEO::DATA::UNKNOWN)
-            {
-                hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, kTarget.m_eFormat, &kTarget.m_spResource);
-                if (FAILED(hRetVal))
-                {
-                    break;
-                }
-            }
-        }
-
-        if (SUCCEEDED(hRetVal) && m_eDepthFormat != GEK3DVIDEO::DATA::UNKNOWN)
-        {
-            hRetVal = m_pVideoSystem->CreateDepthTarget(nXSize, nYSize, m_eDepthFormat, &m_spDepthBuffer);
-        }
-    }
-
-    return hRetVal;
 }
 
 CStringW CGEKRenderFilter::ParseValue(LPCWSTR pValue)
@@ -235,8 +190,9 @@ HRESULT CGEKRenderFilter::LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSi
             m_strDepthSource = kDepthNode.GetAttribute(L"source");
             hRetVal = S_OK;
         }
-        else
+        else if (kDepthNode.HasAttribute(L"name"))
         {
+            m_strDepthSource = kDepthNode.GetAttribute(L"name");
             GEK3DVIDEO::DATA::FORMAT eFormat = GEK3DVIDEO::DATA::D32;
             if (kDepthNode.HasAttribute(L"format"))
             {
@@ -249,9 +205,12 @@ HRESULT CGEKRenderFilter::LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSi
             }
             else
             {
-                m_eDepthFormat = eFormat;
-                hRetVal = m_pVideoSystem->CreateDepthTarget(nXSize, nYSize, eFormat, &m_spDepthBuffer);
+                hRetVal = m_pRenderManager->LoadBuffer(m_strDepthSource, nXSize, nYSize, eFormat);
             }
+        }
+        else
+        {
+            hRetVal = E_INVALIDARG;
         }
 
         if (SUCCEEDED(hRetVal))
@@ -348,14 +307,8 @@ HRESULT CGEKRenderFilter::LoadBuffers(CLibXMLNode &kFilterNode)
                 if (kBufferNode.HasAttribute(L"stride"))
                 {
                     UINT32 nStride = StrToUINT32(kBufferNode.GetAttribute(L"stride"));
-
-                    CComPtr<IGEK3DVideoBuffer> spBuffer;
-                    hRetVal = m_pVideoSystem->CreateBuffer(nStride, nCount, GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &spBuffer);
-                    if (spBuffer)
-                    {
-                        m_aBufferMap[strName] = spBuffer;
-                    }
-                    else
+                    hRetVal = m_pRenderManager->LoadBuffer(strName, nStride, nCount);
+                    if (FAILED(hRetVal))
                     {
                         break;
                     }
@@ -363,14 +316,8 @@ HRESULT CGEKRenderFilter::LoadBuffers(CLibXMLNode &kFilterNode)
                 else if (kBufferNode.HasAttribute(L"format"))
                 {
                     GEK3DVIDEO::DATA::FORMAT eFormat = GetFormat(kBufferNode.GetAttribute(L"format"));
-
-                    CComPtr<IGEK3DVideoBuffer> spBuffer;
-                    hRetVal = m_pVideoSystem->CreateBuffer(eFormat, nCount, GEK3DVIDEO::BUFFER::UNORDERED_ACCESS | GEK3DVIDEO::BUFFER::RESOURCE, &spBuffer);
-                    if (spBuffer)
-                    {
-                        m_aBufferMap[strName] = spBuffer;
-                    }
-                    else
+                    hRetVal = m_pRenderManager->LoadBuffer(strName, eFormat, nCount);
+                    if (FAILED(hRetVal))
                     {
                         break;
                     }
@@ -404,14 +351,14 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
         CLibXMLNode kTargetsNode = kFilterNode.FirstChildElement(L"targets");
         if (kTargetsNode)
         {
-            m_nScale = 1.0f;
+            float nScale = 1.0f;
             if (kTargetsNode.HasAttribute(L"scale"))
             {
-                m_nScale = StrToFloat(kTargetsNode.GetAttribute(L"scale"));
+                nScale = StrToFloat(kTargetsNode.GetAttribute(L"scale"));
             }
 
-            UINT32 nXSize = UINT32(float(pSystem->GetXSize()) * m_nScale);
-            UINT32 nYSize = UINT32(float(pSystem->GetYSize()) * m_nScale);
+            UINT32 nXSize = UINT32(float(pSystem->GetXSize()) * nScale);
+            UINT32 nYSize = UINT32(float(pSystem->GetYSize()) * nScale);
             if (SUCCEEDED(hRetVal))
             {
                 hRetVal = LoadDepthStates(kTargetsNode, nXSize, nYSize);
@@ -420,8 +367,6 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
             CLibXMLNode kTargetNode = kTargetsNode.FirstChildElement(L"target");
             while (kTargetNode)
             {
-                GEK3DVIDEO::DATA::FORMAT eFormat = GetFormat(kTargetNode.GetAttribute(L"format"));
-
                 TARGET kData;
                 if (kTargetNode.HasAttribute(L"clear"))
                 {
@@ -435,30 +380,30 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
 
                 if (kTargetNode.HasAttribute(L"name"))
                 {
+                    if (!kTargetNode.HasAttribute(L"format"))
+                    {
+                        hRetVal = E_INVALIDARG;
+                        break;
+                    }
+
+                    GEK3DVIDEO::DATA::FORMAT eFormat = GetFormat(kTargetNode.GetAttribute(L"format"));
                     if (eFormat == GEK3DVIDEO::DATA::UNKNOWN)
                     {
                         hRetVal = E_INVALIDARG;
                         break;
                     }
 
-                    CComPtr<IGEK3DVideoTexture> spResource;
-                    hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, eFormat, &spResource);
-                    if (spResource)
-                    {
-                        kData.m_eFormat = eFormat;
-                        kData.m_spResource = spResource;
-                        m_aTargets.push_back(kData);
-                        m_aTargetMap[kTargetNode.GetAttribute(L"name")] = &m_aTargets.back();
-                    }
-                    else
+                    hRetVal = m_pRenderManager->LoadBuffer(kTargetNode.GetAttribute(L"name"), nXSize, nYSize, eFormat);
+                    if (FAILED(hRetVal))
                     {
                         break;
                     }
+
+                    kData.m_strSource = kTargetNode.GetAttribute(L"name");
                 }
                 else if (kTargetNode.HasAttribute(L"source"))
                 {
                     kData.m_strSource = kTargetNode.GetAttribute(L"source");
-                    m_aTargets.push_back(kData);
                 }
                 else
                 {
@@ -466,6 +411,7 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
                     break;
                 }
 
+                m_aTargets.push_back(kData);
                 kTargetNode = kTargetNode.NextSiblingElement(L"target");
             }
         }
@@ -758,40 +704,6 @@ STDMETHODIMP_(UINT32) CGEKRenderFilter::GetVertexAttributes(void)
     return m_nVertexAttributes;
 }
 
-STDMETHODIMP CGEKRenderFilter::GetBuffer(LPCWSTR pName, IUnknown **ppTexture)
-{
-    REQUIRE_RETURN(ppTexture, E_INVALIDARG);
-
-    HRESULT hRetVal = E_FAIL;
-    auto pTargetIterator = m_aTargetMap.find(pName);
-    if (pTargetIterator != m_aTargetMap.end())
-    {
-        hRetVal = ((*pTargetIterator).second)->m_spResource->QueryInterface(IID_PPV_ARGS(ppTexture));
-    }
-
-    if (FAILED(hRetVal))
-    {
-        auto pBufferIterator = m_aBufferMap.find(pName);
-        if (pBufferIterator != m_aBufferMap.end())
-        {
-            hRetVal = ((*pBufferIterator).second)->QueryInterface(IID_PPV_ARGS(ppTexture));
-        }
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKRenderFilter::GetDepthBuffer(IUnknown **ppBuffer)
-{
-    HRESULT hRetVal = E_FAIL;
-    if (m_spDepthBuffer)
-    {
-        hRetVal = m_spDepthBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
-    }
-
-    return hRetVal;
-}
-
 STDMETHODIMP_(void) CGEKRenderFilter::Draw(IGEK3DVideoContext *pContext)
 {
     REQUIRE_VOID_RETURN(pContext);
@@ -802,13 +714,9 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(IGEK3DVideoContext *pContext)
     }
 
     CComPtr<IUnknown> spDepthBuffer;
-    if (m_spDepthBuffer)
+    if (!m_strDepthSource.IsEmpty())
     {
-        spDepthBuffer = m_spDepthBuffer;
-    }
-    else if (!m_strDepthSource.IsEmpty())
-    {
-        m_pRenderManager->GetDepthBuffer(m_strDepthSource, &spDepthBuffer);
+        m_pRenderManager->GetBuffer(m_strDepthSource, &spDepthBuffer);
     }
 
     if (spDepthBuffer)
@@ -836,38 +744,29 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(IGEK3DVideoContext *pContext)
         std::vector<GEK3DVIDEO::VIEWPORT> aViewPorts;
         for (auto &kTarget : m_aTargets)
         {
-            CComQIPtr<IGEK3DVideoTexture> spTarget;
-            if (kTarget.m_spResource)
+            CComPtr<IUnknown> spUnknown;
+            m_pRenderManager->GetBuffer(kTarget.m_strSource, &spUnknown);
+            if (spUnknown)
             {
-                spTarget = kTarget.m_spResource;
-            }
-            else if (!kTarget.m_strSource.IsEmpty())
-            {
-                CComPtr<IUnknown> spUnknown;
-                m_pRenderManager->GetBuffer(kTarget.m_strSource, &spUnknown);
-                if (spUnknown)
+                CComQIPtr<IGEK3DVideoTexture> spTarget = spUnknown;
+                if (spTarget)
                 {
-                    spTarget = spUnknown;
+                    if (kTarget.m_bClear)
+                    {
+                        pContext->ClearRenderTarget(spTarget, kTarget.m_nClearColor);
+                    }
+
+                    aTargets.push_back(spTarget);
+
+                    GEK3DVIDEO::VIEWPORT kViewPort;
+                    kViewPort.m_nTopLeftX = 0.0f;
+                    kViewPort.m_nTopLeftY = 0.0f;
+                    kViewPort.m_nXSize = float(spTarget->GetXSize());
+                    kViewPort.m_nYSize = float(spTarget->GetYSize());
+                    kViewPort.m_nMinDepth = 0.0f;
+                    kViewPort.m_nMaxDepth = 1.0f;
+                    aViewPorts.push_back(kViewPort);
                 }
-            }
-
-            if (spTarget)
-            {
-                if (kTarget.m_bClear)
-                {
-                    pContext->ClearRenderTarget(spTarget, kTarget.m_nClearColor);
-                }
-
-                aTargets.push_back(spTarget);
-
-                GEK3DVIDEO::VIEWPORT kViewPort;
-                kViewPort.m_nTopLeftX = 0.0f;
-                kViewPort.m_nTopLeftY = 0.0f;
-                kViewPort.m_nXSize = float(spTarget->GetXSize());
-                kViewPort.m_nYSize = float(spTarget->GetYSize());
-                kViewPort.m_nMinDepth = 0.0f;
-                kViewPort.m_nMaxDepth = 1.0f;
-                aViewPorts.push_back(kViewPort);
             }
         }
 

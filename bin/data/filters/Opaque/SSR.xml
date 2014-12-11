@@ -8,10 +8,10 @@
 
     <pixel>
         <resources>
-            <resource stage="1" source="Opaque/Deferred.Albedo" />
-            <resource stage="2" source="Opaque/Deferred.Normal" />
-            <resource stage="3" source="Opaque/Deferred.Depth" />
-            <resource stage="4" source="Opaque/Deferred.Info" />
+            <resource stage="1" source="Opaque.Albedo" />
+            <resource stage="2" source="Opaque.Normal" />
+            <resource stage="3" source="Opaque.Depth" />
+            <resource stage="4" source="Opaque.Info" />
             <resource stage="5" source="screen" />
         </resources>
 

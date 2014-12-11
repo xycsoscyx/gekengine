@@ -8,15 +8,16 @@
         <define name="gs_nEpsilon" value=".01" />
     </defines>
 
-    <targets>
-        <target name="Ambient" format="R_UINT8"/>
-    </targets>
-
+    <blend writemask="a">
+        <color source="one" destination="zero" operation="add" />
+        <alpha source="one" destination="zero" operation="add" />
+    </blend>
+    
     <pixel>
         <resources>
-            <resource stage="1" source="Opaque/Deferred.Albedo" />
-            <resource stage="2" source="Opaque/Deferred.Normal" />
-            <resource stage="3" source="Opaque/Deferred.Depth" />
+            <resource stage="1" source="Opaque.Albedo" />
+            <resource stage="2" source="Opaque.Normal" />
+            <resource stage="3" source="Opaque.Depth" />
         </resources>
 
         <![CDATA[
@@ -31,7 +32,7 @@
 	            return nAlpha * float2(cos(nAngle), sin(nAngle));
             }
             
-            float MainPixelProgram(INPUT kInput) : SV_TARGET
+            float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
                 float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
@@ -72,7 +73,7 @@
 		            nAmbientOcclusion -= ddy(nAmbientOcclusion) * ((nPixelCoord.y & 1) - 0.5);
 	            }
                 
-                return nAmbientOcclusion;
+                return float4(0,0,0,nAmbientOcclusion);
             }
         ]]>
     </pixel>

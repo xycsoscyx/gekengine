@@ -55,6 +55,7 @@ CGEKRenderStates::~CGEKRenderStates(void)
 
 HRESULT CGEKRenderStates::Load(IGEK3DVideoSystem *pSystem, CLibXMLNode &kStatesNode)
 {
+    REQUIRE_RETURN(pSystem, E_INVALIDARG);
     GEK3DVIDEO::RENDERSTATES kRenderStates;
     if (kStatesNode.HasAttribute(L"fillmode"))
     {
@@ -147,6 +148,7 @@ void GetTargetStates(GEK3DVIDEO::TARGETBLENDSTATES &kStates, CLibXMLNode &kTarge
 
 HRESULT CGEKBlendStates::Load(IGEK3DVideoSystem *pSystem, CLibXMLNode &kBlendNode)
 {
+    REQUIRE_RETURN(pSystem, E_INVALIDARG);
     if (kBlendNode.HasAttribute(L"factor"))
     {
         m_nBlendFactor = StrToFloat4(kBlendNode.GetAttribute(L"factor"));

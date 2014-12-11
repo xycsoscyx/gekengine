@@ -3,10 +3,10 @@
     <render cullmode="back" />
     
     <targets>
-        <target name="Albedo" format="RGBA_UINT8"/>
-        <target name="Normal" format="RG_HALF"/>
-        <target name="Depth" format="R_FLOAT"/>
-        <depth format="D24S8" comparison="lessequal" writemask="all" clear="1" />
+        <target name="Toon.Albedo" format="RGBA_UINT8"/>
+        <target name="Toon.Normal" format="RG_HALF"/>
+        <target name="Toon.Depth" format="R_FLOAT"/>
+        <depth name="Toon.DepthBuffer" format="D24S8" comparison="lessequal" writemask="all" clear="1" />
     </targets>
     
     <pixel>

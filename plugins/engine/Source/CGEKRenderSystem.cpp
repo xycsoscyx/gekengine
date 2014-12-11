@@ -144,6 +144,7 @@ static GEK3DVIDEO::INPUT::SOURCE GetElementClass(LPCWSTR pValue)
 
 BEGIN_INTERFACE_LIST(CGEKRenderSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
+    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManager)
@@ -185,6 +186,11 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
         {
             hRetVal = E_FAIL;
         }
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = CGEKObservable::AddObserver(m_pVideoSystem, (IGEK3DVideoObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
@@ -342,17 +348,70 @@ STDMETHODIMP_(void) CGEKRenderSystem::Destroy(void)
     m_pCurrentFilter = nullptr;
     m_aVisibleLights.clear();
     m_aResources.clear();
-    m_aFilters.clear();
+    m_aBuffers.clear();
     m_aPasses.clear();
 
+    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEK3DVideoObserver *)GetUnknown());
     GetContext()->RemoveCachedObserver(CLSID_GEKPopulationSystem, (IGEKSceneObserver *)GetUnknown());
     GetContext()->RemoveCachedClass(CLSID_GEKRenderSystem);
+}
+
+STDMETHODIMP_(void) CGEKRenderSystem::OnPreReset(void)
+{
+    for (auto &kBuffer : m_aBuffers)
+    {
+        kBuffer.second.m_spResource = nullptr;
+    }
+}
+
+STDMETHODIMP CGEKRenderSystem::OnPostReset(void)
+{
+    HRESULT hRetVal = E_FAIL;
+    IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
+    if (pSystem != nullptr)
+    {
+        hRetVal = S_OK;
+        for (auto &kBuffer : m_aBuffers)
+        {
+            if (kBuffer.second.m_eFormat != GEK3DVIDEO::DATA::UNKNOWN)
+            {
+                switch (kBuffer.second.m_eFormat)
+                {
+                case GEK3DVIDEO::DATA::D16:
+                case GEK3DVIDEO::DATA::D24_S8:
+                case GEK3DVIDEO::DATA::D32:
+                    hRetVal = m_pVideoSystem->CreateDepthTarget(kBuffer.second.m_nXSize, kBuffer.second.m_nYSize, kBuffer.second.m_eFormat, &kBuffer.second.m_spResource);
+                    break;
+
+                default:
+                    if (true)
+                    {
+                        CComPtr<IGEK3DVideoTexture> spTarget;
+                        hRetVal = m_pVideoSystem->CreateRenderTarget(kBuffer.second.m_nXSize, kBuffer.second.m_nYSize, kBuffer.second.m_eFormat, &spTarget);
+                        if (spTarget)
+                        {
+                            hRetVal = spTarget->QueryInterface(IID_PPV_ARGS(&kBuffer.second.m_spResource));
+                        }
+                    }
+
+                    break;
+                };
+
+                if (FAILED(hRetVal))
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    return hRetVal;
 }
 
 STDMETHODIMP_(void) CGEKRenderSystem::OnLoadBegin(void)
 {
     m_aResources.clear();
-    m_aFilters.clear();
+    m_aBuffers.clear();
     m_aPasses.clear();
 }
 
@@ -369,7 +428,7 @@ STDMETHODIMP CGEKRenderSystem::OnLoadEnd(HRESULT hRetVal)
 STDMETHODIMP_(void) CGEKRenderSystem::OnFree(void)
 {
     m_aResources.clear();
-    m_aFilters.clear();
+    m_aBuffers.clear();
     m_aPasses.clear();
     m_pCurrentPass = nullptr;
     m_pCurrentFilter = nullptr;
@@ -447,29 +506,20 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
                         {
                             CStringW strFilter = kFilterNode.GetAttribute(L"source");
                             GEKLOG(L"Filter Source: %s", strFilter.GetString());
-                            auto pFilterIterator = m_aFilters.find(strFilter);
-                            if (pFilterIterator != m_aFilters.end())
+
+                            CComPtr<IGEKRenderFilter> spFilter;
+                            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderFilter, IID_PPV_ARGS(&spFilter));
+                            if (spFilter)
                             {
-                                kPassData.m_aFilters.push_back((*pFilterIterator).second);
-                                hRetVal = S_OK;
-                            }
-                            else
-                            {
-                                CComPtr<IGEKRenderFilter> spFilter;
-                                hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderFilter, IID_PPV_ARGS(&spFilter));
-                                if (spFilter)
+                                CStringW strFilterFileName(L"%root%\\data\\filters\\" + strFilter + L".xml");
+                                hRetVal = spFilter->Load(strFilterFileName, aDefines);
+                                if (SUCCEEDED(hRetVal))
                                 {
-                                    CStringW strFilterFileName(L"%root%\\data\\filters\\" + strFilter + L".xml");
-                                    hRetVal = spFilter->Load(strFilterFileName, aDefines);
-                                    if (SUCCEEDED(hRetVal))
-                                    {
-                                        m_aFilters[strFilter] = spFilter;
-                                        kPassData.m_aFilters.push_back(spFilter);
-                                    }
-                                    else
-                                    {
-                                        break;
-                                    }
+                                    kPassData.m_aFilters.push_back(spFilter);
+                                }
+                                else
+                                {
+                                    break;
                                 }
                             }
 
@@ -559,44 +609,109 @@ STDMETHODIMP_(void) CGEKRenderSystem::SetResource(IGEK3DVideoContextSystem *pSys
     }
 }
 
-STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
+STDMETHODIMP CGEKRenderSystem::LoadBuffer(LPCWSTR pName, UINT32 nStride, UINT32 nCount)
 {
-    REQUIRE_RETURN(ppResource, E_INVALIDARG);
+    REQUIRE_RETURN(m_pVideoSystem, E_FAIL);
+    REQUIRE_RETURN(pName, E_INVALIDARG);
 
-    HRESULT hRetVal = E_FAIL;
-
-    CStringW strName = pName;
-    if (strName.CompareNoCase(L"screen") == 0)
+    HRESULT hRetVal = S_OK;
+    if (m_aBuffers.find(pName) == m_aBuffers.end())
     {
-        hRetVal = m_spScreenBuffer[!m_nCurrentScreenBuffer]->QueryInterface(IID_PPV_ARGS(ppResource));
-    }
-    else
-    {
-        int nPosition = 0;
-        CStringW strFilter = strName.Tokenize(L".", nPosition);
-        CStringW strSource = strName.Tokenize(L".", nPosition);
-        for (auto &kPair : m_aFilters)
+        CComPtr<IGEK3DVideoBuffer> spBuffer;
+        hRetVal = m_pVideoSystem->CreateBuffer(nStride, nCount, GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &spBuffer);
+        if (spBuffer)
         {
-            if (kPair.first == strFilter)
-            {
-                hRetVal = kPair.second->GetBuffer(strSource, ppResource);
-                break;
-            }
+            BUFFER &kBuffer = m_aBuffers[pName];
+            kBuffer.m_nStride = nStride;
+            kBuffer.m_nCount = nCount;
+            kBuffer.m_spResource = spBuffer;
         }
     }
 
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderSystem::GetDepthBuffer(LPCWSTR pSource, IUnknown **ppBuffer)
+STDMETHODIMP CGEKRenderSystem::LoadBuffer(LPCWSTR pName, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount)
 {
-    HRESULT hRetVal = E_FAIL;
-    for (auto &kPair : m_aFilters)
+    REQUIRE_RETURN(m_pVideoSystem, E_FAIL);
+    REQUIRE_RETURN(pName, E_INVALIDARG);
+
+    HRESULT hRetVal = S_OK;
+    if (m_aBuffers.find(pName) == m_aBuffers.end())
     {
-        if (kPair.first == pSource)
+        CComPtr<IGEK3DVideoBuffer> spBuffer;
+        hRetVal = m_pVideoSystem->CreateBuffer(eFormat, nCount, GEK3DVIDEO::BUFFER::UNORDERED_ACCESS | GEK3DVIDEO::BUFFER::RESOURCE, &spBuffer);
+        if (spBuffer)
         {
-            hRetVal = kPair.second->GetDepthBuffer(ppBuffer);
+            BUFFER &kBuffer = m_aBuffers[pName];
+            kBuffer.m_eFormat = eFormat;
+            kBuffer.m_nCount = nCount;
+            kBuffer.m_spResource = spBuffer;
+        }
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP CGEKRenderSystem::LoadBuffer(LPCWSTR pName, UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat)
+{
+    REQUIRE_RETURN(m_pVideoSystem, E_FAIL);
+    REQUIRE_RETURN(pName, E_INVALIDARG);
+
+    HRESULT hRetVal = S_OK;
+    if (m_aBuffers.find(pName) == m_aBuffers.end())
+    {
+        CComPtr<IUnknown> spResource;
+        switch (eFormat)
+        {
+        case GEK3DVIDEO::DATA::D16:
+        case GEK3DVIDEO::DATA::D24_S8:
+        case GEK3DVIDEO::DATA::D32:
+            hRetVal = m_pVideoSystem->CreateDepthTarget(nXSize, nYSize, eFormat, &spResource);
             break;
+
+        default:
+            if (true)
+            {
+                CComPtr<IGEK3DVideoTexture> spTarget;
+                hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, eFormat, &spTarget);
+                if (spTarget)
+                {
+                    hRetVal = spTarget->QueryInterface(IID_PPV_ARGS(&spResource));
+                }
+            }
+
+            break;
+        };
+
+        if (spResource)
+        {
+            BUFFER &kBuffer = m_aBuffers[pName];
+            kBuffer.m_nXSize = nXSize;
+            kBuffer.m_nYSize = nYSize;
+            kBuffer.m_eFormat = eFormat;
+            kBuffer.m_spResource = spResource;
+        }
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
+{
+    REQUIRE_RETURN(ppResource, E_INVALIDARG);
+
+    HRESULT hRetVal = E_FAIL;
+    if (_wcsicmp(pName, L"screen") == 0)
+    {
+        hRetVal = m_spScreenBuffer[!m_nCurrentScreenBuffer]->QueryInterface(IID_PPV_ARGS(ppResource));
+    }
+    else
+    {
+        auto pIterator = m_aBuffers.find(pName);
+        if (pIterator != m_aBuffers.end())
+        {
+            hRetVal = (*pIterator).second.m_spResource->QueryInterface(IID_PPV_ARGS(ppResource));
         }
     }
 

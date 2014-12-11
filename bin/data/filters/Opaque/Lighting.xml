@@ -11,13 +11,13 @@
     </blend>
 
     <buffers>
-        <buffer name="TileIndices" format="R_UINT8" count="ceil(%video.xsize%/gs_nLightTileSize)*ceil(%video.ysize%/gs_nLightTileSize)*gs_nMaxLights" />
+        <buffer name="Opaque.TileIndices" format="R_UINT8" count="ceil(%video.xsize%/gs_nLightTileSize)*ceil(%video.ysize%/gs_nLightTileSize)*gs_nMaxLights" />
     </buffers>
 
     <compute dispatch="ceil(%video.xsize%/gs_nLightTileSize),ceil(%video.ysize%/gs_nLightTileSize),1">
         <resources>
-            <resource stage="0" source="Opaque/Lighting.TileIndices" unorderedaccess="true" />
-            <resource stage="1" source="Opaque/Deferred.Depth" />
+            <resource stage="0" source="Opaque.TileIndices" unorderedaccess="true" />
+            <resource stage="1" source="Opaque.Depth" />
         </resources>
         <![CDATA[
             Texture2D<float> gs_pDepthBuffer        : register(t1);
@@ -113,11 +113,11 @@
     
     <pixel>
         <resources>
-            <resource stage="1" source="Opaque/Deferred.Albedo" />
-            <resource stage="2" source="Opaque/Deferred.Normal" />
-            <resource stage="3" source="Opaque/Deferred.Depth" />
-            <resource stage="4" source="Opaque/Deferred.Info" />
-            <resource stage="5" source="Opaque/Lighting.TileIndices" />
+            <resource stage="1" source="Opaque.Albedo" />
+            <resource stage="2" source="Opaque.Normal" />
+            <resource stage="3" source="Opaque.Depth" />
+            <resource stage="4" source="Opaque.Info" />
+            <resource stage="5" source="Opaque.TileIndices" />
         </resources>
         <![CDATA[
             Texture2D           gs_pAlbedoBuffer        : register(t1);

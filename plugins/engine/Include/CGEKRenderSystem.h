@@ -13,6 +13,7 @@ DECLARE_INTERFACE(IGEKMaterial);
 
 class CGEKRenderSystem : public CGEKUnknown
                        , public CGEKObservable
+                       , public IGEK3DVideoObserver
                        , public IGEKSceneObserver
                        , public IGEKRenderSystem
                        , public IGEKProgramManager
@@ -20,9 +21,27 @@ class CGEKRenderSystem : public CGEKUnknown
                        , public IGEKRenderManager
 {
 public:
+    struct BUFFER
+    {
+        UINT32 m_nStride;
+        UINT32 m_nCount;
+        UINT32 m_nXSize;
+        UINT32 m_nYSize;
+        GEK3DVIDEO::DATA::FORMAT m_eFormat;
+        CComPtr<IUnknown> m_spResource;
+        BUFFER(void)
+            : m_nStride(0)
+            , m_nCount(0)
+            , m_nXSize(0)
+            , m_nYSize(0)
+            , m_eFormat(GEK3DVIDEO::DATA::UNKNOWN)
+        {
+        }
+    };
+
     struct PASS
     {
-        std::vector<IGEKRenderFilter *> m_aFilters;
+        std::vector<CComPtr<IGEKRenderFilter>> m_aFilters;
         std::vector<CStringW> m_aData;
     };
 
@@ -82,8 +101,8 @@ private:
     CComPtr<IUnknown> m_spDepthStates;
     UINT32 m_nNumLightInstances;
 
+    std::unordered_map<CStringW, BUFFER> m_aBuffers;
     std::unordered_map<CStringW, CComPtr<IUnknown>> m_aResources;
-    std::unordered_map<CStringW, CComPtr<IGEKRenderFilter>> m_aFilters;
     std::unordered_map<CStringW, PASS> m_aPasses;
 
     frustum m_nCurrentFrustum;
@@ -106,6 +125,10 @@ public:
     STDMETHOD(Initialize)                   (THIS);
     STDMETHOD_(void, Destroy)               (THIS);
 
+    // IGEK3DVideoObserver
+    STDMETHOD_(void, OnPreReset)            (THIS);
+    STDMETHOD(OnPostReset)                  (THIS);
+
     // IGEKSceneObserver
     STDMETHOD_(void, OnLoadBegin)           (THIS);
     STDMETHOD(OnLoadEnd)                    (THIS_ HRESULT hRetVal);
@@ -120,12 +143,14 @@ public:
     STDMETHOD_(void, EnableProgram)         (THIS_ IGEK3DVideoContext *pContext, IUnknown *pProgram);
 
     // IGEKRenderSystem
-    STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppTexture);
-    STDMETHOD_(void, SetResource)           (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pTexture);
-    STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
-    STDMETHOD(GetDepthBuffer)               (THIS_ LPCWSTR pSource, IUnknown **ppBuffer);
-    STDMETHOD_(void, FlipScreens)           (THIS);
+    STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppResource);
+    STDMETHOD(LoadBuffer)                   (THIS_ LPCWSTR pName, UINT32 nStride, UINT32 nCount);
+    STDMETHOD(LoadBuffer)                   (THIS_ LPCWSTR pName, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount);
+    STDMETHOD(LoadBuffer)                   (THIS_ LPCWSTR pName, UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat);
+    STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppResource);
+    STDMETHOD_(void, SetResource)           (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource);
     STDMETHOD_(void, SetScreenTargets)      (THIS_ IGEK3DVideoContext *pContext, IUnknown *pDepthBuffer);
+    STDMETHOD_(void, FlipScreens)           (THIS);
     STDMETHOD_(void, DrawScene)             (THIS_ IGEK3DVideoContext *pContext, UINT32 nAttributes);
     STDMETHOD_(void, DrawLights)            (THIS_ IGEK3DVideoContext *pContext, std::function<void(void)> OnLightBatch);
     STDMETHOD_(void, DrawOverlay)           (THIS_ IGEK3DVideoContext *pContext);

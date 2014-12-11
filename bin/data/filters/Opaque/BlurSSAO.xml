@@ -1,27 +1,22 @@
 <?xml version="1.0"?>
-<filter>
+<filter flipscreens="true">
     <defines>
         <define name="gs_nRadius" value="4" />
         <define name="gs_nScale" value="2" />
         <define name="gs_nEdgeSharpness" value="1" />
-        <define name="gs_nAxis" value="float2(1,0)" />
     </defines>
-
-    <targets>
-        <target name="Ambient" format="R_UINT8"/>
-    </targets>
 
     <pixel>
         <resources>
-            <resource stage="1" source="Opaque/Deferred.Albedo" />
-            <resource stage="2" source="Opaque/Deferred.Depth" />
-            <resource stage="3" source="Opaque/SSAO.Ambient" />
+            <resource stage="1" source="Opaque.Albedo" />
+            <resource stage="2" source="Opaque.Depth" />
+            <resource stage="3" source="screen" />
         </resources>
         
         <![CDATA[
             Texture2D           gs_pAlbedoBuffer        : register(t1);
             Texture2D<float>    gs_pDepthBuffer         : register(t2);
-            Texture2D<float>    gs_pAmbientBuffer       : register(t3);
+            Texture2D           gs_pScreenBuffer        : register(t3);
 
             static const float gs_aGuassian[] = 
             //	{ 0.356642, 0.239400, 0.072410, 0.009869 };
@@ -32,14 +27,14 @@
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
                 float2 nPixelSize;
-                gs_pAmbientBuffer.GetDimensions(nPixelSize.x, nPixelSize.y);
+                gs_pScreenBuffer.GetDimensions(nPixelSize.x, nPixelSize.y);
                 nPixelSize = rcp(nPixelSize);                
 
 	            float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-	            float nCenterAmbient = gs_pAmbientBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+	            float4 nCenterColor = gs_pScreenBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
 	            float nTotalWeight = gs_aGuassian[0];
-	            float nAmbientOcclusion = nCenterAmbient * nTotalWeight;
+	            float nAmbientOcclusion = nCenterColor.a * nTotalWeight;
 
 	            [unroll]
 	            for (int nSample = -gs_nRadius; nSample <= gs_nRadius; ++nSample)
@@ -49,7 +44,7 @@
 		            {
 			            float2 nSampleCoord = kInput.texcoord + gs_nAxis * (nSample * nPixelSize * gs_nScale);
 			            float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nSampleCoord);
-			            float nSampleAmbient = gs_pAmbientBuffer.Sample(gs_pPointSampler, nSampleCoord);
+			            float nSampleAmbient = gs_pScreenBuffer.Sample(gs_pPointSampler, nSampleCoord).a;
 
 			            // spatial domain: offset gaussian tap
 			            float nWeight = 0.3 + gs_aGuassian[abs(nSample)];
@@ -63,7 +58,7 @@
 	            }
 
 	            const float gs_nEpsilon = 0.0001;
-	            return nAmbientOcclusion / (nTotalWeight + gs_nEpsilon);	
+	            return float4(nCenterColor.xyz, nAmbientOcclusion / (nTotalWeight + gs_nEpsilon));
             }
         ]]>
     </pixel>
