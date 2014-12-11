@@ -14,11 +14,13 @@
         <filter source="Opaque/BlurSSAO">
             <defines>
                 <define name="gs_nAxis" value="float2(1,0)" />
+                <define name="gs_bCombine" value="0" />
             </defines>
         </filter>
         <filter source="Opaque/BlurSSAO">
             <defines>
                 <define name="gs_nAxis" value="float2(0,1)" />
+                <define name="gs_bCombine" value="1" />
             </defines>
         </filter>
         <!--filter source="Opaque/SSR" /-->

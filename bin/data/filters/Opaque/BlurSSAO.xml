@@ -58,7 +58,14 @@
 	            }
 
 	            const float gs_nEpsilon = 0.0001;
-	            return float4(nCenterColor.xyz, nAmbientOcclusion / (nTotalWeight + gs_nEpsilon));
+                if(gs_bCombine)
+                {
+	                return float4(nCenterColor.xyz * nAmbientOcclusion / (nTotalWeight + gs_nEpsilon), 0);
+                }
+                else
+                {
+	                return float4(nCenterColor.xyz, nAmbientOcclusion / (nTotalWeight + gs_nEpsilon));
+                }
             }
         ]]>
     </pixel>
