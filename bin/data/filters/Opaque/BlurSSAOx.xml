@@ -7,10 +7,9 @@
         <define name="gs_nAxis" value="float2(1,0)" />
     </defines>
 
-    <blend>
-        <color source="one" destination="zero" operation="add" />
-        <alpha source="destination_alpha" destination="zero" operation="add" />
-    </blend>
+    <targets>
+        <target name="Ambient" format="R_UINT8"/>
+    </targets>
 
     <pixel>
         <resources>
@@ -26,8 +25,8 @@
 
             static const float gs_aGuassian[] = 
             //	{ 0.356642, 0.239400, 0.072410, 0.009869 };
-            //	{ 0.398943, 0.241971, 0.053991, 0.004432, 0.000134 };  // stddev = 1.0
-	            { 0.153170, 0.144893, 0.122649, 0.092902, 0.062970 };  // stddev = 2.0
+            	{ 0.398943, 0.241971, 0.053991, 0.004432, 0.000134 };  // stddev = 1.0
+	        //  { 0.153170, 0.144893, 0.122649, 0.092902, 0.062970 };  // stddev = 2.0
             //	{ 0.111220, 0.107798, 0.098151, 0.083953, 0.067458, 0.050920, 0.036108 }; // stddev = 3.0
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
