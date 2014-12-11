@@ -418,35 +418,63 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
                     CLibXMLNode kFilterNode = kFiltersNode.FirstChildElement(L"filter");
                     while (kFilterNode)
                     {
-                        CStringW strFilter = kFilterNode.GetAttribute(L"source");
-                        GEKLOG(L"Filter Source: %s", strFilter.GetString());
-                        auto pFilterIterator = m_aFilters.find(strFilter);
-                        if (pFilterIterator != m_aFilters.end())
+                        hRetVal = S_OK;
+                        std::unordered_map<CStringA, CStringA> aDefines;
+                        CLibXMLNode kDefinesNode = kFilterNode.FirstChildElement(L"defines");
+                        if (kDefinesNode)
                         {
-                            kPassData.m_aFilters.push_back((*pFilterIterator).second);
-                            hRetVal = S_OK;
-                        }
-                        else
-                        {
-                            CComPtr<IGEKRenderFilter> spFilter;
-                            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderFilter, IID_PPV_ARGS(&spFilter));
-                            if (spFilter)
+                            CLibXMLNode kDefineNode = kDefinesNode.FirstChildElement(L"define");
+                            while (kDefineNode)
                             {
-                                CStringW strFilterFileName(L"%root%\\data\\filters\\" + strFilter + L".xml");
-                                hRetVal = spFilter->Load(strFilterFileName);
-                                if (SUCCEEDED(hRetVal))
+                                if (kDefineNode.HasAttribute(L"name") &&
+                                    kDefineNode.HasAttribute(L"value"))
                                 {
-                                    m_aFilters[strFilter] = spFilter;
-                                    kPassData.m_aFilters.push_back(spFilter);
+                                    CStringA strName = CW2A(kDefineNode.GetAttribute(L"name"), CP_UTF8);
+                                    CStringA strValue = CW2A(kDefineNode.GetAttribute(L"value"), CP_UTF8);
+
+                                    aDefines[strName] = strValue;
+                                    kDefineNode = kDefineNode.NextSiblingElement(L"define");
                                 }
                                 else
                                 {
+                                    hRetVal = E_INVALIDARG;
                                     break;
                                 }
-                            }
+                            };
                         }
 
-                        kFilterNode = kFilterNode.NextSiblingElement(L"filter");
+                        if (SUCCEEDED(hRetVal))
+                        {
+                            CStringW strFilter = kFilterNode.GetAttribute(L"source");
+                            GEKLOG(L"Filter Source: %s", strFilter.GetString());
+                            auto pFilterIterator = m_aFilters.find(strFilter);
+                            if (pFilterIterator != m_aFilters.end())
+                            {
+                                kPassData.m_aFilters.push_back((*pFilterIterator).second);
+                                hRetVal = S_OK;
+                            }
+                            else
+                            {
+                                CComPtr<IGEKRenderFilter> spFilter;
+                                hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderFilter, IID_PPV_ARGS(&spFilter));
+                                if (spFilter)
+                                {
+                                    CStringW strFilterFileName(L"%root%\\data\\filters\\" + strFilter + L".xml");
+                                    hRetVal = spFilter->Load(strFilterFileName, aDefines);
+                                    if (SUCCEEDED(hRetVal))
+                                    {
+                                        m_aFilters[strFilter] = spFilter;
+                                        kPassData.m_aFilters.push_back(spFilter);
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+
+                            kFilterNode = kFilterNode.NextSiblingElement(L"filter");
+                        }
                     };
                 }
             }

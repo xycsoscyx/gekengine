@@ -61,7 +61,18 @@
 	            }
 
 	            nAmbientOcclusion *= 2.0 * gs_nPI * gs_nRadius * gs_nBeta / gs_nNumSamples;
-	            return min(1, max(0, 1 - nAmbientOcclusion));
+	            nAmbientOcclusion = min(1, max(0, 1 - nAmbientOcclusion));
+	            if (abs(ddx(nCenterPosition.z)) < 0.02)
+                {
+		            nAmbientOcclusion -= ddx(nAmbientOcclusion) * ((nPixelCoord.x & 1) - 0.5);
+	            }
+
+	            if (abs(ddy(nCenterPosition.z)) < 0.02)
+                {
+		            nAmbientOcclusion -= ddy(nAmbientOcclusion) * ((nPixelCoord.y & 1) - 0.5);
+	            }
+                
+                return nAmbientOcclusion;
             }
         ]]>
     </pixel>

@@ -647,8 +647,10 @@ HRESULT CGEKRenderFilter::LoadPixelProgram(CLibXMLNode &kFilterNode)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName)
+STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName, const std::unordered_map<CStringA, CStringA> &aDefines)
 {
+    m_aDefines = aDefines;
+
     CLibXMLDoc kDocument;
     HRESULT hRetVal = kDocument.Load(pFileName);
     if (SUCCEEDED(hRetVal))

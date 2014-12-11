@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <filter>
     <defines>
-        <define name="gs_nDomainSigma" value="2" />
-        <define name="gs_nRangeSigma" value=".02" />
-        <define name="gs_nBiLateralSize" value="5" />
+        <define name="gs_nRadius" value="4" />
+        <define name="gs_nScale" value="2" />
+        <define name="gs_nEdgeSharpness" value="1" />
     </defines>
 
     <blend>
-        <color source="destination_color" destination="zero" operation="add" />
+        <color source="one" destination="zero" operation="add" />
         <alpha source="destination_alpha" destination="zero" operation="add" />
     </blend>
 
@@ -23,48 +23,47 @@
             Texture2D<float>    gs_pDepthBuffer         : register(t2);
             Texture2D<float>    gs_pAmbientBuffer       : register(t3);
 
-            static const float gs_nDomainSigmaSquared = (gs_nDomainSigma * gs_nDomainSigma);
-            static const float gs_nRangeSigmaSquared = (gs_nRangeSigma * gs_nRangeSigma);
+            static const float gs_aGuassian[] = 
+            //	{ 0.356642, 0.239400, 0.072410, 0.009869 };
+            //	{ 0.398943, 0.241971, 0.053991, 0.004432, 0.000134 };  // stddev = 1.0
+	            { 0.153170, 0.144893, 0.122649, 0.092902, 0.062970 };  // stddev = 2.0
+            //	{ 0.111220, 0.107798, 0.098151, 0.083953, 0.067458, 0.050920, 0.036108 }; // stddev = 3.0
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
-                float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-                
-                [branch]
-                if(nAlbedo.w == 1.0)
-                {
-                    return 1;
-                }
+                float2 nPixelSize;
+                gs_pAmbientBuffer.GetDimensions(nPixelSize.x, nPixelSize.y);
+                nPixelSize = rcp(nPixelSize);                
 
-                float2 nSize;
-                gs_pAmbientBuffer.GetDimensions(nSize.x, nSize.y);
-                nSize = rcp(nSize);                
+	            float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+	            float nCenterAmbient = gs_pAmbientBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
-                float3 nTotalAmbient = 0.0f;
-                float nTotalIntensity = 0.0f;
-                float nCurrentDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-                
-                [unroll]
-                for(float nXPos = -gs_nBiLateralSize; nXPos <= gs_nBiLateralSize; nXPos += 1.0f)
-                {
-                    float nXCoord = (kInput.texcoord.x + (nXPos * nSize.x));
+	            float nTotalWeight = gs_aGuassian[0];
+	            float nAmbientOcclusion = nCenterAmbient * nTotalWeight;
 
-                    [unroll]
-                    for(float nYPos = -gs_nBiLateralSize; nYPos <= gs_nBiLateralSize; nYPos += 1.0f)
-                    {
-                        float nYCoord = (kInput.texcoord.y + (nYPos * nSize.y));
-                        float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord));
-                        float nSampleAmbient = gs_pAmbientBuffer.Sample(gs_pPointSampler, float2(nXCoord, nYCoord));
+	            [unroll]
+	            for (int nSample = -gs_nRadius; nSample <= gs_nRadius; ++nSample)
+	            {
+		            // We already handled the zero case above.  This loop should be unrolled and the branch discarded
+		            if (nSample != 0)
+		            {
+			            float2 nSampleCoord = kInput.texcoord + gs_nAxis * (nSample * nPixelSize * gs_nScale);
+			            float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nSampleCoord);
+			            float nSampleAmbient = gs_pAmbientBuffer.Sample(gs_pPointSampler, nSampleCoord);
 
-                        float nDistance = (float(nXPos * nXPos) + float(nYPos * nYPos));
-                        float nIntensity = exp((-1.0 * nDistance / (2.0 * gs_nDomainSigmaSquared))) / ( 2.0f * gs_nPI *  gs_nDomainSigmaSquared) *
-                                           exp((-1.0 * (nCurrentDepth - nSampleDepth) * (nCurrentDepth - nSampleDepth) / (gs_nRangeSigmaSquared)));
-                        nTotalIntensity += nIntensity;
-                        nTotalAmbient += (nIntensity * nSampleAmbient);
-                    }
-                }
+			            // spatial domain: offset gaussian tap
+			            float nWeight = 0.3 + gs_aGuassian[abs(nSample)];
 
-                return float4((nTotalAmbient / nTotalIntensity), 1.0f);
+			            // range domain (the "bilateral" weight). As depth difference increases, decrease weight.
+			            nWeight *= max(0.0, 1.0 - (2000.0 * gs_nEdgeSharpness) * abs(nSampleDepth - nCenterDepth));
+
+			            nAmbientOcclusion += nSampleAmbient * nWeight;
+			            nTotalWeight += nWeight;
+		            }
+	            }
+
+	            const float gs_nEpsilon = 0.0001;
+	            return nAmbientOcclusion / (nTotalWeight + gs_nEpsilon);	
             }
         ]]>
     </pixel>

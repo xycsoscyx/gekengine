@@ -113,7 +113,7 @@ public:
     STDMETHOD(OnPostReset)                                  (THIS);
 
     // IGEKRenderFilter
-    STDMETHOD(Load)                                         (THIS_ LPCWSTR pFileName);
+    STDMETHOD(Load)                                         (THIS_ LPCWSTR pFileName, const std::unordered_map<CStringA, CStringA> &aDefines);
     STDMETHOD_(UINT32, GetVertexAttributes)                 (THIS);
     STDMETHOD(GetBuffer)                                    (THIS_ LPCWSTR pName, IUnknown **ppTexture);
     STDMETHOD(GetDepthBuffer)                               (THIS_ IUnknown **ppBuffer);
