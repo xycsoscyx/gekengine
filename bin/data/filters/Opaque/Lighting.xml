@@ -126,9 +126,6 @@
             Texture2D           gs_pInfoBuffer          : register(t4);
             Buffer<uint>        gs_pTileIndices         : register(t5);
     
-            static const float gs_nPI = 3.14159265358979323846;
-            static const float gs_nReciprocalPI = rcp(gs_nPI);
-    
             // Diffuse & Specular Term
             // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
             bool GetBRDF(in float3 nAlbedo, in float3 nCenterNormal, in float3 nLightNormal, in float3 nViewNormal, in float4 nInfo, out float3 nLightDiffuse, out float3 nLightSpecular)
@@ -189,7 +186,6 @@
                 float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
 	            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
-                return nCenterPosition.y;
 
                 float3 nViewNormal = -normalize(nCenterPosition);
 

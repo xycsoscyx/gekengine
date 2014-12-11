@@ -1,7 +1,13 @@
 <?xml version="1.0"?>
 <filter>
+    <defines>
+        <define name="gs_nDomainSigma" value="18" />
+        <define name="gs_nRangeSigma" value=".07" />
+        <define name="gs_nBiLateralSize" value="3" />
+    </defines>
+
     <blend>
-        <color source="one" destination="zero" operation="add" />
+        <color source="destination_color" destination="zero" operation="add" />
         <alpha source="destination_alpha" destination="zero" operation="add" />
     </blend>
 
@@ -15,12 +21,8 @@
             Texture2D           gs_pAmbientBuffer       : register(t1);
             Texture2D<float>    gs_pDepthBuffer         : register(t2);
 
-            static const float gs_nDomainSigma = 18.0f;
             static const float gs_nDomainSigmaSquared = (gs_nDomainSigma * gs_nDomainSigma);
-            static const float gs_nRangeSigma = 0.07f;
             static const float gs_nRangeSigmaSquared = (gs_nRangeSigma * gs_nRangeSigma);
-            static const float gs_nPI = 3.14159f;
-            static const int gs_nBiLateralSize = 3;
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {

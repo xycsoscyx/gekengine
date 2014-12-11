@@ -1,5 +1,13 @@
 <?xml version="1.0"?>
 <filter>
+    <defines>
+        <define name="gs_nNumSamples" value="16" />
+        <define name="gs_nNumSpirals" value="10" />
+        <define name="gs_nRadius" value="1" />
+        <define name="gs_nBeta" value=".2" />
+        <define name="gs_nEpsilon" value=".01" />
+    </defines>
+
     <targets>
         <target name="Ambient" format="RGBA_UINT8"/>
     </targets>
@@ -16,26 +24,11 @@
             Texture2D<half2>    gs_pNormalBuffer        : register(t2);
             Texture2D<float>    gs_pDepthBuffer         : register(t3);
 
-            #define PI 3.14159265
-
-            static const int gs_nNumSamples = 16;
-            static const int gs_nNumSpirals = 10;
-
-            static const float gs_nRadius = 0.1f;
-            static const float gs_nRadiusSquared = (gs_nRadius * gs_nRadius);
-            static const float gs_nIntensity = 1.0f;
-            static const float gs_nBias = 0.01f;
-            static const float gs_nBeta = 0.4f;
-            static const float gs_nEpsilon = 0.01f;
-
-            float2 TapLocation(int sampleNumber, float spinAngle, out float ssR)
+            float2 TapLocation(int nSample, float nRandomAngle)
             {
-	            // Radius relative to ssR
-	            float alpha = float(sampleNumber + 0.5) * (1.0 / gs_nNumSamples);
-	            float angle = alpha * (gs_nNumSpirals * 6.28) + spinAngle;
-
-	            ssR = alpha;
-	            return float2(cos(angle), sin(angle));
+	            float nAlpha = float(nSample + 0.5) * (1.0 / gs_nNumSamples);
+	            float nAngle = nAlpha * (gs_nNumSpirals * 2 * gs_nPI) + nRandomAngle;
+	            return nAlpha * float2(cos(nAngle), sin(nAngle));
             }
             
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
@@ -44,36 +37,32 @@
                 float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
 	            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
 
-                float2 nSize;
-                gs_pDepthBuffer.GetDimensions(nSize.x, nSize.y);
-	            int2 nPixelCoord = kInput.texcoord * nSize;
+	            int2 nPixelCoord = kInput.position.xy;
 	            float nRandomAngle = (3 * nPixelCoord.x ^ nPixelCoord.y + nPixelCoord.x * nPixelCoord.y) * 10;
+                float nSampleRadius = gs_nRadius / (2 * (nCenterDepth * gs_nCameraMaxDistance) * gs_nCameraFieldOfView.x);
 
-	            float nDiskRadius = -500 * gs_nRadius / nCenterDepth;
-
-	            float nOcclusion = 0;
+                float nAmbientOcclusion = 0;
 
 	            [unroll]
 	            for(int nSample = 0; nSample < gs_nNumSamples; nSample++)
 	            {
-	                float nSampleRadius;
-	                float2 nSampleOffset = TapLocation(nSample, nRandomAngle, nSampleRadius);
-	                nSampleRadius *= nDiskRadius;
+	                float2 nSampleOffset = TapLocation(nSample, nRandomAngle);
                     float2 nSampleCoord = kInput.texcoord + (nSampleOffset * nSampleRadius);
                     float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nSampleCoord);
                     float3 nSamplePosition = GetViewPosition(nSampleCoord, nSampleDepth);
 
-	                float3 v = nSamplePosition - nCenterPosition;
-	                float vv = dot(v, v);
-	                float vn = dot(v, nCenterNormal);
-                    float f = max(gs_nRadiusSquared - vv, 0.0);
-                    nOcclusion += f * f * f * max((vn - gs_nBias) / (gs_nEpsilon + vv), 0.0);
+		            float3 nDelta = nSamplePosition - nCenterPosition;
+		            float nDeltaDelta = dot(nDelta, nDelta);
+		            float nDeltaAngle = dot(nDelta, nCenterNormal);
+		            if(nCenterDepth < 1) //do not AO for far plane
+                    {
+			            nAmbientOcclusion += max(0, nDeltaAngle + nCenterDepth * 0.001) / (nDeltaDelta + gs_nEpsilon);
+                    }
 	            }
 
-                float nTemp = gs_nRadiusSquared * gs_nRadius;
-                nOcclusion /= nTemp * nTemp;
-	            nOcclusion = max(0.0, 1.0 - nOcclusion * gs_nIntensity * (5.0 / gs_nNumSamples));
-	            return float4(nOcclusion, nOcclusion, nOcclusion, 1);
+	            nAmbientOcclusion *= 2.0 * gs_nPI * gs_nRadius * gs_nBeta / gs_nNumSamples;
+	            nAmbientOcclusion = min(1, max(0, 1 - nAmbientOcclusion));
+	            return float4(nAmbientOcclusion, nAmbientOcclusion, nAmbientOcclusion, 1);
             }
         ]]>
     </pixel>

@@ -30,6 +30,9 @@ struct INPUT
     bool   frontface                    : SV_ISFRONTFACE;
 };
 
+static const float gs_nPI = 3.14159265358979323846;
+static const float gs_nReciprocalPI = rcp(gs_nPI);
+
 float3x3 GetCoTangentFrame(float3 nPosition, float3 nNormal, float2 nTexCoord)
 {
     // get edge vectors of the pixel triangle

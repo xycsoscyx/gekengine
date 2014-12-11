@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <filter>
+    <defines>
+        <define name="gs_nAmbientLight" value=".05" />
+    </defines>
+
     <pixel>
         <resources>
             <resource stage="1" source="Opaque/Deferred.Albedo" />
@@ -15,7 +19,7 @@
                 [branch]
                 if (nAlbedo.a < 1.0f)
                 {
-                    nAlbedo *= 0.05f;
+                    nAlbedo *= gs_nAmbientLight;
                 }
                 
                 return nAlbedo;

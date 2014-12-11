@@ -1,5 +1,11 @@
 <?xml version="1.0"?>
 <filter flipscreens="true">
+    <defines>
+        <define name="gs_nStepSize" value=".5" />
+        <define name="gs_nNumSteps" value="30" />
+        <define name="gs_nNumStepsBack" value="15" />
+    </defines>
+
     <pixel>
         <resources>
             <resource stage="1" source="Opaque/Deferred.Albedo" />
@@ -36,26 +42,27 @@
 		                // FRESNEL
 		                nReflectivity = (nReflectivity * pow((1.0 - abs(nViewDotNormal)), 1.0));
 		
-		                float nStepSize = .5;
-		                float nNumSteps = 30.0;
-		                float nNumStepsBack = 15.0;
 		                float nStep = 0;
 		
 		                float3 nRayPosition = nCenterPosition;
-		                float nRealStep = nNumSteps;
+		                float nRealStep = gs_nNumSteps;
 		
+                        float4 nTexCoord;
+                        float nSampleDepth;
+                        float3 nSamplePosition;
+
 		                // FOLLOWING THE REFLECTED RAY 
-		                while(nStep < nNumSteps)
+		                while(nStep < gs_nNumSteps)
                         {
-			                nRayPosition += (nReflection.xyz * nStepSize);
-			                float4 nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
+			                nRayPosition += (nReflection.xyz * gs_nStepSize);
+			                nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
                             nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
-                            float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
-	                        float2 nSamplePosition = GetViewPosition(nTexCoord, nSampleDepth);
+                            nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
+	                        nSamplePosition = GetViewPosition(nTexCoord.xy, nSampleDepth);
                             if(nSamplePosition.z <= nRayPosition.z)
                             {
 				                nRealStep = nStep;
-				                nStep = nNumSteps;				
+				                nStep = gs_nNumSteps;				
 			                }
 			                else
                             {
@@ -64,19 +71,19 @@
 		                };
 
 		                // IF WE HAVE HIT SOMETHING - FOLLOWING THE RAY BACKWARD USING SMALL STEP FOR BETTER PRECISION
-		                if(nRealStep < nNumSteps)
+		                if(nRealStep < gs_nNumSteps)
                         {
 			                nStep = 0;		
-			                while(nStep < nNumStepsBack)
+			                while(nStep < gs_nNumStepsBack)
                             {	
-				                nRayPosition -= (nReflection.xyz * nStepSize / nNumStepsBack);
-				                float4 nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
+				                nRayPosition -= (nReflection.xyz * gs_nStepSize / gs_nNumStepsBack);
+				                nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
 		                        nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
-                                float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
-	                            float2 nSamplePosition = GetViewPosition(nTexCoord, nSampleDepth);
+                                nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
+	                            nSamplePosition = GetViewPosition(nTexCoord.xy, nSampleDepth);
 				                if(nSamplePosition.z > nRayPosition.z)
                                 {
-					                nStep = nNumStepsBack;				
+					                nStep = gs_nNumStepsBack;				
                                 }
 				                else
                                 {
@@ -86,7 +93,7 @@
 		                }
 		
 		                // FADING REFLECTION DEPENDING ON RAY LENGTH
-		                nReflectivity = (nReflectivity * (1.0 - (nRealStep / nNumSteps)));
+		                nReflectivity = (nReflectivity * (1.0 - (nRealStep / gs_nNumSteps)));
 		
 		                // FADING REFLECTION ON SCREEN BORDER // AVOIDS ABRUPT REFLECTION ENDINGS
 		                float2 tAtt = nTexCoord.xy;
