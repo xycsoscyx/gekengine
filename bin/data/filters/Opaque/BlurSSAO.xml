@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <filter>
     <defines>
-        <define name="gs_nDomainSigma" value="18" />
-        <define name="gs_nRangeSigma" value=".07" />
-        <define name="gs_nBiLateralSize" value="3" />
+        <define name="gs_nDomainSigma" value="2" />
+        <define name="gs_nRangeSigma" value=".02" />
+        <define name="gs_nBiLateralSize" value="5" />
     </defines>
 
     <blend>
-        <color source="destination_color" destination="zero" operation="add" />
+        <color source="one" destination="zero" operation="add" />
         <alpha source="destination_alpha" destination="zero" operation="add" />
     </blend>
 
