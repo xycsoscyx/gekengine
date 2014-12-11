@@ -177,17 +177,49 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 {
     printf("GEK Mesh Optimizer\r\n");
 
-    if (nNumArguments < 2)
+    MessageBox(NULL, L"", L"", MB_OK);
+
+    CStringW strInput;
+    CStringW strOutput;
+    bool bSmooth = false;
+    float nSmoothAngle = 80.0f;
+    for (int nArgument = 1; nArgument < nNumArguments; nArgument++)
     {
-        return 0;
+        if (_wcsicmp(astrArguments[nArgument], L"-input") == 0 && ++nArgument < nNumArguments)
+        {
+            strInput = astrArguments[nArgument];
+        }
+        else if (_wcsicmp(astrArguments[nArgument], L"-output") == 0 && ++nArgument < nNumArguments)
+        {
+            strOutput = astrArguments[nArgument];
+        }
+        else if (_wcsicmp(astrArguments[nArgument], L"-smooth") == 0)
+        {
+            bSmooth = true;
+            if (++nArgument < nNumArguments)
+            {
+                nSmoothAngle = StrToFloat(astrArguments[nArgument]);
+            }
+        }
     }
 
-    CStringW strInput = astrArguments[1];
+    if (bSmooth)
+    {
+        printf(" Smoothing Angle: %f\r\n", nSmoothAngle);
+    }
+    else
+    {
+        printf(" Smoothing Disabled\r\n");
+    }
+
     try
     {
         aiPropertyStore *pPropertyStore = aiCreatePropertyStore();
-        aiSetImportPropertyInteger(pPropertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
-        aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
+        aiSetImportPropertyInteger(pPropertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_TANGENTS_AND_BITANGENTS | (bSmooth ? aiComponent_NORMALS : 0));
+        if (bSmooth)
+        {
+            aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, nSmoothAngle);
+        }
 
         const aiScene *pScene = aiImportFileExWithProperties(CW2A(strInput, CP_UTF8), aiProcess_RemoveComponent | aiProcess_FlipUVs | aiProcess_TransformUVCoords, nullptr, pPropertyStore);
         if (pScene == nullptr)
@@ -201,7 +233,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         }
 
         aiApplyPostProcessing(pScene, aiProcess_FindInvalidData | aiProcess_Triangulate | aiProcess_RemoveRedundantMaterials);
-        aiApplyPostProcessing(pScene, aiProcess_GenSmoothNormals);
+        aiApplyPostProcessing(pScene, bSmooth ? aiProcess_GenSmoothNormals : aiProcess_GenNormals);
         aiApplyPostProcessing(pScene, aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices);
         aiReleasePropertyStore(pPropertyStore);
 
@@ -224,11 +256,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             pModel->m_aNormals.insert(pModel->m_aNormals.end(), kPair.second.m_aNormals.begin(), kPair.second.m_aNormals.end());
         }
 
-        CPathW kPath = strInput;
-        kPath.RemoveExtension();
-
         FILE *pFile = nullptr;
-        CStringW strOutput = (kPath.m_strPath + ".gek");
         _wfopen_s(&pFile, strOutput, L"wb");
         if (pFile != nullptr)
         {
