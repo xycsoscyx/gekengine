@@ -10,16 +10,8 @@
         <filter source="Opaque/Ambient" />
         <filter source="Opaque/Lighting" />
         <filter source="Opaque/SSAO" />
-        <filter source="Opaque/BlurSSAO">
-            <defines>
-                <define name="gs_nAxis" value="float2(1,0)" />
-            </defines>
-        </filter>
-        <filter source="Opaque/BlurSSAO">
-            <defines>
-                <define name="gs_nAxis" value="float2(0,1)" />
-            </defines>
-        </filter>
+        <filter source="Opaque/BlurSSAOx" />
+        <filter source="Opaque/BlurSSAOy" />
         <!--filter source="Opaque/SSR" /-->
     </filters>
 </pass>

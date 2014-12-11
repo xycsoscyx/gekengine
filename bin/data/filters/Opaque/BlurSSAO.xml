@@ -4,6 +4,7 @@
         <define name="gs_nRadius" value="4" />
         <define name="gs_nScale" value="2" />
         <define name="gs_nEdgeSharpness" value="1" />
+        <define name="gs_nAxis" value="float2(1,0)" />
     </defines>
 
     <blend>
