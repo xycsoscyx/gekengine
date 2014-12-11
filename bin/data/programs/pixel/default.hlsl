@@ -56,10 +56,10 @@ half3 DecodeNormal(half2 nEncoded)
 
 float3 GetViewPosition(float2 nTexCoord, float nDepth)
 {
+    nTexCoord.y = 1 - nTexCoord.y;
     nTexCoord = (nTexCoord * 2 - 1);
-    nTexCoord.y = (1 - nTexCoord.y);
     float3 nViewVector = float3((nTexCoord * gs_nCameraFieldOfView), 1.0);
-    return (nViewVector * nDepth);
+    return (nViewVector * nDepth * gs_nCameraMaxDistance);
 }
 
 _INSERT_PIXEL_PROGRAM

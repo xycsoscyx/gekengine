@@ -41,7 +41,7 @@
                     g_nTileMaxDepth = 0;
                 }
 
-                float nViewDepth = gs_pDepthBuffer[nScreenPixel.xy];
+                float nViewDepth = gs_pDepthBuffer[nScreenPixel.xy] * gs_nCameraMaxDistance;
                 uint nViewDepthInt = asuint(nViewDepth);
 
                 GroupMemoryBarrierWithGroupSync();
@@ -189,6 +189,7 @@
                 float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
 	            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
+                return nCenterPosition.y;
 
                 float3 nViewNormal = -normalize(nCenterPosition);
 
