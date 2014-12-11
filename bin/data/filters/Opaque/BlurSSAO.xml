@@ -7,25 +7,35 @@
     </defines>
 
     <blend>
-        <color source="one" destination="zero" operation="add" />
+        <color source="destination_color" destination="zero" operation="add" />
         <alpha source="destination_alpha" destination="zero" operation="add" />
     </blend>
 
     <pixel>
         <resources>
-            <resource stage="1" source="Opaque/SSAO.Ambient" />
+            <resource stage="1" source="Opaque/Deferred.Albedo" />
             <resource stage="2" source="Opaque/Deferred.Depth" />
+            <resource stage="3" source="Opaque/SSAO.Ambient" />
         </resources>
         
         <![CDATA[
-            Texture2D<float>    gs_pAmbientBuffer       : register(t1);
+            Texture2D           gs_pAlbedoBuffer        : register(t1);
             Texture2D<float>    gs_pDepthBuffer         : register(t2);
+            Texture2D<float>    gs_pAmbientBuffer       : register(t3);
 
             static const float gs_nDomainSigmaSquared = (gs_nDomainSigma * gs_nDomainSigma);
             static const float gs_nRangeSigmaSquared = (gs_nRangeSigma * gs_nRangeSigma);
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
+                float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                
+                [branch]
+                if(nAlbedo.w == 1.0)
+                {
+                    return 1;
+                }
+
                 float2 nSize;
                 gs_pAmbientBuffer.GetDimensions(nSize.x, nSize.y);
                 nSize = rcp(nSize);                
@@ -33,9 +43,13 @@
                 float3 nTotalAmbient = 0.0f;
                 float nTotalIntensity = 0.0f;
                 float nCurrentDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                
+                [unroll]
                 for(float nXPos = -gs_nBiLateralSize; nXPos <= gs_nBiLateralSize; nXPos += 1.0f)
                 {
                     float nXCoord = (kInput.texcoord.x + (nXPos * nSize.x));
+
+                    [unroll]
                     for(float nYPos = -gs_nBiLateralSize; nYPos <= gs_nBiLateralSize; nYPos += 1.0f)
                     {
                         float nYCoord = (kInput.texcoord.y + (nYPos * nSize.y));
