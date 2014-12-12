@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
 <filter flipscreens="true">
     <defines>
-        <define name="gs_nRadius" value="4" />
-        <define name="gs_nScale" value="2" />
+        <define name="gs_nRadius" value="6" />
+        <define name="gs_nGuassianDeviation" value="3" />
+        <define name="gs_nScale" value="1" />
         <define name="gs_nEdgeSharpness" value="1" />
+        <define name="gs_nEpsilon" value="0.0001" />
     </defines>
 
     <pixel>
@@ -18,12 +20,14 @@
             Texture2D<float>    gs_pDepthBuffer         : register(t2);
             Texture2D           gs_pScreenBuffer        : register(t3);
 
-            static const float gs_aGuassian[] = 
-            //	{ 0.356642, 0.239400, 0.072410, 0.009869 };
-            	{ 0.398943, 0.241971, 0.053991, 0.004432, 0.000134 };  // stddev = 1.0
-	        //  { 0.153170, 0.144893, 0.122649, 0.092902, 0.062970 };  // stddev = 2.0
-            //	{ 0.111220, 0.107798, 0.098151, 0.083953, 0.067458, 0.050920, 0.036108 }; // stddev = 3.0
-
+            static const float gs_aGuassian[][7] = 
+            {
+                { 0.356642, 0.239400, 0.072410, 0.009869, 0,        0,        0        },
+                { 0.398943, 0.241971, 0.053991, 0.004432, 0.000134, 0,        0        }, // stddev = 1.0
+                { 0.153170, 0.144893, 0.122649, 0.092902, 0.062970, 0,        0        }, // stddev = 2.0
+                { 0.111220, 0.107798, 0.098151, 0.083953, 0.067458, 0.050920, 0.036108 }  // stddev = 3.0
+            };
+            
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
                 float2 nPixelSize;
@@ -33,7 +37,7 @@
 	            float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 	            float4 nCenterColor = gs_pScreenBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
-	            float nTotalWeight = gs_aGuassian[0];
+	            float nTotalWeight = gs_aGuassian[gs_nGuassianDeviation][0];
 	            float nAmbientOcclusion = nCenterColor.a * nTotalWeight;
 
 	            [unroll]
@@ -47,17 +51,17 @@
 			            float nSampleAmbient = gs_pScreenBuffer.Sample(gs_pPointSampler, nSampleCoord).a;
 
 			            // spatial domain: offset gaussian tap
-			            float nWeight = 0.3 + gs_aGuassian[abs(nSample)];
+			            float nWeight = gs_aGuassian[gs_nGuassianDeviation][abs(nSample)];
 
 			            // range domain (the "bilateral" weight). As depth difference increases, decrease weight.
-			            nWeight *= max(0.0, 1.0 - (2000.0 * gs_nEdgeSharpness) * abs(nSampleDepth - nCenterDepth));
+			            nWeight *= rcp(gs_nEpsilon + gs_nEdgeSharpness * abs(nCenterDepth - nSampleDepth));
 
 			            nAmbientOcclusion += nSampleAmbient * nWeight;
 			            nTotalWeight += nWeight;
 		            }
 	            }
 
-	            const float gs_nEpsilon = 0.0001;
+                nAmbientOcclusion = (nAmbientOcclusion / (nTotalWeight + gs_nEpsilon));
                 if(gs_bCombine)
                 {
                     float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
@@ -69,12 +73,12 @@
                     }
                     else
                     {
-	                    return float4(nCenterColor.xyz * nAmbientOcclusion / (nTotalWeight + gs_nEpsilon), 0);
+	                    return float4(nCenterColor.xyz * nAmbientOcclusion, 0);
                     }
                 }
                 else
                 {
-	                return float4(nCenterColor.xyz, nAmbientOcclusion / (nTotalWeight + gs_nEpsilon));
+	                return float4(nCenterColor.xyz, nAmbientOcclusion);
                 }
             }
         ]]>

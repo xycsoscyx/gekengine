@@ -49,7 +49,7 @@ float3x3 GetCoTangentFrame(float3 nPosition, float3 nNormal, float2 nTexCoord)
 
     // construct a scale-invariant frame 
     float nReciprocal = rsqrt(max(dot(nTangent, nTangent), dot(nBiTangent, nBiTangent)));
-    return float3x3(nTangent * nReciprocal, nBiTangent * nReciprocal, nNormal);
+    return float3x3(normalize(nTangent * nReciprocal), normalize(nBiTangent * nReciprocal), nNormal);
 }
 
 half2 EncodeNormal(half3 nNormal)

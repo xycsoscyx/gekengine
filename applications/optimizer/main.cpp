@@ -177,8 +177,6 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 {
     printf("GEK Mesh Optimizer\r\n");
 
-    MessageBox(NULL, L"", L"", MB_OK);
-
     CStringW strInput;
     CStringW strOutput;
     bool bSmooth = false;

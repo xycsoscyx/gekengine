@@ -4,8 +4,8 @@
         <define name="gs_nNumSamples" value="16" />
         <define name="gs_nNumSpirals" value="12" />
         <define name="gs_nRadius" value="1" />
-        <define name="gs_nBeta" value=".2" />
-        <define name="gs_nEpsilon" value=".01" />
+        <define name="gs_nBeta" value=".3" />
+        <define name="gs_nEpsilon" value=".1" />
     </defines>
 
     <blend writemask="a">
@@ -25,9 +25,9 @@
             Texture2D<half2>    gs_pNormalBuffer        : register(t2);
             Texture2D<float>    gs_pDepthBuffer         : register(t3);
 
-            float2 TapLocation(int nSample, float nRandomAngle)
+            float2 TapLocation(float nSample, float nRandomAngle)
             {
-	            float nAlpha = float(nSample + 0.5) * (1.0 / gs_nNumSamples);
+	            float nAlpha = (nSample + 0.5) * (1.0 / gs_nNumSamples);
 	            float nAngle = nAlpha * (gs_nNumSpirals * 2 * gs_nPI) + nRandomAngle;
 	            return nAlpha * float2(cos(nAngle), sin(nAngle));
             }
@@ -55,10 +55,7 @@
 		            float3 nDelta = nSamplePosition - nCenterPosition;
 		            float nDeltaDelta = dot(nDelta, nDelta);
 		            float nDeltaAngle = dot(nDelta, nCenterNormal);
-		            if(nCenterDepth < 1) //do not AO for far plane
-                    {
-			            nAmbientOcclusion += max(0, nDeltaAngle + nCenterDepth * 0.001) / (nDeltaDelta + gs_nEpsilon);
-                    }
+                    nAmbientOcclusion += max(0, nDeltaAngle + nCenterDepth * 0.001) / (nDeltaDelta + gs_nEpsilon);
 	            }
 
 	            nAmbientOcclusion *= 2.0 * gs_nPI * gs_nRadius * gs_nBeta / gs_nNumSamples;
