@@ -8,7 +8,7 @@
 		</entity>
         <entity>
 			<transform />
-            <viewer type="perspective" fieldofview="90" minviewdistance="0.5" maxviewdistance="200" viewport="0,0,1,1" pass="toon"/>
+            <viewer type="perspective" fieldofview="90" minviewdistance="0.5" maxviewdistance="200" viewport="0,0,1,1" pass="opaque"/>
             <follow target="player" offset="0,2,-10" />
 		</entity>
 

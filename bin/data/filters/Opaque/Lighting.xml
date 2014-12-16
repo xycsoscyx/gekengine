@@ -174,7 +174,7 @@
                 nLightDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle * nNormalLightAngle);
 
                 float3 nFs = (nKs + nFd * pow((1 - nLightHalfAngle), 5));
-                float3 nD = (pow(nRoughness / (nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) / gs_nPI);
+                float3 nD = (pow(nRoughness / (nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) * gs_nReciprocalPI);
                 nLightSpecular = (nFs * nD * nNormalLightAngle);
                 return true;
             }

@@ -28,7 +28,7 @@
             float2 TapLocation(float nSample, float nRandomAngle)
             {
 	            float nAlpha = (nSample + 0.5) * (1.0 / gs_nNumSamples);
-	            float nAngle = nAlpha * (gs_nNumSpirals * 2 * gs_nPI) + nRandomAngle;
+	            float nAngle = nAlpha * (gs_nNumSpirals * gs_nTwoPi) + nRandomAngle;
 	            return nAlpha * float2(cos(nAngle), sin(nAngle));
             }
             
@@ -58,9 +58,13 @@
                     nAmbientOcclusion += max(0, nDeltaAngle + nCenterDepth * 0.001) / (nDeltaDelta + gs_nEpsilon);
 	            }
 
-	            nAmbientOcclusion *= 2.0 * gs_nPI * gs_nRadius * gs_nBeta / gs_nNumSamples;
+	            nAmbientOcclusion *= gs_nTwoPi * gs_nRadius * gs_nBeta / gs_nNumSamples;
 	            nAmbientOcclusion = min(1, max(0, 1 - nAmbientOcclusion));
-	            if (abs(ddx(nCenterPosition.z)) < 0.02)
+
+                // Below is directly from the Alchemy SSAO
+	            // Bilateral box-filter over a quad for free, respecting depth edges
+	            // (the difference that this makes is subtle)
+                if (abs(ddx(nCenterPosition.z)) < 0.02)
                 {
 		            nAmbientOcclusion -= ddx(nAmbientOcclusion) * ((nPixelCoord.x & 1) - 0.5);
 	            }
