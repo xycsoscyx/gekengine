@@ -1,4 +1,5 @@
 #include "CGEKComponentNewton.h"
+#include "CGEKComponentTransform.h"
 #include <algorithm>
 #include <ppl.h>
 
@@ -6,108 +7,7 @@
 
 #pragma comment(lib, "newton.lib")
 
-BEGIN_INTERFACE_LIST(CGEKComponentNewton)
-    INTERFACE_LIST_ENTRY_COM(IGEKComponent)
-END_INTERFACE_LIST_UNKNOWN
-
-REGISTER_CLASS(CGEKComponentNewton)
-
-CGEKComponentNewton::CGEKComponentNewton(void)
-{
-}
-
-CGEKComponentNewton::~CGEKComponentNewton(void)
-{
-}
-
-STDMETHODIMP_(LPCWSTR) CGEKComponentNewton::GetName(void) const
-{
-    return L"newton";
-};
-
-STDMETHODIMP_(void) CGEKComponentNewton::Clear(void)
-{
-    m_aData.clear();
-}
-
-STDMETHODIMP CGEKComponentNewton::AddComponent(const GEKENTITYID &nEntityID)
-{
-    m_aData[nEntityID] = DATA();
-    return S_OK;
-}
-
-STDMETHODIMP CGEKComponentNewton::RemoveComponent(const GEKENTITYID &nEntityID)
-{
-    return (m_aData.unsafe_erase(nEntityID) > 0 ? S_OK : E_FAIL);
-}
-
-STDMETHODIMP_(bool) CGEKComponentNewton::HasComponent(const GEKENTITYID &nEntityID) const
-{
-    return (m_aData.count(nEntityID) > 0);
-}
-
-STDMETHODIMP_(void) CGEKComponentNewton::ListProperties(const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const
-{
-    auto pIterator = m_aData.find(nEntityID);
-    if (pIterator != m_aData.end())
-    {
-        OnProperty(L"shape", (*pIterator).second.m_strShape.GetString());
-        OnProperty(L"params", (*pIterator).second.m_strParams.GetString());
-        OnProperty(L"mass", (*pIterator).second.m_nMass);
-    }
-}
-
-STDMETHODIMP_(bool) CGEKComponentNewton::GetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const
-{
-    bool bReturn = false;
-    auto pIterator = m_aData.find(nEntityID);
-    if (pIterator != m_aData.end())
-    {
-        if (_wcsicmp(pName, L"shape") == 0)
-        {
-            kValue = (*pIterator).second.m_strShape.GetString();
-            bReturn = true;
-        }
-        else if (_wcsicmp(pName, L"params") == 0)
-        {
-            kValue = (*pIterator).second.m_strParams.GetString();
-            bReturn = true;
-        }
-        else if (_wcsicmp(pName, L"mass") == 0)
-        {
-            kValue = (*pIterator).second.m_nMass;
-            bReturn = true;
-        }
-    }
-
-    return bReturn;
-}
-
-STDMETHODIMP_(bool) CGEKComponentNewton::SetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue)
-{
-    bool bReturn = false;
-    auto pIterator = m_aData.find(nEntityID);
-    if (pIterator != m_aData.end())
-    {
-        if (_wcsicmp(pName, L"shape") == 0)
-        {
-            (*pIterator).second.m_strShape = kValue.GetRawString();
-            bReturn = true;
-        }
-        else if (_wcsicmp(pName, L"params") == 0)
-        {
-            (*pIterator).second.m_strParams = kValue.GetRawString();
-            bReturn = true;
-        }
-        else if (_wcsicmp(pName, L"mass") == 0)
-        {
-            (*pIterator).second.m_nMass = kValue.GetFloat();
-            bReturn = true;
-        }
-    }
-
-    return bReturn;
-}
+REGISTER_COMPONENT(newton)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemNewton)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
@@ -123,41 +23,18 @@ int CGEKComponentSystemNewton::OnAABBOverlap(const NewtonMaterial *pMaterial, co
 
 void CGEKComponentSystemNewton::ContactsProcess(const NewtonJoint *const pContactJoint, dFloat nFrameTime, int nThreadID)
 {
+/*
     NewtonBody *pBody0 = NewtonJointGetBody0(pContactJoint);
     NewtonBody *pBody1 = NewtonJointGetBody1(pContactJoint);
     NewtonWorld *pWorld = NewtonBodyGetWorld(pBody0);
 
-    CGEKComponentSystemNewton *pNewtonSystem = (CGEKComponentSystemNewton *)NewtonWorldGetUserData(pWorld);
-    if (pNewtonSystem != nullptr)
+    GEKENTITYID nEntityID0 = GEKENTITYID(NewtonBodyGetUserData(pBody0));
+    GEKENTITYID nEntityID1 = GEKENTITYID(NewtonBodyGetUserData(pBody1));
+    if(nEntityID0 != GEKINVALIDENTITYID && 
+       nEntityID1 != GEKINVALIDENTITYID)
     {
-        CGEKComponentNewton *pComponent0 = static_cast<CGEKComponentNewton *>(NewtonBodyGetUserData(pBody0));
-        CGEKComponentNewton *pComponent1 = static_cast<CGEKComponentNewton *>(NewtonBodyGetUserData(pBody1));
-        if (pComponent0 != nullptr && pComponent1 != nullptr)
-        {
-/*          
-            CComPtr<IUnknown> spComponent0;
-            CComPtr<IUnknown> spComponent1;
-            pComponent0->QueryInterface(IID_PPV_ARGS(&spComponent0));
-            pComponent1->QueryInterface(IID_PPV_ARGS(&spComponent1));
-            pComponent0->GetEntity()->OnEvent(L"collision", (IUnknown *)spComponent1);
-            pComponent1->GetEntity()->OnEvent(L"collision", (IUnknown *)spComponent0);
-*/
-        }
-        else if (pComponent0 != nullptr)
-        {
-/*          
-            pComponent0->GetEntity()->OnEvent(L"collision");
-*/
-        }
-        else if (pComponent1 != nullptr)
-        {
-/*          
-            pComponent1->GetEntity()->OnEvent(L"collision");
-*/
-        }
     }
-/*
-    NewtonWorld *pWorld = NewtonBodyGetWorld(pBody0);
+
     NewtonWorldCriticalSectionLock(pWorld, nThreadID);
     for (void *pContact = NewtonContactJointGetFirstContact(pContactJoint); pContact; pContact = NewtonContactJointGetNextContact(pContactJoint, pContact))
     {
@@ -351,13 +228,10 @@ void CGEKComponentSystemNewton::OnEntityUpdated(const NewtonBody *pBody, const G
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    GEKVALUE kMass;
-    m_pSceneManager->GetProperty(nEntityID, L"newton", L"mass", kMass);
-
     float4x4 nMatrix;
     NewtonBodyGetMatrix(pBody, nMatrix.data);
-
-    float3 nGravity = (m_pSceneManager->GetGravity(nMatrix.t) * kMass.GetFloat());
+    auto &kNewton = m_pSceneManager->GetComponent<COMPONENT_DATA(newton)>(nEntityID, L"newton");
+    float3 nGravity = (m_pSceneManager->GetGravity(nMatrix.t) * kNewton.mass);
     NewtonBodyAddForce(pBody, nGravity.xyz);
 }
 
@@ -365,8 +239,9 @@ void CGEKComponentSystemNewton::OnEntityTransformed(const NewtonBody *pBody, con
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    m_pSceneManager->SetProperty(nEntityID, L"transform", L"position", nMatrix.t);
-    m_pSceneManager->SetProperty(nEntityID, L"transform", L"rotation", quaternion(nMatrix));
+    auto &kTransform = m_pSceneManager->GetComponent<COMPONENT_DATA(transform)>(nEntityID, L"transform");
+    kTransform.position = nMatrix.t;
+    kTransform.rotation = nMatrix;
 }
 
 STDMETHODIMP CGEKComponentSystemNewton::Initialize(void)
@@ -458,25 +333,14 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
     {
         if (m_pSceneManager->HasComponent(nEntityID, L"transform"))
         {
-            GEKVALUE kShape;
-            m_pSceneManager->GetProperty(nEntityID, L"newton", L"shape", kShape);
-            if (!kShape.GetString().IsEmpty())
+            auto &kTransform = m_pSceneManager->GetComponent<COMPONENT_DATA(transform)>(nEntityID, L"transform");
+            auto &kNewton = m_pSceneManager->GetComponent<COMPONENT_DATA(newton)>(nEntityID, L"delete");
+            if (!kNewton.shape.IsEmpty())
             {
-                GEKVALUE kMass;
-                GEKVALUE kParams;
-                m_pSceneManager->GetProperty(nEntityID, L"newton", L"mass", kMass);
-                m_pSceneManager->GetProperty(nEntityID, L"newton", L"params", kParams);
-
-                GEKVALUE kPosition;
-                GEKVALUE kRotation;
-                m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kPosition);
-                m_pSceneManager->GetProperty(nEntityID, L"transform", L"rotation", kRotation);
-
                 float4x4 nMatrix;
-                nMatrix = kRotation.GetQuaternion();
-                nMatrix.t = kPosition.GetFloat3();
-
-                NewtonCollision *pCollision = LoadCollision(kShape.GetRawString(), kParams.GetRawString());
+                nMatrix = kTransform.rotation;
+                nMatrix.t = kTransform.position;
+                NewtonCollision *pCollision = LoadCollision(kNewton.shape, kNewton.params);
                 if (pCollision != nullptr)
                 {
                     NewtonBody *pBody = NewtonCreateDynamicBody(m_pWorld, pCollision, nMatrix.data);
@@ -484,7 +348,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
                     if (pBody != nullptr)
                     {
                         NewtonBodySetUserData(pBody, (void *)nEntityID);
-                        NewtonBodySetMassProperties(pBody, kMass.GetFloat(), pCollision);
+                        NewtonBodySetMassProperties(pBody, kNewton.mass, pCollision);
                         NewtonBodySetTransformCallback(pBody, [](const NewtonBody *pBody, const dFloat *pMatrix, int nThreadID) -> void
                         {
                             REQUIRE_VOID_RETURN(pBody);

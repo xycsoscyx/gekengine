@@ -6,42 +6,11 @@
 #include <concurrent_unordered_map.h>
 #include <Newton.h>
 
-class CGEKComponentNewton : public CGEKUnknown
-                          , public IGEKComponent
-{
-public:
-    struct DATA
-    {
-    public:
-        CStringW m_strShape;
-        CStringW m_strParams;
-        float m_nMass;
-
-    public:
-        DATA(void)
-            : m_nMass(0.0f)
-        {
-        }
-    };
-
-public:
-    concurrency::concurrent_unordered_map<GEKENTITYID, DATA> m_aData;
-
-public:
-    DECLARE_UNKNOWN(CGEKComponentNewton)
-    CGEKComponentNewton(void);
-    ~CGEKComponentNewton(void);
-
-    // IGEKComponent
-    STDMETHOD_(LPCWSTR, GetName)                (THIS) const;
-    STDMETHOD_(void, Clear)                     (THIS);
-    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID) const;
-    STDMETHOD_(void, ListProperties)            (THIS_ const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const;
-    STDMETHOD_(bool, GetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const;
-    STDMETHOD_(bool, SetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue);
-};
+DECLARE_COMPONENT(newton)
+    DECLARE_COMPONENT_DATA(CStringW, shape)
+    DECLARE_COMPONENT_DATA(CStringW, params)
+    DECLARE_COMPONENT_DATA(float, mass)
+END_COMPONENT(newton)
 
 class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public IGEKSceneObserver

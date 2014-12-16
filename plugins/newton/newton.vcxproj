@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{215A87CB-0AEA-4823-BFC0-56F30CB4C077}</ProjectGuid>
+    <ProjectGuid>{3985C661-11F4-4E1B-B35D-C9C6C791F3D1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>components</RootNamespace>
+    <RootNamespace>newton</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -103,11 +103,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentControl.cpp" />
-    <ClCompile Include="Source\CGEKComponentFollow.cpp" />
-    <ClCompile Include="Source\CGEKComponentLight.cpp" />
-    <ClCompile Include="Source\CGEKComponentTransform.cpp" />
-    <ClCompile Include="Source\CGEKComponentViewer.cpp" />
+    <ClCompile Include="Source\CGEKComponentNewton.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\api\GEKAPI.h" />
@@ -119,13 +115,9 @@
     <ClInclude Include="..\..\api\IGEKProgramManager.h" />
     <ClInclude Include="..\..\api\IGEKRenderManager.h" />
     <ClInclude Include="..\..\api\IGEKSceneManager.h" />
-    <ClInclude Include="GEKComponents.h" />
-    <ClInclude Include="GEKComponentsCLSIDs.h" />
-    <ClInclude Include="Include\CGEKComponentControl.h" />
-    <ClInclude Include="Include\CGEKComponentFollow.h" />
-    <ClInclude Include="Include\CGEKComponentLight.h" />
-    <ClInclude Include="Include\CGEKComponentTransform.h" />
-    <ClInclude Include="Include\CGEKComponentViewer.h" />
+    <ClInclude Include="GEKNewton.h" />
+    <ClInclude Include="GEKNewtonCLSIDs.h" />
+    <ClInclude Include="Include\CGEKComponentNewton.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

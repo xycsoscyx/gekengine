@@ -9,6 +9,10 @@ const GEKENTITYID GEKINVALIDENTITYID = 0;
 
 DECLARE_INTERFACE_IID_(IGEKSceneManager, IUnknown, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B")
 {
+private:
+    STDMETHOD_(LPVOID, GetComponent)            (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent) PURE;
+
+public:
     STDMETHOD(Load)                             (THIS_ LPCWSTR pName) PURE;
 
     STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID, LPCWSTR pName = nullptr) PURE;
@@ -19,9 +23,11 @@ DECLARE_INTERFACE_IID_(IGEKSceneManager, IUnknown, "43DF2FD7-3BE2-4333-86ED-CB12
     STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent) PURE;
     STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent) PURE;
 
-    STDMETHOD_(void, ListProperties)            (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const PURE;
-    STDMETHOD_(bool, GetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, LPCWSTR pName, GEKVALUE &kValue) const PURE;
-    STDMETHOD_(bool, SetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, LPCWSTR pName, const GEKVALUE &kValue) PURE;
+    template <typename CLASS>
+    CLASS &GetComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent)
+    {
+        return *(CLASS *)GetComponent(nEntityID, pComponent);
+    }
 
     STDMETHOD_(void, ListEntities)              (THIS_ std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel = false) PURE;
     STDMETHOD_(void, ListComponentsEntities)    (THIS_ const std::vector<CStringW> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel = false) PURE;

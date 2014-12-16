@@ -12,33 +12,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\CGEKComponentTransform.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKComponentViewer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKComponentLight.cpp">
+    <ClCompile Include="Source\CGEKComponentNewton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentFollow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKComponentControl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEKComponents.h" />
-    <ClInclude Include="GEKComponentsCLSIDs.h" />
-    <ClInclude Include="Include\CGEKComponentTransform.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentViewer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentLight.h">
+    <ClInclude Include="Include\CGEKComponentNewton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\api\IGEKRenderManager.h">
@@ -68,12 +48,8 @@
     <ClInclude Include="..\..\api\IGEKProgramManager.h">
       <Filter>API Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKComponentFollow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentControl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="GEKNewton.h" />
+    <ClInclude Include="GEKNewtonCLSIDs.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

@@ -5,42 +5,10 @@
 #include "GEKAPI.h"
 #include <concurrent_unordered_map.h>
 
-class CGEKComponentControl : public CGEKUnknown
-                           , public IGEKComponent
-{
-public:
-    struct DATA
-    {
-    public:
-        float m_nTurn;
-        float m_nTilt;
-
-    public:
-        DATA(void)
-            : m_nTurn(0.0f)
-            , m_nTilt(0.0f)
-        {
-        }
-    };
-
-public:
-    concurrency::concurrent_unordered_map<GEKENTITYID, DATA> m_aData;
-
-public:
-    DECLARE_UNKNOWN(CGEKComponentControl)
-    CGEKComponentControl(void);
-    ~CGEKComponentControl(void);
-
-    // IGEKComponent
-    STDMETHOD_(LPCWSTR, GetName)                (THIS) const;
-    STDMETHOD_(void, Clear)                     (THIS);
-    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID) const;
-    STDMETHOD_(void, ListProperties)            (THIS_ const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const;
-    STDMETHOD_(bool, GetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const;
-    STDMETHOD_(bool, SetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue);
-};
+DECLARE_COMPONENT(control)
+    DECLARE_COMPONENT_DATA(float, turn)
+    DECLARE_COMPONENT_DATA(float, tilt)
+END_COMPONENT(control)
 
 class CGEKComponentSystemControl : public CGEKUnknown
                                  , public IGEKInputObserver

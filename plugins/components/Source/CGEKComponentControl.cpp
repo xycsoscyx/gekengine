@@ -1,100 +1,11 @@
 #include "CGEKComponentControl.h"
+#include "CGEKComponentTransform.h"
 #include <algorithm>
 #include <ppl.h>
 
 #include "GEKEngineCLSIDs.h"
 
-BEGIN_INTERFACE_LIST(CGEKComponentControl)
-    INTERFACE_LIST_ENTRY_COM(IGEKComponent)
-END_INTERFACE_LIST_UNKNOWN
-
-REGISTER_CLASS(CGEKComponentControl)
-
-CGEKComponentControl::CGEKComponentControl(void)
-{
-}
-
-CGEKComponentControl::~CGEKComponentControl(void)
-{
-}
-
-STDMETHODIMP_(LPCWSTR) CGEKComponentControl::GetName(void) const
-{
-    return L"control";
-};
-
-STDMETHODIMP_(void) CGEKComponentControl::Clear(void)
-{
-    m_aData.clear();
-}
-
-STDMETHODIMP CGEKComponentControl::AddComponent(const GEKENTITYID &nEntityID)
-{
-    m_aData[nEntityID] = DATA();
-    return S_OK;
-}
-
-STDMETHODIMP CGEKComponentControl::RemoveComponent(const GEKENTITYID &nEntityID)
-{
-    return (m_aData.unsafe_erase(nEntityID) > 0 ? S_OK : E_FAIL);
-}
-
-STDMETHODIMP_(bool) CGEKComponentControl::HasComponent(const GEKENTITYID &nEntityID) const
-{
-    return (m_aData.count(nEntityID) > 0);
-}
-
-STDMETHODIMP_(void) CGEKComponentControl::ListProperties(const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const
-{
-    auto pIterator = m_aData.find(nEntityID);
-    if (pIterator != m_aData.end())
-    {
-        OnProperty(L"turn", (*pIterator).second.m_nTurn);
-        OnProperty(L"tilt", (*pIterator).second.m_nTilt);
-    }
-}
-
-STDMETHODIMP_(bool) CGEKComponentControl::GetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const
-{
-    bool bReturn = false;
-    auto pIterator = m_aData.find(nEntityID);
-    if (pIterator != m_aData.end())
-    {
-        if (_wcsicmp(pName, L"turn") == 0)
-        {
-            kValue = (*pIterator).second.m_nTurn;
-            bReturn = true;
-        }
-        else if (_wcsicmp(pName, L"tilt") == 0)
-        {
-            kValue = (*pIterator).second.m_nTilt;
-            bReturn = true;
-        }
-    }
-
-    return bReturn;
-}
-
-STDMETHODIMP_(bool) CGEKComponentControl::SetProperty(const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue)
-{
-    bool bReturn = false;
-    auto pIterator = m_aData.find(nEntityID);
-    if (pIterator != m_aData.end())
-    {
-        if (_wcsicmp(pName, L"turn") == 0)
-        {
-            (*pIterator).second.m_nTurn = kValue.GetFloat();
-            bReturn = true;
-        }
-        else if (_wcsicmp(pName, L"tilt") == 0)
-        {
-            (*pIterator).second.m_nTilt = kValue.GetFloat();
-            bReturn = true;
-        }
-    }
-
-    return bReturn;
-}
+REGISTER_COMPONENT(control)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemControl)
     INTERFACE_LIST_ENTRY_COM(IGEKInputObserver)
@@ -172,22 +83,13 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnPreUpdate(float nGameTime, flo
     {
         for (auto pEntity : aActions)
         {
-            GEKVALUE kPosition;
-            GEKVALUE kRotation;
-            m_pSceneManager->GetProperty(pEntity.first, L"transform", L"position", kPosition);
-            m_pSceneManager->GetProperty(pEntity.first, L"transform", L"rotation", kRotation);
+            auto &kTransform = m_pSceneManager->GetComponent<COMPONENT_DATA(transform)>(pEntity.first, L"transform");
+            auto &kControl = m_pSceneManager->GetComponent<COMPONENT_DATA(control)>(pEntity.first, L"control");
 
-            GEKVALUE kTurn;
-            GEKVALUE kTilt;
-            m_pSceneManager->GetProperty(pEntity.first, L"control", L"turn", kTurn);
-            m_pSceneManager->GetProperty(pEntity.first, L"control", L"tilt", kTilt);
+            kControl.turn += (pEntity.second[L"turn"] * 0.01f);
+            kControl.tilt = 0.0f;//+= (pEntity.second[L"tilt"] * 0.01f);
 
-            float nTurn = (kTurn.GetFloat() + pEntity.second[L"turn"] * 0.01f);
-            float nTilt = 0.0f;// (kTilt.GetFloat() + pEntity.second[L"tilt"] * 0.01f);
-            m_pSceneManager->SetProperty(pEntity.first, L"control", L"turn", nTurn);
-            m_pSceneManager->SetProperty(pEntity.first, L"control", L"tilt", nTilt);
-
-            float4x4 nRotation = float4x4(nTilt, 0.0f, 0.0f) * float4x4(0.0f, nTurn, 0.0f);
+            float4x4 nRotation = (float4x4(kControl.tilt, 0.0f, 0.0f) * float4x4(0.0f, kControl.turn, 0.0f));
 
             float3 nForce(0.0f, 0.0f, 0.0f);
             nForce += nRotation.rz * pEntity.second[L"forward"];
@@ -198,9 +100,8 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnPreUpdate(float nGameTime, flo
             nForce -= nRotation.ry * pEntity.second[L"fall"];
             nForce *= 10.0f;
 
-            float3 nPosition = (kPosition.GetFloat3() + (nForce * nFrameTime));
-            m_pSceneManager->SetProperty(pEntity.first, L"transform", L"position", nPosition);
-            m_pSceneManager->SetProperty(pEntity.first, L"transform", L"rotation", quaternion(nRotation));
+            kTransform.position += (nForce * nFrameTime);
+            kTransform.rotation = nRotation;
         }
     };
 
