@@ -725,7 +725,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::FlipScreens(void)
 
 STDMETHODIMP_(void) CGEKRenderSystem::SetScreenTargets(IGEK3DVideoContext *pContext, IUnknown *pDepthBuffer)
 {
-    REQUIRE_VOID_RETURN(m_pVideoSystem);
+    REQUIRE_VOID_RETURN(m_pVideoSystem && m_spScreenBuffer[m_nCurrentScreenBuffer]);
 
     pContext->SetRenderTargets({ m_spScreenBuffer[m_nCurrentScreenBuffer] }, (pDepthBuffer ? pDepthBuffer : nullptr));
     pContext->SetViewports({ m_kScreenViewPort });

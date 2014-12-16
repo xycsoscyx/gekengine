@@ -9,7 +9,7 @@
     <filters>
         <filter source="Opaque/Deferred" />
         <filter source="Opaque/Ambient" />
-        <filter source="Opaque/Lighting" />
+        <!--filter source="Opaque/Lighting" /-->
         <filter source="Opaque/SSAO" />
         <filter source="Opaque/BlurSSAO">
             <defines>

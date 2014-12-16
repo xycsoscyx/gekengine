@@ -61,7 +61,7 @@
                 nEdgeDepth.y = (nSampleDepth0P + nSampleDepth0N);
                 nEdgeDepth.z = (nSampleDepthNN + nSampleDepthPP);
                 nEdgeDepth.w = (nSampleDepthNP + nSampleDepthPN);
-                nEdgeDepth = (abs((2.0f * nCenterDepth) - nEdgeDepth) - 0.001f);
+                nEdgeDepth = (abs((2.0f * nCenterDepth) - nEdgeDepth) - 0.004f);
                 nEdgeDepth = step(nEdgeDepth, 0);
                 float nAverageEdgeDepth = saturate(dot(nEdgeDepth, 0.4f));
 

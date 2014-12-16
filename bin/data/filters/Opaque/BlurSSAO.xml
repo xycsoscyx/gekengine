@@ -73,7 +73,7 @@
                     }
                     else
                     {
-	                    return float4(nCenterColor.xyz * nAmbientOcclusion, 0);
+	                    return nAmbientOcclusion;//float4(nCenterColor.xyz * nAmbientOcclusion, 0);
                     }
                 }
                 else
