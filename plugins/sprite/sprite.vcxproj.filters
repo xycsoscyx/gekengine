@@ -2,9 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentSystemSprite.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\CGEKComponentSprite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -25,12 +22,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKSprite.h" />
-    <ClInclude Include="Include\CGEKComponentSprite.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentSystemSprite.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\api\IGEKRenderManager.h">
       <Filter>API Files</Filter>
     </ClInclude>
@@ -57,6 +48,9 @@
     </ClInclude>
     <ClInclude Include="..\..\api\IGEKProgramManager.h">
       <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKComponentSprite.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

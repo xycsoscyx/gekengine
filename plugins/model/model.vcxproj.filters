@@ -2,9 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentSystemModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\CGEKComponentModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -26,9 +23,6 @@
   <ItemGroup>
     <ClInclude Include="GEKModel.h" />
     <ClInclude Include="Include\CGEKComponentModel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentSystemModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\api\IGEKRenderManager.h">

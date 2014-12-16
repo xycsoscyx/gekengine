@@ -1,9 +1,6 @@
 #include "CGEKComponentFollow.h"
-#include "CGEKComponentTransform.h"
-#include <algorithm>
-#include <ppl.h>
-
 #include "GEKEngineCLSIDs.h"
+#include "GEKEngine.h"
 
 REGISTER_COMPONENT(follow)
 

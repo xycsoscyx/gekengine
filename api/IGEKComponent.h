@@ -3,6 +3,7 @@
 #include "GEKUtility.h"
 #include "GEKVALUE.h"
 #include "IGEKSceneManager.h"
+#include <concurrent_unordered_map.h>
 
 #pragma warning(disable:4503)
 

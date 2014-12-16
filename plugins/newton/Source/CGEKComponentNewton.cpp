@@ -1,9 +1,6 @@
 #include "CGEKComponentNewton.h"
-#include "CGEKComponentTransform.h"
-#include <algorithm>
-#include <ppl.h>
-
 #include "GEKEngineCLSIDs.h"
+#include "GEKEngine.h"
 
 #pragma comment(lib, "newton.lib")
 

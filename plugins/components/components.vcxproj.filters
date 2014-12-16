@@ -12,15 +12,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\CGEKComponentTransform.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKComponentViewer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKComponentLight.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Source\CGEKComponentFollow.cpp">
       <Filter>Source Files</Filter>
@@ -32,15 +23,6 @@
   <ItemGroup>
     <ClInclude Include="GEKComponents.h" />
     <ClInclude Include="GEKComponentsCLSIDs.h" />
-    <ClInclude Include="Include\CGEKComponentTransform.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentViewer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentLight.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\api\IGEKRenderManager.h">
       <Filter>API Files</Filter>
     </ClInclude>

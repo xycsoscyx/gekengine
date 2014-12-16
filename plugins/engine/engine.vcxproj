@@ -106,6 +106,9 @@
     <ClInclude Include="..\..\api\IGEKSceneManager.h" />
     <ClInclude Include="GEKEngine.h" />
     <ClInclude Include="GEKEngineCLSIDs.h" />
+    <ClInclude Include="Include\CGEKComponentLight.h" />
+    <ClInclude Include="Include\CGEKComponentTransform.h" />
+    <ClInclude Include="Include\CGEKComponentViewer.h" />
     <ClInclude Include="Include\CGEKEngine.h" />
     <ClInclude Include="Include\CGEKPopulationSystem.h" />
     <ClInclude Include="Include\CGEKProperties.h" />
@@ -120,6 +123,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Source\CGEKComponentLight.cpp" />
+    <ClCompile Include="Source\CGEKComponentTransform.cpp" />
+    <ClCompile Include="Source\CGEKComponentViewer.cpp" />
     <ClCompile Include="Source\CGEKEngine.cpp" />
     <ClCompile Include="Source\CGEKPopulationSystem.cpp" />
     <ClCompile Include="Source\CGEKProperties.cpp" />

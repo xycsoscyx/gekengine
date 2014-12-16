@@ -93,7 +93,6 @@
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Source\CGEKComponentModel.cpp" />
-    <ClCompile Include="Source\CGEKComponentSystemModel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
@@ -115,7 +114,6 @@
     <ClInclude Include="..\..\api\IGEKSceneManager.h" />
     <ClInclude Include="GEKModel.h" />
     <ClInclude Include="Include\CGEKComponentModel.h" />
-    <ClInclude Include="Include\CGEKComponentSystemModel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

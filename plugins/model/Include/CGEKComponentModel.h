@@ -1,45 +1,86 @@
 #pragma once
 
-#include "GEKUtility.h"
 #include "GEKContext.h"
+#include "GEKSystem.h"
 #include "GEKAPI.h"
-#include <concurrent_unordered_map.h>
+#include <concurrent_vector.h>
 
-class CGEKComponentModel : public CGEKUnknown
-                         , public IGEKComponent
+DECLARE_COMPONENT(model)
+    DECLARE_COMPONENT_DATA(CStringW, source)
+    DECLARE_COMPONENT_DATA(CStringW, params)
+    DECLARE_COMPONENT_DATA(float3, scale)
+    DECLARE_COMPONENT_DATA(float4, color)
+END_COMPONENT(model)
+
+class CGEKComponentSystemModel : public CGEKUnknown
+                               , public IGEKComponentSystem
+                               , public IGEKSceneObserver
+                               , public IGEKRenderObserver
 {
 public:
-    struct DATA
+    struct MATERIAL
     {
-    public:
-        CStringW m_strSource;
-        CStringW m_strParams;
+        UINT32 m_nFirstVertex;
+        UINT32 m_nFirstIndex;
+        UINT32 m_nNumIndices;
+    };
+
+    struct MODEL
+    {
+        aabb m_nAABB;
+        CComPtr<IGEK3DVideoBuffer> m_spPositionBuffer;
+        CComPtr<IGEK3DVideoBuffer> m_spTexCoordBuffer;
+        CComPtr<IGEK3DVideoBuffer> m_spNormalBuffer;
+        CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
+        std::multimap<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
+    };
+
+    struct INSTANCE
+    {
+        float4x4 m_nMatrix;
         float3 m_nScale;
+        float m_nPadding;
         float4 m_nColor;
 
-    public:
-        DATA(void)
-            : m_nScale(1.0f, 1.0f, 1.0f)
-            , m_nColor(1.0f, 1.0f, 1.0f, 1.0f)
+        INSTANCE(const float4x4 &nMatrix, const float3 &nScale, const float4 &nColor)
+            : m_nMatrix(nMatrix)
+            , m_nScale(nScale)
+            , m_nColor(nColor)
         {
         }
     };
 
-public:
-    concurrency::concurrent_unordered_map<GEKENTITYID, DATA> m_aData;
+private:
+    CComPtr<IGEK3DVideoBuffer> m_spInstanceBuffer;
+    CComPtr<IUnknown> m_spVertexProgram;
+    IGEKSceneManager *m_pSceneManager;
+    IGEKRenderManager *m_pRenderManager;
+    IGEK3DVideoSystem *m_pVideoSystem;
+    IGEKMaterialManager *m_pMaterialManager;
+    IGEKProgramManager *m_pProgramManager;
+
+    concurrency::critical_section m_kCritical;
+    std::unordered_map<CStringW, MODEL> m_aModels;
+    std::unordered_map<MODEL *, std::vector<INSTANCE>> m_aVisible;
 
 public:
-    DECLARE_UNKNOWN(CGEKComponentModel)
-    CGEKComponentModel(void);
-    ~CGEKComponentModel(void);
+    CGEKComponentSystemModel(void);
+    virtual ~CGEKComponentSystemModel(void);
+    DECLARE_UNKNOWN(CGEKComponentSystemModel);
 
-    // IGEKComponent
-    STDMETHOD_(LPCWSTR, GetName)                (THIS) const;
-    STDMETHOD_(void, Clear)                     (THIS);
-    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID) const;
-    STDMETHOD_(void, ListProperties)            (THIS_ const GEKENTITYID &nEntityID, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const;
-    STDMETHOD_(bool, GetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, GEKVALUE &kValue) const;
-    STDMETHOD_(bool, SetProperty)               (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pName, const GEKVALUE &kValue);
+    MODEL *GetModel(LPCWSTR pName, LPCWSTR pParams);
+
+    // IGEKUnknown
+    STDMETHOD(Initialize)                       (THIS);
+    STDMETHOD_(void, Destroy)                   (THIS);
+
+    // IGEKSceneObserver
+    STDMETHOD(OnLoadEnd)                        (THIS_ HRESULT hRetVal);
+    STDMETHOD_(void, OnFree)                    (THIS);
+
+    // IGEKRenderObserver
+    STDMETHOD_(void, OnPreRender)               (THIS);
+    STDMETHOD_(void, OnCullScene)               (THIS);
+    STDMETHOD_(void, OnDrawScene)               (THIS_ IGEK3DVideoContext *pContext, UINT32 nVertexAttributes);
+    STDMETHOD_(void, OnPostRender)              (THIS);
 };
