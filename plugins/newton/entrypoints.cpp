@@ -11,7 +11,7 @@ DECLARE_REGISTERED_CLASS(CGEKComponentnewton)
 
 DECLARE_REGISTERED_CLASS(CGEKComponentSystemNewton)
 
-DECLARE_CONTEXT_SOURCE(Components)
+DECLARE_CONTEXT_SOURCE(Newton)
     ADD_CONTEXT_CLASS(CLSID_GEKComponentNewton, CGEKComponentnewton)
         ADD_CLASS_TYPE(CLSID_GEKComponentType)
     ADD_CONTEXT_CLASS(CLSID_GEKComponentSystemNewton, CGEKComponentSystemNewton)

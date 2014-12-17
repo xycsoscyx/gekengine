@@ -254,6 +254,10 @@ STDMETHODIMP CGEKPopulationSystem::AddComponent(const GEKENTITYID &nEntityID, LP
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = (*pIterator).second->DeSerialize(nEntityID, aParams);
+            if (SUCCEEDED(hRetVal))
+            {
+                CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentAdded, std::placeholders::_1, nEntityID, pComponent)));
+            }
         }
     }
 
