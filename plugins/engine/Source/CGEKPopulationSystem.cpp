@@ -254,10 +254,6 @@ STDMETHODIMP CGEKPopulationSystem::AddComponent(const GEKENTITYID &nEntityID, LP
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = (*pIterator).second->DeSerialize(nEntityID, aParams);
-            for (auto kPair : aParams)
-            {
-                //(*pIterator).second->SetProperty(nEntityID, kPair.first, kPair.second.GetString());
-            }
         }
     }
 

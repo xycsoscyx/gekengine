@@ -6,9 +6,9 @@
 #include <concurrent_unordered_map.h>
 
 DECLARE_COMPONENT(viewer)
-    DECLARE_COMPONENT_DATA(float, fov)
-    DECLARE_COMPONENT_DATA(float, mindistance)
-    DECLARE_COMPONENT_DATA(float, maxdistance)
+    DECLARE_COMPONENT_DATA(float, fieldofview)
+    DECLARE_COMPONENT_DATA(float, minviewdistance)
+    DECLARE_COMPONENT_DATA(float, maxviewdistance)
     DECLARE_COMPONENT_DATA(float4, viewport)
     DECLARE_COMPONENT_DATA(CStringW, pass)
 END_DECLARE_COMPONENT(viewer)

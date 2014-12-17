@@ -1033,15 +1033,15 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             float nYSize = float(m_pSystem->GetYSize());
             float nAspect = (nXSize / nYSize);
 
-            float nFieldOfView = _DEGTORAD(kViewer.fov);
+            float nFieldOfView = _DEGTORAD(kViewer.fieldofview);
             m_kCurrentBuffer.m_nCameraFieldOfView.x = tan(nFieldOfView * 0.5f);
             m_kCurrentBuffer.m_nCameraFieldOfView.y = (m_kCurrentBuffer.m_nCameraFieldOfView.x / nAspect);
-            m_kCurrentBuffer.m_nCameraMinDistance = kViewer.mindistance;
-            m_kCurrentBuffer.m_nCameraMaxDistance = kViewer.maxdistance;
+            m_kCurrentBuffer.m_nCameraMinDistance = kViewer.minviewdistance;
+            m_kCurrentBuffer.m_nCameraMaxDistance = kViewer.maxviewdistance;
             m_kCurrentBuffer.m_nCameraPosition = kTransform.position;
 
             m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
-            m_kCurrentBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kViewer.mindistance, kViewer.maxdistance);
+            m_kCurrentBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kViewer.minviewdistance, kViewer.maxviewdistance);
             m_kCurrentBuffer.m_nInvProjectionMatrix = m_kCurrentBuffer.m_nProjectionMatrix.GetInverse();
             m_kCurrentBuffer.m_nTransformMatrix = (m_kCurrentBuffer.m_nViewMatrix * m_kCurrentBuffer.m_nProjectionMatrix);
 
