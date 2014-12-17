@@ -581,3 +581,77 @@ bool StrToBoolean(LPCWSTR pExpression)
     return nValue;
 }
 
+CStringW StrFromDouble(double nValue)
+{
+    CStringW strValue;
+    strValue.Format(L"%f", nValue);
+    return strValue;
+}
+
+CStringW StrFromFloat(float nValue)
+{
+    CStringW strValue;
+    strValue.Format(L"%f", nValue);
+    return strValue;
+}
+
+CStringW StrFromFloat2(float2 nValue)
+{
+    CStringW strValue;
+    strValue.Format(L"%f,%f", nValue.x, nValue.y);
+    return strValue;
+}
+
+CStringW StrFromFloat3(float3 nValue)
+{
+    CStringW strValue;
+    strValue.Format(L"%f,%f,%f", nValue.x, nValue.y, nValue.z);
+    return strValue;
+}
+
+CStringW StrFromFloat4(float4 nValue)
+{
+    CStringW strValue;
+    strValue.Format(L"%f,%f,%f,%f", nValue.x, nValue.y, nValue.z, nValue.w);
+    return strValue;
+}
+
+CStringW StrFromQuaternion(quaternion nValue)
+{
+    CStringW strValue;
+    strValue.Format(L"%f,%f,%f,%f", nValue.x, nValue.y, nValue.z, nValue.w);
+    return strValue;
+}
+
+CStringW StrFromINT32(INT32 nValue)
+{
+    CStringW strValue;
+    strValue.Format(L"%d", nValue);
+    return strValue;
+}
+
+CStringW StrFromUINT32(UINT32 nValue)
+{
+    CStringW strValue;
+    strValue.Format(L"%u", nValue);
+    return strValue;
+}
+
+CStringW StrFromINT64(INT64 nValue)
+{
+    CStringW strValue;
+    strValue.Format(L"%lld", nValue);
+    return strValue;
+}
+
+CStringW StrFromUINT64(UINT64 nValue)
+{
+    CStringW strValue;
+    strValue.Format(L"%llu", nValue);
+    return strValue;
+}
+
+CStringW StrFromBoolean(bool nValue)
+{
+    return (nValue ? L"true" : L"false");
+}

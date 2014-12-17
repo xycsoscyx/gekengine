@@ -5,6 +5,9 @@
 #pragma comment(lib, "newton.lib")
 
 REGISTER_COMPONENT(newton)
+    REGISTER_SERIALIZE(shape, )
+    REGISTER_SERIALIZE(params, )
+    REGISTER_SERIALIZE(mass, StrFromFloat)
 REGISTER_SEPARATOR(newton)
     REGISTER_DESERIALIZE(shape, )
     REGISTER_DESERIALIZE(params, )

@@ -3,6 +3,13 @@
 #include "GEKContext.h"
 #include "GEKShape.h"
 
+enum GEKVERTEXATTRIBUTES
+{
+    GEK_VERTEX_POSITION     = 1 << 0,
+    GEK_VERTEX_TEXCOORD     = 1 << 1,
+    GEK_VERTEX_NORMAL       = 1 << 2,
+};
+
 DECLARE_INTERFACE(IGEK3DVideoContext);
 
 DECLARE_INTERFACE_IID_(IGEKRenderManager, IUnknown, "5226EB5A-DC03-465C-8393-0F947A0DDC24")

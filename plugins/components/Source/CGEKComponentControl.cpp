@@ -3,6 +3,8 @@
 #include "GEKEngine.h"
 
 REGISTER_COMPONENT(control)
+    REGISTER_SERIALIZE(turn, StrFromFloat)
+    REGISTER_SERIALIZE(tilt, StrFromFloat)
 REGISTER_SEPARATOR(control)
     REGISTER_DESERIALIZE(turn, StrToFloat)
     REGISTER_DESERIALIZE(tilt, StrToFloat)

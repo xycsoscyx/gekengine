@@ -6,6 +6,10 @@
 #define NUM_INSTANCES                   50
 
 REGISTER_COMPONENT(model)
+    REGISTER_SERIALIZE(source, )
+    REGISTER_SERIALIZE(params, )
+    REGISTER_SERIALIZE(scale, StrFromFloat3)
+    REGISTER_SERIALIZE(color, StrFromFloat4)
 REGISTER_SEPARATOR(model)
     REGISTER_DESERIALIZE(source, )
     REGISTER_DESERIALIZE(params, )

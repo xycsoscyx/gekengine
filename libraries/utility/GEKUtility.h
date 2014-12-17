@@ -94,17 +94,17 @@ bool operator < (REFGUID kGUIDA, REFGUID kGUIDB)
 #include "Include\CGEKConfig.h"
 #include "Include\CGEKLibXML2.h"
 
-bool EvaluateDouble(LPCWSTR pExpression,     double &nValue);
-bool EvaluateFloat(LPCWSTR pExpression,      float &nValue);
-bool EvaluateFloat2(LPCWSTR pExpression,     float2 &nValue);
-bool EvaluateFloat3(LPCWSTR pExpression,     float3 &nValue);
-bool EvaluateFloat4(LPCWSTR pExpression,     float4 &nValue);
-bool EvaluateQuaternion(LPCWSTR pExpression, quaternion &nValue);
-bool EvaluateINT32(LPCWSTR pExpression,      INT32 &nValue);
-bool EvaluateUINT32(LPCWSTR pExpression,     UINT32 &nValue);
-bool EvaluateINT64(LPCWSTR pExpression,      INT64 &nValue);
-bool EvaluateUINT64(LPCWSTR pExpression,     UINT64 &nValue);
-bool EvaluateBoolean(LPCWSTR pExpression,    bool &nValue);
+bool        EvaluateDouble(LPCWSTR pExpression,     double &nValue);
+bool        EvaluateFloat(LPCWSTR pExpression,      float &nValue);
+bool        EvaluateFloat2(LPCWSTR pExpression,     float2 &nValue);
+bool        EvaluateFloat3(LPCWSTR pExpression,     float3 &nValue);
+bool        EvaluateFloat4(LPCWSTR pExpression,     float4 &nValue);
+bool        EvaluateQuaternion(LPCWSTR pExpression, quaternion &nValue);
+bool        EvaluateINT32(LPCWSTR pExpression,      INT32 &nValue);
+bool        EvaluateUINT32(LPCWSTR pExpression,     UINT32 &nValue);
+bool        EvaluateINT64(LPCWSTR pExpression,      INT64 &nValue);
+bool        EvaluateUINT64(LPCWSTR pExpression,     UINT64 &nValue);
+bool        EvaluateBoolean(LPCWSTR pExpression,    bool &nValue);
 
 double      StrToDouble(LPCWSTR pExpression);
 float       StrToFloat(LPCWSTR pExpression);
@@ -117,6 +117,18 @@ UINT32      StrToUINT32(LPCWSTR pExpression);
 INT64       StrToINT64(LPCWSTR pExpression);
 UINT64      StrToUINT64(LPCWSTR pExpression);
 bool        StrToBoolean(LPCWSTR pExpression);
+
+CStringW    StrFromDouble(double nValue);
+CStringW    StrFromFloat(float nValue);
+CStringW    StrFromFloat2(float2 nValue);
+CStringW    StrFromFloat3(float3 nValue);
+CStringW    StrFromFloat4(float4 nValue);
+CStringW    StrFromQuaternion(quaternion nValue);
+CStringW    StrFromINT32(INT32 nValue);
+CStringW    StrFromUINT32(UINT32 nValue);
+CStringW    StrFromINT64(INT64 nValue);
+CStringW    StrFromUINT64(UINT64 nValue);
+CStringW    StrFromBoolean(bool nValue);
 
 CStringA    FormatString(LPCSTR pFormat, ...);
 CStringW    FormatString(LPCWSTR pFormat, ...);

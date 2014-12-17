@@ -3,6 +3,8 @@
 #include "GEKUtility.h"
 #include "IGEKSceneManager.h"
 #include <concurrent_unordered_map.h>
+#include <concurrent_vector.h>
+#include <concurrent_queue.h>
 #include <unordered_map>
 
 #pragma warning(disable:4503)
@@ -55,7 +57,9 @@ public:                                                                         
     };                                                                                      \
                                                                                             \
 private:                                                                                    \
-    concurrency::concurrent_unordered_map<GEKENTITYID, DATA> m_aData;                       \
+    concurrency::concurrent_queue<UINT32> m_aEmpty;                                         \
+    concurrency::concurrent_unordered_map<GEKENTITYID, UINT32> m_aIndices;                  \
+    concurrency::concurrent_vector<DATA> m_aData;                                           \
 };
 
 #define GET_COMPONENT_DATA(NAME)                                                            CGEKComponent##NAME##::DATA
@@ -76,31 +80,53 @@ STDMETHODIMP_(LPCWSTR) CGEKComponent##NAME##::GetName(void) const               
                                                                                             \
 STDMETHODIMP_(void) CGEKComponent##NAME##::Clear(void)                                      \
 {                                                                                           \
+    m_aEmpty.clear();                                                                       \
+    m_aIndices.clear();                                                                     \
     m_aData.clear();                                                                        \
 }                                                                                           \
                                                                                             \
 STDMETHODIMP CGEKComponent##NAME##::AddComponent(const GEKENTITYID &nEntityID)              \
 {                                                                                           \
-    m_aData[nEntityID] = DATA();                                                            \
+    UINT32 nDataID = 0;                                                                     \
+    if (m_aEmpty.try_pop(nDataID))                                                          \
+    {                                                                                       \
+        m_aIndices[nEntityID] = nDataID;                                                    \
+        m_aData[nDataID] = DATA();                                                          \
+    }                                                                                       \
+    else                                                                                    \
+    {                                                                                       \
+        m_aIndices[nEntityID] = m_aData.size();                                             \
+        m_aData.push_back(DATA());                                                          \
+    }                                                                                       \
+                                                                                            \
     return S_OK;                                                                            \
 }                                                                                           \
                                                                                             \
 STDMETHODIMP CGEKComponent##NAME##::RemoveComponent(const GEKENTITYID &nEntityID)           \
 {                                                                                           \
-    return (m_aData.unsafe_erase(nEntityID) > 0 ? S_OK : E_FAIL);                           \
+    HRESULT hRetVal = E_FAIL;                                                               \
+    auto pIterator = m_aIndices.find(nEntityID);                                            \
+    if (pIterator != m_aIndices.end())                                                      \
+    {                                                                                       \
+        m_aEmpty.push((*pIterator).second);                                                 \
+        m_aIndices.unsafe_erase(pIterator);                                                 \
+        hRetVal = S_OK;                                                                     \
+    }                                                                                       \
+                                                                                            \
+    return hRetVal;                                                                         \
 }                                                                                           \
                                                                                             \
 STDMETHODIMP_(bool) CGEKComponent##NAME##::HasComponent(const GEKENTITYID &nEntityID) const \
 {                                                                                           \
-    return (m_aData.count(nEntityID) > 0);                                                  \
+    return (m_aIndices.count(nEntityID) > 0);                                               \
 }                                                                                           \
                                                                                             \
 STDMETHODIMP_(LPVOID) CGEKComponent##NAME##::GetComponent(const GEKENTITYID &nEntityID)     \
 {                                                                                           \
-    auto pIterator = m_aData.find(nEntityID);                                               \
-    if (pIterator != m_aData.end())                                                         \
+    auto pIterator = m_aIndices.find(nEntityID);                                            \
+    if (pIterator != m_aIndices.end())                                                      \
     {                                                                                       \
-        return LPVOID(&(*pIterator).second);                                                \
+        return LPVOID(&m_aData[(*pIterator).second]);                                       \
     }                                                                                       \
                                                                                             \
     return nullptr;                                                                         \
@@ -109,11 +135,12 @@ STDMETHODIMP_(LPVOID) CGEKComponent##NAME##::GetComponent(const GEKENTITYID &nEn
 STDMETHODIMP CGEKComponent##NAME##::Serialize(const GEKENTITYID &nEntityID, std::unordered_map<CStringW, CStringW> &aParams)  \
 {                                                                                           \
     HRESULT hRetVal = E_FAIL;                                                               \
-    auto pIterator = m_aData.find(nEntityID);                                               \
-    if (pIterator != m_aData.end())                                                         \
-    {
+    auto pIterator = m_aIndices.find(nEntityID);                                            \
+    if (pIterator != m_aIndices.end())                                                      \
+    {                                                                                       \
+        DATA &kData = m_aData[(*pIterator).second];
 
-#define REGISTER_SERIALIZE(VALUE, SERIALIZE)                                                aParams[L#VALUE] = SERIALIZE((*pIterator).second.VALUE);
+#define REGISTER_SERIALIZE(VALUE, SERIALIZE)                                                aParams[L#VALUE] = SERIALIZE(kData.VALUE);
 
 #define REGISTER_SEPARATOR(NAME)                                                            \
         hRetVal = S_OK;                                                                     \
@@ -125,11 +152,12 @@ STDMETHODIMP CGEKComponent##NAME##::Serialize(const GEKENTITYID &nEntityID, std:
 STDMETHODIMP CGEKComponent##NAME##::DeSerialize(const GEKENTITYID &nEntityID, const std::unordered_map<CStringW, CStringW> &aParams)  \
 {                                                                                           \
     HRESULT hRetVal = E_FAIL;                                                               \
-    auto pIterator = m_aData.find(nEntityID);                                               \
-    if (pIterator != m_aData.end())                                                         \
-    {
+    auto pIterator = m_aIndices.find(nEntityID);                                            \
+    if (pIterator != m_aIndices.end())                                                      \
+    {                                                                                       \
+        DATA &kData = m_aData[(*pIterator).second];
 
-#define REGISTER_DESERIALIZE(VALUE, DESERIALIZE)                                            if(true) { auto pValue = aParams.find(L#VALUE); if(pValue != aParams.end()) { (*pIterator).second.VALUE = DESERIALIZE((*pValue).second); }; };
+#define REGISTER_DESERIALIZE(VALUE, DESERIALIZE)                                            if(true) { auto pValue = aParams.find(L#VALUE); if(pValue != aParams.end()) { kData.VALUE = DESERIALIZE((*pValue).second); }; };
 
 #define END_REGISTER_COMPONENT(NAME)                                                        \
         hRetVal = S_OK;                                                                     \

@@ -6,6 +6,9 @@
 #define NUM_INSTANCES                   50
 
 REGISTER_COMPONENT(sprite)
+    REGISTER_SERIALIZE(source, )
+    REGISTER_SERIALIZE(size, StrFromFloat)
+    REGISTER_SERIALIZE(color, StrFromFloat4)
 REGISTER_SEPARATOR(sprite)
     REGISTER_DESERIALIZE(source, )
     REGISTER_DESERIALIZE(size, StrToFloat)

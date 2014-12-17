@@ -3,6 +3,9 @@
 #include "GEKEngine.h"
 
 REGISTER_COMPONENT(follow)
+    REGISTER_SERIALIZE(target, )
+    REGISTER_SERIALIZE(offset, StrFromFloat3)
+    REGISTER_SERIALIZE(rotation, StrFromQuaternion)
 REGISTER_SEPARATOR(follow)
     REGISTER_DESERIALIZE(target, )
     REGISTER_DESERIALIZE(offset, StrToFloat3)
