@@ -6,8 +6,8 @@
 #include <concurrent_unordered_map.h>
 
 DECLARE_COMPONENT(control)
-    DECLARE_COMPONENT_DATA(float, turn)
-    DECLARE_COMPONENT_DATA(float, tilt)
+    DECLARE_COMPONENT_VALUE(float, turn)
+    DECLARE_COMPONENT_VALUE(float, tilt)
 END_DECLARE_COMPONENT(control)
 
 class CGEKComponentSystemControl : public CGEKUnknown

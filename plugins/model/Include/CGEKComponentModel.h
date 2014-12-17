@@ -6,10 +6,10 @@
 #include <concurrent_vector.h>
 
 DECLARE_COMPONENT(model)
-    DECLARE_COMPONENT_DATA(CStringW, source)
-    DECLARE_COMPONENT_DATA(CStringW, params)
-    DECLARE_COMPONENT_DATA(float3, scale)
-    DECLARE_COMPONENT_DATA(float4, color)
+    DECLARE_COMPONENT_VALUE(CStringW, source)
+    DECLARE_COMPONENT_VALUE(CStringW, params)
+    DECLARE_COMPONENT_VALUE(float3, scale)
+    DECLARE_COMPONENT_VALUE(float4, color)
 END_DECLARE_COMPONENT(model)
 
 class CGEKComponentSystemModel : public CGEKUnknown

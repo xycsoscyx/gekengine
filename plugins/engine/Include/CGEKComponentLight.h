@@ -6,6 +6,6 @@
 #include <concurrent_unordered_map.h>
 
 DECLARE_COMPONENT(light)
-    DECLARE_COMPONENT_DATA(float3, color)
-    DECLARE_COMPONENT_DATA(float, range)
+    DECLARE_COMPONENT_VALUE(float3, color)
+    DECLARE_COMPONENT_VALUE(float, range)
 END_DECLARE_COMPONENT(light)

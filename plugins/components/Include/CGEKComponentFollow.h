@@ -6,9 +6,9 @@
 #include <concurrent_unordered_map.h>
 
 DECLARE_COMPONENT(follow)
-    DECLARE_COMPONENT_DATA(CStringW, target)
-    DECLARE_COMPONENT_DATA(float3, offset)
-    DECLARE_COMPONENT_DATA(quaternion, rotation)
+    DECLARE_COMPONENT_VALUE(CStringW, target)
+    DECLARE_COMPONENT_VALUE(float3, offset)
+    DECLARE_COMPONENT_VALUE(quaternion, rotation)
 END_DECLARE_COMPONENT(follow)
 
 class CGEKComponentSystemFollow : public CGEKUnknown

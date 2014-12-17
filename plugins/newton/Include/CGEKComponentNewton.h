@@ -7,9 +7,9 @@
 #include <Newton.h>
 
 DECLARE_COMPONENT(newton)
-    DECLARE_COMPONENT_DATA(CStringW, shape)
-    DECLARE_COMPONENT_DATA(CStringW, params)
-    DECLARE_COMPONENT_DATA(float, mass)
+    DECLARE_COMPONENT_VALUE(CStringW, shape)
+    DECLARE_COMPONENT_VALUE(CStringW, params)
+    DECLARE_COMPONENT_VALUE(float, mass)
 END_DECLARE_COMPONENT(newton)
 
 class CGEKComponentSystemNewton : public CGEKUnknown

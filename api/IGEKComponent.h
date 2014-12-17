@@ -51,7 +51,7 @@ public:                                                                         
     struct DATA                                                                             \
     {
 
-#define DECLARE_COMPONENT_DATA(TYPE, NAME)                                                  TYPE NAME;
+#define DECLARE_COMPONENT_VALUE(TYPE, VALUE)                                                TYPE VALUE;
 
 #define END_DECLARE_COMPONENT(NAME)                                                         \
     };                                                                                      \
@@ -65,8 +65,18 @@ private:                                                                        
 #define GET_COMPONENT_DATA(NAME)                                                            CGEKComponent##NAME##::DATA
 
 #define REGISTER_COMPONENT(NAME)                                                            \
+BEGIN_INTERFACE_LIST(CGEKComponent##NAME##)                                                 \
+    INTERFACE_LIST_ENTRY_COM(IGEKComponent)                                                 \
+END_INTERFACE_LIST_UNKNOWN                                                                  \
+                                                                                            \
+REGISTER_CLASS(CGEKComponent##NAME##)                                                       \
+                                                                                            \
 CGEKComponent##NAME##::CGEKComponent##NAME##(void)                                          \
-{                                                                                           \
+{
+
+#define REGISTER_COMPONENT_DEFAULT_VALUE(VALUE, DEFAULT)                                    VALUE = DEFAULT;
+
+#define REGISTER_COMPONENT_SERIALIZE(NAME)                                                  \
 }                                                                                           \
                                                                                             \
 CGEKComponent##NAME##::~CGEKComponent##NAME##(void)                                         \
@@ -140,9 +150,9 @@ STDMETHODIMP CGEKComponent##NAME##::Serialize(const GEKENTITYID &nEntityID, std:
     {                                                                                       \
         DATA &kData = m_aData[(*pIterator).second];
 
-#define REGISTER_SERIALIZE(VALUE, SERIALIZE)                                                aParams[L#VALUE] = SERIALIZE(kData.VALUE);
+#define REGISTER_COMPONENT_SERIALIZE_VALUE(VALUE, SERIALIZE)                                aParams[L#VALUE] = SERIALIZE(kData.VALUE);
 
-#define REGISTER_SEPARATOR(NAME)                                                            \
+#define REGISTER_COMPONENT_DESERIALIZE(NAME)                                                \
         hRetVal = S_OK;                                                                     \
     }                                                                                       \
                                                                                             \
@@ -157,20 +167,14 @@ STDMETHODIMP CGEKComponent##NAME##::DeSerialize(const GEKENTITYID &nEntityID, co
     {                                                                                       \
         DATA &kData = m_aData[(*pIterator).second];
 
-#define REGISTER_DESERIALIZE(VALUE, DESERIALIZE)                                            if(true) { auto pValue = aParams.find(L#VALUE); if(pValue != aParams.end()) { kData.VALUE = DESERIALIZE((*pValue).second); }; };
+#define REGISTER_COMPONENT_DESERIALIZE_VALUE(VALUE, DESERIALIZE)                            if(true) { auto pValue = aParams.find(L#VALUE); if(pValue != aParams.end()) { kData.VALUE = DESERIALIZE((*pValue).second); }; };
 
 #define END_REGISTER_COMPONENT(NAME)                                                        \
         hRetVal = S_OK;                                                                     \
     }                                                                                       \
                                                                                             \
     return hRetVal;                                                                         \
-}                                                                                           \
-                                                                                            \
-BEGIN_INTERFACE_LIST(CGEKComponent##NAME##)                                                 \
-    INTERFACE_LIST_ENTRY_COM(IGEKComponent)                                                 \
-END_INTERFACE_LIST_UNKNOWN                                                                  \
-                                                                                            \
-REGISTER_CLASS(CGEKComponent##NAME##)
+}
 
 DECLARE_INTERFACE_IID_(IGEKComponentSystem, IUnknown, "81A24012-F085-42D0-B931-902485673E90")
 {

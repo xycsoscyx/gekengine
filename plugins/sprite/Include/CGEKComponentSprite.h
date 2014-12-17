@@ -6,9 +6,9 @@
 #include <concurrent_vector.h>
 
 DECLARE_COMPONENT(sprite)
-    DECLARE_COMPONENT_DATA(CStringW, source)
-    DECLARE_COMPONENT_DATA(float, size)
-    DECLARE_COMPONENT_DATA(float4, color)
+    DECLARE_COMPONENT_VALUE(CStringW, source)
+    DECLARE_COMPONENT_VALUE(float, size)
+    DECLARE_COMPONENT_VALUE(float4, color)
 END_DECLARE_COMPONENT(sprite)
 
 class CGEKComponentSystemSprite : public CGEKUnknown
