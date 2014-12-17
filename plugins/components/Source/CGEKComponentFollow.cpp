@@ -3,6 +3,9 @@
 #include "GEKEngine.h"
 
 REGISTER_COMPONENT(follow)
+    REGISTER_COMPONENT_DEFAULT_VALUE(target, L"")
+    REGISTER_COMPONENT_DEFAULT_VALUE(offset, float3(0.0f, 0.0f, 0.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(rotation, quaternion(0.0f, 0.0f, 0.0f, 1.0f))
     REGISTER_COMPONENT_SERIALIZE(follow)
         REGISTER_COMPONENT_SERIALIZE_VALUE(target, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(offset, StrFromFloat3)

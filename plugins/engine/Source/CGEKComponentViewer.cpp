@@ -1,6 +1,11 @@
 #include "CGEKComponentViewer.h"
 
 REGISTER_COMPONENT(viewer)
+    REGISTER_COMPONENT_DEFAULT_VALUE(fieldofview, 90.0f)
+    REGISTER_COMPONENT_DEFAULT_VALUE(minviewdistance, 0.1f)
+    REGISTER_COMPONENT_DEFAULT_VALUE(maxviewdistance, 100.0f)
+    REGISTER_COMPONENT_DEFAULT_VALUE(viewport, float4(0.0f, 0.0f, 1.0f, 1.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(pass, L"")
     REGISTER_COMPONENT_SERIALIZE(viewer)
         REGISTER_COMPONENT_SERIALIZE_VALUE(fieldofview, StrFromFloat)
         REGISTER_COMPONENT_SERIALIZE_VALUE(minviewdistance, StrFromFloat)

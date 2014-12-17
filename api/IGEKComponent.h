@@ -48,12 +48,18 @@ public:                                                                         
     STDMETHOD(DeSerialize)          (THIS_ const GEKENTITYID &nEntityID, const std::unordered_map<CStringW, CStringW> &aParams);\
                                                                                             \
 public:                                                                                     \
-    struct DATA                                                                             \
+    struct BASE                                                                             \
+    {                                                                                       \
+        BASE(void) { };                                                                     \
+    };                                                                                      \
+                                                                                            \
+    struct DATA : public BASE                                                               \
     {
 
 #define DECLARE_COMPONENT_VALUE(TYPE, VALUE)                                                TYPE VALUE;
 
 #define END_DECLARE_COMPONENT(NAME)                                                         \
+        DATA(void);                                                                         \
     };                                                                                      \
                                                                                             \
 private:                                                                                    \
@@ -71,12 +77,17 @@ END_INTERFACE_LIST_UNKNOWN                                                      
                                                                                             \
 REGISTER_CLASS(CGEKComponent##NAME##)                                                       \
                                                                                             \
-CGEKComponent##NAME##::CGEKComponent##NAME##(void)                                          \
-{
+CGEKComponent##NAME##::DATA::DATA(void)                                                     \
+    : BASE()
 
-#define REGISTER_COMPONENT_DEFAULT_VALUE(VALUE, DEFAULT)                                    VALUE = DEFAULT;
+#define REGISTER_COMPONENT_DEFAULT_VALUE(VALUE, DEFAULT)                                    , VALUE(DEFAULT)
 
 #define REGISTER_COMPONENT_SERIALIZE(NAME)                                                  \
+{                                                                                           \
+}                                                                                           \
+                                                                                            \
+CGEKComponent##NAME##::CGEKComponent##NAME##(void)                                          \
+{                                                                                           \
 }                                                                                           \
                                                                                             \
 CGEKComponent##NAME##::~CGEKComponent##NAME##(void)                                         \

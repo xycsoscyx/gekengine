@@ -1015,7 +1015,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         auto &kViewer = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(viewer)>(nViewerID, L"viewer");
         if (SUCCEEDED(LoadPass(kViewer.pass)))
         {
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, L"transform");
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnPreRender, std::placeholders::_1)));
 
             m_kScreenViewPort.m_nTopLeftX = kViewer.viewport.x * m_pSystem->GetXSize();
@@ -1026,7 +1025,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             m_kScreenViewPort.m_nMaxDepth = 1.0f;
 
             float4x4 nCameraMatrix;
-            nCameraMatrix   = kTransform.rotation;
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, L"transform");
+            nCameraMatrix = kTransform.rotation;
             nCameraMatrix.t = kTransform.position;
 
             float nXSize = float(m_pSystem->GetXSize());
