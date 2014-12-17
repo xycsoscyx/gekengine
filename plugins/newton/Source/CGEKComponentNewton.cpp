@@ -5,6 +5,8 @@
 #pragma comment(lib, "newton.lib")
 
 REGISTER_COMPONENT(newton)
+REGISTER_SEPARATOR(newton)
+END_REGISTER_COMPONENT(newton)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemNewton)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
@@ -227,7 +229,7 @@ void CGEKComponentSystemNewton::OnEntityUpdated(const NewtonBody *pBody, const G
 
     float4x4 nMatrix;
     NewtonBodyGetMatrix(pBody, nMatrix.data);
-    auto &kNewton = m_pSceneManager->GetComponent<COMPONENT_DATA(newton)>(nEntityID, L"newton");
+    auto &kNewton = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, L"newton");
     float3 nGravity = (m_pSceneManager->GetGravity(nMatrix.t) * kNewton.mass);
     NewtonBodyAddForce(pBody, nGravity.xyz);
 }
@@ -236,7 +238,7 @@ void CGEKComponentSystemNewton::OnEntityTransformed(const NewtonBody *pBody, con
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    auto &kTransform = m_pSceneManager->GetComponent<COMPONENT_DATA(transform)>(nEntityID, L"transform");
+    auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
     kTransform.position = nMatrix.t;
     kTransform.rotation = nMatrix;
 }
@@ -330,8 +332,8 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
     {
         if (m_pSceneManager->HasComponent(nEntityID, L"transform"))
         {
-            auto &kTransform = m_pSceneManager->GetComponent<COMPONENT_DATA(transform)>(nEntityID, L"transform");
-            auto &kNewton = m_pSceneManager->GetComponent<COMPONENT_DATA(newton)>(nEntityID, L"delete");
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
+            auto &kNewton = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, L"delete");
             if (!kNewton.shape.IsEmpty())
             {
                 float4x4 nMatrix;

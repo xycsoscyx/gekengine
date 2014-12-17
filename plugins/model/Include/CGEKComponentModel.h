@@ -10,7 +10,7 @@ DECLARE_COMPONENT(model)
     DECLARE_COMPONENT_DATA(CStringW, params)
     DECLARE_COMPONENT_DATA(float3, scale)
     DECLARE_COMPONENT_DATA(float4, color)
-END_COMPONENT(model)
+END_DECLARE_COMPONENT(model)
 
 class CGEKComponentSystemModel : public CGEKUnknown
                                , public IGEKComponentSystem

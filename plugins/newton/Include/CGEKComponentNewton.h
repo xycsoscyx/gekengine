@@ -10,7 +10,7 @@ DECLARE_COMPONENT(newton)
     DECLARE_COMPONENT_DATA(CStringW, shape)
     DECLARE_COMPONENT_DATA(CStringW, params)
     DECLARE_COMPONENT_DATA(float, mass)
-END_COMPONENT(newton)
+END_DECLARE_COMPONENT(newton)
 
 class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public IGEKSceneObserver

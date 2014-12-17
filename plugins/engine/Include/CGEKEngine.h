@@ -37,7 +37,8 @@ private:
     HCURSOR m_hCursorPointer;
 
 private:
-    void CheckInput(UINT32 nKey, const GEKVALUE &kValue);
+    void CheckInput(UINT32 nKey, bool bState);
+    void CheckInput(UINT32 nKey, float nValue);
     HRESULT Load(LPCWSTR pName);
 
 public:

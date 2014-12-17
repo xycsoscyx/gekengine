@@ -3,6 +3,8 @@
 #include "GEKEngine.h"
 
 REGISTER_COMPONENT(control)
+REGISTER_SEPARATOR(control)
+END_REGISTER_COMPONENT(control)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemControl)
     INTERFACE_LIST_ENTRY_COM(IGEKInputObserver)
@@ -47,27 +49,30 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::Destroy(void)
     }
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemControl::OnAction(LPCWSTR pName, const GEKVALUE &kValue)
+STDMETHODIMP_(void) CGEKComponentSystemControl::OnState(LPCWSTR pName, bool bState)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
     m_pSceneManager->ListComponentsEntities({ L"transform", L"control" }, [&](const GEKENTITYID &nEntityID)->void
     {
-        if (kValue.GetType() == GEKVALUE::BOOLEAN)
+        if (bState)
         {
-            if (kValue.GetBoolean())
-            {
-                m_aConstantActions[nEntityID][pName] = 1.0f;
-            }
-            else
-            {
-                m_aConstantActions[nEntityID][pName] = 0.0f;
-            }
+            m_aConstantActions[nEntityID][pName] = 1.0f;
         }
         else
         {
-            m_aSingleActions[nEntityID][pName] = kValue.GetFloat();
+            m_aConstantActions[nEntityID][pName] = 0.0f;
         }
+    }, true);
+}
+
+STDMETHODIMP_(void) CGEKComponentSystemControl::OnValue(LPCWSTR pName, float nValue)
+{
+    REQUIRE_VOID_RETURN(m_pSceneManager);
+
+    m_pSceneManager->ListComponentsEntities({ L"transform", L"control" }, [&](const GEKENTITYID &nEntityID)->void
+    {
+        m_aSingleActions[nEntityID][pName] = nValue;
     }, true);
 }
 
@@ -80,8 +85,8 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnPreUpdate(float nGameTime, flo
     {
         for (auto pEntity : aActions)
         {
-            auto &kTransform = m_pSceneManager->GetComponent<COMPONENT_DATA(transform)>(pEntity.first, L"transform");
-            auto &kControl = m_pSceneManager->GetComponent<COMPONENT_DATA(control)>(pEntity.first, L"control");
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(pEntity.first, L"transform");
+            auto &kControl = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(control)>(pEntity.first, L"control");
 
             kControl.turn += (pEntity.second[L"turn"] * 0.01f);
             kControl.tilt = 0.0f;//+= (pEntity.second[L"tilt"] * 0.01f);

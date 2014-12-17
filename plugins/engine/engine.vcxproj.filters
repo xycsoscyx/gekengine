@@ -72,9 +72,6 @@
     <ClInclude Include="..\..\api\GEKAPICLSIDs.h">
       <Filter>API Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\GEKVALUE.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\api\IGEKComponent.h">
       <Filter>API Files</Filter>
     </ClInclude>

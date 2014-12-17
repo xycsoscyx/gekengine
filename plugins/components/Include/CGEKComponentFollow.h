@@ -9,7 +9,7 @@ DECLARE_COMPONENT(follow)
     DECLARE_COMPONENT_DATA(CStringW, target)
     DECLARE_COMPONENT_DATA(float3, offset)
     DECLARE_COMPONENT_DATA(quaternion, rotation)
-END_COMPONENT(follow)
+END_DECLARE_COMPONENT(follow)
 
 class CGEKComponentSystemFollow : public CGEKUnknown
                                 , public IGEKSceneObserver

@@ -3,6 +3,8 @@
 #include "GEKEngine.h"
 
 REGISTER_COMPONENT(follow)
+REGISTER_SEPARATOR(follow)
+END_REGISTER_COMPONENT(follow)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemFollow)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
@@ -52,12 +54,12 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnPostUpdate(float nGameTime, flo
 
     m_pSceneManager->ListComponentsEntities({ L"transform", L"follow" }, [&](const GEKENTITYID &nEntityID)->void
     {
-        auto &kFollow = m_pSceneManager->GetComponent<COMPONENT_DATA(follow)>(nEntityID, L"follow");
+        auto &kFollow = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(follow)>(nEntityID, L"follow");
 
         GEKENTITYID nTargetID = GEKINVALIDENTITYID;
         if (SUCCEEDED(m_pSceneManager->GetNamedEntity(kFollow.target, &nTargetID)))
         {
-            auto &kTransform = m_pSceneManager->GetComponent<COMPONENT_DATA(transform)>(nEntityID, L"transform");
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
 
             kFollow.rotation = kFollow.rotation.Slerp(kTransform.rotation, 0.5f);
 

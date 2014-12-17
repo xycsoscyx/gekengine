@@ -1,3 +1,7 @@
 #include "CGEKComponentLight.h"
 
 REGISTER_COMPONENT(light)
+REGISTER_SEPARATOR(light)
+    REGISTER_DESERIALIZE(color, StrToFloat3)
+    REGISTER_DESERIALIZE(range, StrToFloat)
+END_REGISTER_COMPONENT(light)

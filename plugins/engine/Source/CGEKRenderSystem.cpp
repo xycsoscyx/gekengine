@@ -1,14 +1,11 @@
 ﻿#include "CGEKRenderSystem.h"
 #include "IGEKRenderFilter.h"
 #include "CGEKProperties.h"
+#include "GEKSystemCLSIDs.h"
+#include "GEKEngineCLSIDs.h"
+#include "GEKEngine.h"
 #include <windowsx.h>
 #include <atlpath.h>
-#include <algorithm>
-#include <concurrent_vector.h>
-#include <ppl.h>
-
-#include "GEKEngineCLSIDs.h"
-#include "GEKSystemCLSIDs.h"
 
 DECLARE_INTERFACE_IID_(IGEKMaterial, IUnknown, "819CA201-F652-4183-B29D-BB71BB15810E")
 {
@@ -271,7 +268,7 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(LIGHT), m_nNumLightInstances, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
+        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(LIGHTBUFFER), m_nNumLightInstances, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
@@ -976,10 +973,10 @@ STDMETHODIMP_(void) CGEKRenderSystem::DrawLights(IGEK3DVideoContext *pContext, s
 
             m_spLightCountBuffer->Update(aCounts);
 
-            LIGHT *pLights = nullptr;
+            LIGHTBUFFER *pLights = nullptr;
             if (SUCCEEDED(m_spLightBuffer->Map((LPVOID *)&pLights)))
             {
-                memcpy(pLights, &m_aVisibleLights[nPass], (sizeof(LIGHT)* nNumLights));
+                memcpy(pLights, &m_aVisibleLights[nPass], (sizeof(LIGHTBUFFER)* nNumLights));
                 m_spLightBuffer->UnMap();
 
                 OnLightBatch();
@@ -1015,80 +1012,56 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
     m_pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void
     {
-        GEKVALUE kPass;
-        m_pSceneManager->GetProperty(nViewerID, L"viewer", L"pass", kPass);
-        if (SUCCEEDED(LoadPass(kPass.GetRawString())))
+        auto &kViewer = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(viewer)>(nViewerID, L"viewer");
+        if (SUCCEEDED(LoadPass(kViewer.pass)))
         {
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, L"transform");
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnPreRender, std::placeholders::_1)));
 
-            GEKVALUE kProjection;
-            m_pSceneManager->GetProperty(nViewerID, L"viewer", L"projection", kProjection);
-
-            GEKVALUE kMinViewDistance;
-            GEKVALUE kMaxViewDistance;
-            m_pSceneManager->GetProperty(nViewerID, L"viewer", L"minviewdistance", kMinViewDistance);
-            m_pSceneManager->GetProperty(nViewerID, L"viewer", L"maxviewdistance", kMaxViewDistance);
-
-            GEKVALUE kFieldOfView;
-            m_pSceneManager->GetProperty(nViewerID, L"viewer", L"fieldofview", kFieldOfView);
-            float nFieldOfView = _DEGTORAD(kFieldOfView.GetFloat());
-
-            GEKVALUE kViewPort;
-            m_pSceneManager->GetProperty(nViewerID, L"viewer", L"viewport", kViewPort);
-            m_kScreenViewPort.m_nTopLeftX = kViewPort.GetFloat4().x * m_pSystem->GetXSize();
-            m_kScreenViewPort.m_nTopLeftY = kViewPort.GetFloat4().y * m_pSystem->GetYSize();
-            m_kScreenViewPort.m_nXSize = kViewPort.GetFloat4().z * m_pSystem->GetXSize();
-            m_kScreenViewPort.m_nYSize = kViewPort.GetFloat4().w * m_pSystem->GetYSize();
+            m_kScreenViewPort.m_nTopLeftX = kViewer.viewport.x * m_pSystem->GetXSize();
+            m_kScreenViewPort.m_nTopLeftY = kViewer.viewport.y * m_pSystem->GetYSize();
+            m_kScreenViewPort.m_nXSize = kViewer.viewport.z * m_pSystem->GetXSize();
+            m_kScreenViewPort.m_nYSize = kViewer.viewport.w * m_pSystem->GetYSize();
             m_kScreenViewPort.m_nMinDepth = 0.0f;
             m_kScreenViewPort.m_nMaxDepth = 1.0f;
 
-            GEKVALUE kPosition;
-            GEKVALUE kRotation;
-            m_pSceneManager->GetProperty(nViewerID, L"transform", L"position", kPosition);
-            m_pSceneManager->GetProperty(nViewerID, L"transform", L"rotation", kRotation);
-
             float4x4 nCameraMatrix;
-            nCameraMatrix = kRotation.GetQuaternion();
-            nCameraMatrix.t = kPosition.GetFloat3();
+            nCameraMatrix   = kTransform.rotation;
+            nCameraMatrix.t = kTransform.position;
 
             float nXSize = float(m_pSystem->GetXSize());
             float nYSize = float(m_pSystem->GetYSize());
             float nAspect = (nXSize / nYSize);
 
+            float nFieldOfView = _DEGTORAD(kViewer.fov);
             m_kCurrentBuffer.m_nCameraFieldOfView.x = tan(nFieldOfView * 0.5f);
             m_kCurrentBuffer.m_nCameraFieldOfView.y = (m_kCurrentBuffer.m_nCameraFieldOfView.x / nAspect);
-            m_kCurrentBuffer.m_nCameraMinDistance = kMinViewDistance.GetFloat();
-            m_kCurrentBuffer.m_nCameraMaxDistance = kMaxViewDistance.GetFloat();
-            m_kCurrentBuffer.m_nCameraPosition = kPosition.GetFloat3();
+            m_kCurrentBuffer.m_nCameraMinDistance = kViewer.mindistance;
+            m_kCurrentBuffer.m_nCameraMaxDistance = kViewer.maxdistance;
+            m_kCurrentBuffer.m_nCameraPosition = kTransform.position;
 
             m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
-            m_kCurrentBuffer.m_nProjectionMatrix = kProjection.GetFloat4x4();
-            m_kCurrentBuffer.m_nInvProjectionMatrix = kProjection.GetFloat4x4().GetInverse();
+            m_kCurrentBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kViewer.mindistance, kViewer.maxdistance);
+            m_kCurrentBuffer.m_nInvProjectionMatrix = m_kCurrentBuffer.m_nProjectionMatrix.GetInverse();
             m_kCurrentBuffer.m_nTransformMatrix = (m_kCurrentBuffer.m_nViewMatrix * m_kCurrentBuffer.m_nProjectionMatrix);
 
             m_nCurrentFrustum.Create(nCameraMatrix, m_kCurrentBuffer.m_nProjectionMatrix);
 
-            LIGHT kLight;
+            LIGHTBUFFER kData;
             m_aVisibleLights.clear();
             m_pSceneManager->ListComponentsEntities({ L"transform", L"light" }, [&](const GEKENTITYID &nEntityID)->void
             {
-                GEKVALUE kValue;
-                m_pSceneManager->GetProperty(nEntityID, L"transform", L"position", kValue);
-                float3 nPosition(kValue.GetFloat3());
-
-                m_pSceneManager->GetProperty(nEntityID, L"light", L"range", kValue);
-                float nRange = kValue.GetFloat();
-
-                if (m_nCurrentFrustum.IsVisible(sphere(nPosition, nRange)))
+                auto &kLight = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(light)>(nEntityID, L"light");
+                auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
+                if (m_nCurrentFrustum.IsVisible(sphere(kTransform.position, kLight.range)))
                 {
-                    kLight.m_nPosition = (m_kCurrentBuffer.m_nViewMatrix * float4(nPosition, 1.0f));
+                    kData.m_nPosition = (m_kCurrentBuffer.m_nViewMatrix * float4(kTransform.position, 1.0f));
 
-                    kLight.m_nInvRange = (1.0f / (kLight.m_nRange = nRange));
+                    kData.m_nInvRange = (1.0f / (kData.m_nRange = kLight.range));
 
-                    m_pSceneManager->GetProperty(nEntityID, L"light", L"color", kValue);
-                    kLight.m_nColor = kValue.GetFloat3();
+                    kData.m_nColor = kLight.color;
 
-                    m_aVisibleLights.push_back(kLight);
+                    m_aVisibleLights.push_back(kData);
                 }
             });
 
@@ -1107,7 +1080,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             spContext->GetPixelSystem()->SetConstantBuffer(1, m_spMaterialBuffer);
             spContext->GetPixelSystem()->SetConstantBuffer(2, m_spLightCountBuffer);
 
-            m_pCurrentPass = &m_aPasses[kPass.GetRawString()];
+            m_pCurrentPass = &m_aPasses[kViewer.pass];
             for (auto &pFilter : m_pCurrentPass->m_aFilters)
             {
                 m_pCurrentFilter = pFilter;

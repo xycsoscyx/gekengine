@@ -6,6 +6,8 @@
 #define NUM_INSTANCES                   50
 
 REGISTER_COMPONENT(sprite)
+REGISTER_SEPARATOR(sprite)
+END_REGISTER_COMPONENT(sprite)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemSprite)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
@@ -121,14 +123,14 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(void)
 
     m_pSceneManager->ListComponentsEntities({ L"transform", L"sprite" }, [&](const GEKENTITYID &nEntityID)->void
     {
-        auto &kSprite = m_pSceneManager->GetComponent<COMPONENT_DATA(sprite)>(nEntityID, L"sprite");
+        auto &kSprite = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(sprite)>(nEntityID, L"sprite");
 
         CComPtr<IUnknown> spMaterial;
         m_pMaterialManager->LoadMaterial(kSprite.source, &spMaterial);
         if (spMaterial)
         {
             float nHalfSize = (kSprite.size * 0.5f);
-            auto &kTransform = m_pSceneManager->GetComponent<COMPONENT_DATA(transform)>(nEntityID, L"transform");
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
             if (m_pRenderManager->GetFrustum().IsVisible(aabb(kTransform.position - nHalfSize, kTransform.position + nHalfSize)))
             {
                 m_aVisible[spMaterial].emplace_back(kTransform.position, nHalfSize, kSprite.color);

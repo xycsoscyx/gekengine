@@ -19,13 +19,6 @@ struct MODEL
     std::vector<float3> m_aNormals;
 };
 
-struct LIGHT
-{
-    float3 m_nPosition;
-    float3 m_nColor;
-    float m_nRange;
-};
-
 class CMyException
 {
 public:

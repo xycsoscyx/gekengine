@@ -65,6 +65,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>LUABIND_DYNAMIC_LINK;WIN32;_DEBUG;_WINDOWS;_USRDLL;SYSTEM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnablePREfast>false</EnablePREfast>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -108,7 +109,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\api\GEKAPI.h" />
     <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
-    <ClInclude Include="..\..\api\GEKVALUE.h" />
     <ClInclude Include="..\..\api\IGEKComponent.h" />
     <ClInclude Include="..\..\api\IGEKInputManager.h" />
     <ClInclude Include="..\..\api\IGEKMaterialManager.h" />

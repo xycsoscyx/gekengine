@@ -9,10 +9,6 @@ const GEKENTITYID GEKINVALIDENTITYID = 0;
 
 DECLARE_INTERFACE_IID_(IGEKSceneManager, IUnknown, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B")
 {
-private:
-    STDMETHOD_(LPVOID, GetComponent)            (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent) PURE;
-
-public:
     STDMETHOD(Load)                             (THIS_ LPCWSTR pName) PURE;
 
     STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID, LPCWSTR pName = nullptr) PURE;
@@ -22,6 +18,7 @@ public:
     STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::unordered_map<CStringW, CStringW> &aParams) PURE;
     STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent) PURE;
     STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent) PURE;
+    STDMETHOD_(LPVOID, GetComponent)            (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent) PURE;
 
     template <typename CLASS>
     CLASS &GetComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent)

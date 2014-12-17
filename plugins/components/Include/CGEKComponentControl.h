@@ -8,7 +8,7 @@
 DECLARE_COMPONENT(control)
     DECLARE_COMPONENT_DATA(float, turn)
     DECLARE_COMPONENT_DATA(float, tilt)
-END_COMPONENT(control)
+END_DECLARE_COMPONENT(control)
 
 class CGEKComponentSystemControl : public CGEKUnknown
                                  , public IGEKInputObserver
@@ -30,7 +30,8 @@ public:
     STDMETHOD_(void, Destroy)               (THIS);
 
     // IGEKInputObserver
-    STDMETHOD_(void, OnAction)              (THIS_ LPCWSTR pName, const GEKVALUE &kValue);
+    STDMETHOD_(void, OnState)               (THIS_ LPCWSTR pName, bool bState);
+    STDMETHOD_(void, OnValue)               (THIS_ LPCWSTR pName, float nValue);
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnPreUpdate)           (THIS_ float nGameTime, float nFrameTime);

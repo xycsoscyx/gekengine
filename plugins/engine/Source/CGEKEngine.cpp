@@ -104,9 +104,9 @@ HRESULT CGEKEngine::Load(LPCWSTR pName)
     return hRetVal;
 }
 
-void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
+void CGEKEngine::CheckInput(UINT32 nKey, bool bState)
 {
-    if (nKey == VK_ESCAPE && !kValue.GetBoolean())
+    if (nKey == VK_ESCAPE && !bState)
     {
         m_bSendInput = !m_bSendInput;
         m_kTimer.Pause(!m_bWindowActive || !m_bSendInput);
@@ -117,7 +117,20 @@ void CGEKEngine::CheckInput(UINT32 nKey, const GEKVALUE &kValue)
         if (pIterator != m_aInputBindings.end())
         {
             OnCommand((*pIterator).second, nullptr, 0);
-            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnAction, std::placeholders::_1, (*pIterator).second, kValue)));
+            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, (*pIterator).second, bState)));
+        }
+    }
+}
+
+void CGEKEngine::CheckInput(UINT32 nKey, float nValue)
+{
+    if (m_bSendInput)
+    {
+        auto pIterator = m_aInputBindings.find(nKey);
+        if (pIterator != m_aInputBindings.end())
+        {
+            OnCommand((*pIterator).second, nullptr, 0);
+            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, (*pIterator).second, nValue)));
         }
     }
 }

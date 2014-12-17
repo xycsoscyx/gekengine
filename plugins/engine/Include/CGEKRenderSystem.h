@@ -45,7 +45,7 @@ public:
         std::vector<CStringW> m_aData;
     };
 
-    struct LIGHT
+    struct LIGHTBUFFER
     {
         float3 m_nPosition;
         float m_nRange;
@@ -108,7 +108,7 @@ private:
     frustum m_nCurrentFrustum;
     ENGINEBUFFER m_kCurrentBuffer;
     GEK3DVIDEO::VIEWPORT m_kScreenViewPort;
-    std::vector<LIGHT> m_aVisibleLights;
+    std::vector<LIGHTBUFFER> m_aVisibleLights;
 
     PASS *m_pCurrentPass;
     IGEKRenderFilter *m_pCurrentFilter;

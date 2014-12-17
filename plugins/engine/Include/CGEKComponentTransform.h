@@ -8,4 +8,4 @@
 DECLARE_COMPONENT(transform)
     DECLARE_COMPONENT_DATA(float3, position)
     DECLARE_COMPONENT_DATA(quaternion, rotation)
-END_COMPONENT(transform)
+END_DECLARE_COMPONENT(transform)

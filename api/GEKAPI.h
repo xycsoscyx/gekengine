@@ -1,8 +1,5 @@
 #pragma once
 
-// Utilities
-#include "GEKVALUE.h"
-
 // Interfaces
 #include "IGEKComponent.h"
 #include "IGEKMaterialManager.h"

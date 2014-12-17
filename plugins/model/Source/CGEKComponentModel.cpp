@@ -6,6 +6,8 @@
 #define NUM_INSTANCES                   50
 
 REGISTER_COMPONENT(model)
+REGISTER_SEPARATOR(model)
+END_REGISTER_COMPONENT(model)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemModel)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
@@ -213,12 +215,12 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(void)
 
     m_pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
     {
-        auto &kModel = m_pSceneManager->GetComponent<COMPONENT_DATA(model)>(nEntityID, L"model");
+        auto &kModel = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(model)>(nEntityID, L"model");
 
         MODEL *pModel = GetModel(kModel.source, kModel.params);
         if (pModel)
         {
-            auto &kTransform = m_pSceneManager->GetComponent<COMPONENT_DATA(transform)>(nEntityID, L"transform");
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
 
             float4x4 nMatrix;
             nMatrix   = kTransform.rotation;

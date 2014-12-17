@@ -1,9 +1,7 @@
 ﻿#include "CGEKPopulationSystem.h"
-#include <algorithm>
-#include <thread>
-#include <ppl.h>
-
 #include "GEKEngineCLSIDs.h"
+#include "GEKEngine.h"
+#include <ppl.h>
 
 BEGIN_INTERFACE_LIST(CGEKPopulationSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
@@ -164,11 +162,8 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
 
             if (HasComponent(nEntityID, L"light"))
             {
-                GEKVALUE kColor;
-                GetProperty(nEntityID, L"light", L"color", kColor);
-                float3 nColor = kColor.GetFloat3();
-                nColor.Normalize();
-
+                auto &kLight = ((IGEKSceneManager *)this)->GetComponent<GET_COMPONENT_DATA(light)>(nEntityID, L"light");
+                float3 nColor = kLight.color.GetNormal();
                 AddComponent(nEntityID, L"sprite", { { L"source", "light" }, { L"size", "3" }, { L"color", FormatString(L"%f,%f,%f,1.0", nColor.r, nColor.g, nColor.b).GetString() } });
             }
 #endif
@@ -258,15 +253,11 @@ STDMETHODIMP CGEKPopulationSystem::AddComponent(const GEKENTITYID &nEntityID, LP
         hRetVal = (*pIterator).second->AddComponent(nEntityID);
         if (SUCCEEDED(hRetVal))
         {
+            hRetVal = (*pIterator).second->DeSerialize(nEntityID, aParams);
             for (auto kPair : aParams)
             {
-                (*pIterator).second->SetProperty(nEntityID, kPair.first, kPair.second.GetString());
+                //(*pIterator).second->SetProperty(nEntityID, kPair.first, kPair.second.GetString());
             }
-        }
-
-        if (SUCCEEDED(hRetVal))
-        {
-            CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentAdded, std::placeholders::_1, nEntityID, pComponent)));
         }
     }
 
@@ -298,37 +289,15 @@ STDMETHODIMP_(bool) CGEKPopulationSystem::HasComponent(const GEKENTITYID &nEntit
     return bReturn;
 }
 
-STDMETHODIMP_(void) CGEKPopulationSystem::ListProperties(const GEKENTITYID &nEntityID, LPCWSTR pComponent, std::function<void(LPCWSTR, const GEKVALUE &)> OnProperty) const
+STDMETHODIMP_(LPVOID) CGEKPopulationSystem::GetComponent(const GEKENTITYID &nEntityID, LPCWSTR pComponent)
 {
     auto pIterator = m_aComponents.find(pComponent);
     if (pIterator != m_aComponents.end())
     {
-        (*pIterator).second->ListProperties(nEntityID, OnProperty);
-    }
-}
-
-STDMETHODIMP_(bool) CGEKPopulationSystem::GetProperty(const GEKENTITYID &nEntityID, LPCWSTR pComponent, LPCWSTR pName, GEKVALUE &kValue) const
-{
-    bool bReturn = false;
-    auto pIterator = m_aComponents.find(pComponent);
-    if (pIterator != m_aComponents.end())
-    {
-        bReturn = (*pIterator).second->GetProperty(nEntityID, pName, kValue);
+        return (*pIterator).second->GetComponent(nEntityID);
     }
 
-    return bReturn;
-}
-
-STDMETHODIMP_(bool) CGEKPopulationSystem::SetProperty(const GEKENTITYID &nEntityID, LPCWSTR pComponent, LPCWSTR pName, const GEKVALUE &kValue)
-{
-    bool bReturn = false;
-    auto pIterator = m_aComponents.find(pComponent);
-    if (pIterator != m_aComponents.end())
-    {
-        bReturn = (*pIterator).second->SetProperty(nEntityID, pName, kValue);
-    }
-
-    return bReturn;
+    return nullptr;
 }
 
 STDMETHODIMP_(void) CGEKPopulationSystem::ListEntities(std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel)

@@ -9,7 +9,7 @@ DECLARE_COMPONENT(sprite)
     DECLARE_COMPONENT_DATA(CStringW, source)
     DECLARE_COMPONENT_DATA(float, size)
     DECLARE_COMPONENT_DATA(float4, color)
-END_COMPONENT(sprite)
+END_DECLARE_COMPONENT(sprite)
 
 class CGEKComponentSystemSprite : public CGEKUnknown
                                 , public IGEKComponentSystem
