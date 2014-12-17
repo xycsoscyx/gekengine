@@ -333,7 +333,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
         if (m_pSceneManager->HasComponent(nEntityID, L"transform"))
         {
             auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
-            auto &kNewton = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, L"delete");
+            auto &kNewton = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, L"newton");
             if (!kNewton.shape.IsEmpty())
             {
                 float4x4 nMatrix;

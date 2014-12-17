@@ -62,17 +62,18 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnPostUpdate(float nGameTime, flo
         GEKENTITYID nTargetID = GEKINVALIDENTITYID;
         if (SUCCEEDED(m_pSceneManager->GetNamedEntity(kFollow.target, &nTargetID)))
         {
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
+            auto &kTargetTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nTargetID, L"transform");
 
-            kFollow.rotation = kFollow.rotation.Slerp(kTransform.rotation, 0.5f);
+            kFollow.rotation = kFollow.rotation.Slerp(kTargetTransform.rotation, 0.5f);
 
-            float3 nTarget(kTransform.position + kFollow.rotation * kFollow.offset);
+            float3 nTarget(kTargetTransform.position + kFollow.rotation * kFollow.offset);
                 
             float4x4 nLookAt;
-            nLookAt.LookAt(nTarget, kTransform.position, float3(0.0f, 1.0f, 0.0f));
+            nLookAt.LookAt(nTarget, kTargetTransform.position, float3(0.0f, 1.0f, 0.0f));
 
-            kTransform.position = nTarget;
-            kTransform.rotation = nLookAt;
+            auto &kCurrentTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
+            kCurrentTransform.position = nTarget;
+            kCurrentTransform.rotation = nLookAt;
         }
     }, true);
 }
