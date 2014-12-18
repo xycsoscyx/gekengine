@@ -1017,10 +1017,10 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         {
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnPreRender, std::placeholders::_1)));
 
-            m_kScreenViewPort.m_nTopLeftX = kViewer.viewport.x * m_pSystem->GetXSize();
-            m_kScreenViewPort.m_nTopLeftY = kViewer.viewport.y * m_pSystem->GetYSize();
-            m_kScreenViewPort.m_nXSize = kViewer.viewport.z * m_pSystem->GetXSize();
-            m_kScreenViewPort.m_nYSize = kViewer.viewport.w * m_pSystem->GetYSize();
+            m_kScreenViewPort.m_nTopLeftX = kViewer.position.x * m_pSystem->GetXSize();
+            m_kScreenViewPort.m_nTopLeftY = kViewer.position.y * m_pSystem->GetYSize();
+            m_kScreenViewPort.m_nXSize = kViewer.size.x * m_pSystem->GetXSize();
+            m_kScreenViewPort.m_nYSize = kViewer.size.y * m_pSystem->GetYSize();
             m_kScreenViewPort.m_nMinDepth = 0.0f;
             m_kScreenViewPort.m_nMaxDepth = 1.0f;
 
@@ -1036,12 +1036,12 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             float nFieldOfView = _DEGTORAD(kViewer.fieldofview);
             m_kCurrentBuffer.m_nCameraFieldOfView.x = tan(nFieldOfView * 0.5f);
             m_kCurrentBuffer.m_nCameraFieldOfView.y = (m_kCurrentBuffer.m_nCameraFieldOfView.x / nAspect);
-            m_kCurrentBuffer.m_nCameraMinDistance = kViewer.minviewdistance;
-            m_kCurrentBuffer.m_nCameraMaxDistance = kViewer.maxviewdistance;
+            m_kCurrentBuffer.m_nCameraMinDistance = kViewer.mindistance;
+            m_kCurrentBuffer.m_nCameraMaxDistance = kViewer.maxdistance;
             m_kCurrentBuffer.m_nCameraPosition = kTransform.position;
 
             m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
-            m_kCurrentBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kViewer.minviewdistance, kViewer.maxviewdistance);
+            m_kCurrentBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kViewer.mindistance, kViewer.maxdistance);
             m_kCurrentBuffer.m_nInvProjectionMatrix = m_kCurrentBuffer.m_nProjectionMatrix.GetInverse();
             m_kCurrentBuffer.m_nTransformMatrix = (m_kCurrentBuffer.m_nViewMatrix * m_kCurrentBuffer.m_nProjectionMatrix);
 

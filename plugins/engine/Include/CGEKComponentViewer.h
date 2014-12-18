@@ -7,8 +7,9 @@
 
 DECLARE_COMPONENT(viewer)
     DECLARE_COMPONENT_VALUE(float, fieldofview)
-    DECLARE_COMPONENT_VALUE(float, minviewdistance)
-    DECLARE_COMPONENT_VALUE(float, maxviewdistance)
-    DECLARE_COMPONENT_VALUE(float4, viewport)
+    DECLARE_COMPONENT_VALUE(float, mindistance)
+    DECLARE_COMPONENT_VALUE(float, maxdistance)
+    DECLARE_COMPONENT_VALUE(float2, position)
+    DECLARE_COMPONENT_VALUE(float2, size)
     DECLARE_COMPONENT_VALUE(CStringW, pass)
 END_DECLARE_COMPONENT(viewer)
