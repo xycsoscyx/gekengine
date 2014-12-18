@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<filter flipscreens="true">
+<filter flip="true">
     <defines>
         <define name="gs_nRadius" value="6" />
         <define name="gs_nGuassianDeviation" value="3" />
@@ -12,13 +12,13 @@
         <resources>
             <resource stage="1" source="Opaque.Albedo" />
             <resource stage="2" source="Opaque.Depth" />
-            <resource stage="3" source="screen" />
+            <resource stage="3" source="output" />
         </resources>
         
         <![CDATA[
             Texture2D           gs_pAlbedoBuffer        : register(t1);
             Texture2D<float>    gs_pDepthBuffer         : register(t2);
-            Texture2D           gs_pScreenBuffer        : register(t3);
+            Texture2D           gs_pOutputBuffer        : register(t3);
 
             static const float gs_aGuassian[][7] = 
             {
@@ -31,11 +31,11 @@
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
                 float2 nPixelSize;
-                gs_pScreenBuffer.GetDimensions(nPixelSize.x, nPixelSize.y);
+                gs_pOutputBuffer.GetDimensions(nPixelSize.x, nPixelSize.y);
                 nPixelSize = rcp(nPixelSize);                
 
 	            float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-	            float4 nCenterColor = gs_pScreenBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+	            float4 nCenterColor = gs_pOutputBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
 	            float nTotalWeight = gs_aGuassian[gs_nGuassianDeviation][0];
 	            float nAmbientOcclusion = nCenterColor.a * nTotalWeight;
@@ -48,7 +48,7 @@
 		            {
 			            float2 nSampleCoord = kInput.texcoord + gs_nAxis * (nSample * nPixelSize * gs_nScale);
 			            float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nSampleCoord);
-			            float nSampleAmbient = gs_pScreenBuffer.Sample(gs_pPointSampler, nSampleCoord).a;
+			            float nSampleAmbient = gs_pOutputBuffer.Sample(gs_pPointSampler, nSampleCoord).a;
 
 			            // spatial domain: offset gaussian tap
 			            float nWeight = gs_aGuassian[gs_nGuassianDeviation][abs(nSample)];

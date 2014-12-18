@@ -158,7 +158,6 @@ CGEKRenderSystem::CGEKRenderSystem(void)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
     , m_nNumLightInstances(254)
-    , m_nCurrentScreenBuffer(0)
 {
 }
 
@@ -299,17 +298,6 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
         kStates.m_eAddressV = GEK3DVIDEO::ADDRESS::WRAP;
         hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spLinearSampler);
         GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateSamplerStates failed: 0x%08X", hRetVal);
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        UINT32 nXSize = m_pSystem->GetXSize();
-        UINT32 nYSize = m_pSystem->GetYSize();
-        hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &m_spScreenBuffer[0]);
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &m_spScreenBuffer[1]);
-        }
     }
 
     if (SUCCEEDED(hRetVal))
@@ -528,6 +516,17 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
 
             if (SUCCEEDED(hRetVal))
             {
+                kPassData.m_nXSize = m_pSystem->GetXSize();
+                kPassData.m_nYSize = m_pSystem->GetYSize();
+                hRetVal = m_pVideoSystem->CreateRenderTarget(kPassData.m_nXSize, kPassData.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPassData.m_aBuffers[0]);
+                if (SUCCEEDED(hRetVal))
+                {
+                    hRetVal = m_pVideoSystem->CreateRenderTarget(kPassData.m_nXSize, kPassData.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPassData.m_aBuffers[1]);
+                }
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
                 m_aPasses[pName] = kPassData;
             }
         }
@@ -696,12 +695,13 @@ STDMETHODIMP CGEKRenderSystem::LoadBuffer(LPCWSTR pName, UINT32 nXSize, UINT32 n
 
 STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
 {
+    REQUIRE_RETURN(m_pCurrentPass, E_FAIL);
     REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
-    if (_wcsicmp(pName, L"screen") == 0)
+    if (_wcsicmp(pName, L"output") == 0)
     {
-        hRetVal = m_spScreenBuffer[!m_nCurrentScreenBuffer]->QueryInterface(IID_PPV_ARGS(ppResource));
+        hRetVal = m_pCurrentPass->m_aBuffers[!m_pCurrentPass->m_nCurrentBuffer]->QueryInterface(IID_PPV_ARGS(ppResource));
     }
     else
     {
@@ -715,17 +715,26 @@ STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderSystem::FlipScreens(void)
+STDMETHODIMP_(void) CGEKRenderSystem::FlipCurrentBuffers(void)
 {
-    m_nCurrentScreenBuffer = !m_nCurrentScreenBuffer;
+    REQUIRE_VOID_RETURN(m_pCurrentPass);
+    m_pCurrentPass->m_nCurrentBuffer = !m_pCurrentPass->m_nCurrentBuffer;
 }
 
 STDMETHODIMP_(void) CGEKRenderSystem::SetScreenTargets(IGEK3DVideoContext *pContext, IUnknown *pDepthBuffer)
 {
-    REQUIRE_VOID_RETURN(m_pVideoSystem && m_spScreenBuffer[m_nCurrentScreenBuffer]);
+    REQUIRE_VOID_RETURN(m_pSystem && m_pCurrentPass);
 
-    pContext->SetRenderTargets({ m_spScreenBuffer[m_nCurrentScreenBuffer] }, (pDepthBuffer ? pDepthBuffer : nullptr));
-    pContext->SetViewports({ m_kScreenViewPort });
+    pContext->SetRenderTargets({ m_pCurrentPass->m_aBuffers[m_pCurrentPass->m_nCurrentBuffer] }, (pDepthBuffer ? pDepthBuffer : nullptr));
+
+    GEK3DVIDEO::VIEWPORT kViewport;
+    kViewport.m_nTopLeftX = 0.0f;
+    kViewport.m_nTopLeftY = 0.0f;
+    kViewport.m_nXSize = float(m_pCurrentPass->m_nXSize);
+    kViewport.m_nYSize = float(m_pCurrentPass->m_nYSize);
+    kViewport.m_nMinDepth = 0.0f;
+    kViewport.m_nMaxDepth = 1.0f;
+    pContext->SetViewports({ kViewport });
 }
 
 STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial)
@@ -1005,24 +1014,15 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     REQUIRE_VOID_RETURN(m_pSceneManager && m_pVideoSystem);
     GEKFUNCTION(nullptr);
 
-    m_nCurrentScreenBuffer = 0;
     CComQIPtr<IGEK3DVideoContext> spContext(m_pVideoSystem);
     spContext->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
     spContext->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
-
     m_pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void
     {
         auto &kViewer = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(viewer)>(nViewerID, L"viewer");
         if (SUCCEEDED(LoadPass(kViewer.pass)))
         {
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnPreRender, std::placeholders::_1)));
-
-            m_kScreenViewPort.m_nTopLeftX = kViewer.position.x * m_pSystem->GetXSize();
-            m_kScreenViewPort.m_nTopLeftY = kViewer.position.y * m_pSystem->GetYSize();
-            m_kScreenViewPort.m_nXSize = kViewer.size.x * m_pSystem->GetXSize();
-            m_kScreenViewPort.m_nYSize = kViewer.size.y * m_pSystem->GetYSize();
-            m_kScreenViewPort.m_nMinDepth = 0.0f;
-            m_kScreenViewPort.m_nMaxDepth = 1.0f;
 
             float4x4 nCameraMatrix;
             auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, L"transform");
@@ -1080,6 +1080,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             spContext->GetPixelSystem()->SetConstantBuffer(2, m_spLightCountBuffer);
 
             m_pCurrentPass = &m_aPasses[kViewer.pass];
+            m_pCurrentPass->m_nCurrentBuffer = 0;
+
             for (auto &pFilter : m_pCurrentPass->m_aFilters)
             {
                 m_pCurrentFilter = pFilter;
@@ -1087,26 +1089,37 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                 m_pCurrentFilter = nullptr;
             }
 
-            m_pCurrentPass = nullptr;
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnPostRender, std::placeholders::_1)));
+
+            GEK3DVIDEO::VIEWPORT kViewport;
+            kViewport.m_nTopLeftX = (kViewer.position.x * m_pSystem->GetXSize());
+            kViewport.m_nTopLeftY = (kViewer.position.y * m_pSystem->GetYSize());
+            kViewport.m_nXSize = (kViewer.size.x * m_pSystem->GetXSize());
+            kViewport.m_nYSize = (kViewer.size.y * m_pSystem->GetYSize());
+            kViewport.m_nMinDepth = 0.0f;
+            kViewport.m_nMaxDepth = 1.0f;
+
+            m_pVideoSystem->SetDefaultTargets(spContext);
+            spContext->SetViewports({ kViewport });
+
+            spContext->SetRenderStates(m_spRenderStates);
+            spContext->SetBlendStates(float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
+            spContext->SetDepthStates(0x0, m_spDepthStates);
+            spContext->GetComputeSystem()->SetProgram(nullptr);
+            spContext->GetVertexSystem()->SetProgram(m_spVertexProgram);
+            spContext->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
+            spContext->GetGeometrySystem()->SetProgram(nullptr);
+            spContext->GetPixelSystem()->SetProgram(m_spPixelProgram);
+            spContext->GetPixelSystem()->SetResource(0, m_pCurrentPass->m_aBuffers[m_pCurrentPass->m_nCurrentBuffer]);
+            SetResource(spContext->GetPixelSystem(), 1, nullptr);
+            spContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
+            spContext->SetIndexBuffer(0, m_spIndexBuffer);
+            spContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);
+            spContext->DrawIndexedPrimitive(6, 0, 0);
+
+            m_pCurrentPass = nullptr;
         }
     });
-
-    m_pVideoSystem->SetDefaultTargets(spContext);
-    spContext->SetRenderStates(m_spRenderStates);
-    spContext->SetBlendStates(float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
-    spContext->SetDepthStates(0x0, m_spDepthStates);
-    spContext->GetComputeSystem()->SetProgram(nullptr);
-    spContext->GetVertexSystem()->SetProgram(m_spVertexProgram);
-    spContext->GetVertexSystem()->SetConstantBuffer(1, m_spOrthoBuffer);
-    spContext->GetGeometrySystem()->SetProgram(nullptr);
-    spContext->GetPixelSystem()->SetProgram(m_spPixelProgram);
-    spContext->GetPixelSystem()->SetResource(0, m_spScreenBuffer[m_nCurrentScreenBuffer]);
-    SetResource(spContext->GetPixelSystem(), 1, nullptr);
-    spContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
-    spContext->SetIndexBuffer(0, m_spIndexBuffer);
-    spContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);
-    spContext->DrawIndexedPrimitive(6, 0, 0);
 
     spContext->ClearResources();
     m_pVideoSystem->Present(true);
@@ -1117,12 +1130,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     };
 
     m_pVideoSystem->SetEvent(m_spFrameEvent);
-}
-
-STDMETHODIMP_(float2) CGEKRenderSystem::GetScreenSize(void) const
-{
-    REQUIRE_RETURN(m_spScreenBuffer[0], 0.0f);
-    return float2(float(m_spScreenBuffer[0]->GetXSize()), float(m_spScreenBuffer[0]->GetYSize()));
 }
 
 STDMETHODIMP_(const frustum &) CGEKRenderSystem::GetFrustum(void) const

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<filter flipscreens="true">
+<filter flip="true">
     <defines>
         <define name="gs_nStepSize" value=".5" />
         <define name="gs_nNumSteps" value="30" />
@@ -12,7 +12,7 @@
             <resource stage="2" source="Opaque.Normal" />
             <resource stage="3" source="Opaque.Depth" />
             <resource stage="4" source="Opaque.Info" />
-            <resource stage="5" source="screen" />
+            <resource stage="5" source="output" />
         </resources>
 
         <![CDATA[
@@ -20,11 +20,11 @@
             Texture2D<half2>    gs_pNormalBuffer        : register(t2);
             Texture2D<float>    gs_pDepthBuffer         : register(t3);
             Texture2D           gs_pInfoBuffer          : register(t4);
-            Texture2D           gs_pScreenBuffer        : register(t5);
+            Texture2D           gs_pOutputBuffer        : register(t5);
 
             float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
-                float4 nScreen = gs_pScreenBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+                float4 nScreen = gs_pOutputBuffer.Sample(gs_pPointSampler, kInput.texcoord);
                 if(gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord).w < 1.0f)
                 {
                     float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
@@ -109,7 +109,7 @@
 		                // COMBINING REFLECTION TO THE ORIGINAL PIXEL COLOR
 		                if(nReflectivity > 0.0)
                         {
-                            nScreen = lerp(nScreen, gs_pScreenBuffer.Sample(gs_pPointSampler, nTexCoord.xy), nReflectivity);
+                            nScreen = lerp(nScreen, gs_pOutputBuffer.Sample(gs_pPointSampler, nTexCoord.xy), nReflectivity);
 		                }
 	                }
                 }

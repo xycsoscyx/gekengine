@@ -41,6 +41,10 @@ public:
 
     struct PASS
     {
+        UINT32 m_nXSize;
+        UINT32 m_nYSize;
+        UINT8 m_nCurrentBuffer;
+        CComPtr<IGEK3DVideoTexture> m_aBuffers[2];
         std::vector<CComPtr<IGEKRenderFilter>> m_aFilters;
         std::vector<CStringW> m_aData;
     };
@@ -92,8 +96,6 @@ private:
     CComPtr<IGEK3DVideoBuffer> m_spMaterialBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spLightCountBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spLightBuffer;
-    CComPtr<IGEK3DVideoTexture> m_spScreenBuffer[2];
-    UINT8 m_nCurrentScreenBuffer;
     CComPtr<IUnknown> m_spBlendStates;
     CComPtr<IUnknown> m_spRenderStates;
     CComPtr<IUnknown> m_spDepthStates;
@@ -105,7 +107,6 @@ private:
 
     frustum m_nCurrentFrustum;
     ENGINEBUFFER m_kCurrentBuffer;
-    GEK3DVIDEO::VIEWPORT m_kScreenViewPort;
     std::vector<LIGHTBUFFER> m_aVisibleLights;
 
     PASS *m_pCurrentPass;
@@ -148,13 +149,12 @@ public:
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppResource);
     STDMETHOD_(void, SetResource)           (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource);
     STDMETHOD_(void, SetScreenTargets)      (THIS_ IGEK3DVideoContext *pContext, IUnknown *pDepthBuffer);
-    STDMETHOD_(void, FlipScreens)           (THIS);
+    STDMETHOD_(void, FlipCurrentBuffers)    (THIS);
     STDMETHOD_(void, DrawScene)             (THIS_ IGEK3DVideoContext *pContext, UINT32 nAttributes);
     STDMETHOD_(void, DrawLights)            (THIS_ IGEK3DVideoContext *pContext, std::function<void(void)> OnLightBatch);
     STDMETHOD_(void, DrawOverlay)           (THIS_ IGEK3DVideoContext *pContext);
     STDMETHOD_(void, Render)                (THIS);
 
     // IGEKRenderManager
-    STDMETHOD_(float2, GetScreenSize)       (THIS) const;
     STDMETHOD_(const frustum &, GetFrustum) (THIS) const;
 };

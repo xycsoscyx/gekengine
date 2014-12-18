@@ -14,7 +14,6 @@ DECLARE_INTERFACE(IGEK3DVideoContext);
 
 DECLARE_INTERFACE_IID_(IGEKRenderManager, IUnknown, "5226EB5A-DC03-465C-8393-0F947A0DDC24")
 {
-    STDMETHOD_(float2, GetScreenSize)           (THIS) const PURE;
     STDMETHOD_(const frustum &, GetFrustum)     (THIS) const PURE;
 };
 
