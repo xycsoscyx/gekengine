@@ -35,7 +35,7 @@
                 nPixelSize = rcp(nPixelSize);                
 
 	            float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-	            float4 nCenterColor = gs_pScreenBuffer.Sample(gs_pPointSampler, GetViewPortCoord(kInput.texcoord));
+	            float4 nCenterColor = gs_pScreenBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
 	            float nTotalWeight = gs_aGuassian[gs_nGuassianDeviation][0];
 	            float nAmbientOcclusion = nCenterColor.a * nTotalWeight;
@@ -48,7 +48,7 @@
 		            {
 			            float2 nSampleCoord = kInput.texcoord + gs_nAxis * (nSample * nPixelSize * gs_nScale);
 			            float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nSampleCoord);
-			            float nSampleAmbient = gs_pScreenBuffer.Sample(gs_pPointSampler, GetViewPortCoord(nSampleCoord)).a;
+			            float nSampleAmbient = gs_pScreenBuffer.Sample(gs_pPointSampler, nSampleCoord).a;
 
 			            // spatial domain: offset gaussian tap
 			            float nWeight = gs_aGuassian[gs_nGuassianDeviation][abs(nSample)];

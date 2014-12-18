@@ -1038,8 +1038,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             m_kCurrentBuffer.m_nCameraFieldOfView.y = (m_kCurrentBuffer.m_nCameraFieldOfView.x / nAspect);
             m_kCurrentBuffer.m_nCameraMinDistance = kViewer.mindistance;
             m_kCurrentBuffer.m_nCameraMaxDistance = kViewer.maxdistance;
-            m_kCurrentBuffer.m_nViewPortPosition = kViewer.position;
-            m_kCurrentBuffer.m_nViewPortSize = kViewer.size;
 
             m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
             m_kCurrentBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kViewer.mindistance, kViewer.maxdistance);
