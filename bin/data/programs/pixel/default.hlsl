@@ -3,7 +3,8 @@ cbuffer ENGINEBUFFER                    : register(b0)
     float2   gs_nCameraFieldOfView      : packoffset(c0);
     float    gs_nCameraMinDistance      : packoffset(c0.z);
     float    gs_nCameraMaxDistance      : packoffset(c0.w);
-    float3   gs_nCameraPosition         : packoffset(c1);
+    float2   gs_nViewPortPosition       : packoffset(c1);
+    float2   gs_nViewPortSize           : packoffset(c1.z);
     float4x4 gs_nViewMatrix             : packoffset(c2);
     float4x4 gs_nProjectionMatrix       : packoffset(c6);
     float4x4 gs_nInvProjectionMatrix    : packoffset(c10);
@@ -64,6 +65,11 @@ float3 GetViewPosition(float2 nTexCoord, float nDepth)
     nTexCoord = (nTexCoord * 2 - 1);
     float3 nViewVector = float3((nTexCoord * gs_nCameraFieldOfView), 1.0);
     return (nViewVector * nDepth * gs_nCameraMaxDistance);
+}
+
+float2 GetViewPortCoord(float2 nTexCoord)
+{
+    return (clamp((nTexCoord * gs_nViewPortSize), 0.0f, gs_nViewPortSize) + gs_nViewPortPosition);
 }
 
 _INSERT_PIXEL_PROGRAM

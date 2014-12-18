@@ -109,7 +109,7 @@
 		                // COMBINING REFLECTION TO THE ORIGINAL PIXEL COLOR
 		                if(nReflectivity > 0.0)
                         {
-                            nScreen = lerp(nScreen, gs_pScreenBuffer.Sample(gs_pPointSampler, nTexCoord.xy), nReflectivity);
+                            nScreen = lerp(nScreen, gs_pScreenBuffer.Sample(gs_pPointSampler, GetViewPortCoord(nTexCoord.xy)), nReflectivity);
 		                }
 	                }
                 }

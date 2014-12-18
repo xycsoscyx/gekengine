@@ -58,8 +58,8 @@ public:
         float2 m_nCameraFieldOfView;
         float m_nCameraMinDistance;
         float m_nCameraMaxDistance;
-        float3 m_nCameraPosition;
-        float m_nBuffer;
+        float2 m_nViewPortPosition;
+        float2 m_nViewPortSize;
         float4x4 m_nViewMatrix;
         float4x4 m_nProjectionMatrix;
         float4x4 m_nInvProjectionMatrix;

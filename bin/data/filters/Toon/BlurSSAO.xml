@@ -10,8 +10,8 @@
 
     <pixel>
         <resources>
-            <resource stage="1" source="Opaque.Albedo" />
-            <resource stage="2" source="Opaque.Depth" />
+            <resource stage="1" source="Toon.Albedo" />
+            <resource stage="2" source="Toon.Depth" />
             <resource stage="3" source="screen" />
         </resources>
         
