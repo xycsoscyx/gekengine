@@ -118,6 +118,7 @@
     <ClInclude Include="GEKNewton.h" />
     <ClInclude Include="GEKNewtonCLSIDs.h" />
     <ClInclude Include="Include\CGEKComponentNewton.h" />
+    <ClInclude Include="Public\IGEKNewton.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

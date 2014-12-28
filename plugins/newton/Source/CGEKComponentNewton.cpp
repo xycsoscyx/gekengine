@@ -21,6 +21,7 @@ END_REGISTER_COMPONENT(newton)
 BEGIN_INTERFACE_LIST(CGEKComponentSystemNewton)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
+    INTERFACE_LIST_ENTRY_COM(IGEKNewton)
 END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKComponentSystemNewton)
@@ -158,7 +159,7 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
                 {
                     CStringA strMaterialUTF8 = pBuffer;
                     pBuffer += (strMaterialUTF8.GetLength() + 1);
-                    CStringW strMaterial = CA2W(strMaterialUTF8, CP_UTF8);
+                    CStringW strMaterial(CA2W(strMaterialUTF8, CP_UTF8));
 
                     MATERIAL &kMaterial = aMaterials[nMaterial];
                     kMaterial.m_nFirstVertex = *((UINT32 *)pBuffer);
@@ -240,7 +241,7 @@ void CGEKComponentSystemNewton::OnEntityUpdated(const NewtonBody *pBody, const G
     float4x4 nMatrix;
     NewtonBodyGetMatrix(pBody, nMatrix.data);
     auto &kNewton = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, L"newton");
-    float3 nGravity = (m_pSceneManager->GetGravity(nMatrix.t) * kNewton.mass);
+    const float3 nGravity(0.0f, (-9.8331f * kNewton.mass), 0.0f);
     NewtonBodyAddForce(pBody, nGravity.xyz);
 }
 

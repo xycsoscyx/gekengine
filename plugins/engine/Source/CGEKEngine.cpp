@@ -158,7 +158,7 @@ STDMETHODIMP CGEKEngine::Initialize(void)
             }
             else
             {
-                CStringW strID = CA2W(pID, CP_UTF8);
+                CStringW strID(CA2W(pID, CP_UTF8));
                 CStringA strFileName = CW2A(GEKParseFileName(strID), CP_UTF8);
                 pReturn = xmlNewInputFromFile(pContext, strFileName);
             }

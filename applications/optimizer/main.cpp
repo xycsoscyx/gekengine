@@ -43,12 +43,12 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
         throw CMyException(__LINE__, L"Invalid node encountered");
     }
 
-    float4x4 nLocalTransform = *(float4x4 *)&pNode->mTransformation;
+    float4x4 nLocalTransform(*(float4x4 *)&pNode->mTransformation);
     nLocalTransform.Transpose();
 
-    float4x4 nTransform = (nLocalTransform * nParentTransform);
-    float4x4 nRotation = float4x4(quaternion(nTransform)).GetInverse();
-    float4x4 nInverseTransform = nTransform.GetInverse();
+    float4x4 nTransform(nLocalTransform * nParentTransform);
+    float4x4 nRotation(quaternion(nTransform).GetInverse());
+    float4x4 nInverseTransform(nTransform.GetInverse());
     if (pNode->mNumMeshes > 0)
     {
         if (pNode->mMeshes == nullptr)
@@ -122,10 +122,9 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
 
                 for (UINT32 nVertex = 0; nVertex < pMesh->mNumVertices; ++nVertex)
                 {
-                    float3 nPosition;
-                    nPosition.x = pMesh->mVertices[nVertex].x;
-                    nPosition.y = pMesh->mVertices[nVertex].y;
-                    nPosition.z = pMesh->mVertices[nVertex].z;
+                    float3 nPosition(pMesh->mVertices[nVertex].x,
+                                     pMesh->mVertices[nVertex].y,
+                                     pMesh->mVertices[nVertex].z);
                     nPosition = (nTransform * float4(nPosition, 1.0f));
                     kModel.m_aVertices.push_back(nPosition);
                     nAABB.Extend(nPosition);

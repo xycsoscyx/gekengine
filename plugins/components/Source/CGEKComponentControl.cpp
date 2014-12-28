@@ -98,7 +98,7 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnPreUpdate(float nGameTime, flo
             kControl.turn += (pEntity.second[L"turn"] * 0.01f);
             kControl.tilt = 0.0f;//+= (pEntity.second[L"tilt"] * 0.01f);
 
-            float4x4 nRotation = (float4x4(kControl.tilt, 0.0f, 0.0f) * float4x4(0.0f, kControl.turn, 0.0f));
+            float4x4 nRotation(float4x4(kControl.tilt, 0.0f, 0.0f) * float4x4(0.0f, kControl.turn, 0.0f));
 
             float3 nForce(0.0f, 0.0f, 0.0f);
             nForce += nRotation.rz * pEntity.second[L"forward"];

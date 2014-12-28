@@ -48,5 +48,4 @@ public:
     STDMETHOD_(LPVOID, GetComponent)            (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
     STDMETHOD_(void, ListEntities)              (THIS_ std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel = false);
     STDMETHOD_(void, ListComponentsEntities)    (THIS_ const std::vector<CStringW> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel = false);
-    STDMETHOD_(float3, GetGravity)              (THIS_ const float3 &nPosition) const;
 };

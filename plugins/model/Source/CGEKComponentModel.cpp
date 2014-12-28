@@ -93,7 +93,7 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
                 {
                     CStringA strMaterialUTF8 = pBuffer;
                     pBuffer += (strMaterialUTF8.GetLength() + 1);
-                    CStringW strMaterial = CA2W(strMaterialUTF8, CP_UTF8);
+                    CStringW strMaterial(CA2W(strMaterialUTF8, CP_UTF8));
 
                     CComPtr<IUnknown> spMaterial;
                     hRetVal = m_pMaterialManager->LoadMaterial(strMaterial, &spMaterial);

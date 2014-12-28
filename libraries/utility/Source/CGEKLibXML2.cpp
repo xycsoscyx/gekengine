@@ -144,9 +144,9 @@ void CLibXMLNode::ListAttributes(std::function<void(LPCWSTR, LPCWSTR)> OnAttribu
     {
         for(xmlAttrPtr pAttribute = m_pNode->properties; pAttribute != nullptr; pAttribute = pAttribute->next)
         {
-            CStringA strNameUTF8 = pAttribute->name;
-            CStringW strName = CA2W(strNameUTF8, CP_UTF8);
-            CStringW strValue = GetAttribute(strName);
+            CStringA strNameUTF8(pAttribute->name);
+            CStringW strName(CA2W(strNameUTF8, CP_UTF8));
+            CStringW strValue(GetAttribute(strName));
             OnAttribute(strName, strValue);
         }
     }
@@ -158,7 +158,7 @@ bool CLibXMLNode::HasSiblingElement(LPCWSTR pType) const
     if (m_pNode != nullptr)
     {
         xmlNode *pNode = m_pNode;
-        CStringA strTypeUTF8 = CW2A(pType, CP_UTF8);
+        CStringA strTypeUTF8(CW2A(pType, CP_UTF8));
         for (; pNode; pNode = pNode->next)
         {
             if (pNode->type == XML_ELEMENT_NODE)
@@ -180,7 +180,7 @@ CLibXMLNode CLibXMLNode::NextSiblingElement(LPCWSTR pType) const
     if (m_pNode != nullptr)
     {
         xmlNode *pNode = m_pNode->next;
-        CStringA strTypeUTF8 = CW2A(pType, CP_UTF8);
+        CStringA strTypeUTF8(CW2A(pType, CP_UTF8));
         for (; pNode; pNode = pNode->next)
         {
             if (pNode->type == XML_ELEMENT_NODE)
@@ -207,7 +207,7 @@ bool CLibXMLNode::HasChildElement(LPCWSTR pType) const
     if (m_pNode != nullptr)
     {
         xmlNode *pNode = m_pNode->children;
-        CStringA strTypeUTF8 = CW2A(pType, CP_UTF8);
+        CStringA strTypeUTF8(CW2A(pType, CP_UTF8));
         for (; pNode; pNode = pNode->next)
         {
             if (pNode->type == XML_ELEMENT_NODE)
@@ -229,7 +229,7 @@ CLibXMLNode CLibXMLNode::FirstChildElement(LPCWSTR pType) const
     if (m_pNode != nullptr)
     {
         xmlNode *pNode = m_pNode->children;
-        CStringA strTypeUTF8 = CW2A(pType, CP_UTF8);
+        CStringA strTypeUTF8(CW2A(pType, CP_UTF8));
         for (; pNode; pNode = pNode->next)
         {
             if (pNode->type == XML_ELEMENT_NODE)
@@ -254,7 +254,7 @@ CLibXMLNode CLibXMLNode::CreateChildElement(LPCWSTR pType, LPCWSTR pContentForma
 {
     if (m_pNode != nullptr)
     {
-        CStringA strTypeUTF8 = CW2A(pType, CP_UTF8);
+        CStringA strTypeUTF8(CW2A(pType, CP_UTF8));
 
         CStringW strContent;
         if (pContentFormat != nullptr)
@@ -265,7 +265,7 @@ CLibXMLNode CLibXMLNode::CreateChildElement(LPCWSTR pType, LPCWSTR pContentForma
             va_end(pArgs);
         }
 
-        CStringA strContentUTF8 = CW2A(strContent, CP_UTF8);
+        CStringA strContentUTF8(CW2A(strContent, CP_UTF8));
         xmlNodePtr pNewNode = xmlNewChild(m_pNode, nullptr, BAD_CAST strTypeUTF8.GetString(), BAD_CAST strContentUTF8.GetString());
         if (pNewNode != nullptr)
         {
@@ -302,7 +302,7 @@ HRESULT CLibXMLDoc::Create(LPCWSTR pRootNode)
     xmlDoc *pDocument = xmlNewDoc(BAD_CAST "1.0");
     if (pDocument != nullptr)
     {
-        CStringA strRootNodeUTF8 = CW2A(pRootNode, CP_UTF8);
+        CStringA strRootNodeUTF8(CW2A(pRootNode, CP_UTF8));
         xmlNodePtr pRoot = xmlNewNode(nullptr, BAD_CAST strRootNodeUTF8.GetString());
         if (pRoot != nullptr)
         {
@@ -325,7 +325,7 @@ HRESULT CLibXMLDoc::Load(LPCWSTR pFileName)
 
     HRESULT hRetVal = E_FAIL;
     CStringW strFullFileName(GEKParseFileName(pFileName));
-    CStringA strFileNameUTF8 = CW2A(strFullFileName, CP_UTF8);
+    CStringA strFileNameUTF8(CW2A(strFullFileName, CP_UTF8));
     m_pDocument = xmlReadFile(strFileNameUTF8, nullptr, XML_PARSE_DTDATTR | XML_PARSE_NOENT | XML_PARSE_DTDVALID);
     if (m_pDocument != nullptr)
     {
@@ -341,7 +341,7 @@ HRESULT CLibXMLDoc::Save(LPCWSTR pFileName)
     if (m_pDocument != nullptr)
     {
         CStringW strFullFileName(GEKParseFileName(pFileName));
-        CStringA strFileNameUTF8 = CW2A(strFullFileName, CP_UTF8);
+        CStringA strFileNameUTF8(CW2A(strFullFileName, CP_UTF8));
         xmlSaveFormatFileEnc(strFileNameUTF8, m_pDocument, "UTF-8", 1);
     }
 

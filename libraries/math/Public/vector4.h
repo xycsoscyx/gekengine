@@ -116,7 +116,7 @@ public:
 
     tvector4<TYPE> GetNormal(void) const
     {
-        TYPE nLength = GetLength();
+        TYPE nLength(GetLength());
         if (nLength != TYPE(0))
         {
             return (*this * (TYPE(1) / GetLength()));

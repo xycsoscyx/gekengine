@@ -210,18 +210,18 @@ public:
     {
         SetIdentity();
 
-        TYPE nSquareX = (nQuaternion.x * nQuaternion.x);
-        TYPE nSquareY = (nQuaternion.y * nQuaternion.y);
-        TYPE nSquareZ = (nQuaternion.z * nQuaternion.z);
-        TYPE nSquareW = (nQuaternion.w * nQuaternion.w);
+        TYPE nSquareX(nQuaternion.x * nQuaternion.x);
+        TYPE nSquareY(nQuaternion.y * nQuaternion.y);
+        TYPE nSquareZ(nQuaternion.z * nQuaternion.z);
+        TYPE nSquareW(nQuaternion.w * nQuaternion.w);
 
-        TYPE nInverse = (TYPE(1) / (nSquareX + nSquareY + nSquareZ + nSquareW));
+        TYPE nInverse(TYPE(1) / (nSquareX + nSquareY + nSquareZ + nSquareW));
         matrix[0][0] = (( nSquareX - nSquareY - nSquareZ + nSquareW) * nInverse);
         matrix[1][1] = ((-nSquareX + nSquareY - nSquareZ + nSquareW) * nInverse);
         matrix[2][2] = ((-nSquareX - nSquareY + nSquareZ + nSquareW) * nInverse);
 
-        TYPE nXY = (nQuaternion.x * nQuaternion.y);
-        TYPE nZW = (nQuaternion.z * nQuaternion.w);
+        TYPE nXY(nQuaternion.x * nQuaternion.y);
+        TYPE nZW(nQuaternion.z * nQuaternion.w);
         matrix[0][1] = (TYPE(2) * (nXY + nZW) * nInverse);
         matrix[1][0] = (TYPE(2) * (nXY - nZW) * nInverse);
 
@@ -238,8 +238,8 @@ public:
 
     void SetXAngle(TYPE nAngle)
     {
-        TYPE nCos = cos(nAngle);
-        TYPE nSin = sin(nAngle);
+        TYPE nCos(cos(nAngle));
+        TYPE nSin(sin(nAngle));
         matrix[0][0] = TYPE(1); matrix[0][1] = TYPE(0); matrix[0][2] = TYPE(0); matrix[0][3] = TYPE(0);
         matrix[1][0] = TYPE(0); matrix[1][1] = nCos;    matrix[1][2] = nSin;    matrix[1][3] = TYPE(0);
         matrix[2][0] = TYPE(0); matrix[2][1] =-nSin;    matrix[2][2] = nCos;    matrix[2][3] = TYPE(0);
@@ -248,8 +248,8 @@ public:
 
     void SetYAngle(TYPE nAngle)
     {
-        TYPE nCos = cos(nAngle);
-        TYPE nSin = sin(nAngle);
+        TYPE nCos(cos(nAngle));
+        TYPE nSin(sin(nAngle));
         matrix[0][0] = nCos;    matrix[0][1] = TYPE(0); matrix[0][2] =-nSin;    matrix[0][3] = TYPE(0);
         matrix[1][0] = TYPE(0); matrix[1][1] = TYPE(1); matrix[1][2] = TYPE(0); matrix[1][3] = TYPE(0);
         matrix[2][0] = nSin;    matrix[2][1] = TYPE(0); matrix[2][2] = nCos;    matrix[2][3] = TYPE(0);
@@ -258,8 +258,8 @@ public:
 
     void SetZAngle(TYPE nAngle)
     {
-        TYPE nCos = cos(nAngle);
-        TYPE nSin = sin(nAngle);
+        TYPE nCos(cos(nAngle));
+        TYPE nSin(sin(nAngle));
         matrix[0][0] = nCos;    matrix[0][1] = nSin;    matrix[0][2] = TYPE(0); matrix[0][3] = TYPE(0);
         matrix[1][0] =-nSin;    matrix[1][1] = nCos;    matrix[1][2] = TYPE(0); matrix[1][3] = TYPE(0);
         matrix[2][0] = TYPE(0); matrix[2][1] = TYPE(0); matrix[2][2] = TYPE(1); matrix[2][3] = TYPE(0);
@@ -268,9 +268,9 @@ public:
 
     void SetOrthographic(TYPE nMinX, TYPE nMinY, TYPE nMaxX, TYPE nMaxY, TYPE nMinZ, TYPE nMaxZ)
     {
-        TYPE nScaleX = ( TYPE(2) / (nMaxX - nMinX));
-        TYPE nScaleY = ( TYPE(2) / (nMinY - nMaxY));
-        TYPE nScaleZ = (-TYPE(2) / (nMaxZ - nMinZ));
+        TYPE nScaleX( TYPE(2) / (nMaxX - nMinX));
+        TYPE nScaleY( TYPE(2) / (nMinY - nMaxY));
+        TYPE nScaleZ(-TYPE(2) / (nMaxZ - nMinZ));
         TYPE nTranslationX = -((nMaxX + nMinX) / (nMaxX - nMinX));
         TYPE nTranslationY = -((nMinY + nMaxY) / (nMinY - nMaxY));
         TYPE nTranslationZ = -((nMaxZ + nMinZ) / (nMaxZ - nMinZ));
@@ -282,9 +282,9 @@ public:
 
     void SetPerspective(TYPE nFOV, TYPE nAspect, TYPE nNear, TYPE nFar)
     {
-	    TYPE nX = (TYPE(1) / tan(nFOV * TYPE(0.5)));
-	    TYPE nY = (nX * nAspect); 
-	    TYPE nDistance = (nFar - nNear);
+	    TYPE nX(TYPE(1) / tan(nFOV * TYPE(0.5)));
+	    TYPE nY(nX * nAspect); 
+	    TYPE nDistance(nFar - nNear);
 
 	    matrix[0][0] = nX;
 	    matrix[0][1] = TYPE(0);
@@ -431,14 +431,14 @@ public:
     tmatrix4x4<TYPE> GetTranspose(void) const
     {
         return tmatrix4x4<TYPE>(_11, _21, _31, _41,
-                               _12, _22, _32, _42,
-                               _13, _23, _33, _43,
-                               _14, _24, _34, _44);
+                                _12, _22, _32, _42,
+                                _13, _23, _33, _43,
+                                _14, _24, _34, _44);
     }
 
     tmatrix4x4<TYPE> GetInverse(void) const
     {
-        TYPE nDerminant = GetDeterminant();
+        TYPE nDerminant(GetDeterminant());
         if (abs(nDerminant) < _EPSILON) 
         {
             return tmatrix4x4<TYPE>();
@@ -510,16 +510,16 @@ public:
     tvector3<TYPE> operator * (const tvector3<TYPE> &nVector) const
     {
         return tvector3<TYPE>(((nVector.x * _11) + (nVector.y * _21) + (nVector.z * _31)),
-                             ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32)),
-                             ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33)));
+                              ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32)),
+                              ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33)));
     }
 
     tvector4<TYPE> operator * (const tvector4<TYPE> &nVector) const
     {
         return tvector4<TYPE>(((nVector.x * _11) + (nVector.y * _21) + (nVector.z * _31) + (nVector.w * _41)),
-                             ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32) + (nVector.w * _42)),
-                             ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33) + (nVector.w * _43)),
-                             ((nVector.x * _14) + (nVector.y * _24) + (nVector.z * _34) + (nVector.w * _44)));
+                              ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32) + (nVector.w * _42)),
+                              ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33) + (nVector.w * _43)),
+                              ((nVector.x * _14) + (nVector.y * _24) + (nVector.z * _34) + (nVector.w * _44)));
     }
 
     tmatrix4x4<TYPE> operator * (TYPE nScalar) const

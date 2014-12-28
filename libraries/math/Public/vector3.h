@@ -94,7 +94,7 @@ public:
 
     tvector3<TYPE> GetNormal(void) const
     {
-        TYPE nLength = GetLength();
+        TYPE nLength(GetLength());
         if (nLength != TYPE(0))
         {
             return ((*this) * (1.0f / GetLength()));
@@ -116,8 +116,8 @@ public:
     tvector3<TYPE> Cross(const tvector3<TYPE> &nVector) const
     {
         return tvector3<TYPE>(((y * nVector.z) - (z * nVector.y)),
-                       ((z * nVector.x) - (x * nVector.z)),
-                       ((x * nVector.y) - (y * nVector.x)));
+                              ((z * nVector.x) - (x * nVector.z)),
+                              ((x * nVector.y) - (y * nVector.x)));
     }
 
     tvector3<TYPE> Lerp(const tvector3<TYPE> &nVector, TYPE nFactor) const

@@ -347,6 +347,12 @@ STDMETHODIMP_(void) CGEKRenderSystem::OnPreReset(void)
     {
         kBuffer.second.m_spResource = nullptr;
     }
+
+    for (auto &kPass : m_aPasses)
+    {
+        kPass.second.m_aBuffers[0] = nullptr;
+        kPass.second.m_aBuffers[1] = nullptr;
+    }
 }
 
 STDMETHODIMP CGEKRenderSystem::OnPostReset(void)
@@ -386,6 +392,24 @@ STDMETHODIMP CGEKRenderSystem::OnPostReset(void)
                 {
                     break;
                 }
+            }
+        }
+
+        for (auto &kPass : m_aPasses)
+        {
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = m_pVideoSystem->CreateRenderTarget(kPass.second.m_nXSize, kPass.second.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPass.second.m_aBuffers[0]);
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = m_pVideoSystem->CreateRenderTarget(kPass.second.m_nXSize, kPass.second.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPass.second.m_aBuffers[1]);
+            }
+
+            if (FAILED(hRetVal))
+            {
+                break;
             }
         }
     }
@@ -449,7 +473,7 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
                     CLibXMLNode kDataNode = kMaterialsNode.FirstChildElement(L"data");
                     while (kDataNode)
                     {
-                        CStringW strFilter = kDataNode.GetAttribute(L"source");
+                        CStringW strFilter(kDataNode.GetAttribute(L"source"));
                         GEKLOG(L"Data Source: %s", strFilter.GetString());
                         kPassData.m_aData.push_back(strFilter);
                         kDataNode = kDataNode.NextSiblingElement(L"data");
@@ -489,7 +513,7 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
 
                         if (SUCCEEDED(hRetVal))
                         {
-                            CStringW strFilter = kFilterNode.GetAttribute(L"source");
+                            CStringW strFilter(kFilterNode.GetAttribute(L"source"));
                             GEKLOG(L"Filter Source: %s", strFilter.GetString());
 
                             CComPtr<IGEKRenderFilter> spFilter;
@@ -553,11 +577,11 @@ STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource
         if (pName[0] == L'*')
         {
             int nPosition = 0;
-            CStringW strName = &pName[1];
-            CStringW strType = strName.Tokenize(L":", nPosition);
+            CStringW strName(&pName[1]);
+            CStringW strType(strName.Tokenize(L":", nPosition));
             if (strType.CompareNoCase(L"color") == 0)
             {
-                CStringW strColor = strName.Tokenize(L":", nPosition);
+                CStringW strColor(strName.Tokenize(L":", nPosition));
                 GEKLOG(L"Creating Color Texture: %s", strColor.GetString());
                 float4 nColor = StrToFloat4(strColor);
 
@@ -566,9 +590,9 @@ STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource
                 if (spColorTexture)
                 {
                     UINT32 nColorValue = UINT32(UINT8(nColor.r * 255.0f)) |
-                        UINT32(UINT8(nColor.g * 255.0f) << 8) |
-                        UINT32(UINT8(nColor.b * 255.0f) << 16) |
-                        UINT32(UINT8(nColor.a * 255.0f) << 24);
+                                         UINT32(UINT8(nColor.g * 255.0f) << 8) |
+                                         UINT32(UINT8(nColor.b * 255.0f) << 16) |
+                                         UINT32(UINT8(nColor.a * 255.0f) << 24);
                     m_pVideoSystem->UpdateTexture(spColorTexture, &nColorValue, 4);
                     spTexture = spColorTexture;
                 }
@@ -780,7 +804,7 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
                 CLibXMLNode kDataNode = kMaterialNode.FirstChildElement();
                 while (kDataNode)
                 {
-                    CStringW strSource = kDataNode.GetAttribute(L"source");
+                    CStringW strSource(kDataNode.GetAttribute(L"source"));
                     strSource.Replace(L"%material%", pName);
                     strSource.Replace(L"%directory%", kName.m_strPath.GetString());
                     GEKLOG(L"%s: %s", kDataNode.GetType().GetString(), strSource.GetString());

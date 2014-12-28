@@ -3,8 +3,8 @@
 #include "GEKUtility.h"
 #include "GEKContext.h"
 #include "GEKAPI.h"
+#include "IGEKNewton.h"
 #include <concurrent_unordered_map.h>
-#include <Newton.h>
 
 DECLARE_COMPONENT(newton)
     DECLARE_COMPONENT_VALUE(CStringW, shape)
@@ -15,6 +15,7 @@ END_DECLARE_COMPONENT(newton)
 class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public IGEKSceneObserver
                                 , public IGEKComponentSystem
+                                , public IGEKNewton
 {
 public:
     struct MATERIAL
@@ -26,6 +27,7 @@ public:
 
 private:
     IGEKSceneManager *m_pSceneManager;
+
     NewtonWorld *m_pWorld;
     concurrency::concurrent_unordered_map<GEKENTITYID, NewtonBody *> m_aBodies;
     std::unordered_map<CStringW, NewtonCollision *> m_aCollisions;

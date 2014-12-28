@@ -302,7 +302,7 @@ HRESULT CGEKRenderFilter::LoadBuffers(CLibXMLNode &kFilterNode)
             if (kBufferNode.HasAttribute(L"name") &&
                 kBufferNode.HasAttribute(L"count"))
             {
-                CStringW strName = kBufferNode.GetAttribute(L"name");
+                CStringW strName(kBufferNode.GetAttribute(L"name"));
                 UINT32 nCount = StrToUINT32(ParseValue(kBufferNode.GetAttribute(L"count")));
                 if (kBufferNode.HasAttribute(L"stride"))
                 {
@@ -609,7 +609,7 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName, const std::unordered_map<
                 m_bFlip = StrToBoolean(kFilterNode.GetAttribute(L"flip"));
             }
 
-            CStringW strVertexAttributes = kFilterNode.GetAttribute(L"vertexattributes");
+            CStringW strVertexAttributes(kFilterNode.GetAttribute(L"vertexattributes"));
             if (strVertexAttributes.IsEmpty())
             {
                 m_nVertexAttributes = 0xFFFFFFFF;
@@ -619,7 +619,7 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName, const std::unordered_map<
                 m_nVertexAttributes = 0;
 
                 int nPosition = 0;
-                CStringW strAttribute = strVertexAttributes.Tokenize(L",", nPosition);
+                CStringW strAttribute(strVertexAttributes.Tokenize(L",", nPosition));
                 while (!strAttribute.IsEmpty())
                 {
                     if (strAttribute.CompareNoCase(L"position") == 0)
@@ -639,7 +639,7 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName, const std::unordered_map<
                 };
             }
 
-            CStringW strMode = kFilterNode.GetAttribute(L"mode");
+            CStringW strMode(kFilterNode.GetAttribute(L"mode"));
             if (strMode.CompareNoCase(L"forward") == 0)
             {
                 m_eMode = FORWARD;

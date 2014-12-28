@@ -233,12 +233,12 @@ STDMETHODIMP_(CStringW) CGEKSystem::ParseValue(LPCWSTR pValue)
 
         if (nPosition >= 0)
         {
-            CStringW strMiddle = strValue.Tokenize(L"%", nPosition);
+            CStringW strMiddle(strValue.Tokenize(L"%", nPosition));
             if (nPosition >= 0)
             {
                 nPosition = 0;
-                CStringW strGroup = strMiddle.Tokenize(L".", nPosition);
-                CStringW strName = strMiddle.Tokenize(L".", nPosition);
+                CStringW strGroup(strMiddle.Tokenize(L".", nPosition));
+                CStringW strName(strMiddle.Tokenize(L".", nPosition));
                 if (GetConfig().DoesValueExists(strGroup, strName))
                 {
                     strValue.Replace((L"%" + strMiddle + L"%"), GetConfig().GetValue(strGroup, strName, L"0"));

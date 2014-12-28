@@ -10,6 +10,9 @@
     <Filter Include="API Files">
       <UniqueIdentifier>{ace7e109-320b-4a23-906b-a5346117e745}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Interface Files">
+      <UniqueIdentifier>{c9548873-8af9-4b93-80da-0e1364db0cf9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\CGEKComponentNewton.cpp">
@@ -47,6 +50,9 @@
     </ClInclude>
     <ClInclude Include="GEKNewton.h" />
     <ClInclude Include="GEKNewtonCLSIDs.h" />
+    <ClInclude Include="Public\IGEKNewton.h">
+      <Filter>Interface Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
