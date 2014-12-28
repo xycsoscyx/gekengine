@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <filter>
     <defines>
-        <define name="gs_nNumSamples" value="16" />
+        <define name="gs_nNumSamples" value="32" />
         <define name="gs_nNumSpirals" value="12" />
         <define name="gs_nRadius" value="1" />
         <define name="gs_nBeta" value=".3" />

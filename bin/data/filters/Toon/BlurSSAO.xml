@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <filter flip="true">
     <defines>
-        <define name="gs_nRadius" value="6" />
-        <define name="gs_nGuassianDeviation" value="3" />
+        <define name="gs_nRadius" value="4" />
+        <define name="gs_nGuassianDeviation" value="2" />
         <define name="gs_nScale" value="1" />
         <define name="gs_nEdgeSharpness" value="1" />
         <define name="gs_nEpsilon" value="0.0001" />
