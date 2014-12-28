@@ -1146,6 +1146,49 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     });
 
     spContext->ClearResources();
+    CComQIPtr<IGEK2DVideoSystem> sp2DVideoSystem(m_pVideoSystem);
+    if (sp2DVideoSystem)
+    {
+        sp2DVideoSystem->Begin();
+
+        CComPtr<IUnknown> spGray;
+        sp2DVideoSystem->CreateBrush(float4(1.0f, 1.0f, 1.0f, 0.75f), &spGray);
+
+        CComPtr<IUnknown> spFont;
+        sp2DVideoSystem->CreateFont(L"Arial", 400, GEK2DVIDEO::FONT::NORMAL, 25.0f, &spFont);
+
+        static DWORD nLastTime = 0;
+        static std::list<UINT32> aFPS;
+        static UINT32 nNumFrames = 0;
+        static UINT32 nAverageFPS = 0;
+
+        nNumFrames++;
+        DWORD nCurrentTime = GetTickCount();
+        if (nCurrentTime - nLastTime > 1000)
+        {
+            nLastTime = nCurrentTime;
+            aFPS.push_back(nNumFrames);
+            nNumFrames = 0;
+
+            if (aFPS.size() > 10)
+            {
+                aFPS.pop_front();
+            }
+
+            nAverageFPS = 0;
+            for (auto nFPS : aFPS)
+            {
+                nAverageFPS += nFPS;
+            }
+
+            nAverageFPS /= aFPS.size();
+        }
+
+        sp2DVideoSystem->DrawText({ 25.0f, 25.0f, 225.0f, 50.0f }, spFont, spGray, L"FPS: %d", nAverageFPS);
+
+        sp2DVideoSystem->End();
+    }
+
     m_pVideoSystem->Present(true);
 
     while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))
