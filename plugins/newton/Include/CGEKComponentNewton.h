@@ -13,6 +13,7 @@ DECLARE_COMPONENT(newton)
 END_DECLARE_COMPONENT(newton)
 
 class CGEKComponentSystemNewton : public CGEKUnknown
+                                , public CGEKObservable
                                 , public IGEKSceneObserver
                                 , public IGEKComponentSystem
                                 , public IGEKNewton
@@ -36,14 +37,14 @@ private:
     static int OnAABBOverlap(const NewtonMaterial *pMaterial, const NewtonBody *pBody0, const NewtonBody *pBody1, int nThreadID);
     static void ContactsProcess(const NewtonJoint *const pContactJoint, dFloat nFrameTime, int nThreadID);
 
+    NewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
+    void OnEntityUpdated(const NewtonBody *pBody, const GEKENTITYID &nEntityID);
+    void OnEntityTransformed(const NewtonBody *pBody, const GEKENTITYID &nEntityID, const float4x4 &nMatrix);
+
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemNewton)
     CGEKComponentSystemNewton(void);
     ~CGEKComponentSystemNewton(void);
-
-    NewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
-    void OnEntityUpdated(const NewtonBody *pBody, const GEKENTITYID &nEntityID);
-    void OnEntityTransformed(const NewtonBody *pBody, const GEKENTITYID &nEntityID, const float4x4 &nMatrix);
 
     // IGEKUnknown
     STDMETHOD(Initialize)                       (THIS);

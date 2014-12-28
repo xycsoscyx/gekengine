@@ -19,6 +19,7 @@ REGISTER_COMPONENT(newton)
 END_REGISTER_COMPONENT(newton)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemNewton)
+    INTERFACE_LIST_ENTRY_COM(IGEKObservable)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKComponentSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKNewton)
@@ -33,7 +34,6 @@ int CGEKComponentSystemNewton::OnAABBOverlap(const NewtonMaterial *pMaterial, co
 
 void CGEKComponentSystemNewton::ContactsProcess(const NewtonJoint *const pContactJoint, dFloat nFrameTime, int nThreadID)
 {
-/*
     NewtonBody *pBody0 = NewtonJointGetBody0(pContactJoint);
     NewtonBody *pBody1 = NewtonJointGetBody1(pContactJoint);
     NewtonWorld *pWorld = NewtonBodyGetWorld(pBody0);
@@ -55,7 +55,6 @@ void CGEKComponentSystemNewton::ContactsProcess(const NewtonJoint *const pContac
     }
 
     NewtonWorldCriticalSectionUnlock(pWorld);
-*/
 }
 
 CGEKComponentSystemNewton::CGEKComponentSystemNewton(void)
@@ -385,6 +384,24 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
                                 {
                                     GEKENTITYID nEntityID = (GEKENTITYID)NewtonBodyGetUserData(pBody);
                                     pSystem->OnEntityUpdated(pBody, nEntityID);
+                                }
+                            }
+                        });
+
+                        NewtonBodySetDestructorCallback(pBody, [](const NewtonBody *pBody) -> void
+                        {
+                            NewtonWorld *pWorld = NewtonBodyGetWorld(pBody);
+                            if (pWorld)
+                            {
+                                CGEKComponentSystemNewton *pSystem = (CGEKComponentSystemNewton *)NewtonWorldGetUserData(pWorld);
+                                if (pSystem)
+                                {
+                                    GEKENTITYID nEntityID = (GEKENTITYID)NewtonBodyGetUserData(pBody);
+                                    auto pIterator = pSystem->m_aBodies.find(nEntityID);
+                                    if (pIterator != pSystem->m_aBodies.end())
+                                    {
+                                        pSystem->m_aBodies.unsafe_erase(pIterator);
+                                    }
                                 }
                             }
                         });
