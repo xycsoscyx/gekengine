@@ -25,11 +25,7 @@ BEGIN_INTERFACE_LIST(CGEKContext)
 END_INTERFACE_LIST_UNKNOWN
 
 CGEKContext::CGEKContext(void)
-    : m_nFrequency(0.0)
 {
-    UINT64 nFrequency = 0;
-    QueryPerformanceFrequency((LARGE_INTEGER *)&nFrequency);
-    m_nFrequency = double(nFrequency);
 }
 
 CGEKContext::~CGEKContext(void)
@@ -40,31 +36,6 @@ CGEKContext::~CGEKContext(void)
     for (auto &hModule : m_aModules)
     {
         FreeLibrary(hModule);
-    }
-}
-
-STDMETHODIMP_(double) CGEKContext::GetTime(void)
-{
-    UINT64 nCounter = 0;
-    QueryPerformanceCounter((LARGE_INTEGER *)&nCounter);
-    return (double(nCounter) / m_nFrequency);
-}
-
-STDMETHODIMP_(void) CGEKContext::Log(LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eType, LPCWSTR pMessage, ...)
-{
-    if (pMessage != nullptr)
-    {
-        CStringW strMessage;
-
-        va_list pArgs;
-        va_start(pArgs, pMessage);
-        strMessage.AppendFormatV(pMessage, pArgs);
-        va_end(pArgs);
-
-        if (!strMessage.IsEmpty())
-        {
-            CGEKObservable::SendEvent(TGEKEvent<IGEKContextObserver>(std::bind(&IGEKContextObserver::OnLog, std::placeholders::_1, pFile, nLine, eType, strMessage.GetString())));
-        }
     }
 }
 
@@ -151,6 +122,7 @@ STDMETHODIMP CGEKContext::CreateInstance(REFGUID kCLSID, REFIID kIID, LPVOID FAR
     }
     else
     {
+        hRetVal = E_UNEXPECTED;
         auto pIterator = m_aClasses.find(kCLSID);
         if (pIterator != m_aClasses.end())
         {
@@ -165,10 +137,6 @@ STDMETHODIMP CGEKContext::CreateInstance(REFGUID kCLSID, REFIID kIID, LPVOID FAR
                 }
             }
         }
-        else
-        {
-            GEKLOG(L"CLSID not registered with context: %s", CStringW(CComBSTR(kCLSID)).GetString());
-        }
     }
 
     return hRetVal;
@@ -178,15 +146,11 @@ STDMETHODIMP CGEKContext::CreateNamedInstance(LPCWSTR pName, REFIID kIID, LPVOID
 {
     REQUIRE_RETURN(ppObject, E_INVALIDARG);
 
-    HRESULT hRetVal = E_FAIL;
+    HRESULT hRetVal = E_UNEXPECTED;
     auto pIterator = m_aNamedClasses.find(pName);
     if (pIterator != m_aNamedClasses.end())
     {
         hRetVal = CreateInstance(((*pIterator).second), kIID, ppObject);
-    }
-    else
-    {
-        GEKLOG(L"Name not registered with context: %s", pName);
     }
 
     return hRetVal;
@@ -211,10 +175,6 @@ STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRES
                 }
             }
         };
-    }
-    else
-    {
-        GEKLOG(L"Type not registered with context: %s", CStringW(CComBSTR(kTypeCLSID)).GetString());
     }
 
     return hRetVal;

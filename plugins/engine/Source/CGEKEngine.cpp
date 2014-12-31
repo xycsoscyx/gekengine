@@ -43,7 +43,6 @@ HCURSOR LoadAnimatedCursor(HINSTANCE hInstance, UINT nID, LPCTSTR pszResouceType
 
 BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
     INTERFACE_LIST_ENTRY_COM(IGEK3DVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
@@ -54,19 +53,10 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKEngine)
 
 CGEKEngine::CGEKEngine(void)
-    : m_hLogFile(nullptr)
-    , m_bWindowActive(false)
-    , m_bSendInput(false)
+    : m_bWindowActive(false)
+    , m_bConsoleOpen(false)
     , m_hCursorPointer(nullptr)
 {
-    DeleteFile(L"log.xml");
-    m_hLogFile = CreateFile(L"log.xml", GENERIC_ALL, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (m_hLogFile != nullptr && m_hLogFile != INVALID_HANDLE_VALUE)
-    {
-        DWORD nNumWritten = 0;
-        CStringA strMessage("<?xml version=\"1.0\"?>\r\n<logging>\r\n");
-        WriteFile(m_hLogFile, strMessage.GetString(), strMessage.GetLength(), &nNumWritten, nullptr);
-    }
 }
 
 CGEKEngine::~CGEKEngine(void)
@@ -75,19 +65,10 @@ CGEKEngine::~CGEKEngine(void)
     {
         DestroyIcon(m_hCursorPointer);
     }
-
-    if (m_hLogFile != nullptr && m_hLogFile != INVALID_HANDLE_VALUE)
-    {
-        DWORD nNumWritten = 0;
-        CStringA strMessage("</logging>\r\n");
-        WriteFile(m_hLogFile, strMessage.GetString(), strMessage.GetLength(), &nNumWritten, nullptr);
-        CloseHandle(m_hLogFile);
-    }
 }
 
 HRESULT CGEKEngine::Load(LPCWSTR pName)
 {
-    GEKFUNCTION(L"Name(%s)", pName);
     HRESULT hRetVal = m_spPopulationManager->Load(pName);
     if (FAILED(hRetVal))
     {
@@ -95,7 +76,7 @@ HRESULT CGEKEngine::Load(LPCWSTR pName)
     }
     else
     {
-        m_bSendInput = true;
+        m_bConsoleOpen = false;
         m_nTotalTime = 0.0;
         m_nTimeAccumulator = 0.0f;
         m_kTimer.Reset();
@@ -106,17 +87,16 @@ HRESULT CGEKEngine::Load(LPCWSTR pName)
 
 void CGEKEngine::CheckInput(UINT32 nKey, bool bState)
 {
-    if (nKey == VK_ESCAPE && !bState)
+    if (nKey == 0xC0 && !bState)
     {
-        m_bSendInput = !m_bSendInput;
-        m_kTimer.Pause(!m_bWindowActive || !m_bSendInput);
+        m_bConsoleOpen = !m_bConsoleOpen;
+        m_kTimer.Pause(!m_bWindowActive || m_bConsoleOpen);
     }
-    else if (m_bSendInput)
+    else if (!m_bConsoleOpen)
     {
         auto pIterator = m_aInputBindings.find(nKey);
         if (pIterator != m_aInputBindings.end())
         {
-            OnCommand((*pIterator).second, nullptr, 0);
             CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, (*pIterator).second, bState)));
         }
     }
@@ -124,12 +104,11 @@ void CGEKEngine::CheckInput(UINT32 nKey, bool bState)
 
 void CGEKEngine::CheckInput(UINT32 nKey, float nValue)
 {
-    if (m_bSendInput)
+    if (!m_bConsoleOpen)
     {
         auto pIterator = m_aInputBindings.find(nKey);
         if (pIterator != m_aInputBindings.end())
         {
-            OnCommand((*pIterator).second, nullptr, 0);
             CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, (*pIterator).second, nValue)));
         }
     }
@@ -140,12 +119,6 @@ STDMETHODIMP CGEKEngine::Initialize(void)
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKEngine, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(GetContext(), (IGEKContextObserver *)GetUnknown());
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        GEKFUNCTION(nullptr);
 
         LIBXML_TEST_VERSION;
         static xmlExternalEntityLoader kDefaultXMLLoader = xmlGetExternalEntityLoader();
@@ -243,38 +216,11 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
     m_spPopulationManager = nullptr;
     GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEK3DVideoObserver *)GetUnknown());
     CGEKObservable::RemoveObserver(m_spSystem, (IGEKSystemObserver *)this);
-    CGEKObservable::RemoveObserver(GetContext(), (IGEKContextObserver *)this);
     m_spSystem = nullptr;
+
     GetContext()->RemoveCachedClass(CLSID_GEKEngine);
+
     xmlCleanupParser();
-}
-
-STDMETHODIMP_(void) CGEKEngine::OnLog(LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eType, LPCWSTR pMessage)
-{
-    if (m_hLogFile != nullptr && m_hLogFile != INVALID_HANDLE_VALUE)
-    {
-        CPathA kFile(pFile);
-        kFile.StripPath();
-
-        CStringA strFile = kFile.m_strPath;
-
-        CStringA strMessage;
-        if (eType == GEK_LOGSTART)
-        {
-            strMessage.Format("<%s line=\"%d\">%S\r\n", strFile.GetString(), nLine, pMessage);
-        }
-        else if (eType == GEK_LOGEND)
-        {
-            strMessage.Format("%S</%s>\r\n", pMessage, strFile.GetString());
-        }
-        else
-        {
-            strMessage.Format("<%s line=\"%d\">%S</%s>\r\n", strFile.GetString(), nLine, pMessage, strFile.GetString());
-        }
-
-        DWORD nNumWritten = 0;
-        WriteFile(m_hLogFile, strMessage.GetString(), strMessage.GetLength(), &nNumWritten, nullptr);
-    }
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
@@ -282,7 +228,15 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
     switch (nMessage)
     {
     case WM_SETCURSOR:
-        SetCursor(m_hCursorPointer);
+        if (m_bConsoleOpen)
+        {
+            SetCursor(m_hCursorPointer);
+        }
+        else
+        {
+            SetCursor(nullptr);
+        }
+
         nResult = 1;
         break;
 
@@ -290,7 +244,7 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
         if (HIWORD(wParam))
         {
             m_bWindowActive = false;
-            m_kTimer.Pause(!m_bWindowActive || !m_bSendInput);
+            m_kTimer.Pause(!m_bWindowActive || m_bConsoleOpen);
         }
         else
         {
@@ -299,17 +253,62 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
             case WA_ACTIVE:
             case WA_CLICKACTIVE:
                 m_bWindowActive = true;
-                m_kTimer.Pause(!m_bWindowActive || !m_bSendInput);
+                m_kTimer.Pause(!m_bWindowActive || m_bConsoleOpen);
                 break;
 
             case WA_INACTIVE:
                 m_bWindowActive = false;
-                m_kTimer.Pause(!m_bWindowActive || !m_bSendInput);
+                m_kTimer.Pause(!m_bWindowActive || m_bConsoleOpen);
                 break;
             };
         }
 
         nResult = 1;
+        break;
+
+    case WM_CHAR:
+        if (m_bConsoleOpen)
+        {
+            switch (wParam)
+            {
+            case 0x08: // backspace
+                if (m_strConsole.GetLength() > 0)
+                {
+                    m_strConsole = m_strConsole.Mid(0, m_strConsole.GetLength() - 1);
+                }
+
+                break;
+
+            case 0x0A: // linefeed
+            case 0x0D: // carriage return
+                if (true)
+                {
+                    int nPosition = 0;
+                    std::vector<CStringW> aParams;
+                    while (nPosition >= 0 && nPosition < m_strConsole.GetLength())
+                    {
+                        aParams.push_back(m_strConsole.Tokenize(L" ", nPosition));
+                    };
+
+                    OnCommand(aParams);
+                }
+
+                m_strConsole.Empty();
+                break;
+
+            case 0x1B: // escape
+                m_strConsole.Empty();
+                break;
+
+            case 0x09: // tab
+                break;
+
+            default:
+                m_strConsole += (WCHAR)wParam;
+                break;
+            };
+        }
+
         break;
 
     case WM_KEYDOWN:
@@ -362,7 +361,7 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
 {
     if (m_bWindowActive)
     {
-        if (m_bSendInput)
+        if (!m_bConsoleOpen)
         {
             POINT kCursor;
             GetCursorPos(&kCursor);
@@ -418,27 +417,43 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
     m_spSystem->Run();
 }
 
-STDMETHODIMP_(void) CGEKEngine::OnCommand(LPCWSTR pCommand, LPCWSTR *pParams, UINT32 nNumParams)
+STDMETHODIMP_(void) CGEKEngine::OnMessage(LPCWSTR pMessage, ...)
 {
-    if (_wcsicmp(pCommand, L"quit") == 0)
+    va_list pArgs;
+    CStringW strMessage;
+    va_start(pArgs, pMessage);
+    strMessage.FormatV(pMessage, pArgs);
+    va_end(pArgs);
+
+    OutputDebugString(strMessage + L"\r\n");
+    m_aConsoleLog.push_front(strMessage);
+    if (m_aConsoleLog.size() > 100)
     {
+        m_aConsoleLog.pop_back();
+    }
+}
+
+STDMETHODIMP_(void) CGEKEngine::OnCommand(const std::vector<CStringW> &aParams)
+{
+    if (aParams.size() == 1 && aParams[0].CompareNoCase(L"quit") == 0)
+    {
+        OnMessage(L"Quitting...");
         m_spSystem->Stop();
     }
-    else if (_wcsicmp(pCommand, L"newgame") == 0)
+    else if (aParams.size() == 2 && aParams[0].CompareNoCase(L"load") == 0)
     {
-        Load(L"demo");
+        OnMessage(L"Loading Level...");
+        Load(aParams[1]);
     }
-    else if (_wcsicmp(pCommand, L"setresolution") == 0)
+    else if (aParams.size() == 4 && aParams[0].CompareNoCase(L"setresolution") == 0)
     {
-        if (nNumParams == 3 && pParams)
+        OnMessage(L"Setting Resolution (%dx%d %s)...", aParams[1].GetString(), aParams[2].GetString(), (StrToBoolean(aParams[3]) ? L"Windowed" : L"Fullscreen"));
+        m_spSystem->GetConfig().SetValue(L"video", L"xsize", aParams[1]);
+        m_spSystem->GetConfig().SetValue(L"video", L"ysize", aParams[2]);
+        m_spSystem->GetConfig().SetValue(L"video", L"windowed", aParams[3]);
+        if (FAILED(m_spSystem->Reset()))
         {
-            m_spSystem->GetConfig().SetValue(L"video", L"xsize", pParams[0]);
-            m_spSystem->GetConfig().SetValue(L"video", L"ysize", pParams[1]);
-            m_spSystem->GetConfig().SetValue(L"video", L"windowed", pParams[2]);
-            if (FAILED(m_spSystem->Reset()))
-            {
-                m_spSystem->Stop();
-            }
+            m_spSystem->Stop();
         }
     }
 }

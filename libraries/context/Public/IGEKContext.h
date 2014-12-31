@@ -2,18 +2,8 @@
 
 #include "GEKContext.h"
 
-enum GEKLOGTYPE
-{
-    GEK_LOGSTART                = 0,
-    GEK_LOGEND,
-    GEK_LOG,
-};
-
 DECLARE_INTERFACE_IID_(IGEKContext, IUnknown, "E1BBAFAB-1DD8-42E4-A031-46E22835EF1E")
 {
-    STDMETHOD_(double, GetTime)                     (THIS) PURE;
-    STDMETHOD_(void, Log)                           (THIS_ LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eType, LPCWSTR pMessage, ...) PURE;
-
     STDMETHOD(AddSearchPath)                        (THIS_ LPCWSTR pPath) PURE;
     STDMETHOD(Initialize)                           (THIS) PURE;
 
@@ -52,11 +42,6 @@ DECLARE_INTERFACE_IID_(IGEKContext, IUnknown, "E1BBAFAB-1DD8-42E4-A031-46E22835E
 
     STDMETHOD(AddCachedObserver)                    (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver) PURE;
     STDMETHOD(RemoveCachedObserver)                 (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver) PURE;
-};
-
-DECLARE_INTERFACE_IID_(IGEKContextObserver, IGEKObserver, "6D6CEE1C-6CCD-4581-8926-E4DECE0830B0")
-{
-    STDMETHOD_(void, OnLog)                         (THIS_ LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eType, LPCWSTR pMessage) PURE;
 };
 
 HRESULT GEKCreateContext(IGEKContext **ppContext);

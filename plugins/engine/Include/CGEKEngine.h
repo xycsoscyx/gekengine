@@ -13,7 +13,6 @@ DECLARE_INTERFACE(IGEKPopulationSystem);
 
 class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
-                 , public IGEKContextObserver
                  , public IGEKSystemObserver
                  , public IGEK3DVideoObserver
                  , public IGEKGameApplication
@@ -21,7 +20,7 @@ class CGEKEngine : public CGEKUnknown
                  , public IGEKInputManager
 {
 private:
-    HANDLE m_hLogFile;
+    HCURSOR m_hCursorPointer;
     CComPtr<IGEKSystem> m_spSystem;
     bool m_bWindowActive;
 
@@ -29,12 +28,12 @@ private:
     double m_nTotalTime;
     double m_nTimeAccumulator;
 
+    bool m_bConsoleOpen;
+    CStringW m_strConsole;
+    std::list<CStringW> m_aConsoleLog;
     std::unordered_map<UINT32, CStringW> m_aInputBindings;
     CComPtr<IGEKPopulationSystem> m_spPopulationManager;
     CComPtr<IGEKRenderSystem> m_spRenderManager;
-
-    bool m_bSendInput;
-    HCURSOR m_hCursorPointer;
 
 private:
     void CheckInput(UINT32 nKey, bool bState);
@@ -50,9 +49,6 @@ public:
     STDMETHOD(Initialize)                       (THIS);
     STDMETHOD_(void, Destroy)                   (THIS);
 
-    // IGEKContextObserver
-    STDMETHOD_(void, OnLog)                     (THIS_ LPCSTR pFile, UINT32 nLine, GEKLOGTYPE eType, LPCWSTR pMessage);
-
     // IGEKSystemObserver
     STDMETHOD_(void, OnEvent)                   (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
     STDMETHOD_(void, OnRun)                     (THIS);
@@ -67,5 +63,6 @@ public:
     STDMETHOD_(void, Run)                       (THIS);
 
     // IGEKEngine
-    STDMETHOD_(void, OnCommand)                 (THIS_ LPCWSTR pCommand, LPCWSTR *pParams, UINT32 nNumParams);
+    STDMETHOD_(void, OnMessage)                 (THIS_ LPCWSTR pMessage, ...);
+    STDMETHOD_(void, OnCommand)                 (THIS_ const std::vector<CStringW> &aParams);
 };

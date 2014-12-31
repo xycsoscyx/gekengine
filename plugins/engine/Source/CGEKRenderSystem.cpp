@@ -167,7 +167,6 @@ CGEKRenderSystem::~CGEKRenderSystem(void)
 
 STDMETHODIMP CGEKRenderSystem::Initialize(void)
 {
-    GEKFUNCTION(nullptr);
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKRenderSystem, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
@@ -200,13 +199,11 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
         aLayout.push_back(GEK3DVIDEO::INPUTELEMENT(GEK3DVIDEO::DATA::RG_FLOAT, "POSITION", 0));
         aLayout.push_back(GEK3DVIDEO::INPUTELEMENT(GEK3DVIDEO::DATA::RG_FLOAT, "TEXCOORD", 0));
         hRetVal = m_pVideoSystem->LoadVertexProgram(L"%root%\\data\\programs\\vertex\\overlay.hlsl", "MainVertexProgram", aLayout, &m_spVertexProgram);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to LoadVertexProgram failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->LoadPixelProgram(L"%root%\\data\\programs\\pixel\\overlay.hlsl", "MainPixelProgram", &m_spPixelProgram);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to LoadPixelProgram failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -220,7 +217,6 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
         };
 
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float2), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -232,13 +228,11 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
         };
 
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), 6, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float4x4), 1, GEK3DVIDEO::BUFFER::CONSTANT_BUFFER, &m_spOrthoBuffer);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
         if (m_spOrthoBuffer)
         {
             float4x4 nOverlayMatrix;
@@ -250,25 +244,21 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(ENGINEBUFFER), 1, GEK3DVIDEO::BUFFER::CONSTANT_BUFFER, &m_spEngineBuffer);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(MATERIALBUFFER), 1, GEK3DVIDEO::BUFFER::CONSTANT_BUFFER, &m_spMaterialBuffer);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT32) * 4, 1, GEK3DVIDEO::BUFFER::CONSTANT_BUFFER, &m_spLightCountBuffer);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateBuffer(sizeof(LIGHTBUFFER), m_nNumLightInstances, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spLightBuffer);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -278,7 +268,6 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
         kStates.m_eAddressU = GEK3DVIDEO::ADDRESS::CLAMP;
         kStates.m_eAddressV = GEK3DVIDEO::ADDRESS::CLAMP;
         hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spPointSampler);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateSamplerStates failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -297,7 +286,6 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
         kStates.m_eAddressU = GEK3DVIDEO::ADDRESS::WRAP;
         kStates.m_eAddressV = GEK3DVIDEO::ADDRESS::WRAP;
         hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spLinearSampler);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateSamplerStates failed: 0x%08X", hRetVal);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -321,7 +309,6 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = m_pVideoSystem->CreateEvent(&m_spFrameEvent);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateEvent failed: 0x%08X", hRetVal);
     }
 
     return hRetVal;
@@ -456,7 +443,6 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
     }
     else
     {
-        GEKFUNCTION(L"Name(%s)", pName);
 
         CLibXMLDoc kDocument;
         CStringW strFileName(FormatString(L"%%root%%\\data\\passes\\%s.xml", pName));
@@ -476,7 +462,6 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
                     while (kDataNode)
                     {
                         CStringW strFilter(kDataNode.GetAttribute(L"source"));
-                        GEKLOG(L"Data Source: %s", strFilter.GetString());
                         kPassData.m_aData.push_back(strFilter);
                         kDataNode = kDataNode.NextSiblingElement(L"data");
                     };
@@ -516,7 +501,6 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
                         if (SUCCEEDED(hRetVal))
                         {
                             CStringW strFilter(kFilterNode.GetAttribute(L"source"));
-                            GEKLOG(L"Filter Source: %s", strFilter.GetString());
 
                             CComPtr<IGEKRenderFilter> spFilter;
                             hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderFilter, IID_PPV_ARGS(&spFilter));
@@ -573,7 +557,6 @@ STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource
     }
     else
     {
-        GEKFUNCTION(L"Name(%s)", pName);
         CComPtr<IUnknown> spTexture;
         if (pName[0] == L'*')
         {
@@ -583,7 +566,6 @@ STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource
             if (strType.CompareNoCase(L"color") == 0)
             {
                 CStringW strColor(strName.Tokenize(L":", nPosition));
-                GEKLOG(L"Creating Color Texture: %s", strColor.GetString());
                 float4 nColor = StrToFloat4(strColor);
 
                 CComPtr<IGEK3DVideoTexture> spColorTexture;
@@ -601,7 +583,6 @@ STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource
         }
         else
         {
-            GEKLOG(L"Loading Texture: %s", pName);
             CComPtr<IGEK3DVideoTexture> spFileTexture;
             hRetVal = m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spFileTexture);
             if (spFileTexture)
@@ -774,8 +755,6 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
     }
     else
     {
-        GEKFUNCTION(L"Name(%s)", pName);
-
         CLibXMLDoc kDocument;
         hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\materials\\%s.xml", pName));
         if (SUCCEEDED(hRetVal))
@@ -794,14 +773,12 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
                     if (kRenderNode.HasAttribute(L"fullbright"))
                     {
                         bFullBright = StrToBoolean(kRenderNode.GetAttribute(L"fullbright"));
-                        GEKLOG(L"Fullbright: %s", bFullBright ? L"on" : L"off");
                     }
 
                     float4 nColor(1.0f, 1.0f, 1.0f, 1.0f);
                     if (kRenderNode.HasAttribute(L"color"))
                     {
                         nColor = StrToFloat4(kRenderNode.GetAttribute(L"color"));
-                        GEKLOG(L"Color: %s", kRenderNode.GetAttribute(L"color"));
                     }
 
                     std::unordered_map<CStringW, CComPtr<IUnknown>> aData;
@@ -814,7 +791,6 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
                             CStringW strSource(kLayerNode.GetAttribute(L"source"));
                             strSource.Replace(L"%material%", pName);
                             strSource.Replace(L"%directory%", kDirectory.m_strPath.GetString());
-                            GEKLOG(L"%s: %s", kLayerNode.GetType().GetString(), strSource.GetString());
 
                             CComPtr<IUnknown> spData;
                             LoadResource(strSource, &spData);
@@ -828,7 +804,6 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
                     }
 
                     CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(aData, nColor, bFullBright));
-                    GEKRESULT(spMaterial, L"Unable to allocate new material instance");
                     if (spMaterial)
                     {
                         spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kRenderNode.FirstChildElement(L"properties"));
@@ -877,8 +852,6 @@ STDMETHODIMP CGEKRenderSystem::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
     }
     else
     {
-        GEKFUNCTION(L"Name(%s)", pName);
-
         CStringA strDeferredProgram;
         hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\vertex\\plugin.hlsl", strDeferredProgram);
         if (SUCCEEDED(hRetVal))
@@ -955,7 +928,6 @@ STDMETHODIMP CGEKRenderSystem::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
                                     if (spVertexProgram)
                                     {
                                         CComPtr<CGEKProgram> spProgram(new CGEKProgram(spVertexProgram, spGeometryProgram));
-                                        GEKRESULT(spProgram, L"Unable to allocate new program instance");
                                         if (spProgram)
                                         {
                                             spProgram->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
@@ -1045,7 +1017,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::DrawOverlay(IGEK3DVideoContext *pContext)
 STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager && m_pVideoSystem);
-    GEKFUNCTION(nullptr);
 
     CComQIPtr<IGEK3DVideoContext> spContext(m_pVideoSystem);
     spContext->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
@@ -1055,7 +1026,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         auto &kViewer = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(viewer)>(nViewerID, L"viewer");
         if (SUCCEEDED(LoadPass(kViewer.pass)))
         {
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnPreRender, std::placeholders::_1)));
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderBegin, std::placeholders::_1)));
 
             float4x4 nCameraMatrix;
             auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, L"transform");
@@ -1066,18 +1037,19 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             float nYSize = float(m_pSystem->GetYSize());
             float nAspect = (nXSize / nYSize);
 
+            ENGINEBUFFER kEngineBuffer;
             float nFieldOfView = _DEGTORAD(kViewer.fieldofview);
-            m_kCurrentBuffer.m_nCameraFieldOfView.x = tan(nFieldOfView * 0.5f);
-            m_kCurrentBuffer.m_nCameraFieldOfView.y = (m_kCurrentBuffer.m_nCameraFieldOfView.x / nAspect);
-            m_kCurrentBuffer.m_nCameraMinDistance = kViewer.mindistance;
-            m_kCurrentBuffer.m_nCameraMaxDistance = kViewer.maxdistance;
+            kEngineBuffer.m_nCameraFieldOfView.x = tan(nFieldOfView * 0.5f);
+            kEngineBuffer.m_nCameraFieldOfView.y = (kEngineBuffer.m_nCameraFieldOfView.x / nAspect);
+            kEngineBuffer.m_nCameraMinDistance = kViewer.mindistance;
+            kEngineBuffer.m_nCameraMaxDistance = kViewer.maxdistance;
 
-            m_kCurrentBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
-            m_kCurrentBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kViewer.mindistance, kViewer.maxdistance);
-            m_kCurrentBuffer.m_nInvProjectionMatrix = m_kCurrentBuffer.m_nProjectionMatrix.GetInverse();
-            m_kCurrentBuffer.m_nTransformMatrix = (m_kCurrentBuffer.m_nViewMatrix * m_kCurrentBuffer.m_nProjectionMatrix);
+            kEngineBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
+            kEngineBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kViewer.mindistance, kViewer.maxdistance);
+            kEngineBuffer.m_nInvProjectionMatrix = kEngineBuffer.m_nProjectionMatrix.GetInverse();
+            kEngineBuffer.m_nTransformMatrix = (kEngineBuffer.m_nViewMatrix * kEngineBuffer.m_nProjectionMatrix);
 
-            m_nCurrentFrustum.Create(nCameraMatrix, m_kCurrentBuffer.m_nProjectionMatrix);
+            m_nCurrentFrustum.Create(nCameraMatrix, kEngineBuffer.m_nProjectionMatrix);
 
             LIGHTBUFFER kData;
             m_aVisibleLights.clear();
@@ -1087,7 +1059,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                 auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
                 if (m_nCurrentFrustum.IsVisible(sphere(kTransform.position, kLight.range)))
                 {
-                    kData.m_nPosition = (m_kCurrentBuffer.m_nViewMatrix * float4(kTransform.position, 1.0f));
+                    kData.m_nPosition = (kEngineBuffer.m_nViewMatrix * float4(kTransform.position, 1.0f));
 
                     kData.m_nInvRange = (1.0f / (kData.m_nRange = kLight.range));
 
@@ -1099,7 +1071,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1)));
 
-            m_spEngineBuffer->Update((void *)&m_kCurrentBuffer);
+            m_spEngineBuffer->Update((void *)&kEngineBuffer);
             spContext->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
 
             spContext->GetVertexSystem()->SetConstantBuffer(0, m_spEngineBuffer);
@@ -1122,7 +1094,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                 m_pCurrentFilter = nullptr;
             }
 
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnPostRender, std::placeholders::_1)));
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderEnd, std::placeholders::_1)));
 
             GEK3DVIDEO::VIEWPORT kViewport;
             kViewport.m_nTopLeftX = (kViewer.position.x * m_pSystem->GetXSize());
@@ -1155,6 +1127,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     });
 
     spContext->ClearResources();
+    CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderOverlay, std::placeholders::_1)));
     CComQIPtr<IGEK2DVideoSystem> sp2DVideoSystem(m_pVideoSystem);
     if (sp2DVideoSystem)
     {

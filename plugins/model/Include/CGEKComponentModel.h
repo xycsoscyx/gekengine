@@ -79,8 +79,8 @@ public:
     STDMETHOD_(void, OnFree)                    (THIS);
 
     // IGEKRenderObserver
-    STDMETHOD_(void, OnPreRender)               (THIS);
+    STDMETHOD_(void, OnRenderBegin)             (THIS);
     STDMETHOD_(void, OnCullScene)               (THIS);
     STDMETHOD_(void, OnDrawScene)               (THIS_ IGEK3DVideoContext *pContext, UINT32 nVertexAttributes);
-    STDMETHOD_(void, OnPostRender)              (THIS);
+    STDMETHOD_(void, OnRenderEnd)               (THIS);
 };

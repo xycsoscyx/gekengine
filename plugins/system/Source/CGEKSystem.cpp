@@ -64,9 +64,7 @@ CGEKSystem::~CGEKSystem(void)
 
 STDMETHODIMP CGEKSystem::Initialize(void)
 {
-    GEKFUNCTION(nullptr);
     HRESULT hRetVal = CoInitialize(0);
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to CoInitialize failed: 0x%08X", hRetVal);
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = GetContext()->AddCachedClass(CLSID_GEKSystem, GetUnknown());
@@ -78,7 +76,6 @@ STDMETHODIMP CGEKSystem::Initialize(void)
         m_nXSize = StrToUINT32(m_kConfig.GetValue(L"video", L"xsize", L"640"));
         m_nYSize = StrToUINT32(m_kConfig.GetValue(L"video", L"ysize", L"480"));
         m_bIsWindowed = StrToBoolean(m_kConfig.GetValue(L"video", L"windowed", L"1"));
-        GEKLOG(L"Initial Config: %dx%d %s", m_nXSize, m_nYSize, (m_bIsWindowed ? L"Windowed" : L"Fullscreen"));
 
         WNDCLASSEX kClass = { 0 };
         if (!GetClassInfoEx(GetModuleHandle(nullptr), L"GEKvX_Engine_314159", &kClass))
@@ -95,7 +92,6 @@ STDMETHODIMP CGEKSystem::Initialize(void)
             kClass.lpszMenuName         = nullptr;
             kClass.lpszClassName        = L"GEKvX_Engine_314159";
             hRetVal = (RegisterClass(&kClass) ? S_OK : E_FAIL);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to RegisterClass failed: 0x%08X", GetLastError());
         }
     }
 
@@ -121,7 +117,6 @@ STDMETHODIMP CGEKSystem::Initialize(void)
         hRetVal = E_FAIL;
         m_hWindow = CreateWindow(L"GEKvX_Engine_314159", L"GEKvX Engine", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, 
                                  iCenterX, iCenterY, iWinX, iWinY, 0, nullptr, GetModuleHandle(nullptr), 0);
-        GEKRESULT(m_hWindow != nullptr, L"Call to CreateWindow failed: 0x%08X", GetLastError());
         if (m_hWindow != nullptr)
         {
             hRetVal = S_OK;
@@ -162,11 +157,9 @@ STDMETHODIMP_(void) CGEKSystem::Destroy(void)
 
 STDMETHODIMP CGEKSystem::Reset(void)
 {
-    GEKFUNCTION(nullptr);
     m_nXSize = StrToUINT32(m_kConfig.GetValue(L"video", L"xsize", L"640"));
     m_nYSize = StrToUINT32(m_kConfig.GetValue(L"video", L"ysize", L"480"));
     m_bIsWindowed = StrToBoolean(m_kConfig.GetValue(L"video", L"windowed", L"1"));
-    GEKLOG(L"Reset Config: %dx%d %s", m_nXSize, m_nYSize, (m_bIsWindowed ? L"Windowed" : L"Fullscreen"));
 
     HRESULT hRetVal = m_spVideoSystem->Reset();
     if (SUCCEEDED(hRetVal) && m_bIsWindowed)
@@ -257,7 +250,6 @@ STDMETHODIMP_(bool) CGEKSystem::IsRunning(void)
 
 STDMETHODIMP_(void) CGEKSystem::Run(void)
 {
-    GEKFUNCTION(nullptr);
     CGEKObservable::SendEvent(TGEKEvent<IGEKSystemObserver>(std::bind(&IGEKSystemObserver::OnRun, std::placeholders::_1)));
 
     m_bIsRunning = true;

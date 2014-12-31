@@ -106,7 +106,6 @@ private:
     std::unordered_map<CStringW, PASS> m_aPasses;
 
     frustum m_nCurrentFrustum;
-    ENGINEBUFFER m_kCurrentBuffer;
     std::vector<LIGHTBUFFER> m_aVisibleLights;
 
     PASS *m_pCurrentPass;

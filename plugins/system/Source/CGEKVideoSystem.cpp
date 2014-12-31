@@ -766,16 +766,12 @@ CGEKVideoContext::CGEKVideoContext(ID3D11DeviceContext *pContext)
     : m_spDeviceContext(pContext)
 {
     m_spComputeSystem.reset(new CGEKVideoComputeContextSystem(pContext));
-    GEKRESULT(m_spComputeSystem, L"Unable to allocate new compute system instance");
 
     m_spVertexSystem.reset(new CGEKVideoVertexContextSystem(pContext));
-    GEKRESULT(m_spVertexSystem, L"Unable to allocate new vertex system instance");
 
     m_spGeometrySystem.reset(new CGEKVideoGeometryContextSystem(pContext));
-    GEKRESULT(m_spGeometrySystem, L"Unable to allocate new geometry system instance");
 
     m_spPixelSystem.reset(new CGEKVideoPixelContextSystem(pContext));
-    GEKRESULT(m_spPixelSystem, L"Unable to allocate new pixel system instance");
 }
 
 CGEKVideoContext::~CGEKVideoContext(void)
@@ -1040,14 +1036,12 @@ CGEKVideoSystem::~CGEKVideoSystem(void)
 
 HRESULT CGEKVideoSystem::GetDefaultTargets(void)
 {
-    GEKFUNCTION(nullptr);
     HRESULT hRetVal = E_FAIL;
     IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
     if (pSystem != nullptr)
     {
         CComPtr<IDXGISurface> spSurface;
         hRetVal = m_spSwapChain->GetBuffer(0, IID_PPV_ARGS(&spSurface));
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to GetBuffer (IDXGISurface) failed: 0x%08X", hRetVal);
         if (spSurface)
         {
             FLOAT nDPIX = 0.0f;
@@ -1074,15 +1068,12 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
         {
             CComPtr<ID3D11Texture2D> spTexture2D;
             hRetVal = m_spSwapChain->GetBuffer(0, IID_PPV_ARGS(&spTexture2D));
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to GetBuffer (ID3D11Texture2D) failed: 0x%08X", hRetVal);
             if (spTexture2D)
             {
                 hRetVal = m_spDevice->CreateRenderTargetView(spTexture2D, nullptr, &m_spRenderTargetView);
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateRenderTargetView failed: 0x%08X", hRetVal);
                 if (m_spRenderTargetView)
                 {
                     m_spDefaultTarget = new CGEKVideoRenderTarget(m_spDeviceContext, nullptr, nullptr, m_spRenderTargetView, pSystem->GetXSize(), pSystem->GetYSize(), 0);
-                    GEKRESULT(m_spDefaultTarget, L"Unable to allocate new default target instance");
                     if (m_spDefaultTarget)
                     {
                         CComPtr<IUnknown> spDepthView;
@@ -1107,7 +1098,6 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
 
 STDMETHODIMP CGEKVideoSystem::Initialize(void)
 {
-    GEKFUNCTION(nullptr);
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKVideoSystem, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
@@ -1144,14 +1134,11 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
             D3D_FEATURE_LEVEL eFeatureLevel;
             hRetVal = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, nFlags, aFeatureLevelList, _ARRAYSIZE(aFeatureLevelList),
                 D3D11_SDK_VERSION, &kSwapChainDesc, &m_spSwapChain, &m_spDevice, &eFeatureLevel, &m_spDeviceContext);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to D3D11CreateDeviceAndSwapChain failed: 0x%08X", hRetVal);
-            GEKRESULT(eFeatureLevel == D3D_FEATURE_LEVEL_11_0, L"Unable to create D3D 11.0 Device");
             if (m_spDevice &&
                 m_spDeviceContext &&
                 m_spSwapChain)
             {
                 hRetVal = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&m_spD2DFactory));
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to D2D1CreateFactory failed: 0x%08X", hRetVal);
                 if (m_spD2DFactory)
                 {
                     hRetVal = E_FAIL;
@@ -1162,11 +1149,9 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
 
                         CComPtr<ID2D1Device> spD2DDevice;
                         hRetVal = m_spD2DFactory->CreateDevice(spDXGIDevice, &spD2DDevice);
-                        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateDevice failed: 0x%08X", hRetVal);
                         if (spD2DDevice)
                         {
                             hRetVal = spD2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &m_spD2DDeviceContext);
-                            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateDeviceContext failed: 0x%08X", hRetVal);
                         }
                     }
                 }
@@ -1185,22 +1170,17 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
             if (SUCCEEDED(hRetVal))
             {
                 m_spComputeSystem.reset(new CGEKVideoComputeContextSystem(m_spDeviceContext));
-                GEKRESULT(m_spComputeSystem, L"Unable to allocate new compute system instance");
 
                 m_spVertexSystem.reset(new CGEKVideoVertexContextSystem(m_spDeviceContext));
-                GEKRESULT(m_spVertexSystem, L"Unable to allocate new vertex system instance");
 
                 m_spGeometrySystem.reset(new CGEKVideoGeometryContextSystem(m_spDeviceContext));
-                GEKRESULT(m_spGeometrySystem, L"Unable to allocate new geometry system instance");
 
                 m_spPixelSystem.reset(new CGEKVideoPixelContextSystem(m_spDeviceContext));
-                GEKRESULT(m_spPixelSystem, L"Unable to allocate new pixel system instance");
             }
 
             if (SUCCEEDED(hRetVal) && !pSystem->IsWindowed())
             {
                 hRetVal = m_spSwapChain->SetFullscreenState(true, nullptr);
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to SetFullscreenState failed: 0x%08X", hRetVal);
             }
         }
     }
@@ -1216,7 +1196,6 @@ STDMETHODIMP_(void) CGEKVideoSystem::Destroy(void)
 
 STDMETHODIMP CGEKVideoSystem::Reset(void)
 {
-    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice, E_FAIL);
     REQUIRE_RETURN(m_spDeviceContext, E_FAIL);
 
@@ -1231,7 +1210,6 @@ STDMETHODIMP CGEKVideoSystem::Reset(void)
     if (pSystem != nullptr)
     {
         hRetVal = m_spSwapChain->SetFullscreenState(!pSystem->IsWindowed(), nullptr);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to SetFullscreenState failed: 0x%08X", hRetVal);
         if (SUCCEEDED(hRetVal))
         {
             DXGI_MODE_DESC kDesc;
@@ -1243,11 +1221,9 @@ STDMETHODIMP CGEKVideoSystem::Reset(void)
             kDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
             kDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
             hRetVal = m_spSwapChain->ResizeTarget(&kDesc);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to ResizeTarget failed: 0x%08X", hRetVal);
             if (SUCCEEDED(hRetVal))
             {
                 hRetVal = m_spSwapChain->ResizeBuffers(0, pSystem->GetXSize(), pSystem->GetYSize(), DXGI_FORMAT_UNKNOWN, 0);
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to ResizeBuffers failed: 0x%08X", hRetVal);
                 if (SUCCEEDED(hRetVal))
                 {
                     hRetVal = GetDefaultTargets();
@@ -1266,18 +1242,15 @@ STDMETHODIMP CGEKVideoSystem::Reset(void)
 
 STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEK3DVideoContext **ppContext)
 {
-    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice, E_FAIL);
     REQUIRE_RETURN(ppContext, E_INVALIDARG);
 
     CComPtr<ID3D11DeviceContext> spContext;
     HRESULT hRetVal = m_spDevice->CreateDeferredContext(0, &spContext);
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateDeferredContext failed: 0x%08X", hRetVal);
     if (spContext)
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoContext> spVideo(new CGEKVideoContext(spContext));
-        GEKRESULT(spVideo, L"Unable to allocate new video context instance");
         if (spVideo)
         {
             hRetVal = spVideo->QueryInterface(IID_PPV_ARGS(ppContext));
@@ -1289,7 +1262,6 @@ STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEK3DVideoContext **ppConte
 
 STDMETHODIMP CGEKVideoSystem::CreateEvent(IUnknown **ppEvent)
 {
-    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppEvent, E_INVALIDARG);
 
@@ -1299,7 +1271,6 @@ STDMETHODIMP CGEKVideoSystem::CreateEvent(IUnknown **ppEvent)
 
     CComPtr<ID3D11Query> spEvent;
     HRESULT hRetVal = m_spDevice->CreateQuery(&kDesc, &spEvent);
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateQuery failed: 0x%08X", hRetVal);
     if (spEvent)
     {
         hRetVal = spEvent->QueryInterface(IID_PPV_ARGS(ppEvent));
@@ -1341,7 +1312,6 @@ STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(IUnknown *pEvent)
 
 STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES &kStates, IUnknown **ppStates)
 {
-    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
 
@@ -1384,12 +1354,10 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES 
 
     CComPtr<ID3D11RasterizerState> spRasterStates;
     HRESULT hRetVal = m_spDevice->CreateRasterizerState(&kRasterDesc, &spRasterStates);
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateRasterizerState failed: 0x%08X", hRetVal);
     if (spRasterStates)
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoRenderStates> spStates(new CGEKVideoRenderStates(spRasterStates));
-        GEKRESULT(spStates, L"Unable to allocate new render states instance");
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
@@ -1463,7 +1431,6 @@ static D3D11_STENCIL_OP GetStencilOperation(GEK3DVIDEO::STENCIL::OPERATION eOper
 
 STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates)
 {
-    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
 
@@ -1499,7 +1466,6 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &k
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoDepthStates> spStates(new CGEKVideoDepthStates(spDepthStencilStates));
-        GEKRESULT(spStates, L"Unable to allocate new depth states instance");
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
@@ -1591,7 +1557,6 @@ static D3D11_BLEND_OP GetBlendOperation(GEK3DVIDEO::BLEND::OPERATION eOperation)
 
 STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates)
 {
-    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
 
@@ -1632,7 +1597,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDST
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoBlendStates> spStates(new CGEKVideoBlendStates(spBlendStates));
-        GEKRESULT(spStates, L"Unable to allocate new blend states instance");
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
@@ -1644,7 +1608,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDST
 
 STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates, IUnknown **ppStates)
 {
-    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
 
@@ -1688,7 +1651,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLE
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoBlendStates> spStates(new CGEKVideoBlendStates(spBlendStates));
-        GEKRESULT(spStates, L"Unable to allocate new blend states instance");
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
@@ -1700,7 +1662,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLE
 
 STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IGEK3DVideoTexture **ppTarget)
 {
-    GEKFUNCTION(L"XSize(%d), YSize(%d), Format(%d)", nXSize, nYSize, eFormat);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(nXSize > 0 && nYSize > 0 && ppTarget, E_INVALIDARG);
 
@@ -1768,7 +1729,6 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
     {
         CComPtr<ID3D11Texture2D> spTexture;
 	    hRetVal = m_spDevice->CreateTexture2D(&kTextureDesc, nullptr, &spTexture);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateTexture2D failed: 0x%08X", hRetVal);
         if (spTexture)
         {
 	        D3D11_RENDER_TARGET_VIEW_DESC kRenderViewDesc;
@@ -1778,7 +1738,6 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 
             CComPtr<ID3D11RenderTargetView> spRenderView;
 	        hRetVal = m_spDevice->CreateRenderTargetView(spTexture, &kRenderViewDesc, &spRenderView);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateRenderTargetView failed: 0x%08X", hRetVal);
             if (spRenderView)
             {
 	            D3D11_SHADER_RESOURCE_VIEW_DESC kShaderViewDesc;
@@ -1789,12 +1748,10 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 
                 CComPtr<ID3D11ShaderResourceView> spShaderView;
 	            hRetVal = m_spDevice->CreateShaderResourceView(spTexture, &kShaderViewDesc, &spShaderView);
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateShaderResourceView failed: 0x%08X", hRetVal);
                 if (spShaderView)
 	            {
                     hRetVal = E_OUTOFMEMORY;
                     CComPtr<CGEKVideoRenderTarget> spTexture(new CGEKVideoRenderTarget(m_spDeviceContext, spShaderView, nullptr, spRenderView, nXSize, nYSize, 0));
-                    GEKRESULT(spTexture, L"Unable to allocate new render target instance");
                     if (spTexture)
                     {
                         hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTarget));
@@ -1809,7 +1766,6 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 
 STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget)
 {
-    GEKFUNCTION(L"XSize(%d), YSize(%d)", nXSize, nYSize);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(nXSize > 0 && nYSize > 0 && ppTarget, E_INVALIDARG);
 
@@ -1849,7 +1805,6 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GE
     {
         CComPtr<ID3D11Texture2D> spTexture;
         hRetVal = m_spDevice->CreateTexture2D(&kDepthBufferDesc, nullptr, &spTexture);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateTexture2D failed: 0x%08X", hRetVal);
         if (spTexture)
         {
             D3D11_DEPTH_STENCIL_VIEW_DESC kDepthStencilViewDesc;
@@ -1860,7 +1815,6 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GE
 
             CComPtr<ID3D11DepthStencilView> spDepthView;
             hRetVal = m_spDevice->CreateDepthStencilView(spTexture, &kDepthStencilViewDesc, &spDepthView);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateDepthStencilView failed: 0x%08X", hRetVal);
             if (spDepthView)
             {
                 hRetVal = spDepthView->QueryInterface(IID_IUnknown, (LPVOID FAR *)ppTarget);
@@ -1873,7 +1827,6 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GE
 
 STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEK3DVideoBuffer **ppBuffer, LPCVOID pData)
 {
-    GEKFUNCTION(L"Stride(%d), Count(%d), Flags(%d)", nStride, nCount, nFlags);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(nStride > 0 && nCount > 0 && ppBuffer, E_INVALIDARG);
 
@@ -1949,7 +1902,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
     if (pData == nullptr)
     {
         hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, nullptr, &spBuffer);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
     else
     {
@@ -1958,7 +1910,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         kData.SysMemPitch = 0;
         kData.SysMemSlicePitch = 0;
         hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, &kData, &spBuffer);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
     }
 
     if (spBuffer)
@@ -1973,7 +1924,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
             kViewDesc.Buffer.NumElements = nCount;
 
             hRetVal = m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateShaderResourceView failed: 0x%08X", hRetVal);
         }
 
         CComPtr<ID3D11UnorderedAccessView> spUnorderedView;
@@ -1987,14 +1937,12 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
             kViewDesc.Buffer.Flags = 0;
 
             hRetVal = m_spDevice->CreateUnorderedAccessView(spBuffer, &kViewDesc, &spUnorderedView);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateUnorderedAccessView failed: 0x%08X", hRetVal);
         }
 
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = E_OUTOFMEMORY;
             CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, spUnorderedView, nStride, nCount));
-            GEKRESULT(spBuffer, L"Unable to allocate new buffer instance");
             if (spBuffer)
             {
                 hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
@@ -2007,7 +1955,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
 
 STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, IGEK3DVideoBuffer **ppBuffer, LPCVOID pData)
 {
-    GEKFUNCTION(L"Format(%d), Count(%d)", eFormat, nCount);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(eFormat != GEK3DVIDEO::DATA::UNKNOWN && nCount > 0 && ppBuffer, E_INVALIDARG);
 
@@ -2167,7 +2114,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
         if (pData == nullptr)
         {
             hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, nullptr, &spBuffer);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
         }
         else
         {
@@ -2176,7 +2122,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
             kData.SysMemPitch = 0;
             kData.SysMemSlicePitch = 0;
             hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, &kData, &spBuffer);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
         }
 
         if (spBuffer)
@@ -2191,7 +2136,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
                 kViewDesc.Buffer.NumElements = nCount;
 
                 hRetVal = m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateShaderResourceView failed: 0x%08X", hRetVal);
             }
 
             CComPtr<ID3D11UnorderedAccessView> spUnorderedView;
@@ -2205,14 +2149,12 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
                 kViewDesc.Buffer.Flags = 0;
 
                 hRetVal = m_spDevice->CreateUnorderedAccessView(spBuffer, &kViewDesc, &spUnorderedView);
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateUnorderedAccessView failed: 0x%08X", hRetVal);
             }
 
             if (SUCCEEDED(hRetVal))
             {
                 hRetVal = E_OUTOFMEMORY;
                 CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, spUnorderedView, nStride, nCount));
-                GEKRESULT(spBuffer, L"Unable to allocate new buffer instance");
                 if (spBuffer)
                 {
                     hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
@@ -2226,7 +2168,6 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
 
 STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2251,17 +2192,14 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
     HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "cs_5_0", nFlags, 0, &spBlob, &spErrors);
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to D3DX11CompileFromMemory failed: 0x%08X", hRetVal);
     if (spBlob)
     {
         CComPtr<ID3D11ComputeShader> spProgram;
         hRetVal = m_spDevice->CreateComputeShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateComputeShader failed: 0x%08X", hRetVal);
         if (spProgram)
         {
             hRetVal = E_OUTOFMEMORY;
             CComPtr<CGEKVideoComputeProgram> spProgram(new CGEKVideoComputeProgram(spProgram));
-            GEKRESULT(spProgram, L"Unable to allocate new compute program instance");
             if (spProgram)
             {
                 hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -2278,7 +2216,6 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
 
 STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2303,12 +2240,10 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
     HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "vs_5_0", nFlags, 0, &spBlob, &spErrors);
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to D3DX11CompileFromMemory failed: 0x%08X", hRetVal);
     if (spBlob)
     {
         CComPtr<ID3D11VertexShader> spProgram;
         hRetVal = m_spDevice->CreateVertexShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateVertexShader failed: 0x%08X", hRetVal);
         if (spProgram)
         {
             GEK3DVIDEO::INPUT::SOURCE eLastClass = GEK3DVIDEO::INPUT::UNKNOWN;
@@ -2398,12 +2333,10 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
             {
                 CComPtr<ID3D11InputLayout> spLayout;
                 hRetVal = m_spDevice->CreateInputLayout(&aLayoutDesc[0], aLayoutDesc.size(), spBlob->GetBufferPointer(), spBlob->GetBufferSize(), &spLayout);
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateInputLayout failed: 0x%08X", hRetVal);
                 if (spLayout)
                 {
                     hRetVal = E_OUTOFMEMORY;
                     CComPtr<CGEKVideoVertexProgram> spProgram(new CGEKVideoVertexProgram(spProgram, spLayout));
-                    GEKRESULT(spProgram, L"Unable to allocate new vertex program instance");
                     if (spProgram)
                     {
                         hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -2422,7 +2355,6 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
 
 STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2447,17 +2379,14 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
     HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "gs_5_0", nFlags, 0, &spBlob, &spErrors);
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to D3DX11CompileFromMemory failed: 0x%08X", hRetVal);
     if (spBlob)
     {
         CComPtr<ID3D11GeometryShader> spProgram;
         hRetVal = m_spDevice->CreateGeometryShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateGeometryShader failed: 0x%08X", hRetVal);
         if (spProgram)
         {
             hRetVal = E_OUTOFMEMORY;
             CComPtr<CGEKVideoGeometryProgram> spProgram(new CGEKVideoGeometryProgram(spProgram));
-            GEKRESULT(spProgram, L"Unable to allocate new geometry program instance");
             if (spProgram)
             {
                 hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -2474,7 +2403,6 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
 
 STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    GEKFUNCTION(L"Entry(%S)", pEntry);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
 
@@ -2499,17 +2427,14 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
     HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "ps_5_0", nFlags, 0, &spBlob, &spErrors);
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to D3DX11CompileFromMemory failed: 0x%08X", hRetVal);
     if (spBlob)
     {
         CComPtr<ID3D11PixelShader> spProgram;
         hRetVal = m_spDevice->CreatePixelShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreatePixelShader failed: 0x%08X", hRetVal);
         if (spProgram)
         {
             hRetVal = E_OUTOFMEMORY;
             CComPtr<CGEKVideoPixelProgram> spProgram(new CGEKVideoPixelProgram(spProgram));
-            GEKRESULT(spProgram, L"Unable to allocate new pixel program instance");
             if (spProgram)
             {
                 hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
@@ -2586,7 +2511,6 @@ STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry,
 
 STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEK3DVideoTexture **ppTexture)
 {
-    GEKFUNCTION(L"XSize(%d), YSize(%d), ZSize(%d), Format(%d)", nXSize, nYSize, nZSize, eFormat);
 
     HRESULT hRetVal = S_OK;
     DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
@@ -2664,7 +2588,6 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
 
             CComPtr<ID3D11Texture2D> spTexture;
             hRetVal = m_spDevice->CreateTexture2D(&kTextureDesc, nullptr, &spTexture);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateTexture2D failed: 0x%08X", hRetVal);
             if (spTexture)
             {
                 spResource = spTexture;
@@ -2685,7 +2608,6 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
 
             CComPtr<ID3D11Texture3D> spTexture;
             hRetVal = m_spDevice->CreateTexture3D(&kTextureDesc, nullptr, &spTexture);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateTexture3D failed: 0x%08X", hRetVal);
             if (spTexture)
             {
                 spResource = spTexture;
@@ -2698,7 +2620,6 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
             if (nFlags & GEK3DVIDEO::TEXTURE::RESOURCE)
             {
                 hRetVal = m_spDevice->CreateShaderResourceView(spResource, nullptr, &spResourceView);
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateShaderResourceView failed: 0x%08X", hRetVal);
             }
 
             CComPtr<ID3D11UnorderedAccessView> spUnderedView;
@@ -2720,14 +2641,12 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
                 }
 
                 hRetVal = m_spDevice->CreateUnorderedAccessView(spResource, &kViewDesc, &spUnderedView);
-                GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateUnorderedAccessView failed: 0x%08X", hRetVal);
             }
 
             if (SUCCEEDED(hRetVal))
             {
                 hRetVal = E_OUTOFMEMORY;
                 CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, spUnderedView, nXSize, nYSize, nZSize));
-                GEKRESULT(spTexture, L"Unable to allocate new texture instance");
                 if (spTexture)
                 {
                     hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
@@ -2775,7 +2694,6 @@ STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEK3DVideoTexture *pTexture,
 
 STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEK3DVideoTexture **ppTexture)
 {
-    GEKFUNCTION(L"Name(%s)", pFileName);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppTexture, E_INVALIDARG);
 
@@ -2857,7 +2775,6 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEK3DVideoTexture 
 
                     hRetVal = E_OUTOFMEMORY;
                     CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, nullptr, nXSize, nYSize, nZSize));
-                    GEKRESULT(spTexture, L"Unable to allocate new texture instance");
                     if (spTexture)
                     {
                         hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
@@ -2894,7 +2811,6 @@ static D3D11_TEXTURE_ADDRESS_MODE GetAddressMode(GEK3DVIDEO::ADDRESS::MODE eMode
 
 STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates)
 {
-    GEKFUNCTION(nullptr);
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppStates, E_INVALIDARG);
 
@@ -2953,12 +2869,10 @@ STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::SAMPLERSTATE
 
     CComPtr<ID3D11SamplerState> spSamplerStates;
     HRESULT hRetVal = m_spDevice->CreateSamplerState(&kSamplerStates, &spSamplerStates);
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateSamplerState failed: 0x%08X", hRetVal);
     if (spSamplerStates)
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoSamplerStates> spStates(new CGEKVideoSamplerStates(spSamplerStates));
-        GEKRESULT(spStates, L"Unable to allocate new sampler states instance");
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));

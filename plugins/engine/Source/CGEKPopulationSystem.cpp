@@ -21,7 +21,6 @@ CGEKPopulationSystem::~CGEKPopulationSystem(void)
 
 STDMETHODIMP CGEKPopulationSystem::Initialize(void)
 {
-    GEKFUNCTION(nullptr);
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKPopulationSystem, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
@@ -34,10 +33,6 @@ STDMETHODIMP CGEKPopulationSystem::Initialize(void)
                 if (pIterator == m_aComponents.end())
                 {
                     m_aComponents[spComponent->GetName()] = spComponent;
-                }
-                else
-                {
-                    GEKLOG(L"Component name already exists: %s", spComponent->GetName());
                 }
             }
 
@@ -77,7 +72,6 @@ STDMETHODIMP_(void) CGEKPopulationSystem::FreeSystems(void)
 
 STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
 {
-    GEKFUNCTION(L"Name(%s)", pName);
 
     Free();
 
@@ -86,7 +80,6 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
     CLibXMLDoc kDocument;
     std::list<CLibXMLNode> aEntities;
     HRESULT hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\worlds\\%s.xml", pName));
-    GEKRESULT(SUCCEEDED(hRetVal), L"Call to Load Scene Document failed: 0x%08X", hRetVal);
     if (SUCCEEDED(hRetVal))
     {
         CLibXMLNode &kWorldNode = kDocument.GetRoot();
@@ -104,18 +97,15 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
             }
             else
             {
-                GEKLOG(L"Scene missing <population> node");
-                hRetVal = E_FAIL;
+                hRetVal = E_UNEXPECTED;
             }
         }
         else
         {
-            GEKLOG(L"Scene missing <world> node");
-            hRetVal = E_FAIL;
+            hRetVal = E_UNEXPECTED;
         }
     }
     
-    GEKLOG(L"Num. Entities Found: %d", aEntities.size());
     std::for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
     {
         CStringW strName;

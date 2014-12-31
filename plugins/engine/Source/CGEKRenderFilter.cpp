@@ -699,11 +699,6 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName, const std::unordered_map<
     return hRetVal;
 }
 
-STDMETHODIMP_(UINT32) CGEKRenderFilter::GetVertexAttributes(void)
-{
-    return m_nVertexAttributes;
-}
-
 STDMETHODIMP_(void) CGEKRenderFilter::Draw(IGEK3DVideoContext *pContext)
 {
     REQUIRE_VOID_RETURN(pContext);

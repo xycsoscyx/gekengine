@@ -53,8 +53,6 @@ CGEKComponentSystemNewton::MATERIAL *CGEKComponentSystemNewton::LoadMaterial(LPC
     }
     else
     {
-        GEKFUNCTION(L"Name(%s)", pName);
-
         CLibXMLDoc kDocument;
         if (SUCCEEDED(kDocument.Load(FormatString(L"%%root%%\\data\\materials\\%s.xml", pName))))
         {
@@ -118,24 +116,18 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
     if (_wcsicmp(pShape, L"convex_hull") == 0 ||
         _wcsicmp(pShape, L"tree") == 0)
     {
-        GEKFUNCTION(L"Shape(%s), Params(%s)", pShape, pParams);
-
         std::vector<UINT8> aBuffer;
         HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pParams), aBuffer);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to Load Collision File failed: 0x%08X", hRetVal);
         if (SUCCEEDED(hRetVal))
         {
             UINT8 *pBuffer = &aBuffer[0];
             UINT32 nGEKX = *((UINT32 *)pBuffer);
-            GEKRESULT(nGEKX == *(UINT32 *)"GEKX", L"Invalid Magic Header: %d", nGEKX);
             pBuffer += sizeof(UINT32);
 
             UINT16 nType = *((UINT16 *)pBuffer);
-            GEKRESULT(nType == 0, L"Invalid Header Type: %d", nType);
             pBuffer += sizeof(UINT16);
 
             UINT16 nVersion = *((UINT16 *)pBuffer);
-            GEKRESULT(nVersion == 2, L"Invalid Header Version: %d", nVersion);
             pBuffer += sizeof(UINT16);
 
             if (nGEKX == *(UINT32 *)"GEKX" && nType == 0 && nVersion == 2)
@@ -144,7 +136,6 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
                 pBuffer += sizeof(aabb);
 
                 UINT32 nNumMaterials = *((UINT32 *)pBuffer);
-                GEKLOG(L"Number of Materials: %d", nNumMaterials);
                 pBuffer += sizeof(UINT32);
 
                 struct RENDERMATERIAL
@@ -173,7 +164,6 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
                 }
 
                 UINT32 nNumVertices = *((UINT32 *)pBuffer);
-                GEKLOG(L"Number of Vertices: %d", nNumVertices);
                 pBuffer += sizeof(UINT32);
 
                 float3 *pVertices = (float3 *)pBuffer;
@@ -182,7 +172,6 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
                 pBuffer += (sizeof(float3) * nNumVertices);
 
                 UINT32 nNumIndices = *((UINT32 *)pBuffer);
-                GEKLOG(L"Number of Indices: %d", nNumIndices);
                 pBuffer += sizeof(UINT32);
 
                 UINT16 *pIndices = (UINT16 *)pBuffer;
@@ -465,7 +454,6 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
                 if (pCollision != nullptr)
                 {
                     NewtonBody *pBody = NewtonCreateDynamicBody(m_pWorld, pCollision, nMatrix.data);
-                    GEKRESULT(pBody, L"Call to NewtonCreateDynamicBody failed to allocate instance");
                     if (pBody != nullptr)
                     {
                         NewtonBodySetUserData(pBody, (void *)nEntityID);

@@ -98,6 +98,5 @@ public:
 
     // IGEKRenderFilter
     STDMETHOD(Load)                                         (THIS_ LPCWSTR pFileName, const std::unordered_map<CStringA, CStringA> &aDefines);
-    STDMETHOD_(UINT32, GetVertexAttributes)                 (THIS);
     STDMETHOD_(void, Draw)                                  (THIS_ IGEK3DVideoContext *pContext);
 };

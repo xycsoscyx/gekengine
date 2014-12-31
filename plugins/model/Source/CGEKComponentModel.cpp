@@ -58,24 +58,18 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
     }
     else
     {
-        GEKFUNCTION(L"Name(%s), Params(%s)", pName, pParams);
-
         std::vector<UINT8> aBuffer;
         HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pName), aBuffer);
-        GEKRESULT(SUCCEEDED(hRetVal), L"Call to Load Model File failed: 0x%08X", hRetVal);
         if (SUCCEEDED(hRetVal))
         {
             UINT8 *pBuffer = &aBuffer[0];
             UINT32 nGEKX = *((UINT32 *)pBuffer);
-            GEKRESULT(nGEKX == *(UINT32 *)"GEKX", L"Invalid Magic Header: %d", nGEKX);
             pBuffer += sizeof(UINT32);
 
             UINT16 nType = *((UINT16 *)pBuffer);
-            GEKRESULT(nType == 0, L"Invalid Header Type: %d", nType);
             pBuffer += sizeof(UINT16);
 
             UINT16 nVersion = *((UINT16 *)pBuffer);
-            GEKRESULT(nVersion == 2, L"Invalid Header Version: %d", nVersion);
             pBuffer += sizeof(UINT16);
 
             HRESULT hRetVal = E_INVALIDARG;
@@ -86,7 +80,6 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
                 pBuffer += sizeof(aabb);
 
                 UINT32 nNumMaterials = *((UINT32 *)pBuffer);
-                GEKLOG(L"Number of Materials: %d", nNumMaterials);
                 pBuffer += sizeof(UINT32);
 
                 for (UINT32 nMaterial = 0; nMaterial < nNumMaterials; ++nMaterial)
@@ -118,7 +111,6 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
                 }
 
                 UINT32 nNumVertices = *((UINT32 *)pBuffer);
-                GEKLOG(L"Number of Vertices: %d", nNumVertices);
                 pBuffer += sizeof(UINT32);
 
                 if (SUCCEEDED(hRetVal))
@@ -142,7 +134,6 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
                 if (SUCCEEDED(hRetVal))
                 {
                     UINT32 nNumIndices = *((UINT32 *)pBuffer);
-                    GEKLOG(L"Number of Indices: %d", nNumIndices);
                     pBuffer += sizeof(UINT32);
 
                     hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), nNumIndices, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spIndexBuffer, pBuffer);
@@ -195,7 +186,6 @@ STDMETHODIMP CGEKComponentSystemModel::Initialize(void)
         if (pVideoSystem != nullptr)
         {
             hRetVal = pVideoSystem->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
-            GEKRESULT(SUCCEEDED(hRetVal), L"Call to CreateBuffer failed: 0x%08X", hRetVal);
         }
     }
 
@@ -218,7 +208,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnFree(void)
     m_aModels.clear();
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemModel::OnPreRender(void)
+STDMETHODIMP_(void) CGEKComponentSystemModel::OnRenderBegin(void)
 {
 }
 
@@ -304,7 +294,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(IGEK3DVideoContext *pC
     }
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemModel::OnPostRender(void)
+STDMETHODIMP_(void) CGEKComponentSystemModel::OnRenderEnd(void)
 {
     m_aVisible.clear();
 }
