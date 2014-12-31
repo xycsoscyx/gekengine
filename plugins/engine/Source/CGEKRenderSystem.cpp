@@ -446,6 +446,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::OnFree(void)
 
 HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
 {
+    REQUIRE_RETURN(pName, E_INVALIDARG);
+
     HRESULT hRetVal = E_FAIL;
     auto pPassIterator = m_aPasses.find(pName);
     if (pPassIterator != m_aPasses.end())
@@ -561,8 +563,7 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
 
 STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource)
 {
-    REQUIRE_RETURN(pName, E_INVALIDARG);
-    REQUIRE_RETURN(ppResource, E_INVALIDARG);
+    REQUIRE_RETURN(pName && ppResource, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aResources.find(pName);
@@ -763,7 +764,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::SetScreenTargets(IGEK3DVideoContext *pCont
 
 STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial)
 {
-    REQUIRE_RETURN(ppMaterial, E_INVALIDARG);
+    REQUIRE_RETURN(pName && ppMaterial, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aResources.find(pName);
@@ -783,50 +784,58 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
             CLibXMLNode kMaterialNode = kDocument.GetRoot();
             if (kMaterialNode)
             {
-                CPathW kName(pName);
-                kName.RemoveFileSpec();
-
-                bool bFullBright = false;
-                if (kMaterialNode.HasAttribute(L"fullbright"))
+                CLibXMLNode kRenderNode = kMaterialNode.FirstChildElement(L"render");
+                if (kRenderNode)
                 {
-                    bFullBright = StrToBoolean(kMaterialNode.GetAttribute(L"fullbright"));
-                    GEKLOG(L"Fullbright: %s", bFullBright ? L"on" : L"off");
-                }
+                    CPathW kDirectory(pName);
+                    kDirectory.RemoveFileSpec();
 
-                float4 nColor(1.0f, 1.0f, 1.0f, 1.0f);
-                if (kMaterialNode.HasAttribute(L"color"))
-                {
-                    nColor = StrToFloat4(kMaterialNode.GetAttribute(L"color"));
-                    GEKLOG(L"Color: %s", kMaterialNode.GetAttribute(L"color"));
-                }
-
-                std::unordered_map<CStringW, CComPtr<IUnknown>> aData;
-                CLibXMLNode kDataNode = kMaterialNode.FirstChildElement();
-                while (kDataNode)
-                {
-                    CStringW strSource(kDataNode.GetAttribute(L"source"));
-                    strSource.Replace(L"%material%", pName);
-                    strSource.Replace(L"%directory%", kName.m_strPath.GetString());
-                    GEKLOG(L"%s: %s", kDataNode.GetType().GetString(), strSource.GetString());
-
-                    CComPtr<IUnknown> spData;
-                    LoadResource(strSource, &spData);
-                    if (spData)
+                    bool bFullBright = false;
+                    if (kRenderNode.HasAttribute(L"fullbright"))
                     {
-                        aData[kDataNode.GetType()] = spData;
+                        bFullBright = StrToBoolean(kRenderNode.GetAttribute(L"fullbright"));
+                        GEKLOG(L"Fullbright: %s", bFullBright ? L"on" : L"off");
                     }
 
-                    kDataNode = kDataNode.NextSiblingElement();
-                };
+                    float4 nColor(1.0f, 1.0f, 1.0f, 1.0f);
+                    if (kRenderNode.HasAttribute(L"color"))
+                    {
+                        nColor = StrToFloat4(kRenderNode.GetAttribute(L"color"));
+                        GEKLOG(L"Color: %s", kRenderNode.GetAttribute(L"color"));
+                    }
 
-                CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(aData, nColor, bFullBright));
-                GEKRESULT(spMaterial, L"Unable to allocate new material instance");
-                if (spMaterial)
-                {
-                    spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"render"));
-                    spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kMaterialNode.FirstChildElement(L"blend"));
-                    spMaterial->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
-                    hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
+                    std::unordered_map<CStringW, CComPtr<IUnknown>> aData;
+                    CLibXMLNode kLayersNode = kRenderNode.FirstChildElement(L"layers");
+                    if (kLayersNode)
+                    {
+                        CLibXMLNode kLayerNode = kLayersNode.FirstChildElement();
+                        while (kLayerNode)
+                        {
+                            CStringW strSource(kLayerNode.GetAttribute(L"source"));
+                            strSource.Replace(L"%material%", pName);
+                            strSource.Replace(L"%directory%", kDirectory.m_strPath.GetString());
+                            GEKLOG(L"%s: %s", kLayerNode.GetType().GetString(), strSource.GetString());
+
+                            CComPtr<IUnknown> spData;
+                            LoadResource(strSource, &spData);
+                            if (spData)
+                            {
+                                aData[kLayerNode.GetType()] = spData;
+                            }
+
+                            kLayerNode = kLayerNode.NextSiblingElement();
+                        };
+                    }
+
+                    CComPtr<CGEKMaterial> spMaterial(new CGEKMaterial(aData, nColor, bFullBright));
+                    GEKRESULT(spMaterial, L"Unable to allocate new material instance");
+                    if (spMaterial)
+                    {
+                        spMaterial->CGEKRenderStates::Load(m_pVideoSystem, kRenderNode.FirstChildElement(L"properties"));
+                        spMaterial->CGEKBlendStates::Load(m_pVideoSystem, kRenderNode.FirstChildElement(L"blend"));
+                        spMaterial->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
+                        hRetVal = spMaterial->QueryInterface(IID_PPV_ARGS(ppMaterial));
+                    }
                 }
             }
         }
@@ -858,7 +867,7 @@ STDMETHODIMP_(bool) CGEKRenderSystem::EnableMaterial(IGEK3DVideoContext *pContex
 
 STDMETHODIMP CGEKRenderSystem::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
 {
-    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+    REQUIRE_RETURN(pName && ppProgram, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aResources.find(pName);

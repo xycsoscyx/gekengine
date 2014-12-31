@@ -67,9 +67,9 @@ HRESULT CGEKRenderStates::Load(IGEK3DVideoSystem *pSystem, CLibXMLNode &kStatesN
         kRenderStates.m_eCullMode = GetCullMode(kStatesNode.GetAttribute(L"cullmode"));
     }
 
-    if (kStatesNode.HasAttribute(L"frontcounterclockwize"))
+    if (kStatesNode.HasAttribute(L"frontcounterclockwise"))
     {
-        kRenderStates.m_bFrontCounterClockwise = StrToBoolean(kStatesNode.GetAttribute(L"frontcounterclockwize"));
+        kRenderStates.m_bFrontCounterClockwise = StrToBoolean(kStatesNode.GetAttribute(L"frontcounterclockwise"));
     }
 
     if (kStatesNode.HasAttribute(L"depthbias"))
