@@ -12,23 +12,15 @@
 
 #pragma warning(disable:4251)
 
-#define E_INVALID                       _HRESULT_TYPEDEF_(0x8007A001L)
-#define E_FILENOTFOUND                  _HRESULT_TYPEDEF_(0x8007A001L)
-#define E_ARCHIVENOTFOUND               _HRESULT_TYPEDEF_(0x8007A002L)
-
-#define GEKDELETE(X)                    do { if (X) delete [] (X); (X) = nullptr; } while (false)
-#define GEKRELEASE(X)                   do { if (X) delete (X); (X) = nullptr; } while (false)
-#define COMRELEASE(X)                   do { if (X) (X)->Release(); (X) = nullptr; } while (false)
-
 #define REQUIRE_VOID_RETURN(CHECK)      do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (0)
 #define REQUIRE_RETURN(CHECK, RETURN)   do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (0)
 
 enum GEKMODEASPECT
 {
-    _ASPECT_INVALID = -1,
-    _ASPECT_4x3 = 0,
-    _ASPECT_16x9 = 1,
-    _ASPECT_16x10 = 2,
+    _ASPECT_INVALID     = -1,
+    _ASPECT_4x3         = 0,
+    _ASPECT_16x9        = 1,
+    _ASPECT_16x10       = 2,
 };
 
 struct GEKMODE

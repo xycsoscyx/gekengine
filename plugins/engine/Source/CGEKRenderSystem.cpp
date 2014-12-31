@@ -464,11 +464,11 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
         if (SUCCEEDED(hRetVal))
         {
             PASS kPassData;
-            hRetVal = E_INVALID;
+            hRetVal = E_FAIL;
             CLibXMLNode kPassNode = kDocument.GetRoot();
             if (kPassNode)
             {
-                hRetVal = E_INVALID;
+                hRetVal = E_FAIL;
                 CLibXMLNode kMaterialsNode = kPassNode.FirstChildElement(L"materials");
                 if (kMaterialsNode)
                 {
@@ -885,7 +885,7 @@ STDMETHODIMP CGEKRenderSystem::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
         {
             if (strDeferredProgram.Find("_INSERT_WORLD_PROGRAM") < 0)
             {
-                hRetVal = E_INVALID;
+                hRetVal = E_FAIL;
             }
             else
             {

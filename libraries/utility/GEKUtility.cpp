@@ -272,7 +272,7 @@ HRESULT GEKLoadFromFile(LPCWSTR pFileName, std::vector<UINT8> &aBuffer, UINT32 n
     HANDLE hFile = CreateFile(strFullFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile == INVALID_HANDLE_VALUE)
     {
-        hRetVal = E_FILENOTFOUND;
+        hRetVal = E_FAIL;
     }
     else
     {

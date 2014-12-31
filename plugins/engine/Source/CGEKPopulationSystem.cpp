@@ -105,13 +105,13 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
             else
             {
                 GEKLOG(L"Scene missing <population> node");
-                hRetVal = E_INVALID;
+                hRetVal = E_FAIL;
             }
         }
         else
         {
             GEKLOG(L"Scene missing <world> node");
-            hRetVal = E_INVALID;
+            hRetVal = E_FAIL;
         }
     }
     
