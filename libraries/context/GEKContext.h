@@ -106,10 +106,10 @@ public:
 };
 
 template <typename RESULT>
-class CGEKEvent
+class TGEKBaseEvent
 {
 public:
-    virtual ~CGEKEvent(void)
+    virtual ~TGEKBaseEvent(void)
     {
     }
 
@@ -117,7 +117,7 @@ public:
 };
 
 template <typename INTERFACE>
-class TGEKEvent : public CGEKEvent<void>
+class TGEKEvent : public TGEKBaseEvent<void>
 {
 private:
     std::function<void(INTERFACE *)> OnEvent;
@@ -139,7 +139,7 @@ public:
 };
 
 template <typename INTERFACE>
-class TGEKCheck : public CGEKEvent<HRESULT>
+class TGEKCheck : public TGEKBaseEvent<HRESULT>
 {
 private:
     std::function<HRESULT(INTERFACE *)> OnEvent;
@@ -200,7 +200,7 @@ public:
         return E_FAIL;
     }
 
-    void SendEvent(const CGEKEvent<void> &kEvent)
+    void SendEvent(const TGEKBaseEvent<void> &kEvent)
     {
         for (auto &pObserver : m_aObservers)
         {
@@ -208,7 +208,7 @@ public:
         }
     }
 
-    HRESULT CheckEvent(const CGEKEvent<HRESULT> &kEvent)
+    HRESULT CheckEvent(const TGEKBaseEvent<HRESULT> &kEvent)
     {
         HRESULT hRetVal = S_OK;
         for (auto &pObserver : m_aObservers)

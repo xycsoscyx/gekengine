@@ -33,6 +33,7 @@ REGISTER_CLASS(CGEKComponentSystemNewton)
 CGEKComponentSystemNewton::CGEKComponentSystemNewton(void)
     : m_pSceneManager(nullptr)
     , m_pWorld(nullptr)
+    , m_nGravity(0.0f, -9.8331f, 0.0f)
 {
 }
 
@@ -69,9 +70,9 @@ CGEKComponentSystemNewton::MATERIAL *CGEKComponentSystemNewton::LoadMaterial(LPC
                         kMaterial.m_nStaticFriction = StrToFloat(kSurfaceNode.GetAttribute(L"staticfriction"));
                     }
 
-                    if (kSurfaceNode.HasAttribute(L"kineticfrictiom"))
+                    if (kSurfaceNode.HasAttribute(L"kineticfriction"))
                     {
-                        kMaterial.m_nKineticFriction = StrToFloat(kSurfaceNode.GetAttribute(L"kineticfrictiom"));
+                        kMaterial.m_nKineticFriction = StrToFloat(kSurfaceNode.GetAttribute(L"kineticfriction"));
                     }
 
                     if (kSurfaceNode.HasAttribute(L"elasticity"))
@@ -282,11 +283,8 @@ void CGEKComponentSystemNewton::OnSetForceAndTorque(const NewtonBody *pBody, con
     REQUIRE_VOID_RETURN(m_pSceneManager);
     REQUIRE_VOID_RETURN(pBody);
 
-    float4x4 nMatrix;
-    NewtonBodyGetMatrix(pBody, nMatrix.data);
     auto &kNewton = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, L"newton");
-    const float3 nGravity(0.0f, (-9.8331f * kNewton.mass), 0.0f);
-    NewtonBodyAddForce(pBody, nGravity.xyz);
+    NewtonBodyAddForce(pBody, (m_nGravity * kNewton.mass).xyz);
 }
 
 void CGEKComponentSystemNewton::OnEntityTransformed(const NewtonBody *pBody, const GEKENTITYID &nEntityID, const float4x4 &nMatrix)
@@ -327,7 +325,7 @@ void CGEKComponentSystemNewton::OnCollisionContact(const NewtonMaterial *pMateri
 
     float3 nPosition, nNormal;
     NewtonMaterialGetContactPositionAndNormal(pMaterial, pBody0, nPosition.xyz, nNormal.xyz);
-    CGEKObservable::SendEvent(TGEKEvent<IGEKNewtonObserver>(std::bind(&IGEKNewtonObserver::OnCollision, std::placeholders::_1, nEntityID0, nEntityID1, nPosition)));
+    CGEKObservable::SendEvent(TGEKEvent<IGEKNewtonObserver>(std::bind(&IGEKNewtonObserver::OnCollision, std::placeholders::_1, nEntityID0, nEntityID1, nPosition, nNormal)));
 }
 
 STDMETHODIMP CGEKComponentSystemNewton::Initialize(void)

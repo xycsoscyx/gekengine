@@ -2270,7 +2270,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
     }
     else if (spErrors)
     {
-        GEKLOG(L"%S", (const char *)spErrors->GetBufferPointer());
+        OutputDebugStringA((LPCSTR)spErrors->GetBufferPointer());
     }
 
     return hRetVal;
@@ -2414,7 +2414,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
     }
     else if (spErrors)
     {
-        GEKLOG(L"%S", (const char *)spErrors->GetBufferPointer());
+        OutputDebugStringA((LPCSTR)spErrors->GetBufferPointer());
     }
 
     return hRetVal;
@@ -2466,7 +2466,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
     }
     else if (spErrors)
     {
-        GEKLOG(L"%S", (const char *)spErrors->GetBufferPointer());
+        OutputDebugStringA((LPCSTR)spErrors->GetBufferPointer());
     }
 
     return hRetVal;
@@ -2518,7 +2518,7 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
     }
     else if (spErrors)
     {
-        GEKLOG(L"%S", (const char *)spErrors->GetBufferPointer());
+        OutputDebugStringA((LPCSTR)spErrors->GetBufferPointer());
     }
 
     return hRetVal;
