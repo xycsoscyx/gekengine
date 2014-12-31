@@ -4,7 +4,7 @@
         <define name="gs_nNumSamples" value="32" />
         <define name="gs_nNumSpirals" value="12" />
         <define name="gs_nRadius" value="1" />
-        <define name="gs_nBeta" value=".3" />
+        <define name="gs_nStrength" value=".4" />
         <define name="gs_nEpsilon" value=".1" />
     </defines>
 
@@ -58,7 +58,7 @@
                     nAmbientOcclusion += max(0, nDeltaAngle + nCenterDepth * 0.001) / (nDeltaDelta + gs_nEpsilon);
 	            }
 
-	            nAmbientOcclusion *= gs_nTwoPi * gs_nRadius * gs_nBeta / gs_nNumSamples;
+	            nAmbientOcclusion *= gs_nTwoPi * gs_nRadius * gs_nStrength / gs_nNumSamples;
 	            nAmbientOcclusion = min(1, max(0, 1 - nAmbientOcclusion));
 
                 // Below is directly from the Alchemy SSAO

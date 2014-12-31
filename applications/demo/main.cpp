@@ -106,10 +106,10 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         {
 #ifdef _DEBUG
             SetCurrentDirectory(GEKParseFileName(L"%root%\\Debug"));
-            spContext->AddSearchPath(GEKParseFileName(L"%root%\\Debug"));
+            spContext->AddSearchPath(GEKParseFileName(L"%root%\\Debug\\Plugins"));
 #else
             SetCurrentDirectory(GEKParseFileName(L"%root%\\Release"));
-            spContext->AddSearchPath(GEKParseFileName(L"%root%\\Release"));
+            spContext->AddSearchPath(GEKParseFileName(L"%root%\\Release\\Plugins"));
 #endif
 
             if (SUCCEEDED(spContext->Initialize()))

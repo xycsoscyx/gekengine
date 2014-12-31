@@ -7,5 +7,4 @@
             <info source="*color:0.5,0,0,0" />
         </layers>
     </render>
-    <surface elasticity="1"/>
 </material>
