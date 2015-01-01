@@ -123,8 +123,8 @@ public:
     STDMETHOD_(void, Destroy)               (THIS);
 
     // IGEK3DVideoObserver
-    STDMETHOD_(void, OnPreReset)            (THIS);
-    STDMETHOD(OnPostReset)                  (THIS);
+    STDMETHOD_(void, OnResetBegin)          (THIS);
+    STDMETHOD(OnResetEnd)                   (THIS);
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnLoadBegin)           (THIS);
@@ -141,9 +141,9 @@ public:
 
     // IGEKRenderSystem
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppResource);
-    STDMETHOD(LoadBuffer)                   (THIS_ LPCWSTR pName, UINT32 nStride, UINT32 nCount);
-    STDMETHOD(LoadBuffer)                   (THIS_ LPCWSTR pName, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount);
-    STDMETHOD(LoadBuffer)                   (THIS_ LPCWSTR pName, UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat);
+    STDMETHOD(CreateBuffer)                   (THIS_ LPCWSTR pName, UINT32 nStride, UINT32 nCount);
+    STDMETHOD(CreateBuffer)                   (THIS_ LPCWSTR pName, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount);
+    STDMETHOD(CreateBuffer)                   (THIS_ LPCWSTR pName, UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppResource);
     STDMETHOD_(void, SetResource)           (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource);
     STDMETHOD_(void, SetScreenTargets)      (THIS_ IGEK3DVideoContext *pContext, IUnknown *pDepthBuffer);

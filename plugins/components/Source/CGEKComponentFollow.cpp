@@ -58,7 +58,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::Destroy(void)
     }
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemFollow::OnPostUpdate(float nGameTime, float nFrameTime)
+STDMETHODIMP_(void) CGEKComponentSystemFollow::OnUpdateEnd(float nGameTime, float nFrameTime)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 

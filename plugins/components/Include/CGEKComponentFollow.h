@@ -28,5 +28,5 @@ public:
     STDMETHOD_(void, Destroy)               (THIS);
 
     // IGEKSceneObserver
-    STDMETHOD_(void, OnPostUpdate)          (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD_(void, OnUpdateEnd)           (THIS_ float nGameTime, float nFrameTime);
 };

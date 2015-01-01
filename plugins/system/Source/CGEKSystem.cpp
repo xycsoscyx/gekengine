@@ -150,8 +150,8 @@ STDMETHODIMP CGEKSystem::Initialize(void)
 
 STDMETHODIMP_(void) CGEKSystem::Destroy(void)
 {
-    m_spVideoSystem = nullptr;
-    m_spAudioSystem = nullptr;
+    m_spVideoSystem.Release();
+    m_spAudioSystem.Release();
     GetContext()->RemoveCachedClass(CLSID_GEKSystem);
 }
 

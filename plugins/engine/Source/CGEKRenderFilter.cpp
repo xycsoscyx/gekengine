@@ -205,7 +205,7 @@ HRESULT CGEKRenderFilter::LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSi
             }
             else
             {
-                hRetVal = m_pRenderManager->LoadBuffer(m_strDepthSource, nXSize, nYSize, eFormat);
+                hRetVal = m_pRenderManager->CreateBuffer(m_strDepthSource, nXSize, nYSize, eFormat);
             }
         }
         else
@@ -307,7 +307,7 @@ HRESULT CGEKRenderFilter::LoadBuffers(CLibXMLNode &kFilterNode)
                 if (kBufferNode.HasAttribute(L"stride"))
                 {
                     UINT32 nStride = StrToUINT32(kBufferNode.GetAttribute(L"stride"));
-                    hRetVal = m_pRenderManager->LoadBuffer(strName, nStride, nCount);
+                    hRetVal = m_pRenderManager->CreateBuffer(strName, nStride, nCount);
                     if (FAILED(hRetVal))
                     {
                         break;
@@ -316,7 +316,7 @@ HRESULT CGEKRenderFilter::LoadBuffers(CLibXMLNode &kFilterNode)
                 else if (kBufferNode.HasAttribute(L"format"))
                 {
                     GEK3DVIDEO::DATA::FORMAT eFormat = GetFormat(kBufferNode.GetAttribute(L"format"));
-                    hRetVal = m_pRenderManager->LoadBuffer(strName, eFormat, nCount);
+                    hRetVal = m_pRenderManager->CreateBuffer(strName, eFormat, nCount);
                     if (FAILED(hRetVal))
                     {
                         break;
@@ -393,7 +393,7 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
                         break;
                     }
 
-                    hRetVal = m_pRenderManager->LoadBuffer(kTargetNode.GetAttribute(L"name"), nXSize, nYSize, eFormat);
+                    hRetVal = m_pRenderManager->CreateBuffer(kTargetNode.GetAttribute(L"name"), nXSize, nYSize, eFormat);
                     if (FAILED(hRetVal))
                     {
                         break;

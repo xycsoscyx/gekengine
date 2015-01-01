@@ -83,7 +83,13 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnValue(LPCWSTR pName, float nVa
     }, true);
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemControl::OnPreUpdate(float nGameTime, float nFrameTime)
+STDMETHODIMP_(void) CGEKComponentSystemControl::OnFree(void)
+{
+    m_aSingleActions.clear();
+    m_aConstantActions.clear();
+}
+
+STDMETHODIMP_(void) CGEKComponentSystemControl::OnUpdateBegin(float nGameTime, float nFrameTime)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 

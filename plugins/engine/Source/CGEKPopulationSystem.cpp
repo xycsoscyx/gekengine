@@ -72,9 +72,7 @@ STDMETHODIMP_(void) CGEKPopulationSystem::FreeSystems(void)
 
 STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
 {
-
     Free();
-
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
 
     CLibXMLDoc kDocument;
@@ -178,9 +176,9 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Free(void)
 
 STDMETHODIMP_(void) CGEKPopulationSystem::Update(float nGameTime, float nFrameTime)
 {
-    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnPreUpdate, std::placeholders::_1, nGameTime, nFrameTime)));
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnUpdateBegin, std::placeholders::_1, nGameTime, nFrameTime)));
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnUpdate, std::placeholders::_1, nGameTime, nFrameTime)));
-    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnPostUpdate, std::placeholders::_1, nGameTime, nFrameTime)));
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnUpdateEnd, std::placeholders::_1, nGameTime, nFrameTime)));
     m_aHitList.clear();
 }
 

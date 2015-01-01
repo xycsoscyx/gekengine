@@ -34,5 +34,6 @@ public:
     STDMETHOD_(void, OnValue)               (THIS_ LPCWSTR pName, float nValue);
 
     // IGEKSceneObserver
-    STDMETHOD_(void, OnPreUpdate)           (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD_(void, OnFree)                (THIS);
+    STDMETHOD_(void, OnUpdateBegin)         (THIS_ float nGameTime, float nFrameTime);
 };

@@ -44,10 +44,10 @@ HCURSOR LoadAnimatedCursor(HINSTANCE hInstance, UINT nID, LPCTSTR pszResouceType
 BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
     INTERFACE_LIST_ENTRY_COM(IGEKSystemObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
     INTERFACE_LIST_ENTRY_COM(IGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKInputManager)
+    INTERFACE_LIST_ENTRY_COM(IGEKRenderObserver)
 END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKEngine)
@@ -55,6 +55,7 @@ REGISTER_CLASS(CGEKEngine)
 CGEKEngine::CGEKEngine(void)
     : m_bWindowActive(false)
     , m_bConsoleOpen(false)
+    , m_nConsolePosition(0.0f)
     , m_hCursorPointer(nullptr)
 {
 }
@@ -90,7 +91,6 @@ void CGEKEngine::CheckInput(UINT32 nKey, bool bState)
     if (nKey == 0xC0 && !bState)
     {
         m_bConsoleOpen = !m_bConsoleOpen;
-        m_kTimer.Pause(!m_bWindowActive || m_bConsoleOpen);
     }
     else if (!m_bConsoleOpen)
     {
@@ -169,17 +169,16 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetContext()->AddCachedObserver(CLSID_GEKVideoSystem, (IGEK3DVideoObserver *)GetUnknown());
-        }
-
-        if (SUCCEEDED(hRetVal))
-        {
             hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationSystem, IID_PPV_ARGS(&m_spPopulationManager));
         }
         
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderSystem, IID_PPV_ARGS(&m_spRenderManager));
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = CGEKObservable::AddObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
+            }
         }
 
         if (SUCCEEDED(hRetVal))
@@ -207,16 +206,16 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
 STDMETHODIMP_(void) CGEKEngine::Destroy(void)
 {
+    CGEKObservable::RemoveObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
     if (m_spPopulationManager)
     {
         m_spPopulationManager->FreeSystems();
     }
 
-    m_spRenderManager = nullptr;
-    m_spPopulationManager = nullptr;
-    GetContext()->RemoveCachedObserver(CLSID_GEKVideoSystem, (IGEK3DVideoObserver *)GetUnknown());
+    m_spRenderManager.Release();
+    m_spPopulationManager.Release();
     CGEKObservable::RemoveObserver(m_spSystem, (IGEKSystemObserver *)this);
-    m_spSystem = nullptr;
+    m_spSystem.Release();
 
     GetContext()->RemoveCachedClass(CLSID_GEKEngine);
 
@@ -244,7 +243,7 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
         if (HIWORD(wParam))
         {
             m_bWindowActive = false;
-            m_kTimer.Pause(!m_bWindowActive || m_bConsoleOpen);
+            m_kTimer.Pause(!m_bWindowActive);
         }
         else
         {
@@ -253,12 +252,12 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
             case WA_ACTIVE:
             case WA_CLICKACTIVE:
                 m_bWindowActive = true;
-                m_kTimer.Pause(!m_bWindowActive || m_bConsoleOpen);
+                m_kTimer.Pause(!m_bWindowActive);
                 break;
 
             case WA_INACTIVE:
                 m_bWindowActive = false;
-                m_kTimer.Pause(!m_bWindowActive || m_bConsoleOpen);
+                m_kTimer.Pause(!m_bWindowActive);
                 break;
             };
         }
@@ -304,7 +303,11 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
                 break;
 
             default:
-                m_strConsole += (WCHAR)wParam;
+                if (wParam != '`')
+                {
+                    m_strConsole += (WCHAR)wParam;
+                }
+
                 break;
             };
         }
@@ -361,8 +364,16 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
 {
     if (m_bWindowActive)
     {
-        if (!m_bConsoleOpen)
+        m_kTimer.Update();
+        float nFrameTime = float(m_kTimer.GetUpdateTime());
+        if (m_bConsoleOpen)
         {
+            m_nConsolePosition = min(1.0f, (m_nConsolePosition + (nFrameTime * 4.0f)));
+        }
+        else
+        {
+            m_nConsolePosition = max(0.0f, (m_nConsolePosition - (nFrameTime * 4.0f)));
+
             POINT kCursor;
             GetCursorPos(&kCursor);
 
@@ -381,8 +392,7 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
             }
 
             UINT32 nFrame = 3;
-            m_kTimer.Update();
-            m_nTimeAccumulator += m_kTimer.GetUpdateTime();
+            m_nTimeAccumulator += nFrameTime;
             while (m_nTimeAccumulator > (1.0 / 30.0))
             {
                 m_nTotalTime += (1.0f / 30.0f);
@@ -400,15 +410,6 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
 
         m_spRenderManager->Render();
     }
-}
-
-STDMETHODIMP_(void) CGEKEngine::OnPreReset(void)
-{
-}
-
-STDMETHODIMP CGEKEngine::OnPostReset(void)
-{
-    return S_OK;
 }
 
 STDMETHODIMP_(void) CGEKEngine::Run(void)
@@ -447,7 +448,7 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(const std::vector<CStringW> &aParams)
     }
     else if (aParams.size() == 4 && aParams[0].CompareNoCase(L"setresolution") == 0)
     {
-        OnMessage(L"Setting Resolution (%dx%d %s)...", aParams[1].GetString(), aParams[2].GetString(), (StrToBoolean(aParams[3]) ? L"Windowed" : L"Fullscreen"));
+        OnMessage(L"Setting Resolution (%sx%s %s)...", aParams[1].GetString(), aParams[2].GetString(), (StrToBoolean(aParams[3]) ? L"Windowed" : L"Fullscreen"));
         m_spSystem->GetConfig().SetValue(L"video", L"xsize", aParams[1]);
         m_spSystem->GetConfig().SetValue(L"video", L"ysize", aParams[2]);
         m_spSystem->GetConfig().SetValue(L"video", L"windowed", aParams[3]);
@@ -455,5 +456,86 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(const std::vector<CStringW> &aParams)
         {
             m_spSystem->Stop();
         }
+    }
+    else if (aParams.size() > 0)
+    {
+        OnMessage(L"Unknown Command: %s", aParams[0].GetString());
+    }
+}
+
+STDMETHODIMP_(void) CGEKEngine::OnRenderOverlay(void)
+{
+    CComQIPtr<IGEK2DVideoSystem> spVideoSystem(GetContext()->GetCachedClass<IGEK2DVideoSystem>(CLSID_GEKVideoSystem));
+    if (spVideoSystem)
+    {
+        spVideoSystem->Begin();
+
+        float nXSize = float(m_spSystem->GetXSize());
+        float nYSize = float(m_spSystem->GetYSize());
+        float nHalfHeight = (nYSize* 0.5f);
+
+        CComPtr<IUnknown> spBackground;
+        spVideoSystem->CreateBrush({ { 0.0f, float4(0.5f, 0.0f, 0.0f, 1.0f) }, { 1.0f, float4(0.25f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, nHalfHeight }, &spBackground);
+
+        CComPtr<IUnknown> spForeground;
+        spVideoSystem->CreateBrush({ { 0.0f, float4(0.0f, 0.0f, 0.0f, 1.0f) }, { 1.0f, float4(0.25f, 0.25f, 0.25f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, nHalfHeight }, &spForeground);
+
+        CComPtr<IUnknown> spText;
+        spVideoSystem->CreateBrush(float4(1.0f, 1.0f, 1.0f, 1.0f), &spText);
+
+        CComPtr<IUnknown> spFont;
+        spVideoSystem->CreateFont(L"Tahoma", 400, GEK2DVIDEO::FONT::NORMAL, 15.0f, &spFont);
+
+        static DWORD nLastTime = 0;
+        static std::list<UINT32> aFPS;
+        static UINT32 nNumFrames = 0;
+        static UINT32 nAverageFPS = 0;
+
+        nNumFrames++;
+        DWORD nCurrentTime = GetTickCount();
+        if (nCurrentTime - nLastTime > 1000)
+        {
+            nLastTime = nCurrentTime;
+            aFPS.push_back(nNumFrames);
+            nNumFrames = 0;
+
+            if (aFPS.size() > 10)
+            {
+                aFPS.pop_front();
+            }
+
+            nAverageFPS = 0;
+            for (auto nFPS : aFPS)
+            {
+                nAverageFPS += nFPS;
+            }
+
+            nAverageFPS /= aFPS.size();
+        }
+
+        spVideoSystem->SetTransform(float3x2());
+        spVideoSystem->DrawText({ 0.0f, nYSize - 15.0f, nXSize, nYSize }, spFont, spText, L"FPS: %d", nAverageFPS);
+        if (m_nConsolePosition > 0.0f)
+        {
+            float nTop = -((1.0f - m_nConsolePosition) * nHalfHeight);
+
+            float3x2 nTransform;
+            nTransform.SetTranslation(float2(0.0f, nTop));
+            spVideoSystem->SetTransform(nTransform);
+
+            spVideoSystem->DrawRectangle({ 0.0f, 0.0f, nXSize, nHalfHeight }, spBackground, true);
+            spVideoSystem->DrawRectangle({ 10.0f, 10.0f, (nXSize - 10.0f), (nHalfHeight - 40.0f) }, spForeground, true);
+            spVideoSystem->DrawRectangle({ 10.0f, (nHalfHeight - 30.0f), (nXSize - 10.0f), (nHalfHeight - 10.0f) }, spForeground, true);
+            spVideoSystem->DrawText({ 15.0f, (nHalfHeight - 30.0f), (nXSize - 15.0f), (nHalfHeight - 10.0f) }, spFont, spText, m_strConsole + ((GetTickCount() / 500 % 2) ? L"_" : L""));
+
+            float nPosition = (nHalfHeight - 40.0f);
+            for (auto &strMessage : m_aConsoleLog)
+            {
+                spVideoSystem->DrawText({ 15.0f, (nPosition - 20.0f), (nXSize - 15.0f), nPosition }, spFont, spText, strMessage);
+                nPosition -= 20.0f;
+            }
+        }
+
+        spVideoSystem->End();
     }
 }

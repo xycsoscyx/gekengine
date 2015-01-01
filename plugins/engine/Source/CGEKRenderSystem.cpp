@@ -328,76 +328,89 @@ STDMETHODIMP_(void) CGEKRenderSystem::Destroy(void)
     GetContext()->RemoveCachedClass(CLSID_GEKRenderSystem);
 }
 
-STDMETHODIMP_(void) CGEKRenderSystem::OnPreReset(void)
+STDMETHODIMP_(void) CGEKRenderSystem::OnResetBegin(void)
 {
     for (auto &kBuffer : m_aBuffers)
     {
-        kBuffer.second.m_spResource = nullptr;
+        kBuffer.second.m_spResource.Release();
     }
 
     for (auto &kPass : m_aPasses)
     {
-        kPass.second.m_aBuffers[0] = nullptr;
-        kPass.second.m_aBuffers[1] = nullptr;
+        kPass.second.m_aBuffers[0].Release();
+        kPass.second.m_aBuffers[1].Release();
     }
 }
 
-STDMETHODIMP CGEKRenderSystem::OnPostReset(void)
+STDMETHODIMP CGEKRenderSystem::OnResetEnd(void)
 {
-    HRESULT hRetVal = E_FAIL;
-    IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
-    if (pSystem != nullptr)
+    HRESULT hRetVal = S_OK;
+    for (auto &kBuffer : m_aBuffers)
     {
-        hRetVal = S_OK;
-        for (auto &kBuffer : m_aBuffers)
+        if (kBuffer.second.m_nStride > 0)
         {
-            if (kBuffer.second.m_eFormat != GEK3DVIDEO::DATA::UNKNOWN)
+            CComPtr<IGEK3DVideoBuffer> spBuffer;
+            hRetVal = m_pVideoSystem->CreateBuffer(kBuffer.second.m_nStride, kBuffer.second.m_nCount, GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &spBuffer);
+            if (spBuffer)
             {
-                switch (kBuffer.second.m_eFormat)
-                {
-                case GEK3DVIDEO::DATA::D16:
-                case GEK3DVIDEO::DATA::D24_S8:
-                case GEK3DVIDEO::DATA::D32:
-                    hRetVal = m_pVideoSystem->CreateDepthTarget(kBuffer.second.m_nXSize, kBuffer.second.m_nYSize, kBuffer.second.m_eFormat, &kBuffer.second.m_spResource);
-                    break;
-
-                default:
-                    if (true)
-                    {
-                        CComPtr<IGEK3DVideoTexture> spTarget;
-                        hRetVal = m_pVideoSystem->CreateRenderTarget(kBuffer.second.m_nXSize, kBuffer.second.m_nYSize, kBuffer.second.m_eFormat, &spTarget);
-                        if (spTarget)
-                        {
-                            hRetVal = spTarget->QueryInterface(IID_PPV_ARGS(&kBuffer.second.m_spResource));
-                        }
-                    }
-
-                    break;
-                };
-
-                if (FAILED(hRetVal))
-                {
-                    break;
-                }
+                hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(&kBuffer.second.m_spResource));
             }
         }
-
-        for (auto &kPass : m_aPasses)
+        else if (kBuffer.second.m_nCount > 0)
         {
-            if (SUCCEEDED(hRetVal))
+            CComPtr<IGEK3DVideoBuffer> spBuffer;
+            hRetVal = m_pVideoSystem->CreateBuffer(kBuffer.second.m_eFormat, kBuffer.second.m_nCount, GEK3DVIDEO::BUFFER::UNORDERED_ACCESS | GEK3DVIDEO::BUFFER::RESOURCE, &spBuffer);
+            if (spBuffer)
             {
-                hRetVal = m_pVideoSystem->CreateRenderTarget(kPass.second.m_nXSize, kPass.second.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPass.second.m_aBuffers[0]);
+                hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(&kBuffer.second.m_spResource));
             }
+        }
+        else if (kBuffer.second.m_eFormat != GEK3DVIDEO::DATA::UNKNOWN)
+        {
+            switch (kBuffer.second.m_eFormat)
+            {
+            case GEK3DVIDEO::DATA::D16:
+            case GEK3DVIDEO::DATA::D24_S8:
+            case GEK3DVIDEO::DATA::D32:
+                hRetVal = m_pVideoSystem->CreateDepthTarget(kBuffer.second.m_nXSize, kBuffer.second.m_nYSize, kBuffer.second.m_eFormat, &kBuffer.second.m_spResource);
+                break;
 
-            if (SUCCEEDED(hRetVal))
-            {
-                hRetVal = m_pVideoSystem->CreateRenderTarget(kPass.second.m_nXSize, kPass.second.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPass.second.m_aBuffers[1]);
-            }
+            default:
+                if (true)
+                {
+                    CComPtr<IGEK3DVideoTexture> spTarget;
+                    hRetVal = m_pVideoSystem->CreateRenderTarget(kBuffer.second.m_nXSize, kBuffer.second.m_nYSize, kBuffer.second.m_eFormat, &spTarget);
+                    if (spTarget)
+                    {
+                        hRetVal = spTarget->QueryInterface(IID_PPV_ARGS(&kBuffer.second.m_spResource));
+                    }
+                }
+
+                break;
+            };
 
             if (FAILED(hRetVal))
             {
                 break;
             }
+        }
+    }
+
+    for (auto &kPass : m_aPasses)
+    {
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = m_pVideoSystem->CreateRenderTarget(kPass.second.m_nXSize, kPass.second.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPass.second.m_aBuffers[0]);
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = m_pVideoSystem->CreateRenderTarget(kPass.second.m_nXSize, kPass.second.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPass.second.m_aBuffers[1]);
+        }
+
+        if (FAILED(hRetVal))
+        {
+            break;
         }
     }
 
@@ -611,7 +624,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::SetResource(IGEK3DVideoContextSystem *pSys
     }
 }
 
-STDMETHODIMP CGEKRenderSystem::LoadBuffer(LPCWSTR pName, UINT32 nStride, UINT32 nCount)
+STDMETHODIMP CGEKRenderSystem::CreateBuffer(LPCWSTR pName, UINT32 nStride, UINT32 nCount)
 {
     REQUIRE_RETURN(m_pVideoSystem, E_FAIL);
     REQUIRE_RETURN(pName, E_INVALIDARG);
@@ -633,7 +646,7 @@ STDMETHODIMP CGEKRenderSystem::LoadBuffer(LPCWSTR pName, UINT32 nStride, UINT32 
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderSystem::LoadBuffer(LPCWSTR pName, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount)
+STDMETHODIMP CGEKRenderSystem::CreateBuffer(LPCWSTR pName, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount)
 {
     REQUIRE_RETURN(m_pVideoSystem, E_FAIL);
     REQUIRE_RETURN(pName, E_INVALIDARG);
@@ -655,7 +668,7 @@ STDMETHODIMP CGEKRenderSystem::LoadBuffer(LPCWSTR pName, GEK3DVIDEO::DATA::FORMA
     return hRetVal;
 }
 
-STDMETHODIMP CGEKRenderSystem::LoadBuffer(LPCWSTR pName, UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat)
+STDMETHODIMP CGEKRenderSystem::CreateBuffer(LPCWSTR pName, UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat)
 {
     REQUIRE_RETURN(m_pVideoSystem, E_FAIL);
     REQUIRE_RETURN(pName, E_INVALIDARG);
@@ -1129,49 +1142,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
     spContext->ClearResources();
     CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderOverlay, std::placeholders::_1)));
-    CComQIPtr<IGEK2DVideoSystem> sp2DVideoSystem(m_pVideoSystem);
-    if (sp2DVideoSystem)
-    {
-        sp2DVideoSystem->Begin();
-
-        CComPtr<IUnknown> spGray;
-        sp2DVideoSystem->CreateBrush(float4(1.0f, 1.0f, 1.0f, 0.75f), &spGray);
-
-        CComPtr<IUnknown> spFont;
-        sp2DVideoSystem->CreateFont(L"Arial", 400, GEK2DVIDEO::FONT::NORMAL, 25.0f, &spFont);
-
-        static DWORD nLastTime = 0;
-        static std::list<UINT32> aFPS;
-        static UINT32 nNumFrames = 0;
-        static UINT32 nAverageFPS = 0;
-
-        nNumFrames++;
-        DWORD nCurrentTime = GetTickCount();
-        if (nCurrentTime - nLastTime > 1000)
-        {
-            nLastTime = nCurrentTime;
-            aFPS.push_back(nNumFrames);
-            nNumFrames = 0;
-
-            if (aFPS.size() > 10)
-            {
-                aFPS.pop_front();
-            }
-
-            nAverageFPS = 0;
-            for (auto nFPS : aFPS)
-            {
-                nAverageFPS += nFPS;
-            }
-
-            nAverageFPS /= aFPS.size();
-        }
-
-        sp2DVideoSystem->DrawText({ 25.0f, 25.0f, 225.0f, 50.0f }, spFont, spGray, L"FPS: %d", nAverageFPS);
-
-        sp2DVideoSystem->End();
-    }
-
     m_pVideoSystem->Present(true);
 
     while (!m_pVideoSystem->IsEventSet(m_spFrameEvent))

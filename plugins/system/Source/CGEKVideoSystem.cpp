@@ -766,11 +766,8 @@ CGEKVideoContext::CGEKVideoContext(ID3D11DeviceContext *pContext)
     : m_spDeviceContext(pContext)
 {
     m_spComputeSystem.reset(new CGEKVideoComputeContextSystem(pContext));
-
     m_spVertexSystem.reset(new CGEKVideoVertexContextSystem(pContext));
-
     m_spGeometrySystem.reset(new CGEKVideoGeometryContextSystem(pContext));
-
     m_spPixelSystem.reset(new CGEKVideoPixelContextSystem(pContext));
 }
 
@@ -1145,6 +1142,18 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
                     CComQIPtr<IDXGIDevice1> spDXGIDevice(m_spDevice);
                     if (spDXGIDevice)
                     {
+                        CComPtr<IDXGIAdapter> spDXGIAdapter;
+                        spDXGIDevice->GetParent(IID_PPV_ARGS(&spDXGIAdapter));
+                        if (spDXGIAdapter)
+                        {
+                            CComPtr<IDXGIFactory> spDXGIFactory;
+                            spDXGIAdapter->GetParent(IID_PPV_ARGS(&spDXGIFactory));
+                            if (spDXGIFactory)
+                            {
+                                spDXGIFactory->MakeWindowAssociation(pSystem->GetWindow(), DXGI_MWA_NO_ALT_ENTER);
+                            }
+                        }
+
                         spDXGIDevice->SetMaximumFrameLatency(1);
 
                         CComPtr<ID2D1Device> spD2DDevice;
@@ -1170,11 +1179,8 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
             if (SUCCEEDED(hRetVal))
             {
                 m_spComputeSystem.reset(new CGEKVideoComputeContextSystem(m_spDeviceContext));
-
                 m_spVertexSystem.reset(new CGEKVideoVertexContextSystem(m_spDeviceContext));
-
                 m_spGeometrySystem.reset(new CGEKVideoGeometryContextSystem(m_spDeviceContext));
-
                 m_spPixelSystem.reset(new CGEKVideoPixelContextSystem(m_spDeviceContext));
             }
 
@@ -1198,12 +1204,14 @@ STDMETHODIMP CGEKVideoSystem::Reset(void)
 {
     REQUIRE_RETURN(m_spDevice, E_FAIL);
     REQUIRE_RETURN(m_spDeviceContext, E_FAIL);
+    REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
 
-    CGEKObservable::SendEvent(TGEKEvent<IGEK3DVideoObserver>(std::bind(&IGEK3DVideoObserver::OnPreReset, std::placeholders::_1)));
+    CGEKObservable::SendEvent(TGEKEvent<IGEK3DVideoObserver>(std::bind(&IGEK3DVideoObserver::OnResetBegin, std::placeholders::_1)));
 
-    m_spDefaultTarget = nullptr;
-    m_spRenderTargetView = nullptr;
-    m_spDepthStencilView = nullptr;
+    m_spD2DDeviceContext->SetTarget(nullptr);
+    m_spDefaultTarget.Release();
+    m_spRenderTargetView.Release();
+    m_spDepthStencilView.Release();
 
     HRESULT hRetVal = E_FAIL;
     IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
@@ -1233,7 +1241,7 @@ STDMETHODIMP CGEKVideoSystem::Reset(void)
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEK3DVideoObserver>(std::bind(&IGEK3DVideoObserver::OnPostReset, std::placeholders::_1)));
+            hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEK3DVideoObserver>(std::bind(&IGEK3DVideoObserver::OnResetEnd, std::placeholders::_1)));
         }
     }
 
@@ -2959,7 +2967,10 @@ STDMETHODIMP_(void) CGEKVideoSystem::ExecuteCommandList(IUnknown *pUnknown)
 STDMETHODIMP_(void) CGEKVideoSystem::Present(bool bWaitForVSync)
 {
     REQUIRE_VOID_RETURN(m_spSwapChain);
-    m_spSwapChain->Present(bWaitForVSync ? 1 : 0, 0);
+    if (m_spSwapChain->Present(bWaitForVSync ? 1 : 0, 0) == DXGI_ERROR_DEVICE_RESET)
+    {
+        Reset();
+    }
 }
 
 STDMETHODIMP CGEKVideoSystem::CreateBrush(const float4 &nColor, IUnknown **ppBrush)

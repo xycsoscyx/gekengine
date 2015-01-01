@@ -14,10 +14,10 @@ DECLARE_INTERFACE(IGEKPopulationSystem);
 class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
                  , public IGEKSystemObserver
-                 , public IGEK3DVideoObserver
                  , public IGEKGameApplication
                  , public IGEKEngine
                  , public IGEKInputManager
+                 , public IGEKRenderObserver
 {
 private:
     HCURSOR m_hCursorPointer;
@@ -29,6 +29,7 @@ private:
     double m_nTimeAccumulator;
 
     bool m_bConsoleOpen;
+    float m_nConsolePosition;
     CStringW m_strConsole;
     std::list<CStringW> m_aConsoleLog;
     std::unordered_map<UINT32, CStringW> m_aInputBindings;
@@ -55,14 +56,13 @@ public:
     STDMETHOD_(void, OnStop)                    (THIS);
     STDMETHOD_(void, OnStep)                    (THIS);
 
-    // IGEK3DVideoObserver
-    STDMETHOD_(void, OnPreReset)                (THIS);
-    STDMETHOD(OnPostReset)                      (THIS);
-
     // IGEKGameApplication
     STDMETHOD_(void, Run)                       (THIS);
 
     // IGEKEngine
     STDMETHOD_(void, OnMessage)                 (THIS_ LPCWSTR pMessage, ...);
     STDMETHOD_(void, OnCommand)                 (THIS_ const std::vector<CStringW> &aParams);
+
+    // IGEKRenderObserver
+    STDMETHOD_(void, OnRenderOverlay)           (THIS);
 };
