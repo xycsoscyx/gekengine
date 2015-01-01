@@ -80,7 +80,7 @@ public:
 
     // IGEKRenderObserver
     STDMETHOD_(void, OnRenderBegin)             (THIS);
-    STDMETHOD_(void, OnCullScene)               (THIS);
+    STDMETHOD_(void, OnCullScene)               (THIS_ const frustum &nViewFrustum);
     STDMETHOD_(void, OnDrawScene)               (THIS_ IGEK3DVideoContext *pContext, UINT32 nVertexAttributes);
     STDMETHOD_(void, OnRenderEnd)               (THIS);
 };

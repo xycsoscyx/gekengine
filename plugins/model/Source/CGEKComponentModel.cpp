@@ -212,7 +212,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnRenderBegin(void)
 {
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(void)
+STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const frustum &nViewFrustum)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
@@ -232,7 +232,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(void)
             aabb nAABB(pModel->m_nAABB);
             nAABB.minimum *= kModel.scale;
             nAABB.maximum *= kModel.scale;
-            if (m_pRenderManager->GetFrustum().IsVisible(obb(nAABB, nMatrix)))
+            if (nViewFrustum.IsVisible(obb(nAABB, nMatrix)))
             {
                 m_aVisible[pModel].emplace_back(nMatrix, kModel.scale, kModel.color);
             }

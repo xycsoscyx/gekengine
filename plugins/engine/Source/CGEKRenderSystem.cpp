@@ -1049,7 +1049,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             kEngineBuffer.m_nInvProjectionMatrix = kEngineBuffer.m_nProjectionMatrix.GetInverse();
             kEngineBuffer.m_nTransformMatrix = (kEngineBuffer.m_nViewMatrix * kEngineBuffer.m_nProjectionMatrix);
 
-            m_nCurrentFrustum.Create(nCameraMatrix, kEngineBuffer.m_nProjectionMatrix);
+            frustum nViewFrustum;
+            nViewFrustum.Create(nCameraMatrix, kEngineBuffer.m_nProjectionMatrix);
 
             LIGHTBUFFER kData;
             m_aVisibleLights.clear();
@@ -1057,7 +1058,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             {
                 auto &kLight = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(light)>(nEntityID, L"light");
                 auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
-                if (m_nCurrentFrustum.IsVisible(sphere(kTransform.position, kLight.range)))
+                if (nViewFrustum.IsVisible(sphere(kTransform.position, kLight.range)))
                 {
                     kData.m_nPosition = (kEngineBuffer.m_nViewMatrix * float4(kTransform.position, 1.0f));
 
@@ -1069,7 +1070,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                 }
             });
 
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1)));
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1, nViewFrustum)));
 
             m_spEngineBuffer->Update((void *)&kEngineBuffer);
             spContext->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
@@ -1179,9 +1180,4 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     };
 
     m_pVideoSystem->SetEvent(m_spFrameEvent);
-}
-
-STDMETHODIMP_(const frustum &) CGEKRenderSystem::GetFrustum(void) const
-{
-    return m_nCurrentFrustum;
 }

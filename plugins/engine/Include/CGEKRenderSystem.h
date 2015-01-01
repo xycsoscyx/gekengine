@@ -105,7 +105,6 @@ private:
     std::unordered_map<CStringW, CComPtr<IUnknown>> m_aResources;
     std::unordered_map<CStringW, PASS> m_aPasses;
 
-    frustum m_nCurrentFrustum;
     std::vector<LIGHTBUFFER> m_aVisibleLights;
 
     PASS *m_pCurrentPass;
@@ -153,7 +152,4 @@ public:
     STDMETHOD_(void, DrawLights)            (THIS_ IGEK3DVideoContext *pContext, std::function<void(void)> OnLightBatch);
     STDMETHOD_(void, DrawOverlay)           (THIS_ IGEK3DVideoContext *pContext);
     STDMETHOD_(void, Render)                (THIS);
-
-    // IGEKRenderManager
-    STDMETHOD_(const frustum &, GetFrustum) (THIS) const;
 };
