@@ -6,17 +6,17 @@
 #define NUM_INSTANCES                   50
 
 REGISTER_COMPONENT(model)
-    REGISTER_COMPONENT_DEFAULT_VALUE(source, L"")
+    REGISTER_COMPONENT_DEFAULT_VALUE(file, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(params, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(scale, float3(1.0f, 1.0f, 1.0f))
     REGISTER_COMPONENT_DEFAULT_VALUE(color, float4(1.0f, 1.0f, 1.0f, 1.0f))
     REGISTER_COMPONENT_SERIALIZE(model)
-        REGISTER_COMPONENT_SERIALIZE_VALUE(source, )
+        REGISTER_COMPONENT_SERIALIZE_VALUE(file, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(params, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(scale, StrFromFloat3)
         REGISTER_COMPONENT_SERIALIZE_VALUE(color, StrFromFloat4)
     REGISTER_COMPONENT_DESERIALIZE(model)
-        REGISTER_COMPONENT_DESERIALIZE_VALUE(source, )
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(file, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(params, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(scale, StrToFloat3)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(color, StrToFloat4)
@@ -45,7 +45,6 @@ CGEKComponentSystemModel::~CGEKComponentSystemModel(void)
 
 CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pName, LPCWSTR pParams)
 {
-    concurrency::critical_section::scoped_lock kLock(m_kCritical);
     REQUIRE_RETURN(m_pVideoSystem && m_pMaterialManager, nullptr);
     REQUIRE_RETURN(pName, nullptr);
     REQUIRE_RETURN(pParams, nullptr);
@@ -220,7 +219,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const frustum &nViewFr
     {
         auto &kModel = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(model)>(nEntityID, L"model");
 
-        MODEL *pModel = GetModel(kModel.source, kModel.params);
+        MODEL *pModel = GetModel(kModel.file, kModel.params);
         if (pModel)
         {
             auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");

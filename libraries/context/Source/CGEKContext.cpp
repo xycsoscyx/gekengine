@@ -62,6 +62,7 @@ STDMETHODIMP CGEKContext::Initialize(void)
                 GEKGETMODULECLASSES GEKGetModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(hModule, "GEKGetModuleClasses");
                 if (GEKGetModuleClasses)
                 {
+                    OutputDebugString(FormatString(L"GEK Plugin Found: %s\r\n", pFileName));
                     std::unordered_map<CLSID, std::function<HRESULT(IGEKUnknown **ppObject)>> aClasses;
                     std::unordered_map<CStringW, CLSID> aNamedClasses;
                     std::unordered_map<CLSID, std::vector<CLSID>> aTypedClasses;
@@ -69,13 +70,17 @@ STDMETHODIMP CGEKContext::Initialize(void)
                     {
                         for (auto &kPair : aClasses)
                         {
+                            CComBSTR spClass(kPair.first);
+                            CStringW strClass(spClass);
+
                             if (m_aClasses.find(kPair.first) == m_aClasses.end())
                             {
                                 m_aClasses[kPair.first] = kPair.second;
+                                OutputDebugString(FormatString(L"- Adding class from plugin: %s\r\n", strClass.GetString()));
                             }
                             else
                             {
-                                _ASSERTE(!"Duplicate class found while loading plugins");
+                                OutputDebugString(FormatString(L"! Duplicate class found: %s\r\n", strClass.GetString()));
                             }
                         }
 
@@ -84,10 +89,11 @@ STDMETHODIMP CGEKContext::Initialize(void)
                             if (m_aNamedClasses.find(kPair.first) == m_aNamedClasses.end())
                             {
                                 m_aNamedClasses[kPair.first] = kPair.second;
+                                OutputDebugString(FormatString(L"- Adding name from plugin: %s\r\n", kPair.first.GetString()));
                             }
                             else
                             {
-                                _ASSERTE(!"Duplicate name found while loading plugins");
+                                OutputDebugString(FormatString(L"! Duplicate name found: %s\r\n", kPair.first.GetString()));
                             }
                         }
 
@@ -98,7 +104,7 @@ STDMETHODIMP CGEKContext::Initialize(void)
                     }
                     else
                     {
-                        _ASSERTE(!"Unable to get class list from module");
+                        OutputDebugString(L"! Unable to get class list from module");
                     }
                 }
             }

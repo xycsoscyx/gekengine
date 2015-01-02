@@ -6,7 +6,7 @@
 #include <concurrent_vector.h>
 
 DECLARE_COMPONENT(sprite)
-    DECLARE_COMPONENT_VALUE(CStringW, source)
+    DECLARE_COMPONENT_VALUE(CStringW, material)
     DECLARE_COMPONENT_VALUE(float, size)
     DECLARE_COMPONENT_VALUE(float4, color)
 END_DECLARE_COMPONENT(sprite)
@@ -43,7 +43,6 @@ private:
     CComPtr<IGEK3DVideoBuffer> m_spVertexBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
 
-    concurrency::critical_section m_kCritical;
     std::unordered_map<IUnknown *, std::vector<INSTANCE>> m_aVisible;
 
 public:

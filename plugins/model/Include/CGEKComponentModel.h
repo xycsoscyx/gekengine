@@ -6,7 +6,7 @@
 #include <concurrent_vector.h>
 
 DECLARE_COMPONENT(model)
-    DECLARE_COMPONENT_VALUE(CStringW, source)
+    DECLARE_COMPONENT_VALUE(CStringW, file)
     DECLARE_COMPONENT_VALUE(CStringW, params)
     DECLARE_COMPONENT_VALUE(float3, scale)
     DECLARE_COMPONENT_VALUE(float4, color)
@@ -59,7 +59,6 @@ private:
     IGEKMaterialManager *m_pMaterialManager;
     IGEKProgramManager *m_pProgramManager;
 
-    concurrency::critical_section m_kCritical;
     std::unordered_map<CStringW, MODEL> m_aModels;
     std::unordered_map<MODEL *, std::vector<INSTANCE>> m_aVisible;
 

@@ -145,14 +145,14 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
 #ifdef _DEBUG
             if (HasComponent(nEntityID, L"viewer"))
             {
-                AddComponent(nEntityID, L"sprite", { { L"source", "camera" }, { L"size", "5" }, { L"color", L"1,1,1,1" } });
+                AddComponent(nEntityID, L"sprite", { { L"material", "camera" }, { L"size", "5" }, { L"color", L"1,1,1,1" } });
             }
 
             if (HasComponent(nEntityID, L"light"))
             {
                 auto &kLight = ((IGEKSceneManager *)this)->GetComponent<GET_COMPONENT_DATA(light)>(nEntityID, L"light");
                 float3 nColor = kLight.color.GetNormal();
-                AddComponent(nEntityID, L"sprite", { { L"source", "light" }, { L"size", "3" }, { L"color", FormatString(L"%f,%f,%f,1.0", nColor.r, nColor.g, nColor.b).GetString() } });
+                AddComponent(nEntityID, L"sprite", { { L"material", "light" }, { L"size", "3" }, { L"color", FormatString(L"%f,%f,%f,1.0", nColor.r, nColor.g, nColor.b).GetString() } });
             }
 #endif
         }

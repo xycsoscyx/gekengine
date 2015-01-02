@@ -6,15 +6,15 @@
 #define NUM_INSTANCES                   50
 
 REGISTER_COMPONENT(sprite)
-    REGISTER_COMPONENT_DEFAULT_VALUE(source, L"")
+    REGISTER_COMPONENT_DEFAULT_VALUE(material, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(size, 1.0f)
     REGISTER_COMPONENT_DEFAULT_VALUE(color, float4(1.0f, 1.0f, 1.0f, 1.0f))
     REGISTER_COMPONENT_SERIALIZE(sprite)
-        REGISTER_COMPONENT_SERIALIZE_VALUE(source, )
+        REGISTER_COMPONENT_SERIALIZE_VALUE(material, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(size, StrFromFloat)
         REGISTER_COMPONENT_SERIALIZE_VALUE(color, StrFromFloat4)
     REGISTER_COMPONENT_DESERIALIZE(sprite)
-        REGISTER_COMPONENT_DESERIALIZE_VALUE(source, )
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(material, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(size, StrToFloat)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(color, StrToFloat4)
 END_REGISTER_COMPONENT(sprite)
@@ -133,7 +133,7 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(const frustum &nViewF
         auto &kSprite = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(sprite)>(nEntityID, L"sprite");
 
         CComPtr<IUnknown> spMaterial;
-        m_pMaterialManager->LoadMaterial(kSprite.source, &spMaterial);
+        m_pMaterialManager->LoadMaterial(kSprite.material, &spMaterial);
         if (spMaterial)
         {
             float nHalfSize = (kSprite.size * 0.5f);
