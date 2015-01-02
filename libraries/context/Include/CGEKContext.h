@@ -17,7 +17,6 @@ private:
 
     std::list<HMODULE> m_aModules;
     std::unordered_map<CLSID, std::function<HRESULT(IGEKUnknown **ppObject)>> m_aClasses;
-    std::unordered_map<CStringW, CLSID> m_aNamedClasses;
     std::unordered_map<CLSID, std::vector<CLSID>> m_aTypedClasses;
     std::unordered_map<CLSID, IUnknown *> m_aCache;
 
@@ -30,7 +29,6 @@ public:
     STDMETHOD(AddSearchPath)                        (THIS_ LPCWSTR pPath);
     STDMETHOD(Initialize)                           (THIS);
     STDMETHOD(CreateInstance)                       (THIS_ REFCLSID kCLSID, REFIID kIID, LPVOID FAR *ppObject);
-    STDMETHOD(CreateNamedInstance)                  (THIS_ LPCWSTR pName, REFIID kIID, LPVOID FAR *ppObject);
     STDMETHOD(CreateEachType)                       (THIS_ REFCLSID kTypeCLSID, std::function<HRESULT(IUnknown *pObject)> OnCreate);
     STDMETHOD(AddCachedClass)                       (THIS_ REFCLSID kCLSID, IUnknown * const pObject);
     STDMETHOD(RemoveCachedClass)                    (THIS_ REFCLSID kCLSID);

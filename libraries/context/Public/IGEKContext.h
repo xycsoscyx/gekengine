@@ -8,7 +8,6 @@ DECLARE_INTERFACE_IID_(IGEKContext, IUnknown, "E1BBAFAB-1DD8-42E4-A031-46E22835E
     STDMETHOD(Initialize)                           (THIS) PURE;
 
     STDMETHOD(CreateInstance)                       (THIS_ REFCLSID kCLSID, REFIID kIID, LPVOID FAR *ppObject) PURE;
-    STDMETHOD(CreateNamedInstance)                  (THIS_ LPCWSTR pName, REFIID kIID, LPVOID FAR *ppObject) PURE;
     STDMETHOD(CreateEachType)                       (THIS_ REFCLSID kTypeCLSID, std::function<HRESULT(IUnknown *pObject)> OnCreate) PURE;
 
     STDMETHOD(AddCachedClass)                       (THIS_ REFCLSID kCLSID, IUnknown * const pObject) PURE;

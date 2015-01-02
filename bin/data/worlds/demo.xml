@@ -2,10 +2,11 @@
 <world name="Demo">
 	<population>
         <entity name="player">
-			<transform position="-7.200000, -1.200000, 0.000000" rotation="0,0,0,1" />
+			<transform position="0,2,0" rotation="0,0,0,1" />
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
             <control />
 		</entity>
+
         <entity>
 			<transform />
             <viewer type="perspective" fieldofview="90" mindistance="0.5" maxdistance="200" pass="opaque"/>
@@ -13,7 +14,7 @@
 		</entity>
 
         <entity>
-			<transform position="-7.200000, -1.200000, 0.000000" rotation="0,0,0,1" />
+			<transform />
             <viewer type="perspective" fieldofview="90" mindistance="0.5" maxdistance="200" position="0.6,0" size="0.4,0.4" pass="toon"/>
             <follow target="player" offset="0,5,20" />
 		</entity>
@@ -167,920 +168,920 @@
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 
         <!-- 0 -->
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <entity>
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
-			<transform position="rand(55),lerp(0,50,arand(1)),rand(30)" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+		</entity>   
+        <entity>
+            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
 		</entity>   
         <!-- 5 -->
 

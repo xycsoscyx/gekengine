@@ -31,7 +31,6 @@ CGEKContext::CGEKContext(void)
 CGEKContext::~CGEKContext(void)
 {
     m_aClasses.clear();
-    m_aNamedClasses.clear();
     m_aTypedClasses.clear();
     for (auto &hModule : m_aModules)
     {
@@ -56,7 +55,6 @@ STDMETHODIMP CGEKContext::Initialize(void)
             if (hModule)
             {
                 typedef HRESULT(*GEKGETMODULECLASSES)(std::unordered_map<CLSID, std::function<HRESULT(IGEKUnknown **)>> &, 
-                                                      std::unordered_map<CStringW, CLSID> &, 
                                                       std::unordered_map<CLSID, 
                                                       std::vector<CLSID>> &);
                 GEKGETMODULECLASSES GEKGetModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(hModule, "GEKGetModuleClasses");
@@ -64,9 +62,8 @@ STDMETHODIMP CGEKContext::Initialize(void)
                 {
                     OutputDebugString(FormatString(L"GEK Plugin Found: %s\r\n", pFileName));
                     std::unordered_map<CLSID, std::function<HRESULT(IGEKUnknown **ppObject)>> aClasses;
-                    std::unordered_map<CStringW, CLSID> aNamedClasses;
                     std::unordered_map<CLSID, std::vector<CLSID>> aTypedClasses;
-                    if (SUCCEEDED(GEKGetModuleClasses(aClasses, aNamedClasses, aTypedClasses)))
+                    if (SUCCEEDED(GEKGetModuleClasses(aClasses, aTypedClasses)))
                     {
                         for (auto &kPair : aClasses)
                         {
@@ -81,19 +78,6 @@ STDMETHODIMP CGEKContext::Initialize(void)
                             else
                             {
                                 OutputDebugString(FormatString(L"! Duplicate class found: %s\r\n", strClass.GetString()));
-                            }
-                        }
-
-                        for (auto &kPair : aNamedClasses)
-                        {
-                            if (m_aNamedClasses.find(kPair.first) == m_aNamedClasses.end())
-                            {
-                                m_aNamedClasses[kPair.first] = kPair.second;
-                                OutputDebugString(FormatString(L"- Adding name from plugin: %s\r\n", kPair.first.GetString()));
-                            }
-                            else
-                            {
-                                OutputDebugString(FormatString(L"! Duplicate name found: %s\r\n", kPair.first.GetString()));
                             }
                         }
 
@@ -143,20 +127,6 @@ STDMETHODIMP CGEKContext::CreateInstance(REFGUID kCLSID, REFIID kIID, LPVOID FAR
                 }
             }
         }
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKContext::CreateNamedInstance(LPCWSTR pName, REFIID kIID, LPVOID FAR *ppObject)
-{
-    REQUIRE_RETURN(ppObject, E_INVALIDARG);
-
-    HRESULT hRetVal = E_UNEXPECTED;
-    auto pIterator = m_aNamedClasses.find(pName);
-    if (pIterator != m_aNamedClasses.end())
-    {
-        hRetVal = CreateInstance(((*pIterator).second), kIID, ppObject);
     }
 
     return hRetVal;

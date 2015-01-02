@@ -355,7 +355,6 @@ extern HRESULT GEKCreateInstanceOf##CLASS##(IGEKUnknown **ppObject);
 extern "C" __declspec(dllexport)                                                    \
 HRESULT GEKGetModuleClasses(                                                        \
     std::unordered_map<CLSID, std::function<HRESULT (IGEKUnknown **)>> &aClasses,   \
-    std::unordered_map<CStringW, CLSID> &aNamedClasses,                             \
     std::unordered_map<CLSID, std::vector<CLSID>> &aTypedClasses)                   \
 {                                                                                   \
     CLSID kLastCLSID = GUID_NULL;
@@ -369,16 +368,6 @@ HRESULT GEKGetModuleClasses(                                                    
     else                                                                            \
     {                                                                               \
         _ASSERTE(!"Duplicate class found in module: " #CLASSID);                    \
-    }
-
-#define ADD_CLASS_NAME(NAME)                                                        \
-    if (aNamedClasses.find(NAME) == aNamedClasses.end())                            \
-    {                                                                               \
-        aNamedClasses[NAME] = kLastCLSID;                                           \
-    }                                                                               \
-    else                                                                            \
-    {                                                                               \
-        _ASSERTE(!"Duplicate name found in module: " #NAME);                        \
     }
 
 #define ADD_CLASS_TYPE(TYPEID)                                                      \
