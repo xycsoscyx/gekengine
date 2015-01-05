@@ -13,8 +13,8 @@
 
 #include "exprtk.hpp"
 
-static std::random_device kRandomDevice;
-static std::mt19937 kMersine(kRandomDevice());
+static std::random_device gs_kRandomDevice;
+static std::mt19937 gs_kMersineTwister(gs_kRandomDevice());
 
 template <typename TYPE>
 struct CGEKRandom : public exprtk::ifunction<TYPE>
@@ -28,7 +28,7 @@ struct CGEKRandom : public exprtk::ifunction<TYPE>
 
     inline TYPE operator()(const TYPE& nRange)
     {
-        return (nRange * m_kRandom(kMersine));
+        return (nRange * m_kRandom(gs_kMersineTwister));
     }
 };
 

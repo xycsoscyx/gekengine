@@ -25,8 +25,5 @@
     <Filter Include="Header Files">
       <UniqueIdentifier>{ea999d33-a37e-45fe-9875-369b68a8d1f9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{20c051f1-47ac-47e0-9fc3-21b33721dca5}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>
