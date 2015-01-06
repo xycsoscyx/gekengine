@@ -597,7 +597,7 @@ STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource
         else
         {
             CComPtr<IGEK3DVideoTexture> spFileTexture;
-            hRetVal = m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), &spFileTexture);
+            hRetVal = m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\textures\\%s", pName), 0, &spFileTexture);
             if (spFileTexture)
             {
                 spTexture = spFileTexture;
@@ -1032,6 +1032,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     REQUIRE_VOID_RETURN(m_pSceneManager && m_pVideoSystem);
 
     CComQIPtr<IGEK3DVideoContext> spContext(m_pVideoSystem);
+    spContext->GetVertexSystem()->SetSamplerStates(0, m_spPointSampler);
+    spContext->GetVertexSystem()->SetSamplerStates(1, m_spLinearSampler);
     spContext->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
     spContext->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
     m_pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void

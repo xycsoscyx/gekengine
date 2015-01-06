@@ -2700,7 +2700,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEK3DVideoTexture *pTexture,
     }
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEK3DVideoTexture **ppTexture)
+STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, UINT32 nFlags, IGEK3DVideoTexture **ppTexture)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppTexture, E_INVALIDARG);
@@ -2734,6 +2734,11 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEK3DVideoTexture 
 
         if (SUCCEEDED(hRetVal))
         {
+            if (nFlags & GEK3DVIDEO::TEXTURE::FORCE_1D)
+            {
+                kMetadata.dimension = DirectX::TEX_DIMENSION_TEXTURE1D;
+            }
+
             CComPtr<ID3D11ShaderResourceView> spResourceView;
             hRetVal = DirectX::CreateShaderResourceView(m_spDevice, kImage.GetImages(), kImage.GetImageCount(), kMetadata, &spResourceView);
             if (spResourceView)
@@ -2742,11 +2747,12 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, IGEK3DVideoTexture 
                 spResourceView->GetResource(&spResource);
                 if (spResource)
                 {
+                    D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
+                    spResourceView->GetDesc(&kViewDesc);
+
                     UINT32 nXSize = 1;
                     UINT32 nYSize = 1;
                     UINT32 nZSize = 1;
-                    D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
-                    spResourceView->GetDesc(&kViewDesc);
                     if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE1D)
                     {
                         CComQIPtr<ID3D11Texture1D> spTexture1D(spResource);

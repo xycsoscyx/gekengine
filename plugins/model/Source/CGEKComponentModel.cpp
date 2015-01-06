@@ -215,6 +215,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const frustum &nViewFr
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
+    m_aVisible.clear();
     m_pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
     {
         auto &kModel = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(model)>(nEntityID, L"model");
@@ -295,5 +296,4 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(IGEK3DVideoContext *pC
 
 STDMETHODIMP_(void) CGEKComponentSystemModel::OnRenderEnd(void)
 {
-    m_aVisible.clear();
 }

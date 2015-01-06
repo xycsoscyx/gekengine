@@ -214,6 +214,7 @@ namespace GEK3DVIDEO
         {
             RESOURCE                        = 1 << 0,
             UNORDERED_ACCESS                = 1 << 1,
+            FORCE_1D                        = 1 << 2,
         };
     };
 
@@ -494,7 +495,7 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF
 
     STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEK3DVideoTexture **ppTexture) PURE;
     STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect = nullptr) PURE;
-    STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, IGEK3DVideoTexture **ppTexture) PURE;
+    STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, UINT32 nFlags, IGEK3DVideoTexture **ppTexture) PURE;
     STDMETHOD(CreateSamplerStates)                      (THIS_ const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates) PURE;
 
     STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor) PURE;

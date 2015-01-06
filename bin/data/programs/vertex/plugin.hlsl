@@ -26,6 +26,9 @@ struct VIEWVERTEX
     float4   color                      : COLOR0;
 };
 
+SamplerState gs_pPointSampler			: register(s0);
+SamplerState gs_pLinearSampler			: register(s1);
+
 _INSERT_WORLD_PROGRAM
 
 VIEWVERTEX MainVertexProgram(in SOURCEVERTEX kSource)

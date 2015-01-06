@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <material>
-    <render>
+    <render fullbright="1">
         <layers>
             <albedo source="%material%.ColorMap.dds" />
             <normal source="%material%.NormalMap.dds" />

@@ -216,16 +216,19 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
+    concurrency::concurrent_vector<INSTANCE> aVisible;
     concurrency::parallel_for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair)-> void
     {
         if (nViewFrustum.IsVisible(kPair.second))
         {
             concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle)-> void
             {
-                m_aVisible.push_back(INSTANCE(kParticle.m_nPosition, (kParticle.m_nLife.x / kParticle.m_nLife.y)));
+                aVisible.push_back(INSTANCE(kParticle.m_nPosition, (kParticle.m_nLife.x / kParticle.m_nLife.y)));
             });
         }
     });
+
+    m_aVisible.assign(aVisible.begin(), aVisible.end());
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(IGEK3DVideoContext *pContext, UINT32 nVertexAttributes)
@@ -242,8 +245,11 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(IGEK3DVideoContext *p
     m_pMaterialManager->LoadMaterial(L"flames", &spMaterial);
     if (spMaterial)
     {
+        CComPtr<IGEK3DVideoTexture> spColor;
+        m_pVideoSystem->LoadTexture(L"%root%\\data\\gradients\\flame.dds", GEK3DVIDEO::TEXTURE::FORCE_1D, &spColor);
         if (m_pMaterialManager->EnableMaterial(pContext, spMaterial))
         {
+            pContext->GetVertexSystem()->SetResource(1, spColor);
             for (UINT32 nPass = 0; nPass < m_aVisible.size(); nPass += NUM_INSTANCES)
             {
                 UINT32 nNumInstances = min(NUM_INSTANCES, (m_aVisible.size() - nPass));
@@ -263,5 +269,4 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(IGEK3DVideoContext *p
 
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnRenderEnd(void)
 {
-    m_aVisible.clear();
 }

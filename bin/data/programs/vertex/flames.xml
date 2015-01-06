@@ -13,6 +13,7 @@
             };
             
             StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);
+            Texture1D                  gs_pGradient     : register(t1);
 
 			struct SOURCEVERTEX
 			{
@@ -24,16 +25,19 @@
 			WORLDVERTEX GetWorldVertex(in SOURCEVERTEX kSource)
 			{
                 INSTANCE kInstance = gs_aInstances[kSource.instance];
-	            float3 kXOffSet = mul(float3(kInstance.m_nAge, 0.0, 0.0f), (float3x3)gs_nViewMatrix);
-	            float3 kYOffSet = mul(float3(0.0,-kInstance.m_nAge, 0.0f), (float3x3)gs_nViewMatrix);
+
+                float nSize = ((1.0f - kInstance.m_nAge) * 0.5f);
+	            float3 kXOffSet = mul(float3(nSize, 0.0, 0.0f), (float3x3)gs_nViewMatrix);
+	            float3 kYOffSet = mul(float3(0.0,-nSize, 0.0f), (float3x3)gs_nViewMatrix);
 
 				WORLDVERTEX kVertex;
 	            kVertex.position      = float4(kInstance.m_nPosition, 1.0f);
 	            kVertex.position.xyz += (kXOffSet * kSource.position.x);
 	            kVertex.position.xyz += (kYOffSet * kSource.position.y);
 				kVertex.texcoord      = kSource.texcoord;
-                kVertex.normal        = mul(float3(0,0,-1), gs_nViewMatrix);
-                kVertex.color         = 1;
+                kVertex.normal        = mul(float3(0,0,-1), (float3x3)gs_nViewMatrix);
+                kVertex.color         = gs_pGradient.SampleLevel(gs_pLinearSampler, kInstance.m_nAge, 0);
+                kVertex.color.a = 1;
 				return kVertex;
 			}
         ]]>

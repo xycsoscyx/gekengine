@@ -128,6 +128,7 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(const frustum &nViewF
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
+    m_aVisible.clear();
     m_pSceneManager->ListComponentsEntities({ L"transform", L"sprite" }, [&](const GEKENTITYID &nEntityID)->void
     {
         auto &kSprite = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(sprite)>(nEntityID, L"sprite");
@@ -178,5 +179,4 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnDrawScene(IGEK3DVideoContext *p
 
 STDMETHODIMP_(void) CGEKComponentSystemSprite::OnRenderEnd(void)
 {
-    m_aVisible.clear();
 }
