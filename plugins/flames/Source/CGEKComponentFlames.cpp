@@ -7,7 +7,8 @@
 
 static std::random_device gs_kRandomDevice;
 static std::mt19937 gs_kMersineTwister(gs_kRandomDevice());
-static std::uniform_real_distribution<float> gs_kRandomDistribution;
+static std::uniform_real_distribution<float> gs_kFullDistribution(-1.0f, 1.0f);
+static std::uniform_real_distribution<float> gs_kAbsoluteDistribution(0.0f, 1.0f);
 
 #define NUM_INSTANCES                   500
 
@@ -17,8 +18,8 @@ REGISTER_COMPONENT(flames)
     REGISTER_COMPONENT_DEFAULT_VALUE(density, 100)
     REGISTER_COMPONENT_DEFAULT_VALUE(life, float2(1.0f, 2.0f))
     REGISTER_COMPONENT_DEFAULT_VALUE(direction, float3(0.0f, 1.0f, 0.0f))
-    REGISTER_COMPONENT_DEFAULT_VALUE(angle, float3(30.0f, 0.0f, 30.0f))
-    REGISTER_COMPONENT_DEFAULT_VALUE(offset, float3(0.5f, 0.5f, 0.5f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(angle, float3(20.0f, 0.0f, 20.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(offset, float3(0.2f, 0.2f, 0.2f))
     REGISTER_COMPONENT_DEFAULT_VALUE(spin, float2(-360.0f, 360.0f))
     REGISTER_COMPONENT_SERIALIZE(flames)
         REGISTER_COMPONENT_SERIALIZE_VALUE(material, )
@@ -167,20 +168,20 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentAdded(const GEKENTITYI
             kEmitter.m_aParticles.resize(kFlames.density);
             concurrency::parallel_for_each(kEmitter.m_aParticles.begin(), kEmitter.m_aParticles.end(), [&](PARTICLE &kParticle)-> void
             {
-                kParticle.m_nLife.y = ((gs_kRandomDistribution(gs_kMersineTwister) * (kFlames.life.y - kFlames.life.x)) + kFlames.life.x);
-                kParticle.m_nLife.x = (gs_kRandomDistribution(gs_kMersineTwister) * kParticle.m_nLife.y);
+                kParticle.m_nLife.y = ((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.life.y - kFlames.life.x)) + kFlames.life.x);
+                kParticle.m_nLife.x = (gs_kAbsoluteDistribution(gs_kMersineTwister) * kParticle.m_nLife.y);
                 
-                kParticle.m_nSpin.x = _DEGTORAD(gs_kRandomDistribution(gs_kMersineTwister) * 360.0f);
-                kParticle.m_nSpin.y = _DEGTORAD((gs_kRandomDistribution(gs_kMersineTwister) * (kFlames.spin.y - kFlames.spin.x)) + kFlames.spin.x);
+                kParticle.m_nSpin.x = _DEGTORAD(gs_kAbsoluteDistribution(gs_kMersineTwister) * 360.0f);
+                kParticle.m_nSpin.y = _DEGTORAD((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.spin.y - kFlames.spin.x)) + kFlames.spin.x);
 
                 kParticle.m_nPosition = kTransform.position;
-                kParticle.m_nPosition.x += (((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.offset.x);
-                kParticle.m_nPosition.y += (((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.offset.y);
-                kParticle.m_nPosition.z += (((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.offset.z);
+                kParticle.m_nPosition.x += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.x);
+                kParticle.m_nPosition.y += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.y);
+                kParticle.m_nPosition.z += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.z);
                 
-                quaternion nOffset(_DEGTORAD(((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.angle.x),
-                                   _DEGTORAD(((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.angle.y),
-                                   _DEGTORAD(((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.angle.z));
+                quaternion nOffset(_DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.x),
+                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.y),
+                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.z));
                 kParticle.m_nVelocity = ((kTransform.rotation * nOffset) * kFlames.direction);
             });
         }
@@ -215,21 +216,23 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnUpdate(float nGameTime, float n
             if (kParticle.m_nLife.x >= kParticle.m_nLife.y)
             {
                 kParticle.m_nLife.x = 0.0f;
-                kParticle.m_nLife.y = ((gs_kRandomDistribution(gs_kMersineTwister) * (kFlames.life.y - kFlames.life.x)) + kFlames.life.x);
+                kParticle.m_nLife.y = ((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.life.y - kFlames.life.x)) + kFlames.life.x);
 
                 kParticle.m_nPosition = kTransform.position;
-                kParticle.m_nPosition.x += (((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.offset.x);
-                kParticle.m_nPosition.y += (((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.offset.y);
-                kParticle.m_nPosition.z += (((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.offset.z);
-
-                quaternion nOffset(_DEGTORAD(((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.angle.x),
-                                   _DEGTORAD(((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.angle.y),
-                                   _DEGTORAD(((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.angle.z));
+                kParticle.m_nPosition.x += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.x);
+                kParticle.m_nPosition.y += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.y);
+                kParticle.m_nPosition.z += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.z);
+                
+                quaternion nOffset(_DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.x),
+                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.y),
+                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.z));
                 kParticle.m_nVelocity = ((kTransform.rotation * nOffset) * kFlames.direction);
             }
             else
             {
                 kParticle.m_nPosition += kParticle.m_nVelocity * nFrameTime;
+                kParticle.m_nVelocity.x += (gs_kFullDistribution(gs_kMersineTwister) * nFrameTime);
+                kParticle.m_nVelocity.z += (gs_kFullDistribution(gs_kMersineTwister) * nFrameTime);
             }
 
             kPair.second.Extend(kParticle.m_nPosition);

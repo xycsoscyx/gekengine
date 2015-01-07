@@ -29,7 +29,7 @@
                 
                 float nSin, nCos;
                 sincos(kInstance.m_nSpin, nSin, nCos);
-                float nSize = ((1.0f - kInstance.m_nAge) * 0.5f);
+                float nSize = lerp(0.25f, 0.5f, kInstance.m_nAge);
                 nSin *= nSize;
                 nCos *= nSize;
                 

@@ -89,7 +89,8 @@ private:
     CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
 
     CComPtr<IUnknown> m_spPointSampler;
-    CComPtr<IUnknown> m_spLinearSampler;
+    CComPtr<IUnknown> m_spLinearClampSampler;
+    CComPtr<IUnknown> m_spLinearWrapSampler;
 
     CComPtr<IGEK3DVideoBuffer> m_spOrthoBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spEngineBuffer;

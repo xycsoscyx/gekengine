@@ -285,7 +285,25 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
 
         kStates.m_eAddressU = GEK3DVIDEO::ADDRESS::WRAP;
         kStates.m_eAddressV = GEK3DVIDEO::ADDRESS::WRAP;
-        hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spLinearSampler);
+        hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spLinearWrapSampler);
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        GEK3DVIDEO::SAMPLERSTATES kStates;
+        if (m_pSystem->GetConfig().DoesValueExists(L"render", L"anisotropy"))
+        {
+            kStates.m_nMaxAnisotropy = StrToUINT32(m_pSystem->GetConfig().GetValue(L"render", L"anisotropy", L"1"));
+            kStates.m_eFilter = GEK3DVIDEO::FILTER::ANISOTROPIC;
+        }
+        else
+        {
+            kStates.m_eFilter = GEK3DVIDEO::FILTER::MIN_MAG_MIP_LINEAR;
+        }
+
+        kStates.m_eAddressU = GEK3DVIDEO::ADDRESS::CLAMP;
+        kStates.m_eAddressV = GEK3DVIDEO::ADDRESS::CLAMP;
+        hRetVal = m_pVideoSystem->CreateSamplerStates(kStates, &m_spLinearClampSampler);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -1033,9 +1051,9 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
     CComQIPtr<IGEK3DVideoContext> spContext(m_pVideoSystem);
     spContext->GetVertexSystem()->SetSamplerStates(0, m_spPointSampler);
-    spContext->GetVertexSystem()->SetSamplerStates(1, m_spLinearSampler);
+    spContext->GetVertexSystem()->SetSamplerStates(1, m_spLinearClampSampler);
     spContext->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
-    spContext->GetPixelSystem()->SetSamplerStates(1, m_spLinearSampler);
+    spContext->GetPixelSystem()->SetSamplerStates(1, m_spLinearWrapSampler);
     m_pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void
     {
         auto &kViewer = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(viewer)>(nViewerID, L"viewer");
