@@ -230,7 +230,7 @@ HRESULT GEKFindFiles(LPCWSTR pBasePath, LPCWSTR pFilter, bool bRecursive, std::f
         {
             if (kData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
-                if (kData.cFileName[0] == '.')
+                if (kData.cFileName[0] == L'.')
                 {
                     continue;
                 }
@@ -293,7 +293,7 @@ HRESULT GEKLoadFromFile(LPCWSTR pFileName, std::vector<UINT8> &aBuffer, UINT32 n
             if (aBuffer.size() == nReadSize)
             {
                 DWORD nBytesRead = 0;
-                if (ReadFile(hFile, &aBuffer[0], nReadSize, &nBytesRead, nullptr))
+                if (ReadFile(hFile, aBuffer.data(), nReadSize, &nBytesRead, nullptr))
                 {
                     hRetVal = (nBytesRead == nReadSize ? S_OK : E_FAIL);
                 }
@@ -321,7 +321,7 @@ HRESULT GEKLoadFromFile(LPCWSTR pFileName, CStringA &strString)
     if (SUCCEEDED(hRetVal))
     {
         aBuffer.push_back('\0');
-        strString = (const char *)&aBuffer[0];
+        strString = LPCSTR(aBuffer.data());
     }
 
     return hRetVal;
@@ -346,7 +346,7 @@ HRESULT GEKSaveToFile(LPCWSTR pFileName, const std::vector<UINT8> &aBuffer)
     if (hFile != INVALID_HANDLE_VALUE)
     {
         DWORD nBytesWritten = 0;
-        WriteFile(hFile, &aBuffer[0], aBuffer.size(), &nBytesWritten, nullptr);
+        WriteFile(hFile, aBuffer.data(), aBuffer.size(), &nBytesWritten, nullptr);
         CloseHandle(hFile);
     }
 
@@ -360,7 +360,7 @@ HRESULT GEKSaveToFile(LPCWSTR pFileName, LPCSTR pString)
     std::vector<UINT8> aBuffer(nSize);
     if (aBuffer.size() == nSize)
     {
-        memcpy(&aBuffer[0], pString, nSize);
+        memcpy(aBuffer.data(), pString, nSize);
         hRetVal = GEKSaveToFile(pFileName, aBuffer);
     }
 

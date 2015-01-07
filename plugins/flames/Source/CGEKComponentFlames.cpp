@@ -12,16 +12,22 @@ static std::uniform_real_distribution<float> gs_kRandomDistribution;
 #define NUM_INSTANCES                   500
 
 REGISTER_COMPONENT(flames)
+    REGISTER_COMPONENT_DEFAULT_VALUE(material, L"flames")
+    REGISTER_COMPONENT_DEFAULT_VALUE(gradient, L"flames")
     REGISTER_COMPONENT_DEFAULT_VALUE(density, 100)
     REGISTER_COMPONENT_DEFAULT_VALUE(life, float2(0.5f, 1.0f))
     REGISTER_COMPONENT_DEFAULT_VALUE(direction, float3(0.0f, 1.0f, 0.0f))
     REGISTER_COMPONENT_DEFAULT_VALUE(angle, float3(45.0f, 0.0f, 45.0f))
     REGISTER_COMPONENT_SERIALIZE(flames)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(material, )
+        REGISTER_COMPONENT_SERIALIZE_VALUE(gradient, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(density, StrFromUINT32)
         REGISTER_COMPONENT_SERIALIZE_VALUE(life, StrFromFloat2)
         REGISTER_COMPONENT_SERIALIZE_VALUE(direction, StrFromFloat3)
         REGISTER_COMPONENT_SERIALIZE_VALUE(angle, StrFromFloat3)
     REGISTER_COMPONENT_DESERIALIZE(flames)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(material, )
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(gradient, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(density, StrToUINT32)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(life, StrToFloat2)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(direction, StrToFloat3)
@@ -216,19 +222,43 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    concurrency::concurrent_vector<INSTANCE> aVisible;
+    m_aVisible.clear();
     concurrency::parallel_for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair)-> void
     {
         if (nViewFrustum.IsVisible(kPair.second))
         {
-            concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle)-> void
+            auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, L"flames");
+
+            CComPtr<IGEK3DVideoTexture> spGradient;
+            auto pIterator = m_aGradients.find(kFlames.gradient);
+            if (pIterator == m_aGradients.end())
             {
-                aVisible.push_back(INSTANCE(kParticle.m_nPosition, (kParticle.m_nLife.x / kParticle.m_nLife.y)));
-            });
+                m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\gradients\\%s.dds", kFlames.gradient.GetString()), GEK3DVIDEO::TEXTURE::FORCE_1D, &spGradient);
+                if (spGradient)
+                {
+                    m_aGradients[kFlames.gradient] = spGradient;
+                }
+            }
+            else
+            {
+                spGradient = (*pIterator).second;
+            }
+
+            CComPtr<IUnknown> spMaterial;
+            m_pMaterialManager->LoadMaterial(kFlames.material, &spMaterial);
+            if (spMaterial && spGradient)
+            {
+                concurrency::concurrent_vector<INSTANCE> aVisible;
+                concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle)-> void
+                {
+                    aVisible.push_back(INSTANCE(kParticle.m_nPosition, (kParticle.m_nLife.x / kParticle.m_nLife.y)));
+                });
+
+                auto &pVisible = m_aVisible[std::make_pair(spMaterial, spGradient)];
+                pVisible.insert(pVisible.end(), aVisible.begin(), aVisible.end());
+            }
         }
     });
-
-    m_aVisible.assign(aVisible.begin(), aVisible.end());
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(IGEK3DVideoContext *pContext, UINT32 nVertexAttributes)
@@ -241,23 +271,21 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(IGEK3DVideoContext *p
     pContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
     pContext->SetIndexBuffer(0, m_spIndexBuffer);
 
-    CComPtr<IUnknown> spMaterial;
-    m_pMaterialManager->LoadMaterial(L"flames", &spMaterial);
-    if (spMaterial)
+    for (auto &kMaterial : m_aVisible)
     {
-        CComPtr<IGEK3DVideoTexture> spColor;
-        m_pVideoSystem->LoadTexture(L"%root%\\data\\gradients\\flame.dds", GEK3DVIDEO::TEXTURE::FORCE_1D, &spColor);
-        if (m_pMaterialManager->EnableMaterial(pContext, spMaterial))
+        if (m_pMaterialManager->EnableMaterial(pContext, kMaterial.first.first))
         {
-            pContext->GetVertexSystem()->SetResource(1, spColor);
-            for (UINT32 nPass = 0; nPass < m_aVisible.size(); nPass += NUM_INSTANCES)
+            pContext->GetVertexSystem()->SetResource(1, kMaterial.first.second);
+
+            auto &aInstances = kMaterial.second;
+            for (UINT32 nPass = 0; nPass < aInstances.size(); nPass += NUM_INSTANCES)
             {
-                UINT32 nNumInstances = min(NUM_INSTANCES, (m_aVisible.size() - nPass));
+                UINT32 nNumInstances = min(NUM_INSTANCES, (aInstances.size() - nPass));
 
                 INSTANCE *pInstances = nullptr;
                 if (SUCCEEDED(m_spInstanceBuffer->Map((LPVOID *)&pInstances)))
                 {
-                    memcpy(pInstances, &m_aVisible[nPass], (sizeof(INSTANCE) * nNumInstances));
+                    memcpy(pInstances, &aInstances[nPass], (sizeof(INSTANCE) * nNumInstances));
                     m_spInstanceBuffer->UnMap();
 
                     pContext->DrawInstancedIndexedPrimitive(6, nNumInstances, 0, 0, 0);

@@ -819,13 +819,13 @@ STDMETHODIMP_(void) CGEKVideoContext::ClearResources(void)
 STDMETHODIMP_(void) CGEKVideoContext::SetViewports(const std::vector<GEK3DVIDEO::VIEWPORT> &aViewports)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && aViewports.size() > 0);
-    m_spDeviceContext->RSSetViewports(aViewports.size(), (D3D11_VIEWPORT *)&aViewports[0]);
+    m_spDeviceContext->RSSetViewports(aViewports.size(), (D3D11_VIEWPORT *)aViewports.data());
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<trect<UINT32>> &aRects)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && aRects.size() > 0);
-    m_spDeviceContext->RSSetScissorRects(aRects.size(), (D3D11_RECT *)&aRects[0]);
+    m_spDeviceContext->RSSetScissorRects(aRects.size(), (D3D11_RECT *)aRects.data());
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::ClearRenderTarget(IGEK3DVideoTexture *pTarget, const float4 &kColor)
@@ -869,12 +869,12 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEK3DV
         CComQIPtr<ID3D11DepthStencilView> spD3DDepth(pDepth);
         if (spD3DDepth)
         {
-            m_spDeviceContext->OMSetRenderTargets(aD3DViews.size(), &aD3DViews[0], spD3DDepth);
+            m_spDeviceContext->OMSetRenderTargets(aD3DViews.size(), aD3DViews.data(), spD3DDepth);
         }
     }
     else
     {
-        m_spDeviceContext->OMSetRenderTargets(aD3DViews.size(), &aD3DViews[0], nullptr);
+        m_spDeviceContext->OMSetRenderTargets(aD3DViews.size(), aD3DViews.data(), nullptr);
     }
 }
 
@@ -2199,7 +2199,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "cs_5_0", nFlags, 0, &spBlob, &spErrors);
+    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, aDefines.data(), nullptr, pEntry, "cs_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11ComputeShader> spProgram;
@@ -2247,7 +2247,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "vs_5_0", nFlags, 0, &spBlob, &spErrors);
+    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, aDefines.data(), nullptr, pEntry, "vs_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11VertexShader> spProgram;
@@ -2340,7 +2340,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
             if (SUCCEEDED(hRetVal))
             {
                 CComPtr<ID3D11InputLayout> spLayout;
-                hRetVal = m_spDevice->CreateInputLayout(&aLayoutDesc[0], aLayoutDesc.size(), spBlob->GetBufferPointer(), spBlob->GetBufferSize(), &spLayout);
+                hRetVal = m_spDevice->CreateInputLayout(aLayoutDesc.data(), aLayoutDesc.size(), spBlob->GetBufferPointer(), spBlob->GetBufferSize(), &spLayout);
                 if (spLayout)
                 {
                     hRetVal = E_OUTOFMEMORY;
@@ -2386,7 +2386,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "gs_5_0", nFlags, 0, &spBlob, &spErrors);
+    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, aDefines.data(), nullptr, pEntry, "gs_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11GeometryShader> spProgram;
@@ -2434,7 +2434,7 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, &aDefines[0], nullptr, pEntry, "ps_5_0", nFlags, 0, &spBlob, &spErrors);
+    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, aDefines.data(), nullptr, pEntry, "ps_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11PixelShader> spProgram;
@@ -2711,10 +2711,10 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, UINT32 nFlags, IGEK
     {
         DirectX::ScratchImage kImage;
         DirectX::TexMetadata kMetadata;
-        hRetVal = DirectX::LoadFromDDSMemory(&aBuffer[0], aBuffer.size(), 0, &kMetadata, kImage);
+        hRetVal = DirectX::LoadFromDDSMemory(aBuffer.data(), aBuffer.size(), 0, &kMetadata, kImage);
         if (FAILED(hRetVal))
         {
-            hRetVal = DirectX::LoadFromTGAMemory(&aBuffer[0], aBuffer.size(), &kMetadata, kImage);
+            hRetVal = DirectX::LoadFromTGAMemory(aBuffer.data(), aBuffer.size(), &kMetadata, kImage);
         }
 
         if (FAILED(hRetVal))
@@ -2728,7 +2728,7 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, UINT32 nFlags, IGEK
 
             for (UINT32 nFormat = 0; nFormat < _ARRAYSIZE(aFormats) && FAILED(hRetVal); nFormat++)
             {
-                hRetVal = DirectX::LoadFromWICMemory(&aBuffer[0], aBuffer.size(), aFormats[nFormat], &kMetadata, kImage);
+                hRetVal = DirectX::LoadFromWICMemory(aBuffer.data(), aBuffer.size(), aFormats[nFormat], &kMetadata, kImage);
             }
         }
 
@@ -3000,7 +3000,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBrush(const std::vector<GEK2DVIDEO::GRADIENT
     REQUIRE_RETURN(ppBrush, E_INVALIDARG);
 
     CComPtr<ID2D1GradientStopCollection> spStops;
-    HRESULT hRetVal = m_spD2DDeviceContext->CreateGradientStopCollection((D2D1_GRADIENT_STOP *)&aStops[0], aStops.size(), &spStops);
+    HRESULT hRetVal = m_spD2DDeviceContext->CreateGradientStopCollection((D2D1_GRADIENT_STOP *)aStops.data(), aStops.size(), &spStops);
     if (spStops)
     {
         CComPtr<ID2D1LinearGradientBrush> spBrush;

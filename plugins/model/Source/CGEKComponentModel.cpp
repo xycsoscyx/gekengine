@@ -61,7 +61,7 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
         HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pName), aBuffer);
         if (SUCCEEDED(hRetVal))
         {
-            UINT8 *pBuffer = &aBuffer[0];
+            UINT8 *pBuffer = aBuffer.data();
             UINT32 nGEKX = *((UINT32 *)pBuffer);
             pBuffer += sizeof(UINT32);
 

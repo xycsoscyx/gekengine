@@ -23,7 +23,7 @@ HRESULT CGEKConfig::Load(LPCWSTR pFileName)
     std::unordered_map<CStringW, CStringW> *pGroup = nullptr;
     while (kParser.NextToken())
     {
-        if (kParser.GetToken()[0] == L'[')
+        if (kParser.GetToken().GetAt(0) == L'[')
         {
             CStringW strTitle(kParser.GetToken());
             pGroup = &m_aGroups[strTitle.Mid(1, (strTitle.GetLength() - 2))];

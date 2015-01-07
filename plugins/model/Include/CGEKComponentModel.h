@@ -60,6 +60,7 @@ private:
     IGEKProgramManager *m_pProgramManager;
 
     std::unordered_map<CStringW, MODEL> m_aModels;
+
     std::unordered_map<MODEL *, std::vector<INSTANCE>> m_aVisible;
 
 public:

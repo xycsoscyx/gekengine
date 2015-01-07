@@ -6,6 +6,8 @@
 #include <concurrent_vector.h>
 
 DECLARE_COMPONENT(flames)
+    DECLARE_COMPONENT_VALUE(CStringW, material)
+    DECLARE_COMPONENT_VALUE(CStringW, gradient)
     DECLARE_COMPONENT_VALUE(UINT32, density)
     DECLARE_COMPONENT_VALUE(float2, life)
     DECLARE_COMPONENT_VALUE(float3, direction)
@@ -54,9 +56,11 @@ private:
     CComPtr<IGEK3DVideoBuffer> m_spVertexBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
     
-    concurrency::concurrent_vector<INSTANCE> m_aVisible;
+    std::unordered_map<CStringW, CComPtr<IGEK3DVideoTexture>> m_aGradients;
 
     concurrency::concurrent_unordered_map<GEKENTITYID, EMITTER> m_aEmitters;
+
+    std::map<std::pair<IUnknown *, IGEK3DVideoTexture *>, std::vector<INSTANCE>> m_aVisible;
 
 public:
     CGEKComponentSystemFlames(void);

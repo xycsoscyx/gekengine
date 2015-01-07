@@ -358,7 +358,7 @@ HRESULT CGEKAudioSystem::LoadFromFile(LPCWSTR pFileName, DWORD nFlags, GUID nAlg
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = E_FAIL;
-        audiere::RefPtr<audiere::File> spFile(audiere::CreateMemoryFile(&aBuffer[0], aBuffer.size()));
+        audiere::RefPtr<audiere::File> spFile(audiere::CreateMemoryFile(aBuffer.data(), aBuffer.size()));
         if (spFile)
         {
             audiere::RefPtr<audiere::SampleSource> spSource(audiere::OpenSampleSource(spFile));

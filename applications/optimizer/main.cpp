@@ -303,14 +303,14 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             UINT32 nNumVertices = kFinal.m_aVertices.size();
             fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
             printf("-< Num. Total Vertices: %d\r\n", kFinal.m_aVertices.size());
-            fwrite(&kFinal.m_aVertices[0], sizeof(float3), kFinal.m_aVertices.size(), pFile);
-            fwrite(&kFinal.m_aTexCoords[0], sizeof(float2), kFinal.m_aTexCoords.size(), pFile);
-            fwrite(&kFinal.m_aNormals[0], sizeof(float3), kFinal.m_aNormals.size(), pFile);
+            fwrite(kFinal.m_aVertices.data(), sizeof(float3), kFinal.m_aVertices.size(), pFile);
+            fwrite(kFinal.m_aTexCoords.data(), sizeof(float2), kFinal.m_aTexCoords.size(), pFile);
+            fwrite(kFinal.m_aNormals.data(), sizeof(float3), kFinal.m_aNormals.size(), pFile);
 
             UINT32 nNumIndices = kFinal.m_aIndices.size();
             fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
             printf("-< Num. Total Indices: %d\r\n", kFinal.m_aIndices.size());
-            fwrite(&kFinal.m_aIndices[0], sizeof(UINT16), kFinal.m_aIndices.size(), pFile);
+            fwrite(kFinal.m_aIndices.data(), sizeof(UINT16), kFinal.m_aIndices.size(), pFile);
 
             fclose(pFile);
             pFile = nullptr;
