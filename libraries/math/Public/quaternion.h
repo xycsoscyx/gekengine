@@ -242,19 +242,28 @@ public:
         }
 
         return tquaternion<TYPE>(((nScale0 * x) + (nScale1 * nOriginal.x)),
-                                    ((nScale0 * y) + (nScale1 * nOriginal.y)),
-                                    ((nScale0 * z) + (nScale1 * nOriginal.z)),
-                                    ((nScale0 * w) + (nScale1 * nOriginal.w)));
+                                 ((nScale0 * y) + (nScale1 * nOriginal.y)),
+                                 ((nScale0 * z) + (nScale1 * nOriginal.z)),
+                                 ((nScale0 * w) + (nScale1 * nOriginal.w)));
     }
 
     tvector3<TYPE> operator * (const tvector3<TYPE> &nVector) const
     {
-        return (tmatrix4x4<TYPE>(*this) * nVector);
-    }
-
-    tvector4<TYPE> operator * (const tvector4<TYPE> &nVector) const
-    {
-        return (tmatrix4x4<TYPE>(*this) * nVector);
+        float nX2 = x * TYPE(2);
+        float nY2 = y * TYPE(2);
+        float nZ2 = z * TYPE(2);
+        float nX3 = x * nX2;
+        float nY3 = y * nY2;
+        float nZ3 = z * nZ2;
+        float nXY2 = x * nY2;
+        float nXZ2 = x * nZ2;
+        float nYZ2 = y * nZ2;
+        float nWX2 = w * nX2;
+        float nWY2 = w * nY2;
+        float nWZ2 = w * nZ2;
+        return tvector3<TYPE>(((TYPE(1) - (nY3 + nZ3)) * nVector.x + (nXY2 - nWZ2) * nVector.y + (nXZ2 + nWY2) * nVector.z),
+                              ((nXY2 + nWZ2) * nVector.x + (TYPE(1) - (nX3 + nZ3)) * nVector.y + (nYZ2 - nWX2) * nVector.z),
+                              ((nXZ2 - nWY2) * nVector.x + (nYZ2 + nWX2) * nVector.y + (TYPE(1) - (nX3 + nY3)) * nVector.z));
     }
 
     tquaternion<TYPE> operator * (const tquaternion<TYPE> &nQuaternion) const

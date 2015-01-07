@@ -12,6 +12,8 @@ DECLARE_COMPONENT(flames)
     DECLARE_COMPONENT_VALUE(float2, life)
     DECLARE_COMPONENT_VALUE(float3, direction)
     DECLARE_COMPONENT_VALUE(float3, angle)
+    DECLARE_COMPONENT_VALUE(float3, offset)
+    DECLARE_COMPONENT_VALUE(float2, spin)
 END_DECLARE_COMPONENT(flames)
 
 class CGEKComponentSystemFlames : public CGEKUnknown
@@ -24,10 +26,12 @@ public:
     {
         float3 m_nPosition;
         float m_nAge;
+        float m_nSpin;
 
-        INSTANCE(const float3 &nPosition, float nAge)
+        INSTANCE(const float3 &nPosition, float nAge, float nSpin)
             : m_nPosition(nPosition)
             , m_nAge(nAge)
+            , m_nSpin(nSpin)
         {
         }
     };
@@ -37,6 +41,7 @@ public:
         float2 m_nLife;
         float3 m_nPosition;
         float3 m_nVelocity;
+        float2 m_nSpin;
     };
 
     struct EMITTER : public aabb

@@ -10,6 +10,7 @@
             {
                 float3      m_nPosition;
                 float       m_nAge;
+                float       m_nSpin;
             };
             
             StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);
@@ -22,13 +23,18 @@
                 uint instance                           : SV_InstanceId;
 			};
 
-			WORLDVERTEX GetWorldVertex(in SOURCEVERTEX kSource)
+            WORLDVERTEX GetWorldVertex(in SOURCEVERTEX kSource)
 			{
                 INSTANCE kInstance = gs_aInstances[kSource.instance];
-
+                
+                float nSin, nCos;
+                sincos(kInstance.m_nSpin, nSin, nCos);
                 float nSize = ((1.0f - kInstance.m_nAge) * 0.5f);
-	            float3 kXOffSet = mul(float3(nSize, 0.0, 0.0f), (float3x3)gs_nViewMatrix);
-	            float3 kYOffSet = mul(float3(0.0,-nSize, 0.0f), (float3x3)gs_nViewMatrix);
+                nSin *= nSize;
+                nCos *= nSize;
+                
+	            float3 kXOffSet = mul(float3(nSin, nCos, 0.0f), (float3x3)gs_nViewMatrix);
+	            float3 kYOffSet = mul(float3(nCos,-nSin, 0.0f), (float3x3)gs_nViewMatrix);
 
 				WORLDVERTEX kVertex;
 	            kVertex.position      = float4(kInstance.m_nPosition, 1.0f);
