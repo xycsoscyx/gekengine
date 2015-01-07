@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<material>
+    <render>
+        <layers>
+            <albedo source="%material%.ColorMap.dds" />
+            <normal source="%material%.NormalMap.dds" />
+            <info source="*color:0.1,0.3,0.0,0" />
+        </layers>
+    </render>
+</material>

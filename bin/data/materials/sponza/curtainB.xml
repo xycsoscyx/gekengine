@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<material>
+    <render>
+        <layers>
+            <albedo source="%material%.ColorMap.dds" />
+            <normal source="%directory%\curtain.NormalMap.dds" />
+            <info source="%directory%\curtain.InfoMap.dds" />
+        </layers>
+    </render>
+</material>
