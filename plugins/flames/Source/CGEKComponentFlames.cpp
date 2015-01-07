@@ -170,8 +170,8 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentAdded(const GEKENTITYI
                 kParticle.m_nLife.y = ((gs_kRandomDistribution(gs_kMersineTwister) * (kFlames.life.y - kFlames.life.x)) + kFlames.life.x);
                 kParticle.m_nLife.x = (gs_kRandomDistribution(gs_kMersineTwister) * kParticle.m_nLife.y);
                 
-                kParticle.m_nSpin.y = _DEGTORAD((gs_kRandomDistribution(gs_kMersineTwister) * (kFlames.spin.y - kFlames.spin.x)) + kFlames.spin.x);
                 kParticle.m_nSpin.x = _DEGTORAD(gs_kRandomDistribution(gs_kMersineTwister) * 360.0f);
+                kParticle.m_nSpin.y = _DEGTORAD((gs_kRandomDistribution(gs_kMersineTwister) * (kFlames.spin.y - kFlames.spin.x)) + kFlames.spin.x);
 
                 kParticle.m_nPosition = kTransform.position;
                 kParticle.m_nPosition.x += (((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.offset.x);
@@ -211,13 +211,11 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnUpdate(float nGameTime, float n
         concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle)-> void
         {
             kParticle.m_nLife.x += nFrameTime;
+            kParticle.m_nSpin.x += (kParticle.m_nSpin.y * nFrameTime);
             if (kParticle.m_nLife.x >= kParticle.m_nLife.y)
             {
                 kParticle.m_nLife.x = 0.0f;
                 kParticle.m_nLife.y = ((gs_kRandomDistribution(gs_kMersineTwister) * (kFlames.life.y - kFlames.life.x)) + kFlames.life.x);
-
-                kParticle.m_nSpin.y = _DEGTORAD((gs_kRandomDistribution(gs_kMersineTwister) * (kFlames.spin.y - kFlames.spin.x)) + kFlames.spin.x);
-                kParticle.m_nSpin.x = _DEGTORAD(gs_kRandomDistribution(gs_kMersineTwister) * 360.0f);
 
                 kParticle.m_nPosition = kTransform.position;
                 kParticle.m_nPosition.x += (((gs_kRandomDistribution(gs_kMersineTwister) * 2) - 1) * kFlames.offset.x);
@@ -231,7 +229,6 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnUpdate(float nGameTime, float n
             }
             else
             {
-                kParticle.m_nSpin.x += (kParticle.m_nSpin.y * nFrameTime);
                 kParticle.m_nPosition += kParticle.m_nVelocity * nFrameTime;
             }
 
