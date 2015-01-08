@@ -23,7 +23,7 @@
 
             OUTPUT MainPixelProgram(in INPUT kInput)
             {
-                float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord) * gs_nMaterialColor * kInput.color);
+                float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord) * kInput.color);
 
                 [branch]
                 if(nAlbedo.a < 0.5f)
@@ -44,7 +44,7 @@
 
                 OUTPUT kOutput;
                 kOutput.albedo.xyz = nAlbedo.xyz;
-                kOutput.albedo.a   = gs_bMaterialFullBright;
+                kOutput.albedo.a   = 0;//gs_bMaterialFullBright;
                 kOutput.normal     = EncodeNormal(nNormal);
                 kOutput.depth      = (kInput.viewposition.z / gs_nCameraMaxDistance);
                 return kOutput;

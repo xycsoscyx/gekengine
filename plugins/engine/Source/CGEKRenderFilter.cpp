@@ -128,10 +128,6 @@ STDMETHODIMP CGEKRenderFilter::Initialize(void)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKRenderFilter::Destroy(void)
-{
-}
-
 CStringW CGEKRenderFilter::ParseValue(LPCWSTR pValue)
 {
     CStringW strValue(pValue);

@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <material>
     <render>
-        <layers>
+        <solid>
             <albedo source="%material%.ColorMap.dds" />
             <normal source="%material%.NormalMap.dds" />
             <info source="%material%.InfoMap.dds" />
-        </layers>
+        </solid>
     </render>
 </material>

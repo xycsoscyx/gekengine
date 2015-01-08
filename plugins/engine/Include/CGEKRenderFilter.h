@@ -94,7 +94,6 @@ public:
 
     // IGEKUnknown
     STDMETHOD(Initialize)                                   (THIS);
-    STDMETHOD_(void, Destroy)                               (THIS);
 
     // IGEKRenderFilter
     STDMETHOD(Load)                                         (THIS_ LPCWSTR pFileName, const std::unordered_map<CStringA, CStringA> &aDefines);

@@ -103,7 +103,10 @@ HRESULT CGEKRenderStates::Load(IGEK3DVideoSystem *pSystem, CLibXMLNode &kStatesN
 void CGEKRenderStates::Enable(IGEK3DVideoContext *pContext)
 {
     REQUIRE_VOID_RETURN(pContext);
-    pContext->SetRenderStates(m_spRenderStates);
+    if (m_spRenderStates)
+    {
+        pContext->SetRenderStates(m_spRenderStates);
+    }
 }
 
 CGEKBlendStates::~CGEKBlendStates(void)
@@ -203,5 +206,8 @@ HRESULT CGEKBlendStates::Load(IGEK3DVideoSystem *pSystem, CLibXMLNode &kBlendNod
 void CGEKBlendStates::Enable(IGEK3DVideoContext *pContext)
 {
     REQUIRE_VOID_RETURN(pContext);
-    pContext->SetBlendStates(m_nBlendFactor, m_nSampleMask, m_spBlendStates);
+    if (m_spBlendStates)
+    {
+        pContext->SetBlendStates(m_nBlendFactor, m_nSampleMask, m_spBlendStates);
+    }
 }

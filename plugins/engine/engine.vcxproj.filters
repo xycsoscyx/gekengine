@@ -26,6 +26,9 @@
     <ClCompile Include="Source\CGEKComponentViewer.cpp">
       <Filter>Source Files\Base Components</Filter>
     </ClCompile>
+    <ClCompile Include="Source\CGEKRenderMaterial.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKEngine.h" />
@@ -95,6 +98,12 @@
     </ClInclude>
     <ClInclude Include="Include\CGEKComponentViewer.h">
       <Filter>Header Files\Base Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\IGEKRenderMaterial.h">
+      <Filter>Interface Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKRenderMaterial.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

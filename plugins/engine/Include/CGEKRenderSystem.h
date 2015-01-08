@@ -3,13 +3,14 @@
 #include "GEKContext.h"
 #include "GEKSystem.h"
 #include "GEKAPI.h"
+#include "IGEKRenderMaterial.h"
 #include "IGEKRenderSystem.h"
 #include "IGEKPopulationSystem.h"
 #include "IGEKEngine.h"
 #include <concurrent_vector.h>
 
 DECLARE_INTERFACE(IGEKRenderFilter);
-DECLARE_INTERFACE(IGEKMaterial);
+DECLARE_INTERFACE(IGEKRenderMaterial);
 
 class CGEKRenderSystem : public CGEKUnknown
                        , public CGEKObservable
