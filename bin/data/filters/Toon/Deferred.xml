@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <filter mode="forward">
-    <render cullmode="back" />
+    <states cullmode="back" />
     
     <targets>
         <target name="Toon.Albedo" format="RGBA_UINT8"/>

@@ -278,7 +278,7 @@ HRESULT CGEKRenderFilter::LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSi
 
 HRESULT CGEKRenderFilter::LoadRenderStates(CLibXMLNode &kFilterNode)
 {
-    return CGEKRenderStates::Load(m_pVideoSystem, kFilterNode.FirstChildElement(L"render"));
+    return CGEKRenderStates::Load(m_pVideoSystem, kFilterNode.FirstChildElement(L"states"));
 }
 
 HRESULT CGEKRenderFilter::LoadBlendStates(CLibXMLNode &kFilterNode)

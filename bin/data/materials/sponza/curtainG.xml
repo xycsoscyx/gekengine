@@ -2,9 +2,11 @@
 <material>
     <render>
         <solid>
-            <albedo source="%material%.ColorMap.dds" />
-            <normal source="%directory%\curtain.NormalMap.dds" />
-            <info source="%directory%\curtain.InfoMap.dds" />
+            <data>
+                <albedo source="%material%.ColorMap.dds" />
+                <normal source="%directory%\curtain.NormalMap.dds" />
+                <info source="%directory%\curtain.InfoMap.dds" />
+            </data>
         </solid>
     </render>
 </material>

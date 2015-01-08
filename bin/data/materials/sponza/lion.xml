@@ -2,9 +2,11 @@
 <material>
     <render>
         <solid>
-            <albedo source="%material%.ColorMap.dds" />
-            <normal source="%material%.NormalMap.dds" />
-            <info source="*color:0.1,0.3,0.0,0" />
+            <data>
+                <albedo source="%material%.ColorMap.dds" />
+                <normal source="%material%.NormalMap.dds" />
+                <info source="*color:0.1,0.3,0.0,0" />
+            </data>
         </solid>
     </render>
 </material>
