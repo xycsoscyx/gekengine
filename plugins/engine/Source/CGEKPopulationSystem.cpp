@@ -179,6 +179,38 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Update(float nGameTime, float nFrameTi
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnUpdateBegin, std::placeholders::_1, nGameTime, nFrameTime)));
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnUpdate, std::placeholders::_1, nGameTime, nFrameTime)));
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnUpdateEnd, std::placeholders::_1, nGameTime, nFrameTime)));
+    for (auto nDeadID : m_aHitList)
+    {
+        auto pNamedIterator = std::find_if(m_aNamedEntities.begin(), m_aNamedEntities.end(), [&](std::pair<const CStringW, GEKENTITYID> &kPair) -> bool
+        {
+            return (kPair.second == nDeadID);
+        });
+
+        if (pNamedIterator != m_aNamedEntities.end())
+        {
+            m_aNamedEntities.unsafe_erase(pNamedIterator);
+        }
+
+        if (m_aPopulation.size() > 1)
+        {
+            auto pPopulationIterator = std::find_if(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> bool
+            {
+                return (nEntityID == nDeadID);
+            });
+
+            if (pPopulationIterator != m_aPopulation.end())
+            {
+                (*pPopulationIterator) = m_aPopulation.back();
+            }
+
+            m_aPopulation.resize(m_aPopulation.size() - 1);
+        }
+        else
+        {
+            m_aPopulation.clear();
+        }
+    }
+
     m_aHitList.clear();
 }
 
