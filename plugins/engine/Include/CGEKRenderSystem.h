@@ -40,13 +40,19 @@ public:
         }
     };
 
+    struct FILTER
+    {
+        CComPtr<IGEKRenderFilter> m_spFilter;
+        CStringW m_strMaterial;
+    };
+
     struct PASS
     {
         UINT32 m_nXSize;
         UINT32 m_nYSize;
         UINT8 m_nCurrentBuffer;
         CComPtr<IGEK3DVideoTexture> m_aBuffers[2];
-        std::vector<CComPtr<IGEKRenderFilter>> m_aFilters;
+        std::vector<FILTER> m_aFilters;
     };
 
     struct LIGHTBUFFER
@@ -109,7 +115,7 @@ private:
     std::vector<LIGHTBUFFER> m_aVisibleLights;
 
     PASS *m_pCurrentPass;
-    IGEKRenderFilter *m_pCurrentFilter;
+    FILTER *m_pCurrentFilter;
     CComPtr<IUnknown> m_spDefaultRenderStates;
     float4 m_nDefaultBlendFactor;
     UINT32 m_nDefaultSampleMask;

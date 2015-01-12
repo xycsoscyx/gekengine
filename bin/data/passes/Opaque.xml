@@ -1,22 +1,23 @@
 <?xml version="1.0"?>
 <pass>
     <filters>
-        <filter source="Opaque/Deferred" />
-        <filter source="Opaque/Ambient" />
-        <filter source="Opaque/Lighting" />
-        <filter source="Opaque/SSAO" />
-        <filter source="Opaque/BlurSSAO">
+        <filter source="Opaque/Deferred" material="solid" />
+        <filter source="Opaque/Ambient" material="solid" />
+        <filter source="Opaque/Lighting" material="solid" />
+        <filter source="Opaque/SSAO" material="solid" />
+        <filter source="Opaque/BlurSSAO" material="solid">
             <defines>
                 <define name="gs_nAxis" value="float2(1,0)" />
                 <define name="gs_bCombine" value="0" />
             </defines>
         </filter>
-        <filter source="Opaque/BlurSSAO">
+        <filter source="Opaque/BlurSSAO" material="solid">
             <defines>
                 <define name="gs_nAxis" value="float2(0,1)" />
                 <define name="gs_bCombine" value="1" />
             </defines>
         </filter>
         <!--filter source="Opaque/SSR" /-->
+        <filter source="Opaque/Transparent" material="transparent" />
     </filters>
 </pass>

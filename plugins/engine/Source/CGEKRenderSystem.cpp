@@ -420,52 +420,63 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
                     CLibXMLNode kFilterNode = kFiltersNode.FirstChildElement(L"filter");
                     while (kFilterNode)
                     {
-                        hRetVal = S_OK;
-                        std::unordered_map<CStringA, CStringA> aDefines;
-                        CLibXMLNode kDefinesNode = kFilterNode.FirstChildElement(L"defines");
-                        if (kDefinesNode)
+                        if (kFilterNode.HasAttribute(L"source") && kFilterNode.HasAttribute(L"material"))
                         {
-                            CLibXMLNode kDefineNode = kDefinesNode.FirstChildElement(L"define");
-                            while (kDefineNode)
+                            hRetVal = S_OK;
+                            std::unordered_map<CStringA, CStringA> aDefines;
+                            CLibXMLNode kDefinesNode = kFilterNode.FirstChildElement(L"defines");
+                            if (kDefinesNode)
                             {
-                                if (kDefineNode.HasAttribute(L"name") &&
-                                    kDefineNode.HasAttribute(L"value"))
+                                CLibXMLNode kDefineNode = kDefinesNode.FirstChildElement(L"define");
+                                while (kDefineNode)
                                 {
-                                    CStringA strName = CW2A(kDefineNode.GetAttribute(L"name"), CP_UTF8);
-                                    CStringA strValue = CW2A(kDefineNode.GetAttribute(L"value"), CP_UTF8);
+                                    if (kDefineNode.HasAttribute(L"name") &&
+                                        kDefineNode.HasAttribute(L"value"))
+                                    {
+                                        CStringA strName = CW2A(kDefineNode.GetAttribute(L"name"), CP_UTF8);
+                                        CStringA strValue = CW2A(kDefineNode.GetAttribute(L"value"), CP_UTF8);
 
-                                    aDefines[strName] = strValue;
-                                    kDefineNode = kDefineNode.NextSiblingElement(L"define");
-                                }
-                                else
-                                {
-                                    hRetVal = E_INVALIDARG;
-                                    break;
-                                }
-                            };
-                        }
-
-                        if (SUCCEEDED(hRetVal))
-                        {
-                            CStringW strFilter(kFilterNode.GetAttribute(L"source"));
-
-                            CComPtr<IGEKRenderFilter> spFilter;
-                            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderFilter, IID_PPV_ARGS(&spFilter));
-                            if (spFilter)
-                            {
-                                CStringW strFilterFileName(L"%root%\\data\\filters\\" + strFilter + L".xml");
-                                hRetVal = spFilter->Load(strFilterFileName, aDefines);
-                                if (SUCCEEDED(hRetVal))
-                                {
-                                    kPassData.m_aFilters.push_back(spFilter);
-                                }
-                                else
-                                {
-                                    break;
-                                }
+                                        aDefines[strName] = strValue;
+                                        kDefineNode = kDefineNode.NextSiblingElement(L"define");
+                                    }
+                                    else
+                                    {
+                                        hRetVal = E_INVALIDARG;
+                                        break;
+                                    }
+                                };
                             }
 
-                            kFilterNode = kFilterNode.NextSiblingElement(L"filter");
+                            if (SUCCEEDED(hRetVal))
+                            {
+                                CStringW strFilter(kFilterNode.GetAttribute(L"source"));
+
+                                CComPtr<IGEKRenderFilter> spFilter;
+                                hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderFilter, IID_PPV_ARGS(&spFilter));
+                                if (spFilter)
+                                {
+                                    CStringW strFilterFileName(L"%root%\\data\\filters\\" + strFilter + L".xml");
+                                    hRetVal = spFilter->Load(strFilterFileName, aDefines);
+                                    if (SUCCEEDED(hRetVal))
+                                    {
+                                        FILTER kFilter;
+                                        kFilter.m_strMaterial = kFilterNode.GetAttribute(L"material");
+                                        kFilter.m_spFilter = spFilter;
+                                        kPassData.m_aFilters.push_back(kFilter);
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
+
+                                kFilterNode = kFilterNode.NextSiblingElement(L"filter");
+                            }
+                        }
+                        else
+                        {
+                            hRetVal = E_INVALIDARG;
+                            break;
                         }
                     };
                 }
@@ -752,13 +763,13 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
 
 STDMETHODIMP_(bool) CGEKRenderSystem::EnableMaterial(IGEK3DVideoContext *pContext, IUnknown *pMaterial)
 {
-    REQUIRE_RETURN(pContext && pMaterial, false);
+    REQUIRE_RETURN(m_pCurrentFilter && pContext && pMaterial, false);
 
     bool bEnabled = false;
     CComQIPtr<IGEKRenderMaterial> spMaterial(pMaterial);
     if (spMaterial)
     {
-        bEnabled = spMaterial->Enable(pContext, L"solid");
+        bEnabled = spMaterial->Enable(pContext, m_pCurrentFilter->m_strMaterial);
 /*
             MATERIALBUFFER kMaterial;
             kMaterial.m_nColor = spMaterial->GetColor();
@@ -1020,10 +1031,10 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             m_pCurrentPass = &m_aPasses[kViewer.pass];
             m_pCurrentPass->m_nCurrentBuffer = 0;
 
-            for (auto &pFilter : m_pCurrentPass->m_aFilters)
+            for (auto &kFilter : m_pCurrentPass->m_aFilters)
             {
-                m_pCurrentFilter = pFilter;
-                pFilter->Draw(spContext);
+                m_pCurrentFilter = &kFilter;
+                kFilter.m_spFilter->Draw(spContext);
                 m_pCurrentFilter = nullptr;
                 m_spDefaultRenderStates.Release();
                 m_spDefaultBlendStates.Release();
