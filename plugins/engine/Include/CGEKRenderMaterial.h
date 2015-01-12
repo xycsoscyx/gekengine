@@ -13,7 +13,7 @@ class CGEKRenderMaterial : public CGEKUnknown
 public:
     struct LAYER
     {
-        std::unordered_map<CStringW, CComPtr<IUnknown>> m_aData;
+        std::vector<CComPtr<IUnknown>> m_aData;
         CGEKRenderStates m_kRenderStates;
         CGEKBlendStates m_kBlendStates;
         bool m_bFullBright;
@@ -41,5 +41,5 @@ public:
 
     // IGEKRenderMaterial
     STDMETHOD(Load)                         (THIS_ LPCWSTR pName);
-    STDMETHOD_(bool, Enable)                (THIS_ IGEK3DVideoContext *pContext, LPCWSTR pLayer, const std::vector<CStringW> &aData);
+    STDMETHOD_(bool, Enable)                (THIS_ IGEK3DVideoContext *pContext, LPCWSTR pLayer);
 };

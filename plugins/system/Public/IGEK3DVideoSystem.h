@@ -448,7 +448,7 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoContext, IUnknown, "95262C77-0F56-4447-9337-58
 
     STDMETHOD_(void, SetRenderStates)                   (THIS_ IUnknown *pStates) PURE;
     STDMETHOD_(void, SetDepthStates)                    (THIS_ UINT32 nStencilReference, IUnknown *pStates) PURE;
-    STDMETHOD_(void, SetBlendStates)                    (THIS_ const float4 &kBlendFactor, UINT32 nMask, IUnknown *pStates) PURE;
+    STDMETHOD_(void, SetBlendStates)                    (THIS_ const float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates) PURE;
 
     STDMETHOD_(void, SetVertexBuffer)                   (THIS_ UINT32 nSlot, UINT32 nOffset, IGEK3DVideoBuffer *pBuffer) PURE;
     STDMETHOD_(void, SetIndexBuffer)                    (THIS_ UINT32 nOffset, IGEK3DVideoBuffer *pBuffer) PURE;

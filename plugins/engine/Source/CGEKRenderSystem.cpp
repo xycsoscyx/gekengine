@@ -414,18 +414,6 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
             if (kPassNode)
             {
                 hRetVal = E_FAIL;
-                CLibXMLNode kMaterialsNode = kPassNode.FirstChildElement(L"materials");
-                if (kMaterialsNode)
-                {
-                    CLibXMLNode kDataNode = kMaterialsNode.FirstChildElement(L"data");
-                    while (kDataNode)
-                    {
-                        CStringW strFilter(kDataNode.GetAttribute(L"source"));
-                        kPassData.m_aData.push_back(strFilter);
-                        kDataNode = kDataNode.NextSiblingElement(L"data");
-                    };
-                }
-
                 CLibXMLNode kFiltersNode = kPassNode.FirstChildElement(L"filters");
                 if (kFiltersNode)
                 {
@@ -558,6 +546,38 @@ STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource
     }
 
     return hRetVal;
+}
+
+STDMETHODIMP_(void) CGEKRenderSystem::SetDefaultRenderStates(IUnknown *pStates)
+{
+    m_spDefaultRenderStates = pStates;
+}
+
+STDMETHODIMP_(void) CGEKRenderSystem::SetDefaultBlendStates(const float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates)
+{
+    m_nDefaultBlendFactor = nBlendFactor;
+    m_nDefaultSampleMask = nMask;
+    m_spDefaultBlendStates = pStates;
+}
+
+STDMETHODIMP_(void) CGEKRenderSystem::EnableDefaultRenderStates(IGEK3DVideoContext *pContext)
+{
+    REQUIRE_VOID_RETURN(pContext);
+
+    if (m_spDefaultRenderStates)
+    {
+        pContext->SetRenderStates(m_spDefaultRenderStates);
+    }
+}
+
+STDMETHODIMP_(void) CGEKRenderSystem::EnableDefaultBlendStates(IGEK3DVideoContext *pContext)
+{
+    REQUIRE_VOID_RETURN(pContext);
+
+    if (m_spDefaultBlendStates)
+    {
+        pContext->SetBlendStates(m_nDefaultBlendFactor, m_nDefaultSampleMask, m_spDefaultBlendStates);
+    }
 }
 
 STDMETHODIMP_(void) CGEKRenderSystem::SetResource(IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource)
@@ -738,7 +758,7 @@ STDMETHODIMP_(bool) CGEKRenderSystem::EnableMaterial(IGEK3DVideoContext *pContex
     CComQIPtr<IGEKRenderMaterial> spMaterial(pMaterial);
     if (spMaterial)
     {
-        bEnabled = spMaterial->Enable(pContext, L"solid", m_pCurrentPass->m_aData);
+        bEnabled = spMaterial->Enable(pContext, L"solid");
 /*
             MATERIALBUFFER kMaterial;
             kMaterial.m_nColor = spMaterial->GetColor();
@@ -1005,6 +1025,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                 m_pCurrentFilter = pFilter;
                 pFilter->Draw(spContext);
                 m_pCurrentFilter = nullptr;
+                m_spDefaultRenderStates.Release();
+                m_spDefaultBlendStates.Release();
             }
 
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderEnd, std::placeholders::_1)));

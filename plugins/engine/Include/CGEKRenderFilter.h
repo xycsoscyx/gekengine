@@ -12,8 +12,6 @@ DECLARE_INTERFACE(IUnknown);
 
 class CGEKRenderFilter : public CGEKUnknown
                        , public IGEKRenderFilter
-                       , public CGEKRenderStates
-                       , public CGEKBlendStates
 {
 public:
     enum MODES
@@ -61,6 +59,8 @@ private:
 
     MODES m_eMode;
     CComPtr<IUnknown> m_spDepthStates;
+    CGEKRenderStates m_kRenderStates;
+    CGEKBlendStates m_kBlendStates;
 
     bool m_bFlip;
     bool m_bClearDepth;
@@ -79,8 +79,6 @@ private:
 
     HRESULT LoadDefines(CLibXMLNode &kNode);
     HRESULT LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSize, UINT32 nYSize);
-    HRESULT LoadRenderStates(CLibXMLNode &kFilterNode);
-    HRESULT LoadBlendStates(CLibXMLNode &kFilterNode);
     HRESULT LoadBuffers(CLibXMLNode &kFilterNode);
     HRESULT LoadTargets(CLibXMLNode &kFilterNode);
     HRESULT LoadResources(DATA &kData, CLibXMLNode &kNode);

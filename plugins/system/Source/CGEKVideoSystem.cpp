@@ -902,7 +902,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(UINT32 nStencilReference, I
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &kBlendFactor, UINT32 nMask, IUnknown *pStates)
+STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pStates);
@@ -910,7 +910,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &kBlendFactor,
     CComQIPtr<ID3D11BlendState> spStates(pStates);
     if (spStates)
     {
-        m_spDeviceContext->OMSetBlendState(spStates, kBlendFactor.rgba, nMask);
+        m_spDeviceContext->OMSetBlendState(spStates, nBlendFactor.rgba, nMask);
     }
 }
 

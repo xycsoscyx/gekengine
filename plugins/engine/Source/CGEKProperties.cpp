@@ -100,13 +100,23 @@ HRESULT CGEKRenderStates::Load(IGEK3DVideoSystem *pSystem, CLibXMLNode &kStatesN
     return pSystem->CreateRenderStates(kRenderStates, &m_spRenderStates);
 }
 
-void CGEKRenderStates::Enable(IGEK3DVideoContext *pContext)
+bool CGEKRenderStates::Enable(IGEK3DVideoContext *pContext)
 {
-    REQUIRE_VOID_RETURN(pContext);
+    REQUIRE_RETURN(pContext, false);
+
+    bool bEnabled = false;
     if (m_spRenderStates)
     {
+        bEnabled = true;
         pContext->SetRenderStates(m_spRenderStates);
     }
+
+    return bEnabled;
+}
+
+void CGEKRenderStates::SetDefault(IGEKRenderSystem *pSystem)
+{
+    pSystem->SetDefaultRenderStates(m_spRenderStates);
 }
 
 CGEKBlendStates::~CGEKBlendStates(void)
@@ -203,11 +213,21 @@ HRESULT CGEKBlendStates::Load(IGEK3DVideoSystem *pSystem, CLibXMLNode &kBlendNod
     return hRetVal;
 }
 
-void CGEKBlendStates::Enable(IGEK3DVideoContext *pContext)
+bool CGEKBlendStates::Enable(IGEK3DVideoContext *pContext)
 {
-    REQUIRE_VOID_RETURN(pContext);
+    REQUIRE_RETURN(pContext, false);
+
+    bool bEnabled = false;
     if (m_spBlendStates)
     {
+        bEnabled = true;
         pContext->SetBlendStates(m_nBlendFactor, m_nSampleMask, m_spBlendStates);
     }
+
+    return bEnabled;
+}
+
+void CGEKBlendStates::SetDefault(IGEKRenderSystem *pSystem)
+{
+    pSystem->SetDefaultBlendStates(m_nBlendFactor, m_nSampleMask, m_spBlendStates);
 }

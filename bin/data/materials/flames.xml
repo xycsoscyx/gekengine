@@ -2,14 +2,14 @@
 <material>
     <render>
         <solid fullbright="1">
-            <!--blend>
+            <blend>
                 <color source="one" destination="one" operation="add" />
                 <alpha source="one" destination="one" operation="add" />
-            </blend-->
+            </blend>
             <data>
-                <albedo source="%material%.ColorMap.dds" />
-                <normal source="%material%.NormalMap.dds" />
-                <info source="*color:0.5,0,0,0" />
+                <stage source="%material%.ColorMap.dds" />
+                <stage source="%material%.NormalMap.dds" />
+                <stage source="*color:0.5,0,0,0" />
             </data>
         </solid>
     </render>

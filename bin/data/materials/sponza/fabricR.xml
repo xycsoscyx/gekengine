@@ -3,9 +3,9 @@
     <render>
         <solid>
             <data>
-                <albedo source="%material%.ColorMap.dds" />
-                <normal source="%directory%\fabric.NormalMap.dds" />
-                <info source="%directory%\fabric.InfoMap.dds" />
+                <stage source="%material%.ColorMap.dds" />
+                <stage source="%directory%\fabric.NormalMap.dds" />
+                <stage source="%directory%\fabric.InfoMap.dds" />
             </data>
         </solid>
     </render>

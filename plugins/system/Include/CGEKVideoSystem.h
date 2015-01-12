@@ -41,7 +41,7 @@ public:
     STDMETHOD_(void, SetRenderTargets)                  (THIS_ const std::vector<IGEK3DVideoTexture *> &aTargets, IUnknown *pDepth);
     STDMETHOD_(void, SetRenderStates)                   (THIS_ IUnknown *pStates);
     STDMETHOD_(void, SetDepthStates)                    (THIS_ UINT32 nStencilReference, IUnknown *pStates);
-    STDMETHOD_(void, SetBlendStates)                    (THIS_ const float4 &kBlendFactor, UINT32 nMask, IUnknown *pStates);
+    STDMETHOD_(void, SetBlendStates)                    (THIS_ const float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates);
     STDMETHOD_(void, SetVertexBuffer)                   (THIS_ UINT32 nSlot, UINT32 nOffset, IGEK3DVideoBuffer *pBuffer);
     STDMETHOD_(void, SetIndexBuffer)                    (THIS_ UINT32 nOffset, IGEK3DVideoBuffer *pBuffer);
     STDMETHOD_(void, SetPrimitiveType)                  (THIS_ GEK3DVIDEO::PRIMITIVE::TYPE eType);

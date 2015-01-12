@@ -276,16 +276,6 @@ HRESULT CGEKRenderFilter::LoadDepthStates(CLibXMLNode &kTargetsNode, UINT32 nXSi
     return hRetVal;
 }
 
-HRESULT CGEKRenderFilter::LoadRenderStates(CLibXMLNode &kFilterNode)
-{
-    return CGEKRenderStates::Load(m_pVideoSystem, kFilterNode.FirstChildElement(L"states"));
-}
-
-HRESULT CGEKRenderFilter::LoadBlendStates(CLibXMLNode &kFilterNode)
-{
-    return CGEKBlendStates::Load(m_pVideoSystem, kFilterNode.FirstChildElement(L"blend"));
-}
-
 HRESULT CGEKRenderFilter::LoadBuffers(CLibXMLNode &kFilterNode)
 {
     HRESULT hRetVal = S_OK;
@@ -651,17 +641,17 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName, const std::unordered_map<
 
             if (SUCCEEDED(hRetVal))
             {
+                hRetVal = m_kRenderStates.Load(m_pVideoSystem, kFilterNode.FirstChildElement(L"states"));
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = m_kBlendStates.Load(m_pVideoSystem, kFilterNode.FirstChildElement(L"blend"));
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
                 hRetVal = LoadDefines(kFilterNode);
-            }
-
-            if (SUCCEEDED(hRetVal))
-            {
-                hRetVal = LoadBlendStates(kFilterNode);
-            }
-
-            if (SUCCEEDED(hRetVal))
-            {
-                hRetVal = LoadRenderStates(kFilterNode);
             }
 
             if (SUCCEEDED(hRetVal))
@@ -820,10 +810,14 @@ STDMETHODIMP_(void) CGEKRenderFilter::Draw(IGEK3DVideoContext *pContext)
         }
     }
 
-    CGEKRenderStates::Enable(pContext);
-    CGEKBlendStates::Enable(pContext);
+    m_kRenderStates.SetDefault(m_pRenderManager);
+    m_kBlendStates.SetDefault(m_pRenderManager);
+
+    m_kRenderStates.Enable(pContext);
+    m_kBlendStates.Enable(pContext);
     pContext->SetDepthStates(m_nStencilReference, m_spDepthStates);
     pContext->GetPixelSystem()->SetProgram(m_kPixelData.m_spProgram);
+
     if (m_eMode == FORWARD)
     {
         for (auto &kPair : aPixelResources)

@@ -47,7 +47,6 @@ public:
         UINT8 m_nCurrentBuffer;
         CComPtr<IGEK3DVideoTexture> m_aBuffers[2];
         std::vector<CComPtr<IGEKRenderFilter>> m_aFilters;
-        std::vector<CStringW> m_aData;
     };
 
     struct LIGHTBUFFER
@@ -111,6 +110,10 @@ private:
 
     PASS *m_pCurrentPass;
     IGEKRenderFilter *m_pCurrentFilter;
+    CComPtr<IUnknown> m_spDefaultRenderStates;
+    float4 m_nDefaultBlendFactor;
+    UINT32 m_nDefaultSampleMask;
+    CComPtr<IUnknown> m_spDefaultBlendStates;
 
 private:
     HRESULT LoadPass(LPCWSTR pName);
@@ -143,10 +146,14 @@ public:
 
     // IGEKRenderSystem
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppResource);
-    STDMETHOD(CreateBuffer)                   (THIS_ LPCWSTR pName, UINT32 nStride, UINT32 nCount);
-    STDMETHOD(CreateBuffer)                   (THIS_ LPCWSTR pName, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount);
-    STDMETHOD(CreateBuffer)                   (THIS_ LPCWSTR pName, UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat);
+    STDMETHOD(CreateBuffer)                 (THIS_ LPCWSTR pName, UINT32 nStride, UINT32 nCount);
+    STDMETHOD(CreateBuffer)                 (THIS_ LPCWSTR pName, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount);
+    STDMETHOD(CreateBuffer)                 (THIS_ LPCWSTR pName, UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppResource);
+    STDMETHOD_(void, SetDefaultRenderStates)(THIS_ IUnknown *pStates);
+    STDMETHOD_(void, SetDefaultBlendStates) (THIS_ const float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates);
+    STDMETHOD_(void, EnableDefaultRenderStates) (THIS_ IGEK3DVideoContext *pContext);
+    STDMETHOD_(void, EnableDefaultBlendStates)  (THIS_ IGEK3DVideoContext *pContext);
     STDMETHOD_(void, SetResource)           (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource);
     STDMETHOD_(void, SetScreenTargets)      (THIS_ IGEK3DVideoContext *pContext, IUnknown *pDepthBuffer);
     STDMETHOD_(void, FlipCurrentBuffers)    (THIS);

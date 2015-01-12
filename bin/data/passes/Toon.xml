@@ -1,9 +1,5 @@
 <?xml version="1.0"?>
 <pass>
-    <materials>
-        <data source="albedo" />
-        <data source="normal" />
-    </materials>
     <filters>
         <filter source="Toon/Deferred" />
         <filter source="Toon/Edge" />

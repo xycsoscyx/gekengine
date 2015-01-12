@@ -86,24 +86,27 @@ STDMETHODIMP CGEKRenderMaterial::Load(LPCWSTR pName)
                         }
                     }
 
-                    CLibXMLNode kDataNodes = kLayerNode.FirstChildElement(L"data");
-                    if (kDataNodes)
+                    CLibXMLNode kDataNode = kLayerNode.FirstChildElement(L"data");
+                    if (kDataNode)
                     {
-                        CLibXMLNode kDataNode = kDataNodes.FirstChildElement();
-                        while (kDataNode)
+                        CLibXMLNode kStageNode = kDataNode.FirstChildElement(L"stage");
+                        while (kStageNode)
                         {
-                            CStringW strSource(kDataNode.GetAttribute(L"source"));
+                            if (!kStageNode.HasAttribute(L"source"))
+                            {
+                                hRetVal = E_FAIL;
+                                break;
+                            }
+
+                            CStringW strSource(kStageNode.GetAttribute(L"source"));
                             strSource.Replace(L"%material%", pName);
                             strSource.Replace(L"%directory%", kDirectory.m_strPath.GetString());
 
                             CComPtr<IUnknown> spData;
                             m_pRenderManager->LoadResource(strSource, &spData);
-                            if (spData)
-                            {
-                                kLayerData.m_aData[kDataNode.GetType()] = spData;
-                            }
+                            kLayerData.m_aData.push_back(spData);
 
-                            kDataNode = kDataNode.NextSiblingElement();
+                            kStageNode = kStageNode.NextSiblingElement();
                         };
                     }
 
@@ -116,7 +119,7 @@ STDMETHODIMP CGEKRenderMaterial::Load(LPCWSTR pName)
     return hRetVal;
 }
 
-STDMETHODIMP_(bool) CGEKRenderMaterial::Enable(IGEK3DVideoContext *pContext, LPCWSTR pLayer, const std::vector<CStringW> &aData)
+STDMETHODIMP_(bool) CGEKRenderMaterial::Enable(IGEK3DVideoContext *pContext, LPCWSTR pLayer)
 {
     bool bHasData = false;
     auto pLayerIterator = m_aLayers.find(pLayer);
@@ -125,20 +128,19 @@ STDMETHODIMP_(bool) CGEKRenderMaterial::Enable(IGEK3DVideoContext *pContext, LPC
         bHasData = true;
 
         LAYER &kLayer = (*pLayerIterator).second;
-        kLayer.m_kRenderStates.Enable(pContext);
-        kLayer.m_kBlendStates.Enable(pContext);
-
-        for (UINT32 nStage = 0; nStage < aData.size(); nStage++)
+        if (!kLayer.m_kRenderStates.Enable(pContext))
         {
-            auto pDataIterator = kLayer.m_aData.find(aData[nStage]);
-            if (pDataIterator != kLayer.m_aData.end())
-            {
-                m_pRenderManager->SetResource(pContext->GetPixelSystem(), nStage, (*pDataIterator).second);
-            }
-            else
-            {
-                m_pRenderManager->SetResource(pContext->GetPixelSystem(), nStage, nullptr);
-            }
+            m_pRenderManager->EnableDefaultRenderStates(pContext);
+        }
+
+        if (!kLayer.m_kBlendStates.Enable(pContext))
+        {
+            m_pRenderManager->EnableDefaultBlendStates(pContext);
+        }
+
+        for (UINT32 nStage = 0; nStage < kLayer.m_aData.size(); nStage++)
+        {
+            m_pRenderManager->SetResource(pContext->GetPixelSystem(), nStage, kLayer.m_aData[nStage]);
         }
     }
 

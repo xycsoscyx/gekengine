@@ -17,7 +17,8 @@ public:
     virtual ~CGEKRenderStates(void);
 
     HRESULT Load(IGEK3DVideoSystem *pSystem, CLibXMLNode &kStatesNode);
-    void Enable(IGEK3DVideoContext *pContext);
+    bool Enable(IGEK3DVideoContext *pContext);
+    void SetDefault(IGEKRenderSystem *pSystem);
 };
 
 class CGEKBlendStates
@@ -31,5 +32,6 @@ public:
     virtual ~CGEKBlendStates(void);
 
     HRESULT Load(IGEK3DVideoSystem *pSystem, CLibXMLNode &kStatesNode);
-    void Enable(IGEK3DVideoContext *pContext);
+    bool Enable(IGEK3DVideoContext *pContext);
+    void SetDefault(IGEKRenderSystem *pSystem);
 };
