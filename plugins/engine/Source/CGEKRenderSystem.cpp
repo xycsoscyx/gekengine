@@ -964,7 +964,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     spContext->GetVertexSystem()->SetSamplerStates(1, m_spLinearClampSampler);
     spContext->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
     spContext->GetPixelSystem()->SetSamplerStates(1, m_spLinearWrapSampler);
-    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(viewer) }, [&](const GEKENTITYID &nViewerID)->void
+    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(viewer) }, [&](const GEKENTITYID &nViewerID) -> void
     {
         auto &kViewer = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(viewer)>(nViewerID, GET_COMPONENT_ID(viewer));
         if (SUCCEEDED(LoadPass(kViewer.pass)))
@@ -997,7 +997,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
             LIGHTBUFFER kData;
             m_aVisibleLights.clear();
-            m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(light) }, [&](const GEKENTITYID &nEntityID)->void
+            m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(light) }, [&](const GEKENTITYID &nEntityID) -> void
             {
                 auto &kLight = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(light)>(nEntityID, GET_COMPONENT_ID(light));
                 auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));

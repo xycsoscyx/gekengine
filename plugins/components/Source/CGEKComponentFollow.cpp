@@ -62,7 +62,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnUpdateEnd(float nGameTime, floa
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(follow) }, [&](const GEKENTITYID &nEntityID)->void
+    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(follow) }, [&](const GEKENTITYID &nEntityID) -> void
     {
         auto &kFollow = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(follow)>(nEntityID, GET_COMPONENT_ID(follow));
 

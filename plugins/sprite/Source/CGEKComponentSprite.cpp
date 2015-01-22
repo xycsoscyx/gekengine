@@ -129,7 +129,7 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(const frustum &nViewF
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
     m_aVisible.clear();
-    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(sprite) }, [&](const GEKENTITYID &nEntityID)->void
+    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(sprite) }, [&](const GEKENTITYID &nEntityID) -> void
     {
         auto &kSprite = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(sprite)>(nEntityID, GET_COMPONENT_ID(sprite));
 

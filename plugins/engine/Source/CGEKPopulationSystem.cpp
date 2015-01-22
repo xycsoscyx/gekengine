@@ -164,6 +164,33 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
     return CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
 }
 
+STDMETHODIMP CGEKPopulationSystem::Save(LPCWSTR pName)
+{
+    std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
+    {
+        std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> aEntity;
+        std::for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::pair<const GEKCOMPONENTID, CComPtr<IGEKComponent>> &kPair) -> void
+        {
+            std::unordered_map<CStringW, CStringW> aParams;
+            if (SUCCEEDED(kPair.second->Serialize(nEntityID, aParams)))
+            {
+                aEntity[kPair.second->GetName()] = aParams;
+            }
+        });
+
+        CStringW strName;
+        std::for_each(m_aNamedEntities.begin(), m_aNamedEntities.end(), [&](std::pair<const CStringW, GEKENTITYID> &kPair) -> void
+        {
+            if (kPair.second == nEntityID)
+            {
+                strName = kPair.first;
+            }
+        });
+    });
+
+    return S_OK;
+}
+
 STDMETHODIMP_(void) CGEKPopulationSystem::Free(void)
 {
     m_aHitList.clear();
@@ -215,6 +242,7 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Update(float nGameTime, float nFrameTi
     }
 
     m_aHitList.clear();
+    Save(L"test");
 }
 
 STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID, LPCWSTR pName)
@@ -323,14 +351,14 @@ STDMETHODIMP_(void) CGEKPopulationSystem::ListEntities(std::function<void(const 
     bParallel = false;
     if (bParallel)
     {
-        concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
+        concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
         {
             OnEntity(nEntityID);
         });
     }
     else
     {
-        std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
+        std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
         {
             OnEntity(nEntityID);
         });
@@ -340,7 +368,7 @@ STDMETHODIMP_(void) CGEKPopulationSystem::ListEntities(std::function<void(const 
 STDMETHODIMP_(void) CGEKPopulationSystem::ListComponentsEntities(const std::vector<GEKCOMPONENTID> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel)
 {
     std::list<IGEKComponent *> aComponentList;
-    std::for_each(aComponents.begin(), aComponents.end(), [&](const GEKCOMPONENTID &nComponentID)-> void
+    std::for_each(aComponents.begin(), aComponents.end(), [&](const GEKCOMPONENTID &nComponentID) -> void
     {
         auto pIterator = m_aComponents.find(nComponentID);
         if (pIterator != m_aComponents.end())
@@ -352,10 +380,10 @@ STDMETHODIMP_(void) CGEKPopulationSystem::ListComponentsEntities(const std::vect
     bParallel = false;
     if (bParallel)
     {
-        concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
+        concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
         {
             bool bEntityHasAllComponents = true;
-            std::for_each(aComponentList.begin(), aComponentList.end(), [&](IGEKComponent *pComponent)-> void
+            std::for_each(aComponentList.begin(), aComponentList.end(), [&](IGEKComponent *pComponent) -> void
             {
                 if (!pComponent->HasComponent(nEntityID))
                 {
@@ -371,10 +399,10 @@ STDMETHODIMP_(void) CGEKPopulationSystem::ListComponentsEntities(const std::vect
     }
     else
     {
-        std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID)-> void
+        std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
         {
             bool bEntityHasAllComponents = true;
-            std::for_each(aComponentList.begin(), aComponentList.end(), [&](IGEKComponent *pComponent)-> void
+            std::for_each(aComponentList.begin(), aComponentList.end(), [&](IGEKComponent *pComponent) -> void
             {
                 if (!pComponent->HasComponent(nEntityID))
                 {

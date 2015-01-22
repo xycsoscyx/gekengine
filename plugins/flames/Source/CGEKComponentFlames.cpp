@@ -166,7 +166,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentAdded(const GEKENTITYI
             kEmitter.minimum = kTransform.position;
             kEmitter.maximum = kTransform.position;
             kEmitter.m_aParticles.resize(kFlames.density);
-            concurrency::parallel_for_each(kEmitter.m_aParticles.begin(), kEmitter.m_aParticles.end(), [&](PARTICLE &kParticle)-> void
+            concurrency::parallel_for_each(kEmitter.m_aParticles.begin(), kEmitter.m_aParticles.end(), [&](PARTICLE &kParticle) -> void
             {
                 kParticle.m_nLife.y = ((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.life.y - kFlames.life.x)) + kFlames.life.x);
                 kParticle.m_nLife.x = (gs_kAbsoluteDistribution(gs_kMersineTwister) * kParticle.m_nLife.y);
@@ -202,14 +202,14 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentRemoved(const GEKENTIT
 
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnUpdate(float nGameTime, float nFrameTime)
 {
-    concurrency::parallel_for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair)-> void
+    concurrency::parallel_for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair) -> void
     {
         auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(kPair.first, GET_COMPONENT_ID(transform));
         auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, GET_COMPONENT_ID(flames));
 
         kPair.second.minimum = _INFINITY;
         kPair.second.maximum =-_INFINITY;
-        concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle)-> void
+        concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle) -> void
         {
             kParticle.m_nLife.x += nFrameTime;
             kParticle.m_nSpin.x += (kParticle.m_nSpin.y * nFrameTime);
@@ -249,7 +249,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
     m_aVisible.clear();
-    concurrency::parallel_for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair)-> void
+    concurrency::parallel_for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair) -> void
     {
         if (nViewFrustum.IsVisible(kPair.second))
         {
@@ -275,7 +275,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
             if (spMaterial && spGradient)
             {
                 concurrency::concurrent_vector<INSTANCE> aVisible;
-                concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle)-> void
+                concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle) -> void
                 {
                     aVisible.push_back(INSTANCE(kParticle.m_nPosition, (kParticle.m_nLife.x / kParticle.m_nLife.y), kParticle.m_nSpin.x));
                 });
