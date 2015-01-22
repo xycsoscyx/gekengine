@@ -21,7 +21,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEKComponents.h" />
     <ClInclude Include="GEKComponentsCLSIDs.h" />
     <ClInclude Include="..\..\api\IGEKRenderManager.h">
       <Filter>API Files</Filter>
