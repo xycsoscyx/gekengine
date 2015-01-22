@@ -29,14 +29,22 @@ STDMETHODIMP CGEKPopulationSystem::Initialize(void)
             CComQIPtr<IGEKComponent> spComponent(pObject);
             if (spComponent)
             {
-                auto pIterator = m_aComponentNames.find(spComponent->GetName());
-                if (pIterator == m_aComponentNames.end())
-                {
-                    static GEKCOMPONENTID nNextComponentID = GEKINVALIDCOMPONENTID;
+                OutputDebugString(FormatString(L"GEK Component Found: ID (0x%08X), Name (%s)\r\n", spComponent->GetID(), spComponent->GetName()));
 
-                    nNextComponentID++;
-                    m_aComponentNames[spComponent->GetName()] = nNextComponentID;
-                    m_aComponents[nNextComponentID] = spComponent;
+                auto pIDIterator = m_aComponents.find(spComponent->GetID());
+                auto pNamesIterator = m_aComponentNames.find(spComponent->GetName());
+                if (pIDIterator != m_aComponents.end())
+                {
+                    OutputDebugString(FormatString(L" - Component ID Already Used: 0x%08X\r\n", spComponent->GetID()));
+                }
+                else if (pNamesIterator != m_aComponentNames.end())
+                {
+                    OutputDebugString(FormatString(L" - Component Name Already Used: %s\r\n", spComponent->GetName()));
+                }
+                else
+                {
+                    m_aComponentNames[spComponent->GetName()] = spComponent->GetID();
+                    m_aComponents[spComponent->GetID()] = spComponent;
                 }
             }
 
@@ -146,8 +154,9 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
                     });
 
                     AddComponent(nEntityID, (*pIterator).second, aParams);
-                    kComponentNode = kComponentNode.NextSiblingElement();
                 }
+
+                kComponentNode = kComponentNode.NextSiblingElement();
             };
         }
     });

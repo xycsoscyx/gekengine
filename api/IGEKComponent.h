@@ -12,6 +12,7 @@
 DECLARE_INTERFACE_IID_(IGEKComponent, IUnknown, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E")
 {
     STDMETHOD_(LPCWSTR, GetName)                (THIS) const PURE;
+    STDMETHOD_(GEKCOMPONENTID, GetID)           (THIS) const PURE;
     STDMETHOD_(void, Clear)                     (THIS) PURE;
 
     STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID) PURE;
@@ -29,7 +30,7 @@ DECLARE_INTERFACE_IID_(IGEKComponent, IUnknown, "F1CA9EEC-0F09-45DA-BF24-0C70F5F
     }
 };
 
-#define DECLARE_COMPONENT(NAME)                                                             \
+#define DECLARE_COMPONENT(NAME, ID)                                                         \
 class CGEKComponent##NAME##                                                                 \
     : public CGEKUnknown                                                                    \
     , public IGEKComponent                                                                  \
@@ -38,14 +39,18 @@ public:                                                                         
     DECLARE_UNKNOWN(CGEKComponent##NAME##);                                                 \
     CGEKComponent##NAME##(void);                                                            \
     ~CGEKComponent##NAME##(void);                                                           \
-    STDMETHOD_(LPVOID, GetComponent)(THIS_ const GEKENTITYID &nEntityID);                   \
-    STDMETHOD_(LPCWSTR, GetName)    (THIS) const;                                           \
-    STDMETHOD_(void, Clear)         (THIS);                                                 \
-    STDMETHOD(AddComponent)         (THIS_ const GEKENTITYID &nEntityID);                   \
-    STDMETHOD(RemoveComponent)      (THIS_ const GEKENTITYID &nEntityID);                   \
-    STDMETHOD_(bool, HasComponent)  (THIS_ const GEKENTITYID &nEntityID) const;             \
-    STDMETHOD(Serialize)            (THIS_ const GEKENTITYID &nEntityID, std::unordered_map<CStringW, CStringW> &aParams);      \
-    STDMETHOD(DeSerialize)          (THIS_ const GEKENTITYID &nEntityID, const std::unordered_map<CStringW, CStringW> &aParams);\
+    STDMETHOD_(LPCWSTR, GetName)        (THIS) const;                                       \
+    STDMETHOD_(GEKCOMPONENTID, GetID)   (THIS) const;                                       \
+    STDMETHOD_(void, Clear)             (THIS);                                             \
+    STDMETHOD(AddComponent)             (THIS_ const GEKENTITYID &nEntityID);               \
+    STDMETHOD(RemoveComponent)          (THIS_ const GEKENTITYID &nEntityID);               \
+    STDMETHOD_(bool, HasComponent)      (THIS_ const GEKENTITYID &nEntityID) const;         \
+    STDMETHOD_(LPVOID, GetComponent)    (THIS_ const GEKENTITYID &nEntityID);               \
+    STDMETHOD(Serialize)                (THIS_ const GEKENTITYID &nEntityID, std::unordered_map<CStringW, CStringW> &aParams);      \
+    STDMETHOD(DeSerialize)              (THIS_ const GEKENTITYID &nEntityID, const std::unordered_map<CStringW, CStringW> &aParams);\
+                                                                                            \
+public:                                                                                     \
+    static const GEKCOMPONENTID gs_nComponentID = ID;                                       \
                                                                                             \
 public:                                                                                     \
     struct BASE                                                                             \
@@ -66,9 +71,6 @@ private:                                                                        
     concurrency::concurrent_queue<UINT32> m_aEmpty;                                         \
     concurrency::concurrent_unordered_map<GEKENTITYID, UINT32> m_aIndices;                  \
     concurrency::concurrent_vector<DATA> m_aData;                                           \
-                                                                                            \
-public:                                                                                     \
-    static GEKCOMPONENTID gs_nComponentID;                                                  \
 };
 
 #define GET_COMPONENT_ID(NAME)                                                              CGEKComponent##NAME##::gs_nComponentID
@@ -80,8 +82,6 @@ BEGIN_INTERFACE_LIST(CGEKComponent##NAME##)                                     
 END_INTERFACE_LIST_UNKNOWN                                                                  \
                                                                                             \
 REGISTER_CLASS(CGEKComponent##NAME##)                                                       \
-                                                                                            \
-GEKCOMPONENTID CGEKComponent##NAME##::gs_nComponentID = GEKINVALIDCOMPONENTID;              \
                                                                                             \
 CGEKComponent##NAME##::DATA::DATA(void)                                                     \
     : BASE()
@@ -103,6 +103,11 @@ CGEKComponent##NAME##::~CGEKComponent##NAME##(void)                             
 STDMETHODIMP_(LPCWSTR) CGEKComponent##NAME##::GetName(void) const                           \
 {                                                                                           \
     return L#NAME;                                                                          \
+};                                                                                          \
+                                                                                            \
+STDMETHODIMP_(GEKCOMPONENTID) CGEKComponent##NAME##::GetID(void) const                      \
+{                                                                                           \
+    return gs_nComponentID;                                                                 \
 };                                                                                          \
                                                                                             \
 STDMETHODIMP_(void) CGEKComponent##NAME##::Clear(void)                                      \

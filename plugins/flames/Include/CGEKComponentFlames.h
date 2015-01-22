@@ -5,7 +5,7 @@
 #include "GEKAPI.h"
 #include <concurrent_vector.h>
 
-DECLARE_COMPONENT(flames)
+DECLARE_COMPONENT(flames, 0x00000102)
     DECLARE_COMPONENT_VALUE(CStringW, material)
     DECLARE_COMPONENT_VALUE(CStringW, gradient)
     DECLARE_COMPONENT_VALUE(UINT32, density)

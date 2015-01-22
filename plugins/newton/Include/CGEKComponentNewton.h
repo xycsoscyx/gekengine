@@ -6,7 +6,7 @@
 #include "IGEKNewton.h"
 #include <concurrent_unordered_map.h>
 
-DECLARE_COMPONENT(newton)
+DECLARE_COMPONENT(newton, 0x00001000)
     DECLARE_COMPONENT_VALUE(CStringW, shape)
     DECLARE_COMPONENT_VALUE(CStringW, params)
     DECLARE_COMPONENT_VALUE(CStringW, material)

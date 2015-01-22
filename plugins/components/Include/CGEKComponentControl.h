@@ -5,7 +5,7 @@
 #include "GEKAPI.h"
 #include <concurrent_unordered_map.h>
 
-DECLARE_COMPONENT(control)
+DECLARE_COMPONENT(control, 0x00000011)
     DECLARE_COMPONENT_VALUE(float, turn)
     DECLARE_COMPONENT_VALUE(float, tilt)
 END_DECLARE_COMPONENT(control)

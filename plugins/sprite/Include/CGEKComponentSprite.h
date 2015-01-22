@@ -5,7 +5,7 @@
 #include "GEKAPI.h"
 #include <concurrent_vector.h>
 
-DECLARE_COMPONENT(sprite)
+DECLARE_COMPONENT(sprite, 0x00000101)
     DECLARE_COMPONENT_VALUE(CStringW, material)
     DECLARE_COMPONENT_VALUE(float, size)
     DECLARE_COMPONENT_VALUE(float4, color)

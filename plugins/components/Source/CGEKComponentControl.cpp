@@ -60,7 +60,7 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnState(LPCWSTR pName, bool bSta
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    m_pSceneManager->ListComponentsEntities({ L"transform", L"control" }, [&](const GEKENTITYID &nEntityID)->void
+    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(control) }, [&](const GEKENTITYID &nEntityID)->void
     {
         if (bState)
         {
@@ -77,7 +77,7 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnValue(LPCWSTR pName, float nVa
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    m_pSceneManager->ListComponentsEntities({ L"transform", L"control" }, [&](const GEKENTITYID &nEntityID)->void
+    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(control) }, [&](const GEKENTITYID &nEntityID)->void
     {
         m_aSingleActions[nEntityID][pName] = nValue;
     }, true);
