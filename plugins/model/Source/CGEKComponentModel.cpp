@@ -216,14 +216,14 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const frustum &nViewFr
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
     m_aVisible.clear();
-    m_pSceneManager->ListComponentsEntities({ L"transform", L"model" }, [&](const GEKENTITYID &nEntityID)->void
+    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(model) }, [&](const GEKENTITYID &nEntityID)->void
     {
-        auto &kModel = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(model)>(nEntityID, L"model");
+        auto &kModel = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(model)>(nEntityID, GET_COMPONENT_ID(model));
 
         MODEL *pModel = GetModel(kModel.file, kModel.params);
         if (pModel)
         {
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
 
             float4x4 nMatrix;
             nMatrix   = kTransform.rotation;

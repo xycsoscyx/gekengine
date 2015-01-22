@@ -129,16 +129,16 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(const frustum &nViewF
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
     m_aVisible.clear();
-    m_pSceneManager->ListComponentsEntities({ L"transform", L"sprite" }, [&](const GEKENTITYID &nEntityID)->void
+    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(sprite) }, [&](const GEKENTITYID &nEntityID)->void
     {
-        auto &kSprite = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(sprite)>(nEntityID, L"sprite");
+        auto &kSprite = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(sprite)>(nEntityID, GET_COMPONENT_ID(sprite));
 
         CComPtr<IUnknown> spMaterial;
         m_pMaterialManager->LoadMaterial(kSprite.material, &spMaterial);
         if (spMaterial)
         {
             float nHalfSize = (kSprite.size * 0.5f);
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
             if (nViewFrustum.IsVisible(aabb(kTransform.position - nHalfSize, kTransform.position + nHalfSize)))
             {
                 m_aVisible[spMaterial].emplace_back(kTransform.position, nHalfSize, kSprite.color);

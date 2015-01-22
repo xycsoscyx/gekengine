@@ -16,7 +16,8 @@ class CGEKPopulationSystem : public CGEKUnknown
                            , public IGEKSceneManager
 {
 private:
-    std::unordered_map<CStringW, CComPtr<IGEKComponent>> m_aComponents;
+    std::unordered_map<CStringW, GEKCOMPONENTID> m_aComponentNames;
+    std::unordered_map<GEKCOMPONENTID, CComPtr<IGEKComponent>> m_aComponents;
     std::list<CComPtr<IGEKComponentSystem>> m_aComponentSystems;
     concurrency::concurrent_vector<GEKENTITYID> m_aPopulation;
     concurrency::concurrent_unordered_map<CStringW, GEKENTITYID> m_aNamedEntities;
@@ -42,10 +43,10 @@ public:
     STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID, LPCWSTR pName = nullptr);
     STDMETHOD(DestroyEntity)                    (THIS_ const GEKENTITYID &nEntityID);
     STDMETHOD(GetNamedEntity)                   (THIS_ LPCWSTR pName, GEKENTITYID *pEntityID);
-    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent, const std::unordered_map<CStringW, CStringW> &aParams);
-    STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
-    STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
-    STDMETHOD_(LPVOID, GetComponent)            (THIS_ const GEKENTITYID &nEntityID, LPCWSTR pComponent);
+    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID, const std::unordered_map<CStringW, CStringW> &aParams);
+    STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
+    STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
+    STDMETHOD_(LPVOID, GetComponent)            (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
     STDMETHOD_(void, ListEntities)              (THIS_ std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel = false);
-    STDMETHOD_(void, ListComponentsEntities)    (THIS_ const std::vector<CStringW> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel = false);
+    STDMETHOD_(void, ListComponentsEntities)    (THIS_ const std::vector<GEKCOMPONENTID> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel = false);
 };

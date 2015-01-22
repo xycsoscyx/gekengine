@@ -66,8 +66,12 @@ private:                                                                        
     concurrency::concurrent_queue<UINT32> m_aEmpty;                                         \
     concurrency::concurrent_unordered_map<GEKENTITYID, UINT32> m_aIndices;                  \
     concurrency::concurrent_vector<DATA> m_aData;                                           \
+                                                                                            \
+public:                                                                                     \
+    static GEKCOMPONENTID gs_nComponentID;                                                  \
 };
 
+#define GET_COMPONENT_ID(NAME)                                                              CGEKComponent##NAME##::gs_nComponentID
 #define GET_COMPONENT_DATA(NAME)                                                            CGEKComponent##NAME##::DATA
 
 #define REGISTER_COMPONENT(NAME)                                                            \
@@ -76,6 +80,8 @@ BEGIN_INTERFACE_LIST(CGEKComponent##NAME##)                                     
 END_INTERFACE_LIST_UNKNOWN                                                                  \
                                                                                             \
 REGISTER_CLASS(CGEKComponent##NAME##)                                                       \
+                                                                                            \
+GEKCOMPONENTID CGEKComponent##NAME##::gs_nComponentID = GEKINVALIDCOMPONENTID;              \
                                                                                             \
 CGEKComponent##NAME##::DATA::DATA(void)                                                     \
     : BASE()

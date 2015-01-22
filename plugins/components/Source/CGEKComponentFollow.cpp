@@ -62,14 +62,14 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnUpdateEnd(float nGameTime, floa
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    m_pSceneManager->ListComponentsEntities({ L"transform", L"follow" }, [&](const GEKENTITYID &nEntityID)->void
+    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(follow) }, [&](const GEKENTITYID &nEntityID)->void
     {
-        auto &kFollow = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(follow)>(nEntityID, L"follow");
+        auto &kFollow = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(follow)>(nEntityID, GET_COMPONENT_ID(follow));
 
         GEKENTITYID nTargetID = GEKINVALIDENTITYID;
         if (SUCCEEDED(m_pSceneManager->GetNamedEntity(kFollow.target, &nTargetID)))
         {
-            auto &kTargetTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nTargetID, L"transform");
+            auto &kTargetTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nTargetID, GET_COMPONENT_ID(transform));
 
             kFollow.rotation = kFollow.rotation.Slerp(kTargetTransform.rotation, 0.5f);
 
@@ -78,7 +78,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnUpdateEnd(float nGameTime, floa
             float4x4 nLookAt;
             nLookAt.LookAt(nTarget, kTargetTransform.position, float3(0.0f, 1.0f, 0.0f));
 
-            auto &kCurrentTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
+            auto &kCurrentTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
             kCurrentTransform.position = nTarget;
             kCurrentTransform.rotation = nLookAt;
         }

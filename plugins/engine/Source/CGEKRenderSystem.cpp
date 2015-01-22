@@ -964,15 +964,15 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
     spContext->GetVertexSystem()->SetSamplerStates(1, m_spLinearClampSampler);
     spContext->GetPixelSystem()->SetSamplerStates(0, m_spPointSampler);
     spContext->GetPixelSystem()->SetSamplerStates(1, m_spLinearWrapSampler);
-    m_pSceneManager->ListComponentsEntities({ L"transform", L"viewer" }, [&](const GEKENTITYID &nViewerID)->void
+    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(viewer) }, [&](const GEKENTITYID &nViewerID)->void
     {
-        auto &kViewer = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(viewer)>(nViewerID, L"viewer");
+        auto &kViewer = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(viewer)>(nViewerID, GET_COMPONENT_ID(viewer));
         if (SUCCEEDED(LoadPass(kViewer.pass)))
         {
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderBegin, std::placeholders::_1)));
 
             float4x4 nCameraMatrix;
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, L"transform");
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, GET_COMPONENT_ID(transform));
             nCameraMatrix = kTransform.rotation;
             nCameraMatrix.t = kTransform.position;
 
@@ -997,10 +997,10 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
             LIGHTBUFFER kData;
             m_aVisibleLights.clear();
-            m_pSceneManager->ListComponentsEntities({ L"transform", L"light" }, [&](const GEKENTITYID &nEntityID)->void
+            m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(light) }, [&](const GEKENTITYID &nEntityID)->void
             {
-                auto &kLight = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(light)>(nEntityID, L"light");
-                auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
+                auto &kLight = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(light)>(nEntityID, GET_COMPONENT_ID(light));
+                auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
                 if (nViewFrustum.IsVisible(sphere(kTransform.position, kLight.range)))
                 {
                     kData.m_nPosition = (kEngineBuffer.m_nViewMatrix * float4(kTransform.position, 1.0f));

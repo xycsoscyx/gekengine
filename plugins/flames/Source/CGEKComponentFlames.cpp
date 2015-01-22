@@ -151,16 +151,16 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnEntityDestroyed(const GEKENTITY
     }
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentAdded(const GEKENTITYID &nEntityID, LPCWSTR pComponent)
+STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentAdded(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
-    if (_wcsicmp(pComponent, L"flames") == 0)
+    if (nComponentID == GET_COMPONENT_ID(flames))
     {
-        if (m_pSceneManager->HasComponent(nEntityID, L"transform"))
+        if (m_pSceneManager->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
         {
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, L"transform");
-            auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(nEntityID, L"flames");
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
+                auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(nEntityID, GET_COMPONENT_ID(flames));
 
             EMITTER &kEmitter = m_aEmitters[nEntityID];
             kEmitter.minimum = kTransform.position;
@@ -188,9 +188,9 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentAdded(const GEKENTITYI
     }
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentRemoved(const GEKENTITYID &nEntityID, LPCWSTR pComponent)
+STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentRemoved(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
 {
-    if (_wcsicmp(pComponent, L"flames") == 0)
+    if (nComponentID == GET_COMPONENT_ID(flames))
     {
         auto pIterator = m_aEmitters.find(nEntityID);
         if (pIterator != m_aEmitters.end())
@@ -204,8 +204,8 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnUpdate(float nGameTime, float n
 {
     concurrency::parallel_for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair)-> void
     {
-        auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(kPair.first, L"transform");
-        auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, L"flames");
+        auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(kPair.first, GET_COMPONENT_ID(transform));
+        auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, GET_COMPONENT_ID(flames));
 
         kPair.second.minimum = _INFINITY;
         kPair.second.maximum =-_INFINITY;
@@ -253,7 +253,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
     {
         if (nViewFrustum.IsVisible(kPair.second))
         {
-            auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, L"flames");
+            auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, GET_COMPONENT_ID(flames));
 
             CComPtr<IGEK3DVideoTexture> spGradient;
             auto pIterator = m_aGradients.find(kFlames.gradient);

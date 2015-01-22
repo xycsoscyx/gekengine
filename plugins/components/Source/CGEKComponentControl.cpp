@@ -98,8 +98,8 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnUpdateBegin(float nGameTime, f
     {
         for (auto pEntity : aActions)
         {
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(pEntity.first, L"transform");
-            auto &kControl = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(control)>(pEntity.first, L"control");
+            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(pEntity.first, GET_COMPONENT_ID(transform));
+            auto &kControl = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(control)>(pEntity.first, GET_COMPONENT_ID(control));
 
             kControl.turn += (pEntity.second[L"turn"] * 0.01f);
             kControl.tilt = 0.0f;//+= (pEntity.second[L"tilt"] * 0.01f);
