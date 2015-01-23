@@ -116,7 +116,7 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
         }
     }
     
-    std::for_each(aEntities.begin(), aEntities.end(), [&](CLibXMLNode &kEntityNode) -> void
+    for (auto &kEntityNode : aEntities)
     {
         CStringW strName;
         std::map<CStringW, CStringW> aValues;
@@ -159,34 +159,35 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
                 kComponentNode = kComponentNode.NextSiblingElement();
             };
         }
-    });
+    }
 
     return CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
 }
 
 STDMETHODIMP CGEKPopulationSystem::Save(LPCWSTR pName)
 {
-    std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
+    for (auto &nEntityID : m_aPopulation)
     {
         std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> aEntity;
-        std::for_each(m_aComponents.begin(), m_aComponents.end(), [&](std::pair<const GEKCOMPONENTID, CComPtr<IGEKComponent>> &kPair) -> void
+        for (auto &kPair : m_aComponents)
         {
             std::unordered_map<CStringW, CStringW> aParams;
             if (SUCCEEDED(kPair.second->Serialize(nEntityID, aParams)))
             {
                 aEntity[kPair.second->GetName()] = aParams;
             }
-        });
+        }
 
         CStringW strName;
-        std::for_each(m_aNamedEntities.begin(), m_aNamedEntities.end(), [&](std::pair<const CStringW, GEKENTITYID> &kPair) -> void
+        for (auto &kPair : m_aNamedEntities)
         {
             if (kPair.second == nEntityID)
             {
                 strName = kPair.first;
+                break;
             }
-        });
-    });
+        }
+    }
 
     return S_OK;
 }
@@ -357,37 +358,37 @@ STDMETHODIMP_(void) CGEKPopulationSystem::ListEntities(std::function<void(const 
     }
     else*/
     {
-        std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
+        for (auto &nEntityID : m_aPopulation)
         {
             OnEntity(nEntityID);
-        });
+        }
     }
 }
 
 STDMETHODIMP_(void) CGEKPopulationSystem::ListComponentsEntities(const std::vector<GEKCOMPONENTID> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel)
 {
     std::list<IGEKComponent *> aComponentList;
-    std::for_each(aComponents.begin(), aComponents.end(), [&](const GEKCOMPONENTID &nComponentID) -> void
+    for (auto &nComponentID : aComponents)
     {
         auto pIterator = m_aComponents.find(nComponentID);
         if (pIterator != m_aComponents.end())
         {
             aComponentList.push_back((*pIterator).second);
         }
-    });
+    }
 
     /*if (bParallel)
     {
         concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
         {
             bool bEntityHasAllComponents = true;
-            std::for_each(aComponentList.begin(), aComponentList.end(), [&](IGEKComponent *pComponent) -> void
+            for (auto &spComponent : aComponentList)
             {
                 if (!pComponent->HasComponent(nEntityID))
                 {
                     bEntityHasAllComponents = false;
                 }
-            });
+            }
 
             if (bEntityHasAllComponents)
             {
@@ -397,21 +398,21 @@ STDMETHODIMP_(void) CGEKPopulationSystem::ListComponentsEntities(const std::vect
     }
     else*/
     {
-        std::for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
+        for (auto &nEntityID : m_aPopulation)
         {
             bool bEntityHasAllComponents = true;
-            std::for_each(aComponentList.begin(), aComponentList.end(), [&](IGEKComponent *pComponent) -> void
+            for (auto &spComponent : aComponentList)
             {
-                if (!pComponent->HasComponent(nEntityID))
+                if (!spComponent->HasComponent(nEntityID))
                 {
                     bEntityHasAllComponents = false;
                 }
-            });
+            }
 
             if (bEntityHasAllComponents)
             {
                 OnEntity(nEntityID);
             }
-        });
+        }
     }
 }
