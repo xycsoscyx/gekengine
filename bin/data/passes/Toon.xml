@@ -4,7 +4,7 @@
         <filter source="Toon/Deferred" material="solid" />
         <filter source="Toon/Edge" material="solid" />
         <filter source="Toon/SSAO" material="solid" />
-        <filter source="Toon/BlurSSAO">
+        <filter source="Toon/BlurSSAO" material="solid">
             <defines>
                 <define name="gs_nAxis" value="float2(1,0)" />
                 <define name="gs_bCombine" value="0" />
