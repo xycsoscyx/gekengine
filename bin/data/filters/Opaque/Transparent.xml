@@ -3,7 +3,7 @@
     <states cullmode="back" />
     
     <targets>
-        <depth name="Opaque.DepthBuffer" format="D24S8" comparison="less" writemask="all" clear="0" />
+        <depth source="Opaque.DepthBuffer" comparison="less" writemask="zero" />
     </targets>
     
     <pixel>
