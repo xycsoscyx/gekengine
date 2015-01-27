@@ -70,81 +70,6 @@ STDMETHODIMP CGEKSystem::Initialize(void)
         hRetVal = GetContext()->AddCachedClass(CLSID_GEKSystem, GetUnknown());
     }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        m_kConfig.Load(L"%root%\\config.cfg");
-        m_nXSize = StrToUINT32(m_kConfig.GetValue(L"video", L"xsize", L"640"));
-        m_nYSize = StrToUINT32(m_kConfig.GetValue(L"video", L"ysize", L"480"));
-        m_bIsWindowed = StrToBoolean(m_kConfig.GetValue(L"video", L"windowed", L"1"));
-
-        WNDCLASSEX kClass = { 0 };
-        if (!GetClassInfoEx(GetModuleHandle(nullptr), L"GEKvX_Engine_314159", &kClass))
-        {
-            WNDCLASS kClass;
-            kClass.style                = 0;
-            kClass.lpfnWndProc          = ManagerBaseProc;
-            kClass.cbClsExtra           = 0;
-            kClass.cbWndExtra           = 0;
-            kClass.hInstance            = GetModuleHandle(nullptr);
-            kClass.hIcon                = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(103));
-            kClass.hCursor              = nullptr;
-            kClass.hbrBackground        = (HBRUSH)GetStockObject(BLACK_BRUSH);
-            kClass.lpszMenuName         = nullptr;
-            kClass.lpszClassName        = L"GEKvX_Engine_314159";
-            hRetVal = (RegisterClass(&kClass) ? S_OK : E_FAIL);
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        RECT kRect;
-        kRect.left = 0;
-        kRect.top = 0;
-        kRect.right = m_nXSize;
-        kRect.bottom = m_nYSize;
-        AdjustWindowRect(&kRect, WS_OVERLAPPEDWINDOW, false);
-        int iWinX = (kRect.right - kRect.left);
-        int iWinY = (kRect.bottom - kRect.top);
-        int iCenterX = 0;
-        int iCenterY = 0;
-
-        if (m_bIsWindowed)
-        {
-            iCenterX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((kRect.right - kRect.left) / 2);
-            iCenterY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((kRect.bottom - kRect.top) / 2);
-        }
-
-        hRetVal = E_FAIL;
-        m_hWindow = CreateWindow(L"GEKvX_Engine_314159", L"GEKvX Engine", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, 
-                                 iCenterX, iCenterY, iWinX, iWinY, 0, nullptr, GetModuleHandle(nullptr), 0);
-        if (m_hWindow != nullptr)
-        {
-            hRetVal = S_OK;
-            SetWindowLong(m_hWindow, GWL_USERDATA, (long)this);
-            ShowWindow(m_hWindow, SW_HIDE);
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKVideoSystem, IID_PPV_ARGS(&m_spVideoSystem));
-        if (m_spVideoSystem)
-        {
-            m_spVideoSystem->SetDefaultTargets();
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKAudioSystem, IID_PPV_ARGS(&m_spAudioSystem));
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        ShowWindow(m_hWindow, SW_SHOW);
-        UpdateWindow(m_hWindow);
-    }
-
     return hRetVal;
 }
 
@@ -155,37 +80,105 @@ STDMETHODIMP_(void) CGEKSystem::Destroy(void)
     GetContext()->RemoveCachedClass(CLSID_GEKSystem);
 }
 
-STDMETHODIMP CGEKSystem::Reset(void)
+STDMETHODIMP CGEKSystem::SetSize(UINT32 nXSize, UINT32 nYSize, bool bWindowed)
 {
-    m_nXSize = StrToUINT32(m_kConfig.GetValue(L"video", L"xsize", L"640"));
-    m_nYSize = StrToUINT32(m_kConfig.GetValue(L"video", L"ysize", L"480"));
-    m_bIsWindowed = StrToBoolean(m_kConfig.GetValue(L"video", L"windowed", L"1"));
+    m_nXSize = nXSize;
+    m_nYSize = nYSize;
+    m_bIsWindowed = bWindowed;
 
-    HRESULT hRetVal = m_spVideoSystem->Reset();
-    if (SUCCEEDED(hRetVal) && m_bIsWindowed)
+    HRESULT hRetVal = E_FAIL;
+    if (m_hWindow == nullptr)
     {
-        RECT kRect;
-        kRect.left = 0;
-        kRect.top = 0;
-        kRect.right = m_nXSize;
-        kRect.bottom = m_nYSize;
-        AdjustWindowRect(&kRect, WS_OVERLAPPEDWINDOW, false);
-        int iWinX = (kRect.right - kRect.left);
-        int iWinY = (kRect.bottom - kRect.top);
-        int iCenterX = 0;
-        int iCenterY = 0;
+        WNDCLASSEX kClass = { 0 };
+        if (!GetClassInfoEx(GetModuleHandle(nullptr), L"GEKvX_Engine_314159", &kClass))
+        {
+            WNDCLASS kClass;
+            kClass.style = 0;
+            kClass.lpfnWndProc = ManagerBaseProc;
+            kClass.cbClsExtra = 0;
+            kClass.cbWndExtra = 0;
+            kClass.hInstance = GetModuleHandle(nullptr);
+            kClass.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(103));
+            kClass.hCursor = nullptr;
+            kClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+            kClass.lpszMenuName = nullptr;
+            kClass.lpszClassName = L"GEKvX_Engine_314159";
+            hRetVal = (RegisterClass(&kClass) ? S_OK : E_FAIL);
+        }
 
-        iCenterX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((kRect.right - kRect.left) / 2);
-        iCenterY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((kRect.bottom - kRect.top) / 2);
-        SetWindowPos(m_hWindow, HWND_TOP, iCenterX, iCenterY, iWinX, iWinY, SWP_NOZORDER);
+        if (SUCCEEDED(hRetVal))
+        {
+            RECT kRect;
+            kRect.left = 0;
+            kRect.top = 0;
+            kRect.right = m_nXSize;
+            kRect.bottom = m_nYSize;
+            AdjustWindowRect(&kRect, WS_OVERLAPPEDWINDOW, false);
+            int iWinX = (kRect.right - kRect.left);
+            int iWinY = (kRect.bottom - kRect.top);
+            int iCenterX = 0;
+            int iCenterY = 0;
+
+            if (m_bIsWindowed)
+            {
+                iCenterX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((kRect.right - kRect.left) / 2);
+                iCenterY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((kRect.bottom - kRect.top) / 2);
+            }
+
+            hRetVal = E_FAIL;
+            m_hWindow = CreateWindow(L"GEKvX_Engine_314159", L"GEKvX Engine", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX,
+                iCenterX, iCenterY, iWinX, iWinY, 0, nullptr, GetModuleHandle(nullptr), 0);
+            if (m_hWindow != nullptr)
+            {
+                hRetVal = S_OK;
+                SetWindowLong(m_hWindow, GWL_USERDATA, (long)this);
+                ShowWindow(m_hWindow, SW_HIDE);
+            }
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = GetContext()->CreateInstance(CLSID_GEKVideoSystem, IID_PPV_ARGS(&m_spVideoSystem));
+            if (m_spVideoSystem)
+            {
+                m_spVideoSystem->SetDefaultTargets();
+            }
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = GetContext()->CreateInstance(CLSID_GEKAudioSystem, IID_PPV_ARGS(&m_spAudioSystem));
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            ShowWindow(m_hWindow, SW_SHOW);
+            UpdateWindow(m_hWindow);
+        }
+    }
+    else if (m_spVideoSystem)
+    {
+        hRetVal = m_spVideoSystem->Reset();
+        if (SUCCEEDED(hRetVal) && m_bIsWindowed)
+        {
+            RECT kRect;
+            kRect.left = 0;
+            kRect.top = 0;
+            kRect.right = m_nXSize;
+            kRect.bottom = m_nYSize;
+            AdjustWindowRect(&kRect, WS_OVERLAPPEDWINDOW, false);
+            int iWinX = (kRect.right - kRect.left);
+            int iWinY = (kRect.bottom - kRect.top);
+            int iCenterX = 0;
+            int iCenterY = 0;
+
+            iCenterX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((kRect.right - kRect.left) / 2);
+            iCenterY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((kRect.bottom - kRect.top) / 2);
+            SetWindowPos(m_hWindow, HWND_TOP, iCenterX, iCenterY, iWinX, iWinY, SWP_NOZORDER);
+        }
     }
 
     return hRetVal;
-}
-
-STDMETHODIMP_(CGEKConfig &) CGEKSystem::GetConfig(void)
-{
-    return m_kConfig;
 }
 
 STDMETHODIMP_(HWND) CGEKSystem::GetWindow(void)
@@ -206,41 +199,6 @@ STDMETHODIMP_(UINT32) CGEKSystem::GetXSize(void)
 STDMETHODIMP_(UINT32) CGEKSystem::GetYSize(void)
 {
     return m_nYSize;
-}
-
-STDMETHODIMP_(CStringW) CGEKSystem::ParseValue(LPCWSTR pValue)
-{
-    CStringW strValue(pValue);
-    while (strValue.Find(L"%") >= 0)
-    {
-        CStringW strLeft;
-        int nPosition = 0;
-        if (strValue.GetAt(0) == L'%')
-        {
-            nPosition = 1;
-        }
-        else
-        {
-            strLeft = strValue.Tokenize(L"%", nPosition);
-        }
-
-        if (nPosition >= 0)
-        {
-            CStringW strMiddle(strValue.Tokenize(L"%", nPosition));
-            if (nPosition >= 0)
-            {
-                nPosition = 0;
-                CStringW strGroup(strMiddle.Tokenize(L".", nPosition));
-                CStringW strName(strMiddle.Tokenize(L".", nPosition));
-                if (GetConfig().DoesValueExists(strGroup, strName))
-                {
-                    strValue.Replace((L"%" + strMiddle + L"%"), GetConfig().GetValue(strGroup, strName, L"0"));
-                }
-            }
-        }
-    };
-
-    return strValue;
 }
 
 STDMETHODIMP_(bool) CGEKSystem::IsRunning(void)

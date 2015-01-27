@@ -38,13 +38,11 @@ public:
     STDMETHOD_(void, Destroy)                       (THIS);
 
     // IGEKSystem
-    STDMETHOD(Reset)                                (THIS);
-    STDMETHOD_(CGEKConfig &, GetConfig)             (THIS);
+    STDMETHOD(SetSize)                              (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed);
     STDMETHOD_(HWND, GetWindow)                     (THIS);
     STDMETHOD_(bool, IsWindowed)                    (THIS);
     STDMETHOD_(UINT32, GetXSize)                    (THIS);
     STDMETHOD_(UINT32, GetYSize)                    (THIS);
-    STDMETHOD_(CStringW, ParseValue)                (THIS_ LPCWSTR pValue);
     STDMETHOD_(bool, IsRunning)                     (THIS);
     STDMETHOD_(void, Run)                           (THIS);
     STDMETHOD_(void, Stop)                          (THIS);

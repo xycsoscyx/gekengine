@@ -165,6 +165,7 @@ STDMETHODIMP CGEKEngine::Initialize(void)
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = CGEKObservable::AddObserver(m_spSystem, (IGEKSystemObserver *)GetUnknown());
+            hRetVal = m_spSystem->SetSize(640, 480, true);
         }
 
         if (SUCCEEDED(hRetVal))
@@ -449,10 +450,10 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(const std::vector<CStringW> &aParams)
     else if (aParams.size() == 4 && aParams[0].CompareNoCase(L"setresolution") == 0)
     {
         OnMessage(L"Setting Resolution (%sx%s %s)...", aParams[1].GetString(), aParams[2].GetString(), (StrToBoolean(aParams[3]) ? L"Windowed" : L"Fullscreen"));
-        m_spSystem->GetConfig().SetValue(L"video", L"xsize", aParams[1]);
-        m_spSystem->GetConfig().SetValue(L"video", L"ysize", aParams[2]);
-        m_spSystem->GetConfig().SetValue(L"video", L"windowed", aParams[3]);
-        if (FAILED(m_spSystem->Reset()))
+        UINT32 nXSize = StrToUINT32(aParams[1]);
+        UINT32 nYSize = StrToUINT32(aParams[2]);
+        bool bWindowed = StrToBoolean(aParams[3]);
+        if (FAILED(m_spSystem->SetSize(nXSize, nYSize, bWindowed)))
         {
             m_spSystem->Stop();
         }

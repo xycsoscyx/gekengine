@@ -139,7 +139,8 @@ CStringW CGEKRenderFilter::ParseValue(LPCWSTR pValue)
     IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
     if (pSystem != nullptr)
     {
-        strValue = pSystem->ParseValue(strValue);
+        strValue.Replace(L"%xsize%", FormatString(L"%d", pSystem->GetXSize()));
+        strValue.Replace(L"%ysize%", FormatString(L"%d", pSystem->GetYSize()));
     }
 
     return strValue;
@@ -337,14 +338,8 @@ HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
         CLibXMLNode kTargetsNode = kFilterNode.FirstChildElement(L"targets");
         if (kTargetsNode)
         {
-            float nScale = 1.0f;
-            if (kTargetsNode.HasAttribute(L"scale"))
-            {
-                nScale = StrToFloat(kTargetsNode.GetAttribute(L"scale"));
-            }
-
-            UINT32 nXSize = UINT32(float(pSystem->GetXSize()) * nScale);
-            UINT32 nYSize = UINT32(float(pSystem->GetYSize()) * nScale);
+            UINT32 nXSize = pSystem->GetXSize();
+            UINT32 nYSize = pSystem->GetYSize();
             if (SUCCEEDED(hRetVal))
             {
                 hRetVal = LoadDepthStates(kTargetsNode, nXSize, nYSize);
@@ -475,7 +470,8 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
         if (kComputeNode.HasAttribute(L"dispatch"))
         {
             int nPosition = 0;
-            float3 nDispatchSize = StrToFloat3(ParseValue(kComputeNode.GetAttribute(L"dispatch")));
+            m_strDispatchSize = kComputeNode.GetAttribute(L"dispatch");
+            float3 nDispatchSize = StrToFloat3(ParseValue(m_strDispatchSize));
             m_nDispatchXSize = UINT32(nDispatchSize.x);
             m_nDispatchYSize = UINT32(nDispatchSize.y);
             m_nDispatchZSize = UINT32(nDispatchSize.z);

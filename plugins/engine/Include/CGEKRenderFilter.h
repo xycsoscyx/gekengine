@@ -55,6 +55,7 @@ private:
     UINT32 m_nDispatchXSize;
     UINT32 m_nDispatchYSize;
     UINT32 m_nDispatchZSize;
+    CStringW m_strDispatchSize;
     std::unordered_map<CStringA, CStringA> m_aDefines;
 
     MODES m_eMode;

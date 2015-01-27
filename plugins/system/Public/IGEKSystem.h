@@ -4,14 +4,12 @@
 
 DECLARE_INTERFACE_IID_(IGEKSystem, IUnknown, "5BA2B424-8708-4703-A731-B585F4F43716")
 {
-    STDMETHOD(Reset)                                (THIS) PURE;
+    STDMETHOD(SetSize)                              (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed) PURE;
 
-    STDMETHOD_(CGEKConfig &, GetConfig)             (THIS) PURE;
     STDMETHOD_(HWND, GetWindow)                     (THIS) PURE;
     STDMETHOD_(bool, IsWindowed)                    (THIS) PURE;
     STDMETHOD_(UINT32, GetXSize)                    (THIS) PURE;
     STDMETHOD_(UINT32, GetYSize)                    (THIS) PURE;
-    STDMETHOD_(CStringW, ParseValue)                (THIS_ LPCWSTR pValue) PURE;
 
     STDMETHOD_(bool, IsRunning)                     (THIS) PURE;
     STDMETHOD_(void, Run)                           (THIS) PURE;

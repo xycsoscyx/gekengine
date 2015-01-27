@@ -201,12 +201,12 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         GEK3DVIDEO::SAMPLERSTATES kStates;
-        if (m_pSystem->GetConfig().DoesValueExists(L"render", L"anisotropy"))
+        /*if (m_pSystem->GetConfig().DoesValueExists(L"render", L"anisotropy"))
         {
             kStates.m_nMaxAnisotropy = StrToUINT32(m_pSystem->GetConfig().GetValue(L"render", L"anisotropy", L"1"));
             kStates.m_eFilter = GEK3DVIDEO::FILTER::ANISOTROPIC;
         }
-        else
+        else*/
         {
             kStates.m_eFilter = GEK3DVIDEO::FILTER::MIN_MAG_MIP_LINEAR;
         }
@@ -219,12 +219,12 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         GEK3DVIDEO::SAMPLERSTATES kStates;
-        if (m_pSystem->GetConfig().DoesValueExists(L"render", L"anisotropy"))
+        /*if (m_pSystem->GetConfig().DoesValueExists(L"render", L"anisotropy"))
         {
             kStates.m_nMaxAnisotropy = StrToUINT32(m_pSystem->GetConfig().GetValue(L"render", L"anisotropy", L"1"));
             kStates.m_eFilter = GEK3DVIDEO::FILTER::ANISOTROPIC;
         }
-        else
+        else*/
         {
             kStates.m_eFilter = GEK3DVIDEO::FILTER::MIN_MAG_MIP_LINEAR;
         }
@@ -291,6 +291,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::OnResetBegin(void)
 STDMETHODIMP CGEKRenderSystem::OnResetEnd(void)
 {
     HRESULT hRetVal = S_OK;
+    UINT32 nXSize = m_pSystem->GetXSize();
+    UINT32 nYSize = m_pSystem->GetYSize();
     for (auto &kBuffer : m_aBuffers)
     {
         if (kBuffer.second.m_nStride > 0)
@@ -318,14 +320,14 @@ STDMETHODIMP CGEKRenderSystem::OnResetEnd(void)
             case GEK3DVIDEO::DATA::D16:
             case GEK3DVIDEO::DATA::D24_S8:
             case GEK3DVIDEO::DATA::D32:
-                hRetVal = m_pVideoSystem->CreateDepthTarget(kBuffer.second.m_nXSize, kBuffer.second.m_nYSize, kBuffer.second.m_eFormat, &kBuffer.second.m_spResource);
+                hRetVal = m_pVideoSystem->CreateDepthTarget(nXSize, nYSize, kBuffer.second.m_eFormat, &kBuffer.second.m_spResource);
                 break;
 
             default:
                 if (true)
                 {
                     CComPtr<IGEK3DVideoTexture> spTarget;
-                    hRetVal = m_pVideoSystem->CreateRenderTarget(kBuffer.second.m_nXSize, kBuffer.second.m_nYSize, kBuffer.second.m_eFormat, &spTarget);
+                    hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, kBuffer.second.m_eFormat, &spTarget);
                     if (spTarget)
                     {
                         hRetVal = spTarget->QueryInterface(IID_PPV_ARGS(&kBuffer.second.m_spResource));
@@ -346,12 +348,12 @@ STDMETHODIMP CGEKRenderSystem::OnResetEnd(void)
     {
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = m_pVideoSystem->CreateRenderTarget(kPass.second.m_nXSize, kPass.second.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPass.second.m_aBuffers[0]);
+            hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPass.second.m_aBuffers[0]);
         }
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = m_pVideoSystem->CreateRenderTarget(kPass.second.m_nXSize, kPass.second.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPass.second.m_aBuffers[1]);
+            hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPass.second.m_aBuffers[1]);
         }
 
         if (FAILED(hRetVal))
@@ -484,12 +486,12 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
 
             if (SUCCEEDED(hRetVal))
             {
-                kPassData.m_nXSize = m_pSystem->GetXSize();
-                kPassData.m_nYSize = m_pSystem->GetYSize();
-                hRetVal = m_pVideoSystem->CreateRenderTarget(kPassData.m_nXSize, kPassData.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPassData.m_aBuffers[0]);
+                UINT32 nXSize = m_pSystem->GetXSize();
+                UINT32 nYSize = m_pSystem->GetYSize();
+                hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPassData.m_aBuffers[0]);
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pVideoSystem->CreateRenderTarget(kPassData.m_nXSize, kPassData.m_nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPassData.m_aBuffers[1]);
+                    hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPassData.m_aBuffers[1]);
                 }
             }
 
@@ -679,8 +681,6 @@ STDMETHODIMP CGEKRenderSystem::CreateBuffer(LPCWSTR pName, UINT32 nXSize, UINT32
         if (spResource)
         {
             BUFFER &kBuffer = m_aBuffers[pName];
-            kBuffer.m_nXSize = nXSize;
-            kBuffer.m_nYSize = nYSize;
             kBuffer.m_eFormat = eFormat;
             kBuffer.m_spResource = spResource;
         }
@@ -726,8 +726,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::SetScreenTargets(IGEK3DVideoContext *pCont
     GEK3DVIDEO::VIEWPORT kViewport;
     kViewport.m_nTopLeftX = 0.0f;
     kViewport.m_nTopLeftY = 0.0f;
-    kViewport.m_nXSize = float(m_pCurrentPass->m_nXSize);
-    kViewport.m_nYSize = float(m_pCurrentPass->m_nYSize);
+    kViewport.m_nXSize = float(m_pSystem->GetXSize());
+    kViewport.m_nYSize = float(m_pSystem->GetYSize());
     kViewport.m_nMinDepth = 0.0f;
     kViewport.m_nMaxDepth = 1.0f;
     pContext->SetViewports({ kViewport });

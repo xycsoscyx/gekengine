@@ -26,15 +26,11 @@ public:
     {
         UINT32 m_nStride;
         UINT32 m_nCount;
-        UINT32 m_nXSize;
-        UINT32 m_nYSize;
         GEK3DVIDEO::DATA::FORMAT m_eFormat;
         CComPtr<IUnknown> m_spResource;
         BUFFER(void)
             : m_nStride(0)
             , m_nCount(0)
-            , m_nXSize(0)
-            , m_nYSize(0)
             , m_eFormat(GEK3DVIDEO::DATA::UNKNOWN)
         {
         }
@@ -48,8 +44,6 @@ public:
 
     struct PASS
     {
-        UINT32 m_nXSize;
-        UINT32 m_nYSize;
         UINT8 m_nCurrentBuffer;
         CComPtr<IGEK3DVideoTexture> m_aBuffers[2];
         std::vector<FILTER> m_aFilters;
