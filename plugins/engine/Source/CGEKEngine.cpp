@@ -301,6 +301,15 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
 
         nResult = 1;
         break;
+
+    case WM_SYSCOMMAND:
+        if (SC_KEYMENU == (wParam & 0xFFF0))
+        {
+            m_spSystem->SetSize(m_spSystem->GetXSize(), m_spSystem->GetYSize(), !m_spSystem->IsWindowed());
+            nResult = 1;
+        }
+
+        break;
     };
 }
 
