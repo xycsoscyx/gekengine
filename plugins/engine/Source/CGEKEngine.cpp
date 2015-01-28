@@ -119,7 +119,6 @@ STDMETHODIMP CGEKEngine::Initialize(void)
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKEngine, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
-
         LIBXML_TEST_VERSION;
         static xmlExternalEntityLoader kDefaultXMLLoader = xmlGetExternalEntityLoader();
         xmlSetExternalEntityLoader([](LPCSTR pURL, LPCSTR pID, xmlParserCtxtPtr pContext) -> xmlParserInputPtr
@@ -143,63 +142,25 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
             return pReturn;
         });
+    }
 
-        m_aInputBindings[VK_UP] = L"forward";
-        m_aInputBindings[VK_DOWN] = L"backward";
-        m_aInputBindings[VK_LEFT] = L"strafe_left";
-        m_aInputBindings[VK_RIGHT] = L"strafe_right";
-        m_aInputBindings['W'] = L"forward";
-        m_aInputBindings['S'] = L"backward";
-        m_aInputBindings['A'] = L"strafe_left";
-        m_aInputBindings['D'] = L"strafe_right";
-        m_aInputBindings['Q'] = L"rise";
-        m_aInputBindings['Z'] = L"fall";
-        m_aInputBindings[WM_MOUSEWHEEL] = L"height";
-        m_aInputBindings[WM_TURN] = L"turn";
-        m_aInputBindings[WM_TILT] = L"tilt";
-
-        m_aInputBindings[VK_ESCAPE] = L"quit";
-
-        m_bWindowActive = true;
+    if (SUCCEEDED(hRetVal))
+    {
         hRetVal = GetContext()->CreateInstance(CLSID_GEKSystem, IID_PPV_ARGS(&m_spSystem));
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = CGEKObservable::AddObserver(m_spSystem, (IGEKSystemObserver *)GetUnknown());
-            hRetVal = m_spSystem->SetSize(640, 480, true);
-        }
+    }
 
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationSystem, IID_PPV_ARGS(&m_spPopulationManager));
-        }
-        
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderSystem, IID_PPV_ARGS(&m_spRenderManager));
-            if (SUCCEEDED(hRetVal))
-            {
-                hRetVal = CGEKObservable::AddObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
-            }
-        }
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = CGEKObservable::AddObserver(m_spSystem, (IGEKSystemObserver *)GetUnknown());
+    }
 
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = m_spPopulationManager->LoadSystems();
-        }
-
-        if (SUCCEEDED(hRetVal))
-        {
+    if (SUCCEEDED(hRetVal))
+    {
 #ifdef _DEBUG
-            m_hCursorPointer = LoadAnimatedCursor(GetModuleHandle(L"engine.debug.dll"), IDR_CURSOR_POINTER, L"ANIMATEDCURSOR");
+        m_hCursorPointer = LoadAnimatedCursor(GetModuleHandle(L"engine.debug.dll"), IDR_CURSOR_POINTER, L"ANIMATEDCURSOR");
 #else
-            m_hCursorPointer = LoadAnimatedCursor(GetModuleHandle(L"engine.dll"), IDR_CURSOR_POINTER, L"ANIMATEDCURSOR");
+        m_hCursorPointer = LoadAnimatedCursor(GetModuleHandle(L"engine.dll"), IDR_CURSOR_POINTER, L"ANIMATEDCURSOR");
 #endif
-        }
-
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = Load(L"demo");
-        }
     }
 
     return hRetVal;
@@ -207,20 +168,12 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 
 STDMETHODIMP_(void) CGEKEngine::Destroy(void)
 {
-    CGEKObservable::RemoveObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
-    if (m_spPopulationManager)
-    {
-        m_spPopulationManager->FreeSystems();
-    }
+    xmlCleanupParser();
 
-    m_spRenderManager.Release();
-    m_spPopulationManager.Release();
     CGEKObservable::RemoveObserver(m_spSystem, (IGEKSystemObserver *)this);
     m_spSystem.Release();
 
     GetContext()->RemoveCachedClass(CLSID_GEKEngine);
-
-    xmlCleanupParser();
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult)
@@ -353,12 +306,21 @@ STDMETHODIMP_(void) CGEKEngine::OnEvent(UINT32 nMessage, WPARAM wParam, LPARAM l
 
 STDMETHODIMP_(void) CGEKEngine::OnRun(void)
 {
+    Load(L"demo");
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnStop(void)
 {
     m_bWindowActive = false;
     m_spPopulationManager->Free();
+    CGEKObservable::RemoveObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
+    if (m_spPopulationManager)
+    {
+        m_spPopulationManager->FreeSystems();
+    }
+
+    m_spRenderManager.Release();
+    m_spPopulationManager.Release();
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnStep(void)
@@ -413,10 +375,49 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
     }
 }
 
-STDMETHODIMP_(void) CGEKEngine::Run(void)
+STDMETHODIMP_(void) CGEKEngine::Run(UINT32 nXSize, UINT32 nYSize, bool bWindowed)
 {
-    REQUIRE_VOID_RETURN(m_spSystem);
-    m_spSystem->Run();
+    m_aInputBindings[VK_UP] = L"forward";
+    m_aInputBindings[VK_DOWN] = L"backward";
+    m_aInputBindings[VK_LEFT] = L"strafe_left";
+    m_aInputBindings[VK_RIGHT] = L"strafe_right";
+    m_aInputBindings['W'] = L"forward";
+    m_aInputBindings['S'] = L"backward";
+    m_aInputBindings['A'] = L"strafe_left";
+    m_aInputBindings['D'] = L"strafe_right";
+    m_aInputBindings['Q'] = L"rise";
+    m_aInputBindings['Z'] = L"fall";
+    m_aInputBindings[WM_MOUSEWHEEL] = L"height";
+    m_aInputBindings[WM_TURN] = L"turn";
+    m_aInputBindings[WM_TILT] = L"tilt";
+
+    m_aInputBindings[VK_ESCAPE] = L"quit";
+
+    m_bWindowActive = true;
+    HRESULT hRetVal = m_spSystem->SetSize(nXSize, nYSize, bWindowed);
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationSystem, IID_PPV_ARGS(&m_spPopulationManager));
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderSystem, IID_PPV_ARGS(&m_spRenderManager));
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = CGEKObservable::AddObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
+        }
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        hRetVal = m_spPopulationManager->LoadSystems();
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
+        m_spSystem->Run();
+    }
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnMessage(LPCWSTR pMessage, ...)

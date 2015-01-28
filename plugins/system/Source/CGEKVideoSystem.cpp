@@ -1114,9 +1114,9 @@ STDMETHODIMP CGEKVideoSystem::Initialize(void)
             kSwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
             kSwapChainDesc.BufferCount = 1;
             kSwapChainDesc.OutputWindow = pSystem->GetWindow();
-            kSwapChainDesc.Windowed = true;
+            kSwapChainDesc.Windowed = pSystem->IsWindowed();
             kSwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-            kSwapChainDesc.Flags = 0;
+            kSwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
             UINT nFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG

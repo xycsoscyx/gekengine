@@ -78,6 +78,7 @@ STDMETHODIMP_(void) CGEKSystem::Destroy(void)
     m_spVideoSystem.Release();
     m_spAudioSystem.Release();
     GetContext()->RemoveCachedClass(CLSID_GEKSystem);
+    CoUninitialize();
 }
 
 STDMETHODIMP CGEKSystem::SetSize(UINT32 nXSize, UINT32 nYSize, bool bWindowed)

@@ -593,6 +593,17 @@ STDMETHODIMP CGEKRenderFilter::Reload(void)
     m_kComputeData.m_spProgram.Release();
     m_kPixelData.m_aResources.clear();
     m_kPixelData.m_spProgram.Release();
+    m_nVertexAttributes = 0xFFFFFFFF;
+    m_eMode = STANDARD;
+    m_nDispatchXSize = 0;
+    m_nDispatchYSize = 0;
+    m_nDispatchZSize = 0;
+    m_bFlip = false;
+    m_bClearDepth = false;
+    m_bClearStencil = false;
+    m_nClearDepth = 0.0f;
+    m_nClearStencil = 0;
+    m_nStencilReference = 0;
 
     CLibXMLDoc kDocument;
     HRESULT hRetVal = kDocument.Load(m_strFileName);

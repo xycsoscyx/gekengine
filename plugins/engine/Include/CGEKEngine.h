@@ -57,7 +57,7 @@ public:
     STDMETHOD_(void, OnStep)                    (THIS);
 
     // IGEKGameApplication
-    STDMETHOD_(void, Run)                       (THIS);
+    STDMETHOD_(void, Run)                       (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed);
 
     // IGEKEngine
     STDMETHOD_(void, OnMessage)                 (THIS_ LPCWSTR pMessage, ...);
