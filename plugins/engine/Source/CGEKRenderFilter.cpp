@@ -470,8 +470,8 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
         if (kComputeNode.HasAttribute(L"dispatch"))
         {
             int nPosition = 0;
-            m_strDispatchSize = kComputeNode.GetAttribute(L"dispatch");
-            float3 nDispatchSize = StrToFloat3(ParseValue(m_strDispatchSize));
+            CStringW strDispatchSize = kComputeNode.GetAttribute(L"dispatch");
+            float3 nDispatchSize = StrToFloat3(ParseValue(strDispatchSize));
             m_nDispatchXSize = UINT32(nDispatchSize.x);
             m_nDispatchYSize = UINT32(nDispatchSize.y);
             m_nDispatchZSize = UINT32(nDispatchSize.z);
@@ -577,10 +577,25 @@ HRESULT CGEKRenderFilter::LoadPixelProgram(CLibXMLNode &kFilterNode)
 
 STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName, const std::unordered_map<CStringA, CStringA> &aDefines)
 {
+    REQUIRE_RETURN(pFileName, E_INVALIDARG);
+
     m_aDefines = aDefines;
+    m_strFileName = pFileName;
+    return Reload();
+
+}
+
+STDMETHODIMP CGEKRenderFilter::Reload(void)
+{
+    m_spDepthStates.Release();
+    m_aTargets.clear();
+    m_kComputeData.m_aResources.clear();
+    m_kComputeData.m_spProgram.Release();
+    m_kPixelData.m_aResources.clear();
+    m_kPixelData.m_spProgram.Release();
 
     CLibXMLDoc kDocument;
-    HRESULT hRetVal = kDocument.Load(pFileName);
+    HRESULT hRetVal = kDocument.Load(m_strFileName);
     if (SUCCEEDED(hRetVal))
     {
         CLibXMLNode kFilterNode = kDocument.GetRoot();

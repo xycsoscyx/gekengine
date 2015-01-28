@@ -362,6 +362,26 @@ STDMETHODIMP CGEKRenderSystem::OnResetEnd(void)
         }
     }
 
+    if (SUCCEEDED(hRetVal))
+    {
+        for (auto &kPass : m_aPasses)
+        {
+            for (auto &kFilter : kPass.second.m_aFilters)
+            {
+                hRetVal = kFilter.m_spFilter->Reload();
+                if (FAILED(hRetVal))
+                {
+                    break;
+                }
+            }
+
+            if (FAILED(hRetVal))
+            {
+                break;
+            }
+        }
+    }
+
     return hRetVal;
 }
 

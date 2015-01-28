@@ -55,8 +55,8 @@ private:
     UINT32 m_nDispatchXSize;
     UINT32 m_nDispatchYSize;
     UINT32 m_nDispatchZSize;
-    CStringW m_strDispatchSize;
     std::unordered_map<CStringA, CStringA> m_aDefines;
+    CStringW m_strFileName;
 
     MODES m_eMode;
     CComPtr<IUnknown> m_spDepthStates;
@@ -96,5 +96,6 @@ public:
 
     // IGEKRenderFilter
     STDMETHOD(Load)                                         (THIS_ LPCWSTR pFileName, const std::unordered_map<CStringA, CStringA> &aDefines);
+    STDMETHOD(Reload)                                       (THIS);
     STDMETHOD_(void, Draw)                                  (THIS_ IGEK3DVideoContext *pContext);
 };
