@@ -243,7 +243,6 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Update(float nGameTime, float nFrameTi
     }
 
     m_aHitList.clear();
-    Save(L"test");
 }
 
 STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID, LPCWSTR pName)

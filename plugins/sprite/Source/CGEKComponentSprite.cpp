@@ -3,7 +3,7 @@
 #include "GEKEngineCLSIDs.h"
 #include "GEKEngine.h"
 
-#define NUM_INSTANCES                   50
+#define NUM_INSTANCES                   1000
 
 REGISTER_COMPONENT(sprite)
     REGISTER_COMPONENT_DEFAULT_VALUE(material, L"")

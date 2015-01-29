@@ -10,35 +10,41 @@ static std::mt19937 gs_kMersineTwister(gs_kRandomDevice());
 static std::uniform_real_distribution<float> gs_kFullDistribution(-1.0f, 1.0f);
 static std::uniform_real_distribution<float> gs_kAbsoluteDistribution(0.0f, 1.0f);
 
-#define NUM_INSTANCES                   500
+#define NUM_INSTANCES                   10000
 
 REGISTER_COMPONENT(flames)
     REGISTER_COMPONENT_DEFAULT_VALUE(material, L"flames")
     REGISTER_COMPONENT_DEFAULT_VALUE(gradient, L"flames")
+    REGISTER_COMPONENT_DEFAULT_VALUE(color, float4(1.0f, 1.0f, 1.0f, 1.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(color_offset, float4(0.2f, 0.1f, 0.0f, 0.1f))
     REGISTER_COMPONENT_DEFAULT_VALUE(density, 100)
-    REGISTER_COMPONENT_DEFAULT_VALUE(life, float2(1.0f, 2.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(life_range, float2(1.0f, 2.0f))
     REGISTER_COMPONENT_DEFAULT_VALUE(direction, float3(0.0f, 1.0f, 0.0f))
-    REGISTER_COMPONENT_DEFAULT_VALUE(angle, float3(20.0f, 0.0f, 20.0f))
-    REGISTER_COMPONENT_DEFAULT_VALUE(offset, float3(0.2f, 0.2f, 0.2f))
-    REGISTER_COMPONENT_DEFAULT_VALUE(spin, float2(-360.0f, 360.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(direction_offset, float3(20.0f, 0.0f, 20.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(position_offset, float3(0.2f, 0.2f, 0.2f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(spin_range, float2(-360.0f, 360.0f))
     REGISTER_COMPONENT_SERIALIZE(flames)
         REGISTER_COMPONENT_SERIALIZE_VALUE(material, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(gradient, )
+        REGISTER_COMPONENT_SERIALIZE_VALUE(color, StrFromFloat4)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(color_offset, StrFromFloat4)
         REGISTER_COMPONENT_SERIALIZE_VALUE(density, StrFromUINT32)
-        REGISTER_COMPONENT_SERIALIZE_VALUE(life, StrFromFloat2)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(life_range, StrFromFloat2)
         REGISTER_COMPONENT_SERIALIZE_VALUE(direction, StrFromFloat3)
-        REGISTER_COMPONENT_SERIALIZE_VALUE(angle, StrFromFloat3)
-        REGISTER_COMPONENT_SERIALIZE_VALUE(offset, StrFromFloat3)
-        REGISTER_COMPONENT_SERIALIZE_VALUE(spin, StrFromFloat2)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(direction_offset, StrFromFloat3)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(position_offset, StrFromFloat3)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(spin_range, StrFromFloat2)
     REGISTER_COMPONENT_DESERIALIZE(flames)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(material, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(gradient, )
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(color, StrToFloat4)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(color_offset, StrToFloat4)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(density, StrToUINT32)
-        REGISTER_COMPONENT_DESERIALIZE_VALUE(life, StrToFloat2)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(life_range, StrToFloat2)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(direction, StrToFloat3)
-        REGISTER_COMPONENT_DESERIALIZE_VALUE(angle, StrToFloat3)
-        REGISTER_COMPONENT_DESERIALIZE_VALUE(offset, StrToFloat3)
-        REGISTER_COMPONENT_DESERIALIZE_VALUE(spin, StrToFloat3)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(direction_offset, StrToFloat3)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(position_offset, StrToFloat3)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(spin_range, StrToFloat3)
 END_REGISTER_COMPONENT(flames)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemFlames)
@@ -160,7 +166,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentAdded(const GEKENTITYI
         if (m_pSceneManager->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
         {
             auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
-                auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(nEntityID, GET_COMPONENT_ID(flames));
+            auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(nEntityID, GET_COMPONENT_ID(flames));
 
             EMITTER &kEmitter = m_aEmitters[nEntityID];
             kEmitter.minimum = kTransform.position;
@@ -168,21 +174,27 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentAdded(const GEKENTITYI
             kEmitter.m_aParticles.resize(kFlames.density);
             concurrency::parallel_for_each(kEmitter.m_aParticles.begin(), kEmitter.m_aParticles.end(), [&](PARTICLE &kParticle) -> void
             {
-                kParticle.m_nLife.y = ((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.life.y - kFlames.life.x)) + kFlames.life.x);
+                kParticle.m_nLife.y = ((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.life_range.y - kFlames.life_range.x)) + kFlames.life_range.x);
                 kParticle.m_nLife.x = (gs_kAbsoluteDistribution(gs_kMersineTwister) * kParticle.m_nLife.y);
                 
                 kParticle.m_nSpin.x = _DEGTORAD(gs_kAbsoluteDistribution(gs_kMersineTwister) * 360.0f);
-                kParticle.m_nSpin.y = _DEGTORAD((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.spin.y - kFlames.spin.x)) + kFlames.spin.x);
+                kParticle.m_nSpin.y = _DEGTORAD((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.spin_range.y - kFlames.spin_range.x)) + kFlames.spin_range.x);
 
                 kParticle.m_nPosition = kTransform.position;
-                kParticle.m_nPosition.x += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.x);
-                kParticle.m_nPosition.y += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.y);
-                kParticle.m_nPosition.z += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.z);
+                kParticle.m_nPosition.x += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.position_offset.x);
+                kParticle.m_nPosition.y += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.position_offset.y);
+                kParticle.m_nPosition.z += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.position_offset.z);
                 
-                quaternion nOffset(_DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.x),
-                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.y),
-                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.z));
+                quaternion nOffset(_DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.direction_offset.x),
+                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.direction_offset.y),
+                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.direction_offset.z));
                 kParticle.m_nVelocity = ((kTransform.rotation * nOffset) * kFlames.direction);
+
+                kParticle.m_nColor = kFlames.color;
+                kParticle.m_nColor.r += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.color_offset.r);
+                kParticle.m_nColor.g += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.color_offset.g);
+                kParticle.m_nColor.b += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.color_offset.b);
+                kParticle.m_nColor.a += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.color_offset.a);
             });
         }
     }
@@ -216,16 +228,16 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnUpdate(float nGameTime, float n
             if (kParticle.m_nLife.x >= kParticle.m_nLife.y)
             {
                 kParticle.m_nLife.x = 0.0f;
-                kParticle.m_nLife.y = ((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.life.y - kFlames.life.x)) + kFlames.life.x);
+                kParticle.m_nLife.y = ((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.life_range.y - kFlames.life_range.x)) + kFlames.life_range.x);
 
                 kParticle.m_nPosition = kTransform.position;
-                kParticle.m_nPosition.x += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.x);
-                kParticle.m_nPosition.y += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.y);
-                kParticle.m_nPosition.z += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.offset.z);
+                kParticle.m_nPosition.x += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.position_offset.x);
+                kParticle.m_nPosition.y += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.position_offset.y);
+                kParticle.m_nPosition.z += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.position_offset.z);
                 
-                quaternion nOffset(_DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.x),
-                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.y),
-                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.angle.z));
+                quaternion nOffset(_DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.direction_offset.x),
+                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.direction_offset.y),
+                                   _DEGTORAD(gs_kFullDistribution(gs_kMersineTwister) * kFlames.direction_offset.z));
                 kParticle.m_nVelocity = ((kTransform.rotation * nOffset) * kFlames.direction);
             }
             else
@@ -277,7 +289,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
                 concurrency::concurrent_vector<INSTANCE> aVisible;
                 concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle) -> void
                 {
-                    aVisible.push_back(INSTANCE(kParticle.m_nPosition, (kParticle.m_nLife.x / kParticle.m_nLife.y), kParticle.m_nSpin.x));
+                    aVisible.push_back(INSTANCE(kParticle.m_nPosition, nViewFrustum.origin.Distance(kParticle.m_nPosition), (kParticle.m_nLife.x / kParticle.m_nLife.y), kParticle.m_nSpin.x, kParticle.m_nColor));
                 });
 
                 auto &pVisible = m_aVisible[std::make_pair(spMaterial, spGradient)];
@@ -285,6 +297,14 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
             }
         }
     });
+
+    for (auto &kMaterial : m_aVisible)
+    {
+        std::sort(kMaterial.second.begin(), kMaterial.second.end(), [&](const INSTANCE &kInstanceA, const INSTANCE &kInstanceB) -> bool
+        {
+            return (kInstanceB.m_nDistance < kInstanceA.m_nDistance);
+        });
+    }
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(IGEK3DVideoContext *pContext, UINT32 nVertexAttributes)

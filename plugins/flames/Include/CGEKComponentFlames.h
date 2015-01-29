@@ -8,12 +8,14 @@
 DECLARE_COMPONENT(flames, 0x00000102)
     DECLARE_COMPONENT_VALUE(CStringW, material)
     DECLARE_COMPONENT_VALUE(CStringW, gradient)
+    DECLARE_COMPONENT_VALUE(float4, color)
+    DECLARE_COMPONENT_VALUE(float4, color_offset)
     DECLARE_COMPONENT_VALUE(UINT32, density)
-    DECLARE_COMPONENT_VALUE(float2, life)
+    DECLARE_COMPONENT_VALUE(float2, life_range)
     DECLARE_COMPONENT_VALUE(float3, direction)
-    DECLARE_COMPONENT_VALUE(float3, angle)
-    DECLARE_COMPONENT_VALUE(float3, offset)
-    DECLARE_COMPONENT_VALUE(float2, spin)
+    DECLARE_COMPONENT_VALUE(float3, direction_offset)
+    DECLARE_COMPONENT_VALUE(float3, position_offset)
+    DECLARE_COMPONENT_VALUE(float2, spin_range)
 END_DECLARE_COMPONENT(flames)
 
 class CGEKComponentSystemFlames : public CGEKUnknown
@@ -25,13 +27,17 @@ public:
     struct INSTANCE
     {
         float3 m_nPosition;
+        float m_nDistance;
         float m_nAge;
         float m_nSpin;
+        float4 m_nColor;
 
-        INSTANCE(const float3 &nPosition, float nAge, float nSpin)
+        INSTANCE(const float3 &nPosition, float nDistance, float nAge, float nSpin, const float4 &nColor)
             : m_nPosition(nPosition)
+            , m_nDistance(nDistance)
             , m_nAge(nAge)
             , m_nSpin(nSpin)
+            , m_nColor(nColor)
         {
         }
     };
@@ -42,6 +48,7 @@ public:
         float3 m_nPosition;
         float3 m_nVelocity;
         float2 m_nSpin;
+        float4 m_nColor;
     };
 
     struct EMITTER : public aabb

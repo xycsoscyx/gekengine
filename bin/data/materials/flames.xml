@@ -3,8 +3,8 @@
     <render>
         <transparent fullbright="1">
             <blend>
-                <color source="one" destination="one" operation="add" />
-                <alpha source="one" destination="one" operation="add" />
+                <color source="source_alpha" destination="inverse_source_alpha" operation="add" />
+                <alpha source="one" destination="zero" operation="add" />
             </blend>
             <data>
                 <stage source="%material%.ColorMap.dds" />

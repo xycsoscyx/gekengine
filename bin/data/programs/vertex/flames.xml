@@ -9,8 +9,10 @@
             struct INSTANCE
             {
                 float3      m_nPosition;
+                float       m_nDistance;
                 float       m_nAge;
                 float       m_nSpin;
+                float4      m_nColor;
             };
             
             StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);
@@ -42,8 +44,7 @@
 	            kVertex.position.xyz += (kYOffSet * kSource.position.y);
 				kVertex.texcoord      = kSource.texcoord;
                 kVertex.normal        = mul(float3(0,0,-1), (float3x3)gs_nViewMatrix);
-                kVertex.color         = gs_pGradient.SampleLevel(gs_pLinearSampler, kInstance.m_nAge, 0);
-                kVertex.color.a = 1;
+                kVertex.color         = (gs_pGradient.SampleLevel(gs_pLinearSampler, kInstance.m_nAge, 0) * kInstance.m_nColor);
 				return kVertex;
 			}
         ]]>
