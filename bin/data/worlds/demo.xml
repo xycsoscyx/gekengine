@@ -5,7 +5,7 @@
 			<transform position="0,2,0" rotation="0,0,0,1" />
             <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
             <control />
-            <flames density="500" />
+            <flames density="1000" />
 		</entity>
 
         <entity>

@@ -348,14 +348,14 @@ STDMETHODIMP_(LPVOID) CGEKPopulationSystem::GetComponent(const GEKENTITYID &nEnt
 
 STDMETHODIMP_(void) CGEKPopulationSystem::ListEntities(std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel)
 {
-    /*if (bParallel)
+    if (bParallel)
     {
         concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
         {
             OnEntity(nEntityID);
         });
     }
-    else*/
+    else
     {
         for (auto &nEntityID : m_aPopulation)
         {
@@ -376,14 +376,14 @@ STDMETHODIMP_(void) CGEKPopulationSystem::ListComponentsEntities(const std::vect
         }
     }
 
-    /*if (bParallel)
+    if (bParallel)
     {
         concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
         {
             bool bEntityHasAllComponents = true;
             for (auto &spComponent : aComponentList)
             {
-                if (!pComponent->HasComponent(nEntityID))
+                if (!spComponent->HasComponent(nEntityID))
                 {
                     bEntityHasAllComponents = false;
                 }
@@ -395,7 +395,7 @@ STDMETHODIMP_(void) CGEKPopulationSystem::ListComponentsEntities(const std::vect
             }
         });
     }
-    else*/
+    else
     {
         for (auto &nEntityID : m_aPopulation)
         {

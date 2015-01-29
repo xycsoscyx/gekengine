@@ -16,7 +16,7 @@ REGISTER_COMPONENT(flames)
     REGISTER_COMPONENT_DEFAULT_VALUE(material, L"flames")
     REGISTER_COMPONENT_DEFAULT_VALUE(gradient, L"flames")
     REGISTER_COMPONENT_DEFAULT_VALUE(color, float4(1.0f, 1.0f, 1.0f, 1.0f))
-    REGISTER_COMPONENT_DEFAULT_VALUE(color_offset, float4(0.2f, 0.1f, 0.0f, 0.1f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(color_offset, float4(0.1f, 0.05f, 0.0f, 0.1f))
     REGISTER_COMPONENT_DEFAULT_VALUE(density, 100)
     REGISTER_COMPONENT_DEFAULT_VALUE(life_range, float2(1.0f, 2.0f))
     REGISTER_COMPONENT_DEFAULT_VALUE(direction, float3(0.0f, 1.0f, 0.0f))
@@ -300,7 +300,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
 
     for (auto &kMaterial : m_aVisible)
     {
-        std::sort(kMaterial.second.begin(), kMaterial.second.end(), [&](const INSTANCE &kInstanceA, const INSTANCE &kInstanceB) -> bool
+        concurrency::parallel_sort(kMaterial.second.begin(), kMaterial.second.end(), [&](const INSTANCE &kInstanceA, const INSTANCE &kInstanceB) -> bool
         {
             return (kInstanceB.m_nDistance < kInstanceA.m_nDistance);
         });
