@@ -4,6 +4,62 @@
 
 #pragma comment(lib, "libxml2.lib")
 
+void GEKLoadXMLNode(xmlNode *pNode, GEKXMLNODE &kNode)
+{
+    kNode.first = CA2W((const char *)pNode->name, CP_UTF8);
+    xmlChar *pProperty = xmlNodeGetContent(pNode);
+    if (pProperty != nullptr)
+    {
+        kNode.second = CA2W((const char *)pProperty, CP_UTF8);
+        xmlFree(pProperty);
+    }
+
+    for (xmlAttrPtr pAttribute = pNode->properties; pAttribute != nullptr; pAttribute = pAttribute->next)
+    {
+        CStringA strNameUTF8(pAttribute->name);
+        CStringW strName(CA2W(strNameUTF8, CP_UTF8));
+        xmlChar *pProperty = xmlGetProp(pNode, BAD_CAST strNameUTF8.GetString());
+        if (pProperty != nullptr)
+        {
+            kNode.attributes[strName] = CA2W((const char *)pProperty, CP_UTF8);
+            xmlFree(pProperty);
+        }
+    }
+
+    for (xmlNode *pChild = pNode->children; pChild; pChild = pChild->next)
+    {
+        GEKXMLNODE kChild;
+        GEKLoadXMLNode(pChild, kChild);
+        kNode.children.push_back(kChild);
+    }
+}
+
+HRESULT GEKLoadXML(LPCWSTR pFileName, GEKXMLNODE &kRoot)
+{
+    HRESULT hRetVal = E_FAIL;
+    CStringW strFullFileName(GEKParseFileName(pFileName));
+    CStringA strFileNameUTF8(CW2A(strFullFileName, CP_UTF8));
+    xmlDoc *pDocument = xmlReadFile(strFileNameUTF8, nullptr, XML_PARSE_DTDATTR | XML_PARSE_NOENT | XML_PARSE_DTDVALID);
+    if (pDocument != nullptr)
+    {
+        xmlNode *pRoot = xmlDocGetRootElement(pDocument);
+        if (pRoot != nullptr)
+        {
+            GEKLoadXMLNode(pRoot, kRoot);
+            hRetVal = S_OK;
+        }
+
+        xmlFreeDoc(pDocument);
+    }
+
+    return E_FAIL;
+}
+
+HRESULT GEKSaveXML(LPCWSTR pFileName, GEKXMLNODE &kRoot)
+{
+    return E_FAIL;
+}
+
 CLibXMLNode::CLibXMLNode(xmlNode *pNode)
     : m_pNode(pNode)
 {

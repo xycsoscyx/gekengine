@@ -163,6 +163,9 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 #endif
     }
 
+    GEKXMLNODE kXML;
+    GEKLoadXML(L"E:\\GEK Engine\\bin\\data\\passes\\opaque.xml", kXML);
+
     return hRetVal;
 }
 
