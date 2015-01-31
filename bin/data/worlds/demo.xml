@@ -3,7 +3,7 @@
 	<population>
         <entity name="player">
 			<transform position="0,2,0" rotation="0,0,0,1" />
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <light cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  range="lerp(15,30,arand(1))" />
             <control />
             <flames density="1000" />
 		</entity>
@@ -167,339 +167,563 @@
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
         <!-- 0 -->
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
         </entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
-        <entity>
-            <light color="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1))" range="lerp(15,30,arand(1))" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
 			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <flames density="100" life_range="1,1.5" size_min_range="0.15,0.2" size_max_range="0.3,0.4" position_offset="0,0,0" direction_offset="10,0,10" />
-		</entity>   
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
+        <entity cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  >
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+			<transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+            <flames gradient="gray" color="%cr%,%cg%,%cb%,1" density="100" life_range="1.5,2" size_min_range="0.2,0.3" size_max_range="0.3,0.5" position_offset="0,0,0" direction_offset="10,0,10" mass_range=".05,.075" />
+        </entity>   
         <!-- 5 -->
 
     </population>
