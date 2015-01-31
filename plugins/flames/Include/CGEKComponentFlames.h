@@ -16,6 +16,9 @@ DECLARE_COMPONENT(flames, 0x00000102)
     DECLARE_COMPONENT_VALUE(float3, direction_offset)
     DECLARE_COMPONENT_VALUE(float3, position_offset)
     DECLARE_COMPONENT_VALUE(float2, spin_range)
+    DECLARE_COMPONENT_VALUE(float2, size_min_range)
+    DECLARE_COMPONENT_VALUE(float2, size_max_range)
+    DECLARE_COMPONENT_VALUE(float2, mass_range)
 END_DECLARE_COMPONENT(flames)
 
 class CGEKComponentSystemFlames : public CGEKUnknown
@@ -30,12 +33,14 @@ public:
         float m_nDistance;
         float m_nAge;
         float m_nSpin;
+        float m_nSize;
         float4 m_nColor;
 
-        INSTANCE(const float3 &nPosition, float nDistance, float nAge, float nSpin, const float4 &nColor)
+        INSTANCE(const float3 &nPosition, float nDistance, float nAge, float nSize, float nSpin, const float4 &nColor)
             : m_nPosition(nPosition)
             , m_nDistance(nDistance)
             , m_nAge(nAge)
+            , m_nSize(nSize)
             , m_nSpin(nSpin)
             , m_nColor(nColor)
         {
@@ -48,6 +53,8 @@ public:
         float3 m_nPosition;
         float3 m_nVelocity;
         float2 m_nSpin;
+        float2 m_nSize;
+        float m_nMass;
         float4 m_nColor;
     };
 
@@ -67,8 +74,8 @@ private:
 
     CComPtr<IGEK3DVideoBuffer> m_spVertexBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
-    
-    std::unordered_map<CStringW, CComPtr<IGEK3DVideoTexture>> m_aGradients;
+
+    std::unordered_map<CStringW, std::pair<CComPtr<IUnknown>, CComPtr<IGEK3DVideoTexture>>> m_aGradients;
 
     concurrency::concurrent_unordered_map<GEKENTITYID, EMITTER> m_aEmitters;
 

@@ -23,6 +23,9 @@ REGISTER_COMPONENT(flames)
     REGISTER_COMPONENT_DEFAULT_VALUE(direction_offset, float3(20.0f, 0.0f, 20.0f))
     REGISTER_COMPONENT_DEFAULT_VALUE(position_offset, float3(0.2f, 0.2f, 0.2f))
     REGISTER_COMPONENT_DEFAULT_VALUE(spin_range, float2(-360.0f, 360.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(size_min_range, float2(0.4f, 0.5f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(size_max_range, float2(0.5f, 0.6f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(mass_range, float2(0.0f, 0.05f))
     REGISTER_COMPONENT_SERIALIZE(flames)
         REGISTER_COMPONENT_SERIALIZE_VALUE(material, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(gradient, )
@@ -34,6 +37,9 @@ REGISTER_COMPONENT(flames)
         REGISTER_COMPONENT_SERIALIZE_VALUE(direction_offset, StrFromFloat3)
         REGISTER_COMPONENT_SERIALIZE_VALUE(position_offset, StrFromFloat3)
         REGISTER_COMPONENT_SERIALIZE_VALUE(spin_range, StrFromFloat2)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(size_min_range, StrFromFloat2)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(size_max_range, StrFromFloat2)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(mass_range, StrFromFloat2)
     REGISTER_COMPONENT_DESERIALIZE(flames)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(material, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(gradient, )
@@ -44,7 +50,10 @@ REGISTER_COMPONENT(flames)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(direction, StrToFloat3)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(direction_offset, StrToFloat3)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(position_offset, StrToFloat3)
-        REGISTER_COMPONENT_DESERIALIZE_VALUE(spin_range, StrToFloat3)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(spin_range, StrToFloat2)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(size_min_range, StrToFloat2)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(size_max_range, StrToFloat2)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(mass_range, StrToFloat2)
 END_REGISTER_COMPONENT(flames)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemFlames)
@@ -174,11 +183,16 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentAdded(const GEKENTITYI
             kEmitter.m_aParticles.resize(kFlames.density);
             concurrency::parallel_for_each(kEmitter.m_aParticles.begin(), kEmitter.m_aParticles.end(), [&](PARTICLE &kParticle) -> void
             {
-                kParticle.m_nLife.y = ((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.life_range.y - kFlames.life_range.x)) + kFlames.life_range.x);
+                kParticle.m_nLife.y = lerp(kFlames.life_range.x, kFlames.life_range.y, gs_kAbsoluteDistribution(gs_kMersineTwister));
                 kParticle.m_nLife.x = (gs_kAbsoluteDistribution(gs_kMersineTwister) * kParticle.m_nLife.y);
                 
+                kParticle.m_nMass = lerp(kFlames.mass_range.x, kFlames.mass_range.y, gs_kAbsoluteDistribution(gs_kMersineTwister));
+
                 kParticle.m_nSpin.x = _DEGTORAD(gs_kAbsoluteDistribution(gs_kMersineTwister) * 360.0f);
-                kParticle.m_nSpin.y = _DEGTORAD((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.spin_range.y - kFlames.spin_range.x)) + kFlames.spin_range.x);
+                kParticle.m_nSpin.y = _DEGTORAD(lerp(kFlames.spin_range.x, kFlames.spin_range.y, gs_kAbsoluteDistribution(gs_kMersineTwister)));
+                
+                kParticle.m_nSize.x = lerp(kFlames.size_min_range.x, kFlames.size_min_range.y, gs_kAbsoluteDistribution(gs_kMersineTwister));
+                kParticle.m_nSize.y = lerp(kFlames.size_max_range.x, kFlames.size_max_range.y, gs_kAbsoluteDistribution(gs_kMersineTwister));
 
                 kParticle.m_nPosition = kTransform.position;
                 kParticle.m_nPosition.x += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.position_offset.x);
@@ -228,7 +242,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnUpdate(float nGameTime, float n
             if (kParticle.m_nLife.x >= kParticle.m_nLife.y)
             {
                 kParticle.m_nLife.x = 0.0f;
-                kParticle.m_nLife.y = ((gs_kAbsoluteDistribution(gs_kMersineTwister) * (kFlames.life_range.y - kFlames.life_range.x)) + kFlames.life_range.x);
+                kParticle.m_nLife.y = lerp(kFlames.life_range.x, kFlames.life_range.y, gs_kAbsoluteDistribution(gs_kMersineTwister));
 
                 kParticle.m_nPosition = kTransform.position;
                 kParticle.m_nPosition.x += (gs_kFullDistribution(gs_kMersineTwister) * kFlames.position_offset.x);
@@ -242,6 +256,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnUpdate(float nGameTime, float n
             }
             else
             {
+                kParticle.m_nVelocity.y += (-9.81f * kParticle.m_nMass * nFrameTime);
                 kParticle.m_nPosition += kParticle.m_nVelocity * nFrameTime;
                 kParticle.m_nVelocity.x += (gs_kFullDistribution(gs_kMersineTwister) * nFrameTime);
                 kParticle.m_nVelocity.z += (gs_kFullDistribution(gs_kMersineTwister) * nFrameTime);
@@ -261,35 +276,37 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
     m_aVisible.clear();
-    concurrency::parallel_for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair) -> void
+    std::for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair) -> void
     {
         if (nViewFrustum.IsVisible(kPair.second))
         {
             auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, GET_COMPONENT_ID(flames));
 
+            CComPtr<IUnknown> spMaterial;
             CComPtr<IGEK3DVideoTexture> spGradient;
-            auto pIterator = m_aGradients.find(kFlames.gradient);
+            auto pIterator = m_aGradients.find(kFlames.material + L"|" + kFlames.gradient);
             if (pIterator == m_aGradients.end())
             {
+                m_pMaterialManager->LoadMaterial(kFlames.material, &spMaterial);
                 m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\gradients\\%s.dds", kFlames.gradient.GetString()), GEK3DVIDEO::TEXTURE::FORCE_1D, &spGradient);
-                if (spGradient)
+                if (spMaterial && spGradient)
                 {
-                    m_aGradients[kFlames.gradient] = spGradient;
+                    m_aGradients[kFlames.material + L"|" + kFlames.gradient] = std::make_pair(spMaterial, spGradient);
                 }
             }
             else
             {
-                spGradient = (*pIterator).second;
+                spMaterial = (*pIterator).second.first;
+                spGradient = (*pIterator).second.second;
             }
 
-            CComPtr<IUnknown> spMaterial;
-            m_pMaterialManager->LoadMaterial(kFlames.material, &spMaterial);
             if (spMaterial && spGradient)
             {
                 concurrency::concurrent_vector<INSTANCE> aVisible;
                 concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle) -> void
                 {
-                    aVisible.push_back(INSTANCE(kParticle.m_nPosition, nViewFrustum.origin.Distance(kParticle.m_nPosition), (kParticle.m_nLife.x / kParticle.m_nLife.y), kParticle.m_nSpin.x, kParticle.m_nColor));
+                    float nAge = (kParticle.m_nLife.x / kParticle.m_nLife.y);
+                    aVisible.push_back(INSTANCE(kParticle.m_nPosition, nViewFrustum.origin.Distance(kParticle.m_nPosition), nAge, lerp(kParticle.m_nSize.x, kParticle.m_nSize.y, nAge), kParticle.m_nSpin.x, kParticle.m_nColor));
                 });
 
                 auto &pVisible = m_aVisible[std::make_pair(spMaterial, spGradient)];

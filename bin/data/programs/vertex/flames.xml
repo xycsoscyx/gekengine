@@ -12,6 +12,7 @@
                 float       m_nDistance;
                 float       m_nAge;
                 float       m_nSpin;
+                float       m_nSize;
                 float4      m_nColor;
             };
             
@@ -31,9 +32,8 @@
                 
                 float nSin, nCos;
                 sincos(kInstance.m_nSpin, nSin, nCos);
-                float nSize = lerp(0.25f, 0.5f, kInstance.m_nAge);
-                nSin *= nSize;
-                nCos *= nSize;
+                nSin *= kInstance.m_nSize;
+                nCos *= kInstance.m_nSize;
                 
 	            float3 kXOffSet = mul(float3(nSin, nCos, 0.0f), (float3x3)gs_nViewMatrix);
 	            float3 kYOffSet = mul(float3(nCos,-nSin, 0.0f), (float3x3)gs_nViewMatrix);

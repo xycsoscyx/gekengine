@@ -16,6 +16,8 @@ const float _INV_PI             = 0.31830988618379069122f;
 #define _DEGTORAD(x)            ((x) * (_PI / 180.0f))
 #define _RADTODEG(x)            ((x) * (180.0f / _PI))
 
+#define lerp(x, y, s)           (((y - x) * s) + x)
+
 template <typename TYPE>
 struct trect
 {
