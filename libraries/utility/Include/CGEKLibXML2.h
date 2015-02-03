@@ -5,15 +5,6 @@
 #include <libxml/tree.h>
 #include <unordered_map>
 
-struct GEKXMLNODE : public std::pair<CStringW, CStringW>
-{
-    std::unordered_map<CStringW, CStringW> attributes;
-    std::list<GEKXMLNODE> children;
-};
-
-HRESULT GEKLoadXML(LPCWSTR pFileName, GEKXMLNODE &kRoot);
-HRESULT GEKSaveXML(LPCWSTR pFileName, GEKXMLNODE &kRoot);
-
 class CLibXMLNode
 {
 private:

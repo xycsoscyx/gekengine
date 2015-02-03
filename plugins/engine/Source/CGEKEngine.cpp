@@ -163,9 +163,6 @@ STDMETHODIMP CGEKEngine::Initialize(void)
 #endif
     }
 
-    GEKXMLNODE kXML;
-    GEKLoadXML(L"E:\\GEK Engine\\bin\\data\\passes\\opaque.xml", kXML);
-
     return hRetVal;
 }
 
@@ -387,8 +384,39 @@ STDMETHODIMP_(void) CGEKEngine::OnStep(void)
     }
 }
 
-STDMETHODIMP_(void) CGEKEngine::Run(UINT32 nXSize, UINT32 nYSize, bool bWindowed)
+STDMETHODIMP_(void) CGEKEngine::Run(void)
 {
+    UINT32 nXSize = 800;
+    UINT32 nYSize = 600;
+    bool bWindowed = false;
+
+    CLibXMLDoc kDocument;
+    if (SUCCEEDED(kDocument.Load(L"%root%\\config.xml")))
+    {
+        CLibXMLNode kRoot = kDocument.GetRoot();
+        if (kRoot && kRoot.GetType().CompareNoCase(L"config") == 0 && kRoot.HasChildElement(L"video"))
+        {
+            CLibXMLNode kVideo = kRoot.FirstChildElement(L"video");
+            if (kVideo)
+            {
+                if (kVideo.HasAttribute(L"xsize"))
+                {
+                    nXSize = StrToUINT32(kVideo.GetAttribute(L"xsize"));
+                }
+
+                if (kVideo.HasAttribute(L"ysize"))
+                {
+                    nYSize = StrToUINT32(kVideo.GetAttribute(L"ysize"));
+                }
+
+                if (kVideo.HasAttribute(L"windowed"))
+                {
+                    bWindowed = StrToBoolean(kVideo.GetAttribute(L"windowed"));
+                }
+            }
+        }
+    }
+
     m_aInputBindings[VK_UP] = L"forward";
     m_aInputBindings[VK_DOWN] = L"backward";
     m_aInputBindings[VK_LEFT] = L"strafe_left";

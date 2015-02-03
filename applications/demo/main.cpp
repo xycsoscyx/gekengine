@@ -12,9 +12,6 @@
 
 #include "GEKEngineCLSIDs.h"
 
-static UINT32 nXSize = 1280;
-static UINT32 nYSize = 800;
-static bool bWindowed = true;
 INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM lParam)
 {
     switch (nMessage)
@@ -25,6 +22,37 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
 
     case WM_INITDIALOG:
         {
+            UINT32 nXSize = 800;
+            UINT32 nYSize = 600;
+            bool bWindowed = false;
+
+            CLibXMLDoc kDocument;
+            if (SUCCEEDED(kDocument.Load(L"%root%\\config.xml")))
+            {
+                CLibXMLNode kRoot = kDocument.GetRoot();
+                if (kRoot && kRoot.GetType().CompareNoCase(L"config") == 0 && kRoot.HasChildElement(L"video"))
+                {
+                    CLibXMLNode kVideo = kRoot.FirstChildElement(L"video");
+                    if (kVideo)
+                    {
+                        if (kVideo.HasAttribute(L"xsize"))
+                        {
+                            nXSize = StrToUINT32(kVideo.GetAttribute(L"xsize"));
+                        }
+                        
+                        if (kVideo.HasAttribute(L"ysize"))
+                        {
+                            nYSize = StrToUINT32(kVideo.GetAttribute(L"ysize"));
+                        }
+                        
+                        if (kVideo.HasAttribute(L"windowed"))
+                        {
+                            bWindowed = StrToBoolean(kVideo.GetAttribute(L"windowed"));
+                        }
+                    }
+                }
+            }
+
             UINT32 nSelectID = 0;
             SendDlgItemMessage(hDialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
             std::vector<GEKMODE> akModes = GEKGetDisplayModes()[32];
@@ -72,12 +100,27 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
             {
                 std::vector<GEKMODE> akModes = GEKGetDisplayModes()[32];
                 UINT32 nMode = SendDlgItemMessage(hDialog, IDC_MODES, CB_GETCURSEL, 0, 0);
-                
                 GEKMODE &kMode = akModes[nMode];
-                nXSize = kMode.xsize;
-                nYSize = kMode.ysize;
 
-                bWindowed = (SendDlgItemMessage(hDialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? false : true);
+                CLibXMLDoc kDocument;
+                kDocument.Load(L"%root%\\config.xml");
+                CLibXMLNode kRoot = kDocument.GetRoot();
+                if (!kRoot || kRoot.GetType().CompareNoCase(L"config") != 0)
+                {
+                    kDocument.Create(L"config");
+                    kRoot = kDocument.GetRoot();
+                }
+
+                CLibXMLNode kVideo = kRoot.FirstChildElement(L"video");
+                if (!kVideo)
+                {
+                    kVideo = kRoot.CreateChildElement(L"video");
+                }
+
+                kVideo.SetAttribute(L"xsize", L"%d", kMode.xsize);
+                kVideo.SetAttribute(L"ysize", L"%d", kMode.ysize);
+                kVideo.SetAttribute(L"windowed", L"%s", (SendDlgItemMessage(hDialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false"));
+                kDocument.Save(L"%root%\\config.xml");
 
                 EndDialog(hDialog, IDOK);
                 return TRUE;
@@ -116,7 +159,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 spContext->CreateInstance(CLSID_GEKEngine, IID_PPV_ARGS(&spGame));
                 if (spGame)
                 {
-                    spGame->Run(nXSize, nYSize, bWindowed);
+                    spGame->Run();
                 }
             }
         }

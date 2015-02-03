@@ -201,14 +201,24 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         GEK3DVIDEO::SAMPLERSTATES kStates;
-        /*if (m_pSystem->GetConfig().DoesValueExists(L"render", L"anisotropy"))
+        kStates.m_eFilter = GEK3DVIDEO::FILTER::MIN_MAG_MIP_LINEAR;
+
+        CLibXMLDoc kDocument;
+        if (SUCCEEDED(kDocument.Load(L"%root%\\config.xml")))
         {
-            kStates.m_nMaxAnisotropy = StrToUINT32(m_pSystem->GetConfig().GetValue(L"render", L"anisotropy", L"1"));
-            kStates.m_eFilter = GEK3DVIDEO::FILTER::ANISOTROPIC;
-        }
-        else*/
-        {
-            kStates.m_eFilter = GEK3DVIDEO::FILTER::MIN_MAG_MIP_LINEAR;
+            CLibXMLNode kRoot = kDocument.GetRoot();
+            if (kRoot && kRoot.GetType().CompareNoCase(L"config") == 0 && kRoot.HasChildElement(L"render"))
+            {
+                CLibXMLNode kRender = kRoot.FirstChildElement(L"render");
+                if (kRender)
+                {
+                    if (kRender.HasAttribute(L"anisotropy"))
+                    {
+                        kStates.m_nMaxAnisotropy = StrToUINT32(kRender.GetAttribute(L"anisotropy"));
+                        kStates.m_eFilter = GEK3DVIDEO::FILTER::ANISOTROPIC;
+                    }
+                }
+            }
         }
 
         kStates.m_eAddressU = GEK3DVIDEO::ADDRESS::WRAP;
