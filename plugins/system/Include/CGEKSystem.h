@@ -13,7 +13,6 @@ class CGEKSystem : public CGEKUnknown
                  , public IGEKSystem
 {
 protected:
-    CGEKConfig m_kConfig;
     HWND m_hWindow;
     bool m_bIsClosed;
     bool m_bIsRunning;

@@ -11,16 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\CGEKConfig.cpp" />
     <ClCompile Include="Source\CGEKLibXML2.cpp" />
-    <ClCompile Include="Source\CGEKParser.cpp" />
     <ClCompile Include="GEKUtility.cpp" />
     <ClCompile Include="Source\CGEKTimer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\CGEKConfig.h" />
     <ClInclude Include="Include\CGEKLibXML2.h" />
-    <ClInclude Include="Include\CGEKParser.h" />
     <ClInclude Include="Include\CGEKTimer.h" />
     <ClInclude Include="GEKUtility.h" />
   </ItemGroup>

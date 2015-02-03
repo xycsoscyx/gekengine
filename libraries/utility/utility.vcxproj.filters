@@ -2,13 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="GEKUtility.cpp" />
-    <ClCompile Include="Source\CGEKConfig.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\CGEKLibXML2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\CGEKTimer.cpp">
@@ -17,13 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKUtility.h" />
-    <ClInclude Include="Include\CGEKConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\CGEKLibXML2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKTimer.h">

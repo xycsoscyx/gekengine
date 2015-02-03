@@ -82,8 +82,6 @@ bool operator < (REFGUID kGUIDA, REFGUID kGUIDB)
 }
 
 #include "Include\CGEKTimer.h"
-#include "Include\CGEKParser.h"
-#include "Include\CGEKConfig.h"
 #include "Include\CGEKLibXML2.h"
 
 bool        EvaluateDouble(LPCWSTR pExpression,     double &nValue);
