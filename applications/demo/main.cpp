@@ -24,7 +24,7 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
         {
             UINT32 nXSize = 800;
             UINT32 nYSize = 600;
-            bool bWindowed = false;
+            bool bWindowed = true;
 
             CLibXMLDoc kDocument;
             if (SUCCEEDED(kDocument.Load(L"%root%\\config.xml")))
@@ -119,7 +119,7 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
 
                 kVideo.SetAttribute(L"xsize", L"%d", kMode.xsize);
                 kVideo.SetAttribute(L"ysize", L"%d", kMode.ysize);
-                kVideo.SetAttribute(L"windowed", L"%s", (SendDlgItemMessage(hDialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false"));
+                kVideo.SetAttribute(L"windowed", L"%s", (SendDlgItemMessage(hDialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_UNCHECKED ? L"true" : L"false"));
                 kDocument.Save(L"%root%\\config.xml");
 
                 EndDialog(hDialog, IDOK);
