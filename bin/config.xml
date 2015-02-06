@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-	<video xsize="1280" ysize="800" windowed="false"/>
+	<video xsize="1280" ysize="800" windowed="true"/>
 </config>
