@@ -17,7 +17,7 @@
                 <define name="gs_bCombine" value="1" />
             </defines>
         </filter>
-        <!--filter source="Opaque/SSR" material="transparent" /-->
+        <!--filter source="Opaque/SSR" material="solid" /-->
         <filter source="Opaque/Transparent" material="transparent" />
     </filters>
 </pass>

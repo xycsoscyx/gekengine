@@ -20,6 +20,25 @@ protected:
     std::unique_ptr<IGEK3DVideoContextSystem> m_spGeometrySystem;
     std::unique_ptr<IGEK3DVideoContextSystem> m_spPixelSystem;
 
+    UINT32 m_nNumRenderTargets;
+
+    UINT32 m_nNumRenderStates;
+    UINT32 m_nNumDepthStates;
+    UINT32 m_nNumBlendStates;
+
+    UINT32 m_nNumVertexBuffers;
+    UINT32 m_nNumIndexBuffers;
+
+    UINT32 m_nNumDrawCalls;
+    UINT32 m_nNumIndices;
+    UINT32 m_nNumVertices;
+    UINT32 m_nNumInstances;
+
+    UINT32 m_nNumDispatchCalls;
+    UINT32 m_nNumDispatchThreadsX;
+    UINT32 m_nNumDispatchThreadsY;
+    UINT32 m_nNumDispatchThreadsZ;
+
 protected:
     CGEKVideoContext(ID3D11DeviceContext *pContext);
 
@@ -28,6 +47,8 @@ public:
     virtual ~CGEKVideoContext(void);
     DECLARE_UNKNOWN(CGEKVideoContext);
     
+    void ResetCounts(void);
+
     // IGEK3DVideoContext
     STDMETHOD_(IGEK3DVideoContextSystem *, GetComputeSystem)  (THIS);
     STDMETHOD_(IGEK3DVideoContextSystem *, GetVertexSystem)   (THIS);
