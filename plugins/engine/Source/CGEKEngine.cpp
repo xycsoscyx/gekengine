@@ -411,7 +411,17 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
 
     m_aInputBindings[VK_ESCAPE] = L"quit";
 
-    SetWindowPos(m_hWindow, nullptr, 0, 0, nXSize, nYSize, 0);
+    RECT kRect;
+    kRect.left = 0;
+    kRect.top = 0;
+    kRect.right = nXSize;
+    kRect.bottom = nYSize;
+    AdjustWindowRect(&kRect, WS_OVERLAPPEDWINDOW, false);
+    int nWindowXSize = (kRect.right - kRect.left);
+    int nWindowYSize = (kRect.bottom - kRect.top);
+    int nCenterX = (bWindowed ? (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((kRect.right - kRect.left) / 2) : 0);
+    int nCenterY = (bWindowed ? (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((kRect.bottom - kRect.top) / 2) : 0);
+    SetWindowPos(m_hWindow, nullptr, nCenterX, nCenterY, nWindowXSize, nWindowYSize, 0);
     ShowWindow(m_hWindow, SW_SHOW);
     UpdateWindow(m_hWindow);
 
@@ -550,6 +560,18 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(const std::vector<CStringW> &aParams)
         UINT32 nXSize = StrToUINT32(aParams[1]);
         UINT32 nYSize = StrToUINT32(aParams[2]);
         bool bWindowed = StrToBoolean(aParams[3]);
+
+        RECT kRect;
+        kRect.left = 0;
+        kRect.top = 0;
+        kRect.right = nXSize;
+        kRect.bottom = nYSize;
+        AdjustWindowRect(&kRect, WS_OVERLAPPEDWINDOW, false);
+        int nWindowXSize = (kRect.right - kRect.left);
+        int nWindowYSize = (kRect.bottom - kRect.top);
+        int nCenterX = (bWindowed ? (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((kRect.right - kRect.left) / 2) : 0);
+        int nCenterY = (bWindowed ? (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((kRect.bottom - kRect.top) / 2) : 0);
+        SetWindowPos(m_hWindow, nullptr, nCenterX, nCenterY, nWindowXSize, nWindowYSize, 0);
         if (FAILED(m_spVideoSystem->Resize(nXSize, nYSize, bWindowed)))
         {
             m_bIsRunning = false;
