@@ -80,6 +80,7 @@ class CGEKVideoSystem : public CGEKVideoContext
                       , public IGEK2DVideoSystem
 {
 private:
+    bool m_bWindowed;
     CComPtr<ID3D11Device> m_spDevice;
     CComPtr<IGEK3DVideoTexture> m_spDefaultTarget;
     CComPtr<ID3D11RenderTargetView> m_spRenderTargetView;
@@ -105,6 +106,9 @@ public:
     // IGEK3DVideoSystem
     STDMETHOD(Initialize)                               (THIS_ HWND hWindow, UINT32 nXSize, UINT32 nYSize, bool bWindowed);
     STDMETHOD(Resize)                                   (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed);
+    STDMETHOD_(UINT32, GetXSize)                        (THIS);
+    STDMETHOD_(UINT32, GetYSize)                        (THIS);
+    STDMETHOD_(bool, IsWindowed)                        (THIS);
     STDMETHOD(CreateDeferredContext)                    (THIS_ IGEK3DVideoContext **ppContext);
     STDMETHOD(CreateEvent)                              (THIS_ IUnknown **ppEvent);
     STDMETHOD_(void, SetEvent)                          (THIS_ IUnknown *pEvent);

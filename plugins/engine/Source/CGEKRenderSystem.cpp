@@ -511,8 +511,8 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
 
             if (SUCCEEDED(hRetVal))
             {
-                UINT32 nXSize = m_pSystem->GetXSize();
-                UINT32 nYSize = m_pSystem->GetYSize();
+                UINT32 nXSize = m_pVideoSystem->GetXSize();
+                UINT32 nYSize = m_pVideoSystem->GetYSize();
                 hRetVal = m_pVideoSystem->CreateRenderTarget(nXSize, nYSize, GEK3DVIDEO::DATA::RGBA_UINT8, &kPassData.m_aBuffers[0]);
                 if (SUCCEEDED(hRetVal))
                 {
@@ -744,15 +744,15 @@ STDMETHODIMP_(void) CGEKRenderSystem::FlipCurrentBuffers(void)
 
 STDMETHODIMP_(void) CGEKRenderSystem::SetScreenTargets(IGEK3DVideoContext *pContext, IUnknown *pDepthBuffer)
 {
-    REQUIRE_VOID_RETURN(m_pSystem && m_pCurrentPass);
+    REQUIRE_VOID_RETURN(m_pVideoSystem && m_pCurrentPass);
 
     pContext->SetRenderTargets({ m_pCurrentPass->m_aBuffers[m_pCurrentPass->m_nCurrentBuffer] }, (pDepthBuffer ? pDepthBuffer : nullptr));
 
     GEK3DVIDEO::VIEWPORT kViewport;
     kViewport.m_nTopLeftX = 0.0f;
     kViewport.m_nTopLeftY = 0.0f;
-    kViewport.m_nXSize = float(m_pSystem->GetXSize());
-    kViewport.m_nYSize = float(m_pSystem->GetYSize());
+    kViewport.m_nXSize = float(m_pVideoSystem->GetXSize());
+    kViewport.m_nYSize = float(m_pVideoSystem->GetYSize());
     kViewport.m_nMinDepth = 0.0f;
     kViewport.m_nMaxDepth = 1.0f;
     pContext->SetViewports({ kViewport });
@@ -1001,8 +1001,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             nCameraMatrix = kTransform.rotation;
             nCameraMatrix.t = kTransform.position;
 
-            float nXSize = float(m_pSystem->GetXSize());
-            float nYSize = float(m_pSystem->GetYSize());
+            float nXSize = float(m_pVideoSystem->GetXSize());
+            float nYSize = float(m_pVideoSystem->GetYSize());
             float nAspect = (nXSize / nYSize);
 
             ENGINEBUFFER kEngineBuffer;
@@ -1068,10 +1068,10 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderEnd, std::placeholders::_1)));
 
             GEK3DVIDEO::VIEWPORT kViewport;
-            kViewport.m_nTopLeftX = (kViewer.position.x * m_pSystem->GetXSize());
-            kViewport.m_nTopLeftY = (kViewer.position.y * m_pSystem->GetYSize());
-            kViewport.m_nXSize = (kViewer.size.x * m_pSystem->GetXSize());
-            kViewport.m_nYSize = (kViewer.size.y * m_pSystem->GetYSize());
+            kViewport.m_nTopLeftX = (kViewer.position.x * m_pVideoSystem->GetXSize());
+            kViewport.m_nTopLeftY = (kViewer.position.y * m_pVideoSystem->GetYSize());
+            kViewport.m_nXSize = (kViewer.size.x * m_pVideoSystem->GetXSize());
+            kViewport.m_nYSize = (kViewer.size.y * m_pVideoSystem->GetYSize());
             kViewport.m_nMinDepth = 0.0f;
             kViewport.m_nMaxDepth = 1.0f;
 

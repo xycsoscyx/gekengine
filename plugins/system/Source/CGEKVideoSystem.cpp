@@ -1,7 +1,6 @@
 #pragma warning(disable : 4005)
 
 #include "CGEKVideoSystem.h"
-#include "IGEKSystem.h"
 #include <d3dcompiler.h>
 #include <DirectXTex.h>
 #include <algorithm>
@@ -1072,6 +1071,7 @@ STDMETHODIMP_(void) CGEKVideoContext::FinishCommandList(IUnknown **ppUnknown)
 }
 
 CGEKVideoSystem::CGEKVideoSystem(void)
+    : m_bWindowed(false)
 {
 }
 
@@ -1151,6 +1151,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::Destroy(void)
 
 STDMETHODIMP CGEKVideoSystem::Initialize(HWND hWindow, UINT32 nXSize, UINT32 nYSize, bool bWindowed)
 {
+    m_bWindowed = bWindowed;
     DXGI_SWAP_CHAIN_DESC kSwapChainDesc;
     kSwapChainDesc.BufferDesc.Width = nXSize;
     kSwapChainDesc.BufferDesc.Height = nYSize;
@@ -1247,6 +1248,7 @@ STDMETHODIMP CGEKVideoSystem::Resize(UINT32 nXSize, UINT32 nYSize, bool bWindowe
 
     CGEKObservable::SendEvent(TGEKEvent<IGEK3DVideoObserver>(std::bind(&IGEK3DVideoObserver::OnResizeBegin, std::placeholders::_1)));
 
+    m_bWindowed = bWindowed;
     m_spD2DDeviceContext->SetTarget(nullptr);
     m_spDefaultTarget.Release();
     m_spRenderTargetView.Release();
@@ -1280,6 +1282,21 @@ STDMETHODIMP CGEKVideoSystem::Resize(UINT32 nXSize, UINT32 nYSize, bool bWindowe
     }
 
     return hRetVal;
+}
+
+STDMETHODIMP_(UINT32) CGEKVideoSystem::GetXSize(void)
+{
+    return (m_spDefaultTarget ? m_spDefaultTarget->GetXSize() : 0);
+}
+
+STDMETHODIMP_(UINT32) CGEKVideoSystem::GetYSize(void)
+{
+    return (m_spDefaultTarget ? m_spDefaultTarget->GetYSize() : 0);
+}
+
+STDMETHODIMP_(bool) CGEKVideoSystem::IsWindowed(void)
+{
+    return m_bWindowed;
 }
 
 STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEK3DVideoContext **ppContext)

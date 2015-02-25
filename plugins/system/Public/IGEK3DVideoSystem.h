@@ -468,6 +468,10 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF
     STDMETHOD(Initialize)                               (THIS_ HWND hWindow, UINT32 nXSize, UINT32 nYSize, bool bWindowed) PURE;
     STDMETHOD(Resize)                                   (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed) PURE;
 
+    STDMETHOD_(UINT32, GetXSize)                        (THIS) PURE;
+    STDMETHOD_(UINT32, GetYSize)                        (THIS) PURE;
+    STDMETHOD_(bool, IsWindowed)                        (THIS) PURE;
+
     STDMETHOD(CreateDeferredContext)                    (THIS_ IGEK3DVideoContext **ppContext) PURE;
 
     STDMETHOD(CreateEvent)                              (THIS_ IUnknown **ppEvent) PURE;

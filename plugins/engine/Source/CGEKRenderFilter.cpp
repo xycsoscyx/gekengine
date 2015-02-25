@@ -136,12 +136,8 @@ CStringW CGEKRenderFilter::ParseValue(LPCWSTR pValue)
         strValue.Replace(CA2W(kPair.first), CA2W(kPair.second));
     }
 
-    IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
-    if (pSystem != nullptr)
-    {
-        strValue.Replace(L"%xsize%", FormatString(L"%d", pSystem->GetXSize()));
-        strValue.Replace(L"%ysize%", FormatString(L"%d", pSystem->GetYSize()));
-    }
+    strValue.Replace(L"%xsize%", FormatString(L"%d", m_pVideoSystem->GetXSize()));
+    strValue.Replace(L"%ysize%", FormatString(L"%d", m_pVideoSystem->GetYSize()));
 
     return strValue;
 }
@@ -330,71 +326,66 @@ HRESULT CGEKRenderFilter::LoadBuffers(CLibXMLNode &kFilterNode)
 
 HRESULT CGEKRenderFilter::LoadTargets(CLibXMLNode &kFilterNode)
 {
-    HRESULT hRetVal = E_FAIL;
-    IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
-    if (pSystem != nullptr)
+    HRESULT hRetVal = S_OK;
+    CLibXMLNode kTargetsNode = kFilterNode.FirstChildElement(L"targets");
+    if (kTargetsNode)
     {
-        hRetVal = S_OK;
-        CLibXMLNode kTargetsNode = kFilterNode.FirstChildElement(L"targets");
-        if (kTargetsNode)
+        UINT32 nXSize = m_pVideoSystem->GetXSize();
+        UINT32 nYSize = m_pVideoSystem->GetYSize();
+        if (SUCCEEDED(hRetVal))
         {
-            UINT32 nXSize = pSystem->GetXSize();
-            UINT32 nYSize = pSystem->GetYSize();
-            if (SUCCEEDED(hRetVal))
+            hRetVal = LoadDepthStates(kTargetsNode, nXSize, nYSize);
+        }
+
+        CLibXMLNode kTargetNode = kTargetsNode.FirstChildElement(L"target");
+        while (kTargetNode)
+        {
+            TARGET kData;
+            if (kTargetNode.HasAttribute(L"clear"))
             {
-                hRetVal = LoadDepthStates(kTargetsNode, nXSize, nYSize);
+                kData.m_bClear = true;
+                kData.m_nClearColor = StrToFloat4(kTargetNode.GetAttribute(L"clear"));
+            }
+            else
+            {
+                kData.m_bClear = false;
             }
 
-            CLibXMLNode kTargetNode = kTargetsNode.FirstChildElement(L"target");
-            while (kTargetNode)
+            if (kTargetNode.HasAttribute(L"name"))
             {
-                TARGET kData;
-                if (kTargetNode.HasAttribute(L"clear"))
-                {
-                    kData.m_bClear = true;
-                    kData.m_nClearColor = StrToFloat4(kTargetNode.GetAttribute(L"clear"));
-                }
-                else
-                {
-                    kData.m_bClear = false;
-                }
-
-                if (kTargetNode.HasAttribute(L"name"))
-                {
-                    if (!kTargetNode.HasAttribute(L"format"))
-                    {
-                        hRetVal = E_INVALIDARG;
-                        break;
-                    }
-
-                    GEK3DVIDEO::DATA::FORMAT eFormat = GetFormat(kTargetNode.GetAttribute(L"format"));
-                    if (eFormat == GEK3DVIDEO::DATA::UNKNOWN)
-                    {
-                        hRetVal = E_INVALIDARG;
-                        break;
-                    }
-
-                    hRetVal = m_pRenderManager->CreateBuffer(kTargetNode.GetAttribute(L"name"), nXSize, nYSize, eFormat);
-                    if (FAILED(hRetVal))
-                    {
-                        break;
-                    }
-
-                    kData.m_strSource = kTargetNode.GetAttribute(L"name");
-                }
-                else if (kTargetNode.HasAttribute(L"source"))
-                {
-                    kData.m_strSource = kTargetNode.GetAttribute(L"source");
-                }
-                else
+                if (!kTargetNode.HasAttribute(L"format"))
                 {
                     hRetVal = E_INVALIDARG;
                     break;
                 }
 
-                m_aTargets.push_back(kData);
-                kTargetNode = kTargetNode.NextSiblingElement(L"target");
+                GEK3DVIDEO::DATA::FORMAT eFormat = GetFormat(kTargetNode.GetAttribute(L"format"));
+                if (eFormat == GEK3DVIDEO::DATA::UNKNOWN)
+                {
+                    hRetVal = E_INVALIDARG;
+                    break;
+                }
+
+                hRetVal = m_pRenderManager->CreateBuffer(kTargetNode.GetAttribute(L"name"), nXSize, nYSize, eFormat);
+                if (FAILED(hRetVal))
+                {
+                    break;
+                }
+
+                kData.m_strSource = kTargetNode.GetAttribute(L"name");
             }
+            else if (kTargetNode.HasAttribute(L"source"))
+            {
+                kData.m_strSource = kTargetNode.GetAttribute(L"source");
+            }
+            else
+            {
+                hRetVal = E_INVALIDARG;
+                break;
+            }
+
+            m_aTargets.push_back(kData);
+            kTargetNode = kTargetNode.NextSiblingElement(L"target");
         }
     }
 

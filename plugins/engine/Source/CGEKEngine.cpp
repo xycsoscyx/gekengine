@@ -352,7 +352,7 @@ LRESULT CGEKEngine::WindowProc(UINT32 nMessage, WPARAM wParam, LPARAM lParam)
     case WM_SYSCOMMAND:
         if (SC_KEYMENU == (wParam & 0xFFF0))
         {
-            //m_spSystem->SetSize(m_spSystem->GetXSize(), m_spSystem->GetYSize(), !m_spSystem->IsWindowed());
+            m_spVideoSystem->Resize(m_spVideoSystem->GetXSize(), m_spVideoSystem->GetYSize(), !m_spVideoSystem->IsWindowed());
             return 1;
         }
 
@@ -411,6 +411,10 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
 
     m_aInputBindings[VK_ESCAPE] = L"quit";
 
+    SetWindowPos(m_hWindow, nullptr, 0, 0, nXSize, nYSize, 0);
+    ShowWindow(m_hWindow, SW_SHOW);
+    UpdateWindow(m_hWindow);
+
     m_bWindowActive = true;
     HRESULT hRetVal = m_spVideoSystem->Initialize(m_hWindow, nXSize, nYSize, bWindowed);
     if (SUCCEEDED(hRetVal))
@@ -439,6 +443,7 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
 
     if (SUCCEEDED(hRetVal))
     {
+        m_bIsRunning = true;
         MSG kMessage = { 0 };
         while (m_bIsRunning && !m_bIsClosed)
         {
@@ -545,9 +550,9 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(const std::vector<CStringW> &aParams)
         UINT32 nXSize = StrToUINT32(aParams[1]);
         UINT32 nYSize = StrToUINT32(aParams[2]);
         bool bWindowed = StrToBoolean(aParams[3]);
-        if (FAILED(m_spSystem->SetSize(nXSize, nYSize, bWindowed)))
+        if (FAILED(m_spVideoSystem->Resize(nXSize, nYSize, bWindowed)))
         {
-            m_spSystem->Stop();
+            m_bIsRunning = false;
         }
     }
     else if (aParams.size() > 0)
@@ -563,8 +568,8 @@ STDMETHODIMP_(void) CGEKEngine::OnRenderOverlay(void)
     {
         spVideoSystem->Begin();
 
-        float nXSize = float(m_spSystem->GetXSize());
-        float nYSize = float(m_spSystem->GetYSize());
+        float nXSize = float(m_spVideoSystem->GetXSize());
+        float nYSize = float(m_spVideoSystem->GetYSize());
         float nHalfHeight = (nYSize* 0.5f);
 
         CComPtr<IUnknown> spBackground;

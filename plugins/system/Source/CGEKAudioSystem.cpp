@@ -1,5 +1,4 @@
 #include "CGEKAudioSystem.h"
-#include "IGEKSystem.h"
 #include "audiere.h"
 
 #include "GEKSystemCLSIDs.h"
