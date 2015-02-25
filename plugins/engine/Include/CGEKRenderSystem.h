@@ -76,8 +76,8 @@ public:
     };
 
 private:
-    IGEKSystem *m_pSystem;
     IGEK3DVideoSystem *m_pVideoSystem;
+
     IGEKEngine *m_pEngine;
     IGEKSceneManager *m_pSceneManager;
 
@@ -128,8 +128,8 @@ public:
     STDMETHOD_(void, Destroy)               (THIS);
 
     // IGEK3DVideoObserver
-    STDMETHOD_(void, OnResetBegin)          (THIS);
-    STDMETHOD(OnResetEnd)                   (THIS);
+    STDMETHOD_(void, OnResizeBegin)         (THIS);
+    STDMETHOD(OnResizeEnd)                  (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed);
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnLoadBegin)           (THIS);

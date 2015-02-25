@@ -13,16 +13,18 @@ DECLARE_INTERFACE(IGEKPopulationSystem);
 
 class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
-                 , public IGEKSystemObserver
                  , public IGEKGameApplication
                  , public IGEKEngine
                  , public IGEKInputManager
                  , public IGEKRenderObserver
 {
 private:
-    HCURSOR m_hCursorPointer;
-    CComPtr<IGEKSystem> m_spSystem;
+    HWND m_hWindow;
+    bool m_bIsClosed;
+    bool m_bIsRunning;
     bool m_bWindowActive;
+
+    HCURSOR m_hCursorPointer;
 
     CGEKTimer m_kTimer;
     double m_nTotalTime;
@@ -33,10 +35,15 @@ private:
     CStringW m_strConsole;
     std::list<CStringW> m_aConsoleLog;
     std::unordered_map<UINT32, CStringW> m_aInputBindings;
+
+    CComPtr<IGEKAudioSystem> m_spAudioSystem;
+    CComPtr<IGEK3DVideoSystem> m_spVideoSystem;
     CComPtr<IGEKPopulationSystem> m_spPopulationManager;
     CComPtr<IGEKRenderSystem> m_spRenderManager;
 
 private:
+    static LRESULT CALLBACK WindowProc(HWND hWindow, UINT32 nMessage, WPARAM wParam, LPARAM lParam);
+    LRESULT WindowProc(UINT32 nMessage, WPARAM wParam, LPARAM lParam);
     void CheckInput(UINT32 nKey, bool bState);
     void CheckInput(UINT32 nKey, float nValue);
     HRESULT Load(LPCWSTR pName);
@@ -49,12 +56,6 @@ public:
     // IGEKUnknown
     STDMETHOD(Initialize)                       (THIS);
     STDMETHOD_(void, Destroy)                   (THIS);
-
-    // IGEKSystemObserver
-    STDMETHOD_(void, OnEvent)                   (THIS_ UINT32 nMessage, WPARAM wParam, LPARAM lParam, LRESULT &nResult);
-    STDMETHOD_(void, OnRun)                     (THIS);
-    STDMETHOD_(void, OnStop)                    (THIS);
-    STDMETHOD_(void, OnStep)                    (THIS);
 
     // IGEKGameApplication
     STDMETHOD_(void, Run)                       (THIS);

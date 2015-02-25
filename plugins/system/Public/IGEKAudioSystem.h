@@ -26,6 +26,8 @@ DECLARE_INTERFACE_IID_(IGEKAudioSound, IGEKAudioSample, "7C3C561D-669B-4559-A1DD
 
 DECLARE_INTERFACE_IID_(IGEKAudioSystem, IUnknown, "E760C91D-7AF9-4AAA-B8E5-08F8F9A23CEB")
 {
+    STDMETHOD(Initialize)               (THIS_ HWND hWindow) PURE;
+
     STDMETHOD_(void, SetMasterVolume)   (THIS_ float nVolume) PURE;
     STDMETHOD_(float, GetMasterVolume)  (THIS) PURE;
 

@@ -4,9 +4,6 @@
     <ClCompile Include="Source\CGEKAudioSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKSystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\CGEKVideoSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -18,16 +15,10 @@
     <ClInclude Include="Include\CGEKAudioSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKSystem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\CGEKVideoSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Public\IGEKAudioSystem.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\IGEKSystem.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
     <ClInclude Include="Public\IGEK3DVideoSystem.h">

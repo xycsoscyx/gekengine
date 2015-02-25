@@ -79,8 +79,7 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKRenderSystem)
 
 CGEKRenderSystem::CGEKRenderSystem(void)
-    : m_pSystem(nullptr)
-    , m_pVideoSystem(nullptr)
+    : m_pVideoSystem(nullptr)
     , m_pEngine(nullptr)
     , m_pSceneManager(nullptr)
     , m_pCurrentPass(nullptr)
@@ -98,12 +97,10 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKRenderSystem, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
-        m_pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
         m_pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
         m_pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
         m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
-        if (m_pSystem == nullptr ||
-            m_pVideoSystem == nullptr ||
+        if (m_pVideoSystem == nullptr ||
             m_pEngine == nullptr ||
             m_pSceneManager == nullptr)
         {
@@ -284,7 +281,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Destroy(void)
     GetContext()->RemoveCachedClass(CLSID_GEKRenderSystem);
 }
 
-STDMETHODIMP_(void) CGEKRenderSystem::OnResetBegin(void)
+STDMETHODIMP_(void) CGEKRenderSystem::OnResizeBegin(void)
 {
     for (auto &kBuffer : m_aBuffers)
     {
@@ -298,11 +295,9 @@ STDMETHODIMP_(void) CGEKRenderSystem::OnResetBegin(void)
     }
 }
 
-STDMETHODIMP CGEKRenderSystem::OnResetEnd(void)
+STDMETHODIMP CGEKRenderSystem::OnResizeEnd(UINT32 nXSize, UINT32 nYSize, bool bWindowed)
 {
     HRESULT hRetVal = S_OK;
-    UINT32 nXSize = m_pSystem->GetXSize();
-    UINT32 nYSize = m_pSystem->GetYSize();
     for (auto &kBuffer : m_aBuffers)
     {
         if (kBuffer.second.m_nStride > 0)

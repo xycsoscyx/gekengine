@@ -30,6 +30,7 @@ public:
     STDMETHOD_(void, Destroy)           (THIS);
 
     // IGEKAudioSystem
+    STDMETHOD(Initialize)               (THIS_ HWND hWindow);
     STDMETHOD_(void, SetMasterVolume)   (THIS_ float nVolume);
     STDMETHOD_(float, GetMasterVolume)  (THIS);
     STDMETHOD_(void, SetListener)       (THIS_ const float4x4 &nMatrix);

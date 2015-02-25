@@ -103,7 +103,8 @@ public:
     STDMETHOD_(void, Destroy)                           (THIS);
 
     // IGEK3DVideoSystem
-    STDMETHOD(Reset)                                    (THIS);
+    STDMETHOD(Initialize)                               (THIS_ HWND hWindow, UINT32 nXSize, UINT32 nYSize, bool bWindowed);
+    STDMETHOD(Resize)                                   (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed);
     STDMETHOD(CreateDeferredContext)                    (THIS_ IGEK3DVideoContext **ppContext);
     STDMETHOD(CreateEvent)                              (THIS_ IUnknown **ppEvent);
     STDMETHOD_(void, SetEvent)                          (THIS_ IUnknown *pEvent);

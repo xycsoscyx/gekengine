@@ -183,45 +183,57 @@ CGEKAudioSystem::~CGEKAudioSystem(void)
 
 STDMETHODIMP CGEKAudioSystem::Initialize(void)
 {
-    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKAudioSystem, GetUnknown());
-    if (SUCCEEDED(hRetVal))
+    return GetContext()->AddCachedClass(CLSID_GEKAudioSystem, GetUnknown());
+}
+
+STDMETHODIMP_(void) CGEKAudioSystem::Destroy(void)
+{
+    GetContext()->RemoveCachedClass(CLSID_GEKAudioSystem);
+}
+
+STDMETHODIMP CGEKAudioSystem::Initialize(HWND hWindow)
+{
+    REQUIRE_RETURN(hWindow, E_INVALIDARG);
+
+    HRESULT hRetVal = E_FAIL;
+    if (m_spDirectSound)
     {
-        IGEKSystem *pSystem = GetContext()->GetCachedClass<IGEKSystem>(CLSID_GEKSystem);
-        if (pSystem != nullptr)
+        hRetVal = m_spDirectSound->SetCooperativeLevel(hWindow, DSSCL_PRIORITY);
+    }
+    else
+    {
+        hRetVal = DirectSoundCreate8(nullptr, &m_spDirectSound, nullptr);
+        if (SUCCEEDED(hRetVal))
         {
-            hRetVal = DirectSoundCreate8(nullptr, &m_spDirectSound, nullptr);
+            hRetVal = m_spDirectSound->SetCooperativeLevel(hWindow, DSSCL_PRIORITY);
             if (SUCCEEDED(hRetVal))
             {
-                hRetVal = m_spDirectSound->SetCooperativeLevel(pSystem->GetWindow(), DSSCL_PRIORITY);
+                DSBUFFERDESC kDesc = { 0 };
+                kDesc.dwSize = sizeof(DSBUFFERDESC);
+                kDesc.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
+                hRetVal = m_spDirectSound->CreateSoundBuffer(&kDesc, &m_spPrimary, nullptr);
                 if (SUCCEEDED(hRetVal))
                 {
-                    DSBUFFERDESC kDesc = { 0 };
-                    kDesc.dwSize = sizeof(DSBUFFERDESC);
-                    kDesc.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
-                    hRetVal = m_spDirectSound->CreateSoundBuffer(&kDesc, &m_spPrimary, nullptr);
+                    WAVEFORMATEX kFormat;
+                    ZeroMemory(&kFormat, sizeof(WAVEFORMATEX));
+                    kFormat.wFormatTag = WAVE_FORMAT_PCM;
+                    kFormat.nChannels = 2;
+                    kFormat.wBitsPerSample = 8;
+                    kFormat.nSamplesPerSec = 48000;
+                    kFormat.nBlockAlign = (kFormat.wBitsPerSample / 8 * kFormat.nChannels);
+                    kFormat.nAvgBytesPerSec = (kFormat.nSamplesPerSec * kFormat.nBlockAlign);
+                    hRetVal = m_spPrimary->SetFormat(&kFormat);
                     if (SUCCEEDED(hRetVal))
                     {
-                        WAVEFORMATEX kFormat;
-                        ZeroMemory(&kFormat, sizeof(WAVEFORMATEX));
-                        kFormat.wFormatTag = WAVE_FORMAT_PCM;
-                        kFormat.nChannels = 2;
-                        kFormat.wBitsPerSample = 8;
-                        kFormat.nSamplesPerSec = 48000;
-                        kFormat.nBlockAlign = (kFormat.wBitsPerSample / 8 * kFormat.nChannels);
-                        kFormat.nAvgBytesPerSec = (kFormat.nSamplesPerSec * kFormat.nBlockAlign);
-                        hRetVal = m_spPrimary->SetFormat(&kFormat);
-                        if (SUCCEEDED(hRetVal))
+                        hRetVal = E_FAIL;
+                        m_spListener = m_spPrimary;
+                        if (m_spListener)
                         {
-                            hRetVal = E_FAIL;
-                            m_spListener = m_spPrimary;
-                            if (m_spListener)
-                            {
-                                hRetVal = S_OK;
-                                SetMasterVolume(1.0f);
-                                SetDistanceFactor(1.0f);
-                                SetDopplerFactor(0.0f);
-                                SetRollOffFactor(1.0f);
-                            }
+                            hRetVal = S_OK;
+                            SetMasterVolume(1.0f);
+                            SetDistanceFactor(1.0f);
+                            SetDopplerFactor(0.0f);
+                            SetRollOffFactor(1.0f);
                         }
                     }
                 }
@@ -230,11 +242,6 @@ STDMETHODIMP CGEKAudioSystem::Initialize(void)
     }
 
     return hRetVal;
-}
-
-STDMETHODIMP_(void) CGEKAudioSystem::Destroy(void)
-{
-    GetContext()->RemoveCachedClass(CLSID_GEKAudioSystem);
 }
 
 STDMETHODIMP_(void) CGEKAudioSystem::SetMasterVolume(float nVolume)

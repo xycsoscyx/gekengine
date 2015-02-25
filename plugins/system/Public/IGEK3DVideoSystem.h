@@ -465,7 +465,8 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoContext, IUnknown, "95262C77-0F56-4447-9337-58
 
 DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6")
 {
-    STDMETHOD(Reset)                                    (THIS) PURE;
+    STDMETHOD(Initialize)                               (THIS_ HWND hWindow, UINT32 nXSize, UINT32 nYSize, bool bWindowed) PURE;
+    STDMETHOD(Resize)                                   (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed) PURE;
 
     STDMETHOD(CreateDeferredContext)                    (THIS_ IGEK3DVideoContext **ppContext) PURE;
 
@@ -512,6 +513,6 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF
 
 DECLARE_INTERFACE_IID_(IGEK3DVideoObserver, IGEKObserver, "2FE17A37-9B0B-4D12-95C9-F5CC5173B565")
 {
-    STDMETHOD_(void, OnResetBegin)                      (THIS) PURE;
-    STDMETHOD(OnResetEnd)                               (THIS) PURE;
+    STDMETHOD_(void, OnResizeBegin)                     (THIS) PURE;
+    STDMETHOD(OnResizeEnd)                              (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed) PURE;
 };
