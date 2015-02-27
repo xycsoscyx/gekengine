@@ -14,6 +14,132 @@
 #define WM_TURN             (WM_USER + 0)
 #define WM_TILT             (WM_USER + 1)
 
+CGEKConfigGroup::CGEKConfigGroup(void)
+{
+}
+
+CGEKConfigGroup::~CGEKConfigGroup(void)
+{
+}
+
+void CGEKConfigGroup::Load(CLibXMLNode &kNode)
+{
+    m_strText = kNode.GetText();
+    kNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
+    {
+        m_aValues[pName] = pValue;
+    });
+
+    CLibXMLNode &kChild = kNode.FirstChildElement();
+    while (kChild)
+    {
+        CComPtr<CGEKConfigGroup> spChild = new CGEKConfigGroup();
+        if (spChild)
+        {
+            spChild->Load(kChild);
+            m_aGroups.insert(std::make_pair(kChild.GetType(), spChild));
+        }
+
+        kChild = kChild.NextSiblingElement();
+    };
+}
+
+void CGEKConfigGroup::Save(CLibXMLNode &kNode)
+{
+    kNode.SetText(m_strText);
+    for (auto &kPair : m_aValues)
+    {
+        kNode.SetAttribute(kPair.first, kPair.second);
+    }
+
+    for (auto &kPair : m_aGroups)
+    {
+        CLibXMLNode &kChild = kNode.CreateChildElement(kPair.first);
+        kPair.second->Save(kChild);
+    }
+}
+
+STDMETHODIMP_(LPCWSTR) CGEKConfigGroup::GetText(void)
+{
+    return m_strText;
+}
+
+STDMETHODIMP_(bool) CGEKConfigGroup::HasGroup(LPCWSTR pName)
+{
+    REQUIRE_RETURN(pName, false);
+
+    bool bExists = false;
+    auto pIterator = m_aGroups.find(pName);
+    if (pIterator != m_aGroups.end())
+    {
+        bExists = true;
+    }
+
+    return bExists;
+}
+
+STDMETHODIMP_(IGEKConfigGroup *) CGEKConfigGroup::GetGroup(LPCWSTR pName)
+{
+    REQUIRE_RETURN(pName, nullptr);
+
+    auto pIterator = m_aGroups.find(pName);
+    if (pIterator == m_aGroups.end())
+    {
+        m_aGroups.insert(std::make_pair(pName, new CGEKConfigGroup()));
+        pIterator = m_aGroups.find(pName);
+    }
+
+    return (*pIterator).second;
+}
+
+STDMETHODIMP_(void) CGEKConfigGroup::ListGroups(std::function<void(LPCWSTR, IGEKConfigGroup*)> OnGroup)
+{
+    for (auto &kPair : m_aGroups)
+    {
+        OnGroup(kPair.first, kPair.second);
+    }
+}
+
+STDMETHODIMP_(bool) CGEKConfigGroup::HasValue(LPCWSTR pName)
+{
+    REQUIRE_RETURN(pName, false);
+
+    bool bExists = false;
+    auto pIterator = m_aValues.find(pName);
+    if (pIterator != m_aValues.end())
+    {
+        bExists = true;
+    }
+
+    return bExists;
+}
+
+STDMETHODIMP_(LPCWSTR) CGEKConfigGroup::GetValue(LPCWSTR pName, LPCWSTR pDefault)
+{
+    REQUIRE_RETURN(pName, pDefault);
+
+    auto pIterator = m_aValues.find(pName);
+    if (pIterator == m_aValues.end())
+    {
+        m_aValues[pName] = pDefault;
+        pIterator = m_aValues.find(pName);
+    }
+
+    return (*pIterator).second.GetString();
+}
+
+STDMETHODIMP_(void) CGEKConfigGroup::ListValues(std::function<void(LPCWSTR, LPCWSTR)> OnValue)
+{
+    for (auto &kPair : m_aValues)
+    {
+        OnValue(kPair.first, kPair.second);
+    }
+}
+
+BEGIN_INTERFACE_LIST(CGEKConfigGroup)
+    INTERFACE_LIST_ENTRY_COM(IGEKConfigGroup)
+END_INTERFACE_LIST_UNKNOWN
+
 HCURSOR LoadAnimatedCursor(HINSTANCE hInstance, UINT nID, LPCTSTR pszResouceType)
 {
     HCURSOR hCursor = nullptr;
@@ -188,7 +314,14 @@ LRESULT CGEKEngine::WindowProc(UINT32 nMessage, WPARAM wParam, LPARAM lParam)
         if (true)
         {
             INT32 nDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-            CheckInput(WM_MOUSEWHEEL, ((float(nDelta) / float(WHEEL_DELTA)) * 4));
+            if (nDelta > 0)
+            {
+                CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, L"rise", ((float(nDelta) / float(WHEEL_DELTA)) * 4))));
+            }
+            else if (nDelta < 0)
+            {
+                CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, L"fall", -((float(nDelta) / float(WHEEL_DELTA)) * 4))));
+            }
         }
 
         return 1;
@@ -233,23 +366,36 @@ void CGEKEngine::CheckInput(UINT32 nKey, bool bState)
     }
     else if (!m_bConsoleOpen)
     {
-        auto pIterator = m_aInputBindings.find(nKey);
-        if (pIterator != m_aInputBindings.end())
+        switch (nKey)
         {
-            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, (*pIterator).second, bState)));
-        }
-    }
-}
+        case 'W':
+        case VK_UP:
+            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"forward", bState)));
+            break;
 
-void CGEKEngine::CheckInput(UINT32 nKey, float nValue)
-{
-    if (!m_bConsoleOpen)
-    {
-        auto pIterator = m_aInputBindings.find(nKey);
-        if (pIterator != m_aInputBindings.end())
-        {
-            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, (*pIterator).second, nValue)));
-        }
+        case 'S':
+        case VK_DOWN:
+            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"backward", bState)));
+            break;
+
+        case 'A':
+        case VK_LEFT:
+            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"strafe_left", bState)));
+            break;
+
+        case 'D':
+        case VK_RIGHT:
+            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"strafe_right", bState)));
+            break;
+
+        case 'Q':
+            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"rise", bState)));
+            break;
+
+        case 'Z':
+            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"fall", bState)));
+            break;
+        };
     }
 }
 
@@ -348,163 +494,147 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
 
 STDMETHODIMP_(void) CGEKEngine::Run(void)
 {
-    UINT32 nXSize = 800;
-    UINT32 nYSize = 600;
-    bool bWindowed = false;
-
-    CLibXMLDoc kDocument;
-    if (SUCCEEDED(kDocument.Load(L"%root%\\config.xml")))
+    m_spConfig = new CGEKConfigGroup();
+    if (m_spConfig)
     {
-        CLibXMLNode kRoot = kDocument.GetRoot();
-        if (kRoot && kRoot.GetType().CompareNoCase(L"config") == 0 && kRoot.HasChildElement(L"video"))
+        CLibXMLDoc kLoadConfig;
+        if (SUCCEEDED(kLoadConfig.Load(L"%root%\\config.xml")))
         {
-            CLibXMLNode kVideo = kRoot.FirstChildElement(L"video");
-            if (kVideo)
+            CLibXMLNode kRoot = kLoadConfig.GetRoot();
+            if (kRoot && kRoot.GetType().CompareNoCase(L"config") == 0)
             {
-                if (kVideo.HasAttribute(L"xsize"))
-                {
-                    nXSize = StrToUINT32(kVideo.GetAttribute(L"xsize"));
-                }
-
-                if (kVideo.HasAttribute(L"ysize"))
-                {
-                    nYSize = StrToUINT32(kVideo.GetAttribute(L"ysize"));
-                }
-
-                if (kVideo.HasAttribute(L"windowed"))
-                {
-                    bWindowed = StrToBoolean(kVideo.GetAttribute(L"windowed"));
-                }
+                m_spConfig->Load(kRoot);
             }
         }
-    }
 
-    m_aInputBindings[VK_UP] = L"forward";
-    m_aInputBindings[VK_DOWN] = L"backward";
-    m_aInputBindings[VK_LEFT] = L"strafe_left";
-    m_aInputBindings[VK_RIGHT] = L"strafe_right";
-    m_aInputBindings['W'] = L"forward";
-    m_aInputBindings['S'] = L"backward";
-    m_aInputBindings['A'] = L"strafe_left";
-    m_aInputBindings['D'] = L"strafe_right";
-    m_aInputBindings['Q'] = L"rise";
-    m_aInputBindings['Z'] = L"fall";
-    m_aInputBindings[WM_MOUSEWHEEL] = L"height";
-    m_aInputBindings[WM_TURN] = L"turn";
-    m_aInputBindings[WM_TILT] = L"tilt";
+        UINT32 nXSize = StrToUINT32(GetConfig()->GetGroup(L"display")->GetValue(L"xsize", L"800"));
+        UINT32 nYSize = StrToUINT32(GetConfig()->GetGroup(L"display")->GetValue(L"ysize", L"600"));
+        bool bWindowed = StrToBoolean(GetConfig()->GetGroup(L"display")->GetValue(L"windowed", L"true"));
 
-    m_aInputBindings[VK_ESCAPE] = L"quit";
+        RECT kRect;
+        kRect.left = 0;
+        kRect.top = 0;
+        kRect.right = nXSize;
+        kRect.bottom = nYSize;
+        AdjustWindowRect(&kRect, WS_OVERLAPPEDWINDOW, false);
+        int nWindowXSize = (kRect.right - kRect.left);
+        int nWindowYSize = (kRect.bottom - kRect.top);
+        int nCenterX = (bWindowed ? (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((kRect.right - kRect.left) / 2) : 0);
+        int nCenterY = (bWindowed ? (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((kRect.bottom - kRect.top) / 2) : 0);
+        SetWindowPos(m_hWindow, nullptr, nCenterX, nCenterY, nWindowXSize, nWindowYSize, 0);
+        ShowWindow(m_hWindow, SW_SHOW);
+        UpdateWindow(m_hWindow);
 
-    RECT kRect;
-    kRect.left = 0;
-    kRect.top = 0;
-    kRect.right = nXSize;
-    kRect.bottom = nYSize;
-    AdjustWindowRect(&kRect, WS_OVERLAPPEDWINDOW, false);
-    int nWindowXSize = (kRect.right - kRect.left);
-    int nWindowYSize = (kRect.bottom - kRect.top);
-    int nCenterX = (bWindowed ? (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((kRect.right - kRect.left) / 2) : 0);
-    int nCenterY = (bWindowed ? (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((kRect.bottom - kRect.top) / 2) : 0);
-    SetWindowPos(m_hWindow, nullptr, nCenterX, nCenterY, nWindowXSize, nWindowYSize, 0);
-    ShowWindow(m_hWindow, SW_SHOW);
-    UpdateWindow(m_hWindow);
-
-    m_bWindowActive = true;
-    HRESULT hRetVal = m_spVideoSystem->Initialize(m_hWindow, nXSize, nYSize, bWindowed);
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationSystem, IID_PPV_ARGS(&m_spPopulationManager));
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderSystem, IID_PPV_ARGS(&m_spRenderManager));
+        m_bWindowActive = true;
+        HRESULT hRetVal = m_spVideoSystem->Initialize(m_hWindow, nXSize, nYSize, bWindowed);
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = CGEKObservable::AddObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
+            hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationSystem, IID_PPV_ARGS(&m_spPopulationManager));
         }
-    }
 
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = m_spPopulationManager->LoadSystems();
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        RunCommand(L"load", { L"demo" });
-
-        m_bIsRunning = true;
-        MSG kMessage = { 0 };
-        while (m_bIsRunning && !m_bIsClosed)
+        if (SUCCEEDED(hRetVal))
         {
-            while (PeekMessage(&kMessage, nullptr, 0U, 0U, PM_REMOVE))
+            hRetVal = GetContext()->CreateInstance(CLSID_GEKRenderSystem, IID_PPV_ARGS(&m_spRenderManager));
+            if (SUCCEEDED(hRetVal))
             {
-                TranslateMessage(&kMessage);
-                DispatchMessage(&kMessage);
-            };
+                hRetVal = CGEKObservable::AddObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
+            }
+        }
 
-            if (m_bWindowActive)
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = m_spPopulationManager->LoadSystems();
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            RunCommand(L"load", { L"demo" });
+
+            m_bIsRunning = true;
+            MSG kMessage = { 0 };
+            while (m_bIsRunning && !m_bIsClosed)
             {
-                m_kTimer.Update();
-                float nFrameTime = float(m_kTimer.GetUpdateTime());
-                if (m_bConsoleOpen)
+                while (PeekMessage(&kMessage, nullptr, 0U, 0U, PM_REMOVE))
                 {
-                    m_nConsolePosition = min(1.0f, (m_nConsolePosition + (nFrameTime * 4.0f)));
-                }
-                else
+                    TranslateMessage(&kMessage);
+                    DispatchMessage(&kMessage);
+                };
+
+                if (m_bWindowActive)
                 {
-                    m_nConsolePosition = max(0.0f, (m_nConsolePosition - (nFrameTime * 4.0f)));
-
-                    POINT kCursor;
-                    GetCursorPos(&kCursor);
-
-                    RECT kWindow;
-                    GetWindowRect(m_hWindow, &kWindow);
-                    INT32 nCenterX = (kWindow.left + ((kWindow.right - kWindow.left) / 2));
-                    INT32 nCenterY = (kWindow.top + ((kWindow.bottom - kWindow.top) / 2));
-                    SetCursorPos(nCenterX, nCenterY);
-
-                    INT32 nCursorMoveX = ((kCursor.x - nCenterX) / 2);
-                    INT32 nCursorMoveY = ((kCursor.y - nCenterY) / 2);
-                    if (nCursorMoveX != 0 || nCursorMoveY != 0)
+                    m_kTimer.Update();
+                    float nFrameTime = float(m_kTimer.GetUpdateTime());
+                    if (m_bConsoleOpen)
                     {
-                        CheckInput(WM_TURN, float(nCursorMoveX));
-                        CheckInput(WM_TILT, float(nCursorMoveY));
+                        m_nConsolePosition = min(1.0f, (m_nConsolePosition + (nFrameTime * 4.0f)));
+                    }
+                    else
+                    {
+                        m_nConsolePosition = max(0.0f, (m_nConsolePosition - (nFrameTime * 4.0f)));
+
+                        POINT kCursor;
+                        GetCursorPos(&kCursor);
+
+                        RECT kWindow;
+                        GetWindowRect(m_hWindow, &kWindow);
+                        INT32 nCenterX = (kWindow.left + ((kWindow.right - kWindow.left) / 2));
+                        INT32 nCenterY = (kWindow.top + ((kWindow.bottom - kWindow.top) / 2));
+                        SetCursorPos(nCenterX, nCenterY);
+
+                        INT32 nCursorMoveX = ((kCursor.x - nCenterX) / 2);
+                        INT32 nCursorMoveY = ((kCursor.y - nCenterY) / 2);
+                        if (nCursorMoveX != 0 || nCursorMoveY != 0)
+                        {
+                            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, L"turn", float(nCursorMoveX))));
+                            CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, L"tilt", float(nCursorMoveY))));
+                        }
+
+                        UINT32 nFrame = 3;
+                        m_nTimeAccumulator += nFrameTime;
+                        while (m_nTimeAccumulator > (1.0 / 30.0))
+                        {
+                            m_nTotalTime += (1.0f / 30.0f);
+                            m_spPopulationManager->Update(float(m_nTotalTime), (1.0f / 30.0f));
+                            if (--nFrame == 0)
+                            {
+                                m_nTimeAccumulator = 0.0f;
+                            }
+                            else
+                            {
+                                m_nTimeAccumulator -= (1.0 / 30.0);
+                            }
+                        };
                     }
 
-                    UINT32 nFrame = 3;
-                    m_nTimeAccumulator += nFrameTime;
-                    while (m_nTimeAccumulator > (1.0 / 30.0))
-                    {
-                        m_nTotalTime += (1.0f / 30.0f);
-                        m_spPopulationManager->Update(float(m_nTotalTime), (1.0f / 30.0f));
-                        if (--nFrame == 0)
-                        {
-                            m_nTimeAccumulator = 0.0f;
-                        }
-                        else
-                        {
-                            m_nTimeAccumulator -= (1.0 / 30.0);
-                        }
-                    };
+                    m_spRenderManager->Render();
                 }
+            };
 
-                m_spRenderManager->Render();
+            m_bWindowActive = false;
+            m_spPopulationManager->Free();
+            CGEKObservable::RemoveObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
+            if (m_spPopulationManager)
+            {
+                m_spPopulationManager->FreeSystems();
             }
-        };
+        }
 
-        m_bWindowActive = false;
-        m_spPopulationManager->Free();
-        CGEKObservable::RemoveObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
-        if (m_spPopulationManager)
+        m_spRenderManager.Release();
+        m_spPopulationManager.Release();
+
+        CLibXMLDoc kSaveConfig;
+        if (SUCCEEDED(kSaveConfig.Create(L"config")))
         {
-            m_spPopulationManager->FreeSystems();
+            m_spConfig->Save(kSaveConfig.GetRoot());
+            kSaveConfig.Save(L"%root%\\config.xml");
         }
     }
+}
 
-    m_spRenderManager.Release();
-    m_spPopulationManager.Release();
+STDMETHODIMP_(IGEKConfigGroup *) CGEKEngine::GetConfig(void)
+{
+    REQUIRE_RETURN(m_spConfig, nullptr);
+    return m_spConfig;
 }
 
 STDMETHODIMP_(void) CGEKEngine::ShowMessage(GEKMESSAGETYPE eType, LPCWSTR pSystem, LPCWSTR pMessage, ...)

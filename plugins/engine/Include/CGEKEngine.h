@@ -11,6 +11,32 @@
 DECLARE_INTERFACE(IGEKRenderSystem);
 DECLARE_INTERFACE(IGEKPopulationSystem);
 
+class CGEKConfigGroup : public CGEKUnknown
+                      , public IGEKConfigGroup
+{
+private:
+    CStringW m_strText;
+    std::unordered_map<CStringW, CComPtr<CGEKConfigGroup>> m_aGroups;
+    std::unordered_map<CStringW, CStringW> m_aValues;
+
+public:
+    CGEKConfigGroup(void);
+    virtual ~CGEKConfigGroup(void);
+    DECLARE_UNKNOWN(CGEKConfigGroup);
+
+    void Load(CLibXMLNode &kNode);
+    void Save(CLibXMLNode &kNode);
+
+    // IGEKConfigGroup
+    STDMETHOD_(LPCWSTR, GetText)                (THIS);
+    STDMETHOD_(bool, HasGroup)                  (THIS_ LPCWSTR pName);
+    STDMETHOD_(IGEKConfigGroup*, GetGroup)      (THIS_ LPCWSTR pName);
+    STDMETHOD_(void, ListGroups)                (THIS_ std::function<void(LPCWSTR, IGEKConfigGroup*)> OnGroup);
+    STDMETHOD_(bool, HasValue)                  (THIS_ LPCWSTR pName);
+    STDMETHOD_(LPCWSTR, GetValue)               (THIS_ LPCWSTR pName, LPCWSTR pDefault = nullptr);
+    STDMETHOD_(void, ListValues)                (THIS_ std::function<void(LPCWSTR, LPCWSTR)> OnValue);
+};
+
 class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
                  , public IGEKGameApplication
@@ -39,7 +65,8 @@ private:
     std::list<GEKMESSAGE> m_aConsoleLog;
     std::map<CStringW, std::list<GEKMESSAGE>> m_aSystemLogs;
     std::list<std::pair<CStringW, std::vector<CStringW>>> m_aCommandLog;
-    std::unordered_map<UINT32, CStringW> m_aInputBindings;
+
+    CComPtr<CGEKConfigGroup> m_spConfig;
 
     CComPtr<IGEKAudioSystem> m_spAudioSystem;
     CComPtr<IGEK3DVideoSystem> m_spVideoSystem;
@@ -50,7 +77,6 @@ private:
     static LRESULT CALLBACK WindowProc(HWND hWindow, UINT32 nMessage, WPARAM wParam, LPARAM lParam);
     LRESULT WindowProc(UINT32 nMessage, WPARAM wParam, LPARAM lParam);
     void CheckInput(UINT32 nKey, bool bState);
-    void CheckInput(UINT32 nKey, float nValue);
 
 public:
     CGEKEngine(void);
@@ -65,6 +91,7 @@ public:
     STDMETHOD_(void, Run)                       (THIS);
 
     // IGEKEngine
+    STDMETHOD_(IGEKConfigGroup *, GetConfig)    (THIS);
     STDMETHOD_(void, ShowMessage)               (THIS_ GEKMESSAGETYPE eType, LPCWSTR pSystem, LPCWSTR pMessage, ...);
     STDMETHOD_(void, RunCommand)                (THIS_ LPCWSTR pCommand, const std::vector<CStringW> &aParams);
 

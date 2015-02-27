@@ -8,12 +8,10 @@
 #include <dinput.h>
 
 class CGEKInputSystem : public CGEKUnknown
-                      , public CGEKContextUser
-                      , public CGEKSystemUser
-                      , public IGEKContextObserver
                       , public IGEKInputSystem
 {
 private:
+    HWND m_hWindow;
     CComPtr<IDirectInput8> m_spDirectInput;
     CComPtr<IGEKInputDevice> m_spMouse;
     CComPtr<IGEKInputDevice> m_spKeyboard;
@@ -21,19 +19,15 @@ private:
 
 private:
     static BOOL CALLBACK JoyStickEnum(LPCDIDEVICEINSTANCE pkInstance, void *pContext);
+    void AddJoystick(LPCDIDEVICEINSTANCE pkInstance);
 
 public:
     CGEKInputSystem(void);
     virtual ~CGEKInputSystem(void);
     DECLARE_UNKNOWN(CGEKInputSystem);
 
-    // IGEKContextObserver
-    STDMETHOD(OnRegistration)           (THIS_ IUnknown *pObject);
-
-    // IGEKUnknown
-    STDMETHOD(Initialize)                       (THIS);
-
     // IGEKInputSystem
+    STDMETHOD(Initialize)                       (THIS_ HWND hWindow);
     STDMETHOD_(IGEKInputDevice *, GetKeyboard)  (THIS);
     STDMETHOD_(IGEKInputDevice *, GetMouse)     (THIS);
     STDMETHOD_(UINT32, GetNumJoysticks)         (THIS);

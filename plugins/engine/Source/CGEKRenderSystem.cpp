@@ -226,12 +226,12 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
     if (SUCCEEDED(hRetVal))
     {
         GEK3DVIDEO::SAMPLERSTATES kStates;
-        /*if (m_pSystem->GetConfig().DoesValueExists(L"render", L"anisotropy"))
+        kStates.m_nMaxAnisotropy = StrToUINT32(m_pEngine->GetConfig()->GetGroup(L"quality")->GetValue(L"anisotropy", L"0"));
+        if (kStates.m_nMaxAnisotropy > 0)
         {
-            kStates.m_nMaxAnisotropy = StrToUINT32(m_pSystem->GetConfig().GetValue(L"render", L"anisotropy", L"1"));
             kStates.m_eFilter = GEK3DVIDEO::FILTER::ANISOTROPIC;
         }
-        else*/
+        else
         {
             kStates.m_eFilter = GEK3DVIDEO::FILTER::MIN_MAG_MIP_LINEAR;
         }

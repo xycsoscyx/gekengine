@@ -30,24 +30,24 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
             if (SUCCEEDED(kDocument.Load(L"%root%\\config.xml")))
             {
                 CLibXMLNode kRoot = kDocument.GetRoot();
-                if (kRoot && kRoot.GetType().CompareNoCase(L"config") == 0 && kRoot.HasChildElement(L"video"))
+                if (kRoot && kRoot.GetType().CompareNoCase(L"config") == 0 && kRoot.HasChildElement(L"display"))
                 {
-                    CLibXMLNode kVideo = kRoot.FirstChildElement(L"video");
-                    if (kVideo)
+                    CLibXMLNode kDisplay = kRoot.FirstChildElement(L"display");
+                    if (kDisplay)
                     {
-                        if (kVideo.HasAttribute(L"xsize"))
+                        if (kDisplay.HasAttribute(L"xsize"))
                         {
-                            nXSize = StrToUINT32(kVideo.GetAttribute(L"xsize"));
+                            nXSize = StrToUINT32(kDisplay.GetAttribute(L"xsize"));
                         }
                         
-                        if (kVideo.HasAttribute(L"ysize"))
+                        if (kDisplay.HasAttribute(L"ysize"))
                         {
-                            nYSize = StrToUINT32(kVideo.GetAttribute(L"ysize"));
+                            nYSize = StrToUINT32(kDisplay.GetAttribute(L"ysize"));
                         }
                         
-                        if (kVideo.HasAttribute(L"windowed"))
+                        if (kDisplay.HasAttribute(L"windowed"))
                         {
-                            bWindowed = StrToBoolean(kVideo.GetAttribute(L"windowed"));
+                            bWindowed = StrToBoolean(kDisplay.GetAttribute(L"windowed"));
                         }
                     }
                 }
@@ -111,15 +111,15 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
                     kRoot = kDocument.GetRoot();
                 }
 
-                CLibXMLNode kVideo = kRoot.FirstChildElement(L"video");
-                if (!kVideo)
+                CLibXMLNode kDisplay = kRoot.FirstChildElement(L"display");
+                if (!kDisplay)
                 {
-                    kVideo = kRoot.CreateChildElement(L"video");
+                    kDisplay = kRoot.CreateChildElement(L"display");
                 }
 
-                kVideo.SetAttribute(L"xsize", L"%d", kMode.xsize);
-                kVideo.SetAttribute(L"ysize", L"%d", kMode.ysize);
-                kVideo.SetAttribute(L"windowed", L"%s", (SendDlgItemMessage(hDialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_UNCHECKED ? L"true" : L"false"));
+                kDisplay.SetAttribute(L"xsize", L"%d", kMode.xsize);
+                kDisplay.SetAttribute(L"ysize", L"%d", kMode.ysize);
+                kDisplay.SetAttribute(L"windowed", L"%s", (SendDlgItemMessage(hDialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_UNCHECKED ? L"true" : L"false"));
                 kDocument.Save(L"%root%\\config.xml");
 
                 EndDialog(hDialog, IDOK);

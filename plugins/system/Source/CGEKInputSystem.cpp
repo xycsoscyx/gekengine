@@ -1,5 +1,4 @@
 #include "CGEKInputSystem.h"
-#include "IGEKSystem.h"
 #include <algorithm>
 
 #include "GEKSystemCLSIDs.h"
@@ -387,41 +386,86 @@ public:
 
 BOOL CALLBACK CGEKInputSystem::JoyStickEnum(LPCDIDEVICEINSTANCE pkInstance, void *pContext)
 {
-    CGEKInputSystem *pInput = (CGEKInputSystem *)pContext;
-    CComPtr<CGEKJoystick> spJoystickDevice = new CGEKJoystick();
-    if (spJoystickDevice != nullptr)
+    CGEKInputSystem *pSystem = (CGEKInputSystem *)pContext;
+    if (pSystem)
     {
-        if (SUCCEEDED(spJoystickDevice->Initialize(pInput->m_spDirectInput, pInput->GetSystem()->GetWindow(), pkInstance->guidInstance)))
-        {
-            CComPtr<IGEKInputDevice> spInputDevice;
-            spJoystickDevice->QueryInterface(IID_PPV_ARGS(&spInputDevice));
-            if (spInputDevice != nullptr)
-            {
-                pInput->m_aJoysticks.push_back(spInputDevice);
-            }
-        }
+        pSystem->AddJoystick(pkInstance);
     }
 
     return DIENUM_CONTINUE;
 }
 
+void CGEKInputSystem::AddJoystick(LPCDIDEVICEINSTANCE pkInstance)
+{
+    CComPtr<CGEKJoystick> spJoystickDevice = new CGEKJoystick();
+    if (spJoystickDevice != nullptr)
+    {
+        if (SUCCEEDED(spJoystickDevice->Initialize(m_spDirectInput, m_hWindow, pkInstance->guidInstance)))
+        {
+            CComPtr<IGEKInputDevice> spInputDevice;
+            spJoystickDevice->QueryInterface(IID_PPV_ARGS(&spInputDevice));
+            if (spInputDevice != nullptr)
+            {
+                m_aJoysticks.push_back(spInputDevice);
+            }
+        }
+    }
+}
+
 BEGIN_INTERFACE_LIST(CGEKInputSystem)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextUser)
-    INTERFACE_LIST_ENTRY_COM(IGEKContextObserver)
-    INTERFACE_LIST_ENTRY_COM(IGEKSystemUser)
     INTERFACE_LIST_ENTRY_COM(IGEKInputSystem)
 END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKInputSystem);
 
 CGEKInputSystem::CGEKInputSystem(void)
+    : m_hWindow(nullptr)
 {
 }
 
 CGEKInputSystem::~CGEKInputSystem(void)
 {
-    CGEKObservable::RemoveObserver(GetContext(), this);
     m_aJoysticks.clear();
+}
+
+HRESULT CGEKInputSystem::Initialize(HWND hWindow)
+{
+    m_hWindow = hWindow;
+    HRESULT hRetVal = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&m_spDirectInput, nullptr);
+    if (m_spDirectInput != nullptr)
+    {
+        hRetVal = E_OUTOFMEMORY;
+        CComPtr<CGEKKeyboard> spKeyboard = new CGEKKeyboard();
+        if (spKeyboard != nullptr)
+        {
+            hRetVal = spKeyboard->Initialize(m_spDirectInput, hWindow);
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = spKeyboard->QueryInterface(IID_PPV_ARGS(&m_spKeyboard));
+            }
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = E_OUTOFMEMORY;
+            CComPtr<CGEKMouse> spMouse = new CGEKMouse();
+            if (spMouse != nullptr)
+            {
+                hRetVal = spMouse->Initialize(m_spDirectInput, hWindow);
+                if (SUCCEEDED(hRetVal))
+                {
+                    hRetVal = spMouse->QueryInterface(IID_PPV_ARGS(&m_spMouse));
+                }
+            }
+        }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = m_spDirectInput->EnumDevices(DI8DEVCLASS_GAMECTRL, JoyStickEnum, LPVOID(this), DIEDFL_ATTACHEDONLY);
+        }
+    }
+
+    return hRetVal;
 }
 
 IGEKInputDevice *CGEKInputSystem::GetKeyboard(void)
@@ -449,61 +493,6 @@ IGEKInputDevice *CGEKInputSystem::GetJoystick(UINT32 nDevice)
     }
 
     return nullptr;
-}
-
-STDMETHODIMP CGEKInputSystem::OnRegistration(IUnknown *pObject)
-{
-    CComQIPtr<IGEKInputSystemUser> spSystemUser(pObject);
-    if (spSystemUser != nullptr)
-    {
-        return spSystemUser->Register(this);
-    }
-
-    return S_OK;
-}
-
-HRESULT CGEKInputSystem::Initialize(void)
-{
-    HRESULT hRetVal = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&m_spDirectInput, nullptr); 
-    if (m_spDirectInput != nullptr)
-    {
-        hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKKeyboard> spKeyboard = new CGEKKeyboard();
-        if (spKeyboard != nullptr)
-        {
-            hRetVal = spKeyboard->Initialize(m_spDirectInput, GetSystem()->GetWindow());
-            if (SUCCEEDED(hRetVal))
-            {
-                hRetVal = spKeyboard->QueryInterface(IID_PPV_ARGS(&m_spKeyboard));
-            }
-        }
-
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKMouse> spMouse = new CGEKMouse();
-            if (spMouse != nullptr)
-            {
-                hRetVal = spMouse->Initialize(m_spDirectInput, GetSystem()->GetWindow());
-                if (SUCCEEDED(hRetVal))
-                {
-                    hRetVal = spMouse->QueryInterface(IID_PPV_ARGS(&m_spMouse));
-                }
-            }
-        }
-
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = m_spDirectInput->EnumDevices(DI8DEVCLASS_GAMECTRL, JoyStickEnum, this, DIEDFL_ATTACHEDONLY);
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::AddObserver(GetContext(), this);
-    }
-
-    return hRetVal;
 }
 
 HRESULT CGEKInputSystem::Refresh(void)
