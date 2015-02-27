@@ -139,5 +139,6 @@
     <None Include="cursor.ani">
       <Filter>Source Files\Base Components\Resource Files</Filter>
     </None>
+    <None Include="pointer.ani" />
   </ItemGroup>
 </Project>

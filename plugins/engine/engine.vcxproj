@@ -146,6 +146,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cursor.ani" />
+    <None Include="pointer.ani" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,6 +1,7 @@
 ﻿#include "CGEKPopulationSystem.h"
 #include "GEKEngineCLSIDs.h"
 #include "GEKEngine.h"
+#include "IGEKEngine.h"
 #include <ppl.h>
 
 BEGIN_INTERFACE_LIST(CGEKPopulationSystem)
@@ -24,32 +25,37 @@ STDMETHODIMP CGEKPopulationSystem::Initialize(void)
     HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKPopulationSystem, GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentType, [&](IUnknown *pObject) -> HRESULT
+        hRetVal = E_FAIL;
+        IGEKEngine *pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
+        if (pEngine)
         {
-            CComQIPtr<IGEKComponent> spComponent(pObject);
-            if (spComponent)
+            hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentType, [&](IUnknown *pObject) -> HRESULT
             {
-                OutputDebugString(FormatString(L"GEK Component Found: ID (0x%08X), Name (%s)\r\n", spComponent->GetID(), spComponent->GetName()));
+                CComQIPtr<IGEKComponent> spComponent(pObject);
+                if (spComponent)
+                {
+                    pEngine->ShowMessage(GEKMESSAGE_NORMAL, L"population", L"Component Found : ID(0x % 08X), Name(%s)", spComponent->GetID(), spComponent->GetName());
 
-                auto pIDIterator = m_aComponents.find(spComponent->GetID());
-                auto pNamesIterator = m_aComponentNames.find(spComponent->GetName());
-                if (pIDIterator != m_aComponents.end())
-                {
-                    OutputDebugString(FormatString(L" - Component ID Already Used: 0x%08X\r\n", spComponent->GetID()));
+                    auto pIDIterator = m_aComponents.find(spComponent->GetID());
+                    auto pNamesIterator = m_aComponentNames.find(spComponent->GetName());
+                    if (pIDIterator != m_aComponents.end())
+                    {
+                        pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Component ID Already Used: 0x%08X", spComponent->GetID());
+                    }
+                    else if (pNamesIterator != m_aComponentNames.end())
+                    {
+                        pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Component Name Already Used: %s", spComponent->GetName());
+                    }
+                    else
+                    {
+                        m_aComponentNames[spComponent->GetName()] = spComponent->GetID();
+                        m_aComponents[spComponent->GetID()] = spComponent;
+                    }
                 }
-                else if (pNamesIterator != m_aComponentNames.end())
-                {
-                    OutputDebugString(FormatString(L" - Component Name Already Used: %s\r\n", spComponent->GetName()));
-                }
-                else
-                {
-                    m_aComponentNames[spComponent->GetName()] = spComponent->GetID();
-                    m_aComponents[spComponent->GetID()] = spComponent;
-                }
-            }
 
-            return S_OK;
-        });
+                return S_OK;
+            });
+        }
     }
 
     return hRetVal;
@@ -84,84 +90,99 @@ STDMETHODIMP_(void) CGEKPopulationSystem::FreeSystems(void)
 
 STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
 {
-    Free();
-    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
-
-    CLibXMLDoc kDocument;
-    std::list<CLibXMLNode> aEntities;
-    HRESULT hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\worlds\\%s.xml", pName));
-    if (SUCCEEDED(hRetVal))
+    HRESULT hRetVal = E_FAIL;
+    IGEKEngine *pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
+    if (pEngine)
     {
-        CLibXMLNode &kWorldNode = kDocument.GetRoot();
-        if (kWorldNode.GetType().CompareNoCase(L"world") == 0)
+        pEngine->ShowMessage(GEKMESSAGE_NORMAL, L"population", L"Loading Population (%s)...", pName);
+
+        Free();
+        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
+
+        CLibXMLDoc kDocument;
+        std::list<CLibXMLNode> aEntities;
+        hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\worlds\\%s.xml", pName));
+        if (SUCCEEDED(hRetVal))
         {
-            CLibXMLNode &kPopulationNode = kWorldNode.FirstChildElement(L"population");
-            if (kPopulationNode)
+            CLibXMLNode &kWorldNode = kDocument.GetRoot();
+            if (kWorldNode.GetType().CompareNoCase(L"world") == 0)
             {
-                CLibXMLNode &kEntityNode = kPopulationNode.FirstChildElement(L"entity");
-                while (kEntityNode)
+                CLibXMLNode &kPopulationNode = kWorldNode.FirstChildElement(L"population");
+                if (kPopulationNode)
                 {
-                    aEntities.push_back(kEntityNode);
-                    kEntityNode = kEntityNode.NextSiblingElement(L"entity");
-                };
+                    CLibXMLNode &kEntityNode = kPopulationNode.FirstChildElement(L"entity");
+                    while (kEntityNode)
+                    {
+                        aEntities.push_back(kEntityNode);
+                        kEntityNode = kEntityNode.NextSiblingElement(L"entity");
+                    };
+                }
+                else
+                {
+                    pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to locate \"population\" node");
+                    hRetVal = E_UNEXPECTED;
+                }
             }
             else
             {
+                pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to locate \"world\" node");
                 hRetVal = E_UNEXPECTED;
             }
         }
         else
         {
-            hRetVal = E_UNEXPECTED;
+            pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to load population");
         }
-    }
-    
-    for (auto &kEntityNode : aEntities)
-    {
-        CStringW strName;
-        std::map<CStringW, CStringW> aValues;
-        kEntityNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
-        {
-            if (_wcsicmp(pName, L"name") == 0)
-            {
-                strName = pValue;
-            }
-            else
-            {
-                aValues[FormatString(L"%%%s%%", pName).MakeLower()] = FormatString(L"%f", StrToFloat(pValue));
-            }
-        });
 
-        GEKENTITYID nEntityID = GEKINVALIDENTITYID;
-        if (SUCCEEDED(CreateEntity(nEntityID, (strName.IsEmpty() ? nullptr : strName.GetString()))))
+        for (auto &kEntityNode : aEntities)
         {
-            CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
-            while (kComponentNode)
+            CStringW strName;
+            std::map<CStringW, CStringW> aValues;
+            kEntityNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
             {
-                auto pIterator = m_aComponentNames.find(kComponentNode.GetType());
-                if (pIterator != m_aComponentNames.end())
+                if (_wcsicmp(pName, L"name") == 0)
                 {
-                    std::unordered_map<CStringW, CStringW> aParams;
-                    kComponentNode.ListAttributes([&aValues, &aParams](LPCWSTR pName, LPCWSTR pValue) -> void
-                    {
-                        CStringW strValue(pValue);
-                        for (auto kPair : aValues)
-                        {
-                            strValue.Replace(kPair.first, kPair.second);
-                        }
-
-                        aParams[pName] = strValue;
-                    });
-
-                    AddComponent(nEntityID, (*pIterator).second, aParams);
+                    strName = pValue;
                 }
+                else
+                {
+                    aValues[FormatString(L"%%%s%%", pName).MakeLower()] = FormatString(L"%f", StrToFloat(pValue));
+                }
+            });
 
-                kComponentNode = kComponentNode.NextSiblingElement();
-            };
+            GEKENTITYID nEntityID = GEKINVALIDENTITYID;
+            if (SUCCEEDED(CreateEntity(nEntityID, (strName.IsEmpty() ? nullptr : strName.GetString()))))
+            {
+                CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
+                while (kComponentNode)
+                {
+                    auto pIterator = m_aComponentNames.find(kComponentNode.GetType());
+                    if (pIterator != m_aComponentNames.end())
+                    {
+                        std::unordered_map<CStringW, CStringW> aParams;
+                        kComponentNode.ListAttributes([&aValues, &aParams](LPCWSTR pName, LPCWSTR pValue) -> void
+                        {
+                            CStringW strValue(pValue);
+                            for (auto kPair : aValues)
+                            {
+                                strValue.Replace(kPair.first, kPair.second);
+                            }
+
+                            aParams[pName] = strValue;
+                        });
+
+                        AddComponent(nEntityID, (*pIterator).second, aParams);
+                    }
+
+                    kComponentNode = kComponentNode.NextSiblingElement();
+                };
+            }
         }
+
+        hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
     }
 
-    return CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
+    return hRetVal;
 }
 
 STDMETHODIMP CGEKPopulationSystem::Save(LPCWSTR pName)

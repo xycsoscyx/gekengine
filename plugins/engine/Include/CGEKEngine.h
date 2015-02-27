@@ -33,7 +33,12 @@ private:
     bool m_bConsoleOpen;
     float m_nConsolePosition;
     CStringW m_strConsole;
-    std::list<CStringW> m_aConsoleLog;
+
+    typedef std::pair<GEKMESSAGETYPE, CStringW> GEKMESSAGE;
+
+    std::list<GEKMESSAGE> m_aConsoleLog;
+    std::map<CStringW, std::list<GEKMESSAGE>> m_aSystemLogs;
+    std::list<std::pair<CStringW, std::vector<CStringW>>> m_aCommandLog;
     std::unordered_map<UINT32, CStringW> m_aInputBindings;
 
     CComPtr<IGEKAudioSystem> m_spAudioSystem;
@@ -46,7 +51,6 @@ private:
     LRESULT WindowProc(UINT32 nMessage, WPARAM wParam, LPARAM lParam);
     void CheckInput(UINT32 nKey, bool bState);
     void CheckInput(UINT32 nKey, float nValue);
-    HRESULT Load(LPCWSTR pName);
 
 public:
     CGEKEngine(void);
@@ -61,8 +65,8 @@ public:
     STDMETHOD_(void, Run)                       (THIS);
 
     // IGEKEngine
-    STDMETHOD_(void, OnMessage)                 (THIS_ LPCWSTR pMessage, ...);
-    STDMETHOD_(void, OnCommand)                 (THIS_ const std::vector<CStringW> &aParams);
+    STDMETHOD_(void, ShowMessage)               (THIS_ GEKMESSAGETYPE eType, LPCWSTR pSystem, LPCWSTR pMessage, ...);
+    STDMETHOD_(void, RunCommand)                (THIS_ LPCWSTR pCommand, const std::vector<CStringW> &aParams);
 
     // IGEKRenderObserver
     STDMETHOD_(void, OnRenderOverlay)           (THIS);

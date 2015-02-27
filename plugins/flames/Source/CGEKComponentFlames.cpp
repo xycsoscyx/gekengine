@@ -155,6 +155,7 @@ STDMETHODIMP CGEKComponentSystemFlames::OnLoadEnd(HRESULT hRetVal)
 
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnFree(void)
 {
+    m_aEmitters.clear();
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnEntityDestroyed(const GEKENTITYID &nEntityID)

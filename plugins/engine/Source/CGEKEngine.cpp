@@ -51,6 +51,161 @@ END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKEngine)
 
+LRESULT CALLBACK CGEKEngine::WindowProc(HWND hWindow, UINT32 nMessage, WPARAM wParam, LPARAM lParam)
+{
+    CGEKEngine *pEngine = (CGEKEngine *)GetWindowLong(hWindow, GWL_USERDATA);
+    if (pEngine == nullptr)
+    {
+        return DefWindowProc(hWindow, nMessage, wParam, lParam);
+    }
+
+    return pEngine->WindowProc(nMessage, wParam, lParam);
+}
+
+LRESULT CGEKEngine::WindowProc(UINT32 nMessage, WPARAM wParam, LPARAM lParam)
+{
+    switch (nMessage)
+    {
+
+    case WM_CLOSE:
+        m_bIsClosed = true;
+        DestroyWindow(m_hWindow);
+        return 0;
+
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+
+    case WM_SETCURSOR:
+        if (m_bConsoleOpen)
+        {
+            SetCursor(m_hCursorPointer);
+        }
+        else
+        {
+            SetCursor(nullptr);
+        }
+
+        return 1;
+
+    case WM_ACTIVATE:
+        if (HIWORD(wParam))
+        {
+            m_bWindowActive = false;
+            m_kTimer.Pause(!m_bWindowActive);
+        }
+        else
+        {
+            switch (LOWORD(wParam))
+            {
+            case WA_ACTIVE:
+            case WA_CLICKACTIVE:
+                m_bWindowActive = true;
+                m_kTimer.Pause(!m_bWindowActive);
+                break;
+
+            case WA_INACTIVE:
+                m_bWindowActive = false;
+                m_kTimer.Pause(!m_bWindowActive);
+                break;
+            };
+        }
+
+        return 1;
+
+    case WM_CHAR:
+        if (m_bConsoleOpen)
+        {
+            switch (wParam)
+            {
+            case 0x08: // backspace
+                if (m_strConsole.GetLength() > 0)
+                {
+                    m_strConsole = m_strConsole.Mid(0, m_strConsole.GetLength() - 1);
+                }
+
+                break;
+
+            case 0x0A: // linefeed
+            case 0x0D: // carriage return
+                if (true)
+                {
+                    int nPosition = 0;
+                    CStringW strCommand = m_strConsole.Tokenize(L" ", nPosition);
+
+                    std::vector<CStringW> aParams;
+                    while (nPosition >= 0 && nPosition < m_strConsole.GetLength())
+                    {
+                        aParams.push_back(m_strConsole.Tokenize(L" ", nPosition));
+                    };
+
+                    RunCommand(strCommand, aParams);
+                }
+
+                m_strConsole.Empty();
+                break;
+
+            case 0x1B: // escape
+                m_strConsole.Empty();
+                break;
+
+            case 0x09: // tab
+                break;
+
+            default:
+                if (wParam != '`')
+                {
+                    m_strConsole += (WCHAR)wParam;
+                }
+
+                break;
+            };
+        }
+
+        break;
+
+    case WM_KEYDOWN:
+        CheckInput(wParam, true);
+        return 1;
+
+    case WM_KEYUP:
+        CheckInput(wParam, false);
+        return 1;
+
+    case WM_LBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+        CheckInput(nMessage, true);
+        return 1;
+
+    case WM_LBUTTONUP:
+    case WM_RBUTTONUP:
+    case WM_MBUTTONUP:
+        CheckInput(nMessage, false);
+        return 1;
+
+    case WM_MOUSEWHEEL:
+        if (true)
+        {
+            INT32 nDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+            CheckInput(WM_MOUSEWHEEL, ((float(nDelta) / float(WHEEL_DELTA)) * 4));
+        }
+
+        return 1;
+
+    case WM_SYSCOMMAND:
+        if (SC_KEYMENU == (wParam & 0xFFF0))
+        {
+            m_spVideoSystem->Resize(m_spVideoSystem->GetXSize(), m_spVideoSystem->GetYSize(), !m_spVideoSystem->IsWindowed());
+            return 1;
+        }
+
+        break;
+    };
+
+    return DefWindowProc(m_hWindow, nMessage, wParam, lParam);
+}
+
 CGEKEngine::CGEKEngine(void)
     : m_hWindow(nullptr)
     , m_bIsClosed(false)
@@ -68,24 +223,6 @@ CGEKEngine::~CGEKEngine(void)
     {
         DestroyIcon(m_hCursorPointer);
     }
-}
-
-HRESULT CGEKEngine::Load(LPCWSTR pName)
-{
-    HRESULT hRetVal = m_spPopulationManager->Load(pName);
-    if (FAILED(hRetVal))
-    {
-        m_spPopulationManager->Free();
-    }
-    else
-    {
-        m_bConsoleOpen = false;
-        m_nTotalTime = 0.0;
-        m_nTimeAccumulator = 0.0f;
-        m_kTimer.Reset();
-    }
-
-    return hRetVal;
 }
 
 void CGEKEngine::CheckInput(UINT32 nKey, bool bState)
@@ -209,159 +346,6 @@ STDMETHODIMP_(void) CGEKEngine::Destroy(void)
     GetContext()->RemoveCachedClass(CLSID_GEKEngine);
 }
 
-LRESULT CALLBACK CGEKEngine::WindowProc(HWND hWindow, UINT32 nMessage, WPARAM wParam, LPARAM lParam)
-{
-    CGEKEngine *pEngine = (CGEKEngine *)GetWindowLong(hWindow, GWL_USERDATA);
-    if (pEngine == nullptr)
-    {
-        return DefWindowProc(hWindow, nMessage, wParam, lParam);
-    }
-
-    return pEngine->WindowProc(nMessage, wParam, lParam);
-}
-
-LRESULT CGEKEngine::WindowProc(UINT32 nMessage, WPARAM wParam, LPARAM lParam)
-{
-    switch (nMessage)
-    {
-
-    case WM_CLOSE:
-        m_bIsClosed = true;
-        DestroyWindow(m_hWindow);
-        return 0;
-
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-
-    case WM_SETCURSOR:
-        if (m_bConsoleOpen)
-        {
-            SetCursor(m_hCursorPointer);
-        }
-        else
-        {
-            SetCursor(nullptr);
-        }
-
-        return 1;
-
-    case WM_ACTIVATE:
-        if (HIWORD(wParam))
-        {
-            m_bWindowActive = false;
-            m_kTimer.Pause(!m_bWindowActive);
-        }
-        else
-        {
-            switch (LOWORD(wParam))
-            {
-            case WA_ACTIVE:
-            case WA_CLICKACTIVE:
-                m_bWindowActive = true;
-                m_kTimer.Pause(!m_bWindowActive);
-                break;
-
-            case WA_INACTIVE:
-                m_bWindowActive = false;
-                m_kTimer.Pause(!m_bWindowActive);
-                break;
-            };
-        }
-
-        return 1;
-
-    case WM_CHAR:
-        if (m_bConsoleOpen)
-        {
-            switch (wParam)
-            {
-            case 0x08: // backspace
-                if (m_strConsole.GetLength() > 0)
-                {
-                    m_strConsole = m_strConsole.Mid(0, m_strConsole.GetLength() - 1);
-                }
-
-                break;
-
-            case 0x0A: // linefeed
-            case 0x0D: // carriage return
-                if (true)
-                {
-                    int nPosition = 0;
-                    std::vector<CStringW> aParams;
-                    while (nPosition >= 0 && nPosition < m_strConsole.GetLength())
-                    {
-                        aParams.push_back(m_strConsole.Tokenize(L" ", nPosition));
-                    };
-
-                    OnCommand(aParams);
-                }
-
-                m_strConsole.Empty();
-                break;
-
-            case 0x1B: // escape
-                m_strConsole.Empty();
-                break;
-
-            case 0x09: // tab
-                break;
-
-            default:
-                if (wParam != '`')
-                {
-                    m_strConsole += (WCHAR)wParam;
-                }
-
-                break;
-            };
-        }
-
-        break;
-
-    case WM_KEYDOWN:
-        CheckInput(wParam, true);
-        return 1;
-
-    case WM_KEYUP:
-        CheckInput(wParam, false);
-        return 1;
-
-    case WM_LBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-    case WM_MBUTTONDOWN:
-        CheckInput(nMessage, true);
-        return 1;
-
-    case WM_LBUTTONUP:
-    case WM_RBUTTONUP:
-    case WM_MBUTTONUP:
-        CheckInput(nMessage, false);
-        return 1;
-
-    case WM_MOUSEWHEEL:
-        if (true)
-        {
-            INT32 nDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-            CheckInput(WM_MOUSEWHEEL, ((float(nDelta) / float(WHEEL_DELTA)) * 4));
-        }
-
-        return 1;
-
-    case WM_SYSCOMMAND:
-        if (SC_KEYMENU == (wParam & 0xFFF0))
-        {
-            m_spVideoSystem->Resize(m_spVideoSystem->GetXSize(), m_spVideoSystem->GetYSize(), !m_spVideoSystem->IsWindowed());
-            return 1;
-        }
-
-        break;
-    };
-
-    return DefWindowProc(m_hWindow, nMessage, wParam, lParam);
-}
-
 STDMETHODIMP_(void) CGEKEngine::Run(void)
 {
     UINT32 nXSize = 800;
@@ -448,11 +432,8 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = Load(L"demo");
-    }
+        RunCommand(L"load", { L"demo" });
 
-    if (SUCCEEDED(hRetVal))
-    {
         m_bIsRunning = true;
         MSG kMessage = { 0 };
         while (m_bIsRunning && !m_bIsClosed)
@@ -526,7 +507,7 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
     m_spPopulationManager.Release();
 }
 
-STDMETHODIMP_(void) CGEKEngine::OnMessage(LPCWSTR pMessage, ...)
+STDMETHODIMP_(void) CGEKEngine::ShowMessage(GEKMESSAGETYPE eType, LPCWSTR pSystem, LPCWSTR pMessage, ...)
 {
     va_list pArgs;
     CStringW strMessage;
@@ -534,32 +515,60 @@ STDMETHODIMP_(void) CGEKEngine::OnMessage(LPCWSTR pMessage, ...)
     strMessage.FormatV(pMessage, pArgs);
     va_end(pArgs);
 
-    OutputDebugString(strMessage + L"\r\n");
-    m_aConsoleLog.push_front(strMessage);
+    if (pSystem)
+    {
+        OutputDebugString(FormatString(L"[%s] %s\r\n", pSystem, strMessage.GetString()));
+    }
+    else
+    {
+        OutputDebugString(FormatString(L"%s\r\n", strMessage.GetString()));
+    }
+
+    m_aConsoleLog.push_front(std::make_pair(eType, strMessage));
     if (m_aConsoleLog.size() > 100)
     {
         m_aConsoleLog.pop_back();
     }
+
+    if (pSystem)
+    {
+        std::list<GEKMESSAGE> &aSystemLog = m_aSystemLogs[pSystem];
+        aSystemLog.push_front(std::make_pair(eType, strMessage));
+        if (aSystemLog.size() > 100)
+        {
+            aSystemLog.pop_back();
+        }
+    }
 }
 
-STDMETHODIMP_(void) CGEKEngine::OnCommand(const std::vector<CStringW> &aParams)
+STDMETHODIMP_(void) CGEKEngine::RunCommand(LPCWSTR pCommand, const std::vector<CStringW> &aParams)
 {
-    if (aParams.size() == 1 && aParams[0].CompareNoCase(L"quit") == 0)
+    if (_wcsicmp(pCommand, L"quit") == 0)
     {
-        OnMessage(L"Quitting...");
+        ShowMessage(GEKMESSAGE_NORMAL, L"command", L"Quitting...");
         m_bIsRunning = false;
     }
-    else if (aParams.size() == 2 && aParams[0].CompareNoCase(L"load") == 0)
+    else if (_wcsicmp(pCommand, L"load") == 0 && aParams.size() == 1)
     {
-        OnMessage(L"Loading Level...");
-        Load(aParams[1]);
+        ShowMessage(GEKMESSAGE_NORMAL, L"command", L"Loading Level (%s)...", aParams[0].GetString());
+        if (FAILED(m_spPopulationManager->Load(aParams[0])))
+        {
+            m_spPopulationManager->Free();
+        }
+        else
+        {
+            m_bConsoleOpen = false;
+            m_nTotalTime = 0.0;
+            m_nTimeAccumulator = 0.0f;
+            m_kTimer.Reset();
+        }
     }
-    else if (aParams.size() == 4 && aParams[0].CompareNoCase(L"setresolution") == 0)
+    else if (_wcsicmp(pCommand, L"setresolution") == 0 && aParams.size() == 3)
     {
-        OnMessage(L"Setting Resolution (%sx%s %s)...", aParams[1].GetString(), aParams[2].GetString(), (StrToBoolean(aParams[3]) ? L"Windowed" : L"Fullscreen"));
-        UINT32 nXSize = StrToUINT32(aParams[1]);
-        UINT32 nYSize = StrToUINT32(aParams[2]);
-        bool bWindowed = StrToBoolean(aParams[3]);
+        ShowMessage(GEKMESSAGE_NORMAL, L"command", L"Setting Resolution (%sx%s %s)...", aParams[0].GetString(), aParams[1].GetString(), (StrToBoolean(aParams[2]) ? L"Windowed" : L"Fullscreen"));
+        UINT32 nXSize = StrToUINT32(aParams[0]);
+        UINT32 nYSize = StrToUINT32(aParams[1]);
+        bool bWindowed = StrToBoolean(aParams[2]);
 
         RECT kRect;
         kRect.left = 0;
@@ -577,10 +586,23 @@ STDMETHODIMP_(void) CGEKEngine::OnCommand(const std::vector<CStringW> &aParams)
             m_bIsRunning = false;
         }
     }
-    else if (aParams.size() > 0)
+    else if (_wcsicmp(pCommand, L"showlog") == 0 && aParams.size() == 1)
     {
-        OnMessage(L"Unknown Command: %s", aParams[0].GetString());
+        ShowMessage(GEKMESSAGE_NORMAL, nullptr, L"Showing Log (%s)...", aParams[0].GetString());
+
+        std::list<GEKMESSAGE> &aSystem = m_aSystemLogs[aParams[0]];
+        for (auto &kMessage : aSystem)
+        {
+            ShowMessage(kMessage.first, nullptr, kMessage.second);
+        }
     }
+    else
+    {
+        ShowMessage(GEKMESSAGE_NORMAL, L"command", L"Unknown Command: %s", pCommand);
+        return;
+    }
+
+    m_aCommandLog.push_back(std::make_pair(pCommand, aParams));
 }
 
 STDMETHODIMP_(void) CGEKEngine::OnRenderOverlay(void)
@@ -648,10 +670,16 @@ STDMETHODIMP_(void) CGEKEngine::OnRenderOverlay(void)
             spVideoSystem->DrawRectangle({ 10.0f, (nHalfHeight - 30.0f), (nXSize - 10.0f), (nHalfHeight - 10.0f) }, spForeground, true);
             spVideoSystem->DrawText({ 15.0f, (nHalfHeight - 30.0f), (nXSize - 15.0f), (nHalfHeight - 10.0f) }, spFont, spText, m_strConsole + ((GetTickCount() / 500 % 2) ? L"_" : L""));
 
+            CComPtr<IUnknown> spLogTypes[4];
+            spVideoSystem->CreateBrush(float4(1.0f, 1.0f, 1.0f, 1.0f), &spLogTypes[0]);
+            spVideoSystem->CreateBrush(float4(1.0f, 1.0f, 0.0f, 1.0f), &spLogTypes[1]);
+            spVideoSystem->CreateBrush(float4(1.0f, 0.0f, 0.0f, 1.0f), &spLogTypes[2]);
+            spVideoSystem->CreateBrush(float4(1.0f, 0.0f, 0.0f, 1.0f), &spLogTypes[3]);
+
             float nPosition = (nHalfHeight - 40.0f);
-            for (auto &strMessage : m_aConsoleLog)
+            for (auto &kMessage : m_aConsoleLog)
             {
-                spVideoSystem->DrawText({ 15.0f, (nPosition - 20.0f), (nXSize - 15.0f), nPosition }, spFont, spText, strMessage);
+                spVideoSystem->DrawText({ 15.0f, (nPosition - 20.0f), (nXSize - 15.0f), nPosition }, spFont, spLogTypes[kMessage.first], kMessage.second);
                 nPosition -= 20.0f;
             }
         }
