@@ -41,6 +41,10 @@ DECLARE_INTERFACE_IID_(IGEKContext, IUnknown, "E1BBAFAB-1DD8-42E4-A031-46E22835E
 
     STDMETHOD(AddCachedObserver)                    (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver) PURE;
     STDMETHOD(RemoveCachedObserver)                 (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver) PURE;
+
+    STDMETHOD_(void, ResetMetrics)                  (THIS)PURE;
+    STDMETHOD_(void, AdjustMetric)                  (THIS_ LPCWSTR pName, INT32 nCount = 1) PURE;
+    STDMETHOD_(void, ListMetrics)                   (THIS_ std::function<void(LPCWSTR, UINT32)> OnMetric) PURE;
 };
 
 HRESULT GEKCreateContext(IGEKContext **ppContext);

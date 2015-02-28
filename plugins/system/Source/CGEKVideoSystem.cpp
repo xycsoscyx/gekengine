@@ -775,28 +775,6 @@ CGEKVideoContext::~CGEKVideoContext(void)
 {
 }
 
-void CGEKVideoContext::ResetCounts(void)
-{
-    m_nNumRenderTargets = 0;
-
-    m_nNumRenderStates = 0;
-    m_nNumDepthStates = 0;
-    m_nNumBlendStates = 0;
-
-    m_nNumVertexBuffers = 0;
-    m_nNumIndexBuffers = 0;
-
-    m_nNumDrawCalls = 0;
-    m_nNumIndices = 0;
-    m_nNumVertices = 0;
-    m_nNumInstances = 0;
-
-    m_nNumDispatchCalls = 0;
-    m_nNumDispatchThreadsX = 0;
-    m_nNumDispatchThreadsY = 0;
-    m_nNumDispatchThreadsZ = 0;
-}
-
 STDMETHODIMP_(IGEK3DVideoContextSystem *) CGEKVideoContext::GetComputeSystem(void)
 {
     return m_spComputeSystem.get();
@@ -899,6 +877,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEK3DV
         m_spDeviceContext->OMSetRenderTargets(aD3DViews.size(), aD3DViews.data(), nullptr);
     }
 
+    GetContext()->IncrementMetric(L"video.render.targets");
     m_nNumRenderTargets += aTargets.size();
 }
 

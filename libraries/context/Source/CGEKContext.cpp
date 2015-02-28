@@ -237,3 +237,29 @@ STDMETHODIMP CGEKContext::RemoveCachedObserver(REFCLSID kCLSID, IGEKObserver *pO
 
     return hRetVal;
 }
+
+STDMETHODIMP_(void) CGEKContext::ResetMetrics(void)
+{
+    m_aMetrics.clear();
+}
+
+STDMETHODIMP_(void) CGEKContext::IncrementMetric(LPCWSTR pName, INT32 nCount)
+{
+    auto pIterator = m_aMetrics.find(pName);
+    if (pIterator == m_aMetrics.end())
+    {
+        m_aMetrics[pName] = 1;
+    }
+    else
+    {
+        (*pIterator).second++;
+    }
+}
+
+STDMETHODIMP_(void) CGEKContext::ListMetrics(std::function<void(LPCWSTR, UINT32)> OnMetric)
+{
+    for (auto &kPair : m_aMetrics)
+    {
+        OnMetric(kPair.first, kPair.second);
+    }
+}
