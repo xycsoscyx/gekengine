@@ -120,11 +120,11 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnFree(void)
 {
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemSprite::OnRenderBegin(void)
+STDMETHODIMP_(void) CGEKComponentSystemSprite::OnRenderBegin(const GEKENTITYID &nViewerID)
 {
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(const frustum &nViewFrustum)
+STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(const GEKENTITYID &nViewerID, const frustum &nViewFrustum)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
@@ -142,12 +142,13 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(const frustum &nViewF
             if (nViewFrustum.IsVisible(aabb(kTransform.position - nHalfSize, kTransform.position + nHalfSize)))
             {
                 m_aVisible[spMaterial].emplace_back(kTransform.position, nHalfSize, kSprite.color);
+                GetContext()->AdjustMetric(FormatString(L"viewer_%08X", nViewerID), L"visible_sprites");
             }
         }
     });
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemSprite::OnDrawScene(IGEK3DVideoContext *pContext, UINT32 nVertexAttributes)
+STDMETHODIMP_(void) CGEKComponentSystemSprite::OnDrawScene(const GEKENTITYID &nViewerID, IGEK3DVideoContext *pContext, UINT32 nVertexAttributes)
 {
     REQUIRE_VOID_RETURN(pContext);
 
@@ -177,6 +178,6 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnDrawScene(IGEK3DVideoContext *p
     }
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemSprite::OnRenderEnd(void)
+STDMETHODIMP_(void) CGEKComponentSystemSprite::OnRenderEnd(const GEKENTITYID &nViewerID)
 {
 }

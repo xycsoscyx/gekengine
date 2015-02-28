@@ -59,8 +59,8 @@ public:
     STDMETHOD_(void, OnFree)                    (THIS);
 
     // IGEKRenderObserver
-    STDMETHOD_(void, OnRenderBegin)             (THIS);
-    STDMETHOD_(void, OnCullScene)               (THIS_ const frustum &nViewFrustum);
-    STDMETHOD_(void, OnDrawScene)               (THIS_ IGEK3DVideoContext *pContext, UINT32 nVertexAttributes);
-    STDMETHOD_(void, OnRenderEnd)               (THIS);
+    STDMETHOD_(void, OnRenderBegin)             (THIS_ const GEKENTITYID &nViewerID);
+    STDMETHOD_(void, OnCullScene)               (THIS_ const GEKENTITYID &nViewerID,const frustum &nViewFrustum);
+    STDMETHOD_(void, OnDrawScene)               (THIS_ const GEKENTITYID &nViewerID, IGEK3DVideoContext *pContext, UINT32 nVertexAttributes);
+    STDMETHOD_(void, OnRenderEnd)               (THIS_ const GEKENTITYID &nViewerID);
 };

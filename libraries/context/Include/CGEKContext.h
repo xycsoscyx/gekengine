@@ -20,7 +20,7 @@ private:
     std::unordered_map<CLSID, std::vector<CLSID>> m_aTypedClasses;
     std::unordered_map<CLSID, IUnknown *> m_aCache;
 
-    std::unordered_map<CStringW, UINT32> m_aMetrics;
+    std::unordered_map<CStringW, std::unordered_map<CStringW, UINT32>> m_aMetrics;
 
 public:
     CGEKContext(void);
@@ -39,6 +39,7 @@ public:
     STDMETHOD(AddCachedObserver)                    (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver);
     STDMETHOD(RemoveCachedObserver)                 (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver);
     STDMETHOD_(void, ResetMetrics)                  (THIS);
-    STDMETHOD_(void, AdjustMetric)                  (THIS_ LPCWSTR pName, INT32 nCount);
-    STDMETHOD_(void, ListMetrics)                   (THIS_ std::function<void(LPCWSTR, UINT32)> OnMetric);
+    STDMETHOD_(void, AdjustMetric)                  (THIS_ LPCWSTR pSystem, LPCWSTR pName, INT32 nCount);
+    STDMETHOD_(void, ListSystems)                   (THIS_ std::function<void(LPCWSTR)> OnSystem);
+    STDMETHOD_(void, ListMetrics)                   (THIS_ LPCWSTR pSystem, std::function<void(LPCWSTR, UINT32)> OnMetric);
 };

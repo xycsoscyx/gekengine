@@ -268,11 +268,11 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnUpdate(float nGameTime, float n
     });
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemFlames::OnRenderBegin(void)
+STDMETHODIMP_(void) CGEKComponentSystemFlames::OnRenderBegin(const GEKENTITYID &nViewerID)
 {
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewFrustum)
+STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const GEKENTITYID &nViewerID, const frustum &nViewFrustum)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager);
 
@@ -312,6 +312,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
 
                 auto &pVisible = m_aVisible[std::make_pair(spMaterial, spGradient)];
                 pVisible.insert(pVisible.end(), aVisible.begin(), aVisible.end());
+                GetContext()->AdjustMetric(FormatString(L"viewer_%08X", nViewerID), L"visible_flames");
             }
         }
     });
@@ -325,7 +326,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const frustum &nViewF
     }
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(IGEK3DVideoContext *pContext, UINT32 nVertexAttributes)
+STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(const GEKENTITYID &nViewerID, IGEK3DVideoContext *pContext, UINT32 nVertexAttributes)
 {
     REQUIRE_VOID_RETURN(pContext);
 
@@ -359,6 +360,6 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(IGEK3DVideoContext *p
     }
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemFlames::OnRenderEnd(void)
+STDMETHODIMP_(void) CGEKComponentSystemFlames::OnRenderEnd(const GEKENTITYID &nViewerID)
 {
 }

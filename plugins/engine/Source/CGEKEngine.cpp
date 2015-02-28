@@ -726,6 +726,28 @@ STDMETHODIMP_(void) CGEKEngine::RunCommand(LPCWSTR pCommand, const std::vector<C
             ShowMessage(kMessage.first, nullptr, kMessage.second);
         }
     }
+    else if (_wcsicmp(pCommand, L"showmetrics") == 0 && aParams.size() <= 1)
+    {
+        if (aParams.size() == 1)
+        {
+            ShowMessage(GEKMESSAGE_NORMAL, nullptr, L"Showing Metrics (%s)...", aParams[0].GetString());
+            GetContext()->ListMetrics(aParams[0], [&](LPCWSTR pName, UINT32 nCount) -> void
+            {
+                ShowMessage(GEKMESSAGE_NORMAL, nullptr, L"- %s: %d", pName, nCount);
+            });
+        }
+        else
+        {
+            GetContext()->ListSystems([&](LPCWSTR pSystem) -> void
+            {
+                ShowMessage(GEKMESSAGE_NORMAL, nullptr, L"Showing Metrics (%s)...", pSystem);
+                GetContext()->ListMetrics(pSystem, [&](LPCWSTR pName, UINT32 nCount) -> void
+                {
+                    ShowMessage(GEKMESSAGE_NORMAL, nullptr, L"- %s: %d", pName, nCount);
+                });
+            });
+        }
+    }
     else
     {
         ShowMessage(GEKMESSAGE_NORMAL, L"command", L"Unknown Command: %s", pCommand);

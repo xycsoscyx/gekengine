@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
   
-<display xsize="800" ysize="600" windowed="true"/><quality anisotropy="0"/></config>
+<display xsize="1280" ysize="800" windowed="true"/><quality anisotropy="0"/></config>

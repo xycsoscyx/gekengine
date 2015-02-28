@@ -927,7 +927,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::EnableProgram(IGEK3DVideoContext *pContext
 
 STDMETHODIMP_(void) CGEKRenderSystem::DrawScene(IGEK3DVideoContext *pContext, UINT32 nAttributes)
 {
-    CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnDrawScene, std::placeholders::_1, pContext, nAttributes)));
+    CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnDrawScene, std::placeholders::_1, 0, pContext, nAttributes)));
 }
 
 STDMETHODIMP_(void) CGEKRenderSystem::DrawLights(IGEK3DVideoContext *pContext, std::function<void(void)> OnLightBatch)
@@ -984,6 +984,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager && m_pVideoSystem);
 
+    GetContext()->ResetMetrics();
+
     CComQIPtr<IGEK3DVideoContext> spContext(m_pVideoSystem);
     spContext->GetVertexSystem()->SetSamplerStates(0, m_spPointSampler);
     spContext->GetVertexSystem()->SetSamplerStates(1, m_spLinearClampSampler);
@@ -994,7 +996,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         auto &kViewer = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(viewer)>(nViewerID, GET_COMPONENT_ID(viewer));
         if (SUCCEEDED(LoadPass(kViewer.pass)))
         {
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderBegin, std::placeholders::_1)));
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderBegin, std::placeholders::_1, nViewerID)));
 
             float4x4 nCameraMatrix;
             auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, GET_COMPONENT_ID(transform));
@@ -1038,7 +1040,9 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                 }
             });
 
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1, nViewFrustum)));
+            GetContext()->AdjustMetric(FormatString(L"viewer_%08X", nViewerID), L"visible_lights", m_aVisibleLights.size());
+
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1, nViewerID, nViewFrustum)));
 
             m_spEngineBuffer->Update((void *)&kEngineBuffer);
             spContext->GetGeometrySystem()->SetConstantBuffer(0, m_spEngineBuffer);
@@ -1065,7 +1069,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                 m_spDefaultBlendStates.Release();
             }
 
-            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderEnd, std::placeholders::_1)));
+            CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderEnd, std::placeholders::_1, nViewerID)));
 
             GEK3DVIDEO::VIEWPORT kViewport;
             kViewport.m_nTopLeftX = (kViewer.position.x * m_pVideoSystem->GetXSize());

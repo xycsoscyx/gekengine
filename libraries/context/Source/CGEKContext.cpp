@@ -243,12 +243,13 @@ STDMETHODIMP_(void) CGEKContext::ResetMetrics(void)
     m_aMetrics.clear();
 }
 
-STDMETHODIMP_(void) CGEKContext::IncrementMetric(LPCWSTR pName, INT32 nCount)
+STDMETHODIMP_(void) CGEKContext::AdjustMetric(LPCWSTR pSystem, LPCWSTR pName, INT32 nCount)
 {
-    auto pIterator = m_aMetrics.find(pName);
-    if (pIterator == m_aMetrics.end())
+    auto &aList = m_aMetrics[pSystem];
+    auto pIterator = aList.find(pName);
+    if (pIterator == aList.end())
     {
-        m_aMetrics[pName] = 1;
+        aList[pName] = 1;
     }
     else
     {
@@ -256,10 +257,22 @@ STDMETHODIMP_(void) CGEKContext::IncrementMetric(LPCWSTR pName, INT32 nCount)
     }
 }
 
-STDMETHODIMP_(void) CGEKContext::ListMetrics(std::function<void(LPCWSTR, UINT32)> OnMetric)
+STDMETHODIMP_(void) CGEKContext::ListSystems(std::function<void(LPCWSTR)> OnSystem)
 {
     for (auto &kPair : m_aMetrics)
     {
-        OnMetric(kPair.first, kPair.second);
+        OnSystem(kPair.first);
+    }
+}
+
+STDMETHODIMP_(void) CGEKContext::ListMetrics(LPCWSTR pSystem, std::function<void(LPCWSTR, UINT32)> OnMetric)
+{
+    auto pIterator = m_aMetrics.find(pSystem);
+    if (pIterator != m_aMetrics.end())
+    {
+        for (auto &kPair : (*pIterator).second)
+        {
+            OnMetric(kPair.first, kPair.second);
+        }
     }
 }
