@@ -875,8 +875,6 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEK3DV
     {
         m_spDeviceContext->OMSetRenderTargets(aD3DViews.size(), aD3DViews.data(), nullptr);
     }
-
-    GetContext()->AdjustMetric(L"video", L"render_targets", aTargets.size());
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(IUnknown *pStates)
@@ -888,7 +886,6 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(IUnknown *pStates)
     if (spStates)
     {
         m_spDeviceContext->RSSetState(spStates);
-        GetContext()->AdjustMetric(L"video", L"render_states");
     }
 }
 
@@ -901,7 +898,6 @@ STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(UINT32 nStencilReference, I
     if (spStates)
     {
         m_spDeviceContext->OMSetDepthStencilState(spStates, nStencilReference);
-        GetContext()->AdjustMetric(L"video", L"depth_states");
     }
 }
 
@@ -914,7 +910,6 @@ STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &nBlendFactor,
     if (spStates)
     {
         m_spDeviceContext->OMSetBlendState(spStates, nBlendFactor.rgba, nMask);
-        GetContext()->AdjustMetric(L"video", L"blend_states");
     }
 }
 
@@ -929,7 +924,6 @@ STDMETHODIMP_(void) CGEKVideoContext::SetVertexBuffer(UINT32 nSlot, UINT32 nOffs
         UINT32 nStride = pBuffer->GetStride();
         ID3D11Buffer *pD3DBuffer = spBuffer;
         m_spDeviceContext->IASetVertexBuffers(nSlot, 1, &pD3DBuffer, &nStride, &nOffset);
-        GetContext()->AdjustMetric(L"video", L"vertex_buffers");
     }
 }
 
@@ -951,8 +945,6 @@ STDMETHODIMP_(void) CGEKVideoContext::SetIndexBuffer(UINT32 nOffset, IGEK3DVideo
             m_spDeviceContext->IASetIndexBuffer(spBuffer, DXGI_FORMAT_R32_UINT, nOffset);
             break;
         };
-
-        GetContext()->AdjustMetric(L"video", L"index_buffers");
     }
 }
 
@@ -991,44 +983,30 @@ STDMETHODIMP_(void) CGEKVideoContext::DrawIndexedPrimitive(UINT32 nNumIndices, U
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->DrawIndexed(nNumIndices, nStartIndex, nBaseVertex);
-    GetContext()->AdjustMetric(L"video", L"num_indices", nNumIndices);
-    GetContext()->AdjustMetric(L"video", L"draw_calls");
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::DrawPrimitive(UINT32 nNumVertices, UINT32 nStartVertex)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->Draw(nNumVertices, nStartVertex);
-    GetContext()->AdjustMetric(L"video", L"num_vertices", nNumVertices);
-    GetContext()->AdjustMetric(L"video", L"draw_calls");
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::DrawInstancedIndexedPrimitive(UINT32 nNumIndices, UINT32 nNumInstances, UINT32 nStartIndex, UINT32 nBaseVertex, UINT32 nStartInstance)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->DrawIndexedInstanced(nNumIndices, nNumInstances, nStartIndex, nBaseVertex, nStartInstance);
-    GetContext()->AdjustMetric(L"video", L"num_instances", nNumInstances);
-    GetContext()->AdjustMetric(L"video", L"num_indices", nNumIndices);
-    GetContext()->AdjustMetric(L"video", L"draw_calls");
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::DrawInstancedPrimitive(UINT32 nNumVertices, UINT32 nNumInstances, UINT32 nStartVertex, UINT32 nStartInstance)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->DrawInstanced(nNumVertices, nNumInstances, nStartVertex, nStartInstance);
-    GetContext()->AdjustMetric(L"video", L"num_instances", nNumInstances);
-    GetContext()->AdjustMetric(L"video", L"num_vertices", nNumVertices);
-    GetContext()->AdjustMetric(L"video", L"draw_calls");
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::Dispatch(UINT32 nThreadGroupCountX, UINT32 nThreadGroupCountY, UINT32 nThreadGroupCountZ)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->Dispatch(nThreadGroupCountX, nThreadGroupCountY, nThreadGroupCountZ);
-    GetContext()->AdjustMetric(L"video", L"dispatch_calls");
-    GetContext()->AdjustMetric(L"video", L"dispatch_threads_x", nThreadGroupCountX);
-    GetContext()->AdjustMetric(L"video", L"dispatch_threads_y", nThreadGroupCountY);
-    GetContext()->AdjustMetric(L"video", L"dispatch_threads_z", nThreadGroupCountZ);
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::FinishCommandList(IUnknown **ppUnknown)

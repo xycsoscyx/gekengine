@@ -312,7 +312,6 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const GEKENTITYID &nV
 
                 auto &pVisible = m_aVisible[std::make_pair(spMaterial, spGradient)];
                 pVisible.insert(pVisible.end(), aVisible.begin(), aVisible.end());
-                GetContext()->AdjustMetric(FormatString(L"viewer_%08X", nViewerID), L"visible_flames");
             }
         }
     });

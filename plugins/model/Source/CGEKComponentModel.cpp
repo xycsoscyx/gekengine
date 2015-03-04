@@ -235,7 +235,6 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const GEKENTITYID &nVi
             if (nViewFrustum.IsVisible(obb(nAABB, nMatrix)))
             {
                 m_aVisible[pModel].emplace_back(nMatrix, kModel.scale, kModel.color);
-                GetContext()->AdjustMetric(FormatString(L"viewer_%08X", nViewerID), L"visible_models");
             }
         }
     });

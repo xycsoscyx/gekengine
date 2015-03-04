@@ -142,7 +142,6 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(const GEKENTITYID &nV
             if (nViewFrustum.IsVisible(aabb(kTransform.position - nHalfSize, kTransform.position + nHalfSize)))
             {
                 m_aVisible[spMaterial].emplace_back(kTransform.position, nHalfSize, kSprite.color);
-                GetContext()->AdjustMetric(FormatString(L"viewer_%08X", nViewerID), L"visible_sprites");
             }
         }
     });

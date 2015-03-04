@@ -984,8 +984,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager && m_pVideoSystem);
 
-    GetContext()->ResetMetrics();
-
     CComQIPtr<IGEK3DVideoContext> spContext(m_pVideoSystem);
     spContext->GetVertexSystem()->SetSamplerStates(0, m_spPointSampler);
     spContext->GetVertexSystem()->SetSamplerStates(1, m_spLinearClampSampler);
@@ -1039,8 +1037,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                     m_aVisibleLights.push_back(kData);
                 }
             });
-
-            GetContext()->AdjustMetric(FormatString(L"viewer_%08X", nViewerID), L"visible_lights", m_aVisibleLights.size());
 
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1, nViewerID, nViewFrustum)));
 
