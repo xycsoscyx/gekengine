@@ -980,6 +980,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::DrawOverlay(IGEK3DVideoContext *pContext)
     pContext->DrawIndexedPrimitive(6, 0, 0);
 }
 
+#include <ppl.h>
 STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 {
     REQUIRE_VOID_RETURN(m_pSceneManager && m_pVideoSystem);
@@ -1020,23 +1021,22 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             frustum nViewFrustum;
             nViewFrustum.Create(nCameraMatrix, kEngineBuffer.m_nProjectionMatrix);
 
-            LIGHTBUFFER kData;
-            m_aVisibleLights.clear();
+            concurrency::concurrent_vector<LIGHTBUFFER> aVisibleLights;
             m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(light) }, [&](const GEKENTITYID &nEntityID) -> void
             {
                 auto &kLight = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(light)>(nEntityID, GET_COMPONENT_ID(light));
                 auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
                 if (nViewFrustum.IsVisible(sphere(kTransform.position, kLight.range)))
                 {
-                    kData.m_nPosition = (kEngineBuffer.m_nViewMatrix * float4(kTransform.position, 1.0f));
-
-                    kData.m_nInvRange = (1.0f / (kData.m_nRange = kLight.range));
-
-                    kData.m_nColor = kLight.color;
-
-                    m_aVisibleLights.push_back(kData);
+                    auto pIterator = aVisibleLights.grow_by(1);
+                    (*pIterator).m_nPosition = (kEngineBuffer.m_nViewMatrix * float4(kTransform.position, 1.0f));
+                    (*pIterator).m_nRange = kLight.range;
+                    (*pIterator).m_nInvRange = (1.0f / kLight.range);
+                    (*pIterator).m_nColor = kLight.color;
                 }
-            });
+            }, true);
+
+            m_aVisibleLights.assign(aVisibleLights.begin(), aVisibleLights.end());
 
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnCullScene, std::placeholders::_1, nViewerID, nViewFrustum)));
 

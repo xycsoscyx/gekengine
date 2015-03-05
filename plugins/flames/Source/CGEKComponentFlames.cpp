@@ -10,7 +10,7 @@ static std::mt19937 gs_kMersineTwister(gs_kRandomDevice());
 static std::uniform_real_distribution<float> gs_kFullDistribution(-1.0f, 1.0f);
 static std::uniform_real_distribution<float> gs_kAbsoluteDistribution(0.0f, 1.0f);
 
-#define NUM_INSTANCES                   5000
+#define NUM_INSTANCES                   10000
 
 REGISTER_COMPONENT(flames)
     REGISTER_COMPONENT_DEFAULT_VALUE(material, L"flames")
