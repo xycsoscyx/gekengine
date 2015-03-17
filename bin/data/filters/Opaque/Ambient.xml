@@ -9,6 +9,6 @@
             <resource stage="1" source="Opaque.Albedo" />
         </resources>
 
-        <program source="Opaque\Ambient.hlsl" entry="MainPixelProgram" />
+        <program source="Opaque\Ambient" entry="MainPixelProgram" />
     </pixel>
 </filter>

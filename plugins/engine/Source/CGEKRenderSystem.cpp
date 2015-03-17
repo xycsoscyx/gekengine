@@ -123,12 +123,12 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
         std::vector<GEK3DVIDEO::INPUTELEMENT> aLayout;
         aLayout.push_back(GEK3DVIDEO::INPUTELEMENT(GEK3DVIDEO::DATA::RG_FLOAT, "POSITION", 0));
         aLayout.push_back(GEK3DVIDEO::INPUTELEMENT(GEK3DVIDEO::DATA::RG_FLOAT, "TEXCOORD", 0));
-        hRetVal = m_pVideoSystem->LoadVertexProgram(L"%root%\\data\\programs\\vertex\\overlay.hlsl", "MainVertexProgram", aLayout, &m_spVertexProgram);
+        hRetVal = m_pVideoSystem->LoadVertexProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainVertexProgram", aLayout, &m_spVertexProgram);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = m_pVideoSystem->LoadPixelProgram(L"%root%\\data\\programs\\pixel\\overlay.hlsl", "MainPixelProgram", &m_spPixelProgram);
+        hRetVal = m_pVideoSystem->LoadPixelProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainPixelProgram", &m_spPixelProgram);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -818,89 +818,92 @@ STDMETHODIMP CGEKRenderSystem::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)
     }
     else
     {
-        CStringA strDeferredProgram;
-        hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\vertex\\plugin.hlsl", strDeferredProgram);
+        CLibXMLDoc kDocument;
+        hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\plugins\\%s.xml", pName));
         if (SUCCEEDED(hRetVal))
         {
-            if (strDeferredProgram.Find("_INSERT_WORLD_PROGRAM") < 0)
+            hRetVal = E_INVALIDARG;
+            CLibXMLNode kPluginNode = kDocument.GetRoot();
+            if (kPluginNode)
             {
-                hRetVal = E_FAIL;
-            }
-            else
-            {
-                CLibXMLDoc kDocument;
-                hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\programs\\vertex\\%s.xml", pName));
-                if (SUCCEEDED(hRetVal))
+                CLibXMLNode kLayoutNode = kPluginNode.FirstChildElement(L"layout");
+                if (kLayoutNode)
                 {
-                    hRetVal = E_INVALIDARG;
-                    CLibXMLNode kProgramNode = kDocument.GetRoot();
-                    if (kProgramNode)
+                    std::vector<CStringA> aNames;
+                    std::vector<GEK3DVIDEO::INPUTELEMENT> aLayout;
+                    CLibXMLNode kElementNode = kLayoutNode.FirstChildElement(L"element");
+                    while (kElementNode)
                     {
-                        CLibXMLNode kLayoutNode = kProgramNode.FirstChildElement(L"layout");
-                        if (kLayoutNode)
+                        if (kElementNode.HasAttribute(L"type") &&
+                            kElementNode.HasAttribute(L"name") &&
+                            kElementNode.HasAttribute(L"index"))
                         {
-                            std::vector<CStringA> aNames;
-                            std::vector<GEK3DVIDEO::INPUTELEMENT> aLayout;
-                            CLibXMLNode kElementNode = kLayoutNode.FirstChildElement(L"element");
-                            while (kElementNode)
+                            aNames.push_back((LPCSTR)CW2A(kElementNode.GetAttribute(L"name")));
+
+                            GEK3DVIDEO::INPUTELEMENT kData;
+                            kData.m_eType = GetFormatType(kElementNode.GetAttribute(L"type"));
+                            kData.m_pName = aNames.back().GetString();
+                            kData.m_nIndex = StrToUINT32(kElementNode.GetAttribute(L"index"));
+                            if (kElementNode.HasAttribute(L"class") &&
+                                kElementNode.HasAttribute(L"slot"))
                             {
-                                if (kElementNode.HasAttribute(L"type") && 
-                                   kElementNode.HasAttribute(L"name") &&
-                                   kElementNode.HasAttribute(L"index"))
-                                {
-                                    aNames.push_back((LPCSTR)CW2A(kElementNode.GetAttribute(L"name")));
-
-                                    GEK3DVIDEO::INPUTELEMENT kData;
-                                    kData.m_eType = GetFormatType(kElementNode.GetAttribute(L"type"));
-                                    kData.m_pName = aNames.back().GetString();
-                                    kData.m_nIndex = StrToUINT32(kElementNode.GetAttribute(L"index"));
-                                    if (kElementNode.HasAttribute(L"class") &&
-                                       kElementNode.HasAttribute(L"slot"))
-                                    {
-                                        kData.m_eClass = GetElementClass(kElementNode.GetAttribute(L"class"));
-                                        kData.m_nSlot = StrToUINT32(kElementNode.GetAttribute(L"slot"));
-                                    }
-
-                                    aLayout.push_back(kData);
-                                }
-                                else
-                                {
-                                    break;
-                                }
-
-                                kElementNode = kElementNode.NextSiblingElement(L"element");
-                            };
-
-                            hRetVal = S_OK;
-                            CComPtr<IUnknown> spGeometryProgram;
-                            CLibXMLNode kGeometryNode = kProgramNode.FirstChildElement(L"geometry");
-                            if (kGeometryNode)
-                            {
-                                CStringA strGeometryProgram = kGeometryNode.GetText();
-                                hRetVal = m_pVideoSystem->CompileGeometryProgram(strGeometryProgram, "MainGeometryProgram", &spGeometryProgram);
+                                kData.m_eClass = GetElementClass(kElementNode.GetAttribute(L"class"));
+                                kData.m_nSlot = StrToUINT32(kElementNode.GetAttribute(L"slot"));
                             }
 
-                            if (SUCCEEDED(hRetVal))
-                            {
-                                hRetVal = E_INVALIDARG;
-                                CLibXMLNode kVertexNode = kProgramNode.FirstChildElement(L"vertex");
-                                if (kVertexNode)
-                                {
-                                    CStringA strVertexProgram = kVertexNode.GetText();
-                                    strDeferredProgram.Replace("_INSERT_WORLD_PROGRAM", (strVertexProgram + "\r\n"));
+                            aLayout.push_back(kData);
+                        }
+                        else
+                        {
+                            break;
+                        }
 
-                                    CComPtr<IUnknown> spVertexProgram;
-                                    hRetVal = m_pVideoSystem->CompileVertexProgram(strDeferredProgram, "MainVertexProgram", aLayout, &spVertexProgram);
-                                    if (spVertexProgram)
-                                    {
-                                        CComPtr<CGEKProgram> spProgram(new CGEKProgram(spVertexProgram, spGeometryProgram));
-                                        if (spProgram)
-                                        {
-                                            spProgram->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
-                                            hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
-                                        }
-                                    }
+                        kElementNode = kElementNode.NextSiblingElement(L"element");
+                    };
+
+                    hRetVal = S_OK;
+                    CComPtr<IUnknown> spGeometryProgram;
+                    CLibXMLNode kGeometryNode = kPluginNode.FirstChildElement(L"geometry");
+                    if (kGeometryNode)
+                    {
+                        CLibXMLNode kProgramNode = kGeometryNode.FirstChildElement(L"program");
+                        if (kProgramNode && kProgramNode.HasAttribute(L"source") && kProgramNode.HasAttribute(L"entry"))
+                        {
+                            CStringW strFileName = kProgramNode.GetAttribute(L"source");
+                            CStringW strEntryPoint = kProgramNode.GetAttribute(L"entry");
+                            hRetVal = m_pVideoSystem->LoadGeometryProgram(strFileName, CW2A(strEntryPoint), &spGeometryProgram);
+                        }
+                        else
+                        {
+                            hRetVal = E_FAIL;
+                        }
+                    }
+
+                    if (SUCCEEDED(hRetVal))
+                    {
+                        hRetVal = E_INVALIDARG;
+                        CLibXMLNode kVertexNode = kPluginNode.FirstChildElement(L"vertex");
+                        if (kVertexNode)
+                        {
+                            CLibXMLNode kProgramNode = kVertexNode.FirstChildElement(L"program");
+                            if (kProgramNode && kProgramNode.HasAttribute(L"source") && kProgramNode.HasAttribute(L"entry"))
+                            {
+                                CStringW strFileName = kProgramNode.GetAttribute(L"source");
+                                CStringW strEntryPoint = kProgramNode.GetAttribute(L"entry");
+                                hRetVal = m_pVideoSystem->LoadGeometryProgram(strFileName, CW2A(strEntryPoint), &spGeometryProgram);
+
+                                CComPtr<IUnknown> spVertexProgram;
+                                hRetVal = m_pVideoSystem->LoadVertexProgram(L"%root%\\data\\programs\\" + strFileName + L".hlsl", CW2A(strEntryPoint), aLayout, &spVertexProgram);
+                                CComPtr<CGEKProgram> spProgram(new CGEKProgram(spVertexProgram, spGeometryProgram));
+                                if (spProgram)
+                                {
+                                    spProgram->QueryInterface(IID_PPV_ARGS(&m_aResources[pName]));
+                                    hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
                                 }
+                            }
+                            else
+                            {
+                                hRetVal = E_FAIL;
                             }
                         }
                     }

@@ -20,6 +20,6 @@
             <resource stage="3" source="Toon.Depth" />
         </resources>
 
-        <program source="Toon\SSAO.hlsl" entry="MainPixelProgram" />
+        <program source="Toon\SSAO" entry="MainPixelProgram" />
     </pixel>
 </filter>

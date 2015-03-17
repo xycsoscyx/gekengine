@@ -456,61 +456,40 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
 {
     HRESULT hRetVal = S_OK;
     CLibXMLNode kComputeNode = kFilterNode.FirstChildElement(L"compute");
-    if (kComputeNode)
+    if (kComputeNode && kComputeNode.HasAttribute(L"dispatch"))
     {
-        if (kComputeNode.HasAttribute(L"dispatch"))
+        int nPosition = 0;
+        CStringW strDispatchSize = kComputeNode.GetAttribute(L"dispatch");
+        float3 nDispatchSize = StrToFloat3(ParseValue(strDispatchSize));
+        m_nDispatchXSize = UINT32(nDispatchSize.x);
+        m_nDispatchYSize = UINT32(nDispatchSize.y);
+        m_nDispatchZSize = UINT32(nDispatchSize.z);
+
+        CLibXMLNode kProgramNode = kComputeNode.FirstChildElement(L"program");
+        if (kProgramNode && kProgramNode.HasAttribute(L"source") && kProgramNode.HasAttribute(L"entry"))
         {
-            int nPosition = 0;
-            CStringW strDispatchSize = kComputeNode.GetAttribute(L"dispatch");
-            float3 nDispatchSize = StrToFloat3(ParseValue(strDispatchSize));
-            m_nDispatchXSize = UINT32(nDispatchSize.x);
-            m_nDispatchYSize = UINT32(nDispatchSize.y);
-            m_nDispatchZSize = UINT32(nDispatchSize.z);
+            std::unordered_map<CStringA, CStringA> aDefines(m_aDefines);
+            aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
+            aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
+            aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
 
-            CStringA strProgram;
-            switch (m_eMode)
-            {
-            case FORWARD:
-                hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\forward.hlsl", strProgram);
-                break;
-
-            case LIGHTING:
-                hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\lighting.hlsl", strProgram);
-                break;
-
-            default:
-                hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\compute\\default.hlsl", strProgram);
-                break;
-            };
-
-            if (SUCCEEDED(hRetVal))
-            {
-                if (strProgram.Find("_INSERT_COMPUTE_PROGRAM") < 0)
-                {
-                    hRetVal = E_INVALIDARG;
-                }
-                else
-                {
-                    std::unordered_map<CStringA, CStringA> aDefines(m_aDefines);
-                    aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
-                    aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
-                    aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
-
-                    CStringA strCoreProgram = kComputeNode.GetText();
-                    strProgram.Replace("_INSERT_COMPUTE_PROGRAM", strCoreProgram);
-                    hRetVal = m_pVideoSystem->CompileComputeProgram(strProgram, "MainComputeProgram", &m_kComputeData.m_spProgram, &aDefines);
-                }
-            }
-
-            if (SUCCEEDED(hRetVal))
-            {
-                hRetVal = LoadResources(m_kComputeData, kComputeNode);
-            }
+            CStringW strFileName = kProgramNode.GetAttribute(L"source");
+            CStringW strEntryPoint = kProgramNode.GetAttribute(L"entry");
+            hRetVal = m_pVideoSystem->LoadComputeProgram(strFileName, CW2A(strEntryPoint), &m_kComputeData.m_spProgram, &aDefines);
         }
         else
         {
-            hRetVal = E_INVALIDARG;
+            hRetVal = E_FAIL;
         }
+
+        if (SUCCEEDED(hRetVal))
+        {
+            hRetVal = LoadResources(m_kComputeData, kComputeNode);
+        }
+    }
+    else
+    {
+        hRetVal = E_FAIL;
     }
 
     return hRetVal;
@@ -522,39 +501,21 @@ HRESULT CGEKRenderFilter::LoadPixelProgram(CLibXMLNode &kFilterNode)
     CLibXMLNode kPixelNode = kFilterNode.FirstChildElement(L"pixel");
     if (kPixelNode)
     {
-        CStringA strProgram;
-        switch (m_eMode)
+        CLibXMLNode kProgramNode = kFilterNode.FirstChildElement(L"program");
+        if (kProgramNode && kProgramNode.HasAttribute(L"source") && kProgramNode.HasAttribute(L"entry"))
         {
-        case FORWARD:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\forward.hlsl", strProgram);
-            break;
+            std::unordered_map<CStringA, CStringA> aDefines(m_aDefines);
+            aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
+            aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
+            aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
 
-        case LIGHTING:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\lighting.hlsl", strProgram);
-            break;
-
-        default:
-            hRetVal = GEKLoadFromFile(L"%root%\\data\\programs\\pixel\\default.hlsl", strProgram);
-            break;
-        };
-
-        if (SUCCEEDED(hRetVal))
+            CStringW strFileName = kProgramNode.GetAttribute(L"source");
+            CStringW strEntryPoint = kProgramNode.GetAttribute(L"entry");
+            hRetVal = m_pVideoSystem->LoadPixelProgram(strFileName, CW2A(strEntryPoint), &m_kPixelData.m_spProgram, &aDefines);
+        }
+        else
         {
-            if (strProgram.Find("_INSERT_PIXEL_PROGRAM") < 0)
-            {
-                hRetVal = E_INVALIDARG;
-            }
-            else
-            {
-                std::unordered_map<CStringA, CStringA> aDefines(m_aDefines);
-                aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
-                aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
-                aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
-
-                CStringA strCoreProgram = kPixelNode.GetText();
-                strProgram.Replace("_INSERT_PIXEL_PROGRAM", strCoreProgram);
-                hRetVal = m_pVideoSystem->CompilePixelProgram(strProgram, "MainPixelProgram", &m_kPixelData.m_spProgram, &aDefines);
-            }
+            hRetVal = E_FAIL;
         }
 
         if (SUCCEEDED(hRetVal))

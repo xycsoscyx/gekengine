@@ -6,6 +6,6 @@
 		<element type="rgb_float" name="NORMAL" index="0" class="vertex" slot="2" />
     </layout>
     <vertex>
-        <program source="model.hlsl" entry="MainVertexProgram" />
+        <program source="model" entry="MainVertexProgram" />
     </vertex>
 </program>

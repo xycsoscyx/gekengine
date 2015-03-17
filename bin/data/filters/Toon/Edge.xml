@@ -11,6 +11,6 @@
             <resource stage="3" source="Toon.Depth" />
         </resources>
         
-        <program source="Toon\Edge.hlsl" entry="MainPixelProgram" />
+        <program source="Toon\Edge" entry="MainPixelProgram" />
     </pixel>
 </filter>

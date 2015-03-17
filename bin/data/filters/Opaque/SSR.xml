@@ -15,6 +15,6 @@
             <resource stage="5" source="output" />
         </resources>
 
-        <program source="Opaque\SSR.hlsl" entry="MainPixelProgram" />
+        <program source="Opaque\SSR" entry="MainPixelProgram" />
     </pixel>
 </filter>

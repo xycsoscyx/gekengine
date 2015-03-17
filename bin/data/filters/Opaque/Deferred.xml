@@ -11,6 +11,6 @@
     </targets>
     
     <pixel>
-        <program source="Opaque\Deferred.hlsl" entry="MainPixelProgram" />
+        <program source="Opaque\Deferred" entry="MainPixelProgram" />
     </pixel>
 </filter>
