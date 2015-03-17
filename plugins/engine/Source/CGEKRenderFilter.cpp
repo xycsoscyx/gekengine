@@ -490,6 +490,7 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
                     break;
                 }
 
+                aDefines["_TYPE_COMPUTE"] = L"1";
                 CStringW strFileName = kProgramNode.GetAttribute(L"source");
                 CStringW strEntryPoint = kProgramNode.GetAttribute(L"entry");
                 hRetVal = m_pVideoSystem->LoadComputeProgram(L"%root%\\data\\programs\\" + strFileName + L".hlsl", CW2A(strEntryPoint), &m_kComputeData.m_spProgram, &aDefines);
@@ -545,6 +546,7 @@ HRESULT CGEKRenderFilter::LoadPixelProgram(CLibXMLNode &kFilterNode)
                 aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
             }
 
+            aDefines["_TYPE_PIXEL"] = L"1";
             CStringW strFileName = kProgramNode.GetAttribute(L"source");
             CStringW strEntryPoint = kProgramNode.GetAttribute(L"entry");
             hRetVal = m_pVideoSystem->LoadPixelProgram(L"%root%\\data\\programs\\" + strFileName + L".hlsl", CW2A(strEntryPoint), &m_kPixelData.m_spProgram, &aDefines);

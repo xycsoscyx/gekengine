@@ -1,7 +1,9 @@
 #include "..\gekengine.h"
 #include "..\gektypes.h"
 #include "..\gekutility.h"
+#include "..\geklights.h"
 
+#ifdef _TYPE_COMPUTE
 Texture2D<float> gs_pDepthBuffer        : register(t1);
 
 RWBuffer<uint> g_pTileOutput            : register(u0);
@@ -90,7 +92,7 @@ void MainComputeProgram(uint3 nScreenPixel : SV_DispatchThreadID, uint3 nTileID 
         g_pTileOutput[nBufferIndex] = nLightIndex;
     }
 }
-
+#else
 Texture2D           gs_pAlbedoBuffer        : register(t1);
 Texture2D<half2>    gs_pNormalBuffer        : register(t2);
 Texture2D<float>    gs_pDepthBuffer         : register(t3);
@@ -215,3 +217,4 @@ float4 MainPixelProgram(in INPUT kInput) : SV_TARGET0
 
     return float4(nLighting, nAlbedo.a);
 }
+#endif
