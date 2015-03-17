@@ -1,4 +1,4 @@
-#include "gekengine.h"
+#include "..\gekengine.h"
 
 cbuffer ORTHOBUFFER                     : register(b1)
 {

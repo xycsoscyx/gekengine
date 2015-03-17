@@ -1,4 +1,4 @@
-#include "gekengine.h"
+#include "..\gekengine.h"
 
 Texture2D           gs_pAlbedoBuffer        : register(t1);
 Texture2D<half2>    gs_pNormalBuffer        : register(t2);

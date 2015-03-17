@@ -1,4 +1,4 @@
-#include "gekengine.h"
+#include "..\gekengine.h"
 
 Texture2D     gs_pAlbedoMap             : register(t0);
 Texture2D     gs_pNormalMap             : register(t1);

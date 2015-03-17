@@ -1,4 +1,4 @@
-#include "gekengine.h"
+#include "..\gekengine.h"
 
 Texture2D<float> gs_pDepthBuffer        : register(t1);
 
