@@ -7,6 +7,6 @@
     </targets>
     
     <pixel>
-        <program source="%data%\programs\Opaque\Transparent.hlsl" entry="MainPixelProgram" />
+        <program source="Opaque\Transparent.hlsl" entry="MainPixelProgram" />
     </pixel>
 </filter>

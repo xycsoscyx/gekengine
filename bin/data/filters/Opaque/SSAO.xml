@@ -20,6 +20,6 @@
             <resource stage="3" source="Opaque.Depth" />
         </resources>
 
-        <program source="%data%\programs\Opaque\SSAO.hlsl" entry="MainPixelProgram" />
+        <program source="Opaque\SSAO.hlsl" entry="MainPixelProgram" />
     </pixel>
 </filter>

@@ -15,6 +15,6 @@
             <resource stage="3" source="output" />
         </resources>
         
-        <program source="%data%\programs\Toon\BlurSSAO.hlsl" entry="MainPixelProgram" />
+        <program source="Toon\BlurSSAO.hlsl" entry="MainPixelProgram" />
     </pixel>
 </filter>

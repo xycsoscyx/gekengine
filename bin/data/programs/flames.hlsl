@@ -1,3 +1,5 @@
+#include "gekengine.h"
+
 struct INSTANCE
 {
     float3      m_nPosition;

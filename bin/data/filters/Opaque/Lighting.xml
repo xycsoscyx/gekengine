@@ -20,7 +20,7 @@
             <resource stage="1" source="Opaque.Depth" />
         </resources>
 
-        <program source="%data%\programs\Opaque\Lighting.hlsl" entry="MainComputeProgram" />
+        <program source="Opaque\Lighting.hlsl" entry="MainComputeProgram" />
     </compute>
     
     <pixel>
@@ -32,6 +32,6 @@
             <resource stage="5" source="Opaque.TileIndices" />
         </resources>
 
-        <program source="%data%\programs\Opaque\Lighting.hlsl" entry="MainPixelProgram"/>
+        <program source="Opaque\Lighting.hlsl" entry="MainPixelProgram"/>
     </pixel>
 </filter>

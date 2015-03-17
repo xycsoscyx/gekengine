@@ -1,3 +1,5 @@
+#include "gekengine.h"
+
 struct INSTANCE
 {
     float4x4    m_nMatrix;

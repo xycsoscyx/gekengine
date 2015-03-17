@@ -10,6 +10,6 @@
     </targets>
     
     <pixel>
-        <program source="%data%\programs\Toon\Deferred.hlsl" entry="MainPixelProgram" />
+        <program source="Toon\Deferred.hlsl" entry="MainPixelProgram" />
     </pixel>
 </filter>

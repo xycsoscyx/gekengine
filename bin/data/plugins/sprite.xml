@@ -5,6 +5,6 @@
 		<element type="rg_float" name="TEXCOORD" index="0" class="vertex" slot="0" />
     </layout>
     <vertex>
-        <program source="%data%\programs\sprite.hlsl" entry="MainVertexProgram" />
+        <program source="sprite.hlsl" entry="MainVertexProgram" />
     </vertex>
 </program>
