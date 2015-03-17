@@ -15,6 +15,6 @@
             <resource stage="3" source="output" />
         </resources>
 
-        <program source="%data%\shaders\Opaque\BlurSSAO.hlsl" entry="MainPixelProgram" />
+        <program source="%data%\programs\Opaque\BlurSSAO.hlsl" entry="MainPixelProgram" />
     </pixel>
 </filter>

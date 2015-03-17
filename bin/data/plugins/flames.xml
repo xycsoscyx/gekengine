@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<program>
+    <layout>
+		<element type="rg_float" name="POSITION" index="0" class="vertex" slot="0" />
+		<element type="rg_float" name="TEXCOORD" index="0" class="vertex" slot="0" />
+    </layout>
+    <vertex>
+        <program source="%data%\programs\flames.hlsl" entry="MainVertexProgram" />
+    </vertex>
+</program>
