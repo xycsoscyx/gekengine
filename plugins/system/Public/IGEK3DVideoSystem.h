@@ -517,6 +517,6 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF
 
 DECLARE_INTERFACE_IID_(IGEK3DVideoObserver, IGEKObserver, "2FE17A37-9B0B-4D12-95C9-F5CC5173B565")
 {
-    STDMETHOD_(void, OnResizeBegin)                     (THIS) PURE;
-    STDMETHOD(OnResizeEnd)                              (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed) PURE;
+    STDMETHOD_(void, OnResizeBegin)                     (THIS) { };
+    STDMETHOD(OnResizeEnd)                              (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed) { return S_OK; };
 };
