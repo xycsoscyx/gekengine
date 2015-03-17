@@ -456,40 +456,58 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
 {
     HRESULT hRetVal = S_OK;
     CLibXMLNode kComputeNode = kFilterNode.FirstChildElement(L"compute");
-    if (kComputeNode && kComputeNode.HasAttribute(L"dispatch"))
+    if (kComputeNode)
     {
-        int nPosition = 0;
-        CStringW strDispatchSize = kComputeNode.GetAttribute(L"dispatch");
-        float3 nDispatchSize = StrToFloat3(ParseValue(strDispatchSize));
-        m_nDispatchXSize = UINT32(nDispatchSize.x);
-        m_nDispatchYSize = UINT32(nDispatchSize.y);
-        m_nDispatchZSize = UINT32(nDispatchSize.z);
-
-        CLibXMLNode kProgramNode = kComputeNode.FirstChildElement(L"program");
-        if (kProgramNode && kProgramNode.HasAttribute(L"source") && kProgramNode.HasAttribute(L"entry"))
+        // Compute node must have dispatch attribute with thread sizes
+        if (kComputeNode.HasAttribute(L"dispatch"))
         {
-            std::unordered_map<CStringA, CStringA> aDefines(m_aDefines);
-            aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
-            aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
-            aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
+            int nPosition = 0;
+            CStringW strDispatchSize = kComputeNode.GetAttribute(L"dispatch");
+            float3 nDispatchSize = StrToFloat3(ParseValue(strDispatchSize));
+            m_nDispatchXSize = UINT32(nDispatchSize.x);
+            m_nDispatchYSize = UINT32(nDispatchSize.y);
+            m_nDispatchZSize = UINT32(nDispatchSize.z);
 
-            CStringW strFileName = kProgramNode.GetAttribute(L"source");
-            CStringW strEntryPoint = kProgramNode.GetAttribute(L"entry");
-            hRetVal = m_pVideoSystem->LoadComputeProgram(strFileName, CW2A(strEntryPoint), &m_kComputeData.m_spProgram, &aDefines);
+            CLibXMLNode kProgramNode = kComputeNode.FirstChildElement(L"program");
+            if (kProgramNode && kProgramNode.HasAttribute(L"source") && kProgramNode.HasAttribute(L"entry"))
+            {
+                std::unordered_map<CStringA, CStringA> aDefines(m_aDefines);
+                aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
+                aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
+                aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
+                switch (m_eMode)
+                {
+                case LIGHTING:
+                    aDefines["_MODE_LIGHTING"] = L"1";
+                    break;
+
+                case FORWARD:
+                    aDefines["_MODE_FORWARD"] = L"1";
+                    break;
+
+                case STANDARD:
+                    aDefines["_MODE_STANDARD"] = L"1";
+                    break;
+                }
+
+                CStringW strFileName = kProgramNode.GetAttribute(L"source");
+                CStringW strEntryPoint = kProgramNode.GetAttribute(L"entry");
+                hRetVal = m_pVideoSystem->LoadComputeProgram(L"%root%\\data\\programs\\" + strFileName + L".hlsl", CW2A(strEntryPoint), &m_kComputeData.m_spProgram, &aDefines);
+            }
+            else
+            {
+                hRetVal = E_FAIL;
+            }
+
+            if (SUCCEEDED(hRetVal))
+            {
+                hRetVal = LoadResources(m_kComputeData, kComputeNode);
+            }
         }
         else
         {
             hRetVal = E_FAIL;
         }
-
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = LoadResources(m_kComputeData, kComputeNode);
-        }
-    }
-    else
-    {
-        hRetVal = E_FAIL;
     }
 
     return hRetVal;
@@ -501,17 +519,35 @@ HRESULT CGEKRenderFilter::LoadPixelProgram(CLibXMLNode &kFilterNode)
     CLibXMLNode kPixelNode = kFilterNode.FirstChildElement(L"pixel");
     if (kPixelNode)
     {
-        CLibXMLNode kProgramNode = kFilterNode.FirstChildElement(L"program");
+        CLibXMLNode kProgramNode = kPixelNode.FirstChildElement(L"program");
         if (kProgramNode && kProgramNode.HasAttribute(L"source") && kProgramNode.HasAttribute(L"entry"))
         {
             std::unordered_map<CStringA, CStringA> aDefines(m_aDefines);
-            aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
-            aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
-            aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
+            switch (m_eMode)
+            {
+            case LIGHTING:
+                aDefines["_MODE_LIGHTING"] = L"1";
+                break;
+
+            case FORWARD:
+                aDefines["_MODE_FORWARD"] = L"1";
+                break;
+
+            case STANDARD:
+                aDefines["_MODE_STANDARD"] = L"1";
+                break;
+            }
+
+            if (m_kComputeData.m_spProgram)
+            {
+                aDefines["gs_nDispatchXSize"].Format("%d", m_nDispatchXSize);
+                aDefines["gs_nDispatchYSize"].Format("%d", m_nDispatchYSize);
+                aDefines["gs_nDispatchZSize"].Format("%d", m_nDispatchZSize);
+            }
 
             CStringW strFileName = kProgramNode.GetAttribute(L"source");
             CStringW strEntryPoint = kProgramNode.GetAttribute(L"entry");
-            hRetVal = m_pVideoSystem->LoadPixelProgram(strFileName, CW2A(strEntryPoint), &m_kPixelData.m_spProgram, &aDefines);
+            hRetVal = m_pVideoSystem->LoadPixelProgram(L"%root%\\data\\programs\\" + strFileName + L".hlsl", CW2A(strEntryPoint), &m_kPixelData.m_spProgram, &aDefines);
         }
         else
         {
@@ -534,7 +570,6 @@ STDMETHODIMP CGEKRenderFilter::Load(LPCWSTR pFileName, const std::unordered_map<
     m_aDefines = aDefines;
     m_strFileName = pFileName;
     return Reload();
-
 }
 
 STDMETHODIMP CGEKRenderFilter::Reload(void)

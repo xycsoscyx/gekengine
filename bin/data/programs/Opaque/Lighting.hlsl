@@ -1,4 +1,6 @@
 #include "..\gekengine.h"
+#include "..\gektypes.h"
+#include "..\gekutility.h"
 
 Texture2D<float> gs_pDepthBuffer        : register(t1);
 
@@ -113,15 +115,15 @@ bool GetBRDF(in float3 nAlbedo, in float3 nCenterNormal, in float3 nLightNormal,
     float nMetalness = nInfo.z;
 
     float3 nKs = lerp(nSpecular, nAlbedo, nMetalness);
-        float3 nKd = lerp(nAlbedo, 0, nMetalness);
-        float3 nFd = 1.0 - nKs;
+    float3 nKd = lerp(nAlbedo, 0, nMetalness);
+    float3 nFd = 1.0 - nKs;
 
-        float nNormalViewAngle = dot(nCenterNormal, nViewNormal);
+    float nNormalViewAngle = dot(nCenterNormal, nViewNormal);
     float nNormalViewAngleSquared = (nNormalViewAngle * nNormalViewAngle);
     float nInvNormalViewAngleSquared = (1.0 - nNormalViewAngleSquared);
 
     float3 nHalfVector = normalize(nLightNormal + nViewNormal);
-        float nNormalHalfAngle = saturate(dot(nCenterNormal, nHalfVector));
+    float nNormalHalfAngle = saturate(dot(nCenterNormal, nHalfVector));
     float nLightHalfAngle = saturate(dot(nLightNormal, nHalfVector));
 
     float nNormalLightAngleSquared = (nNormalLightAngle * nNormalLightAngle);
@@ -143,8 +145,8 @@ bool GetBRDF(in float3 nAlbedo, in float3 nCenterNormal, in float3 nLightNormal,
     nLightDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle * nNormalLightAngle);
 
     float3 nFs = (nKs + nFd * pow((1 - nLightHalfAngle), 5));
-        float3 nD = (pow(nRoughness / (nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) * gs_nReciprocalPI);
-        nLightSpecular = (nFs * nD * nNormalLightAngle);
+    float3 nD = (pow(nRoughness / (nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) * gs_nReciprocalPI);
+    nLightSpecular = (nFs * nD * nNormalLightAngle);
     return true;
 }
 
@@ -152,20 +154,20 @@ float3 GetLightingContribution(in INPUT kInput, in float3 nAlbedo)
 {
     float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 
-        float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+    float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
     float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
-        float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
+    float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
 
-        float3 nViewNormal = -normalize(nCenterPosition);
+    float3 nViewNormal = -normalize(nCenterPosition);
 
-        const uint2 nTileID = uint2(floor(kInput.position.xy / float(gs_nLightTileSize).xx));
+    const uint2 nTileID = uint2(floor(kInput.position.xy / float(gs_nLightTileSize).xx));
     const uint nTileIndex = ((nTileID.y * gs_nDispatchXSize) + nTileID.x);
     const uint nBufferIndex = (nTileIndex * gs_nMaxLights);
 
     float3 nTotalDiffuse = 0.0f;
-        float3 nTotalSpecular = 0.0f;
+    float3 nTotalSpecular = 0.0f;
 
-        [loop]
+    [loop]
     for (uint nLightIndex = 0; nLightIndex < gs_nNumLights; nLightIndex++)
     {
         uint nLight = gs_pTileIndices[nBufferIndex + nLightIndex];
@@ -177,18 +179,18 @@ float3 GetLightingContribution(in INPUT kInput, in float3 nAlbedo)
         }
 
         float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nCenterPosition);
-            float nDistance = length(nLightVector);
+        float nDistance = length(nLightVector);
         float3 nLightNormal = normalize(nLightVector);
 
-            float nAttenuation = (1.0f - saturate(nDistance * gs_aLights[nLight].m_nInvRange));
+        float nAttenuation = (1.0f - saturate(nDistance * gs_aLights[nLight].m_nInvRange));
 
         [branch]
         if (nAttenuation > 0.0f)
         {
             float3 nLightDiffuse = 0.0f;
-                float3 nLightSpecular = 0.0f;
+            float3 nLightSpecular = 0.0f;
 
-                [branch]
+            [branch]
             if (GetBRDF(nAlbedo, nCenterNormal, nLightNormal, nViewNormal, nCenterInfo, nLightDiffuse, nLightSpecular))
             {
                 nTotalDiffuse += saturate(gs_aLights[nLight].m_nColor * nLightDiffuse * nAttenuation);

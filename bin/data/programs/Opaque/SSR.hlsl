@@ -1,4 +1,6 @@
 #include "..\gekengine.h"
+#include "..\gektypes.h"
+#include "..\gekutility.h"
 
 Texture2D           gs_pAlbedoBuffer        : register(t1);
 Texture2D<half2>    gs_pNormalBuffer        : register(t2);
@@ -12,16 +14,16 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
     if (gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord).w < 1.0f)
     {
         float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-            float nReflectivity = nCenterInfo.w;
+        float nReflectivity = nCenterInfo.w;
         if (nReflectivity > 0.0f)
         {
             float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
             float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
-                float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
+            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
 
-                float3 nViewNormal = normalize(nCenterPosition);
-                float3 nReflection = reflect(nViewNormal, nCenterNormal);
-                float nViewDotNormal = dot(nViewNormal, nCenterNormal);
+            float3 nViewNormal = normalize(nCenterPosition);
+            float3 nReflection = reflect(nViewNormal, nCenterNormal);
+            float nViewDotNormal = dot(nViewNormal, nCenterNormal);
 
             // FRESNEL
             nReflectivity = (nReflectivity * pow((1.0 - abs(nViewDotNormal)), 1.0));
@@ -29,7 +31,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             float nStep = 0;
 
             float3 nRayPosition = nCenterPosition;
-                float nRealStep = gs_nNumSteps;
+            float nRealStep = gs_nNumSteps;
 
             float4 nTexCoord;
             float nSampleDepth;
@@ -81,7 +83,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 
             // FADING REFLECTION ON SCREEN BORDER // AVOIDS ABRUPT REFLECTION ENDINGS
             float2 tAtt = nTexCoord.xy;
-                if (tAtt.x > 0.5) tAtt.x = (1.0 - tAtt.x);
+            if (tAtt.x > 0.5) tAtt.x = (1.0 - tAtt.x);
             if (tAtt.y > 0.5) tAtt.y = (1.0 - tAtt.y);
 
             nReflectivity = (nReflectivity * clamp((tAtt.x * 10.0), 0.0, 1.0));

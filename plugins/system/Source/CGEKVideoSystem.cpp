@@ -2272,7 +2272,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
     }
     else if (spErrors)
     {
-        OutputDebugStringA((LPCSTR)spErrors->GetBufferPointer());
+        OutputDebugStringA(FormatString("Compute Error: %s", (LPCSTR)spErrors->GetBufferPointer()));
     }
 
     return hRetVal;
@@ -2411,7 +2411,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
     }
     else if (spErrors)
     {
-        OutputDebugStringA((LPCSTR)spErrors->GetBufferPointer());
+        OutputDebugStringA(FormatString("Vertex Error: %s", (LPCSTR)spErrors->GetBufferPointer()));
     }
 
     return hRetVal;
@@ -2459,7 +2459,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
     }
     else if (spErrors)
     {
-        OutputDebugStringA((LPCSTR)spErrors->GetBufferPointer());
+        OutputDebugStringA(FormatString("Geometry Error: %s", (LPCSTR)spErrors->GetBufferPointer()));
     }
 
     return hRetVal;
@@ -2507,7 +2507,7 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
     }
     else if (spErrors)
     {
-        OutputDebugStringA((LPCSTR)spErrors->GetBufferPointer());
+        OutputDebugStringA(FormatString("Pixel Error: %s", (LPCSTR)spErrors->GetBufferPointer()));
     }
 
     return hRetVal;

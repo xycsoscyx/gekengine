@@ -1,4 +1,5 @@
 #include "..\gekengine.h"
+#include "..\gektypes.h"
 
 Texture2D           gs_pAlbedoBuffer        : register(t1);
 Texture2D<float>    gs_pDepthBuffer         : register(t2);

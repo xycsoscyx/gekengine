@@ -1,4 +1,7 @@
 #include "..\gekengine.h"
+#include "..\gektypes.h"
+#include "..\gekmaterial.h"
+#include "..\gekutility.h"
 
 Texture2D     gs_pAlbedoMap             : register(t0);
 Texture2D     gs_pNormalMap             : register(t1);

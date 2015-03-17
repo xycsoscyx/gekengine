@@ -1,27 +1,3 @@
-cbuffer ENGINEBUFFER                    : register(b0)
-{
-    float2   gs_nCameraFieldOfView      : packoffset(c0);
-    float    gs_nCameraMinDistance      : packoffset(c0.z);
-    float    gs_nCameraMaxDistance      : packoffset(c0.w);
-    float4x4 gs_nViewMatrix             : packoffset(c1);
-    float4x4 gs_nProjectionMatrix       : packoffset(c5);
-    float4x4 gs_nInvProjectionMatrix    : packoffset(c9);
-    float4x4 gs_nTransformMatrix        : packoffset(c13);
-};
-
-SamplerState  gs_pPointSampler			: register(s0);
-SamplerState  gs_pLinearSampler			: register(s1);
-
-struct INPUT
-{
-    float4 position                     : SV_POSITION;
-    float2 texcoord                     : TEXCOORD0;
-};
-
-static const float gs_nPI = 3.14159265358979323846f;
-static const float gs_nReciprocalPI = rcp(gs_nPI);
-static const float gs_nTwoPi = 2.0f * gs_nPI;
-
 float3x3 GetCoTangentFrame(float3 nPosition, float3 nNormal, float2 nTexCoord)
 {
     // get edge vectors of the pixel triangle
@@ -64,5 +40,3 @@ float3 GetViewPosition(float2 nTexCoord, float nDepth)
     float3 nViewVector = float3((nTexCoord * gs_nCameraFieldOfView), 1.0);
     return (nViewVector * nDepth * gs_nCameraMaxDistance);
 }
-
-_INSERT_PIXEL_PROGRAM
