@@ -16,6 +16,8 @@ struct SOURCEVERTEX
     uint instance                           : SV_InstanceId;
 };
 
+#include "gekplugin.h"
+
 WORLDVERTEX GetWorldVertex(in SOURCEVERTEX kSource)
 {
     INSTANCE kInstance = gs_aInstances[kSource.instance];
