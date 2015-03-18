@@ -9,3 +9,8 @@ DECLARE_INTERFACE_IID_(IGEKResourceSystem, IUnknown, "4680DA6E-2FD2-4918-A635-49
 {
     STDMETHOD(Initialize)                               (THIS_ IGEK3DVideoSystem *pVideoSystem) PURE;
 };
+
+DECLARE_INTERFACE_IID_(IGEKResourceObserver, IGEKObserver, "9F5C17A5-D6B0-445D-9FFA-531C498CE604")
+{
+    STDMETHOD_(void, OnResourceReady)                   (THIS_ const GEKRESOURCEID &nResourceID) PURE;
+};
