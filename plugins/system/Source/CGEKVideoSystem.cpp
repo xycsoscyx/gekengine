@@ -2230,7 +2230,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
+HRESULT CGEKVideoSystem::CompileComputeProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -2255,7 +2255,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, aDefines.data(), pIncludes, pEntry, "cs_5_0", nFlags, 0, &spBlob, &spErrors);
+    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "cs_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11ComputeShader> spProgram;
@@ -2278,7 +2278,7 @@ STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEnt
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
+HRESULT CGEKVideoSystem::CompileVertexProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -2303,7 +2303,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, aDefines.data(), pIncludes, pEntry, "vs_5_0", nFlags, 0, &spBlob, &spErrors);
+    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "vs_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11VertexShader> spProgram;
@@ -2417,7 +2417,7 @@ STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntr
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
+HRESULT CGEKVideoSystem::CompileGeometryProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -2442,7 +2442,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, aDefines.data(), pIncludes, pEntry, "gs_5_0", nFlags, 0, &spBlob, &spErrors);
+    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "gs_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11GeometryShader> spProgram;
@@ -2465,7 +2465,7 @@ STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEn
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
+HRESULT CGEKVideoSystem::CompilePixelProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(ppProgram, E_INVALIDARG);
@@ -2490,7 +2490,7 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), nullptr, aDefines.data(), pIncludes, pEntry, "ps_5_0", nFlags, 0, &spBlob, &spErrors);
+    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "ps_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11PixelShader> spProgram;
@@ -2515,22 +2515,22 @@ STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry
 
 STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    return CompileComputeProgram(pProgram, pEntry, ppProgram, pDefines, nullptr);
+    return CompileComputeProgram(nullptr, pProgram, pEntry, ppProgram, pDefines, nullptr);
 }
 
 STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    return CompileVertexProgram(pProgram, pEntry, aLayout, ppProgram, pDefines, nullptr);
+    return CompileVertexProgram(nullptr, pProgram, pEntry, aLayout, ppProgram, pDefines, nullptr);
 }
 
 STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    return CompileGeometryProgram(pProgram, pEntry, ppProgram, pDefines, nullptr);
+    return CompileGeometryProgram(nullptr, pProgram, pEntry, ppProgram, pDefines, nullptr);
 }
 
 STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    return CompilePixelProgram(pProgram, pEntry, ppProgram, pDefines, nullptr);
+    return CompilePixelProgram(nullptr, pProgram, pEntry, ppProgram, pDefines, nullptr);
 }
 
 STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
@@ -2543,7 +2543,7 @@ STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntr
     if (SUCCEEDED(hRetVal))
     {
         CComPtr<CGEKInclude> spInclude(new CGEKInclude(pFileName));
-        hRetVal = CompileComputeProgram(strProgram, pEntry, ppProgram, pDefines, spInclude);
+        hRetVal = CompileComputeProgram(pFileName, strProgram, pEntry, ppProgram, pDefines, spInclude);
     }
 
     return hRetVal;
@@ -2559,7 +2559,7 @@ STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry
     if (SUCCEEDED(hRetVal))
     {
         CComPtr<CGEKInclude> spInclude(new CGEKInclude(pFileName));
-        hRetVal = CompileVertexProgram(strProgram, pEntry, aLayout, ppProgram, pDefines, spInclude);
+        hRetVal = CompileVertexProgram(pFileName, strProgram, pEntry, aLayout, ppProgram, pDefines, spInclude);
     }
 
     return hRetVal;
@@ -2575,7 +2575,7 @@ STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEnt
     if (SUCCEEDED(hRetVal))
     {
         CComPtr<CGEKInclude> spInclude(new CGEKInclude(pFileName));
-        hRetVal = CompileGeometryProgram(strProgram, pEntry, ppProgram, pDefines, spInclude);
+        hRetVal = CompileGeometryProgram(pFileName, strProgram, pEntry, ppProgram, pDefines, spInclude);
     }
 
     return hRetVal;
@@ -2591,7 +2591,7 @@ STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry,
     if (SUCCEEDED(hRetVal))
     {
         CComPtr<CGEKInclude> spInclude(new CGEKInclude(pFileName));
-        hRetVal = CompilePixelProgram(strProgram, pEntry, ppProgram, pDefines, spInclude);
+        hRetVal = CompilePixelProgram(pFileName, strProgram, pEntry, ppProgram, pDefines, spInclude);
     }
 
     return hRetVal;
