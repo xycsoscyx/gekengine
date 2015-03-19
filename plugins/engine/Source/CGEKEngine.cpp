@@ -527,6 +527,12 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
 
         m_bWindowActive = true;
         HRESULT hRetVal = m_spVideoSystem->Initialize(m_hWindow, nXSize, nYSize, bWindowed);
+
+        CComPtr<IGEKResourceSystem> spSystem;
+        GetContext()->CreateInstance(CLSID_GEKResourceSystem, IID_PPV_ARGS(&spSystem));
+        spSystem->Initialize(m_spVideoSystem);
+        spSystem->LoadTexture(L"%root%\\data\\textures\\rock.NormalMap.tga", 0);
+
         if (SUCCEEDED(hRetVal))
         {
             hRetVal = GetContext()->CreateInstance(CLSID_GEKPopulationSystem, IID_PPV_ARGS(&m_spPopulationManager));
