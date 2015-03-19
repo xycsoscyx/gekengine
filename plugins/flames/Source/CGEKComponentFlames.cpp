@@ -284,26 +284,15 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const GEKENTITYID &nV
             auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, GET_COMPONENT_ID(flames));
 
             CComPtr<IUnknown> spMaterial;
+            m_pMaterialManager->LoadMaterial(kFlames.material, &spMaterial);
+
             CComPtr<IGEK3DVideoTexture> spGradient;
-            auto pIterator = m_aGradients.find(kFlames.material + L"|" + kFlames.gradient);
-            if (pIterator == m_aGradients.end())
-            {
-                m_pMaterialManager->LoadMaterial(kFlames.material, &spMaterial);
-                m_pVideoSystem->LoadTexture(FormatString(L"%%root%%\\data\\gradients\\%s.dds", kFlames.gradient.GetString()), GEK3DVIDEO::TEXTURE::FORCE_1D, &spGradient);
-                if (spMaterial && spGradient)
-                {
-                    m_aGradients[kFlames.material + L"|" + kFlames.gradient] = std::make_pair(spMaterial, spGradient);
-                }
-            }
-            else
-            {
-                spMaterial = (*pIterator).second.first;
-                spGradient = (*pIterator).second.second;
-            }
+            m_pMaterialManager->LoadTexture(L"%root%\\data\\gradients\\" + kFlames.gradient + L".dds", GEK3DVIDEO::TEXTURE::FORCE_1D, &spGradient);
 
             if (spMaterial && spGradient)
             {
                 concurrency::concurrent_vector<INSTANCE> aVisible;
+                aVisible.reserve(kPair.second.m_aParticles.size());
                 concurrency::parallel_for_each(kPair.second.m_aParticles.begin(), kPair.second.m_aParticles.end(), [&](PARTICLE &kParticle) -> void
                 {
                     float nAge = (kParticle.m_nLife.x / kParticle.m_nLife.y);

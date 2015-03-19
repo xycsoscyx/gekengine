@@ -8,7 +8,6 @@
 #include <ppl.h>
 
 class CGEKResourceSystem : public CGEKUnknown
-                         , public CGEKObservable
                          , public IGEKResourceSystem
                          , public IGEK3DVideoObserver
 {
@@ -22,7 +21,7 @@ private:
     concurrency::concurrent_unordered_map<GEKRESOURCEID, CComPtr<IUnknown>> m_aResources;
 
 private:
-    void LoadTexture2(CStringW strFileName, UINT32 nFlags, GEKRESOURCEID nResourceID);
+    void OnLoadTexture(CStringW strFileName, UINT32 nFlags, GEKRESOURCEID nResourceID);
 
 public:
     CGEKResourceSystem(void);
@@ -35,6 +34,8 @@ public:
     // IGEKResourceSystem
     STDMETHOD(Initialize)                               (THIS_ IGEK3DVideoSystem *pVideoSystem);
     STDMETHOD_(GEKRESOURCEID, LoadTexture)              (THIS_ LPCWSTR pFileName, UINT32 nFlags);
+    STDMETHOD_(void, SetResource)                       (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nIndex, IUnknown *pResource);
+    STDMETHOD_(void, SetUnorderedAccess)                (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource);
 
     // IGEK3DVideoObserver
     STDMETHOD_(void, OnResizeBegin)                     (THIS);

@@ -2,6 +2,10 @@
 
 #include "GEKContext.h"
 
+DECLARE_INTERFACE(IGEK3DVideoSystem);
+DECLARE_INTERFACE(IGEK3DVideoContext);
+DECLARE_INTERFACE(IGEK3DVideoContextSystem);
+
 typedef UINT32 GEKRESOURCEID;
 const GEKRESOURCEID GEKINVALIDRESOURCEID = 0;
 
@@ -10,9 +14,6 @@ DECLARE_INTERFACE_IID_(IGEKResourceSystem, IUnknown, "4680DA6E-2FD2-4918-A635-49
     STDMETHOD(Initialize)                               (THIS_ IGEK3DVideoSystem *pVideoSystem) PURE;
 
     STDMETHOD_(GEKRESOURCEID, LoadTexture)              (THIS_ LPCWSTR pFileName, UINT32 nFlags) PURE;
-};
-
-DECLARE_INTERFACE_IID_(IGEKResourceObserver, IGEKObserver, "9F5C17A5-D6B0-445D-9FFA-531C498CE604")
-{
-    STDMETHOD_(void, OnResourceReady)                   (THIS_ const GEKRESOURCEID &nResourceID) PURE;
+    STDMETHOD_(void, SetResource)                       (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nIndex, IUnknown *pResource) PURE;
+    STDMETHOD_(void, SetUnorderedAccess)                (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource) PURE;
 };

@@ -75,10 +75,7 @@ private:
     CComPtr<IGEK3DVideoBuffer> m_spVertexBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
 
-    std::unordered_map<CStringW, std::pair<CComPtr<IUnknown>, CComPtr<IGEK3DVideoTexture>>> m_aGradients;
-
     concurrency::concurrent_unordered_map<GEKENTITYID, EMITTER> m_aEmitters;
-
     std::map<std::pair<IUnknown *, IGEK3DVideoTexture *>, std::vector<INSTANCE>> m_aVisible;
 
 public:

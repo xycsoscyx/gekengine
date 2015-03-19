@@ -120,6 +120,15 @@ STDMETHODIMP CGEKRenderSystem::Initialize(void)
 
     if (SUCCEEDED(hRetVal))
     {
+        GetContext()->CreateInstance(CLSID_GEKResourceSystem, IID_PPV_ARGS(&m_spResourceSystem));
+        if (m_spResourceSystem)
+        {
+            hRetVal = m_spResourceSystem->Initialize(m_pVideoSystem);
+        }
+    }
+
+    if (SUCCEEDED(hRetVal))
+    {
         std::vector<GEK3DVIDEO::INPUTELEMENT> aLayout;
         aLayout.push_back(GEK3DVIDEO::INPUTELEMENT(GEK3DVIDEO::DATA::RG_FLOAT, "POSITION", 0));
         aLayout.push_back(GEK3DVIDEO::INPUTELEMENT(GEK3DVIDEO::DATA::RG_FLOAT, "TEXCOORD", 0));
@@ -804,6 +813,30 @@ STDMETHODIMP_(bool) CGEKRenderSystem::EnableMaterial(IGEK3DVideoContext *pContex
     }
 
     return bEnabled;
+}
+
+STDMETHODIMP CGEKRenderSystem::LoadTexture(LPCWSTR pName, UINT32 nFlags, IGEK3DVideoTexture **ppTexture)
+{
+    REQUIRE_RETURN(pName && ppTexture, E_INVALIDARG);
+
+    HRESULT hRetVal = E_FAIL;
+    auto pIterator = m_aResources.find(pName);
+    if (pIterator != m_aResources.end())
+    {
+        hRetVal = (*pIterator).second->QueryInterface(IID_PPV_ARGS(ppTexture));
+    }
+    else
+    {
+        CComPtr<IGEK3DVideoTexture> spTexture;
+        hRetVal = m_pVideoSystem->LoadTexture(pName, nFlags, &spTexture);
+        if (spTexture)
+        {
+            m_aResources[pName] = spTexture;
+            hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
+        }
+    }
+
+    return hRetVal;
 }
 
 STDMETHODIMP CGEKRenderSystem::LoadProgram(LPCWSTR pName, IUnknown **ppProgram)

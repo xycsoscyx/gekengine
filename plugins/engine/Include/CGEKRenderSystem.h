@@ -81,6 +81,8 @@ private:
     IGEKEngine *m_pEngine;
     IGEKSceneManager *m_pSceneManager;
 
+    CComPtr<IGEKResourceSystem> m_spResourceSystem;
+
     CComPtr<IUnknown> m_spFrameEvent;
 
     CComPtr<IUnknown> m_spVertexProgram;
@@ -139,6 +141,7 @@ public:
     // IGEKMaterialManager
     STDMETHOD(LoadMaterial)                 (THIS_ LPCWSTR pName, IUnknown **ppMaterial);
     STDMETHOD_(bool, EnableMaterial)        (THIS_ IGEK3DVideoContext *pContext, IUnknown *pMaterial);
+    STDMETHOD(LoadTexture)                  (THIS_ LPCWSTR pName, UINT32 nFlags, IGEK3DVideoTexture **ppTexture);
 
     // IGEKProgramManager
     STDMETHOD(LoadProgram)                  (THIS_ LPCWSTR pName, IUnknown **ppProgram);

@@ -4,7 +4,6 @@
 #include "GEKSystemCLSIDs.h"
 
 BEGIN_INTERFACE_LIST(CGEKResourceSystem)
-    INTERFACE_LIST_ENTRY_COM(IGEKObservable)
     INTERFACE_LIST_ENTRY_COM(IGEKResourceSystem)
     INTERFACE_LIST_ENTRY_COM(IGEK3DVideoObserver)
 END_INTERFACE_LIST_UNKNOWN
@@ -36,14 +35,13 @@ STDMETHODIMP CGEKResourceSystem::Initialize(IGEK3DVideoSystem *pVideoSystem)
     return S_OK;
 }
 
-void CGEKResourceSystem::LoadTexture2(CStringW strFileName, UINT32 nFlags, GEKRESOURCEID nResourceID)
+void CGEKResourceSystem::OnLoadTexture(CStringW strFileName, UINT32 nFlags, GEKRESOURCEID nResourceID)
 {
     CComPtr<IGEK3DVideoTexture> spTexture;
     m_pVideoSystem->LoadTexture(strFileName, nFlags, &spTexture);
     if (spTexture)
     {
         m_aResources[nResourceID] = spTexture;
-        CGEKObservable::SendEvent(TGEKEvent<IGEKResourceObserver>(std::bind(&IGEKResourceObserver::OnResourceReady, std::placeholders::_1, nResourceID)));
     }
 }
 
@@ -51,7 +49,7 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadTexture(LPCWSTR pFileName, 
 {
     GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
 
-    m_aQueue.push(std::bind(&CGEKResourceSystem::LoadTexture2, this, pFileName, nFlags, nResourceID));
+    m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadTexture, this, pFileName, nFlags, nResourceID));
     m_aTasks.run([&](void) -> void
     {
         std::function<void(void)> Function;
@@ -62,6 +60,14 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadTexture(LPCWSTR pFileName, 
     });
 
     return nResourceID;
+}
+
+STDMETHODIMP_(void) CGEKResourceSystem::SetResource(IGEK3DVideoContextSystem *pSystem, UINT32 nIndex, IUnknown *pResource)
+{
+}
+
+STDMETHODIMP_(void) CGEKResourceSystem::SetUnorderedAccess(IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource)
+{
 }
 
 STDMETHODIMP_(void) CGEKResourceSystem::OnResizeBegin(void)
