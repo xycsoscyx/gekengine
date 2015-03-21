@@ -62,12 +62,22 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadTexture(LPCWSTR pFileName, 
     return nResourceID;
 }
 
-STDMETHODIMP_(void) CGEKResourceSystem::SetResource(IGEK3DVideoContextSystem *pSystem, UINT32 nIndex, IUnknown *pResource)
+STDMETHODIMP_(void) CGEKResourceSystem::SetResource(IGEK3DVideoContextSystem *pSystem, UINT32 nIndex, const GEKRESOURCEID &nResourceID)
 {
+    auto pIterator = m_aResources.find(nResourceID);
+    if (pIterator != m_aResources.end())
+    {
+        pSystem->SetResource(nIndex, (*pIterator).second);
+    }
 }
 
-STDMETHODIMP_(void) CGEKResourceSystem::SetUnorderedAccess(IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource)
+STDMETHODIMP_(void) CGEKResourceSystem::SetUnorderedAccess(IGEK3DVideoContextSystem *pSystem, UINT32 nStage, const GEKRESOURCEID &nResourceID)
 {
+    auto pIterator = m_aResources.find(nResourceID);
+    if (pIterator != m_aResources.end())
+    {
+        pSystem->SetUnorderedAccess(nStage, (*pIterator).second);
+    }
 }
 
 STDMETHODIMP_(void) CGEKResourceSystem::OnResizeBegin(void)

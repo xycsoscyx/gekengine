@@ -34,8 +34,8 @@ public:
     // IGEKResourceSystem
     STDMETHOD(Initialize)                               (THIS_ IGEK3DVideoSystem *pVideoSystem);
     STDMETHOD_(GEKRESOURCEID, LoadTexture)              (THIS_ LPCWSTR pFileName, UINT32 nFlags);
-    STDMETHOD_(void, SetResource)                       (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nIndex, IUnknown *pResource);
-    STDMETHOD_(void, SetUnorderedAccess)                (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource);
+    STDMETHOD_(void, SetResource)                       (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nIndex, const GEKRESOURCEID &nResourceID);
+    STDMETHOD_(void, SetUnorderedAccess)                (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, const GEKRESOURCEID &nResourceID);
 
     // IGEK3DVideoObserver
     STDMETHOD_(void, OnResizeBegin)                     (THIS);
