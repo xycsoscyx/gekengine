@@ -14,11 +14,11 @@
             <follow target="player" offset="0,2,-10" />
 		</entity>
 
-        <!--entity>
+        <entity>
 			<transform />
             <viewer type="perspective" fieldofview="90" mindistance="0.5" maxdistance="200" position="0.6,0" size="0.4,0.4" pass="toon"/>
             <follow target="player" offset="0,5,20" />
-		</entity-->
+		</entity>
 
 		<entity>z
 			<transform position="0,0,0" rotation="0,0,0,1" />
