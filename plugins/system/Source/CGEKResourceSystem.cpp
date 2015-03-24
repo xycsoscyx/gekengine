@@ -10,6 +10,42 @@ END_INTERFACE_LIST_UNKNOWN
 
 REGISTER_CLASS(CGEKResourceSystem);
 
+void CGEKResourceSystem::OnLoadTexture(CStringW strFileName, UINT32 nFlags, GEKRESOURCEID nResourceID)
+{
+}
+
+void CGEKResourceSystem::OnLoadComputeProgram(CStringW strFileName, CStringA strEntry, std::unordered_map<CStringA, CStringA> aDefines, GEKRESOURCEID nResourceID)
+{
+}
+
+void CGEKResourceSystem::OnLoadVertexProgram(CStringW strFileName, CStringA strEntry, std::vector<GEK3DVIDEO::INPUTELEMENT> aLayout, std::unordered_map<CStringA, CStringA> aDefines, GEKRESOURCEID nResourceID)
+{
+}
+
+void CGEKResourceSystem::OnLoadGeometryProgram(CStringW strFileName, CStringA strEntry, std::unordered_map<CStringA, CStringA> aDefines, GEKRESOURCEID nResourceID)
+{
+}
+
+void CGEKResourceSystem::OnLoadPixelProgram(CStringW strFileName, CStringA strEntry, std::unordered_map<CStringA, CStringA> aDefines, GEKRESOURCEID nResourceID)
+{
+}
+
+void CGEKResourceSystem::OnCreateRenderStates(GEK3DVIDEO::RENDERSTATES kStates, GEKRESOURCEID nResourceID)
+{
+}
+
+void CGEKResourceSystem::OnCreateDepthStates(GEK3DVIDEO::DEPTHSTATES kStates, GEKRESOURCEID nResourceID)
+{
+}
+
+void CGEKResourceSystem::OnCreateUnifiedBlendStates(GEK3DVIDEO::UNIFIEDBLENDSTATES kStates, GEKRESOURCEID nResourceID)
+{
+}
+
+void CGEKResourceSystem::OnCreateIndependentBlendStates(GEK3DVIDEO::INDEPENDENTBLENDSTATES kStates, GEKRESOURCEID nResourceID)
+{
+}
+
 CGEKResourceSystem::CGEKResourceSystem(void)
     : m_pVideoSystem(nullptr)
     , m_nNextResourceID(GEKINVALIDRESOURCEID)
@@ -22,8 +58,7 @@ CGEKResourceSystem::~CGEKResourceSystem(void)
 
 STDMETHODIMP_(void) CGEKResourceSystem::Destroy(void)
 {
-    m_aTasks.cancel();
-    m_aTasks.wait();
+    Flush();
 }
 
 STDMETHODIMP CGEKResourceSystem::Initialize(IGEK3DVideoSystem *pVideoSystem)
@@ -35,29 +70,36 @@ STDMETHODIMP CGEKResourceSystem::Initialize(IGEK3DVideoSystem *pVideoSystem)
     return S_OK;
 }
 
-void CGEKResourceSystem::OnLoadTexture(CStringW strFileName, UINT32 nFlags, GEKRESOURCEID nResourceID)
+STDMETHODIMP_(void) CGEKResourceSystem::Flush(void)
 {
-    CComPtr<IGEK3DVideoTexture> spTexture;
-    m_pVideoSystem->LoadTexture(strFileName, nFlags, &spTexture);
-    if (spTexture)
-    {
-        m_aResources[nResourceID] = spTexture;
-    }
+    m_aTasks.cancel();
+    m_aTasks.wait();
+    m_aQueue.clear();
+    m_aResources.clear();
+    m_aNames.clear();
 }
 
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadTexture(LPCWSTR pFileName, UINT32 nFlags)
 {
-    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
-
-    m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadTexture, this, pFileName, nFlags, nResourceID));
-    m_aTasks.run([&](void) -> void
+    GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
+    auto pIterator = m_aNames.find(pFileName);
+    if (pIterator == m_aNames.end())
     {
-        std::function<void(void)> Function;
-        if (m_aQueue.try_pop(Function))
+        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadTexture, this, pFileName, nFlags, nResourceID));
+        m_aTasks.run([&](void) -> void
         {
-            Function();
-        }
-    });
+            std::function<void(void)> Function;
+            if (m_aQueue.try_pop(Function))
+            {
+                Function();
+            }
+        });
+    }
+    else
+    {
+        nResourceID = (*pIterator).second;
+    }
 
     return nResourceID;
 }
@@ -82,28 +124,120 @@ STDMETHODIMP_(void) CGEKResourceSystem::SetUnorderedAccess(IGEK3DVideoContextSys
 
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+    GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
+    auto pIterator = m_aNames.find(pFileName);
+    if (pIterator == m_aNames.end())
+    {
+        std::unordered_map<CStringA, CStringA> aDefines;
+        if (pDefines)
+        {
+            aDefines = (*pDefines);
+        }
+
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadComputeProgram, this, pFileName, pEntry, aDefines));
+        m_aTasks.run([&](void) -> void
+        {
+            std::function<void(void)> Function;
+            if (m_aQueue.try_pop(Function))
+            {
+                Function();
+            }
+        });
+    }
+    else
+    {
+        nResourceID = (*pIterator).second;
+    }
 
     return nResourceID;
 }
 
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+    GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
+    auto pIterator = m_aNames.find(pFileName);
+    if (pIterator == m_aNames.end())
+    {
+        std::unordered_map<CStringA, CStringA> aDefines;
+        if (pDefines)
+        {
+            aDefines = (*pDefines);
+        }
+
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadVertexProgram, this, pFileName, pEntry, aDefines));
+        m_aTasks.run([&](void) -> void
+        {
+            std::function<void(void)> Function;
+            if (m_aQueue.try_pop(Function))
+            {
+                Function();
+            }
+        });
+    }
+    else
+    {
+        nResourceID = (*pIterator).second;
+    }
 
     return nResourceID;
 }
 
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+    GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
+    auto pIterator = m_aNames.find(pFileName);
+    if (pIterator == m_aNames.end())
+    {
+        std::unordered_map<CStringA, CStringA> aDefines;
+        if (pDefines)
+        {
+            aDefines = (*pDefines);
+        }
+
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadGeometryProgram, this, pFileName, pEntry, aDefines));
+        m_aTasks.run([&](void) -> void
+        {
+            std::function<void(void)> Function;
+            if (m_aQueue.try_pop(Function))
+            {
+                Function();
+            }
+        });
+    }
+    else
+    {
+        nResourceID = (*pIterator).second;
+    }
 
     return nResourceID;
 }
 
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+    GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
+    auto pIterator = m_aNames.find(pFileName);
+    if (pIterator == m_aNames.end())
+    {
+        std::unordered_map<CStringA, CStringA> aDefines;
+        if (pDefines)
+        {
+            aDefines = (*pDefines);
+        }
+
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadPixelProgram, this, pFileName, pEntry, aDefines));
+        m_aTasks.run([&](void) -> void
+        {
+            std::function<void(void)> Function;
+            if (m_aQueue.try_pop(Function))
+            {
+                Function();
+            }
+        });
+    }
+    else
+    {
+        nResourceID = (*pIterator).second;
+    }
 
     return nResourceID;
 }
@@ -119,28 +253,96 @@ STDMETHODIMP_(void) CGEKResourceSystem::SetProgram(IGEK3DVideoContextSystem *pSy
 
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES &kStates)
 {
-    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+    GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
+    auto pIterator = m_aNames.find(pFileName);
+    if (pIterator == m_aNames.end())
+    {
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateRenderStates, this, kStates));
+        m_aTasks.run([&](void) -> void
+        {
+            std::function<void(void)> Function;
+            if (m_aQueue.try_pop(Function))
+            {
+                Function();
+            }
+        });
+    }
+    else
+    {
+        nResourceID = (*pIterator).second;
+    }
 
     return nResourceID;
 }
 
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &kStates)
 {
-    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+    GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
+    auto pIterator = m_aNames.find(pFileName);
+    if (pIterator == m_aNames.end())
+    {
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateDepthStates, this, kStates));
+        m_aTasks.run([&](void) -> void
+        {
+            std::function<void(void)> Function;
+            if (m_aQueue.try_pop(Function))
+            {
+                Function();
+            }
+        });
+    }
+    else
+    {
+        nResourceID = (*pIterator).second;
+    }
 
     return nResourceID;
 }
 
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates)
 {
-    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+    GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
+    auto pIterator = m_aNames.find(pFileName);
+    if (pIterator == m_aNames.end())
+    {
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateUnifiedBlendStates, this, kStates));
+        m_aTasks.run([&](void) -> void
+        {
+            std::function<void(void)> Function;
+            if (m_aQueue.try_pop(Function))
+            {
+                Function();
+            }
+        });
+    }
+    else
+    {
+        nResourceID = (*pIterator).second;
+    }
 
     return nResourceID;
 }
 
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates)
 {
-    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+    GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
+    auto pIterator = m_aNames.find(pFileName);
+    if (pIterator == m_aNames.end())
+    {
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateIndependentBlendStates, this, kStates));
+        m_aTasks.run([&](void) -> void
+        {
+            std::function<void(void)> Function;
+            if (m_aQueue.try_pop(Function))
+            {
+                Function();
+            }
+        });
+    }
+    else
+    {
+        nResourceID = (*pIterator).second;
+    }
 
     return nResourceID;
 }
