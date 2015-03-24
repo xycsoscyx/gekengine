@@ -134,7 +134,7 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadComputeProgram(LPCWSTR pFil
             aDefines = (*pDefines);
         }
 
-        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadComputeProgram, this, pFileName, pEntry, aDefines));
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadComputeProgram, this, pFileName, pEntry, aDefines, nResourceID));
         m_aTasks.run([&](void) -> void
         {
             std::function<void(void)> Function;
@@ -164,7 +164,7 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadVertexProgram(LPCWSTR pFile
             aDefines = (*pDefines);
         }
 
-        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadVertexProgram, this, pFileName, pEntry, aDefines));
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadVertexProgram, this, pFileName, pEntry, aLayout, aDefines, nResourceID));
         m_aTasks.run([&](void) -> void
         {
             std::function<void(void)> Function;
@@ -194,7 +194,7 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadGeometryProgram(LPCWSTR pFi
             aDefines = (*pDefines);
         }
 
-        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadGeometryProgram, this, pFileName, pEntry, aDefines));
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadGeometryProgram, this, pFileName, pEntry, aDefines, nResourceID));
         m_aTasks.run([&](void) -> void
         {
             std::function<void(void)> Function;
@@ -224,7 +224,7 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadPixelProgram(LPCWSTR pFileN
             aDefines = (*pDefines);
         }
 
-        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadPixelProgram, this, pFileName, pEntry, aDefines));
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadPixelProgram, this, pFileName, pEntry, aDefines, nResourceID));
         m_aTasks.run([&](void) -> void
         {
             std::function<void(void)> Function;
@@ -257,7 +257,7 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateRenderStates(const GEK3DV
     auto pIterator = m_aResourceMap.find(CGEKBlob(&kStates, sizeof(kStates)));
     if (pIterator == m_aResourceMap.end())
     {
-        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateRenderStates, this, kStates));
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateRenderStates, this, kStates, nResourceID));
         m_aTasks.run([&](void) -> void
         {
             std::function<void(void)> Function;
@@ -281,7 +281,7 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateDepthStates(const GEK3DVI
     auto pIterator = m_aResourceMap.find(CGEKBlob(&kStates, sizeof(kStates)));
     if (pIterator == m_aResourceMap.end())
     {
-        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateDepthStates, this, kStates));
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateDepthStates, this, kStates, nResourceID));
         m_aTasks.run([&](void) -> void
         {
             std::function<void(void)> Function;
@@ -305,7 +305,7 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateBlendStates(const GEK3DVI
     auto pIterator = m_aResourceMap.find(CGEKBlob(&kStates, sizeof(kStates)));
     if (pIterator == m_aResourceMap.end())
     {
-        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateUnifiedBlendStates, this, kStates));
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateUnifiedBlendStates, this, kStates, nResourceID));
         m_aTasks.run([&](void) -> void
         {
             std::function<void(void)> Function;
@@ -329,7 +329,7 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateBlendStates(const GEK3DVI
     auto pIterator = m_aResourceMap.find(CGEKBlob(&kStates, sizeof(kStates)));
     if (pIterator == m_aResourceMap.end())
     {
-        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateIndependentBlendStates, this, kStates));
+        m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateIndependentBlendStates, this, kStates, nResourceID));
         m_aTasks.run([&](void) -> void
         {
             std::function<void(void)> Function;
