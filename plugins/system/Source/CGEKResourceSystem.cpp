@@ -76,14 +76,14 @@ STDMETHODIMP_(void) CGEKResourceSystem::Flush(void)
     m_aTasks.wait();
     m_aQueue.clear();
     m_aResources.clear();
-    m_aNames.clear();
+    m_aResourceMap.clear();
 }
 
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadTexture(LPCWSTR pFileName, UINT32 nFlags)
 {
     GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
-    auto pIterator = m_aNames.find(pFileName);
-    if (pIterator == m_aNames.end())
+    auto pIterator = m_aResourceMap.find(CGEKBlob(pFileName, nFlags));
+    if (pIterator == m_aResourceMap.end())
     {
         nResourceID = InterlockedIncrement(&m_nNextResourceID);
         m_aQueue.push(std::bind(&CGEKResourceSystem::OnLoadTexture, this, pFileName, nFlags, nResourceID));
@@ -125,8 +125,8 @@ STDMETHODIMP_(void) CGEKResourceSystem::SetUnorderedAccess(IGEK3DVideoContextSys
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
-    auto pIterator = m_aNames.find(pFileName);
-    if (pIterator == m_aNames.end())
+    auto pIterator = m_aResourceMap.find(CGEKBlob(pFileName, pEntry));
+    if (pIterator == m_aResourceMap.end())
     {
         std::unordered_map<CStringA, CStringA> aDefines;
         if (pDefines)
@@ -155,8 +155,8 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadComputeProgram(LPCWSTR pFil
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
-    auto pIterator = m_aNames.find(pFileName);
-    if (pIterator == m_aNames.end())
+    auto pIterator = m_aResourceMap.find(CGEKBlob(pFileName, pEntry));
+    if (pIterator == m_aResourceMap.end())
     {
         std::unordered_map<CStringA, CStringA> aDefines;
         if (pDefines)
@@ -185,8 +185,8 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadVertexProgram(LPCWSTR pFile
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
-    auto pIterator = m_aNames.find(pFileName);
-    if (pIterator == m_aNames.end())
+    auto pIterator = m_aResourceMap.find(CGEKBlob(pFileName, pEntry));
+    if (pIterator == m_aResourceMap.end())
     {
         std::unordered_map<CStringA, CStringA> aDefines;
         if (pDefines)
@@ -215,8 +215,8 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadGeometryProgram(LPCWSTR pFi
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
     GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
-    auto pIterator = m_aNames.find(pFileName);
-    if (pIterator == m_aNames.end())
+    auto pIterator = m_aResourceMap.find(CGEKBlob(pFileName, pEntry));
+    if (pIterator == m_aResourceMap.end())
     {
         std::unordered_map<CStringA, CStringA> aDefines;
         if (pDefines)
@@ -254,8 +254,8 @@ STDMETHODIMP_(void) CGEKResourceSystem::SetProgram(IGEK3DVideoContextSystem *pSy
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES &kStates)
 {
     GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
-    auto pIterator = m_aNames.find(pFileName);
-    if (pIterator == m_aNames.end())
+    auto pIterator = m_aResourceMap.find(CGEKBlob(&kStates, sizeof(kStates)));
+    if (pIterator == m_aResourceMap.end())
     {
         m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateRenderStates, this, kStates));
         m_aTasks.run([&](void) -> void
@@ -278,8 +278,8 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateRenderStates(const GEK3DV
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &kStates)
 {
     GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
-    auto pIterator = m_aNames.find(pFileName);
-    if (pIterator == m_aNames.end())
+    auto pIterator = m_aResourceMap.find(CGEKBlob(&kStates, sizeof(kStates)));
+    if (pIterator == m_aResourceMap.end())
     {
         m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateDepthStates, this, kStates));
         m_aTasks.run([&](void) -> void
@@ -302,8 +302,8 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateDepthStates(const GEK3DVI
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates)
 {
     GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
-    auto pIterator = m_aNames.find(pFileName);
-    if (pIterator == m_aNames.end())
+    auto pIterator = m_aResourceMap.find(CGEKBlob(&kStates, sizeof(kStates)));
+    if (pIterator == m_aResourceMap.end())
     {
         m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateUnifiedBlendStates, this, kStates));
         m_aTasks.run([&](void) -> void
@@ -326,8 +326,8 @@ STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateBlendStates(const GEK3DVI
 STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates)
 {
     GEKRESOURCEID nResourceID = GEKINVALIDRESOURCEID;
-    auto pIterator = m_aNames.find(pFileName);
-    if (pIterator == m_aNames.end())
+    auto pIterator = m_aResourceMap.find(CGEKBlob(&kStates, sizeof(kStates)));
+    if (pIterator == m_aResourceMap.end())
     {
         m_aQueue.push(std::bind(&CGEKResourceSystem::OnCreateIndependentBlendStates, this, kStates));
         m_aTasks.run([&](void) -> void

@@ -7,6 +7,90 @@
 #include <concurrent_queue.h>
 #include <ppl.h>
 
+template <class TYPE>
+inline void hash_combine(std::size_t &nSeed, const TYPE &nValue)
+{
+    std::hash<TYPE> kHasher;
+    nSeed ^= kHasher(nValue) + 0x9e3779b9 + (nSeed << 6) + (nSeed >> 2);
+}
+
+struct CGEKBlob
+{
+private:
+    std::vector<UINT8> m_aData;
+    std::size_t m_nHash;
+
+public:
+    CGEKBlob(const CStringW &strFileName, UINT32 nFlags)
+        : m_nHash(0)
+    {
+        UINT32 nFileNameLength = (strFileName.GetLength() * sizeof(wchar_t));
+        m_aData.resize(nFileNameLength + sizeof(DWORD));
+        memcpy(m_aData.data(), strFileName.GetString(), nFileNameLength);
+        memcpy((m_aData.data() + nFileNameLength), &nFlags, sizeof(UINT32));
+        CalculateHash();
+    }
+
+    CGEKBlob(const CStringW &strFileName, const CStringA &strEntry)
+        : m_nHash(0)
+    {
+        UINT32 nFileNameLength = (strFileName.GetLength() * sizeof(wchar_t));
+        UINT32 nEntryLength = strEntry.GetLength();
+        m_aData.resize(nFileNameLength + nEntryLength);
+        memcpy(m_aData.data(), strFileName.GetString(), nFileNameLength);
+        memcpy((m_aData.data() + nFileNameLength), strEntry.GetString(), nEntryLength);
+        CalculateHash();
+    }
+
+    CGEKBlob(LPCVOID pData, size_t nSize)
+        : m_nHash(0)
+    {
+        m_aData.resize(nSize);
+        memcpy(m_aData.data(), pData, nSize);
+        CalculateHash();
+    }
+
+    bool operator == (const CGEKBlob &kData) const
+    {
+        return (m_aData.size() == kData.m_aData.size() &&
+            memcmp(m_aData.data(), kData.m_aData.data(), m_aData.size()) == 0);
+    }
+
+    void CalculateHash(void)
+    {
+        for (auto &nValue : m_aData)
+        {
+            hash_combine(m_nHash, nValue);
+        }
+    }
+
+    std::size_t GetHash(void) const
+    {
+        return m_nHash;
+    }
+};
+
+namespace std
+{
+    template <>
+    struct hash<CGEKBlob> : public unary_function<CGEKBlob, size_t>
+    {
+        size_t operator()(const CGEKBlob &kBlob) const
+        {
+            return kBlob.GetHash();
+        }
+    };
+
+    template <>
+    struct equal_to<CGEKBlob> : public unary_function<CGEKBlob, bool>
+    {
+        bool operator()(const CGEKBlob &kBlobA, const CGEKBlob &kBlobB) const
+        {
+            return (kBlobA.GetHash() == kBlobB.GetHash());
+        }
+    };
+}
+
 class CGEKResourceSystem : public CGEKUnknown
                          , public IGEKResourceSystem
                          , public IGEK3DVideoObserver
@@ -19,7 +103,7 @@ private:
 
     GEKRESOURCEID m_nNextResourceID;
     concurrency::concurrent_unordered_map<GEKRESOURCEID, CComPtr<IUnknown>> m_aResources;
-    concurrency::concurrent_unordered_map<CStringW, GEKRESOURCEID> m_aNames;
+    concurrency::concurrent_unordered_map<CGEKBlob, GEKRESOURCEID> m_aResourceMap;
 
 private:
     void OnLoadTexture(CStringW strFileName, UINT32 nFlags, GEKRESOURCEID nResourceID);
