@@ -80,6 +80,107 @@ STDMETHODIMP_(void) CGEKResourceSystem::SetUnorderedAccess(IGEK3DVideoContextSys
     }
 }
 
+STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
+{
+    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+
+    return nResourceID;
+}
+
+STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines)
+{
+    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+
+    return nResourceID;
+}
+
+STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
+{
+    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+
+    return nResourceID;
+}
+
+STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
+{
+    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+
+    return nResourceID;
+}
+
+STDMETHODIMP_(void) CGEKResourceSystem::SetProgram(IGEK3DVideoContextSystem *pSystem, const GEKRESOURCEID &nResourceID)
+{
+    auto pIterator = m_aResources.find(nResourceID);
+    if (pIterator != m_aResources.end())
+    {
+        pSystem->SetProgram((*pIterator).second);
+    }
+}
+
+STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES &kStates)
+{
+    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+
+    return nResourceID;
+}
+
+STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &kStates)
+{
+    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+
+    return nResourceID;
+}
+
+STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates)
+{
+    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+
+    return nResourceID;
+}
+
+STDMETHODIMP_(GEKRESOURCEID) CGEKResourceSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates)
+{
+    GEKRESOURCEID nResourceID = InterlockedIncrement(&m_nNextResourceID);
+
+    return nResourceID;
+}
+
+STDMETHODIMP_(void) CGEKResourceSystem::SetRenderStates(IGEK3DVideoContext *pContext, const GEKRESOURCEID &nResourceID)
+{
+    auto pIterator = m_aResources.find(nResourceID);
+    if (pIterator != m_aResources.end())
+    {
+        pContext->SetRenderStates((*pIterator).second);
+    }
+}
+
+STDMETHODIMP_(void) CGEKResourceSystem::SetDepthStates(IGEK3DVideoContext *pContext, UINT32 nStencilReference, const GEKRESOURCEID &nResourceID)
+{
+    auto pIterator = m_aResources.find(nResourceID);
+    if (pIterator != m_aResources.end())
+    {
+        pContext->SetDepthStates(nStencilReference, (*pIterator).second);
+    }
+}
+
+STDMETHODIMP_(void) CGEKResourceSystem::SetBlendStates(IGEK3DVideoContext *pContext, const float4 &nBlendFactor, UINT32 nMask, const GEKRESOURCEID &nResourceID)
+{
+    auto pIterator = m_aResources.find(nResourceID);
+    if (pIterator != m_aResources.end())
+    {
+        pContext->SetBlendStates(nBlendFactor, nMask, (*pIterator).second);
+    }
+}
+
+STDMETHODIMP_(void) CGEKResourceSystem::SetSamplerStates(IGEK3DVideoContextSystem *pSystem, UINT32 nStage, const GEKRESOURCEID &nResourceID)
+{
+    auto pIterator = m_aResources.find(nResourceID);
+    if (pIterator != m_aResources.end())
+    {
+        pSystem->SetSamplerStates(nStage, (*pIterator).second);
+    }
+}
+
 STDMETHODIMP_(void) CGEKResourceSystem::OnResizeBegin(void)
 {
 }

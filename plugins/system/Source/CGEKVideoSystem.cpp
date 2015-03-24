@@ -13,6 +13,170 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 
+static D3D11_TEXTURE_ADDRESS_MODE GetAddressMode(GEK3DVIDEO::ADDRESS::MODE eMode)
+{
+    switch (eMode)
+    {
+    case GEK3DVIDEO::ADDRESS::WRAP:
+        return D3D11_TEXTURE_ADDRESS_WRAP;
+
+    case GEK3DVIDEO::ADDRESS::MIRROR:
+        return D3D11_TEXTURE_ADDRESS_MIRROR;
+
+    case GEK3DVIDEO::ADDRESS::MIRROR_ONCE:
+        return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
+
+    case GEK3DVIDEO::ADDRESS::BORDER:
+        return D3D11_TEXTURE_ADDRESS_BORDER;
+
+    case GEK3DVIDEO::ADDRESS::CLAMP:
+    default:
+        return D3D11_TEXTURE_ADDRESS_CLAMP;
+    };
+};
+
+static D3D11_COMPARISON_FUNC GetComparisonFunction(GEK3DVIDEO::COMPARISON::FUNCTION eFunction)
+{
+    switch (eFunction)
+    {
+    case GEK3DVIDEO::COMPARISON::NEVER:
+        return D3D11_COMPARISON_NEVER;
+
+    case GEK3DVIDEO::COMPARISON::EQUAL:
+        return D3D11_COMPARISON_EQUAL;
+
+    case GEK3DVIDEO::COMPARISON::NOT_EQUAL:
+        return D3D11_COMPARISON_NOT_EQUAL;
+
+    case GEK3DVIDEO::COMPARISON::LESS:
+        return D3D11_COMPARISON_LESS;
+
+    case GEK3DVIDEO::COMPARISON::LESS_EQUAL:
+        return D3D11_COMPARISON_LESS_EQUAL;
+
+    case GEK3DVIDEO::COMPARISON::GREATER:
+        return D3D11_COMPARISON_GREATER;
+
+    case GEK3DVIDEO::COMPARISON::GREATER_EQUAL:
+        return D3D11_COMPARISON_GREATER_EQUAL;
+
+    case GEK3DVIDEO::COMPARISON::ALWAYS:
+    default:
+        return D3D11_COMPARISON_ALWAYS;
+    };
+}
+
+static D3D11_STENCIL_OP GetStencilOperation(GEK3DVIDEO::STENCIL::OPERATION eOperation)
+{
+    switch (eOperation)
+    {
+    case GEK3DVIDEO::STENCIL::KEEP:
+        return D3D11_STENCIL_OP_KEEP;
+
+    case GEK3DVIDEO::STENCIL::REPLACE:
+        return D3D11_STENCIL_OP_REPLACE;
+
+    case GEK3DVIDEO::STENCIL::INVERT:
+        return D3D11_STENCIL_OP_INVERT;
+
+    case GEK3DVIDEO::STENCIL::INCREASE:
+        return D3D11_STENCIL_OP_INCR;
+
+    case GEK3DVIDEO::STENCIL::INCREASE_SATURATED:
+        return D3D11_STENCIL_OP_INCR_SAT;
+
+    case GEK3DVIDEO::STENCIL::DECREASE:
+        return D3D11_STENCIL_OP_DECR;
+
+    case GEK3DVIDEO::STENCIL::DECREASE_SATURATED:
+        return D3D11_STENCIL_OP_DECR_SAT;
+
+    case GEK3DVIDEO::STENCIL::ZERO:
+    default:
+        return D3D11_STENCIL_OP_ZERO;
+    };
+};
+
+static D3D11_BLEND GetBlendSource(GEK3DVIDEO::BLEND::FACTOR::SOURCE eSource)
+{
+    switch (eSource)
+    {
+    case GEK3DVIDEO::BLEND::FACTOR::ONE:
+        return D3D11_BLEND_ONE;
+
+    case GEK3DVIDEO::BLEND::FACTOR::BLENDFACTOR:
+        return D3D11_BLEND_BLEND_FACTOR;
+
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_BLENDFACTOR:
+        return D3D11_BLEND_INV_BLEND_FACTOR;
+
+    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_COLOR:
+        return D3D11_BLEND_SRC_COLOR;
+
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SOURCE_COLOR:
+        return D3D11_BLEND_INV_SRC_COLOR;
+
+    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_ALPHA:
+        return D3D11_BLEND_SRC_ALPHA;
+
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SOURCE_ALPHA:
+        return D3D11_BLEND_INV_SRC_ALPHA;
+
+    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_ALPHA_SATURATE:
+        return D3D11_BLEND_SRC_ALPHA_SAT;
+
+    case GEK3DVIDEO::BLEND::FACTOR::DESTINATION_COLOR:
+        return D3D11_BLEND_DEST_COLOR;
+
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_COLOR:
+        return D3D11_BLEND_INV_DEST_COLOR;
+
+    case GEK3DVIDEO::BLEND::FACTOR::DESTINATION_ALPHA:
+        return D3D11_BLEND_DEST_ALPHA;
+
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_ALPHA:
+        return D3D11_BLEND_INV_DEST_ALPHA;
+
+    case GEK3DVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_COLOR:
+        return D3D11_BLEND_SRC1_COLOR;
+
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_COLOR:
+        return D3D11_BLEND_INV_SRC1_COLOR;
+
+    case GEK3DVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_ALPHA:
+        return D3D11_BLEND_SRC1_ALPHA;
+
+    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_ALPHA:
+        return D3D11_BLEND_INV_SRC1_ALPHA;
+
+    case GEK3DVIDEO::BLEND::FACTOR::ZERO:
+    default:
+        return D3D11_BLEND_ZERO;
+    };
+}
+
+static D3D11_BLEND_OP GetBlendOperation(GEK3DVIDEO::BLEND::OPERATION eOperation)
+{
+    switch (eOperation)
+    {
+    case GEK3DVIDEO::BLEND::SUBTRACT:
+        return D3D11_BLEND_OP_SUBTRACT;
+
+    case GEK3DVIDEO::BLEND::REVERSE_SUBTRACT:
+        return D3D11_BLEND_OP_REV_SUBTRACT;
+
+    case GEK3DVIDEO::BLEND::MINIMUM:
+        return D3D11_BLEND_OP_MIN;
+
+    case GEK3DVIDEO::BLEND::MAXIMUM:
+        return D3D11_BLEND_OP_MAX;
+
+    case GEK3DVIDEO::BLEND::ADD:
+    default:
+        return D3D11_BLEND_OP_ADD;
+    };
+};
+
 class CGEKVideoComputeContextSystem : public IGEK3DVideoContextSystem
 {
 private:
@@ -1431,68 +1595,6 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES 
     return hRetVal;
 }
 
-static D3D11_COMPARISON_FUNC GetComparisonFunction(GEK3DVIDEO::COMPARISON::FUNCTION eFunction)
-{
-    switch (eFunction)
-    {
-    case GEK3DVIDEO::COMPARISON::NEVER:
-        return D3D11_COMPARISON_NEVER;
-
-    case GEK3DVIDEO::COMPARISON::EQUAL:
-        return D3D11_COMPARISON_EQUAL;
-
-    case GEK3DVIDEO::COMPARISON::NOT_EQUAL:
-        return D3D11_COMPARISON_NOT_EQUAL;
-
-    case GEK3DVIDEO::COMPARISON::LESS:
-        return D3D11_COMPARISON_LESS;
-
-    case GEK3DVIDEO::COMPARISON::LESS_EQUAL:
-        return D3D11_COMPARISON_LESS_EQUAL;
-
-    case GEK3DVIDEO::COMPARISON::GREATER:
-        return D3D11_COMPARISON_GREATER;
-
-    case GEK3DVIDEO::COMPARISON::GREATER_EQUAL:
-        return D3D11_COMPARISON_GREATER_EQUAL;
-
-    case GEK3DVIDEO::COMPARISON::ALWAYS:
-    default:
-        return D3D11_COMPARISON_ALWAYS;
-    };
-}
-
-static D3D11_STENCIL_OP GetStencilOperation(GEK3DVIDEO::STENCIL::OPERATION eOperation)
-{
-    switch (eOperation)
-    {
-    case GEK3DVIDEO::STENCIL::KEEP:
-        return D3D11_STENCIL_OP_KEEP;
-
-    case GEK3DVIDEO::STENCIL::REPLACE:
-        return D3D11_STENCIL_OP_REPLACE;
-
-    case GEK3DVIDEO::STENCIL::INVERT:
-        return D3D11_STENCIL_OP_INVERT;
-
-    case GEK3DVIDEO::STENCIL::INCREASE:
-        return D3D11_STENCIL_OP_INCR;
-
-    case GEK3DVIDEO::STENCIL::INCREASE_SATURATED:
-        return D3D11_STENCIL_OP_INCR_SAT;
-
-    case GEK3DVIDEO::STENCIL::DECREASE:
-        return D3D11_STENCIL_OP_DECR;
-
-    case GEK3DVIDEO::STENCIL::DECREASE_SATURATED:
-        return D3D11_STENCIL_OP_DECR_SAT;
-
-    case GEK3DVIDEO::STENCIL::ZERO:
-    default:
-        return D3D11_STENCIL_OP_ZERO;
-    };
-};
-
 STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
@@ -1538,86 +1640,6 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &k
 
     return hRetVal;
 }
-
-static D3D11_BLEND GetBlendSource(GEK3DVIDEO::BLEND::FACTOR::SOURCE eSource)
-{
-    switch (eSource)
-    {
-    case GEK3DVIDEO::BLEND::FACTOR::ONE:
-        return D3D11_BLEND_ONE;
-
-    case GEK3DVIDEO::BLEND::FACTOR::BLENDFACTOR:
-        return D3D11_BLEND_BLEND_FACTOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_BLENDFACTOR:
-        return D3D11_BLEND_INV_BLEND_FACTOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_COLOR:
-        return D3D11_BLEND_SRC_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SOURCE_COLOR:
-        return D3D11_BLEND_INV_SRC_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_ALPHA:
-        return D3D11_BLEND_SRC_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SOURCE_ALPHA:
-        return D3D11_BLEND_INV_SRC_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_ALPHA_SATURATE:
-        return D3D11_BLEND_SRC_ALPHA_SAT;
-
-    case GEK3DVIDEO::BLEND::FACTOR::DESTINATION_COLOR:
-        return D3D11_BLEND_DEST_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_COLOR:
-        return D3D11_BLEND_INV_DEST_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::DESTINATION_ALPHA:
-        return D3D11_BLEND_DEST_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_ALPHA:
-        return D3D11_BLEND_INV_DEST_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_COLOR:
-        return D3D11_BLEND_SRC1_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_COLOR:
-        return D3D11_BLEND_INV_SRC1_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_ALPHA:
-        return D3D11_BLEND_SRC1_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_ALPHA:
-        return D3D11_BLEND_INV_SRC1_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::ZERO:
-    default:
-        return D3D11_BLEND_ZERO;
-    };
-}
-
-static D3D11_BLEND_OP GetBlendOperation(GEK3DVIDEO::BLEND::OPERATION eOperation)
-{
-    switch (eOperation)
-    {
-    case GEK3DVIDEO::BLEND::SUBTRACT:
-        return D3D11_BLEND_OP_SUBTRACT;
-
-    case GEK3DVIDEO::BLEND::REVERSE_SUBTRACT:
-        return D3D11_BLEND_OP_REV_SUBTRACT;
-
-    case GEK3DVIDEO::BLEND::MINIMUM:
-        return D3D11_BLEND_OP_MIN;
-
-    case GEK3DVIDEO::BLEND::MAXIMUM:
-        return D3D11_BLEND_OP_MAX;
-
-    case GEK3DVIDEO::BLEND::ADD:
-    default:
-        return D3D11_BLEND_OP_ADD;
-    };
-};
 
 STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates)
 {
@@ -1715,6 +1737,79 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLE
     {
         hRetVal = E_OUTOFMEMORY;
         CComPtr<CGEKVideoBlendStates> spStates(new CGEKVideoBlendStates(spBlendStates));
+        if (spStates)
+        {
+            hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
+        }
+    }
+
+    return hRetVal;
+}
+
+STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates)
+{
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
+    REQUIRE_RETURN(ppStates, E_INVALIDARG);
+
+    D3D11_SAMPLER_DESC kSamplerStates;
+    kSamplerStates.AddressU = GetAddressMode(kStates.m_eAddressU);
+    kSamplerStates.AddressV = GetAddressMode(kStates.m_eAddressV);
+    kSamplerStates.AddressW = GetAddressMode(kStates.m_eAddressW);
+    kSamplerStates.MipLODBias = kStates.m_nMipLODBias;
+    kSamplerStates.MaxAnisotropy = kStates.m_nMaxAnisotropy;
+    kSamplerStates.ComparisonFunc = GetComparisonFunction(kStates.m_eComparison);
+    kSamplerStates.BorderColor[0] = kStates.m_nBorderColor.r;
+    kSamplerStates.BorderColor[1] = kStates.m_nBorderColor.g;
+    kSamplerStates.BorderColor[2] = kStates.m_nBorderColor.b;
+    kSamplerStates.BorderColor[3] = kStates.m_nBorderColor.a;
+    kSamplerStates.MinLOD = kStates.m_nMinLOD;
+    kSamplerStates.MaxLOD = kStates.m_nMaxLOD;
+    switch (kStates.m_eFilter)
+    {
+    case GEK3DVIDEO::FILTER::MIN_MAG_POINT_MIP_LINEAR:
+        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+        break;
+
+    case GEK3DVIDEO::FILTER::MIN_POINT_MAG_LINEAR_MIP_POINT:
+        kSamplerStates.Filter = D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+        break;
+
+    case GEK3DVIDEO::FILTER::MIN_POINT_MAG_MIP_LINEAR:
+        kSamplerStates.Filter = D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
+        break;
+
+    case GEK3DVIDEO::FILTER::MIN_LINEAR_MAG_MIP_POINT:
+        kSamplerStates.Filter = D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+        break;
+
+    case GEK3DVIDEO::FILTER::MIN_LINEAR_MAG_POINT_MIP_LINEAR:
+        kSamplerStates.Filter = D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+        break;
+
+    case GEK3DVIDEO::FILTER::MIN_MAG_LINEAR_MIP_POINT:
+        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+        break;
+
+    case GEK3DVIDEO::FILTER::MIN_MAG_MIP_LINEAR:
+        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        break;
+
+    case GEK3DVIDEO::FILTER::ANISOTROPIC:
+        kSamplerStates.Filter = D3D11_FILTER_ANISOTROPIC;
+        break;
+
+    case GEK3DVIDEO::FILTER::MIN_MAG_MIP_POINT:
+    default:
+        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+        break;
+    };
+
+    CComPtr<ID3D11SamplerState> spSamplerStates;
+    HRESULT hRetVal = m_spDevice->CreateSamplerState(&kSamplerStates, &spSamplerStates);
+    if (spSamplerStates)
+    {
+        hRetVal = E_OUTOFMEMORY;
+        CComPtr<CGEKVideoSamplerStates> spStates(new CGEKVideoSamplerStates(spSamplerStates));
         if (spStates)
         {
             hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
@@ -2875,101 +2970,6 @@ STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, UINT32 nFlags, IGEK
                     }
                 }
             }
-        }
-    }
-
-    return hRetVal;
-}
-
-static D3D11_TEXTURE_ADDRESS_MODE GetAddressMode(GEK3DVIDEO::ADDRESS::MODE eMode)
-{
-    switch (eMode)
-    {
-    case GEK3DVIDEO::ADDRESS::WRAP:
-        return D3D11_TEXTURE_ADDRESS_WRAP;
-
-    case GEK3DVIDEO::ADDRESS::MIRROR:
-        return D3D11_TEXTURE_ADDRESS_MIRROR;
-
-    case GEK3DVIDEO::ADDRESS::MIRROR_ONCE:
-        return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
-
-    case GEK3DVIDEO::ADDRESS::BORDER:
-        return D3D11_TEXTURE_ADDRESS_BORDER;
-
-    case GEK3DVIDEO::ADDRESS::CLAMP:
-    default:
-        return D3D11_TEXTURE_ADDRESS_CLAMP;
-    };
-};
-
-STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates)
-{
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppStates, E_INVALIDARG);
-
-    D3D11_SAMPLER_DESC kSamplerStates;
-    kSamplerStates.AddressU = GetAddressMode(kStates.m_eAddressU);
-    kSamplerStates.AddressV = GetAddressMode(kStates.m_eAddressV);
-    kSamplerStates.AddressW = GetAddressMode(kStates.m_eAddressW);
-    kSamplerStates.MipLODBias = kStates.m_nMipLODBias;
-    kSamplerStates.MaxAnisotropy = kStates.m_nMaxAnisotropy;
-    kSamplerStates.ComparisonFunc = GetComparisonFunction(kStates.m_eComparison);
-    kSamplerStates.BorderColor[0] = kStates.m_nBorderColor.r;
-    kSamplerStates.BorderColor[1] = kStates.m_nBorderColor.g;
-    kSamplerStates.BorderColor[2] = kStates.m_nBorderColor.b;
-    kSamplerStates.BorderColor[3] = kStates.m_nBorderColor.a;
-    kSamplerStates.MinLOD = kStates.m_nMinLOD;
-    kSamplerStates.MaxLOD = kStates.m_nMaxLOD;
-    switch (kStates.m_eFilter)
-    {
-    case GEK3DVIDEO::FILTER::MIN_MAG_POINT_MIP_LINEAR:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_POINT_MAG_LINEAR_MIP_POINT:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_POINT_MAG_MIP_LINEAR:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_LINEAR_MAG_MIP_POINT:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_LINEAR_MAG_POINT_MIP_LINEAR:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_MAG_LINEAR_MIP_POINT:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_MAG_MIP_LINEAR:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-        break;
-
-    case GEK3DVIDEO::FILTER::ANISOTROPIC:
-        kSamplerStates.Filter = D3D11_FILTER_ANISOTROPIC;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_MAG_MIP_POINT:
-    default:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-        break;
-    };
-
-    CComPtr<ID3D11SamplerState> spSamplerStates;
-    HRESULT hRetVal = m_spDevice->CreateSamplerState(&kSamplerStates, &spSamplerStates);
-    if (spSamplerStates)
-    {
-        hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKVideoSamplerStates> spStates(new CGEKVideoSamplerStates(spSamplerStates));
-        if (spStates)
-        {
-            hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
         }
     }
 

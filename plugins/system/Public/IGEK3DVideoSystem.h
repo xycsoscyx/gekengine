@@ -482,6 +482,7 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF
     STDMETHOD(CreateDepthStates)                        (THIS_ const GEK3DVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates) PURE;
     STDMETHOD(CreateBlendStates)                        (THIS_ const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates) PURE;
     STDMETHOD(CreateBlendStates)                        (THIS_ const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates, IUnknown **ppStates) PURE;
+    STDMETHOD(CreateSamplerStates)                      (THIS_ const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates) PURE;
 
     STDMETHOD(CreateRenderTarget)                       (THIS_ UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IGEK3DVideoTexture **ppTarget) PURE;
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget) PURE;
@@ -502,7 +503,6 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF
     STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEK3DVideoTexture **ppTexture) PURE;
     STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect = nullptr) PURE;
     STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, UINT32 nFlags, IGEK3DVideoTexture **ppTexture) PURE;
-    STDMETHOD(CreateSamplerStates)                      (THIS_ const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates) PURE;
 
     STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor) PURE;
     STDMETHOD_(void, ClearDefaultDepthStencilTarget)    (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;

@@ -100,6 +100,7 @@ public:
     STDMETHOD(CreateDepthStates)                        (THIS_ const GEK3DVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates);
     STDMETHOD(CreateBlendStates)                        (THIS_ const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates);
     STDMETHOD(CreateBlendStates)                        (THIS_ const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates, IUnknown **ppStates);
+    STDMETHOD(CreateSamplerStates)                      (THIS_ const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates);
     STDMETHOD(CreateRenderTarget)                       (THIS_ UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IGEK3DVideoTexture **ppTarget);
     STDMETHOD(CreateDepthTarget)                        (THIS_ UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget);
     STDMETHOD(CreateBuffer)                             (THIS_ UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEK3DVideoBuffer **ppBuffer, LPCVOID pData = nullptr);
@@ -115,7 +116,6 @@ public:
     STDMETHOD(CreateTexture)                            (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEK3DVideoTexture **ppTexture);
     STDMETHOD_(void, UpdateTexture)                     (THIS_ IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect);
     STDMETHOD(LoadTexture)                              (THIS_ LPCWSTR pFileName, UINT32 nFlags, IGEK3DVideoTexture **ppTexture);
-    STDMETHOD(CreateSamplerStates)                      (THIS_ const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates);
     STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor);
     STDMETHOD_(void, ClearDefaultDepthStencilTarget)    (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil);
     STDMETHOD_(void, SetDefaultTargets)                 (THIS_ IGEK3DVideoContext *pContext = nullptr, IUnknown *pDepth = nullptr);

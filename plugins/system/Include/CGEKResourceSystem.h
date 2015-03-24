@@ -36,6 +36,19 @@ public:
     STDMETHOD_(GEKRESOURCEID, LoadTexture)              (THIS_ LPCWSTR pFileName, UINT32 nFlags);
     STDMETHOD_(void, SetResource)                       (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nIndex, const GEKRESOURCEID &nResourceID);
     STDMETHOD_(void, SetUnorderedAccess)                (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, const GEKRESOURCEID &nResourceID);
+    STDMETHOD_(GEKRESOURCEID, LoadComputeProgram)       (THIS_ LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr);
+    STDMETHOD_(GEKRESOURCEID, LoadVertexProgram)        (THIS_ LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines = nullptr);
+    STDMETHOD_(GEKRESOURCEID, LoadGeometryProgram)      (THIS_ LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr);
+    STDMETHOD_(GEKRESOURCEID, LoadPixelProgram)         (THIS_ LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr);
+    STDMETHOD_(void, SetProgram)                        (THIS_ IGEK3DVideoContextSystem *pSystem, const GEKRESOURCEID &nResourceID);
+    STDMETHOD_(GEKRESOURCEID, CreateRenderStates)       (THIS_ const GEK3DVIDEO::RENDERSTATES &kStates);
+    STDMETHOD_(GEKRESOURCEID, CreateDepthStates)        (THIS_ const GEK3DVIDEO::DEPTHSTATES &kStates);
+    STDMETHOD_(GEKRESOURCEID, CreateBlendStates)        (THIS_ const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates);
+    STDMETHOD_(GEKRESOURCEID, CreateBlendStates)        (THIS_ const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates);
+    STDMETHOD_(void, SetRenderStates)                   (THIS_ IGEK3DVideoContext *pContext, const GEKRESOURCEID &nResourceID);
+    STDMETHOD_(void, SetDepthStates)                    (THIS_ IGEK3DVideoContext *pContext, UINT32 nStencilReference, const GEKRESOURCEID &nResourceID);
+    STDMETHOD_(void, SetBlendStates)                    (THIS_ IGEK3DVideoContext *pContext, const float4 &nBlendFactor, UINT32 nMask, const GEKRESOURCEID &nResourceID);
+    STDMETHOD_(void, SetSamplerStates)                  (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, const GEKRESOURCEID &nResourceID);
 
     // IGEK3DVideoObserver
     STDMETHOD_(void, OnResizeBegin)                     (THIS);
