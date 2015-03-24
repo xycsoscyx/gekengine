@@ -61,10 +61,10 @@ class CGEKVideoSystem : public CGEKVideoContext
 private:
     bool m_bWindowed;
     CComPtr<ID3D11Device> m_spDevice;
+    CComPtr<IDXGISwapChain> m_spSwapChain;
     CComPtr<IGEK3DVideoTexture> m_spDefaultTarget;
     CComPtr<ID3D11RenderTargetView> m_spRenderTargetView;
     CComPtr<ID3D11DepthStencilView> m_spDepthStencilView;
-    CComPtr<IDXGISwapChain> m_spSwapChain;
 
     CComPtr<ID2D1Factory1> m_spD2DFactory;
     CComPtr<ID2D1DeviceContext> m_spD2DDeviceContext;

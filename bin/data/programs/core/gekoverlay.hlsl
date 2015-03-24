@@ -24,13 +24,10 @@ PIXEL MainVertexProgram(in VERTEX kVertex)
     return kPixel;
 }
 
-Texture2D     gs_pOutputBuffer          : register(t0);
-Texture2D     gs_pOverlayBuffer         : register(t1);
+Texture2D     gs_pBuffer                : register(t0);
 
 float4 MainPixelProgram(PIXEL kInput) : SV_TARGET
 {
-    float4 nScreen = gs_pOutputBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-    float4 nOverlay = gs_pOverlayBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-    return ((nScreen * (1.0f - nOverlay.a)) + (nOverlay * nOverlay.a));
+    return gs_pBuffer.Sample(gs_pPointSampler, kInput.texcoord);
 }
 

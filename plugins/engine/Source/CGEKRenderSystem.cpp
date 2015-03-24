@@ -84,7 +84,7 @@ CGEKRenderSystem::CGEKRenderSystem(void)
     , m_pSceneManager(nullptr)
     , m_pCurrentPass(nullptr)
     , m_pCurrentFilter(nullptr)
-    , m_nNumLightInstances(254)
+    , m_nNumLightInstances(500)
 {
 }
 
@@ -1086,8 +1086,8 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             spContext->GetComputeSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
 
             spContext->GetPixelSystem()->SetConstantBuffer(0, m_spEngineBuffer);
-            spContext->GetPixelSystem()->SetConstantBuffer(1, m_spMaterialBuffer);
-            spContext->GetPixelSystem()->SetConstantBuffer(2, m_spLightCountBuffer);
+            spContext->GetPixelSystem()->SetConstantBuffer(1, m_spLightCountBuffer);
+            spContext->GetPixelSystem()->SetConstantBuffer(2, m_spMaterialBuffer);
 
             m_pCurrentPass = &m_aPasses[kViewer.pass];
             m_pCurrentPass->m_nCurrentBuffer = 0;
@@ -1123,7 +1123,6 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             spContext->GetGeometrySystem()->SetProgram(nullptr);
             spContext->GetPixelSystem()->SetProgram(m_spPixelProgram);
             spContext->GetPixelSystem()->SetResource(0, m_pCurrentPass->m_aBuffers[m_pCurrentPass->m_nCurrentBuffer]);
-            SetResource(spContext->GetPixelSystem(), 1, nullptr);
             spContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
             spContext->SetIndexBuffer(0, m_spIndexBuffer);
             spContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);

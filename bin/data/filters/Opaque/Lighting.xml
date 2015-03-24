@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <filter mode="lighting">
     <defines>
-        <define name="gs_nLightTileSize" value="16" />
-        <define name="gs_nMaxLights" value="254" />
+        <define name="gs_nLightTileSize" value="32" />
+        <define name="gs_nMaxLights" value="500" />
     </defines>
 
     <blend>
@@ -25,9 +25,9 @@
     
     <pixel>
         <resources>
-            <resource stage="1" source="Opaque.Albedo" />
-            <resource stage="2" source="Opaque.Normal" />
-            <resource stage="3" source="Opaque.Depth" />
+            <resource stage="1" source="Opaque.Depth" />
+            <resource stage="2" source="Opaque.Albedo" />
+            <resource stage="3" source="Opaque.Normal" />
             <resource stage="4" source="Opaque.Info" />
             <resource stage="5" source="Opaque.TileIndices" />
         </resources>

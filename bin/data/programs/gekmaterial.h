@@ -1,4 +1,4 @@
-cbuffer MATERIALBUFFER                  : register(b1)
+cbuffer MATERIALBUFFER                  : register(b2)
 {
     float4  gs_nMaterialColor           : packoffset(c0);
     bool    gs_bMaterialFullBright      : packoffset(c1);

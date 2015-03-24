@@ -3,16 +3,18 @@
 #include "..\gekutility.h"
 #include "..\geklights.h"
 
-#ifdef _TYPE_COMPUTE
-Texture2D<float> gs_pDepthBuffer        : register(t1);
+groupshared uint    g_nTileMinDepth;
+groupshared uint    g_nTileMaxDepth;
+groupshared uint    g_nNumTileLights;
+groupshared uint    g_aTileLightList[gs_nMaxLights];
+groupshared float4  g_aTileFrustum[6];
+RWBuffer<uint>      g_pTileOutput           : register(u0);
 
-RWBuffer<uint> g_pTileOutput            : register(u0);
-
-groupshared uint g_nTileMinDepth;
-groupshared uint g_nTileMaxDepth;
-groupshared uint g_nNumTileLights;
-groupshared uint g_aTileLightList[gs_nMaxLights];
-groupshared float4 g_aTileFrustum[6];
+Texture2D<float>    gs_pDepthBuffer         : register(t1);
+Texture2D           gs_pAlbedoBuffer        : register(t2);
+Texture2D<half2>    gs_pNormalBuffer        : register(t3);
+Texture2D           gs_pInfoBuffer          : register(t4);
+Buffer<uint>        gs_pTileIndices         : register(t5);
 
 [numthreads(gs_nLightTileSize, gs_nLightTileSize, 1)]
 void MainComputeProgram(uint3 nScreenPixel : SV_DispatchThreadID, uint3 nTileID : SV_GroupID, uint3 nTilePixelID : SV_GroupThreadID, uint nTilePixelIndex : SV_GroupIndex)
@@ -44,17 +46,17 @@ void MainComputeProgram(uint3 nScreenPixel : SV_DispatchThreadID, uint3 nTileID 
         float2 nSize;
         gs_pDepthBuffer.GetDimensions(nSize.x, nSize.y);
         float2 nTileScale = nSize * rcp(float(2 * gs_nLightTileSize));
-            float2 nTileBias = nTileScale - float2(nTileID.xy);
+        float2 nTileBias = nTileScale - float2(nTileID.xy);
 
-            float3 nXPlane = float3(gs_nProjectionMatrix[0][0] * nTileScale.x, 0.0f, nTileBias.x);
-            float3 nYPlane = float3(0.0f, -gs_nProjectionMatrix[1][1] * nTileScale.y, nTileBias.y);
-            float3 nZPlane = float3(0.0f, 0.0f, 1.0f);
+        float3 nXPlane = float3(gs_nProjectionMatrix[0][0] * nTileScale.x, 0.0f, nTileBias.x);
+        float3 nYPlane = float3(0.0f, -gs_nProjectionMatrix[1][1] * nTileScale.y, nTileBias.y);
+        float3 nZPlane = float3(0.0f, 0.0f, 1.0f);
 
-            g_aTileFrustum[0] = float4(normalize(nZPlane - nXPlane), 0.0f),
-            g_aTileFrustum[1] = float4(normalize(nZPlane + nXPlane), 0.0f),
-            g_aTileFrustum[2] = float4(normalize(nZPlane - nYPlane), 0.0f),
-            g_aTileFrustum[3] = float4(normalize(nZPlane + nYPlane), 0.0f),
-            g_aTileFrustum[4] = float4(0.0f, 0.0f, 1.0f, -nMinTileDepth);
+        g_aTileFrustum[0] = float4(normalize(nZPlane - nXPlane), 0.0f),
+        g_aTileFrustum[1] = float4(normalize(nZPlane + nXPlane), 0.0f),
+        g_aTileFrustum[2] = float4(normalize(nZPlane - nYPlane), 0.0f),
+        g_aTileFrustum[3] = float4(normalize(nZPlane + nYPlane), 0.0f),
+        g_aTileFrustum[4] = float4(0.0f, 0.0f, 1.0f, -nMinTileDepth);
         g_aTileFrustum[5] = float4(0.0f, 0.0f, -1.0f, nMaxTileDepth);
     }
 
@@ -92,12 +94,6 @@ void MainComputeProgram(uint3 nScreenPixel : SV_DispatchThreadID, uint3 nTileID 
         g_pTileOutput[nBufferIndex] = nLightIndex;
     }
 }
-#else
-Texture2D           gs_pAlbedoBuffer        : register(t1);
-Texture2D<half2>    gs_pNormalBuffer        : register(t2);
-Texture2D<float>    gs_pDepthBuffer         : register(t3);
-Texture2D           gs_pInfoBuffer          : register(t4);
-Buffer<uint>        gs_pTileIndices         : register(t5);
 
 // Diffuse & Specular Term
 // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
@@ -217,4 +213,3 @@ float4 MainPixelProgram(in INPUT kInput) : SV_TARGET0
 
     return float4(nLighting, nAlbedo.a);
 }
-#endif
