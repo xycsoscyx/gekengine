@@ -12,38 +12,101 @@ REGISTER_CLASS(CGEKResourceSystem);
 
 void CGEKResourceSystem::OnLoadTexture(CStringW strFileName, UINT32 nFlags, GEKRESOURCEID nResourceID)
 {
+    CComPtr<IGEK3DVideoTexture> spTexture;
+    m_pVideoSystem->LoadTexture(strFileName, nFlags, &spTexture);
+    if (spTexture)
+    {
+        m_aResourceMap[CGEKBlob(strFileName, nFlags)] = nResourceID;
+        m_aResources[nResourceID] = spTexture;
+    }
 }
 
 void CGEKResourceSystem::OnLoadComputeProgram(CStringW strFileName, CStringA strEntry, std::unordered_map<CStringA, CStringA> aDefines, GEKRESOURCEID nResourceID)
 {
+    CComPtr<IUnknown> spProgram;
+    m_pVideoSystem->LoadComputeProgram(strFileName, strEntry, &spProgram, &aDefines);
+    if (spProgram)
+    {
+        m_aResourceMap[CGEKBlob(strFileName, strEntry)] = nResourceID;
+        m_aResources[nResourceID] = spProgram;
+    }
 }
 
 void CGEKResourceSystem::OnLoadVertexProgram(CStringW strFileName, CStringA strEntry, std::vector<GEK3DVIDEO::INPUTELEMENT> aLayout, std::unordered_map<CStringA, CStringA> aDefines, GEKRESOURCEID nResourceID)
 {
+    CComPtr<IUnknown> spProgram;
+    m_pVideoSystem->LoadVertexProgram(strFileName, strEntry, aLayout, &spProgram, &aDefines);
+    if (spProgram)
+    {
+        m_aResourceMap[CGEKBlob(strFileName, strEntry)] = nResourceID;
+        m_aResources[nResourceID] = spProgram;
+    }
 }
 
 void CGEKResourceSystem::OnLoadGeometryProgram(CStringW strFileName, CStringA strEntry, std::unordered_map<CStringA, CStringA> aDefines, GEKRESOURCEID nResourceID)
 {
+    CComPtr<IUnknown> spProgram;
+    m_pVideoSystem->LoadGeometryProgram(strFileName, strEntry, &spProgram, &aDefines);
+    if (spProgram)
+    {
+        m_aResourceMap[CGEKBlob(strFileName, strEntry)] = nResourceID;
+        m_aResources[nResourceID] = spProgram;
+    }
 }
 
 void CGEKResourceSystem::OnLoadPixelProgram(CStringW strFileName, CStringA strEntry, std::unordered_map<CStringA, CStringA> aDefines, GEKRESOURCEID nResourceID)
 {
+    CComPtr<IUnknown> spProgram;
+    m_pVideoSystem->LoadPixelProgram(strFileName, strEntry, &spProgram, &aDefines);
+    if (spProgram)
+    {
+        m_aResourceMap[CGEKBlob(strFileName, strEntry)] = nResourceID;
+        m_aResources[nResourceID] = spProgram;
+    }
 }
 
 void CGEKResourceSystem::OnCreateRenderStates(GEK3DVIDEO::RENDERSTATES kStates, GEKRESOURCEID nResourceID)
 {
+    CComPtr<IUnknown> spStates;
+    m_pVideoSystem->CreateRenderStates(kStates, &spStates);
+    if (spStates)
+    {
+        m_aResourceMap[CGEKBlob(&kStates, sizeof(kStates))] = nResourceID;
+        m_aResources[nResourceID] = spStates;
+    }
 }
 
 void CGEKResourceSystem::OnCreateDepthStates(GEK3DVIDEO::DEPTHSTATES kStates, GEKRESOURCEID nResourceID)
 {
+    CComPtr<IUnknown> spStates;
+    m_pVideoSystem->CreateDepthStates(kStates, &spStates);
+    if (spStates)
+    {
+        m_aResourceMap[CGEKBlob(&kStates, sizeof(kStates))] = nResourceID;
+        m_aResources[nResourceID] = spStates;
+    }
 }
 
 void CGEKResourceSystem::OnCreateUnifiedBlendStates(GEK3DVIDEO::UNIFIEDBLENDSTATES kStates, GEKRESOURCEID nResourceID)
 {
+    CComPtr<IUnknown> spStates;
+    m_pVideoSystem->CreateBlendStates(kStates, &spStates);
+    if (spStates)
+    {
+        m_aResourceMap[CGEKBlob(&kStates, sizeof(kStates))] = nResourceID;
+        m_aResources[nResourceID] = spStates;
+    }
 }
 
 void CGEKResourceSystem::OnCreateIndependentBlendStates(GEK3DVIDEO::INDEPENDENTBLENDSTATES kStates, GEKRESOURCEID nResourceID)
 {
+    CComPtr<IUnknown> spStates;
+    m_pVideoSystem->CreateBlendStates(kStates, &spStates);
+    if (spStates)
+    {
+        m_aResourceMap[CGEKBlob(&kStates, sizeof(kStates))] = nResourceID;
+        m_aResources[nResourceID] = spStates;
+    }
 }
 
 CGEKResourceSystem::CGEKResourceSystem(void)
