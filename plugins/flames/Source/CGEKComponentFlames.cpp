@@ -2,6 +2,7 @@
 #include "GEKSystemCLSIDs.h"
 #include "GEKEngineCLSIDs.h"
 #include "GEKEngine.h"
+#include "GEKAPI.h"
 #include <random>
 #include <ppl.h>
 
@@ -65,54 +66,36 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKComponentSystemFlames)
 
 CGEKComponentSystemFlames::CGEKComponentSystemFlames(void)
-    : m_pRenderManager(nullptr)
-    , m_pSceneManager(nullptr)
-    , m_pVideoSystem(nullptr)
-    , m_pMaterialManager(nullptr)
-    , m_pProgramManager(nullptr)
+    : m_pEngine(nullptr)
 {
 }
 
 CGEKComponentSystemFlames::~CGEKComponentSystemFlames(void)
 {
+    CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
+    CGEKObservable::RemoveObserver(m_pEngine->GetRenderManager(), (IGEKRenderObserver *)GetUnknown());
 }
 
-STDMETHODIMP CGEKComponentSystemFlames::Initialize(void)
+STDMETHODIMP CGEKComponentSystemFlames::Initialize(IGEKEngineCore *pEngine)
 {
-    HRESULT hRetVal = E_FAIL;
-    m_pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
-    m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
-    m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderSystem);
-    m_pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
-    m_pMaterialManager = GetContext()->GetCachedClass<IGEKMaterialManager>(CLSID_GEKRenderSystem);
-    if (m_pRenderManager && m_pSceneManager && m_pVideoSystem && m_pMaterialManager && m_pProgramManager)
+    REQUIRE_RETURN(pEngine, E_INVALIDARG);
+
+    m_pEngine = pEngine;
+
+    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetRenderManager(), (IGEKRenderObserver *)GetUnknown());
+    if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(m_pRenderManager, (IGEKRenderObserver *)GetUnknown());
+        hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
+        hRetVal = m_pEngine->GetProgramManager()->LoadProgram(L"flames", &m_spVertexProgram);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = E_FAIL;
-        CComQIPtr<IGEKProgramManager> spProgramManager(m_pRenderManager);
-        if (spProgramManager != nullptr)
-        {
-            hRetVal = spProgramManager->LoadProgram(L"flames", &m_spVertexProgram);
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = E_FAIL;
-        IGEK3DVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
-        if (pVideoSystem != nullptr)
-        {
-            hRetVal = pVideoSystem->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
-        }
+        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -125,7 +108,7 @@ STDMETHODIMP CGEKComponentSystemFlames::Initialize(void)
             float2(-1.0f,  1.0f), float2(0.0f, 1.0f),
         };
 
-        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float4), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
+        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(float4), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -136,16 +119,10 @@ STDMETHODIMP CGEKComponentSystemFlames::Initialize(void)
             0, 2, 3,
         };
 
-        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), 6, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
+        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(UINT16), 6, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
     }
 
     return hRetVal;
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemFlames::Destroy(void)
-{
-    CGEKObservable::RemoveObserver(m_pRenderManager, (IGEKRenderObserver *)GetUnknown());
-    CGEKObservable::RemoveObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
 }
 
 STDMETHODIMP CGEKComponentSystemFlames::OnLoadEnd(HRESULT hRetVal)
@@ -169,14 +146,12 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnEntityDestroyed(const GEKENTITY
 
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnComponentAdded(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
-
     if (nComponentID == GET_COMPONENT_ID(flames))
     {
-        if (m_pSceneManager->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
+        if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
         {
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
-            auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(nEntityID, GET_COMPONENT_ID(flames));
+            auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
+            auto &kFlames = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(flames)>(nEntityID, GET_COMPONENT_ID(flames));
 
             EMITTER &kEmitter = m_aEmitters[nEntityID];
             kEmitter.minimum = kTransform.position;
@@ -231,8 +206,8 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnUpdate(float nGameTime, float n
 {
     concurrency::parallel_for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair) -> void
     {
-        auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(kPair.first, GET_COMPONENT_ID(transform));
-        auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, GET_COMPONENT_ID(flames));
+        auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(kPair.first, GET_COMPONENT_ID(transform));
+        auto &kFlames = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, GET_COMPONENT_ID(flames));
 
         kPair.second.minimum = _INFINITY;
         kPair.second.maximum =-_INFINITY;
@@ -274,20 +249,18 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnRenderBegin(const GEKENTITYID &
 
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const GEKENTITYID &nViewerID, const frustum &nViewFrustum)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
-
     m_aVisible.clear();
     std::for_each(m_aEmitters.begin(), m_aEmitters.end(), [&](std::pair<const GEKENTITYID, EMITTER> &kPair) -> void
     {
         if (nViewFrustum.IsVisible(kPair.second))
         {
-            auto &kFlames = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, GET_COMPONENT_ID(flames));
+            auto &kFlames = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(flames)>(kPair.first, GET_COMPONENT_ID(flames));
 
             CComPtr<IUnknown> spMaterial;
-            m_pMaterialManager->LoadMaterial(kFlames.material, &spMaterial);
+            m_pEngine->GetMaterialManager()->LoadMaterial(kFlames.material, &spMaterial);
 
             CComPtr<IGEK3DVideoTexture> spGradient;
-            m_pMaterialManager->LoadTexture(L"%root%\\data\\gradients\\" + kFlames.gradient + L".dds", GEK3DVIDEO::TEXTURE::FORCE_1D, &spGradient);
+            m_pEngine->GetMaterialManager()->LoadTexture(L"%root%\\data\\gradients\\" + kFlames.gradient + L".dds", GEK3DVIDEO::TEXTURE::FORCE_1D, &spGradient);
 
             if (spMaterial && spGradient)
             {
@@ -318,7 +291,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(const GEKENTITYID &nV
 {
     REQUIRE_VOID_RETURN(pContext);
 
-    m_pProgramManager->EnableProgram(pContext, m_spVertexProgram);
+    m_pEngine->GetProgramManager()->EnableProgram(pContext, m_spVertexProgram);
     pContext->GetVertexSystem()->SetResource(0, m_spInstanceBuffer);
     pContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);
     pContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
@@ -326,7 +299,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnDrawScene(const GEKENTITYID &nV
 
     for (auto &kMaterial : m_aVisible)
     {
-        if (m_pMaterialManager->EnableMaterial(pContext, kMaterial.first.first))
+        if (m_pEngine->GetMaterialManager()->EnableMaterial(pContext, kMaterial.first.first))
         {
             pContext->GetVertexSystem()->SetResource(1, kMaterial.first.second);
 

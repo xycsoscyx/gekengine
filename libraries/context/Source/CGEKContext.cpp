@@ -105,27 +105,15 @@ STDMETHODIMP CGEKContext::CreateInstance(REFGUID kCLSID, REFIID kIID, LPVOID FAR
     REQUIRE_RETURN(ppObject, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
-    auto pCacheIterator = m_aCache.find(kCLSID);
-    if (pCacheIterator != m_aCache.end())
+    auto pIterator = m_aClasses.find(kCLSID);
+    if (pIterator != m_aClasses.end())
     {
-        hRetVal = (*pCacheIterator).second->QueryInterface(kIID, ppObject);
-    }
-    else
-    {
-        hRetVal = E_UNEXPECTED;
-        auto pIterator = m_aClasses.find(kCLSID);
-        if (pIterator != m_aClasses.end())
+        CComPtr<IGEKUnknown> spObject;
+        hRetVal = ((*pIterator).second)(&spObject);
+        if (SUCCEEDED(hRetVal) && spObject)
         {
-            CComPtr<IGEKUnknown> spObject;
-            hRetVal = ((*pIterator).second)(&spObject);
-            if (SUCCEEDED(hRetVal) && spObject)
-            {
-                hRetVal = spObject->RegisterContext(this);
-                if (SUCCEEDED(hRetVal))
-                {
-                    hRetVal = spObject->QueryInterface(kIID, ppObject);
-                }
-            }
+            spObject->RegisterContext(this);
+            hRetVal = spObject->QueryInterface(kIID, ppObject);
         }
     }
 
@@ -151,88 +139,6 @@ STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRES
                 }
             }
         };
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKContext::AddCachedClass(REFCLSID kCLSID, IUnknown * const pObject)
-{
-    REQUIRE_RETURN(pObject, E_INVALIDARG);
-
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aCache.find(kCLSID);
-    if (pIterator == m_aCache.end())
-    {
-        m_aCache.insert(std::make_pair(kCLSID, pObject));
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKContext::RemoveCachedClass(REFCLSID kCLSID)
-{
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aCache.find(kCLSID);
-    if (pIterator != m_aCache.end())
-    {
-        m_aCache.erase(pIterator);
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP_(IUnknown *) CGEKContext::GetCachedClass(REFCLSID kCLSID)
-{
-    auto pIterator = m_aCache.find(kCLSID);
-    if (pIterator != m_aCache.end())
-    {
-        return (*pIterator).second;
-    }
-
-    return nullptr;
-}
-
-STDMETHODIMP_(const IUnknown *) CGEKContext::GetCachedClass(REFCLSID kCLSID) const
-{
-    auto pIterator = m_aCache.find(kCLSID);
-    if (pIterator != m_aCache.end())
-    {
-        return (*pIterator).second;
-    }
-
-    return nullptr;
-}
-
-STDMETHODIMP CGEKContext::AddCachedObserver(REFCLSID kCLSID, IGEKObserver *pObserver)
-{
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aCache.find(kCLSID);
-    if (pIterator != m_aCache.end())
-    {
-        IGEKObservable *pObservable = dynamic_cast<IGEKObservable *>((*pIterator).second);
-        if (pObservable != nullptr)
-        {
-            hRetVal = pObservable->AddObserver(pObserver);
-        }
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKContext::RemoveCachedObserver(REFCLSID kCLSID, IGEKObserver *pObserver)
-{
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aCache.find(kCLSID);
-    if (pIterator != m_aCache.end())
-    {
-        IGEKObservable *pObservable = dynamic_cast<IGEKObservable *>((*pIterator).second);
-        if (pObservable != nullptr)
-        {
-            hRetVal = pObservable->RemoveObserver(pObserver);
-        }
     }
 
     return hRetVal;

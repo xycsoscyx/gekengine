@@ -49,5 +49,8 @@
     <ClInclude Include="..\..\api\IGEKProgramManager.h">
       <Filter>API Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\api\IGEKEngineCore.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

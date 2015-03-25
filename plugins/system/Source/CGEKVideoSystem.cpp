@@ -1307,17 +1307,6 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::Initialize(void)
-{
-    return GetContext()->AddCachedClass(CLSID_GEKVideoSystem, GetUnknown());
-}
-
-
-STDMETHODIMP_(void) CGEKVideoSystem::Destroy(void)
-{
-    GetContext()->RemoveCachedClass(CLSID_GEKVideoSystem);
-}
-
 STDMETHODIMP CGEKVideoSystem::Initialize(HWND hWindow, UINT32 nXSize, UINT32 nYSize, bool bWindowed)
 {
     m_bWindowed = bWindowed;

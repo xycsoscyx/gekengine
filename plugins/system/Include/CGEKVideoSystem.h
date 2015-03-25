@@ -82,10 +82,6 @@ public:
     virtual ~CGEKVideoSystem(void);
     DECLARE_UNKNOWN(CGEKVideoSystem);
     
-    // IGEKUnknown
-    STDMETHOD(Initialize)                               (THIS);
-    STDMETHOD_(void, Destroy)                           (THIS);
-
     // IGEK3DVideoSystem
     STDMETHOD(Initialize)                               (THIS_ HWND hWindow, UINT32 nXSize, UINT32 nYSize, bool bWindowed);
     STDMETHOD(Resize)                                   (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed);

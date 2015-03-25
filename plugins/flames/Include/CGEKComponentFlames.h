@@ -64,13 +64,10 @@ public:
     };
 
 private:
+    IGEKEngineCore *m_pEngine;
+
     CComPtr<IGEK3DVideoBuffer> m_spInstanceBuffer;
     CComPtr<IUnknown> m_spVertexProgram;
-    IGEKSceneManager *m_pSceneManager;
-    IGEKRenderManager *m_pRenderManager;
-    IGEK3DVideoSystem *m_pVideoSystem;
-    IGEKMaterialManager *m_pMaterialManager;
-    IGEKProgramManager *m_pProgramManager;
 
     CComPtr<IGEK3DVideoBuffer> m_spVertexBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
@@ -83,9 +80,8 @@ public:
     virtual ~CGEKComponentSystemFlames(void);
     DECLARE_UNKNOWN(CGEKComponentSystemFlames);
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)                       (THIS);
-    STDMETHOD_(void, Destroy)                   (THIS);
+    // IGEKComponentSystem
+    STDMETHOD(Initialize)                       (THIS_ IGEKEngineCore *pEngine);
 
     // IGEKSceneObserver
     STDMETHOD(OnLoadEnd)                        (THIS_ HRESULT hRetVal);

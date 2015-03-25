@@ -180,16 +180,6 @@ CGEKAudioSystem::~CGEKAudioSystem(void)
 {
 }
 
-STDMETHODIMP CGEKAudioSystem::Initialize(void)
-{
-    return GetContext()->AddCachedClass(CLSID_GEKAudioSystem, GetUnknown());
-}
-
-STDMETHODIMP_(void) CGEKAudioSystem::Destroy(void)
-{
-    GetContext()->RemoveCachedClass(CLSID_GEKAudioSystem);
-}
-
 STDMETHODIMP CGEKAudioSystem::Initialize(HWND hWindow)
 {
     REQUIRE_RETURN(hWindow, E_INVALIDARG);

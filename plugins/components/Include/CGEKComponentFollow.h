@@ -23,10 +23,9 @@ public:
     CGEKComponentSystemFollow(void);
     ~CGEKComponentSystemFollow(void);
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)                   (THIS);
-    STDMETHOD_(void, Destroy)               (THIS);
+    // IGEKComponentSystem
+    STDMETHOD(Initialize)                       (THIS_ IGEKEngineCore *pEngine);
 
     // IGEKSceneObserver
-    STDMETHOD_(void, OnUpdateEnd)           (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD_(void, OnUpdateEnd)               (THIS_ float nGameTime, float nFrameTime);
 };

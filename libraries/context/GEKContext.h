@@ -36,7 +36,6 @@ public:
         LONG nRefCount = InterlockedDecrement(&m_nRefCount);
         if (nRefCount == 0)
         {
-            Destroy();
             delete this;
         }
 
@@ -66,20 +65,9 @@ public:
         return hRetVal;
     }
 
-    STDMETHOD(RegisterContext)                  (THIS_ IGEKContext *pContext)
+    STDMETHOD_(void, RegisterContext)           (THIS_ IGEKContext *pContext)
     {
-        REQUIRE_RETURN(pContext, E_INVALIDARG);
         m_pContext = pContext;
-        return Initialize();
-    }
-
-    STDMETHOD(Initialize)                       (THIS)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD_(void, Destroy)                   (THIS)
-    {
     }
 
     STDMETHOD_(IGEKContext *, GetContext)       (THIS)

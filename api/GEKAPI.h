@@ -7,3 +7,4 @@
 #include "IGEKSceneManager.h"
 #include "IGEKRenderManager.h"
 #include "IGEKInputManager.h"
+#include "IGEKEngineCore.h"

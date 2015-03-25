@@ -105,6 +105,9 @@
     <ClInclude Include="Include\CGEKRenderMaterial.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\api\IGEKEngineCore.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

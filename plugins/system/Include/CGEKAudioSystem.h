@@ -25,10 +25,6 @@ public:
     virtual ~CGEKAudioSystem(void);
     DECLARE_UNKNOWN(CGEKAudioSystem)
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)               (THIS);
-    STDMETHOD_(void, Destroy)           (THIS);
-
     // IGEKAudioSystem
     STDMETHOD(Initialize)               (THIS_ HWND hWindow);
     STDMETHOD_(void, SetMasterVolume)   (THIS_ float nVolume);

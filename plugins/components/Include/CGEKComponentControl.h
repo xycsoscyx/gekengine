@@ -25,15 +25,14 @@ public:
     CGEKComponentSystemControl(void);
     ~CGEKComponentSystemControl(void);
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)                   (THIS);
-    STDMETHOD_(void, Destroy)               (THIS);
+    // IGEKComponentSystem
+    STDMETHOD(Initialize)                       (THIS_ IGEKEngineCore *pEngine);
 
     // IGEKInputObserver
-    STDMETHOD_(void, OnState)               (THIS_ LPCWSTR pName, bool bState);
-    STDMETHOD_(void, OnValue)               (THIS_ LPCWSTR pName, float nValue);
+    STDMETHOD_(void, OnState)                   (THIS_ LPCWSTR pName, bool bState);
+    STDMETHOD_(void, OnValue)                   (THIS_ LPCWSTR pName, float nValue);
 
     // IGEKSceneObserver
-    STDMETHOD_(void, OnFree)                (THIS);
-    STDMETHOD_(void, OnUpdateBegin)         (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD_(void, OnFree)                    (THIS);
+    STDMETHOD_(void, OnUpdateBegin)             (THIS_ float nGameTime, float nFrameTime);
 };

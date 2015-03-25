@@ -18,7 +18,6 @@ private:
     std::list<HMODULE> m_aModules;
     std::unordered_map<CLSID, std::function<HRESULT(IGEKUnknown **ppObject)>> m_aClasses;
     std::unordered_map<CLSID, std::vector<CLSID>> m_aTypedClasses;
-    std::unordered_map<CLSID, IUnknown *> m_aCache;
 
 public:
     CGEKContext(void);
@@ -30,10 +29,4 @@ public:
     STDMETHOD(Initialize)                           (THIS);
     STDMETHOD(CreateInstance)                       (THIS_ REFCLSID kCLSID, REFIID kIID, LPVOID FAR *ppObject);
     STDMETHOD(CreateEachType)                       (THIS_ REFCLSID kTypeCLSID, std::function<HRESULT(IUnknown *pObject)> OnCreate);
-    STDMETHOD(AddCachedClass)                       (THIS_ REFCLSID kCLSID, IUnknown * const pObject);
-    STDMETHOD(RemoveCachedClass)                    (THIS_ REFCLSID kCLSID);
-    STDMETHOD_(IUnknown *, GetCachedClass)          (THIS_ REFCLSID kCLSID);
-    STDMETHOD_(const IUnknown *, GetCachedClass)    (THIS_ REFCLSID kCLSID) const;
-    STDMETHOD(AddCachedObserver)                    (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver);
-    STDMETHOD(RemoveCachedObserver)                 (THIS_ REFCLSID kCLSID, IGEKObserver *pObserver);
 };

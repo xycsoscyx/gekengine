@@ -50,9 +50,8 @@ public:
     virtual ~CGEKComponentSystemSprite(void);
     DECLARE_UNKNOWN(CGEKComponentSystemSprite);
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)                       (THIS);
-    STDMETHOD_(void, Destroy)                   (THIS);
+    // IGEKComponentSystem
+    STDMETHOD(Initialize)                       (THIS_ IGEKEngineCore *pEngine);
 
     // IGEKSceneObserver
     STDMETHOD(OnLoadEnd)                        (THIS_ HRESULT hRetVal);

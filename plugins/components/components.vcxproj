@@ -111,6 +111,7 @@
     <ClInclude Include="..\..\api\GEKAPI.h" />
     <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
     <ClInclude Include="..\..\api\IGEKComponent.h" />
+    <ClInclude Include="..\..\api\IGEKEngineCore.h" />
     <ClInclude Include="..\..\api\IGEKInputManager.h" />
     <ClInclude Include="..\..\api\IGEKMaterialManager.h" />
     <ClInclude Include="..\..\api\IGEKProgramManager.h" />

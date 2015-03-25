@@ -49,5 +49,8 @@
     <ClInclude Include="Include\CGEKComponentFlames.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\api\IGEKEngineCore.h">
+      <Filter>API Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
