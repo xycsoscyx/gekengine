@@ -39,6 +39,20 @@ CGEKComponentSystemNewton::CGEKComponentSystemNewton(void)
 
 CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
 {
+    CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
+    if (m_pWorld != nullptr)
+    {
+        for (auto kPair : m_aCollisions)
+        {
+            NewtonDestroyCollision(kPair.second);
+        }
+
+        m_aBodies.clear();
+        m_aCollisions.clear();
+        m_aMaterials.clear();
+        NewtonDestroy(m_pWorld);
+        m_pWorld = nullptr;
+    }
 }
 
 CGEKComponentSystemNewton::MATERIAL *CGEKComponentSystemNewton::LoadMaterial(LPCWSTR pName)
@@ -269,29 +283,27 @@ NewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWST
 
 void CGEKComponentSystemNewton::OnSetForceAndTorque(const NewtonBody *pBody, const GEKENTITYID &nEntityID)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
     REQUIRE_VOID_RETURN(pBody);
 
-    auto &kNewton = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, GET_COMPONENT_ID(newton));
+    auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, GET_COMPONENT_ID(newton));
     NewtonBodyAddForce(pBody, (m_nGravity * kNewton.mass).xyz);
 }
 
 void CGEKComponentSystemNewton::OnEntityTransformed(const NewtonBody *pBody, const GEKENTITYID &nEntityID, const float4x4 &nMatrix)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
     REQUIRE_VOID_RETURN(pBody);
 
-    auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
+    auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
     kTransform.position = nMatrix.t;
     kTransform.rotation = nMatrix;
 }
 
 void CGEKComponentSystemNewton::OnCollisionContact(const NewtonMaterial *pMaterial, NewtonBody *pBody0, const GEKENTITYID &nEntityID0, NewtonBody *pBody1, const GEKENTITYID &nEntityID1)
 {
-    auto &kNewton0 = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID0, GET_COMPONENT_ID(newton));
+    auto &kNewton0 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID0, GET_COMPONENT_ID(newton));
     MATERIAL *pMaterial0 = LoadMaterial(kNewton0.material);
 
-    auto &kNewton1 = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID1, GET_COMPONENT_ID(newton));
+    auto &kNewton1 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID1, GET_COMPONENT_ID(newton));
     MATERIAL *pMaterial1 = LoadMaterial(kNewton1.material);
 
     UINT32 nFaceAttribute = NewtonMaterialGetContactFaceAttribute(pMaterial);
@@ -374,28 +386,6 @@ STDMETHODIMP CGEKComponentSystemNewton::Initialize(IGEKEngineCore *pEngine)
     return hRetVal;
 };
 
-STDMETHODIMP_(void) CGEKComponentSystemNewton::Destroy(void)
-{
-    if (m_pSceneManager)
-    {
-        CGEKObservable::RemoveObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
-    }
-
-    if (m_pWorld != nullptr)
-    {
-        for (auto kPair : m_aCollisions)
-        {
-            NewtonDestroyCollision(kPair.second);
-        }
-
-        m_aBodies.clear();
-        m_aCollisions.clear();
-        m_aMaterials.clear();
-        NewtonDestroy(m_pWorld);
-        m_pWorld = nullptr;
-    }
-}
-
 STDMETHODIMP CGEKComponentSystemNewton::OnLoadEnd(HRESULT hRetVal)
 {
     if (FAILED(hRetVal))
@@ -434,14 +424,12 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnEntityDestroyed(const GEKENTITY
 
 STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
-
     if (nComponentID == GET_COMPONENT_ID(newton))
     {
-        if (m_pSceneManager->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
+        if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
         {
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
-            auto &kNewton = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, GET_COMPONENT_ID(newton));
+            auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
+            auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, GET_COMPONENT_ID(newton));
             if (!kNewton.shape.IsEmpty())
             {
                 float4x4 nMatrix;
