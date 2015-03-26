@@ -1,7 +1,6 @@
 ﻿#include "CGEKPopulationSystem.h"
 #include "GEKEngineCLSIDs.h"
 #include "GEKEngine.h"
-#include "IGEKEngine.h"
 #include <ppl.h>
 
 BEGIN_INTERFACE_LIST(CGEKPopulationSystem)
@@ -13,127 +12,115 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKPopulationSystem)
 
 CGEKPopulationSystem::CGEKPopulationSystem(void)
+    : m_pEngine(nullptr)
 {
 }
 
 CGEKPopulationSystem::~CGEKPopulationSystem(void)
 {
+    Free();
+    m_aComponents.clear();
+    m_aComponentSystems.clear();
 }
 
-STDMETHODIMP CGEKPopulationSystem::Initialize(void)
+STDMETHODIMP CGEKPopulationSystem::Initialize(IGEKEngineCore *pEngine)
 {
-    HRESULT hRetVal = GetContext()->AddCachedClass(CLSID_GEKPopulationSystem, GetUnknown());
+    REQUIRE_RETURN(pEngine, E_INVALIDARG);
+
+    m_pEngine = pEngine;
+    HRESULT hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentType, [&](IUnknown *pObject) -> HRESULT
+    {
+        CComQIPtr<IGEKComponent> spComponent(pObject);
+        if (spComponent)
+        {
+            m_pEngine->ShowMessage(GEKMESSAGE_NORMAL, L"population", L"Component Found : ID(0x % 08X), Name(%s)", spComponent->GetID(), spComponent->GetName());
+
+            auto pIDIterator = m_aComponents.find(spComponent->GetID());
+            auto pNamesIterator = m_aComponentNames.find(spComponent->GetName());
+            if (pIDIterator != m_aComponents.end())
+            {
+                m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Component ID Already Used: 0x%08X", spComponent->GetID());
+            }
+            else if (pNamesIterator != m_aComponentNames.end())
+            {
+                m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Component Name Already Used: %s", spComponent->GetName());
+            }
+            else
+            {
+                m_aComponentNames[spComponent->GetName()] = spComponent->GetID();
+                m_aComponents[spComponent->GetID()] = spComponent;
+            }
+        }
+
+        return S_OK;
+    });
+
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = E_FAIL;
-        IGEKEngine *pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
-        if (pEngine)
+        hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentSystemType, [&](IUnknown *pObject) -> HRESULT
         {
-            hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentType, [&](IUnknown *pObject) -> HRESULT
+            CComQIPtr<IGEKComponentSystem> spSystem(pObject);
+            if (spSystem)
             {
-                CComQIPtr<IGEKComponent> spComponent(pObject);
-                if (spComponent)
+                if (SUCCEEDED(spSystem->Initialize(pEngine)))
                 {
-                    pEngine->ShowMessage(GEKMESSAGE_NORMAL, L"population", L"Component Found : ID(0x % 08X), Name(%s)", spComponent->GetID(), spComponent->GetName());
-
-                    auto pIDIterator = m_aComponents.find(spComponent->GetID());
-                    auto pNamesIterator = m_aComponentNames.find(spComponent->GetName());
-                    if (pIDIterator != m_aComponents.end())
-                    {
-                        pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Component ID Already Used: 0x%08X", spComponent->GetID());
-                    }
-                    else if (pNamesIterator != m_aComponentNames.end())
-                    {
-                        pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Component Name Already Used: %s", spComponent->GetName());
-                    }
-                    else
-                    {
-                        m_aComponentNames[spComponent->GetName()] = spComponent->GetID();
-                        m_aComponents[spComponent->GetID()] = spComponent;
-                    }
+                    m_aComponentSystems.push_back(spSystem);
                 }
+            }
 
-                return S_OK;
-            });
-        }
+            return S_OK;
+        });
     }
 
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKPopulationSystem::Destroy(void)
-{
-    Free();
-    m_aComponents.clear();
-    m_aComponentSystems.clear();
-    GetContext()->RemoveCachedClass(CLSID_GEKPopulationSystem);
-}
-
-STDMETHODIMP CGEKPopulationSystem::LoadSystems(void)
-{
-    return GetContext()->CreateEachType(CLSID_GEKComponentSystemType, [&](IUnknown *pObject) -> HRESULT
-    {
-        CComQIPtr<IGEKComponentSystem> spSystem(pObject);
-        if (spSystem)
-        {
-            m_aComponentSystems.push_back(spSystem);
-        }
-
-        return S_OK;
-    });
-}
-
-STDMETHODIMP_(void) CGEKPopulationSystem::FreeSystems(void)
-{
-    m_aComponentSystems.clear();
-}
-
 STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
 {
-    HRESULT hRetVal = E_FAIL;
-    IGEKEngine *pEngine = GetContext()->GetCachedClass<IGEKEngine>(CLSID_GEKEngine);
-    if (pEngine)
+    REQUIRE_RETURN(pName, E_INVALIDARG);
+
+    m_pEngine->ShowMessage(GEKMESSAGE_NORMAL, L"population", L"Loading Population (%s)...", pName);
+
+    Free();
+    CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
+
+    CLibXMLDoc kDocument;
+    std::list<CLibXMLNode> aEntities;
+    HRESULT hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\worlds\\%s.xml", pName));
+    if (SUCCEEDED(hRetVal))
     {
-        pEngine->ShowMessage(GEKMESSAGE_NORMAL, L"population", L"Loading Population (%s)...", pName);
-
-        Free();
-        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
-
-        CLibXMLDoc kDocument;
-        std::list<CLibXMLNode> aEntities;
-        hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\worlds\\%s.xml", pName));
-        if (SUCCEEDED(hRetVal))
+        CLibXMLNode &kWorldNode = kDocument.GetRoot();
+        if (kWorldNode.GetType().CompareNoCase(L"world") == 0)
         {
-            CLibXMLNode &kWorldNode = kDocument.GetRoot();
-            if (kWorldNode.GetType().CompareNoCase(L"world") == 0)
+            CLibXMLNode &kPopulationNode = kWorldNode.FirstChildElement(L"population");
+            if (kPopulationNode)
             {
-                CLibXMLNode &kPopulationNode = kWorldNode.FirstChildElement(L"population");
-                if (kPopulationNode)
+                CLibXMLNode &kEntityNode = kPopulationNode.FirstChildElement(L"entity");
+                while (kEntityNode)
                 {
-                    CLibXMLNode &kEntityNode = kPopulationNode.FirstChildElement(L"entity");
-                    while (kEntityNode)
-                    {
-                        aEntities.push_back(kEntityNode);
-                        kEntityNode = kEntityNode.NextSiblingElement(L"entity");
-                    };
-                }
-                else
-                {
-                    pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to locate \"population\" node");
-                    hRetVal = E_UNEXPECTED;
-                }
+                    aEntities.push_back(kEntityNode);
+                    kEntityNode = kEntityNode.NextSiblingElement(L"entity");
+                };
             }
             else
             {
-                pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to locate \"world\" node");
+                m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to locate \"population\" node");
                 hRetVal = E_UNEXPECTED;
             }
         }
         else
         {
-            pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to load population");
+            m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to locate \"world\" node");
+            hRetVal = E_UNEXPECTED;
         }
+    }
+    else
+    {
+        m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to load population");
+    }
 
+    if (SUCCEEDED(hRetVal))
+    {
         for (auto &kEntityNode : aEntities)
         {
             CStringW strName;
@@ -178,10 +165,9 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
                 };
             }
         }
-
-        hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
     }
 
+    hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
     return hRetVal;
 }
 

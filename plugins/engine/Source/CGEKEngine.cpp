@@ -170,7 +170,7 @@ HCURSOR LoadAnimatedCursor(HINSTANCE hInstance, UINT nID, LPCTSTR pszResouceType
 BEGIN_INTERFACE_LIST(CGEKEngine)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
     INTERFACE_LIST_ENTRY_COM(IGEKGameApplication)
-    INTERFACE_LIST_ENTRY_COM(IGEKEngine)
+    INTERFACE_LIST_ENTRY_COM(IGEKEngineCore)
     INTERFACE_LIST_ENTRY_COM(IGEKInputManager)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderObserver)
 END_INTERFACE_LIST_UNKNOWN
@@ -488,7 +488,7 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
                         if (SUCCEEDED(GetContext()->CreateInstance(CLSID_GEKPopulationSystem, IID_PPV_ARGS(&m_spPopulationManager))) && m_spPopulationManager &&
                             SUCCEEDED(GetContext()->CreateInstance(CLSID_GEKRenderSystem, IID_PPV_ARGS(&m_spRenderManager))) && m_spRenderManager &&
                             SUCCEEDED(CGEKObservable::AddObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown())) &&
-                            SUCCEEDED(m_spPopulationManager->LoadSystems()))
+                            SUCCEEDED(m_spPopulationManager->Initialize(this)))
                         {
                             RunCommand(L"load", { L"demo" });
 
@@ -553,9 +553,7 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
                             };
                             
                             m_bWindowActive = false;
-                            m_spPopulationManager->Free();
                             CGEKObservable::RemoveObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
-                            m_spPopulationManager->FreeSystems();
                         }
 
                         m_spRenderManager.Release();
@@ -584,6 +582,36 @@ STDMETHODIMP_(IGEKConfigGroup *) CGEKEngine::GetConfig(void)
 {
     REQUIRE_RETURN(m_spConfig, nullptr);
     return m_spConfig;
+}
+
+STDMETHODIMP_(IGEK3DVideoSystem *) CGEKEngine::GetVideoSystem(void)
+{
+    REQUIRE_RETURN(m_spVideoSystem, nullptr);
+    return m_spVideoSystem;
+}
+
+STDMETHODIMP_(IGEKSceneManager *) CGEKEngine::GetSceneManager(void)
+{
+    REQUIRE_RETURN(m_spPopulationManager, nullptr);
+    return dynamic_cast<IGEKSceneManager *>((IGEKPopulationSystem *)m_spPopulationManager);
+}
+
+STDMETHODIMP_(IGEKRenderManager *) CGEKEngine::GetRenderManager(void)
+{
+    REQUIRE_RETURN(m_spRenderManager, nullptr);
+    return dynamic_cast<IGEKRenderManager *>((IGEKRenderSystem *)m_spRenderManager);
+}
+
+STDMETHODIMP_(IGEKProgramManager *) CGEKEngine::GetProgramManager(void)
+{
+    REQUIRE_RETURN(m_spConfig, nullptr);
+    return dynamic_cast<IGEKProgramManager *>((IGEKRenderSystem *)m_spRenderManager);
+}
+
+STDMETHODIMP_(IGEKMaterialManager *) CGEKEngine::GetMaterialManager(void)
+{
+    REQUIRE_RETURN(m_spConfig, nullptr);
+    return dynamic_cast<IGEKMaterialManager *>((IGEKRenderSystem *)m_spRenderManager);
 }
 
 STDMETHODIMP_(void) CGEKEngine::ShowMessage(GEKMESSAGETYPE eType, LPCWSTR pSystem, LPCWSTR pMessage, ...)

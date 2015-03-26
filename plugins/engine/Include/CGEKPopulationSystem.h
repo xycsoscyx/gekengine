@@ -16,6 +16,7 @@ class CGEKPopulationSystem : public CGEKUnknown
                            , public IGEKSceneManager
 {
 private:
+    IGEKEngineCore *m_pEngine;
     std::unordered_map<CStringW, GEKCOMPONENTID> m_aComponentNames;
     std::unordered_map<GEKCOMPONENTID, CComPtr<IGEKComponent>> m_aComponents;
     std::list<CComPtr<IGEKComponentSystem>> m_aComponentSystems;
@@ -28,13 +29,8 @@ public:
     virtual ~CGEKPopulationSystem(void);
     DECLARE_UNKNOWN(CGEKPopulationSystem);
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)               (THIS);
-    STDMETHOD_(void, Destroy)           (THIS);
-
     // IGEKPopulationSystem
-    STDMETHOD(LoadSystems)              (THIS);
-    STDMETHOD_(void, FreeSystems)       (THIS);
+    STDMETHOD(Initialize)               (THIS_ IGEKEngineCore *pEngine);
     STDMETHOD(Load)                     (THIS_ LPCWSTR pName);
     STDMETHOD(Save)                     (THIS_ LPCWSTR pName);
     STDMETHOD_(void, Free)              (THIS);

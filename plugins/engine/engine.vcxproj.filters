@@ -45,9 +45,6 @@
     <ClInclude Include="Include\CGEKRenderFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Public\IGEKEngine.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\CGEKProperties.h">
       <Filter>Header Files</Filter>
     </ClInclude>

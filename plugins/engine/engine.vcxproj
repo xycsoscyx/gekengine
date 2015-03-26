@@ -116,7 +116,6 @@
     <ClInclude Include="Include\CGEKRenderFilter.h" />
     <ClInclude Include="Include\CGEKRenderMaterial.h" />
     <ClInclude Include="Include\CGEKRenderSystem.h" />
-    <ClInclude Include="Public\IGEKEngine.h" />
     <ClInclude Include="Public\IGEKGameApplication.h" />
     <ClInclude Include="Public\IGEKPopulationSystem.h" />
     <ClInclude Include="Public\IGEKRenderFilter.h" />

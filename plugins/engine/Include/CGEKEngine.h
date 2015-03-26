@@ -3,7 +3,6 @@
 #include "GEKContext.h"
 #include "GEKSystem.h"
 #include "IGEKGameApplication.h"
-#include "IGEKEngine.h"
 #include "GEKAPI.h"
 #include <concurrent_queue.h>
 #include <list>
@@ -40,7 +39,7 @@ public:
 class CGEKEngine : public CGEKUnknown
                  , public CGEKObservable
                  , public IGEKGameApplication
-                 , public IGEKEngine
+                 , public IGEKEngineCore
                  , public IGEKInputManager
                  , public IGEKRenderObserver
 {
@@ -84,17 +83,22 @@ public:
     DECLARE_UNKNOWN(CGEKEngine);
 
     // IGEKUnknown
-    STDMETHOD(Initialize)                       (THIS);
-    STDMETHOD_(void, Destroy)                   (THIS);
+    STDMETHOD(Initialize)                                   (THIS);
+    STDMETHOD_(void, Destroy)                               (THIS);
 
     // IGEKGameApplication
-    STDMETHOD_(void, Run)                       (THIS);
+    STDMETHOD_(void, Run)                                   (THIS);
 
     // IGEKEngine
-    STDMETHOD_(IGEKConfigGroup *, GetConfig)    (THIS);
-    STDMETHOD_(void, ShowMessage)               (THIS_ GEKMESSAGETYPE eType, LPCWSTR pSystem, LPCWSTR pMessage, ...);
-    STDMETHOD_(void, RunCommand)                (THIS_ LPCWSTR pCommand, const std::vector<CStringW> &aParams);
+    STDMETHOD_(IGEKConfigGroup *, GetConfig)                (THIS);
+    STDMETHOD_(IGEK3DVideoSystem *, GetVideoSystem)         (THIS);
+    STDMETHOD_(IGEKSceneManager *, GetSceneManager)         (THIS);
+    STDMETHOD_(IGEKRenderManager *, GetRenderManager)       (THIS);
+    STDMETHOD_(IGEKProgramManager *, GetProgramManager)     (THIS);
+    STDMETHOD_(IGEKMaterialManager *, GetMaterialManager)   (THIS);
+    STDMETHOD_(void, ShowMessage)                           (THIS_ GEKMESSAGETYPE eType, LPCWSTR pSystem, LPCWSTR pMessage, ...);
+    STDMETHOD_(void, RunCommand)                            (THIS_ LPCWSTR pCommand, const std::vector<CStringW> &aParams);
 
     // IGEKRenderObserver
-    STDMETHOD_(void, OnRenderOverlay)           (THIS);
+    STDMETHOD_(void, OnRenderOverlay)                       (THIS);
 };
