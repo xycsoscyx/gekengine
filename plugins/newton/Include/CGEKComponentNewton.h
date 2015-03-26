@@ -37,7 +37,7 @@ public:
     };
 
 private:
-    IGEKSceneManager *m_pSceneManager;
+    IGEKEngineCore *m_pEngine;
 
     float3 m_nGravity;
     NewtonWorld *m_pWorld;

@@ -16,7 +16,7 @@ class CGEKComponentSystemFollow : public CGEKUnknown
                                 , public IGEKComponentSystem
 {
 private:
-    IGEKSceneManager *m_pSceneManager;
+    IGEKEngineCore *m_pEngine;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemFollow)

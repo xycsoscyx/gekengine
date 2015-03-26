@@ -28,54 +28,35 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKComponentSystemSprite)
 
 CGEKComponentSystemSprite::CGEKComponentSystemSprite(void)
-    : m_pRenderManager(nullptr)
-    , m_pSceneManager(nullptr)
-    , m_pVideoSystem(nullptr)
-    , m_pMaterialManager(nullptr)
-    , m_pProgramManager(nullptr)
+    : m_pEngine(nullptr)
 {
 }
 
 CGEKComponentSystemSprite::~CGEKComponentSystemSprite(void)
 {
+    CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
+    CGEKObservable::RemoveObserver(m_pEngine->GetRenderManager(), (IGEKRenderObserver *)GetUnknown());
 }
 
-STDMETHODIMP CGEKComponentSystemSprite::Initialize(void)
+STDMETHODIMP CGEKComponentSystemSprite::Initialize(IGEKEngineCore *pEngine)
 {
-    HRESULT hRetVal = E_FAIL;
-    m_pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
-    m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
-    m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderSystem);
-    m_pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
-    m_pMaterialManager = GetContext()->GetCachedClass<IGEKMaterialManager>(CLSID_GEKRenderSystem);
-    if (m_pRenderManager && m_pSceneManager && m_pVideoSystem && m_pMaterialManager && m_pProgramManager)
+    REQUIRE_RETURN(pEngine, E_INVALIDARG);
+
+    m_pEngine = pEngine;
+    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetRenderManager(), (IGEKRenderObserver *)GetUnknown());
+    if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(m_pRenderManager, (IGEKRenderObserver *)GetUnknown());
+        hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
+        hRetVal = m_pEngine->GetProgramManager()->LoadProgram(L"sprite", &m_spVertexProgram);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = E_FAIL;
-        CComQIPtr<IGEKProgramManager> spProgramManager(m_pRenderManager);
-        if (spProgramManager != nullptr)
-        {
-            hRetVal = spProgramManager->LoadProgram(L"sprite", &m_spVertexProgram);
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = E_FAIL;
-        IGEK3DVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
-        if (pVideoSystem != nullptr)
-        {
-            hRetVal = pVideoSystem->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
-        }
+        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -88,7 +69,7 @@ STDMETHODIMP CGEKComponentSystemSprite::Initialize(void)
             float2(-1.0f,  1.0f), float2(0.0f, 1.0f),
         };
 
-        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float4), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
+        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(float4), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -99,16 +80,10 @@ STDMETHODIMP CGEKComponentSystemSprite::Initialize(void)
             0, 2, 3,
         };
 
-        hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), 6, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
+        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(UINT16), 6, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spIndexBuffer, aIndices);
     }
 
     return hRetVal;
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemSprite::Destroy(void)
-{
-    CGEKObservable::RemoveObserver(m_pRenderManager, (IGEKRenderObserver *)GetUnknown());
-    CGEKObservable::RemoveObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
 }
 
 STDMETHODIMP CGEKComponentSystemSprite::OnLoadEnd(HRESULT hRetVal)
@@ -126,19 +101,17 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnRenderBegin(const GEKENTITYID &
 
 STDMETHODIMP_(void) CGEKComponentSystemSprite::OnCullScene(const GEKENTITYID &nViewerID, const frustum &nViewFrustum)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
-
     m_aVisible.clear();
-    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(sprite) }, [&](const GEKENTITYID &nEntityID) -> void
+    m_pEngine->GetSceneManager()->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(sprite) }, [&](const GEKENTITYID &nEntityID) -> void
     {
-        auto &kSprite = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(sprite)>(nEntityID, GET_COMPONENT_ID(sprite));
+        auto &kSprite = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(sprite)>(nEntityID, GET_COMPONENT_ID(sprite));
 
         CComPtr<IUnknown> spMaterial;
-        m_pMaterialManager->LoadMaterial(kSprite.material, &spMaterial);
+        m_pEngine->GetMaterialManager()->LoadMaterial(kSprite.material, &spMaterial);
         if (spMaterial)
         {
             float nHalfSize = (kSprite.size * 0.5f);
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
+            auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
             if (nViewFrustum.IsVisible(aabb(kTransform.position - nHalfSize, kTransform.position + nHalfSize)))
             {
                 m_aVisible[spMaterial].emplace_back(kTransform.position, nHalfSize, kSprite.color);
@@ -151,7 +124,7 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnDrawScene(const GEKENTITYID &nV
 {
     REQUIRE_VOID_RETURN(pContext);
 
-    m_pProgramManager->EnableProgram(pContext, m_spVertexProgram);
+    m_pEngine->GetProgramManager()->EnableProgram(pContext, m_spVertexProgram);
     pContext->GetVertexSystem()->SetResource(0, m_spInstanceBuffer);
     pContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);
     pContext->SetVertexBuffer(0, 0, m_spVertexBuffer);
@@ -168,7 +141,7 @@ STDMETHODIMP_(void) CGEKComponentSystemSprite::OnDrawScene(const GEKENTITYID &nV
                 memcpy(pInstances, &kModel.second[nPass], (sizeof(INSTANCE) * nNumInstances));
                 m_spInstanceBuffer->UnMap();
 
-                if (m_pMaterialManager->EnableMaterial(pContext, kModel.first))
+                if (m_pEngine->GetMaterialManager()->EnableMaterial(pContext, kModel.first))
                 {
                     pContext->DrawInstancedIndexedPrimitive(6, nNumInstances, 0, 0, 0);
                 }

@@ -31,21 +31,18 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKComponentSystemModel)
 
 CGEKComponentSystemModel::CGEKComponentSystemModel(void)
-    : m_pRenderManager(nullptr)
-    , m_pSceneManager(nullptr)
-    , m_pVideoSystem(nullptr)
-    , m_pMaterialManager(nullptr)
-    , m_pProgramManager(nullptr)
+    : m_pEngine(nullptr)
 {
 }
 
 CGEKComponentSystemModel::~CGEKComponentSystemModel(void)
 {
+    CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
+    CGEKObservable::RemoveObserver(m_pEngine->GetRenderManager(), (IGEKRenderObserver *)GetUnknown());
 }
 
 CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pName, LPCWSTR pParams)
 {
-    REQUIRE_RETURN(m_pVideoSystem && m_pMaterialManager, nullptr);
     REQUIRE_RETURN(pName, nullptr);
     REQUIRE_RETURN(pParams, nullptr);
 
@@ -88,7 +85,7 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
                     CStringW strMaterial(CA2W(strMaterialUTF8, CP_UTF8));
 
                     CComPtr<IUnknown> spMaterial;
-                    hRetVal = m_pMaterialManager->LoadMaterial(strMaterial, &spMaterial);
+                    hRetVal = m_pEngine->GetMaterialManager()->LoadMaterial(strMaterial, &spMaterial);
                     if (SUCCEEDED(hRetVal))
                     {
                         MATERIAL kMaterial;
@@ -114,19 +111,19 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spPositionBuffer, pBuffer);
+                    hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(float3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spPositionBuffer, pBuffer);
                     pBuffer += (sizeof(float3) * nNumVertices);
                 }
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float2), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spTexCoordBuffer, pBuffer);
+                    hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(float2), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spTexCoordBuffer, pBuffer);
                     pBuffer += (sizeof(float2) * nNumVertices);
                 }
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(float3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spNormalBuffer, pBuffer);
+                    hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(float3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spNormalBuffer, pBuffer);
                     pBuffer += (sizeof(float3) * nNumVertices);
                 }
 
@@ -135,7 +132,7 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
                     UINT32 nNumIndices = *((UINT32 *)pBuffer);
                     pBuffer += sizeof(UINT32);
 
-                    hRetVal = m_pVideoSystem->CreateBuffer(sizeof(UINT16), nNumIndices, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spIndexBuffer, pBuffer);
+                    hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(UINT16), nNumIndices, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spIndexBuffer, pBuffer);
                     pBuffer += (sizeof(UINT16) * nNumIndices);
                 }
 
@@ -150,51 +147,28 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
     return pModel;
 }
 
-STDMETHODIMP CGEKComponentSystemModel::Initialize(void)
+STDMETHODIMP CGEKComponentSystemModel::Initialize(IGEKEngineCore *pEngine)
 {
-    HRESULT hRetVal = E_FAIL;
-    m_pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
-    m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
-    m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderManager>(CLSID_GEKRenderSystem);
-    m_pProgramManager = GetContext()->GetCachedClass<IGEKProgramManager>(CLSID_GEKRenderSystem);
-    m_pMaterialManager = GetContext()->GetCachedClass<IGEKMaterialManager>(CLSID_GEKRenderSystem);
-    if (m_pRenderManager && m_pSceneManager && m_pVideoSystem && m_pMaterialManager && m_pProgramManager)
+    REQUIRE_RETURN(pEngine, E_INVALIDARG);
+
+    m_pEngine = pEngine;
+    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetRenderManager(), (IGEKRenderObserver *)GetUnknown());
+    if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(m_pRenderManager, (IGEKRenderObserver *)GetUnknown());
+        hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
+        hRetVal = m_pEngine->GetProgramManager()->LoadProgram(L"model", &m_spVertexProgram);
     }
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = E_FAIL;
-        CComQIPtr<IGEKProgramManager> spProgramManager(m_pRenderManager);
-        if (spProgramManager != nullptr)
-        {
-            hRetVal = spProgramManager->LoadProgram(L"model", &m_spVertexProgram);
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = E_FAIL;
-        IGEK3DVideoSystem *pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
-        if (pVideoSystem != nullptr)
-        {
-            hRetVal = pVideoSystem->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
-        }
+        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(INSTANCE), NUM_INSTANCES, GEK3DVIDEO::BUFFER::DYNAMIC | GEK3DVIDEO::BUFFER::STRUCTURED_BUFFER | GEK3DVIDEO::BUFFER::RESOURCE, &m_spInstanceBuffer);
     }
 
     return hRetVal;
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemModel::Destroy(void)
-{
-    CGEKObservable::RemoveObserver(m_pRenderManager, (IGEKRenderObserver *)GetUnknown());
-    CGEKObservable::RemoveObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
 }
 
 STDMETHODIMP CGEKComponentSystemModel::OnLoadEnd(HRESULT hRetVal)
@@ -213,17 +187,15 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnRenderBegin(const GEKENTITYID &n
 
 STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const GEKENTITYID &nViewerID, const frustum &nViewFrustum)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
-
     m_aVisible.clear();
-    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(model) }, [&](const GEKENTITYID &nEntityID) -> void
+    m_pEngine->GetSceneManager()->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(model) }, [&](const GEKENTITYID &nEntityID) -> void
     {
-        auto &kModel = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(model)>(nEntityID, GET_COMPONENT_ID(model));
+        auto &kModel = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(model)>(nEntityID, GET_COMPONENT_ID(model));
 
         MODEL *pModel = GetModel(kModel.file, kModel.params);
         if (pModel)
         {
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
+            auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
 
             float4x4 nMatrix;
             nMatrix   = kTransform.rotation;
@@ -251,7 +223,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(const GEKENTITYID &nVi
         return;
     }
 
-    m_pProgramManager->EnableProgram(pContext, m_spVertexProgram);
+    m_pEngine->GetProgramManager()->EnableProgram(pContext, m_spVertexProgram);
     pContext->GetVertexSystem()->SetResource(0, m_spInstanceBuffer);
     pContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);
     for (auto kModel : m_aVisible)
@@ -284,7 +256,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(const GEKENTITYID &nVi
 
                 for (auto &kMaterial : kModel.first->m_aMaterials)
                 {
-                    if (m_pMaterialManager->EnableMaterial(pContext, kMaterial.first))
+                    if (m_pEngine->GetMaterialManager()->EnableMaterial(pContext, kMaterial.first))
                     {
                         pContext->DrawInstancedIndexedPrimitive(kMaterial.second.m_nNumIndices, nNumInstances, kMaterial.second.m_nFirstIndex, kMaterial.second.m_nFirstVertex, 0);
                     }

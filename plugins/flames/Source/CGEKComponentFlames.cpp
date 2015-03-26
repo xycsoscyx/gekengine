@@ -81,7 +81,6 @@ STDMETHODIMP CGEKComponentSystemFlames::Initialize(IGEKEngineCore *pEngine)
     REQUIRE_RETURN(pEngine, E_INVALIDARG);
 
     m_pEngine = pEngine;
-
     HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetRenderManager(), (IGEKRenderObserver *)GetUnknown());
     if (SUCCEEDED(hRetVal))
     {

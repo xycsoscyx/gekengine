@@ -22,45 +22,33 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKComponentSystemControl)
 
 CGEKComponentSystemControl::CGEKComponentSystemControl(void)
-    : m_pSceneManager(nullptr)
+    : m_pEngine(nullptr)
 {
 }
 
 CGEKComponentSystemControl::~CGEKComponentSystemControl(void)
 {
+    CGEKObservable::RemoveObserver(m_pEngine, (IGEKInputObserver *)GetUnknown());
+    CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
 }
 
-STDMETHODIMP CGEKComponentSystemControl::Initialize(void)
+STDMETHODIMP CGEKComponentSystemControl::Initialize(IGEKEngineCore *pEngine)
 {
-    HRESULT hRetVal = E_FAIL;
-    m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
-    if (m_pSceneManager)
-    {
-        hRetVal = CGEKObservable::AddObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
-    }
+    REQUIRE_RETURN(pEngine, E_INVALIDARG);
 
+    m_pEngine = pEngine;
+    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
+        HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine, (IGEKInputObserver *)GetUnknown());
     }
 
     return hRetVal;
 };
 
-STDMETHODIMP_(void) CGEKComponentSystemControl::Destroy(void)
-{
-    GetContext()->RemoveCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
-    if (m_pSceneManager)
-    {
-        CGEKObservable::RemoveObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
-    }
-}
-
 STDMETHODIMP_(void) CGEKComponentSystemControl::OnState(LPCWSTR pName, bool bState)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
-
-    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(control) }, [&](const GEKENTITYID &nEntityID) -> void
+    m_pEngine->GetSceneManager()->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(control) }, [&](const GEKENTITYID &nEntityID) -> void
     {
         if (bState)
         {
@@ -75,9 +63,7 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnState(LPCWSTR pName, bool bSta
 
 STDMETHODIMP_(void) CGEKComponentSystemControl::OnValue(LPCWSTR pName, float nValue)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
-
-    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(control) }, [&](const GEKENTITYID &nEntityID) -> void
+    m_pEngine->GetSceneManager()->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(control) }, [&](const GEKENTITYID &nEntityID) -> void
     {
         m_aSingleActions[nEntityID][pName] = nValue;
     }, true);
@@ -91,15 +77,13 @@ STDMETHODIMP_(void) CGEKComponentSystemControl::OnFree(void)
 
 STDMETHODIMP_(void) CGEKComponentSystemControl::OnUpdateBegin(float nGameTime, float nFrameTime)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
-
     std::function<void(concurrency::concurrent_unordered_map<GEKENTITYID, concurrency::concurrent_unordered_map<CStringW, float>> &)> DoActions = 
         [&](concurrency::concurrent_unordered_map<GEKENTITYID, concurrency::concurrent_unordered_map<CStringW, float>> &aActions) -> void
     {
         for (auto pEntity : aActions)
         {
-            auto &kTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(pEntity.first, GET_COMPONENT_ID(transform));
-            auto &kControl = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(control)>(pEntity.first, GET_COMPONENT_ID(control));
+            auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(pEntity.first, GET_COMPONENT_ID(transform));
+            auto &kControl = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(control)>(pEntity.first, GET_COMPONENT_ID(control));
 
             kControl.turn += (pEntity.second[L"turn"] * 0.01f);
             kControl.tilt = 0.0f;//+= (pEntity.second[L"tilt"] * 0.01f);

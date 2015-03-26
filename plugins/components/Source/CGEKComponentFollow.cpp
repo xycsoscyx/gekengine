@@ -24,52 +24,34 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKComponentSystemFollow)
 
 CGEKComponentSystemFollow::CGEKComponentSystemFollow(void)
-    : m_pSceneManager(nullptr)
+    : m_pEngine(nullptr)
 {
 }
 
 CGEKComponentSystemFollow::~CGEKComponentSystemFollow(void)
 {
+    CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
 }
 
-STDMETHODIMP CGEKComponentSystemFollow::Initialize(void)
+STDMETHODIMP CGEKComponentSystemFollow::Initialize(IGEKEngineCore *pEngine)
 {
-    HRESULT hRetVal = E_FAIL;
-    m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
-    if (m_pSceneManager)
-    {
-        hRetVal = CGEKObservable::AddObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
-    }
+    REQUIRE_RETURN(pEngine, E_INVALIDARG);
 
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = GetContext()->AddCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
-    }
-
+    m_pEngine = pEngine;
+    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
     return hRetVal;
 };
 
-STDMETHODIMP_(void) CGEKComponentSystemFollow::Destroy(void)
-{
-    GetContext()->RemoveCachedObserver(CLSID_GEKEngine, (IGEKInputObserver *)GetUnknown());
-    if (m_pSceneManager)
-    {
-        CGEKObservable::RemoveObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
-    }
-}
-
 STDMETHODIMP_(void) CGEKComponentSystemFollow::OnUpdateEnd(float nGameTime, float nFrameTime)
 {
-    REQUIRE_VOID_RETURN(m_pSceneManager);
-
-    m_pSceneManager->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(follow) }, [&](const GEKENTITYID &nEntityID) -> void
+    m_pEngine->GetSceneManager()->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(follow) }, [&](const GEKENTITYID &nEntityID) -> void
     {
-        auto &kFollow = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(follow)>(nEntityID, GET_COMPONENT_ID(follow));
+        auto &kFollow = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(follow)>(nEntityID, GET_COMPONENT_ID(follow));
 
         GEKENTITYID nTargetID = GEKINVALIDENTITYID;
-        if (SUCCEEDED(m_pSceneManager->GetNamedEntity(kFollow.target, &nTargetID)))
+        if (SUCCEEDED(m_pEngine->GetSceneManager()->GetNamedEntity(kFollow.target, &nTargetID)))
         {
-            auto &kTargetTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nTargetID, GET_COMPONENT_ID(transform));
+            auto &kTargetTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nTargetID, GET_COMPONENT_ID(transform));
 
             kFollow.rotation = kFollow.rotation.Slerp(kTargetTransform.rotation, 0.5f);
 
@@ -78,7 +60,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnUpdateEnd(float nGameTime, floa
             float4x4 nLookAt;
             nLookAt.LookAt(nTarget, kTargetTransform.position, float3(0.0f, 1.0f, 0.0f));
 
-            auto &kCurrentTransform = m_pSceneManager->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
+            auto &kCurrentTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
             kCurrentTransform.position = nTarget;
             kCurrentTransform.rotation = nLookAt;
         }

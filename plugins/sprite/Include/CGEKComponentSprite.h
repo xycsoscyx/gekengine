@@ -32,13 +32,10 @@ public:
     };
 
 private:
+    IGEKEngineCore *m_pEngine;
+
     CComPtr<IGEK3DVideoBuffer> m_spInstanceBuffer;
     CComPtr<IUnknown> m_spVertexProgram;
-    IGEKSceneManager *m_pSceneManager;
-    IGEKRenderManager *m_pRenderManager;
-    IGEK3DVideoSystem *m_pVideoSystem;
-    IGEKMaterialManager *m_pMaterialManager;
-    IGEKProgramManager *m_pProgramManager;
 
     CComPtr<IGEK3DVideoBuffer> m_spVertexBuffer;
     CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;

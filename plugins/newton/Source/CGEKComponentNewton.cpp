@@ -31,7 +31,7 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKComponentSystemNewton)
 
 CGEKComponentSystemNewton::CGEKComponentSystemNewton(void)
-    : m_pSceneManager(nullptr)
+    : m_pEngine(nullptr)
     , m_pWorld(nullptr)
     , m_nGravity(0.0f, -9.8331f, 0.0f)
 {
@@ -317,15 +317,12 @@ void CGEKComponentSystemNewton::OnCollisionContact(const NewtonMaterial *pMateri
     CGEKObservable::SendEvent(TGEKEvent<IGEKNewtonObserver>(std::bind(&IGEKNewtonObserver::OnCollision, std::placeholders::_1, nEntityID0, nEntityID1, nPosition, nNormal)));
 }
 
-STDMETHODIMP CGEKComponentSystemNewton::Initialize(void)
+STDMETHODIMP CGEKComponentSystemNewton::Initialize(IGEKEngineCore *pEngine)
 {
-    HRESULT hRetVal = E_FAIL;
-    m_pSceneManager = GetContext()->GetCachedClass<IGEKSceneManager>(CLSID_GEKPopulationSystem);
-    if (m_pSceneManager)
-    {
-        hRetVal = CGEKObservable::AddObserver(m_pSceneManager, (IGEKSceneObserver *)GetUnknown());
-    }
+    REQUIRE_RETURN(pEngine, E_INVALIDARG);
 
+    m_pEngine = pEngine;
+    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
     if (SUCCEEDED(hRetVal))
     {
         hRetVal = E_FAIL;
