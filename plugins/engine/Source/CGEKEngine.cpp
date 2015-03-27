@@ -488,7 +488,8 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
                         if (SUCCEEDED(GetContext()->CreateInstance(CLSID_GEKPopulationSystem, IID_PPV_ARGS(&m_spPopulationManager))) && m_spPopulationManager &&
                             SUCCEEDED(GetContext()->CreateInstance(CLSID_GEKRenderSystem, IID_PPV_ARGS(&m_spRenderManager))) && m_spRenderManager &&
                             SUCCEEDED(CGEKObservable::AddObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown())) &&
-                            SUCCEEDED(m_spPopulationManager->Initialize(this)))
+                            SUCCEEDED(m_spPopulationManager->Initialize(this)) &&
+                            SUCCEEDED(m_spRenderManager->Initialize(this)))
                         {
                             RunCommand(L"load", { L"demo" });
 

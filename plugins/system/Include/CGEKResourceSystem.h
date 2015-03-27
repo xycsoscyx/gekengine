@@ -121,9 +121,6 @@ public:
     virtual ~CGEKResourceSystem(void);
     DECLARE_UNKNOWN(CGEKResourceSystem);
 
-    // IGEKUnknown
-    STDMETHOD_(void, Destroy)                           (THIS);
-
     // IGEKResourceSystem
     STDMETHOD(Initialize)                               (THIS_ IGEK3DVideoSystem *pVideoSystem);
     STDMETHOD_(void, Flush)                             (THIS);

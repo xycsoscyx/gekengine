@@ -3,11 +3,14 @@
 #include "GEKUtility.h"
 #include "GEKContext.h"
 
+DECLARE_INTERFACE(IGEKEngineCore);
 DECLARE_INTERFACE(IGEK3DVideoContextSystem);
 DECLARE_INTERFACE(IGEK3DVideoContext);
 
 DECLARE_INTERFACE_IID_(IGEKRenderSystem, IUnknown, "77161A84-61C4-4C05-9550-4EEB74EF3CB1")
 {
+    STDMETHOD(Initialize)                   (THIS_ IGEKEngineCore *pEngine) PURE;
+
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppResource) PURE;
     STDMETHOD(CreateBuffer)                 (THIS_ LPCWSTR pName, UINT32 nStride, UINT32 nCount) PURE;
     STDMETHOD(CreateBuffer)                 (THIS_ LPCWSTR pName, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount) PURE;

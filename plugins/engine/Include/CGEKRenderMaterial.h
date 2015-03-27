@@ -27,8 +27,8 @@ public:
     };
 
 private:
-    IGEK3DVideoSystem *m_pVideoSystem;
-    IGEKRenderSystem *m_pRenderManager;
+    IGEKEngineCore *m_pEngine;
+    IGEKRenderSystem *m_pRenderSystem;
     std::unordered_map<CStringW, LAYER> m_aLayers;
 
 public:
@@ -36,10 +36,7 @@ public:
     ~CGEKRenderMaterial(void);
     DECLARE_UNKNOWN(CGEKRenderMaterial);
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)                   (THIS);
-
     // IGEKRenderMaterial
-    STDMETHOD(Load)                         (THIS_ LPCWSTR pName);
+    STDMETHOD(Load)                         (THIS_ IGEKEngineCore *pEngine, IGEKRenderSystem *pRenderSystem, LPCWSTR pName);
     STDMETHOD_(bool, Enable)                (THIS_ IGEK3DVideoContext *pContext, LPCWSTR pLayer);
 };

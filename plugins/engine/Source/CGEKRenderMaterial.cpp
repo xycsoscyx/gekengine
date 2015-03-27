@@ -10,8 +10,8 @@ END_INTERFACE_LIST_UNKNOWN
 REGISTER_CLASS(CGEKRenderMaterial)
 
 CGEKRenderMaterial::CGEKRenderMaterial(void)
-    : m_pVideoSystem(nullptr)
-    , m_pRenderManager(nullptr)
+    : m_pEngine(nullptr)
+    , m_pRenderSystem(nullptr)
 {
 }
 
@@ -19,25 +19,13 @@ CGEKRenderMaterial::~CGEKRenderMaterial(void)
 {
 }
 
-// IGEKUnknown
-STDMETHODIMP CGEKRenderMaterial::Initialize(void)
-{
-    HRESULT hRetVal = E_FAIL;
-    m_pVideoSystem = GetContext()->GetCachedClass<IGEK3DVideoSystem>(CLSID_GEKVideoSystem);
-    m_pRenderManager = GetContext()->GetCachedClass<IGEKRenderSystem>(CLSID_GEKRenderSystem);
-    if (m_pVideoSystem != nullptr && m_pRenderManager != nullptr)
-    {
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
 // IGEKRenderMaterial
-STDMETHODIMP CGEKRenderMaterial::Load(LPCWSTR pName)
+STDMETHODIMP CGEKRenderMaterial::Load(IGEKEngineCore *pEngine, IGEKRenderSystem *pRenderSystem, LPCWSTR pName)
 {
-    REQUIRE_RETURN(m_pRenderManager, E_FAIL);
-    REQUIRE_RETURN(pName, E_INVALIDARG);
+    REQUIRE_RETURN(pEngine && pRenderSystem && pName, E_INVALIDARG);
+
+    m_pEngine = pEngine;
+    m_pRenderSystem = pRenderSystem;
 
     m_aLayers.clear();
     CLibXMLDoc kDocument;
@@ -70,7 +58,7 @@ STDMETHODIMP CGEKRenderMaterial::Load(LPCWSTR pName)
 
                     if (kLayerNode.HasChildElement(L"states"))
                     {
-                        hRetVal = kLayerData.m_kRenderStates.Load(m_pVideoSystem, kLayerNode.FirstChildElement(L"states"));
+                        hRetVal = kLayerData.m_kRenderStates.Load(m_pEngine->GetVideoSystem(), kLayerNode.FirstChildElement(L"states"));
                         if (FAILED(hRetVal))
                         {
                             break;
@@ -79,7 +67,7 @@ STDMETHODIMP CGEKRenderMaterial::Load(LPCWSTR pName)
 
                     if (kLayerNode.HasChildElement(L"blend"))
                     {
-                        hRetVal = kLayerData.m_kBlendStates.Load(m_pVideoSystem, kLayerNode.FirstChildElement(L"blend"));
+                        hRetVal = kLayerData.m_kBlendStates.Load(m_pEngine->GetVideoSystem(), kLayerNode.FirstChildElement(L"blend"));
                         if (FAILED(hRetVal))
                         {
                             break;
@@ -103,7 +91,7 @@ STDMETHODIMP CGEKRenderMaterial::Load(LPCWSTR pName)
                             strSource.Replace(L"%directory%", kDirectory.m_strPath.GetString());
 
                             CComPtr<IUnknown> spData;
-                            m_pRenderManager->LoadResource(strSource, &spData);
+                            m_pRenderSystem->LoadResource(strSource, &spData);
                             kLayerData.m_aData.push_back(spData);
 
                             kStageNode = kStageNode.NextSiblingElement();
@@ -130,17 +118,17 @@ STDMETHODIMP_(bool) CGEKRenderMaterial::Enable(IGEK3DVideoContext *pContext, LPC
         LAYER &kLayer = (*pLayerIterator).second;
         if (!kLayer.m_kRenderStates.Enable(pContext))
         {
-            m_pRenderManager->EnableDefaultRenderStates(pContext);
+            m_pRenderSystem->EnableDefaultRenderStates(pContext);
         }
 
         if (!kLayer.m_kBlendStates.Enable(pContext))
         {
-            m_pRenderManager->EnableDefaultBlendStates(pContext);
+            m_pRenderSystem->EnableDefaultBlendStates(pContext);
         }
 
         for (UINT32 nStage = 0; nStage < kLayer.m_aData.size(); nStage++)
         {
-            m_pRenderManager->SetResource(pContext->GetPixelSystem(), nStage, kLayer.m_aData[nStage]);
+            m_pRenderSystem->SetResource(pContext->GetPixelSystem(), nStage, kLayer.m_aData[nStage]);
         }
     }
 

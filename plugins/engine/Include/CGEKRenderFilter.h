@@ -47,8 +47,8 @@ public:
     };
 
 private:
-    IGEK3DVideoSystem *m_pVideoSystem;
-    IGEKRenderSystem *m_pRenderManager;
+    IGEKEngineCore *m_pEngine;
+    IGEKRenderSystem *m_pRenderSystem;
 
     UINT32 m_nVertexAttributes;
 
@@ -91,10 +91,8 @@ public:
     virtual ~CGEKRenderFilter(void);
     DECLARE_UNKNOWN(CGEKRenderFilter);
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)                                   (THIS);
-
     // IGEKRenderFilter
+    STDMETHOD(Initialize)                                   (THIS_ IGEKEngineCore *pEngine, IGEKRenderSystem *pRenderSystem);
     STDMETHOD(Load)                                         (THIS_ LPCWSTR pFileName, const std::unordered_map<CStringA, CStringA> &aDefines);
     STDMETHOD(Reload)                                       (THIS);
     STDMETHOD_(void, Draw)                                  (THIS_ IGEK3DVideoContext *pContext);

@@ -117,10 +117,6 @@ CGEKResourceSystem::CGEKResourceSystem(void)
 
 CGEKResourceSystem::~CGEKResourceSystem(void)
 {
-}
-
-STDMETHODIMP_(void) CGEKResourceSystem::Destroy(void)
-{
     Flush();
 }
 

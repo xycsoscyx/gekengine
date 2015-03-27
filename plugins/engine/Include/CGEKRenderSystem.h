@@ -6,7 +6,6 @@
 #include "IGEKRenderMaterial.h"
 #include "IGEKRenderSystem.h"
 #include "IGEKPopulationSystem.h"
-#include "IGEKEngine.h"
 #include <concurrent_vector.h>
 
 DECLARE_INTERFACE(IGEKRenderFilter);
@@ -76,10 +75,7 @@ public:
     };
 
 private:
-    IGEK3DVideoSystem *m_pVideoSystem;
-
-    IGEKEngine *m_pEngine;
-    IGEKSceneManager *m_pSceneManager;
+    IGEKEngineCore *m_pEngine;
 
     CComPtr<IGEKResourceSystem> m_spResourceSystem;
 
@@ -125,10 +121,6 @@ public:
     virtual ~CGEKRenderSystem(void);
     DECLARE_UNKNOWN(CGEKRenderSystem);
 
-    // IGEKUnknown
-    STDMETHOD(Initialize)                   (THIS);
-    STDMETHOD_(void, Destroy)               (THIS);
-
     // IGEK3DVideoObserver
     STDMETHOD_(void, OnResizeBegin)         (THIS);
     STDMETHOD(OnResizeEnd)                  (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed);
@@ -148,6 +140,7 @@ public:
     STDMETHOD_(void, EnableProgram)         (THIS_ IGEK3DVideoContext *pContext, IUnknown *pProgram);
 
     // IGEKRenderSystem
+    STDMETHOD(Initialize)                   (THIS_ IGEKEngineCore *pEngine);
     STDMETHOD(LoadResource)                 (THIS_ LPCWSTR pName, IUnknown **ppResource);
     STDMETHOD(CreateBuffer)                 (THIS_ LPCWSTR pName, UINT32 nStride, UINT32 nCount);
     STDMETHOD(CreateBuffer)                 (THIS_ LPCWSTR pName, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount);
