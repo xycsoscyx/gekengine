@@ -19,11 +19,6 @@ HRESULT GEKCreateContext(IGEKContext **ppContext)
     return hRetVal;
 }
 
-BEGIN_INTERFACE_LIST(CGEKContext)
-    INTERFACE_LIST_ENTRY_COM(IGEKContext)
-    INTERFACE_LIST_ENTRY_COM(IGEKObservable)
-END_INTERFACE_LIST_UNKNOWN
-
 CGEKContext::CGEKContext(void)
 {
 }
@@ -36,6 +31,52 @@ CGEKContext::~CGEKContext(void)
     {
         FreeLibrary(hModule);
     }
+}
+
+STDMETHODIMP_(ULONG) CGEKContext::AddRef(void)
+{
+    return InterlockedIncrement(&m_nRefCount);
+}
+
+STDMETHODIMP_(ULONG) CGEKContext::Release(void)
+{
+    LONG nRefCount = InterlockedDecrement(&m_nRefCount);
+    if (nRefCount == 0)
+    {
+        delete this;
+    }
+
+    return nRefCount;
+}
+
+STDMETHODIMP CGEKContext::QueryInterface(REFIID rIID, LPVOID FAR *ppObject)
+{
+    REQUIRE_RETURN(ppObject, E_INVALIDARG);
+
+    HRESULT hRetVal = E_INVALIDARG;
+    if (IsEqualIID(IID_IUnknown, rIID))
+    {
+        AddRef();
+        (*ppObject) = dynamic_cast<IUnknown *>(dynamic_cast<IGEKContext *>(this));
+        _ASSERTE(*ppObject);
+        hRetVal = S_OK;
+    }
+    else if (IsEqualIID(__uuidof(IGEKUnknown), rIID))
+    {
+        AddRef();
+        (*ppObject) = dynamic_cast<IGEKUnknown *>(this);
+        _ASSERTE(*ppObject);
+        hRetVal = S_OK;
+    }
+    else if (IsEqualIID(__uuidof(IGEKContext), rIID))
+    {
+        AddRef();
+        (*ppObject) = dynamic_cast<IGEKContext *>(this);
+        _ASSERTE(*ppObject);
+        hRetVal = S_OK;
+    }
+
+    return hRetVal;
 }
 
 STDMETHODIMP CGEKContext::AddSearchPath(LPCWSTR pPath)

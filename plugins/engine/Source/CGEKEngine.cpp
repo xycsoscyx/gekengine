@@ -557,8 +557,8 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
                             CGEKObservable::RemoveObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
                         }
 
-                        m_spRenderManager.Release();
                         m_spPopulationManager.Release();
+                        m_spRenderManager.Release();
                     }
                 }
 

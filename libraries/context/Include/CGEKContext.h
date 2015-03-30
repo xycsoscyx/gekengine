@@ -8,11 +8,12 @@
 
 #include <concurrent_unordered_map.h>
 
-class CGEKContext : public CGEKUnknown
-                  , public CGEKObservable
+class CGEKContext : public CGEKObservable
                   , public IGEKContext
 {
 private:
+    ULONG m_nRefCount;
+
     std::list<CStringW> m_aSearchPaths;
 
     std::list<HMODULE> m_aModules;
@@ -22,11 +23,15 @@ private:
 public:
     CGEKContext(void);
     virtual ~CGEKContext(void);
-    DECLARE_UNKNOWN(CGEKContext);
+
+    // IUnknown
+    STDMETHOD_(ULONG, AddRef)                   (THIS);
+    STDMETHOD_(ULONG, Release)                  (THIS);
+    STDMETHOD(QueryInterface)                   (THIS_ REFIID rIID, LPVOID FAR *ppObject);
 
     // IGEKContext
-    STDMETHOD(AddSearchPath)                        (THIS_ LPCWSTR pPath);
-    STDMETHOD(Initialize)                           (THIS);
-    STDMETHOD(CreateInstance)                       (THIS_ REFCLSID kCLSID, REFIID kIID, LPVOID FAR *ppObject);
-    STDMETHOD(CreateEachType)                       (THIS_ REFCLSID kTypeCLSID, std::function<HRESULT(IUnknown *pObject)> OnCreate);
+    STDMETHOD(AddSearchPath)                    (THIS_ LPCWSTR pPath);
+    STDMETHOD(Initialize)                       (THIS);
+    STDMETHOD(CreateInstance)                   (THIS_ REFCLSID kCLSID, REFIID kIID, LPVOID FAR *ppObject);
+    STDMETHOD(CreateEachType)                   (THIS_ REFCLSID kTypeCLSID, std::function<HRESULT(IUnknown *pObject)> OnCreate);
 };
