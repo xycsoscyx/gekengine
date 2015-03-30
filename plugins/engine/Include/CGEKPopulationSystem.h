@@ -34,6 +34,7 @@ public:
 
     // IGEKPopulationSystem
     STDMETHOD(Initialize)                       (THIS_ IGEKEngineCore *pEngine);
+    STDMETHOD_(void, Clear)                     (THIS);
     STDMETHOD(Load)                             (THIS_ LPCWSTR pName);
     STDMETHOD(Save)                             (THIS_ LPCWSTR pName);
     STDMETHOD_(void, Free)                      (THIS);

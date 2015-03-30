@@ -22,9 +22,7 @@ CGEKPopulationSystem::~CGEKPopulationSystem(void)
 
 STDMETHODIMP_(void) CGEKPopulationSystem::Destroy(void)
 {
-    Free();
-    m_aComponents.clear();
-    m_aComponentSystems.clear();
+    Clear();
 }
 
 STDMETHODIMP CGEKPopulationSystem::Initialize(IGEKEngineCore *pEngine)
@@ -77,6 +75,13 @@ STDMETHODIMP CGEKPopulationSystem::Initialize(IGEKEngineCore *pEngine)
     }
 
     return hRetVal;
+}
+
+STDMETHODIMP_(void) CGEKPopulationSystem::Clear(void)
+{
+    Free();
+    m_aComponents.clear();
+    m_aComponentSystems.clear();
 }
 
 STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
