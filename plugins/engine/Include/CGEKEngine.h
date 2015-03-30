@@ -82,6 +82,9 @@ public:
     virtual ~CGEKEngine(void);
     DECLARE_UNKNOWN(CGEKEngine);
 
+    // IGEKUnknown
+    STDMETHOD_(void, Destroy)                               (THIS);
+
     // IGEKGameApplication
     STDMETHOD_(void, Run)                                   (THIS);
 

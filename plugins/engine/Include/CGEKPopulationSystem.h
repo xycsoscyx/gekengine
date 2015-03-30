@@ -29,12 +29,15 @@ public:
     virtual ~CGEKPopulationSystem(void);
     DECLARE_UNKNOWN(CGEKPopulationSystem);
 
+    // IGEKUnknown
+    STDMETHOD_(void, Destroy)                   (THIS);
+
     // IGEKPopulationSystem
-    STDMETHOD(Initialize)               (THIS_ IGEKEngineCore *pEngine);
-    STDMETHOD(Load)                     (THIS_ LPCWSTR pName);
-    STDMETHOD(Save)                     (THIS_ LPCWSTR pName);
-    STDMETHOD_(void, Free)              (THIS);
-    STDMETHOD_(void, Update)            (THIS_ float nGameTime, float nFrameTime);
+    STDMETHOD(Initialize)                       (THIS_ IGEKEngineCore *pEngine);
+    STDMETHOD(Load)                             (THIS_ LPCWSTR pName);
+    STDMETHOD(Save)                             (THIS_ LPCWSTR pName);
+    STDMETHOD_(void, Free)                      (THIS);
+    STDMETHOD_(void, Update)                    (THIS_ float nGameTime, float nFrameTime);
 
     // IGEKSceneManager
     STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID, LPCWSTR pName = nullptr);

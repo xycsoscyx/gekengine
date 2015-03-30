@@ -18,6 +18,10 @@ CGEKPopulationSystem::CGEKPopulationSystem(void)
 
 CGEKPopulationSystem::~CGEKPopulationSystem(void)
 {
+}
+
+STDMETHODIMP_(void) CGEKPopulationSystem::Destroy(void)
+{
     Free();
     m_aComponents.clear();
     m_aComponentSystems.clear();

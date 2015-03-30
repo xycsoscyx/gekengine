@@ -92,6 +92,10 @@ CGEKRenderSystem::~CGEKRenderSystem(void)
     CGEKObservable::RemoveObserver(m_pEngine->GetVideoSystem(), (IGEK3DVideoObserver *)GetUnknown());
 }
 
+STDMETHODIMP_(void) CGEKRenderSystem::Destroy(void)
+{
+}
+
 STDMETHODIMP CGEKRenderSystem::Initialize(IGEKEngineCore *pEngine)
 {
     REQUIRE_RETURN(pEngine, E_INVALIDARG);

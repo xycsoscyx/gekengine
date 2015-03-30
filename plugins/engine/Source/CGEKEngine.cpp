@@ -352,10 +352,10 @@ CGEKEngine::CGEKEngine(void)
 
 CGEKEngine::~CGEKEngine(void)
 {
-    if (m_hCursorPointer)
-    {
-        DestroyIcon(m_hCursorPointer);
-    }
+}
+
+STDMETHODIMP_(void) CGEKEngine::Destroy(void)
+{
 }
 
 void CGEKEngine::CheckInput(UINT32 nKey, bool bState)
@@ -573,6 +573,11 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
                 m_spVideoSystem.Release();
                 DestroyWindow(m_hWindow);
             }
+        }
+
+        if (m_hCursorPointer)
+        {
+            DestroyIcon(m_hCursorPointer);
         }
     }
 

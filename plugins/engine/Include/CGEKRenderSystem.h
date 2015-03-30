@@ -121,6 +121,9 @@ public:
     virtual ~CGEKRenderSystem(void);
     DECLARE_UNKNOWN(CGEKRenderSystem);
 
+    // IGEKUnknown
+    STDMETHOD_(void, Destroy)               (THIS);
+
     // IGEK3DVideoObserver
     STDMETHOD_(void, OnResizeBegin)         (THIS);
     STDMETHOD(OnResizeEnd)                  (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed);
