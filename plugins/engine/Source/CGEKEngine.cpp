@@ -558,8 +558,8 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
                         }
 
                         m_spPopulationManager->Clear();
-                        m_spPopulationManager.Release();
                         m_spRenderManager.Release();
+                        m_spPopulationManager.Release();
                     }
                 }
 
