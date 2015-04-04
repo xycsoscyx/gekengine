@@ -20,6 +20,7 @@ protected:
     std::unique_ptr<IGEK3DVideoContextSystem> m_spGeometrySystem;
     std::unique_ptr<IGEK3DVideoContextSystem> m_spPixelSystem;
 
+#ifdef _DEBUG
     UINT32 m_nNumBoundRenderTargets;
     UINT32 m_nNumBoundRenderStates;
     UINT32 m_nNumBoundDepthStates;
@@ -33,6 +34,7 @@ protected:
     UINT32 m_nNumDispatchedThreadsX;
     UINT32 m_nNumDispatchedThreadsY;
     UINT32 m_nNumDispatchedThreadsZ;
+#endif
 
 protected:
     CGEKVideoContext(ID3D11DeviceContext *pContext);

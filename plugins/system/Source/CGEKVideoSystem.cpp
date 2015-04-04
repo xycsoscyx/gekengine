@@ -981,6 +981,7 @@ CGEKVideoContext::CGEKVideoContext(void)
 
 CGEKVideoContext::CGEKVideoContext(ID3D11DeviceContext *pContext)
     : m_spDeviceContext(pContext)
+#ifdef _DEBUG
     , m_nNumBoundRenderTargets(0)
     , m_nNumBoundRenderStates(0)
     , m_nNumBoundDepthStates(0)
@@ -994,6 +995,7 @@ CGEKVideoContext::CGEKVideoContext(ID3D11DeviceContext *pContext)
     , m_nNumDispatchedThreadsX(0)
     , m_nNumDispatchedThreadsY(0)
     , m_nNumDispatchedThreadsZ(0)
+#endif
 {
     m_spComputeSystem.reset(new CGEKVideoComputeContextSystem(pContext));
     m_spVertexSystem.reset(new CGEKVideoVertexContextSystem(pContext));
@@ -1007,6 +1009,7 @@ CGEKVideoContext::~CGEKVideoContext(void)
 
 void CGEKVideoContext::ResetCounts(void)
 {
+#ifdef _DEBUG
     m_nNumBoundRenderTargets = 0;
     m_nNumBoundRenderStates = 0;
     m_nNumBoundDepthStates = 0;
@@ -1020,6 +1023,7 @@ void CGEKVideoContext::ResetCounts(void)
     m_nNumDispatchedThreadsX = 0;
     m_nNumDispatchedThreadsY = 0;
     m_nNumDispatchedThreadsZ = 0;
+#endif
 }
 
 STDMETHODIMP_(IGEK3DVideoContextSystem *) CGEKVideoContext::GetComputeSystem(void)
@@ -1124,7 +1128,9 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEK3DV
         m_spDeviceContext->OMSetRenderTargets(aD3DViews.size(), aD3DViews.data(), nullptr);
     }
 
+#ifdef _DEBUG
     m_nNumBoundRenderTargets += aTargets.size();
+#endif
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(IUnknown *pStates)
@@ -1136,7 +1142,9 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(IUnknown *pStates)
     if (spStates)
     {
         m_spDeviceContext->RSSetState(spStates);
+#ifdef _DEBUG
         m_nNumBoundDepthStates++;
+#endif
     }
 }
 
@@ -1149,7 +1157,9 @@ STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(UINT32 nStencilReference, I
     if (spStates)
     {
         m_spDeviceContext->OMSetDepthStencilState(spStates, nStencilReference);
+#ifdef _DEBUG
         m_nNumBoundDepthStates++;
+#endif
     }
 }
 
@@ -1162,7 +1172,9 @@ STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &nBlendFactor,
     if (spStates)
     {
         m_spDeviceContext->OMSetBlendState(spStates, nBlendFactor.rgba, nMask);
+#ifdef _DEBUG
         m_nNumBoundBlendStates++;
+#endif
     }
 }
 
@@ -1177,7 +1189,9 @@ STDMETHODIMP_(void) CGEKVideoContext::SetVertexBuffer(UINT32 nSlot, UINT32 nOffs
         UINT32 nStride = pBuffer->GetStride();
         ID3D11Buffer *pD3DBuffer = spBuffer;
         m_spDeviceContext->IASetVertexBuffers(nSlot, 1, &pD3DBuffer, &nStride, &nOffset);
+#ifdef _DEBUG
         m_nNumBoundVertexBuffers++;
+#endif
     }
 }
 
@@ -1193,12 +1207,16 @@ STDMETHODIMP_(void) CGEKVideoContext::SetIndexBuffer(UINT32 nOffset, IGEK3DVideo
         {
         case 2:
             m_spDeviceContext->IASetIndexBuffer(spBuffer, DXGI_FORMAT_R16_UINT, nOffset);
+#ifdef _DEBUG
             m_nNumBoundIndexBuffers++;
+#endif
             break;
 
         case 4:
             m_spDeviceContext->IASetIndexBuffer(spBuffer, DXGI_FORMAT_R32_UINT, nOffset);
+#ifdef _DEBUG
             m_nNumBoundIndexBuffers++;
+#endif
             break;
         };
     }
@@ -1239,43 +1257,53 @@ STDMETHODIMP_(void) CGEKVideoContext::DrawIndexedPrimitive(UINT32 nNumIndices, U
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->DrawIndexed(nNumIndices, nStartIndex, nBaseVertex);
+#ifdef _DEBUG
     m_nNumDrawCalls++;
     m_nNumDrawnIndices += nNumIndices;
+#endif
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::DrawPrimitive(UINT32 nNumVertices, UINT32 nStartVertex)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->Draw(nNumVertices, nStartVertex);
+#ifdef _DEBUG
     m_nNumDrawCalls++;
     m_nNumDrawnVertices += nNumVertices;
+#endif
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::DrawInstancedIndexedPrimitive(UINT32 nNumIndices, UINT32 nNumInstances, UINT32 nStartIndex, UINT32 nBaseVertex, UINT32 nStartInstance)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->DrawIndexedInstanced(nNumIndices, nNumInstances, nStartIndex, nBaseVertex, nStartInstance);
+#ifdef _DEBUG
     m_nNumDrawCalls++;
     m_nNumDrawnIndices += nNumIndices;
     m_nNumDrawnInstances += nNumInstances;
+#endif
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::DrawInstancedPrimitive(UINT32 nNumVertices, UINT32 nNumInstances, UINT32 nStartVertex, UINT32 nStartInstance)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->DrawInstanced(nNumVertices, nNumInstances, nStartVertex, nStartInstance);
+#ifdef _DEBUG
     m_nNumDrawCalls++;
     m_nNumDrawnVertices += nNumVertices;
     m_nNumDrawnInstances += nNumInstances;
+#endif
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::Dispatch(UINT32 nThreadGroupCountX, UINT32 nThreadGroupCountY, UINT32 nThreadGroupCountZ)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     m_spDeviceContext->Dispatch(nThreadGroupCountX, nThreadGroupCountY, nThreadGroupCountZ);
+#ifdef _DEBUG
     m_nNumDispatchedThreadsX += nThreadGroupCountX;
     m_nNumDispatchedThreadsY += nThreadGroupCountY;
     m_nNumDispatchedThreadsZ += nThreadGroupCountZ;
+#endif
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::FinishCommandList(IUnknown **ppUnknown)
