@@ -6,6 +6,7 @@
 #include <concurrent_vector.h>
 #include <concurrent_queue.h>
 #include <unordered_map>
+#include <set>
 
 #pragma warning(disable:4503)
 
@@ -13,6 +14,8 @@ DECLARE_INTERFACE(IGEKEngineCore);
 
 DECLARE_INTERFACE_IID_(IGEKComponent, IUnknown, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E")
 {
+    STDMETHOD_(void, GetIntersectingSet)        (THIS_ std::set<GEKENTITYID> &aSet) PURE;
+
     STDMETHOD_(LPCWSTR, GetName)                (THIS) const PURE;
     STDMETHOD_(GEKCOMPONENTID, GetID)           (THIS) const PURE;
     STDMETHOD_(void, Clear)                     (THIS) PURE;
@@ -46,6 +49,7 @@ public:                                                                         
     DECLARE_UNKNOWN(CGEKComponent##NAME##);                                                 \
     CGEKComponent##NAME##(void);                                                            \
     ~CGEKComponent##NAME##(void);                                                           \
+    STDMETHOD_(void, GetIntersectingSet)(THIS_ std::set<GEKENTITYID> &aSet);                \
     STDMETHOD_(LPCWSTR, GetName)        (THIS) const;                                       \
     STDMETHOD_(GEKCOMPONENTID, GetID)   (THIS) const;                                       \
     STDMETHOD_(void, Clear)             (THIS);                                             \
@@ -105,6 +109,42 @@ CGEKComponent##NAME##::CGEKComponent##NAME##(void)                              
                                                                                             \
 CGEKComponent##NAME##::~CGEKComponent##NAME##(void)                                         \
 {                                                                                           \
+}                                                                                           \
+                                                                                            \
+STDMETHODIMP_(void) CGEKComponent##NAME##::GetIntersectingSet(std::set<GEKENTITYID> &aSet)  \
+{                                                                                           \
+    if (aSet.empty())                                                                       \
+    {                                                                                       \
+        for (auto kPair : m_aIndices)                                                       \
+        {                                                                                   \
+            aSet.insert(kPair.first);                                                       \
+        }                                                                                   \
+    }                                                                                       \
+    else                                                                                    \
+    {                                                                                       \
+        std::set<GEKENTITYID> aIntersection;                                                \
+        auto pSetIterator = aSet.cbegin();                                                  \
+        auto pMapIterator = m_aIndices.cbegin();                                            \
+        while (pSetIterator != aSet.cend() && pMapIterator != m_aIndices.cend())            \
+        {                                                                                   \
+            if ((*pSetIterator) < pMapIterator->first)                                      \
+            {                                                                               \
+                ++pSetIterator;                                                             \
+            }                                                                               \
+            else if (pMapIterator->first < (*pSetIterator))                                 \
+            {                                                                               \
+                ++pMapIterator;                                                             \
+            }                                                                               \
+            else                                                                            \
+            {                                                                               \
+                aIntersection.insert((*pSetIterator));                                      \
+                ++pSetIterator;                                                             \
+                ++pMapIterator;                                                             \
+            }                                                                               \
+        };                                                                                  \
+                                                                                            \
+        aSet = std::move(aIntersection);                                                    \
+    }                                                                                       \
 }                                                                                           \
                                                                                             \
 STDMETHODIMP_(LPCWSTR) CGEKComponent##NAME##::GetName(void) const                           \

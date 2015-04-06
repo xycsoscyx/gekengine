@@ -354,10 +354,6 @@ CGEKEngine::~CGEKEngine(void)
 {
 }
 
-STDMETHODIMP_(void) CGEKEngine::Destroy(void)
-{
-}
-
 void CGEKEngine::CheckInput(UINT32 nKey, bool bState)
 {
     if (nKey == 0xC0 && !bState)

@@ -18,10 +18,6 @@ CGEKPopulationSystem::CGEKPopulationSystem(void)
 
 CGEKPopulationSystem::~CGEKPopulationSystem(void)
 {
-}
-
-STDMETHODIMP_(void) CGEKPopulationSystem::Destroy(void)
-{
     Clear();
 }
 
@@ -382,49 +378,32 @@ STDMETHODIMP_(void) CGEKPopulationSystem::ListEntities(std::function<void(const 
 
 STDMETHODIMP_(void) CGEKPopulationSystem::ListComponentsEntities(const std::vector<GEKCOMPONENTID> &aComponents, std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel)
 {
-    std::list<IGEKComponent *> aComponentList;
+    std::set<GEKENTITYID> aEntities;
     for (auto &nComponentID : aComponents)
     {
         auto pIterator = m_aComponents.find(nComponentID);
         if (pIterator != m_aComponents.end())
         {
-            aComponentList.push_back((*pIterator).second);
+            (*pIterator).second->GetIntersectingSet(aEntities);
+            if (aEntities.empty())
+            {
+                break;
+            }
         }
     }
 
-    if (bParallel)
+    if (!aEntities.empty())
     {
-        concurrency::parallel_for_each(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> void
+        if (bParallel)
         {
-            bool bEntityHasAllComponents = true;
-            for (auto &spComponent : aComponentList)
-            {
-                if (!spComponent->HasComponent(nEntityID))
-                {
-                    bEntityHasAllComponents = false;
-                }
-            }
-
-            if (bEntityHasAllComponents)
+            concurrency::parallel_for_each(aEntities.begin(), aEntities.end(), [&](const GEKENTITYID &nEntityID) -> void
             {
                 OnEntity(nEntityID);
-            }
-        });
-    }
-    else
-    {
-        for (auto &nEntityID : m_aPopulation)
+            });
+        }
+        else
         {
-            bool bEntityHasAllComponents = true;
-            for (auto &spComponent : aComponentList)
-            {
-                if (!spComponent->HasComponent(nEntityID))
-                {
-                    bEntityHasAllComponents = false;
-                }
-            }
-
-            if (bEntityHasAllComponents)
+            for (auto &nEntityID : aEntities)
             {
                 OnEntity(nEntityID);
             }

@@ -29,9 +29,6 @@ public:
     virtual ~CGEKPopulationSystem(void);
     DECLARE_UNKNOWN(CGEKPopulationSystem);
 
-    // IGEKUnknown
-    STDMETHOD_(void, Destroy)                   (THIS);
-
     // IGEKPopulationSystem
     STDMETHOD(Initialize)                       (THIS_ IGEKEngineCore *pEngine);
     STDMETHOD_(void, Clear)                     (THIS);
