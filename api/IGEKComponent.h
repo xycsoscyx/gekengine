@@ -115,7 +115,7 @@ STDMETHODIMP_(void) CGEKComponent##NAME##::GetIntersectingSet(std::set<GEKENTITY
 {                                                                                           \
     if (aSet.empty())                                                                       \
     {                                                                                       \
-        for (auto kPair : m_aIndices)                                                       \
+        for (auto &kPair : m_aIndices)                                                      \
         {                                                                                   \
             aSet.insert(kPair.first);                                                       \
         }                                                                                   \
@@ -123,25 +123,13 @@ STDMETHODIMP_(void) CGEKComponent##NAME##::GetIntersectingSet(std::set<GEKENTITY
     else                                                                                    \
     {                                                                                       \
         std::set<GEKENTITYID> aIntersection;                                                \
-        auto pSetIterator = aSet.cbegin();                                                  \
-        auto pMapIterator = m_aIndices.cbegin();                                            \
-        while (pSetIterator != aSet.cend() && pMapIterator != m_aIndices.cend())            \
+        for (auto &kPair : m_aIndices)                                                      \
         {                                                                                   \
-            if ((*pSetIterator) < pMapIterator->first)                                      \
+            if (aSet.count(kPair.first) > 0)                                                \
             {                                                                               \
-                ++pSetIterator;                                                             \
+                aIntersection.insert(kPair.first);                                          \
             }                                                                               \
-            else if (pMapIterator->first < (*pSetIterator))                                 \
-            {                                                                               \
-                ++pMapIterator;                                                             \
-            }                                                                               \
-            else                                                                            \
-            {                                                                               \
-                aIntersection.insert((*pSetIterator));                                      \
-                ++pSetIterator;                                                             \
-                ++pMapIterator;                                                             \
-            }                                                                               \
-        };                                                                                  \
+        }                                                                                   \
                                                                                             \
         aSet = std::move(aIntersection);                                                    \
     }                                                                                       \
