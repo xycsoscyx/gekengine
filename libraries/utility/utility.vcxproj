@@ -13,10 +13,12 @@
   <ItemGroup>
     <ClCompile Include="Source\CGEKLibXML2.cpp" />
     <ClCompile Include="GEKUtility.cpp" />
+    <ClCompile Include="Source\CGEKPerformance.cpp" />
     <ClCompile Include="Source\CGEKTimer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\CGEKLibXML2.h" />
+    <ClInclude Include="Include\CGEKPerformance.h" />
     <ClInclude Include="Include\CGEKTimer.h" />
     <ClInclude Include="GEKUtility.h" />
   </ItemGroup>

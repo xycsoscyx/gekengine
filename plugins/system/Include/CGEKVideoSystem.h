@@ -20,25 +20,8 @@ protected:
     std::unique_ptr<IGEK3DVideoContextSystem> m_spGeometrySystem;
     std::unique_ptr<IGEK3DVideoContextSystem> m_spPixelSystem;
 
-#ifdef _DEBUG
-    UINT32 m_nNumBoundRenderTargets;
-    UINT32 m_nNumBoundRenderStates;
-    UINT32 m_nNumBoundDepthStates;
-    UINT32 m_nNumBoundBlendStates;
-    UINT32 m_nNumBoundVertexBuffers;
-    UINT32 m_nNumBoundIndexBuffers;
-    UINT32 m_nNumDrawCalls;
-    UINT32 m_nNumDrawnIndices;
-    UINT32 m_nNumDrawnVertices;
-    UINT32 m_nNumDrawnInstances;
-    UINT32 m_nNumDispatchedThreadsX;
-    UINT32 m_nNumDispatchedThreadsY;
-    UINT32 m_nNumDispatchedThreadsZ;
-#endif
-
 protected:
     CGEKVideoContext(ID3D11DeviceContext *pContext);
-    void ResetCounts(void);
 
 public:
     CGEKVideoContext(void);
