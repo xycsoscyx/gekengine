@@ -3,11 +3,12 @@
 #include <windows.h>
 #include <atlbase.h>
 #include <atlstr.h>
+#include <chrono>
 
 class CGEKPerformance
 {
 private:
-    LARGE_INTEGER m_nStart;
+    std::chrono::high_resolution_clock::time_point m_kStart;
     LPCSTR m_pFunction;
     LPCSTR m_pFile;
     UINT32 m_nLine;
@@ -15,8 +16,6 @@ private:
 public:
     CGEKPerformance(LPCSTR pFunction, LPCSTR pFile, UINT32 nLine);
     ~CGEKPerformance(void);
-
-    static void Initialize(void);
 };
 
 #define GEKPERFNAME(FUNCTION, LINE)  kPerformance##NAME####LINE##Counter

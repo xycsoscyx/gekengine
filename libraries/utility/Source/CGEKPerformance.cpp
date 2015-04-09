@@ -2,27 +2,19 @@
 #include "GEKUtility.h"
 #include <windows.h>
 
-static double gs_nFrequency = 0.0f;
-void CGEKPerformance::Initialize(void)
-{
-    LARGE_INTEGER nFrequency;
-    QueryPerformanceFrequency(&nFrequency);
-    gs_nFrequency = double(nFrequency.QuadPart);
-}
+static std::chrono::high_resolution_clock gs_kClock;
 
 CGEKPerformance::CGEKPerformance(LPCSTR pFunction, LPCSTR pFile, UINT32 nLine)
     : m_pFunction(pFunction)
     , m_pFile(pFile)
     , m_nLine(nLine)
+    , m_kStart(gs_kClock.now())
 {
-    QueryPerformanceCounter(&m_nStart);
     OutputDebugStringA(FormatString("> %s(%d)\r\n", m_pFunction, m_nLine));
 }
 
 CGEKPerformance::~CGEKPerformance(void)
 {
-    LARGE_INTEGER nEnd;
-    QueryPerformanceCounter(&nEnd);
-    double nTime = (double(nEnd.QuadPart - m_nStart.QuadPart) / gs_nFrequency);
+    double nTime = (std::chrono::duration<double, std::milli>(gs_kClock.now() - m_kStart).count() * 0.001);
     OutputDebugStringA(FormatString("< %s(%d): %f\r\n", m_pFunction, m_nLine, nTime));
 }

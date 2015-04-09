@@ -2,31 +2,20 @@
 #include <windows.h>
 
 CGEKTimer::CGEKTimer(void)
-    : m_nFrequency(0.0)
-    , m_nTimeStart(0)
-    , m_nPreviousTime(0)
-    , m_nCurrentTime(0)
-    , m_bPaused(false)
-    , m_nPauseTime(0)
+    : m_bPaused(false)
 {
-    UINT64 nFrequency = 0;
-    QueryPerformanceFrequency((LARGE_INTEGER *)&nFrequency);
-    m_nFrequency = double(nFrequency);
     Reset();
 }
 
 void CGEKTimer::Reset(void)
 {
-    QueryPerformanceCounter((LARGE_INTEGER *)&m_nTimeStart);
-    m_nPreviousTime = 0;
-    m_nCurrentTime = 0;
+    m_kPrevious = m_kCurrent = m_kStart = m_kClock.now();
 }
 
 void CGEKTimer::Update(void) 
 {
-    m_nPreviousTime = m_nCurrentTime;
-    QueryPerformanceCounter((LARGE_INTEGER *)&m_nCurrentTime);
-    m_nCurrentTime = (m_nCurrentTime - m_nTimeStart);
+    m_kPrevious = m_kCurrent;
+    m_kCurrent = m_kClock.now();
 }
 
 void CGEKTimer::Pause(bool bState)
@@ -34,23 +23,23 @@ void CGEKTimer::Pause(bool bState)
     if (bState && !m_bPaused)
     {
         m_bPaused = true;
-        QueryPerformanceCounter((LARGE_INTEGER *)&m_nPauseTime);
+        m_kPaused = m_kClock.now();
     }
     else if (!bState && m_bPaused)
     {
-        UINT64 nTime = 0;
-        QueryPerformanceCounter((LARGE_INTEGER *)&nTime);
-        m_nTimeStart += (nTime - m_nPauseTime);
+        auto kTime = m_kClock.now();
+        auto kPaused = (kTime - m_kPaused);
+        m_kStart += kPaused;
         m_bPaused = false;
     }
 }
 
 double CGEKTimer::GetUpdateTime(void) const 
-{ 
-    return (double(m_nCurrentTime - m_nPreviousTime) / m_nFrequency);
+{
+    return (std::chrono::duration<double, std::milli>(m_kCurrent - m_kPrevious).count() * 0.001);
 }
 
 double CGEKTimer::GetAbsoluteTime(void) const
 {
-    return (double(m_nCurrentTime) / m_nFrequency);
+    return (std::chrono::duration<double, std::milli>(m_kCurrent - m_kStart).count() * 0.001);
 }

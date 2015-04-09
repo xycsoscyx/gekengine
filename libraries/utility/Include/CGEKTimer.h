@@ -1,17 +1,18 @@
 #pragma once
 
 #include <windows.h>
+#include <chrono>
 
 class CGEKTimer
 {
 private:
-    double m_nFrequency;
-    UINT64 m_nTimeStart;
-    UINT64 m_nPreviousTime;
-    UINT64 m_nCurrentTime;
-    
+    std::chrono::high_resolution_clock m_kClock;
+    std::chrono::high_resolution_clock::time_point m_kStart;
+    std::chrono::high_resolution_clock::time_point m_kPrevious;
+    std::chrono::high_resolution_clock::time_point m_kCurrent;
+
     bool m_bPaused;
-    UINT64 m_nPauseTime;
+    std::chrono::high_resolution_clock::time_point m_kPaused;
 
 public:
     CGEKTimer(void);
