@@ -18,6 +18,7 @@ class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public IGEKSceneObserver
                                 , public IGEKComponentSystem
                                 , public IGEKNewton
+                                , public dNewton
 {
 public:
     struct MATERIAL
@@ -40,19 +41,19 @@ private:
     IGEKEngineCore *m_pEngine;
 
     float3 m_nGravity;
-    NewtonWorld *m_pWorld;
     MATERIAL m_kDefaultMaterial;
     std::map<CStringW, MATERIAL> m_aMaterials;
-    concurrency::concurrent_unordered_map<GEKENTITYID, NewtonBody *> m_aBodies;
-    std::unordered_map<CStringW, NewtonCollision *> m_aCollisions;
+    concurrency::concurrent_unordered_map<GEKENTITYID, std::shared_ptr<dNewtonDynamicBody>> m_aBodies;
+    std::unordered_map<CStringW, std::shared_ptr<dNewtonCollision>> m_aCollisions;
 
 private:
-    void OnSetForceAndTorque(const NewtonBody *pBody, const GEKENTITYID &nEntityID);
-    void OnEntityTransformed(const NewtonBody *pBody, const GEKENTITYID &nEntityID, const float4x4 &nMatrix);
-    void OnCollisionContact(const NewtonMaterial *pMaterial, NewtonBody *pBody0, const GEKENTITYID &nEntityID0, NewtonBody *pBody1, const GEKENTITYID &nEntityID1);
-
     MATERIAL *LoadMaterial(LPCWSTR pName);
-    NewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
+    dNewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
+
+private:
+    bool OnBodiesAABBOverlap(const dNewtonBody* const body0, const dNewtonBody* const body1, int threadIndex) const;
+    bool OnCompoundSubCollisionAABBOverlap(const dNewtonBody* const body0, const dNewtonCollision* const subShape0, const dNewtonBody* const body1, const dNewtonCollision* const subShape1, int threadIndex) const;
+    void OnContactProcess(dNewtonContactMaterial* const contactMaterial, dFloat timestep, int threadIndex) const;
 
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemNewton)
@@ -69,4 +70,8 @@ public:
     STDMETHOD_(void, OnComponentAdded)          (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
     STDMETHOD_(void, OnComponentRemoved)        (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
     STDMETHOD_(void, OnUpdate)                  (THIS_ float nGameTime, float nFrameTime);
+
+    // IGEKNewton
+    STDMETHOD_(dNewton *, GetCore)              (THIS);
+    STDMETHOD_(float3, GetGravity)              (THIS);
 };
