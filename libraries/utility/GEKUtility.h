@@ -11,6 +11,7 @@
 #include <map>
 
 #pragma warning(disable:4251)
+#pragma warning(disable:4996)
 
 #define REQUIRE_VOID_RETURN(CHECK)      do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (false)
 #define REQUIRE_RETURN(CHECK, RETURN)   do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (false)
@@ -123,6 +124,32 @@ CStringW    StrFromBoolean(bool nValue);
 
 CStringA    FormatString(LPCSTR pFormat, ...);
 CStringW    FormatString(LPCWSTR pFormat, ...);
+
+namespace std
+{
+    wstring to_string(const float2 &nValue);
+    wstring to_string(const float3 &nValue);
+    wstring to_string(const float4 &nValue);
+    wstring to_string(const quaternion &nValue);
+
+    template<typename ... ARGS>
+    string format(LPCSTR pFormat, ARGS ... pArgs)
+    {
+        size_t nLength = _snprintf(nullptr, 0, pFormat, pArgs ...);
+        string strReturn(++nLength, '\0');
+        _snprintf(&strReturn.front(), nLength, pFormat, pArgs ...);
+        return strReturn;
+    }
+
+    template<typename ... ARGS>
+    wstring format(LPCWSTR pFormat, ARGS ... pArgs)
+    {
+        size_t nLength = _snwprintf(nullptr, 0, pFormat, pArgs ...);
+        wstring strReturn(++nLength, L'\0');
+        _snwprintf(&strReturn.front(), nLength, pFormat, pArgs ...);
+        return strReturn;
+    }
+};
 
 CStringW GEKParseFileName(LPCWSTR pFileName);
 

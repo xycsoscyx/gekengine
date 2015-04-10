@@ -190,6 +190,29 @@ CStringW FormatString(LPCWSTR pFormat, ...)
     return strValue;
 }
 
+namespace std
+{
+    wstring to_string(const float2 &nValue)
+    {
+        return format(L"%f,%f", nValue.x, nValue.y);
+    }
+
+    wstring to_string(const float3 &nValue)
+    {
+        return format(L"%f,%f,%f", nValue.x, nValue.y, nValue.z);
+    }
+
+    wstring to_string(const float4 &nValue)
+    {
+        return format(L"%f,%f,%f,%f", nValue.x, nValue.y, nValue.z, nValue.w);
+    }
+
+    wstring to_string(const quaternion &nValue)
+    {
+        return format(L"%f,%f,%f,%f", nValue.x, nValue.y, nValue.z, nValue.w);
+    }
+};
+
 CStringW GEKParseFileName(LPCWSTR pFileName)
 {
     CStringW strParsed(pFileName);
