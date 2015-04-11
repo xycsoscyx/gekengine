@@ -43,7 +43,7 @@ private:
     float3 m_nGravity;
     MATERIAL m_kDefaultMaterial;
     std::map<CStringW, MATERIAL> m_aMaterials;
-    concurrency::concurrent_unordered_map<GEKENTITYID, std::shared_ptr<dNewtonDynamicBody>> m_aBodies;
+    concurrency::concurrent_unordered_map<GEKENTITYID, std::shared_ptr<dNewtonBody>> m_aBodies;
     std::unordered_map<CStringW, std::shared_ptr<dNewtonCollision>> m_aCollisions;
 
 private:
