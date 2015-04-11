@@ -109,7 +109,7 @@ static __forceinline float ClipFloat(float nValue)
     return (float(nInteger) / 100.0f);
 }
 
-GEKMODEASPECT GEKMODE::GetAspect(void)
+GEKMODEASPECT GEKMODE::GetAspect(void) const
 {
     const float fAspect4x3 = ClipFloat(4.0f / 3.0f);
     const float fAspect16x9 = ClipFloat(16.0f / 9.0f);

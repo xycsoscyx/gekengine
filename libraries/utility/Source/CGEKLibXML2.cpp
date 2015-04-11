@@ -348,7 +348,7 @@ HRESULT CLibXMLDoc::Save(LPCWSTR pFileName)
     return hRetVal;
 }
 
-CLibXMLNode CLibXMLDoc::GetRoot(void)
+CLibXMLNode CLibXMLDoc::GetRoot(void) const
 {
     if (m_pDocument != nullptr)
     {

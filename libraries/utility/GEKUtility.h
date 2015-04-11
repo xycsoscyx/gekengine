@@ -31,7 +31,7 @@ public:
     UINT32 ysize;
 
 public:
-    GEKMODEASPECT GetAspect(void);
+    GEKMODEASPECT GetAspect(void) const;
 };
 
 std::map<UINT32, std::vector<GEKMODE>> GEKGetDisplayModes(void);

@@ -287,19 +287,18 @@ STDMETHODIMP CGEKPopulationSystem::DestroyEntity(const GEKENTITYID &nEntityID)
     return S_OK;
 }
 
-STDMETHODIMP CGEKPopulationSystem::GetNamedEntity(LPCWSTR pName, GEKENTITYID *pEntityID)
+STDMETHODIMP_(GEKENTITYID) CGEKPopulationSystem::GetNamedEntity(LPCWSTR pName)
 {
-    REQUIRE_RETURN(pName && pEntityID, E_INVALIDARG);
+    REQUIRE_RETURN(pName, GEKINVALIDENTITYID);
 
-    HRESULT hRetVal = E_FAIL;
+    GEKENTITYID nEntityID = GEKINVALIDENTITYID;
     auto pIterator = m_aNamedEntities.find(pName);
     if (pIterator != m_aNamedEntities.end())
     {
-        (*pEntityID) = (*pIterator).second;
-        hRetVal = S_OK;
+        nEntityID = (*pIterator).second;
     }
 
-    return hRetVal;
+    return nEntityID;
 }
 
 STDMETHODIMP CGEKPopulationSystem::AddComponent(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID, const std::unordered_map<CStringW, CStringW> &aParams)

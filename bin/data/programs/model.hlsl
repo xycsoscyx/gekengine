@@ -28,7 +28,7 @@ WORLDVERTEX GetWorldVertex(in SOURCEVERTEX kSource)
 	WORLDVERTEX kVertex;
 	kVertex.position    = mul(nObject, float4(kSource.position * kInstance.m_nScale, 1.0f));
 	kVertex.texcoord    = kSource.texcoord;
-	kVertex.normal      = mul(kSource.normal, (float3x3)nObject);
+    kVertex.normal      = mul((float3x3)nObject, kSource.normal);
     kVertex.color       = kInstance.m_nColor;
 	return kVertex;
 }

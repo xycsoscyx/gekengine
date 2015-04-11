@@ -53,7 +53,7 @@ private:
 private:
     bool OnBodiesAABBOverlap(const dNewtonBody* const body0, const dNewtonBody* const body1, int threadIndex) const;
     bool OnCompoundSubCollisionAABBOverlap(const dNewtonBody* const body0, const dNewtonCollision* const subShape0, const dNewtonBody* const body1, const dNewtonCollision* const subShape1, int threadIndex) const;
-    void OnContactProcess(dNewtonContactMaterial* const contactMaterial, dFloat timestep, int threadIndex) const;
+    void OnContactProcess(dNewtonContactMaterial* const contactMaterial, dFloat timestep, int threadIndex);
 
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemNewton)

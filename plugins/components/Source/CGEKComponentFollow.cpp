@@ -48,8 +48,8 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnUpdateEnd(float nGameTime, floa
     {
         auto &kFollow = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(follow)>(nEntityID, GET_COMPONENT_ID(follow));
 
-        GEKENTITYID nTargetID = GEKINVALIDENTITYID;
-        if (SUCCEEDED(m_pEngine->GetSceneManager()->GetNamedEntity(kFollow.target, &nTargetID)))
+        GEKENTITYID nTargetID = m_pEngine->GetSceneManager()->GetNamedEntity(kFollow.target);
+        if (nTargetID != GEKINVALIDENTITYID)
         {
             auto &kTargetTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nTargetID, GET_COMPONENT_ID(transform));
 

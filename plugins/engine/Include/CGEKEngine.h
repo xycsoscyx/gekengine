@@ -27,13 +27,13 @@ public:
     void Save(CLibXMLNode &kNode);
 
     // IGEKConfigGroup
-    STDMETHOD_(LPCWSTR, GetText)                (THIS);
-    STDMETHOD_(bool, HasGroup)                  (THIS_ LPCWSTR pName);
+    STDMETHOD_(LPCWSTR, GetText)                (THIS) CONST;
+    STDMETHOD_(bool, HasGroup)                  (THIS_ LPCWSTR pName) CONST;
     STDMETHOD_(IGEKConfigGroup*, GetGroup)      (THIS_ LPCWSTR pName);
-    STDMETHOD_(void, ListGroups)                (THIS_ std::function<void(LPCWSTR, IGEKConfigGroup*)> OnGroup);
-    STDMETHOD_(bool, HasValue)                  (THIS_ LPCWSTR pName);
+    STDMETHOD_(void, ListGroups)                (THIS_ std::function<void(LPCWSTR, IGEKConfigGroup*)> OnGroup) CONST;
+    STDMETHOD_(bool, HasValue)                  (THIS_ LPCWSTR pName) CONST;
     STDMETHOD_(LPCWSTR, GetValue)               (THIS_ LPCWSTR pName, LPCWSTR pDefault = nullptr);
-    STDMETHOD_(void, ListValues)                (THIS_ std::function<void(LPCWSTR, LPCWSTR)> OnValue);
+    STDMETHOD_(void, ListValues)                (THIS_ std::function<void(LPCWSTR, LPCWSTR)> OnValue) CONST;
 };
 
 class CGEKEngine : public CGEKUnknown

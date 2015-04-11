@@ -59,12 +59,12 @@ void CGEKConfigGroup::Save(CLibXMLNode &kNode)
     }
 }
 
-STDMETHODIMP_(LPCWSTR) CGEKConfigGroup::GetText(void)
+STDMETHODIMP_(LPCWSTR) CGEKConfigGroup::GetText(void) CONST
 {
     return m_strText;
 }
 
-STDMETHODIMP_(bool) CGEKConfigGroup::HasGroup(LPCWSTR pName)
+STDMETHODIMP_(bool) CGEKConfigGroup::HasGroup(LPCWSTR pName) CONST
 {
     REQUIRE_RETURN(pName, false);
 
@@ -92,7 +92,7 @@ STDMETHODIMP_(IGEKConfigGroup *) CGEKConfigGroup::GetGroup(LPCWSTR pName)
     return (*pIterator).second;
 }
 
-STDMETHODIMP_(void) CGEKConfigGroup::ListGroups(std::function<void(LPCWSTR, IGEKConfigGroup*)> OnGroup)
+STDMETHODIMP_(void) CGEKConfigGroup::ListGroups(std::function<void(LPCWSTR, IGEKConfigGroup*)> OnGroup) CONST
 {
     for (auto &kPair : m_aGroups)
     {
@@ -100,7 +100,7 @@ STDMETHODIMP_(void) CGEKConfigGroup::ListGroups(std::function<void(LPCWSTR, IGEK
     }
 }
 
-STDMETHODIMP_(bool) CGEKConfigGroup::HasValue(LPCWSTR pName)
+STDMETHODIMP_(bool) CGEKConfigGroup::HasValue(LPCWSTR pName) CONST
 {
     REQUIRE_RETURN(pName, false);
 
@@ -128,7 +128,7 @@ STDMETHODIMP_(LPCWSTR) CGEKConfigGroup::GetValue(LPCWSTR pName, LPCWSTR pDefault
     return (*pIterator).second.GetString();
 }
 
-STDMETHODIMP_(void) CGEKConfigGroup::ListValues(std::function<void(LPCWSTR, LPCWSTR)> OnValue)
+STDMETHODIMP_(void) CGEKConfigGroup::ListValues(std::function<void(LPCWSTR, LPCWSTR)> OnValue) CONST
 {
     for (auto &kPair : m_aValues)
     {

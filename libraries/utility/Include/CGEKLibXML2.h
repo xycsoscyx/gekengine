@@ -52,5 +52,5 @@ public:
     HRESULT Load(LPCWSTR pFileName);
     HRESULT Save(LPCWSTR pFileName);
 
-    CLibXMLNode GetRoot(void);
+    CLibXMLNode GetRoot(void) const;
 };

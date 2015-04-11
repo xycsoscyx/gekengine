@@ -4,6 +4,7 @@
 #include <dNewtonCollision.h>
 
 #pragma comment(lib, "newton.lib")
+#pragma comment(lib, "dNewton.lib")
 
 REGISTER_COMPONENT(newton)
     REGISTER_COMPONENT_DEFAULT_VALUE(shape, L"")
@@ -48,14 +49,14 @@ public:
     {
     }
 
-    GEKENTITYID GetEntityID(void)
+    GEKENTITYID GetEntityID(void) const
     {
         return m_nEntityID;
     }
 
     void OnBodyTransform(const dFloat* const pMatrix, int nThreadID)
     {
-        const float4x4 &nMatrix = *reinterpret_cast<const float4x4 *>(&pMatrix);
+        const float4x4 &nMatrix = *reinterpret_cast<const float4x4 *>(pMatrix);
         auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(m_nEntityID, GET_COMPONENT_ID(transform));
         kTransform.position = nMatrix.t;
         kTransform.rotation = nMatrix;
@@ -72,6 +73,8 @@ CGEKComponentSystemNewton::CGEKComponentSystemNewton(void)
     : m_pEngine(nullptr)
     , m_nGravity(0.0f, -9.8331f, 0.0f)
 {
+    NewtonWorld *pNewton = NewtonCreate();
+    NewtonDestroy(pNewton);
 }
 
 CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
@@ -319,7 +322,7 @@ bool CGEKComponentSystemNewton::OnCompoundSubCollisionAABBOverlap(const dNewtonB
     return true;
 }
 
-void CGEKComponentSystemNewton::OnContactProcess(dNewtonContactMaterial* const pContactMaterial, dFloat nTimeStep, int nThreadID) const
+void CGEKComponentSystemNewton::OnContactProcess(dNewtonContactMaterial* const pContactMaterial, dFloat nTimeStep, int nThreadID)
 {
     CGEKDynamicBody *pBody0 = dynamic_cast<CGEKDynamicBody *>(pContactMaterial->GetBody0());
     CGEKDynamicBody *pBody1 = dynamic_cast<CGEKDynamicBody *>(pContactMaterial->GetBody1());

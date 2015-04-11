@@ -40,7 +40,7 @@ public:
     // IGEKSceneManager
     STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID, LPCWSTR pName = nullptr);
     STDMETHOD(DestroyEntity)                    (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD(GetNamedEntity)                   (THIS_ LPCWSTR pName, GEKENTITYID *pEntityID);
+    STDMETHOD_(GEKENTITYID, GetNamedEntity)     (THIS_ LPCWSTR pName);
     STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID, const std::unordered_map<CStringW, CStringW> &aParams);
     STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
     STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
