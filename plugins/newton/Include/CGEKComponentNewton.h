@@ -6,12 +6,20 @@
 #include "IGEKNewton.h"
 #include <concurrent_unordered_map.h>
 
-DECLARE_COMPONENT(newton, 0x00001000)
+DECLARE_COMPONENT(dynamicbody, 0x00001000)
     DECLARE_COMPONENT_VALUE(CStringW, shape)
     DECLARE_COMPONENT_VALUE(CStringW, params)
     DECLARE_COMPONENT_VALUE(CStringW, material)
     DECLARE_COMPONENT_VALUE(float, mass)
-END_DECLARE_COMPONENT(newton)
+END_DECLARE_COMPONENT(dynamicbody)
+
+DECLARE_COMPONENT(player, 0x00003000)
+    DECLARE_COMPONENT_VALUE(float, mass)
+    DECLARE_COMPONENT_VALUE(float, outer_radius)
+    DECLARE_COMPONENT_VALUE(float, inner_radius)
+    DECLARE_COMPONENT_VALUE(float, height)
+    DECLARE_COMPONENT_VALUE(float, stair_step)
+END_DECLARE_COMPONENT(player)
 
 class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public CGEKObservable
@@ -39,6 +47,8 @@ public:
 
 private:
     IGEKEngineCore *m_pEngine;
+
+    std::shared_ptr<dNewtonPlayerManager> m_spPlayerManager;
 
     float3 m_nGravity;
     MATERIAL m_kDefaultMaterial;
@@ -72,6 +82,7 @@ public:
     STDMETHOD_(void, OnUpdate)                  (THIS_ float nGameTime, float nFrameTime);
 
     // IGEKNewton
-    STDMETHOD_(dNewton *, GetCore)              (THIS);
-    STDMETHOD_(float3, GetGravity)              (THIS);
+    STDMETHOD_(dNewton *, GetCore)                          (THIS);
+    STDMETHOD_(dNewtonPlayerManager *, GetPlayerManager)    (THIS);
+    STDMETHOD_(float3, GetGravity)                          (THIS);
 };

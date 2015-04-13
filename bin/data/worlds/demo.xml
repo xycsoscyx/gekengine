@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <world name="Demo">
 	<population>
-        <entity name="player">
+        <entity name="player" cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))" >
 			<transform position="0,2,0" rotation="0,0,0,1" />
-            <light cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))"  range="lerp(15,30,arand(1))" />
-            <control />
+            <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
+            <player mass="100" outer_radius="1" inner_radius=".25" height="1.9" stair_step=".25"/>
             <flames density="1000" />
 		</entity>
 
@@ -20,149 +20,149 @@
             <follow target="player" offset="0,5,20" />
 		</entity>
 
-		<entity>z
+		<entity>
 			<transform position="0,0,0" rotation="0,0,0,1" />
             <model file="sponza" />
-            <newton shape="tree" params="sponza" />
+            <dynamicbody shape="tree" params="sponza" />
         </entity>
 
         <!-- 0 -->
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
-        </entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity size="lerp(1,3,arand(1))">
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
-        </entity>
-        <entity size="lerp(1,3,arand(1))">
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
-        </entity>
-        <entity size="lerp(1,3,arand(1))">
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
-        </entity>
-        <entity size="lerp(1,3,arand(1))">
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
-        </entity>
-        <entity size="lerp(1,3,arand(1))">
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <!-- 5 -->
 
         <!-- 0 -->
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <entity size="lerp(1,3,arand(1))">
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-			<model file="boulder" scale="%size%,%size%,%size%" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-            <newton shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+        </entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity size="lerp(1,3,arand(1))">
+			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+        </entity>
+        <entity size="lerp(1,3,arand(1))">
+			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+        </entity>
+        <entity size="lerp(1,3,arand(1))">
+			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+        </entity>
+        <entity size="lerp(1,3,arand(1))">
+			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
+        </entity>
+        <entity size="lerp(1,3,arand(1))">
+			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+			<sprite material="rock" size="%size%*2" color="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+            <dynamicbody shape="sphere" params="%size%" mass="lerp(25,50,arand(1))" material="rock" />
         </entity>
         <!-- 5 -->
 

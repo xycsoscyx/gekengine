@@ -5,23 +5,44 @@
 
 #pragma comment(lib, "newton.lib")
 #pragma comment(lib, "dNewton.lib")
+#pragma comment(lib, "dContainers.lib")
 
-REGISTER_COMPONENT(newton)
+REGISTER_COMPONENT(dynamicbody)
     REGISTER_COMPONENT_DEFAULT_VALUE(shape, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(params, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(material, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(mass, 0.0f)
-    REGISTER_COMPONENT_SERIALIZE(newton)
+    REGISTER_COMPONENT_SERIALIZE(dynamicbody)
         REGISTER_COMPONENT_SERIALIZE_VALUE(shape, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(params, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(material, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(mass, StrFromFloat)
-    REGISTER_COMPONENT_DESERIALIZE(newton)
+    REGISTER_COMPONENT_DESERIALIZE(dynamicbody)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(shape, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(params, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(material, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(mass, StrToFloat)
-END_REGISTER_COMPONENT(newton)
+END_REGISTER_COMPONENT(dynamicbody)
+
+REGISTER_COMPONENT(player)
+    REGISTER_COMPONENT_DEFAULT_VALUE(mass, 0.0f)
+    REGISTER_COMPONENT_DEFAULT_VALUE(outer_radius, 0.0f)
+    REGISTER_COMPONENT_DEFAULT_VALUE(inner_radius, 0.0f)
+    REGISTER_COMPONENT_DEFAULT_VALUE(height, 0.0f)
+    REGISTER_COMPONENT_DEFAULT_VALUE(stair_step, 0.0f)
+    REGISTER_COMPONENT_SERIALIZE(player)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(mass, StrFromFloat)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(outer_radius, StrFromFloat)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(inner_radius, StrFromFloat)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(height, StrFromFloat)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(stair_step, StrFromFloat)
+    REGISTER_COMPONENT_DESERIALIZE(player)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(mass, StrToFloat)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(outer_radius, StrToFloat)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(inner_radius, StrToFloat)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(mass, StrToFloat)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(stair_step, StrToFloat)
+END_REGISTER_COMPONENT(player)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemNewton)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
@@ -64,7 +85,39 @@ public:
 
     void OnForceAndTorque(dFloat nTimeStep, int nThreadID)
     {
-        auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(newton)>(m_nEntityID, GET_COMPONENT_ID(newton));
+        auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(m_nEntityID, GET_COMPONENT_ID(dynamicbody));
+        AddForce((m_pNewton->GetGravity() * kNewton.mass).xyz);
+    }
+};
+
+class CGEKPlayer : public dNewtonPlayerManager::dNewtonPlayer
+{
+private:
+    IGEKEngineCore *m_pEngine;
+    IGEKNewton *m_pNewton;
+
+    GEKENTITYID m_nEntityID;
+
+public:
+    CGEKPlayer(IGEKEngineCore *pEngine, IGEKNewton *pNewton, float nMass, float nOuterRadius, float nInnerRadius, float nHeight, float nStairStep, const GEKENTITYID &nEntityID)
+        : dNewtonPlayer(pNewton->GetPlayerManager(), nullptr, nMass, nOuterRadius, nInnerRadius, nHeight, nStairStep, float3(0.0f, 1.0f, 0.0f).xyz, float3(0.0f, 0.0f, 1.0f).xyz, 1)
+        , m_pEngine(pEngine)
+        , m_pNewton(pNewton)
+        , m_nEntityID(nEntityID)
+    {
+    }
+
+    void OnBodyTransform(const dFloat* const pMatrix, int nThreadID)
+    {
+        const float4x4 &nMatrix = *reinterpret_cast<const float4x4 *>(pMatrix);
+        auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(m_nEntityID, GET_COMPONENT_ID(transform));
+        kTransform.position = nMatrix.t;
+        kTransform.rotation = nMatrix;
+    }
+
+    void OnPlayerMove(dFloat nTimeStep)
+    {
+        auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(m_nEntityID, GET_COMPONENT_ID(dynamicbody));
         AddForce((m_pNewton->GetGravity() * kNewton.mass).xyz);
     }
 };
@@ -73,8 +126,7 @@ CGEKComponentSystemNewton::CGEKComponentSystemNewton(void)
     : m_pEngine(nullptr)
     , m_nGravity(0.0f, -9.8331f, 0.0f)
 {
-    NewtonWorld *pNewton = NewtonCreate();
-    NewtonDestroy(pNewton);
+    m_spPlayerManager.reset(new dNewtonPlayerManager(this));
 }
 
 CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
@@ -84,6 +136,7 @@ CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
     m_aBodies.clear();
     m_aCollisions.clear();
     m_aMaterials.clear();
+    m_spPlayerManager.reset();
 }
 
 CGEKComponentSystemNewton::MATERIAL *CGEKComponentSystemNewton::LoadMaterial(LPCWSTR pName)
@@ -331,8 +384,8 @@ void CGEKComponentSystemNewton::OnContactProcess(dNewtonContactMaterial* const p
     for (void *pContact = pContactMaterial->GetFirstContact(); pContact; pContact = pContactMaterial->GetNextContact(pContact))
     {
         NewtonMaterial *pMaterial = NewtonContactGetMaterial(pContact);
-        auto &kNewton0 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(newton)>(pBody0->GetEntityID(), GET_COMPONENT_ID(newton));
-        auto &kNewton1 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(newton)>(pBody1->GetEntityID(), GET_COMPONENT_ID(newton));
+        auto &kNewton0 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(pBody0->GetEntityID(), GET_COMPONENT_ID(dynamicbody));
+        auto &kNewton1 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(pBody1->GetEntityID(), GET_COMPONENT_ID(dynamicbody));
         MATERIAL *pMaterial0 = LoadMaterial(kNewton0.material);
         MATERIAL *pMaterial1 = LoadMaterial(kNewton1.material);
 
@@ -400,12 +453,13 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnEntityDestroyed(const GEKENTITY
 
 STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
 {
-    if (nComponentID == GET_COMPONENT_ID(newton))
+    dNewtonBody *pBody = nullptr;
+    if (nComponentID == GET_COMPONENT_ID(dynamicbody))
     {
         if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
         {
             auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
-            auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(newton)>(nEntityID, GET_COMPONENT_ID(newton));
+            auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(nEntityID, GET_COMPONENT_ID(dynamicbody));
             if (!kNewton.shape.IsEmpty())
             {
                 float4x4 nMatrix;
@@ -414,20 +468,38 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
                 dNewtonCollision *pCollision = LoadCollision(kNewton.shape, kNewton.params);
                 if (pCollision != nullptr)
                 {
-                    CGEKDynamicBody *pBody = new CGEKDynamicBody(m_pEngine, this, kNewton.mass, pCollision, nMatrix, nEntityID);
-                    if (pBody != nullptr)
-                    {
-                        m_aBodies[nEntityID].reset(pBody);
-                    }
+                    pBody = new CGEKDynamicBody(m_pEngine, this, kNewton.mass, pCollision, nMatrix, nEntityID);
                 }
             }
         }
+    }
+    else if (nComponentID == GET_COMPONENT_ID(player))
+    {
+        if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
+        {
+            auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
+            auto &kPlayer = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(player)>(nEntityID, GET_COMPONENT_ID(player));
+            pBody = new CGEKPlayer(m_pEngine, this, kPlayer.mass, kPlayer.outer_radius, kPlayer.inner_radius, kPlayer.height, kPlayer.stair_step, nEntityID);
+            if (pBody)
+            {
+                float4x4 nMatrix;
+                nMatrix = kTransform.rotation;
+                nMatrix.t = kTransform.position;
+                pBody->SetMatrix(nMatrix.data);
+            }
+        }
+    }
+
+    if (pBody != nullptr)
+    {
+        m_aBodies[nEntityID].reset(pBody);
     }
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentRemoved(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
 {
-    if (nComponentID == GET_COMPONENT_ID(newton))
+    if (nComponentID == GET_COMPONENT_ID(dynamicbody) ||
+        nComponentID == GET_COMPONENT_ID(player))
     {
         auto pIterator = m_aBodies.find(nEntityID);
         if (pIterator != m_aBodies.end())
@@ -445,6 +517,11 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnUpdate(float nGameTime, float n
 STDMETHODIMP_(dNewton *) CGEKComponentSystemNewton::GetCore(void)
 {
     return this;
+}
+
+STDMETHODIMP_(dNewtonPlayerManager *) CGEKComponentSystemNewton::GetPlayerManager(void)
+{
+    return m_spPlayerManager.get();
 }
 
 STDMETHODIMP_(float3) CGEKComponentSystemNewton::GetGravity(void)
