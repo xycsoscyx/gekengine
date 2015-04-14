@@ -3,15 +3,9 @@
 #include "GEKEngine.h"
 #include <dNewtonCollision.h>
 
-#ifdef _DEBUG
-    #pragma comment(lib, "newton_d.lib")
-    #pragma comment(lib, "dNewton_d.lib")
-    #pragma comment(lib, "dContainers_d.lib")
-#else
-    #pragma comment(lib, "newton.lib")
-    #pragma comment(lib, "dNewton.lib")
-    #pragma comment(lib, "dContainers.lib")
-#endif
+#pragma comment(lib, "newton.lib")
+#pragma comment(lib, "dNewton.lib")
+#pragma comment(lib, "dContainers.lib")
 
 REGISTER_COMPONENT(dynamicbody)
     REGISTER_COMPONENT_DEFAULT_VALUE(shape, L"")
@@ -391,38 +385,41 @@ void CGEKComponentSystemNewton::OnContactProcess(dNewtonContactMaterial* const p
 {
     CGEKDynamicBody *pBody0 = dynamic_cast<CGEKDynamicBody *>(pContactMaterial->GetBody0());
     CGEKDynamicBody *pBody1 = dynamic_cast<CGEKDynamicBody *>(pContactMaterial->GetBody1());
-
-    NewtonWorldCriticalSectionLock(GetNewton(), nThreadID);
-    for (void *pContact = pContactMaterial->GetFirstContact(); pContact; pContact = pContactMaterial->GetNextContact(pContact))
+    if (pBody0 && pBody1)
     {
-        NewtonMaterial *pMaterial = NewtonContactGetMaterial(pContact);
-        auto &kNewton0 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(pBody0->GetEntityID(), GET_COMPONENT_ID(dynamicbody));
-        auto &kNewton1 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(pBody1->GetEntityID(), GET_COMPONENT_ID(dynamicbody));
-        MATERIAL *pMaterial0 = LoadMaterial(kNewton0.material);
-        MATERIAL *pMaterial1 = LoadMaterial(kNewton1.material);
-
-        UINT32 nFaceAttribute = NewtonMaterialGetContactFaceAttribute(pMaterial);
-        if (nFaceAttribute > 0)
+        NewtonWorldCriticalSectionLock(GetNewton(), nThreadID);
+        for (void *pContact = pContactMaterial->GetFirstContact(); pContact; pContact = pContactMaterial->GetNextContact(pContact))
         {
-            if (kNewton0.material.CompareNoCase(L"tree") == 0)
+            NewtonMaterial *pMaterial = NewtonContactGetMaterial(pContact);
+            auto &kNewton0 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(pBody0->GetEntityID(), GET_COMPONENT_ID(dynamicbody));
+            auto &kNewton1 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(pBody1->GetEntityID(), GET_COMPONENT_ID(dynamicbody));
+            MATERIAL *pMaterial0 = LoadMaterial(kNewton0.material);
+            MATERIAL *pMaterial1 = LoadMaterial(kNewton1.material);
+
+            UINT32 nFaceAttribute = NewtonMaterialGetContactFaceAttribute(pMaterial);
+            if (nFaceAttribute > 0)
             {
-                pMaterial0 = (MATERIAL *)nFaceAttribute;
+                if (kNewton0.material.CompareNoCase(L"tree") == 0)
+                {
+                    pMaterial0 = (MATERIAL *)nFaceAttribute;
+                }
+                else if (kNewton1.material.CompareNoCase(L"tree") == 0)
+                {
+                    pMaterial1 = (MATERIAL *)nFaceAttribute;
+                }
             }
-            else if (kNewton1.material.CompareNoCase(L"tree") == 0)
-            {
-                pMaterial1 = (MATERIAL *)nFaceAttribute;
-            }
+
+            NewtonMaterialSetContactSoftness(pMaterial, ((pMaterial0->m_nSoftness + pMaterial1->m_nSoftness) * 0.5f));
+            NewtonMaterialSetContactElasticity(pMaterial, ((pMaterial0->m_nElasticity + pMaterial1->m_nElasticity) * 0.5f));
+            NewtonMaterialSetContactFrictionCoef(pMaterial, pMaterial0->m_nStaticFriction, pMaterial0->m_nKineticFriction, 0);
+            NewtonMaterialSetContactFrictionCoef(pMaterial, pMaterial1->m_nStaticFriction, pMaterial1->m_nKineticFriction, 1);
+
+            float3 nPosition, nNormal;
+            NewtonMaterialGetContactPositionAndNormal(pMaterial, pBody0->GetNewtonBody(), nPosition.xyz, nNormal.xyz);
+            CGEKObservable::SendEvent(TGEKEvent<IGEKNewtonObserver>(std::bind(&IGEKNewtonObserver::OnCollision, std::placeholders::_1, pBody0->GetEntityID(), pBody1->GetEntityID(), nPosition, nNormal)));
         }
-
-        NewtonMaterialSetContactSoftness(pMaterial, ((pMaterial0->m_nSoftness + pMaterial1->m_nSoftness) * 0.5f));
-        NewtonMaterialSetContactElasticity(pMaterial, ((pMaterial0->m_nElasticity + pMaterial1->m_nElasticity) * 0.5f));
-        NewtonMaterialSetContactFrictionCoef(pMaterial, pMaterial0->m_nStaticFriction, pMaterial0->m_nKineticFriction, 0);
-        NewtonMaterialSetContactFrictionCoef(pMaterial, pMaterial1->m_nStaticFriction, pMaterial1->m_nKineticFriction, 1);
-
-        float3 nPosition, nNormal;
-        NewtonMaterialGetContactPositionAndNormal(pMaterial, pBody0->GetNewtonBody(), nPosition.xyz, nNormal.xyz);
-        CGEKObservable::SendEvent(TGEKEvent<IGEKNewtonObserver>(std::bind(&IGEKNewtonObserver::OnCollision, std::placeholders::_1, pBody0->GetEntityID(), pBody1->GetEntityID(), nPosition, nNormal)));
     }
+
 
     NewtonWorldCriticalSectionUnlock(GetNewton());
 }
