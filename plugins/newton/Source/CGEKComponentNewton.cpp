@@ -93,7 +93,7 @@ public:
     {
     }
 
-    // dNewtonDynamicBody
+    // dNewtonBody
     void OnBodyTransform(const dFloat* const pMatrix, int nThreadID)
     {
         const float4x4 &nMatrix = *reinterpret_cast<const float4x4 *>(pMatrix);
@@ -102,6 +102,7 @@ public:
         kTransform.rotation = nMatrix;
     }
 
+    // dNewtonDynamicBody
     void OnForceAndTorque(dFloat nTimeStep, int nThreadID)
     {
         auto &kDynamicBody = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(GetEntityID(), GET_COMPONENT_ID(dynamicbody));
@@ -136,7 +137,7 @@ public:
         CGEKObservable::RemoveObserver(GetEngineCore(), GetClass<IGEKInputObserver>());
     }
 
-    // dNewtonPlayerManager::dNewtonPlayer
+    // dNewtonBody
     void OnBodyTransform(const dFloat* const pMatrix, int nThreadID)
     {
         const float4x4 &nMatrix = *reinterpret_cast<const float4x4 *>(pMatrix);
@@ -145,6 +146,7 @@ public:
         kTransform.rotation = nMatrix;
     }
 
+    // dNewtonPlayerManager::dNewtonPlayer
     void OnPlayerMove(dFloat nTimeStep)
     {
         float nForward = 0.0f;

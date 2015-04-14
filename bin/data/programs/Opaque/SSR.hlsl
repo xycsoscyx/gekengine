@@ -86,8 +86,8 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             if (tAtt.x > 0.5) tAtt.x = (1.0 - tAtt.x);
             if (tAtt.y > 0.5) tAtt.y = (1.0 - tAtt.y);
 
-            nReflectivity = (nReflectivity * clamp((tAtt.x * 10.0), 0.0, 1.0));
-            nReflectivity = (nReflectivity * clamp((tAtt.y * 10.0), 0.0, 1.0));
+            nReflectivity *= saturate(tAtt.x * 10.0);
+            nReflectivity *= saturate(tAtt.y * 10.0);
 
             // AVOIDING REFLECTION OF OBJECTS IN FOREGROUND 
             nReflectivity = (nReflectivity * 1.0 / (1.0 + (abs(nSamplePosition.z - nRayPosition.z) * 20)));

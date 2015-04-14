@@ -4,7 +4,7 @@
         <entity name="player" cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))" >
 			<transform position="0,3,0" rotation="0,0,0,1" />
             <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
-            <player mass="100" outer_radius="1" inner_radius=".25" height="1.9" stair_step=".25"/>
+            <player mass="250" outer_radius="1" inner_radius=".25" height="1.9" stair_step=".25"/>
             <flames density="1000" />
 		</entity>
 
