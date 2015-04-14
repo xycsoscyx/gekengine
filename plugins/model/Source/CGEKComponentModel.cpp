@@ -197,9 +197,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const GEKENTITYID &nVi
         {
             auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
 
-            float4x4 nMatrix;
-            nMatrix   = kTransform.rotation;
-            nMatrix.t = kTransform.position;
+            float4x4 nMatrix(kTransform.rotation, kTransform.position);
 
             aabb nAABB(pModel->m_nAABB);
             nAABB.minimum *= kModel.scale;

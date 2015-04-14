@@ -1005,10 +1005,9 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         {
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderBegin, std::placeholders::_1, nViewerID)));
 
-            float4x4 nCameraMatrix;
             auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, GET_COMPONENT_ID(transform));
-            nCameraMatrix = kTransform.rotation;
-            nCameraMatrix.t = kTransform.position;
+
+            float4x4 nCameraMatrix(kTransform.rotation, kTransform.position);
 
             float nXSize = float(m_pEngine->GetVideoSystem()->GetXSize());
             float nYSize = float(m_pEngine->GetVideoSystem()->GetYSize());

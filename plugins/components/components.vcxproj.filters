@@ -16,9 +16,6 @@
     <ClCompile Include="Source\CGEKComponentFollow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentControl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKComponentsCLSIDs.h" />
@@ -47,9 +44,6 @@
       <Filter>API Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKComponentFollow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentControl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\api\IGEKEngineCore.h">

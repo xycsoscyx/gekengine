@@ -117,11 +117,17 @@ class CGEKPlayer : public CGEKUnknown
                  , public dNewtonPlayerManager::dNewtonPlayer
                  , public IGEKInputObserver
 {
+private:
+    float m_nTurn;
+    concurrency::concurrent_unordered_map<CStringW, float> m_aConstantActions;
+    concurrency::concurrent_unordered_map<CStringW, float> m_aSingleActions;
+
 public:
     DECLARE_UNKNOWN(CGEKPlayer)
     CGEKPlayer(IGEKEngineCore *pEngine, IGEKNewtonSystem *pNewton, const GEKENTITYID &nEntityID, float nMass, float nOuterRadius, float nInnerRadius, float nHeight, float nStairStep)
         : CGEKNewtonBody(pEngine, pNewton, nEntityID)
         , dNewtonPlayer(pNewton->GetPlayerManager(), nullptr, nMass, nOuterRadius, nInnerRadius, nHeight, nStairStep, float3(0.0f, 1.0f, 0.0f).xyz, float3(0.0f, 0.0f, 1.0f).xyz, 1)
+        , m_nTurn(0.0f)
     {
     }
 
@@ -141,19 +147,45 @@ public:
 
     void OnPlayerMove(dFloat nTimeStep)
     {
+        float nForward = 0.0f;
+        float nStrafe = 0.0f;
+        float nHeight = 0.0f;
+        auto GetInput = [&](concurrency::concurrent_unordered_map<CStringW, float> &aActions) -> void
+        {
+            m_nTurn += (aActions[L"turn"] * 0.01f);
+
+            nForward += aActions[L"forward"];
+            nForward -= aActions[L"backward"];
+            nStrafe += aActions[L"strafe_left"];
+            nStrafe -= aActions[L"strafe_right"];
+            nHeight += aActions[L"rise"];
+            nHeight -= aActions[L"fall"];
+        };
+
+        GetInput(m_aSingleActions);
+        m_aSingleActions.clear();
+        GetInput(m_aConstantActions);
+
         auto &kPlayer = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(player)>(GetEntityID(), GET_COMPONENT_ID(player));
-        SetPlayerVelocity(0.0f, 0.0f, 0.0f, 0.0f, GetNewtonSystem()->GetGravity().xyz, nTimeStep);
+        SetPlayerVelocity(nForward, nStrafe, nHeight, m_nTurn, GetNewtonSystem()->GetGravity().xyz, nTimeStep);
     }
 
     // IGEKInputObserver
     STDMETHODIMP_(void) OnState(LPCWSTR pName, bool bState)
     {
-        OutputDebugStringW(FormatString(L"OnState(%s): %s\r\n", pName, bState ? L"true" : L"false"));
+        if (bState)
+        {
+            m_aConstantActions[pName] = 1.0f;
+        }
+        else
+        {
+            m_aConstantActions[pName] = 0.0f;
+        }
     }
 
     STDMETHODIMP_(void) OnValue(LPCWSTR pName, float nValue)
     {
-        OutputDebugStringW(FormatString(L"OnValue(%s): %f\r\n", pName, nValue));
+        m_aSingleActions[pName] = nValue;
     }
 };
 
@@ -523,12 +555,10 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
             auto &kDynamicBody = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(nEntityID, GET_COMPONENT_ID(dynamicbody));
             if (!kDynamicBody.shape.IsEmpty())
             {
-                float4x4 nMatrix;
-                nMatrix = kTransform.rotation;
-                nMatrix.t = kTransform.position;
                 dNewtonCollision *pCollision = LoadCollision(kDynamicBody.shape, kDynamicBody.params);
                 if (pCollision != nullptr)
                 {
+                    float4x4 nMatrix(kTransform.rotation, kTransform.position);
                     CComPtr<IGEKUnknown> spBody = new CGEKDynamicBody(m_pEngine, this, nEntityID, kDynamicBody.mass, pCollision, nMatrix);
                     if (spBody)
                     {
@@ -548,11 +578,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
             if (spPlayer)
             {
                 CGEKObservable::AddObserver(m_pEngine, spPlayer->GetClass<IGEKInputObserver>());
-
-                float4x4 nMatrix;
-                nMatrix = kTransform.rotation;
-                nMatrix.t = kTransform.position;
-                spPlayer->SetMatrix(nMatrix.data);
+                spPlayer->SetMatrix(float4x4(kTransform.rotation, kTransform.position).data);
                 if (spPlayer)
                 {
                     spPlayer.QueryInterface(&m_aBodies[nEntityID]);
