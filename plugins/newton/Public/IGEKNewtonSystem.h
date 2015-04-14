@@ -3,10 +3,9 @@
 #include "GEKUtility.h"
 
 #include <dNewton.h>
-#include <dNewtonDynamicBody.h>
 #include <dNewtonPlayerManager.h>
 
-DECLARE_INTERFACE_IID_(IGEKNewton, IUnknown, "E8B4EB56-E5E1-41F6-B761-32C74426314F")
+DECLARE_INTERFACE_IID_(IGEKNewtonSystem, IUnknown, "E8B4EB56-E5E1-41F6-B761-32C74426314F")
 {
     STDMETHOD_(dNewton *, GetCore)                          (THIS) PURE;
     STDMETHOD_(dNewtonPlayerManager *, GetPlayerManager)    (THIS) PURE;

@@ -3,7 +3,8 @@
 #include "GEKUtility.h"
 #include "GEKContext.h"
 #include "GEKAPI.h"
-#include "IGEKNewton.h"
+#include "IGEKNewtonSystem.h"
+#include <dNewtonDynamicBody.h>
 #include <concurrent_unordered_map.h>
 
 DECLARE_COMPONENT(dynamicbody, 0x00001000)
@@ -25,7 +26,7 @@ class CGEKComponentSystemNewton : public CGEKUnknown
                                 , public CGEKObservable
                                 , public IGEKSceneObserver
                                 , public IGEKComponentSystem
-                                , public IGEKNewton
+                                , public IGEKNewtonSystem
                                 , public dNewton
 {
 public:
@@ -81,7 +82,7 @@ public:
     STDMETHOD_(void, OnComponentRemoved)        (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
     STDMETHOD_(void, OnUpdate)                  (THIS_ float nGameTime, float nFrameTime);
 
-    // IGEKNewton
+    // IGEKNewtonSystem
     STDMETHOD_(dNewton *, GetCore)                          (THIS);
     STDMETHOD_(dNewtonPlayerManager *, GetPlayerManager)    (THIS);
     STDMETHOD_(float3, GetGravity)                          (THIS);

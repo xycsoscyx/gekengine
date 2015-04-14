@@ -6,8 +6,8 @@
 #include "Public\IGEKContext.h"
 #include <atlpath.h>
 #include <algorithm>
-#include <list>
 #include <map>
+#include <concurrent_unordered_set.h>
 
 class CGEKUnknown : public IGEKUnknown
 {
@@ -91,6 +91,18 @@ public:
     {
         return dynamic_cast<const IUnknown *>(this);
     }
+
+    template <typename CLASS>
+    CLASS *GetClass(void)
+    {
+        return dynamic_cast<CLASS *>(GetUnknown());
+    }
+
+    template <typename CLASS>
+    const CLASS *GetClass(void) const
+    {
+        return dynamic_cast<const CLASS *>(GetUnknown());
+    }
 };
 
 template <typename RESULT>
@@ -153,7 +165,8 @@ public:
 class CGEKObservable : public IGEKObservable
 {
 private:
-    std::list<IGEKObserver *> m_aObservers;
+    concurrency::concurrent_unordered_set<IGEKObserver *> m_aObservers;
+    CComAutoCriticalSection m_kSection;
 
 public:
     CGEKObservable(void)
@@ -166,30 +179,37 @@ public:
 
     STDMETHOD(AddObserver)      (THIS_ IGEKObserver *pObserver)
     {
-        auto pIterator = std::find(m_aObservers.begin(), m_aObservers.end(), pObserver);
+        CComCritSecLock<CComAutoCriticalSection> kLock(m_kSection);
+
+        HRESULT hRetVal = E_FAIL;
+        auto pIterator = m_aObservers.find(pObserver);
         if (pIterator == m_aObservers.end())
         {
-            m_aObservers.push_back(pObserver);
-            return S_OK;
+            m_aObservers.insert(pObserver);
+            hRetVal = S_OK;
         }
 
-        return E_FAIL;
+        return hRetVal;
     }
 
     STDMETHOD(RemoveObserver)   (THIS_ IGEKObserver *pObserver)
     {
-        auto pIterator = std::find(m_aObservers.begin(), m_aObservers.end(), pObserver);
+        CComCritSecLock<CComAutoCriticalSection> kLock(m_kSection);
+
+        HRESULT hRetVal = E_FAIL;
+        auto pIterator = m_aObservers.find(pObserver);
         if (pIterator != m_aObservers.end())
         {
-            m_aObservers.erase(pIterator);
-            return S_OK;
+            m_aObservers.unsafe_erase(pIterator);
+            hRetVal = S_OK;
         }
 
-        return E_FAIL;
+        return hRetVal;
     }
 
     void SendEvent(const TGEKBaseEvent<void> &kEvent)
     {
+        CComCritSecLock<CComAutoCriticalSection> kLock(m_kSection);
         for (auto &pObserver : m_aObservers)
         {
             kEvent(pObserver);
@@ -198,6 +218,8 @@ public:
 
     HRESULT CheckEvent(const TGEKBaseEvent<HRESULT> &kEvent)
     {
+        CComCritSecLock<CComAutoCriticalSection> kLock(m_kSection);
+
         HRESULT hRetVal = S_OK;
         for (auto &pObserver : m_aObservers)
         {
@@ -213,24 +235,26 @@ public:
 
     static HRESULT AddObserver(IUnknown *pUnknown, IGEKObserver *pObserver)
     {
+        HRESULT hRetVal = E_FAIL;
         IGEKObservable *pObservable = dynamic_cast<IGEKObservable *>(pUnknown);
         if (pObservable)
         {
-            return pObservable->AddObserver(pObserver);
+            hRetVal = pObservable->AddObserver(pObserver);
         }
 
-        return E_FAIL;
+        return hRetVal;
     }
 
     static HRESULT RemoveObserver(IUnknown *pUnknown, IGEKObserver *pObserver)
     {
+        HRESULT hRetVal = E_FAIL;
         IGEKObservable *pObservable = dynamic_cast<IGEKObservable *>(pUnknown);
         if (pObservable)
         {
-            return pObservable->RemoveObserver(pObserver);
+            hRetVal = pObservable->RemoveObserver(pObserver);
         }
 
-        return E_FAIL;
+        return hRetVal;
     }
 };
 

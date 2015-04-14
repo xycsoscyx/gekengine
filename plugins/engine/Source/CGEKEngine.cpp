@@ -483,7 +483,7 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
                     {
                         if (SUCCEEDED(GetContext()->CreateInstance(CLSID_GEKPopulationSystem, IID_PPV_ARGS(&m_spPopulationManager))) && m_spPopulationManager &&
                             SUCCEEDED(GetContext()->CreateInstance(CLSID_GEKRenderSystem, IID_PPV_ARGS(&m_spRenderManager))) && m_spRenderManager &&
-                            SUCCEEDED(CGEKObservable::AddObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown())) &&
+                            SUCCEEDED(CGEKObservable::AddObserver(m_spRenderManager, GetClass<IGEKRenderObserver>())) &&
                             SUCCEEDED(m_spRenderManager->Initialize(this)) &&
                             SUCCEEDED(m_spPopulationManager->Initialize(this)))
                         {
@@ -550,7 +550,7 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
                             };
                             
                             m_bWindowActive = false;
-                            CGEKObservable::RemoveObserver(m_spRenderManager, (IGEKRenderObserver *)GetUnknown());
+                            CGEKObservable::RemoveObserver(m_spRenderManager, GetClass<IGEKRenderObserver>());
                         }
 
                         m_spPopulationManager->Clear();

@@ -88,8 +88,8 @@ CGEKRenderSystem::CGEKRenderSystem(void)
 
 CGEKRenderSystem::~CGEKRenderSystem(void)
 {
-    CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
-    CGEKObservable::RemoveObserver(m_pEngine->GetVideoSystem(), (IGEK3DVideoObserver *)GetUnknown());
+    CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), GetClass<IGEKSceneObserver>());
+    CGEKObservable::RemoveObserver(m_pEngine->GetVideoSystem(), GetClass<IGEK3DVideoObserver>());
 }
 
 STDMETHODIMP CGEKRenderSystem::Initialize(IGEKEngineCore *pEngine)
@@ -97,10 +97,10 @@ STDMETHODIMP CGEKRenderSystem::Initialize(IGEKEngineCore *pEngine)
     REQUIRE_RETURN(pEngine, E_INVALIDARG);
 
     m_pEngine = pEngine;
-    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetVideoSystem(), (IGEK3DVideoObserver *)GetUnknown());
+    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetVideoSystem(), GetClass<IGEK3DVideoObserver>());
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
+        hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), GetClass<IGEKSceneObserver>());
     }
 
     if (SUCCEEDED(hRetVal))

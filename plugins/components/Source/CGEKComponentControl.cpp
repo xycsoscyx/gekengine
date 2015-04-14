@@ -28,8 +28,8 @@ CGEKComponentSystemControl::CGEKComponentSystemControl(void)
 
 CGEKComponentSystemControl::~CGEKComponentSystemControl(void)
 {
-    CGEKObservable::RemoveObserver(m_pEngine, (IGEKInputObserver *)GetUnknown());
-    CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
+    CGEKObservable::RemoveObserver(m_pEngine, GetClass<IGEKInputObserver>());
+    CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), GetClass<IGEKSceneObserver>());
 }
 
 STDMETHODIMP CGEKComponentSystemControl::Initialize(IGEKEngineCore *pEngine)
@@ -37,10 +37,10 @@ STDMETHODIMP CGEKComponentSystemControl::Initialize(IGEKEngineCore *pEngine)
     REQUIRE_RETURN(pEngine, E_INVALIDARG);
 
     m_pEngine = pEngine;
-    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), (IGEKSceneObserver *)GetUnknown());
+    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), GetClass<IGEKSceneObserver>());
     if (SUCCEEDED(hRetVal))
     {
-        HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine, (IGEKInputObserver *)GetUnknown());
+        HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine, GetClass<IGEKInputObserver>());
     }
 
     return hRetVal;

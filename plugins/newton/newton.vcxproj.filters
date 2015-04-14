@@ -50,11 +50,11 @@
     </ClInclude>
     <ClInclude Include="GEKNewton.h" />
     <ClInclude Include="GEKNewtonCLSIDs.h" />
-    <ClInclude Include="Public\IGEKNewton.h">
-      <Filter>Interface Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\api\IGEKEngineCore.h">
       <Filter>API Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\IGEKNewtonSystem.h">
+      <Filter>Interface Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
