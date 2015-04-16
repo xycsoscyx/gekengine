@@ -49,22 +49,22 @@ public:
 private:
     IGEKEngineCore *m_pEngine;
 
-    std::shared_ptr<dNewtonPlayerManager> m_spPlayerManager;
+    std::unique_ptr<dNewtonPlayerManager> m_spPlayerManager;
 
     float3 m_nGravity;
     MATERIAL m_kDefaultMaterial;
     std::map<CStringW, MATERIAL> m_aMaterials;
     concurrency::concurrent_unordered_map<GEKENTITYID, CComPtr<IUnknown>> m_aBodies;
-    std::unordered_map<CStringW, std::shared_ptr<dNewtonCollision>> m_aCollisions;
+    std::unordered_map<CStringW, std::unique_ptr<dNewtonCollision>> m_aCollisions;
 
 private:
     MATERIAL *LoadMaterial(LPCWSTR pName);
     dNewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
 
 private:
-    bool OnBodiesAABBOverlap(const dNewtonBody* const body0, const dNewtonBody* const body1, int threadIndex) const;
-    bool OnCompoundSubCollisionAABBOverlap(const dNewtonBody* const body0, const dNewtonCollision* const subShape0, const dNewtonBody* const body1, const dNewtonCollision* const subShape1, int threadIndex) const;
-    void OnContactProcess(dNewtonContactMaterial* const contactMaterial, dFloat timestep, int threadIndex);
+    bool OnBodiesAABBOverlap(const dNewtonBody* const pBody0, const dNewtonBody* const pBody1, int nThreadID) const;
+    bool OnCompoundSubCollisionAABBOverlap(const dNewtonBody* const pBody0, const dNewtonCollision* const pSubShape0, const dNewtonBody* const pBody1, const dNewtonCollision* const pSubShape1, int nThreadID) const;
+    void OnContactProcess(dNewtonContactMaterial* const pContactMaterial, dFloat nTimeStep, int nThreadID);
 
 public:
     DECLARE_UNKNOWN(CGEKComponentSystemNewton)

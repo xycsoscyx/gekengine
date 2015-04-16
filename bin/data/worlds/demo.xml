@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <world name="Demo">
 	<population>
+		<entity>
+			<transform position="0,0,0" rotation="0,0,0,1" />
+            <model file="sponza" />
+            <dynamicbody shape="tree" params="sponza" />
+        </entity>
+
         <entity name="player" cr="lerp(.5,3,arand(1))" cg="lerp(.5,3,arand(1))" cb="lerp(.5,3,arand(1))" >
 			<transform position="0,3,0" rotation="0,0,0,1" />
             <light color="%cr%,%cg%,%cb%" range="lerp(15,30,arand(1))" />
@@ -19,12 +25,6 @@
             <viewer type="perspective" fieldofview="90" mindistance="0.5" maxdistance="200" position="0.6,0" size="0.4,0.4" pass="toon"/>
             <follow target="player" offset="0,5,20" />
 		</entity>
-
-		<entity>
-			<transform position="0,0,0" rotation="0,0,0,1" />
-            <model file="sponza" />
-            <dynamicbody shape="tree" params="sponza" />
-        </entity>
 
         <!-- 0 -->
         <entity size="lerp(1,3,arand(1))">

@@ -65,6 +65,10 @@ public:
     {
     }
 
+    virtual ~CGEKNewtonBody(void)
+    {
+    }
+
     IGEKEngineCore *GetEngineCore(void)
     {
         return m_pEngine;
@@ -79,6 +83,8 @@ public:
     {
         return m_nEntityID;
     }
+
+    STDMETHOD_(NewtonBody *, GetNewtonBody) (THIS) CONST PURE;
 };
 
 class CGEKDynamicBody : public CGEKUnknown
@@ -91,6 +97,16 @@ public:
         : CGEKNewtonBody(pEngine, pNewton, nEntityID)
         , dNewtonDynamicBody(pNewton->GetCore(), nMass, pCollision, nullptr, nMatrix.data, NULL)
     {
+    }
+
+    ~CGEKDynamicBody(void)
+    {
+    }
+
+    // CGEKNewtonBody
+    STDMETHODIMP_(NewtonBody *) GetNewtonBody(void) CONST
+    {
+        return dNewtonBody::GetNewtonBody();
     }
 
     // dNewtonBody
@@ -137,6 +153,12 @@ public:
         CGEKObservable::RemoveObserver(GetEngineCore(), GetClass<IGEKInputObserver>());
     }
 
+    // CGEKNewtonBody
+    STDMETHODIMP_(NewtonBody *) GetNewtonBody(void) CONST
+    {
+        return dNewtonBody::GetNewtonBody();
+    }
+
     // dNewtonBody
     void OnBodyTransform(const dFloat* const pMatrix, int nThreadID)
     {
@@ -152,7 +174,7 @@ public:
         float nForward = 0.0f;
         float nStrafe = 0.0f;
         float nHeight = 0.0f;
-        auto GetInput = [&](concurrency::concurrent_unordered_map<CStringW, float> &aActions) -> void
+        static auto GetInput = [&](concurrency::concurrent_unordered_map<CStringW, float> &aActions) -> void
         {
             m_nTurn += (aActions[L"turn"] * 0.01f);
 
@@ -236,13 +258,13 @@ CGEKComponentSystemNewton::MATERIAL *CGEKComponentSystemNewton::LoadMaterial(LPC
         CLibXMLDoc kDocument;
         if (SUCCEEDED(kDocument.Load(FormatString(L"%%root%%\\data\\materials\\%s.xml", pName))))
         {
+            MATERIAL &kMaterial = m_aMaterials[pName];
             CLibXMLNode kMaterialNode = kDocument.GetRoot();
             if (kMaterialNode)
             {
                 CLibXMLNode kSurfaceNode = kMaterialNode.FirstChildElement(L"surface");
                 if (kSurfaceNode)
                 {
-                    MATERIAL &kMaterial = m_aMaterials[pName];
                     if (kSurfaceNode.HasAttribute(L"staticfriction"))
                     {
                         kMaterial.m_nStaticFriction = StrToFloat(kSurfaceNode.GetAttribute(L"staticfriction"));
@@ -282,17 +304,13 @@ CGEKComponentSystemNewton::MATERIAL *CGEKComponentSystemNewton::LoadMaterial(LPC
 dNewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWSTR pParams)
 {
     dNewtonCollision *pCollision = nullptr;
-
-    CStringW strIdentity;
-    strIdentity.Format(L"%s|%s", pShape, pParams);
-    auto pIterator = m_aCollisions.find(strIdentity);
+    auto pIterator = m_aCollisions.find(FormatString(L"%s|%s", pShape, pParams));
     if (pIterator != m_aCollisions.end())
     {
         pCollision = (*pIterator).second.get();
     }
     else
     {
-        size_t nHash = std::hash<LPCWSTR>()(strIdentity.GetString());
         if (_wcsicmp(pShape, L"convex_hull") == 0 ||
             _wcsicmp(pShape, L"tree") == 0)
         {
@@ -364,15 +382,11 @@ dNewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWS
                             aCloud[nIndex] = pVertices[pIndices[nIndex]];
                         }
 
-                        pCollision = new dNewtonCollisionConvexHull(this, aCloud.size(), aCloud[0].xyz, sizeof(float3), 0.025f, nHash);
+                        pCollision = new dNewtonCollisionConvexHull(this, aCloud.size(), aCloud[0].xyz, sizeof(float3), 0.025f, 1);
                     }
                     else if (_wcsicmp(pShape, L"tree") == 0)
                     {
-#ifdef _DEBUG
-                        dNewtonCollisionMesh *pMesh = new dNewtonCollisionMesh(this, 0);
-#else
                         dNewtonCollisionMesh *pMesh = new dNewtonCollisionMesh(this, 1);
-#endif
                         if (pMesh != nullptr)
                         {
                             pMesh->BeginFace();
@@ -405,48 +419,48 @@ dNewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWS
             if (_wcsicmp(pShape, L"cube") == 0)
             {
                 float3 nSize = StrToFloat3(pParams);
-                pCollision = new dNewtonCollisionBox(this, nSize.x, nSize.y, nSize.z, nHash);
+                pCollision = new dNewtonCollisionBox(this, nSize.x, nSize.y, nSize.z, 1);
             }
             else if (_wcsicmp(pShape, L"sphere") == 0)
             {
                 float nSize = StrToFloat(pParams);
-                pCollision = new dNewtonCollisionSphere(this, nSize, nHash);
+                pCollision = new dNewtonCollisionSphere(this, nSize, 1);
             }
             else if (_wcsicmp(pShape, L"cone") == 0)
             {
                 float2 nSize = StrToFloat2(pParams);
-                pCollision = new dNewtonCollisionCone(this, nSize.x, nSize.y, nHash);
+                pCollision = new dNewtonCollisionCone(this, nSize.x, nSize.y, 1);
             }
             else if (_wcsicmp(pShape, L"capsule") == 0)
             {
                 float2 nSize = StrToFloat2(pParams);
-                pCollision = new dNewtonCollisionCapsule(this, nSize.x, nSize.y, nHash);
+                pCollision = new dNewtonCollisionCapsule(this, nSize.x, nSize.y, 1);
             }
             else if (_wcsicmp(pShape, L"cylinder") == 0)
             {
                 float2 nSize = StrToFloat2(pParams);
-                pCollision = new dNewtonCollisionCylinder(this, nSize.x, nSize.y, nHash);
+                pCollision = new dNewtonCollisionCylinder(this, nSize.x, nSize.y, 1);
             }
             else if (_wcsicmp(pShape, L"tapered_capsule") == 0)
             {
                 float3 nSize = StrToFloat3(pParams);
-                pCollision = new dNewtonCollisionTaperedCapsule(this, nSize.x, nSize.y, nSize.z, nHash);
+                pCollision = new dNewtonCollisionTaperedCapsule(this, nSize.x, nSize.y, nSize.z, 1);
             }
             else if (_wcsicmp(pShape, L"tapered_cylinder") == 0)
             {
                 float3 nSize = StrToFloat3(pParams);
-                pCollision = new dNewtonCollisionTaperedCylinder(this, nSize.x, nSize.y, nSize.z, nHash);
+                pCollision = new dNewtonCollisionTaperedCylinder(this, nSize.x, nSize.y, nSize.z, 1);
             }
             else if (_wcsicmp(pShape, L"chamfer_cylinder") == 0)
             {
                 float2 nSize = StrToFloat2(pParams);
-                pCollision = new dNewtonCollisionChamferedCylinder(this, nSize.x, nSize.y, nHash);
+                pCollision = new dNewtonCollisionChamferedCylinder(this, nSize.x, nSize.y, 1);
             }
         }
 
         if (pCollision)
         {
-            m_aCollisions[strIdentity].reset(pCollision);
+            m_aCollisions[FormatString(L"%s|%s", pShape, pParams)].reset(pCollision);
         }
     }
 
@@ -465,39 +479,52 @@ bool CGEKComponentSystemNewton::OnCompoundSubCollisionAABBOverlap(const dNewtonB
 
 void CGEKComponentSystemNewton::OnContactProcess(dNewtonContactMaterial* const pContactMaterial, dFloat nTimeStep, int nThreadID)
 {
-    CGEKDynamicBody *pBody0 = dynamic_cast<CGEKDynamicBody *>(pContactMaterial->GetBody0());
-    CGEKDynamicBody *pBody1 = dynamic_cast<CGEKDynamicBody *>(pContactMaterial->GetBody1());
+    CGEKNewtonBody *pBody0 = dynamic_cast<CGEKNewtonBody *>(pContactMaterial->GetBody0());
+    CGEKNewtonBody *pBody1 = dynamic_cast<CGEKNewtonBody *>(pContactMaterial->GetBody1());
     if (pBody0 && pBody1)
     {
         NewtonWorldCriticalSectionLock(GetNewton(), nThreadID);
         for (void *pContact = pContactMaterial->GetFirstContact(); pContact; pContact = pContactMaterial->GetNextContact(pContact))
         {
             NewtonMaterial *pMaterial = NewtonContactGetMaterial(pContact);
-            auto &kNewton0 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(pBody0->GetEntityID(), GET_COMPONENT_ID(dynamicbody));
-            auto &kNewton1 = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(pBody1->GetEntityID(), GET_COMPONENT_ID(dynamicbody));
-            MATERIAL *pMaterial0 = LoadMaterial(kNewton0.material);
-            MATERIAL *pMaterial1 = LoadMaterial(kNewton1.material);
 
-            UINT32 nFaceAttribute = NewtonMaterialGetContactFaceAttribute(pMaterial);
-            if (nFaceAttribute > 0)
+            float3 nPosition, nNormal;
+            NewtonMaterialGetContactPositionAndNormal(pMaterial, pBody0->GetNewtonBody(), nPosition.xyz, nNormal.xyz);
+            static auto GetMaterial = [&](CGEKNewtonBody *pBody, NewtonMaterial *pMaterial) -> MATERIAL *
             {
-                if (kNewton0.material.CompareNoCase(L"tree") == 0)
+                if (m_pEngine->GetSceneManager()->HasComponent(pBody->GetEntityID(), GET_COMPONENT_ID(dynamicbody)))
                 {
-                    pMaterial0 = (MATERIAL *)nFaceAttribute;
+                    auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(pBody->GetEntityID(), GET_COMPONENT_ID(dynamicbody));
+                    if (kNewton.shape.CompareNoCase(L"tree") == 0)
+                    {
+                        NewtonCollision *pCollision = NewtonMaterialGetBodyCollidingShape(pMaterial, pBody->GetNewtonBody());
+                        if (pCollision)
+                        {
+                            dLong nAttribute = 0;
+                            float3 nCollisionNormal;
+                            NewtonCollisionRayCast(pCollision, (nPosition - nNormal).xyz, (nPosition + nNormal).xyz, nCollisionNormal.xyz, &nAttribute);
+                            if (nAttribute > 0)
+                            {
+                                return (MATERIAL *)nAttribute;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        return LoadMaterial(kNewton.material);
+                    }
                 }
-                else if (kNewton1.material.CompareNoCase(L"tree") == 0)
-                {
-                    pMaterial1 = (MATERIAL *)nFaceAttribute;
-                }
-            }
 
+                return &m_kDefaultMaterial;
+            };
+
+            MATERIAL *pMaterial0 = GetMaterial(pBody0, pMaterial);
+            MATERIAL *pMaterial1 = GetMaterial(pBody1, pMaterial);
             NewtonMaterialSetContactSoftness(pMaterial, ((pMaterial0->m_nSoftness + pMaterial1->m_nSoftness) * 0.5f));
             NewtonMaterialSetContactElasticity(pMaterial, ((pMaterial0->m_nElasticity + pMaterial1->m_nElasticity) * 0.5f));
             NewtonMaterialSetContactFrictionCoef(pMaterial, pMaterial0->m_nStaticFriction, pMaterial0->m_nKineticFriction, 0);
             NewtonMaterialSetContactFrictionCoef(pMaterial, pMaterial1->m_nStaticFriction, pMaterial1->m_nKineticFriction, 1);
 
-            float3 nPosition, nNormal;
-            NewtonMaterialGetContactPositionAndNormal(pMaterial, pBody0->GetNewtonBody(), nPosition.xyz, nNormal.xyz);
             CGEKObservable::SendEvent(TGEKEvent<IGEKNewtonObserver>(std::bind(&IGEKNewtonObserver::OnCollision, std::placeholders::_1, pBody0->GetEntityID(), pBody1->GetEntityID(), nPosition, nNormal)));
         }
     }
@@ -581,10 +608,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
             {
                 CGEKObservable::AddObserver(m_pEngine, spPlayer->GetClass<IGEKInputObserver>());
                 spPlayer->SetMatrix(float4x4(kTransform.rotation, kTransform.position).data);
-                if (spPlayer)
-                {
-                    spPlayer.QueryInterface(&m_aBodies[nEntityID]);
-                }
+                spPlayer.QueryInterface(&m_aBodies[nEntityID]);
             }
         }
     }
@@ -605,7 +629,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentRemoved(const GEKENTIT
 
 STDMETHODIMP_(void) CGEKComponentSystemNewton::OnUpdate(float nGameTime, float nFrameTime)
 {
-    Update(nFrameTime);
+    UpdateOffLine(nFrameTime);
 }
 
 STDMETHODIMP_(dNewton *) CGEKComponentSystemNewton::GetCore(void)
