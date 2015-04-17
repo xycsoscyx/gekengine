@@ -239,26 +239,70 @@ CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
     m_aBodies.clear();
     m_aCollisions.clear();
     m_aMaterials.clear();
+    m_aMaterialIndices.clear();
     m_spPlayerManager.reset();
     DestroyAllBodies();
 }
 
-CGEKComponentSystemNewton::MATERIAL *CGEKComponentSystemNewton::LoadMaterial(LPCWSTR pName)
+const CGEKComponentSystemNewton::MATERIAL &CGEKComponentSystemNewton::GetMaterial(INT32 nIndex) const
 {
-    REQUIRE_RETURN(pName, nullptr);
-
-    MATERIAL *pMaterial = nullptr;
-    auto pIterator = m_aMaterials.find(pName);
-    if (pIterator != m_aMaterials.end())
+    if (nIndex >= 0 && nIndex < int(m_aMaterials.size()))
     {
-        pMaterial = &(*pIterator).second;
+        return m_aMaterials[nIndex];
     }
     else
     {
+        static const MATERIAL kDefault;
+        return kDefault;
+    }
+}
+
+INT32 CGEKComponentSystemNewton::GetContactMaterial(const GEKENTITYID &nEntityID, NewtonBody *pBody, NewtonMaterial *pMaterial, const float3 &nPosition, const float3 &nNormal)
+{
+    if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(dynamicbody)))
+    {
+        auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(nEntityID, GET_COMPONENT_ID(dynamicbody));
+        if (kNewton.shape.CompareNoCase(L"tree") == 0)
+        {
+            NewtonCollision *pCollision = NewtonMaterialGetBodyCollidingShape(pMaterial, pBody);
+            if (pCollision)
+            {
+                dLong nAttribute = 0;
+                float3 nCollisionNormal;
+                NewtonCollisionRayCast(pCollision, (nPosition - nNormal).xyz, (nPosition + nNormal).xyz, nCollisionNormal.xyz, &nAttribute);
+                if (nAttribute > 0)
+                {
+                    return INT32(nAttribute);
+                }
+            }
+        }
+        else
+        {
+            return LoadMaterial(kNewton.material);
+        }
+    }
+
+    return -1;
+}
+
+INT32 CGEKComponentSystemNewton::LoadMaterial(LPCWSTR pName)
+{
+    REQUIRE_RETURN(pName, -1);
+
+    INT32 nMaterialIndex = -1;
+    auto pIterator = m_aMaterialIndices.find(pName);
+    if (pIterator != m_aMaterialIndices.end())
+    {
+        nMaterialIndex = (*pIterator).second;
+    }
+    else
+    {
+        m_aMaterialIndices[pName] = -1;
+
         CLibXMLDoc kDocument;
         if (SUCCEEDED(kDocument.Load(FormatString(L"%%root%%\\data\\materials\\%s.xml", pName))))
         {
-            MATERIAL &kMaterial = m_aMaterials[pName];
+            MATERIAL kMaterial;
             CLibXMLNode kMaterialNode = kDocument.GetRoot();
             if (kMaterialNode)
             {
@@ -285,20 +329,15 @@ CGEKComponentSystemNewton::MATERIAL *CGEKComponentSystemNewton::LoadMaterial(LPC
                         kMaterial.m_nSoftness = StrToFloat(kSurfaceNode.GetAttribute(L"softness"));
                     }
 
-                    pMaterial = &kMaterial;
+                    nMaterialIndex = m_aMaterials.size();
+                    m_aMaterialIndices[pName] = nMaterialIndex;
+                    m_aMaterials.push_back(kMaterial);
                 }
             }
         }
     }
 
-    if (pMaterial)
-    {
-        return pMaterial;
-    }
-    else
-    {
-        return &m_kDefaultMaterial;
-    }
+    return nMaterialIndex;
 }
 
 dNewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWSTR pParams)
@@ -393,7 +432,7 @@ dNewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWS
                             for (auto &kPair : aMaterials)
                             {
                                 RENDERMATERIAL &kMaterial = kPair.second;
-                                MATERIAL *pMaterial = LoadMaterial(kPair.first);
+                                INT32 nMaterialIndex = LoadMaterial(kPair.first);
                                 for (UINT32 nIndex = 0; nIndex < kMaterial.m_nNumIndices; nIndex += 3)
                                 {
                                     float3 aFace[3] =
@@ -403,7 +442,7 @@ dNewtonCollision *CGEKComponentSystemNewton::LoadCollision(LPCWSTR pShape, LPCWS
                                         pVertices[kMaterial.m_nFirstVertex + pIndices[kMaterial.m_nFirstIndex + nIndex + 2]],
                                     };
 
-                                    pMesh->AddFace(3, aFace[0].xyz, sizeof(float3), int(pMaterial));
+                                    pMesh->AddFace(3, aFace[0].xyz, sizeof(float3), nMaterialIndex);
                                 }
                             }
 
@@ -490,40 +529,16 @@ void CGEKComponentSystemNewton::OnContactProcess(dNewtonContactMaterial* const p
 
             float3 nPosition, nNormal;
             NewtonMaterialGetContactPositionAndNormal(pMaterial, pBody0->GetNewtonBody(), nPosition.xyz, nNormal.xyz);
-            static auto GetMaterial = [&](CGEKNewtonBaseBody *pBody, NewtonMaterial *pMaterial) -> MATERIAL *
-            {
-                if (m_pEngine->GetSceneManager()->HasComponent(pBody->GetEntityID(), GET_COMPONENT_ID(dynamicbody)))
-                {
-                    auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(pBody->GetEntityID(), GET_COMPONENT_ID(dynamicbody));
-                    if (kNewton.shape.CompareNoCase(L"tree") == 0)
-                    {
-                        NewtonCollision *pCollision = NewtonMaterialGetBodyCollidingShape(pMaterial, pBody->GetNewtonBody());
-                        if (pCollision)
-                        {
-                            dLong nAttribute = 0;
-                            float3 nCollisionNormal;
-                            NewtonCollisionRayCast(pCollision, (nPosition - nNormal).xyz, (nPosition + nNormal).xyz, nCollisionNormal.xyz, &nAttribute);
-                            if (nAttribute > 0)
-                            {
-                                return (MATERIAL *)nAttribute;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        return LoadMaterial(kNewton.material);
-                    }
-                }
 
-                return &m_kDefaultMaterial;
-            };
+            INT32 nMaterialIndex0 = GetContactMaterial(pBody0->GetEntityID(), pBody0->GetNewtonBody(), pMaterial, nPosition, nNormal);
+            INT32 nMaterialIndex1 = GetContactMaterial(pBody1->GetEntityID(), pBody1->GetNewtonBody(), pMaterial, nPosition, nNormal);
+            const MATERIAL &kMaterial0 = GetMaterial(nMaterialIndex0);
+            const MATERIAL &kMaterial1 = GetMaterial(nMaterialIndex1);
 
-            MATERIAL *pMaterial0 = GetMaterial(pBody0, pMaterial);
-            MATERIAL *pMaterial1 = GetMaterial(pBody1, pMaterial);
-            NewtonMaterialSetContactSoftness(pMaterial, ((pMaterial0->m_nSoftness + pMaterial1->m_nSoftness) * 0.5f));
-            NewtonMaterialSetContactElasticity(pMaterial, ((pMaterial0->m_nElasticity + pMaterial1->m_nElasticity) * 0.5f));
-            NewtonMaterialSetContactFrictionCoef(pMaterial, pMaterial0->m_nStaticFriction, pMaterial0->m_nKineticFriction, 0);
-            NewtonMaterialSetContactFrictionCoef(pMaterial, pMaterial1->m_nStaticFriction, pMaterial1->m_nKineticFriction, 1);
+            NewtonMaterialSetContactSoftness(pMaterial, ((kMaterial0.m_nSoftness + kMaterial1.m_nSoftness) * 0.5f));
+            NewtonMaterialSetContactElasticity(pMaterial, ((kMaterial0.m_nElasticity + kMaterial1.m_nElasticity) * 0.5f));
+            NewtonMaterialSetContactFrictionCoef(pMaterial, kMaterial0.m_nStaticFriction, kMaterial0.m_nKineticFriction, 0);
+            NewtonMaterialSetContactFrictionCoef(pMaterial, kMaterial1.m_nStaticFriction, kMaterial1.m_nKineticFriction, 1);
 
             CGEKObservable::SendEvent(TGEKEvent<IGEKNewtonObserver>(std::bind(&IGEKNewtonObserver::OnCollision, std::placeholders::_1, pBody0->GetEntityID(), pBody1->GetEntityID(), nPosition, nNormal)));
         }
@@ -562,6 +577,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnFree(void)
     m_aCollisions.clear();
     m_aBodies.clear();
     m_aMaterials.clear();
+    m_aMaterialIndices.clear();
     DestroyAllBodies();
 }
 

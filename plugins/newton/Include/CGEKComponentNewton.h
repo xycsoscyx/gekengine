@@ -52,13 +52,15 @@ private:
     std::unique_ptr<dNewtonPlayerManager> m_spPlayerManager;
 
     float3 m_nGravity;
-    MATERIAL m_kDefaultMaterial;
-    std::map<CStringW, MATERIAL> m_aMaterials;
+    std::vector<MATERIAL> m_aMaterials;
+    std::map<CStringW, INT32> m_aMaterialIndices;
     concurrency::concurrent_unordered_map<GEKENTITYID, CComPtr<IUnknown>> m_aBodies;
     std::unordered_map<CStringW, std::unique_ptr<dNewtonCollision>> m_aCollisions;
 
 private:
-    MATERIAL *LoadMaterial(LPCWSTR pName);
+    const MATERIAL &GetMaterial(INT32 nIndex) const;
+    INT32 GetContactMaterial(const GEKENTITYID &nEntityID, NewtonBody *pBody, NewtonMaterial *pMaterial, const float3 &nPosition, const float3 &nNormal);
+    INT32 LoadMaterial(LPCWSTR pName);
     dNewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
 
 private:
