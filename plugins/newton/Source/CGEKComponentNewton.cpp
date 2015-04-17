@@ -50,7 +50,7 @@ REGISTER_COMPONENT(player)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(stair_step, StrToFloat)
 END_REGISTER_COMPONENT(player)
 
-class CGEKNewtonBody
+class CGEKNewtonBaseBody
 {
 private:
     IGEKEngineCore *m_pEngine;
@@ -58,14 +58,14 @@ private:
     GEKENTITYID m_nEntityID;
 
 public:
-    CGEKNewtonBody(IGEKEngineCore *pEngine, IGEKNewtonSystem *pNewton, const GEKENTITYID &nEntityID)
+    CGEKNewtonBaseBody(IGEKEngineCore *pEngine, IGEKNewtonSystem *pNewton, const GEKENTITYID &nEntityID)
         : m_pEngine(pEngine)
         , m_pNewton(pNewton)
         , m_nEntityID(nEntityID)
     {
     }
 
-    virtual ~CGEKNewtonBody(void)
+    virtual ~CGEKNewtonBaseBody(void)
     {
     }
 
@@ -88,13 +88,13 @@ public:
 };
 
 class CGEKDynamicBody : public CGEKUnknown
-                      , public CGEKNewtonBody
+                      , public CGEKNewtonBaseBody
                       , public dNewtonDynamicBody
 {
 public:
     DECLARE_UNKNOWN(CGEKDynamicBody)
     CGEKDynamicBody(IGEKEngineCore *pEngine, IGEKNewtonSystem *pNewton, const GEKENTITYID &nEntityID, float nMass, const dNewtonCollision* const pCollision, const float4x4& nMatrix)
-        : CGEKNewtonBody(pEngine, pNewton, nEntityID)
+        : CGEKNewtonBaseBody(pEngine, pNewton, nEntityID)
         , dNewtonDynamicBody(pNewton->GetCore(), nMass, pCollision, nullptr, nMatrix.data, NULL)
     {
     }
@@ -103,7 +103,7 @@ public:
     {
     }
 
-    // CGEKNewtonBody
+    // CGEKNewtonBaseBody
     STDMETHODIMP_(NewtonBody *) GetNewtonBody(void) CONST
     {
         return dNewtonBody::GetNewtonBody();
@@ -130,7 +130,7 @@ BEGIN_INTERFACE_LIST(CGEKDynamicBody)
 END_INTERFACE_LIST_UNKNOWN
 
 class CGEKPlayer : public CGEKUnknown 
-                 , public CGEKNewtonBody
+                 , public CGEKNewtonBaseBody
                  , public dNewtonPlayerManager::dNewtonPlayer
                  , public IGEKInputObserver
 {
@@ -142,7 +142,7 @@ private:
 public:
     DECLARE_UNKNOWN(CGEKPlayer)
     CGEKPlayer(IGEKEngineCore *pEngine, IGEKNewtonSystem *pNewton, const GEKENTITYID &nEntityID, float nMass, float nOuterRadius, float nInnerRadius, float nHeight, float nStairStep)
-        : CGEKNewtonBody(pEngine, pNewton, nEntityID)
+        : CGEKNewtonBaseBody(pEngine, pNewton, nEntityID)
         , dNewtonPlayer(pNewton->GetPlayerManager(), nullptr, nMass, nOuterRadius, nInnerRadius, nHeight, nStairStep, float3(0.0f, 1.0f, 0.0f).xyz, float3(0.0f, 0.0f, 1.0f).xyz, 1)
         , m_nTurn(0.0f)
     {
@@ -153,7 +153,7 @@ public:
         CGEKObservable::RemoveObserver(GetEngineCore(), GetClass<IGEKInputObserver>());
     }
 
-    // CGEKNewtonBody
+    // CGEKNewtonBaseBody
     STDMETHODIMP_(NewtonBody *) GetNewtonBody(void) CONST
     {
         return dNewtonBody::GetNewtonBody();
@@ -479,8 +479,8 @@ bool CGEKComponentSystemNewton::OnCompoundSubCollisionAABBOverlap(const dNewtonB
 
 void CGEKComponentSystemNewton::OnContactProcess(dNewtonContactMaterial* const pContactMaterial, dFloat nTimeStep, int nThreadID)
 {
-    CGEKNewtonBody *pBody0 = dynamic_cast<CGEKNewtonBody *>(pContactMaterial->GetBody0());
-    CGEKNewtonBody *pBody1 = dynamic_cast<CGEKNewtonBody *>(pContactMaterial->GetBody1());
+    CGEKNewtonBaseBody *pBody0 = dynamic_cast<CGEKNewtonBaseBody *>(pContactMaterial->GetBody0());
+    CGEKNewtonBaseBody *pBody1 = dynamic_cast<CGEKNewtonBaseBody *>(pContactMaterial->GetBody1());
     if (pBody0 && pBody1)
     {
         NewtonWorldCriticalSectionLock(GetNewton(), nThreadID);
@@ -490,7 +490,7 @@ void CGEKComponentSystemNewton::OnContactProcess(dNewtonContactMaterial* const p
 
             float3 nPosition, nNormal;
             NewtonMaterialGetContactPositionAndNormal(pMaterial, pBody0->GetNewtonBody(), nPosition.xyz, nNormal.xyz);
-            static auto GetMaterial = [&](CGEKNewtonBody *pBody, NewtonMaterial *pMaterial) -> MATERIAL *
+            static auto GetMaterial = [&](CGEKNewtonBaseBody *pBody, NewtonMaterial *pMaterial) -> MATERIAL *
             {
                 if (m_pEngine->GetSceneManager()->HasComponent(pBody->GetEntityID(), GET_COMPONENT_ID(dynamicbody)))
                 {
@@ -529,9 +529,9 @@ void CGEKComponentSystemNewton::OnContactProcess(dNewtonContactMaterial* const p
         }
     }
 
-
     NewtonWorldCriticalSectionUnlock(GetNewton());
 }
+
 STDMETHODIMP CGEKComponentSystemNewton::Initialize(IGEKEngineCore *pEngine)
 {
     REQUIRE_RETURN(pEngine, E_INVALIDARG);
