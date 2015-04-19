@@ -49,7 +49,7 @@ public:
 private:
     IGEKEngineCore *m_pEngine;
 
-    std::unique_ptr<dNewtonPlayerManager> m_spPlayerManager;
+    dNewtonPlayerManager *m_pPlayerManager;
 
     float3 m_nGravity;
     std::vector<MATERIAL> m_aMaterials;

@@ -240,7 +240,6 @@ CGEKComponentSystemNewton::~CGEKComponentSystemNewton(void)
     m_aCollisions.clear();
     m_aMaterials.clear();
     m_aMaterialIndices.clear();
-    m_spPlayerManager.reset();
     DestroyAllBodies();
 }
 
@@ -555,8 +554,8 @@ STDMETHODIMP CGEKComponentSystemNewton::Initialize(IGEKEngineCore *pEngine)
     HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), GetClass<IGEKSceneObserver>());
     if (SUCCEEDED(hRetVal))
     {
-        m_spPlayerManager.reset(new dNewtonPlayerManager(this));
-        hRetVal = (m_spPlayerManager ? S_OK : E_OUTOFMEMORY);
+        m_pPlayerManager = new dNewtonPlayerManager(this);
+        hRetVal = (m_pPlayerManager ? S_OK : E_OUTOFMEMORY);
     }
 
     return hRetVal;
@@ -655,7 +654,7 @@ STDMETHODIMP_(dNewton *) CGEKComponentSystemNewton::GetCore(void)
 
 STDMETHODIMP_(dNewtonPlayerManager *) CGEKComponentSystemNewton::GetPlayerManager(void)
 {
-    return m_spPlayerManager.get();
+    return m_pPlayerManager;
 }
 
 STDMETHODIMP_(float3) CGEKComponentSystemNewton::GetGravity(void)
