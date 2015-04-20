@@ -2,8 +2,9 @@
 #include "GEKSystemCLSIDs.h"
 #include "GEKEngineCLSIDs.h"
 #include "GEKEngine.h"
+#include <ppl.h>
 
-#define NUM_INSTANCES                   50
+#define NUM_INSTANCES                   500
 
 REGISTER_COMPONENT(model)
     REGISTER_COMPONENT_DEFAULT_VALUE(file, L"")
@@ -50,10 +51,15 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
     auto pIterator = m_aModels.find(FormatString(L"%s|%s", pName, pParams));
     if (pIterator != m_aModels.end())
     {
-        pModel = &(*pIterator).second;
+        if ((*pIterator).second.m_bLoaded)
+        {
+            pModel = &(*pIterator).second;
+        }
     }
     else
     {
+        MODEL &kModel = m_aModels[FormatString(L"%s|%s", pName, pParams)];
+
         std::vector<UINT8> aBuffer;
         HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pName), aBuffer);
         if (SUCCEEDED(hRetVal))
@@ -71,7 +77,6 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
             HRESULT hRetVal = E_INVALIDARG;
             if (nGEKX == *(UINT32 *)"GEKX" && nType == 0 && nVersion == 2)
             {
-                MODEL kModel;
                 kModel.m_nAABB = *(aabb *)pBuffer;
                 pBuffer += sizeof(aabb);
 
@@ -138,7 +143,8 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    pModel = &(m_aModels[FormatString(L"%s|%s", pName, pParams)] = kModel);
+                    kModel.m_bLoaded = true;
+                    pModel = &kModel;
                 }
             }
         }
@@ -204,10 +210,18 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const GEKENTITYID &nVi
             nAABB.maximum *= kModel.scale;
             if (nViewFrustum.IsVisible(obb(nAABB, nMatrix)))
             {
-                m_aVisible[pModel].emplace_back(nMatrix, kModel.scale, kModel.color);
+                m_aVisible[pModel].emplace_back(nMatrix, kModel.scale, kModel.color, nViewFrustum.origin.Distance(kTransform.position));
             }
         }
     });
+
+    for (auto kModel : m_aVisible)
+    {
+        concurrency::parallel_sort(kModel.second.begin(), kModel.second.end(), [&](const INSTANCE &kInstanceA, const INSTANCE &kInstanceB) -> bool
+        {
+            return (kInstanceA.m_nDistance < kInstanceB.m_nDistance);
+        });
+    }
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(const GEKENTITYID &nViewerID, IGEK3DVideoContext *pContext, UINT32 nVertexAttributes)
@@ -242,22 +256,19 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(const GEKENTITYID &nVi
         }
 
         pContext->SetIndexBuffer(0, kModel.first->m_spIndexBuffer);
-        for (UINT32 nPass = 0; nPass < kModel.second.size(); nPass += NUM_INSTANCES)
+
+        INSTANCE *pInstances = nullptr;
+        if (SUCCEEDED(m_spInstanceBuffer->Map((LPVOID *)&pInstances)))
         {
-            UINT32 nNumInstances = min(NUM_INSTANCES, (kModel.second.size() - nPass));
+            UINT32 nNumInstances = min(NUM_INSTANCES, kModel.second.size());
+            memcpy(pInstances, kModel.second.data(), (sizeof(INSTANCE) * nNumInstances));
+            m_spInstanceBuffer->UnMap();
 
-            INSTANCE *pInstances = nullptr;
-            if (SUCCEEDED(m_spInstanceBuffer->Map((LPVOID *)&pInstances)))
+            for (auto &kMaterial : kModel.first->m_aMaterials)
             {
-                memcpy(pInstances, &kModel.second[nPass], (sizeof(INSTANCE) * nNumInstances));
-                m_spInstanceBuffer->UnMap();
-
-                for (auto &kMaterial : kModel.first->m_aMaterials)
+                if (m_pEngine->GetMaterialManager()->EnableMaterial(pContext, kMaterial.first))
                 {
-                    if (m_pEngine->GetMaterialManager()->EnableMaterial(pContext, kMaterial.first))
-                    {
-                        pContext->DrawInstancedIndexedPrimitive(kMaterial.second.m_nNumIndices, nNumInstances, kMaterial.second.m_nFirstIndex, kMaterial.second.m_nFirstVertex, 0);
-                    }
+                    pContext->DrawInstancedIndexedPrimitive(kMaterial.second.m_nNumIndices, nNumInstances, kMaterial.second.m_nFirstIndex, kMaterial.second.m_nFirstVertex, 0);
                 }
             }
         }

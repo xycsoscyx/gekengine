@@ -132,6 +132,7 @@ STDMETHODIMP CGEKComponentSystemFlames::OnLoadEnd(HRESULT hRetVal)
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnFree(void)
 {
     m_aEmitters.clear();
+    m_aGradients.clear();
 }
 
 STDMETHODIMP_(void) CGEKComponentSystemFlames::OnEntityDestroyed(const GEKENTITYID &nEntityID)
@@ -259,7 +260,16 @@ STDMETHODIMP_(void) CGEKComponentSystemFlames::OnCullScene(const GEKENTITYID &nV
             m_pEngine->GetMaterialManager()->LoadMaterial(kFlames.material, &spMaterial);
 
             CComPtr<IGEK3DVideoTexture> spGradient;
-            m_pEngine->GetMaterialManager()->LoadTexture(L"%root%\\data\\gradients\\" + kFlames.gradient + L".dds", GEK3DVIDEO::TEXTURE::FORCE_1D, &spGradient);
+            auto pIterator = m_aGradients.find(kFlames.gradient);
+            if (pIterator == m_aGradients.end())
+            {
+                m_pEngine->GetMaterialManager()->LoadTexture(L"%root%\\data\\gradients\\" + kFlames.gradient + L".dds", GEK3DVIDEO::TEXTURE::FORCE_1D, &spGradient);
+                m_aGradients[kFlames.gradient] = spGradient;
+            }
+            else
+            {
+                spGradient = (*pIterator).second;
+            }
 
             if (spMaterial && spGradient)
             {

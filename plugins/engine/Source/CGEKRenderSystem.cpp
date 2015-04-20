@@ -639,11 +639,11 @@ STDMETHODIMP CGEKRenderSystem::CreateBuffer(LPCWSTR pName, GEK3DVIDEO::DATA::FOR
     HRESULT hRetVal = S_OK;
     if (m_aBuffers.find(pName) == m_aBuffers.end())
     {
+        BUFFER &kBuffer = m_aBuffers[pName];
         CComPtr<IGEK3DVideoBuffer> spBuffer;
         hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(eFormat, nCount, GEK3DVIDEO::BUFFER::UNORDERED_ACCESS | GEK3DVIDEO::BUFFER::RESOURCE, &spBuffer);
         if (spBuffer)
         {
-            BUFFER &kBuffer = m_aBuffers[pName];
             kBuffer.m_eFormat = eFormat;
             kBuffer.m_nCount = nCount;
             kBuffer.m_spResource = spBuffer;
@@ -661,6 +661,8 @@ STDMETHODIMP CGEKRenderSystem::CreateBuffer(LPCWSTR pName, UINT32 nXSize, UINT32
     HRESULT hRetVal = S_OK;
     if (m_aBuffers.find(pName) == m_aBuffers.end())
     {
+        BUFFER &kBuffer = m_aBuffers[pName];
+
         CComPtr<IUnknown> spResource;
         switch (eFormat)
         {
@@ -686,7 +688,6 @@ STDMETHODIMP CGEKRenderSystem::CreateBuffer(LPCWSTR pName, UINT32 nXSize, UINT32
 
         if (spResource)
         {
-            BUFFER &kBuffer = m_aBuffers[pName];
             kBuffer.m_eFormat = eFormat;
             kBuffer.m_spResource = spResource;
         }
@@ -710,7 +711,10 @@ STDMETHODIMP CGEKRenderSystem::GetBuffer(LPCWSTR pName, IUnknown **ppResource)
         auto pIterator = m_aBuffers.find(pName);
         if (pIterator != m_aBuffers.end())
         {
-            hRetVal = (*pIterator).second.m_spResource->QueryInterface(IID_PPV_ARGS(ppResource));
+            if ((*pIterator).second.m_spResource)
+            {
+                hRetVal = (*pIterator).second.m_spResource->QueryInterface(IID_PPV_ARGS(ppResource));
+            }
         }
     }
 
@@ -747,10 +751,14 @@ STDMETHODIMP CGEKRenderSystem::LoadMaterial(LPCWSTR pName, IUnknown **ppMaterial
     auto pIterator = m_aResources.find(pName);
     if (pIterator != m_aResources.end())
     {
-        hRetVal = (*pIterator).second->QueryInterface(IID_PPV_ARGS(ppMaterial));
+        if ((*pIterator).second)
+        {
+            hRetVal = (*pIterator).second->QueryInterface(IID_PPV_ARGS(ppMaterial));
+        }
     }
     else
     {
+        m_aResources[pName] = nullptr;
         CComPtr<IGEKRenderMaterial> spMaterial;
         GetContext()->CreateInstance(CLSID_GEKRenderMaterial, IID_PPV_ARGS(&spMaterial));
         if (spMaterial)

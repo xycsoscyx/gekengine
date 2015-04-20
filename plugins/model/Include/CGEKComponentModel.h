@@ -33,19 +33,26 @@ public:
         CComPtr<IGEK3DVideoBuffer> m_spNormalBuffer;
         CComPtr<IGEK3DVideoBuffer> m_spIndexBuffer;
         std::multimap<CComPtr<IUnknown>, MATERIAL> m_aMaterials;
+        bool m_bLoaded;
+
+        MODEL(void)
+            : m_bLoaded(false)
+        {
+        }
     };
 
     struct INSTANCE
     {
         float4x4 m_nMatrix;
         float3 m_nScale;
-        float m_nPadding;
         float4 m_nColor;
+        float m_nDistance;
 
-        INSTANCE(const float4x4 &nMatrix, const float3 &nScale, const float4 &nColor)
+        INSTANCE(const float4x4 &nMatrix, const float3 &nScale, const float4 &nColor, float nDistance)
             : m_nMatrix(nMatrix)
             , m_nScale(nScale)
             , m_nColor(nColor)
+            , m_nDistance(nDistance)
         {
         }
     };

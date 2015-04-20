@@ -4,8 +4,8 @@ struct INSTANCE
 {
     float4x4    m_nMatrix;
     float3      m_nScale;
-    float       m_nPadding;
     float4      m_nColor;
+    float       m_nDistance;
 };
             
 StructuredBuffer<INSTANCE> gs_aInstances    : register(t0);
