@@ -1014,9 +1014,9 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
         {
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderBegin, std::placeholders::_1, nViewerID)));
 
-            auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, GET_COMPONENT_ID(transform));
+            auto &kViewerTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, GET_COMPONENT_ID(transform));
 
-            float4x4 nCameraMatrix(kTransform.rotation, kTransform.position);
+            float4x4 nCameraMatrix(kViewerTransform.rotation, kViewerTransform.position);
 
             float nXSize = float(m_pEngine->GetVideoSystem()->GetXSize());
             float nYSize = float(m_pEngine->GetVideoSystem()->GetYSize());
@@ -1042,14 +1042,13 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             {
                 auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
                 auto &kLight = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(pointlight)>(nEntityID, GET_COMPONENT_ID(pointlight));
-                auto &kColor = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(color)>(nEntityID, GET_COMPONENT_ID(color));
                 if (nViewFrustum.IsVisible(sphere(kTransform.position, kLight.radius)))
                 {
                     auto pIterator = aVisibleLights.grow_by(1);
                     (*pIterator).m_nPosition = (kEngineBuffer.m_nViewMatrix * float4(kTransform.position, 1.0f));
                     (*pIterator).m_nRange = kLight.radius;
                     (*pIterator).m_nInvRange = (1.0f / kLight.radius);
-                    (*pIterator).m_nColor = kColor.value;
+                    (*pIterator).m_nColor = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(color)>(nEntityID, GET_COMPONENT_ID(color)).value;
                 }
             }, true);
 

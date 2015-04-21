@@ -189,7 +189,7 @@ public:
         GetInput(m_aConstantActions);
 
         auto &kPlayer = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(player)>(GetEntityID(), GET_COMPONENT_ID(player));
-        SetPlayerVelocity(nForward, nStrafe, nHeight, m_nTurn, GetNewtonSystem()->GetGravity().xyz, nTimeStep);
+        SetPlayerVelocity(nForward, nStrafe, nHeight, m_nTurn, float3(0.0f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.xyz, nTimeStep);
     }
 
     // IGEKInputObserver
@@ -197,7 +197,7 @@ public:
     {
         if (bState)
         {
-            m_aConstantActions[pName] = 1.0f;
+            m_aConstantActions[pName] = 10.0f;
         }
         else
         {
@@ -259,7 +259,7 @@ INT32 CGEKComponentSystemNewton::GetContactMaterial(const GEKENTITYID &nEntityID
     if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(dynamicbody)))
     {
         auto &kNewton = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(nEntityID, GET_COMPONENT_ID(dynamicbody));
-        if (kNewton.shape.CompareNoCase(L"tree") == 0)
+        if (kNewton.material.IsEmpty())
         {
             NewtonCollision *pCollision = NewtonMaterialGetBodyCollidingShape(pMaterial, pBody);
             if (pCollision)

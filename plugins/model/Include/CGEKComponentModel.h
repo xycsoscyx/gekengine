@@ -7,7 +7,6 @@
 
 DECLARE_COMPONENT(model, 0x00000100)
     DECLARE_COMPONENT_VALUE(CStringW, source)
-    DECLARE_COMPONENT_VALUE(CStringW, params)
 END_DECLARE_COMPONENT(model)
 
 class CGEKComponentSystemModel : public CGEKUnknown
@@ -70,7 +69,7 @@ public:
     virtual ~CGEKComponentSystemModel(void);
     DECLARE_UNKNOWN(CGEKComponentSystemModel);
 
-    MODEL *GetModel(LPCWSTR pName, LPCWSTR pParams);
+    MODEL *GetModel(LPCWSTR pSource);
 
     // IGEKComponentSystem
     STDMETHOD(Initialize)                       (THIS_ IGEKEngineCore *pEngine);

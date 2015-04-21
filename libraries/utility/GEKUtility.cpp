@@ -418,36 +418,12 @@ bool EvaluateFloat3(LPCWSTR pExpression, float3 &nValue)
 
 bool EvaluateFloat4(LPCWSTR pExpression, float4 &nValue)
 {
-    if (gs_kEvalulateFloat.EvaluateVector(pExpression, nValue.xyzw))
-    {
-        return true;
-    }
-
-    float3 nPartValue;
-    if (EvaluateFloat3(pExpression, nPartValue))
-    {
-        nValue = float4(nPartValue, 1.0f);
-        return true;
-    }
-
-    return false;
+    return gs_kEvalulateFloat.EvaluateVector(pExpression, nValue.xyzw);
 }
 
 bool EvaluateQuaternion(LPCWSTR pExpression, quaternion &nValue)
 {
-    if (EvaluateFloat4(pExpression, *(float4 *)&nValue))
-    {
-        return true;
-    }
-
-    float3 nEuler;
-    if (EvaluateFloat3(pExpression, nEuler))
-    {
-        nValue.SetEuler(nEuler);
-        return true;
-    }
-
-    return false;
+    return EvaluateFloat4(pExpression, *(float4 *)&nValue);
 }
 
 bool EvaluateINT32(LPCWSTR pExpression, INT32 &nValue)
@@ -544,28 +520,64 @@ float StrToFloat(LPCWSTR pExpression)
 float2 StrToFloat2(LPCWSTR pExpression)
 {
     float2 nValue;
-    EvaluateFloat2(pExpression, nValue);
+    if (!EvaluateFloat2(pExpression, nValue))
+    {
+        if (EvaluateFloat(pExpression, nValue.x))
+        {
+            nValue.y = nValue.x;
+        }
+    }
+
     return nValue;
 }
 
 float3 StrToFloat3(LPCWSTR pExpression)
 {
     float3 nValue;
-    EvaluateFloat3(pExpression, nValue);
+    if (!EvaluateFloat3(pExpression, nValue))
+    {
+        if (EvaluateFloat(pExpression, nValue.x))
+        {
+            nValue.y = nValue.z = nValue.x;
+        }
+    }
+
     return nValue;
 }
 
 float4 StrToFloat4(LPCWSTR pExpression)
 {
     float4 nValue;
-    EvaluateFloat4(pExpression, nValue);
+    if (!EvaluateFloat4(pExpression, nValue))
+    {
+        if (EvaluateFloat3(pExpression, *(float3 *)&nValue))
+        {
+            nValue.w = 1.0f;
+        }
+        else
+        {
+            if (EvaluateFloat(pExpression, nValue.x))
+            {
+                nValue.y = nValue.z = nValue.w = nValue.x;
+            }
+        }
+    }
+
     return nValue;
 }
 
 quaternion StrToQuaternion(LPCWSTR pExpression)
 {
     quaternion nValue;
-    EvaluateQuaternion(pExpression, nValue);
+    if (!EvaluateQuaternion(pExpression, nValue))
+    {
+        float3 nEuler;
+        if (EvaluateFloat3(pExpression, nEuler))
+        {
+            nValue.SetEuler(nEuler);
+        }
+    }
+
     return nValue;
 }
 

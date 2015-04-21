@@ -9,13 +9,10 @@
 
 REGISTER_COMPONENT(model)
     REGISTER_COMPONENT_DEFAULT_VALUE(source, L"")
-    REGISTER_COMPONENT_DEFAULT_VALUE(params, L"")
     REGISTER_COMPONENT_SERIALIZE(model)
         REGISTER_COMPONENT_SERIALIZE_VALUE(source, )
-        REGISTER_COMPONENT_SERIALIZE_VALUE(params, )
     REGISTER_COMPONENT_DESERIALIZE(model)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(source, )
-        REGISTER_COMPONENT_DESERIALIZE_VALUE(params, )
 END_REGISTER_COMPONENT(model)
 
 BEGIN_INTERFACE_LIST(CGEKComponentSystemModel)
@@ -37,13 +34,12 @@ CGEKComponentSystemModel::~CGEKComponentSystemModel(void)
     CGEKObservable::RemoveObserver(m_pEngine->GetRenderManager(), GetClass<IGEKRenderObserver>());
 }
 
-CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pName, LPCWSTR pParams)
+CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pSource)
 {
-    REQUIRE_RETURN(pName, nullptr);
-    REQUIRE_RETURN(pParams, nullptr);
+    REQUIRE_RETURN(pSource, nullptr);
 
     MODEL *pModel = nullptr;
-    auto pIterator = m_aModels.find(FormatString(L"%s|%s", pName, pParams));
+    auto pIterator = m_aModels.find(pSource);
     if (pIterator != m_aModels.end())
     {
         if ((*pIterator).second.m_bLoaded)
@@ -53,10 +49,10 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pNam
     }
     else
     {
-        MODEL &kModel = m_aModels[FormatString(L"%s|%s", pName, pParams)];
+        MODEL &kModel = m_aModels[pSource];
 
         std::vector<UINT8> aBuffer;
-        HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pName), aBuffer);
+        HRESULT hRetVal = GEKLoadFromFile(FormatString(L"%%root%%\\data\\models\\%s.gek", pSource), aBuffer);
         if (SUCCEEDED(hRetVal))
         {
             UINT8 *pBuffer = aBuffer.data();
@@ -192,20 +188,19 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const GEKENTITYID &nVi
     m_pEngine->GetSceneManager()->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(model) }, [&](const GEKENTITYID &nEntityID) -> void
     {
         auto &kModel = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(model)>(nEntityID, GET_COMPONENT_ID(model));
-        MODEL *pModel = GetModel(kModel.source, kModel.params);
+        MODEL *pModel = GetModel(kModel.source);
         if (pModel)
         {
             float3 nSize(1.0f, 1.0f, 1.0f);
-            float4 nColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-            if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(color)))
-            {
-                nColor = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(color)>(nEntityID, GET_COMPONENT_ID(color)).value;
-            }
-
             if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(size)))
             {
                 nSize = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(size)>(nEntityID, GET_COMPONENT_ID(size)).value;
+            }
+
+            float4 nColor(1.0f, 1.0f, 1.0f, 1.0f);
+            if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(color)))
+            {
+                nColor = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(color)>(nEntityID, GET_COMPONENT_ID(color)).value;
             }
 
             auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
@@ -262,19 +257,21 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(const GEKENTITYID &nVi
         }
 
         pContext->SetIndexBuffer(0, kModel.first->m_spIndexBuffer);
-
-        INSTANCE *pInstances = nullptr;
-        if (SUCCEEDED(m_spInstanceBuffer->Map((LPVOID *)&pInstances)))
+        for (UINT32 nPass = 0; nPass < kModel.second.size(); nPass += NUM_INSTANCES)
         {
-            UINT32 nNumInstances = min(NUM_INSTANCES, kModel.second.size());
-            memcpy(pInstances, kModel.second.data(), (sizeof(INSTANCE) * nNumInstances));
-            m_spInstanceBuffer->UnMap();
-
-            for (auto &kMaterial : kModel.first->m_aMaterials)
+            INSTANCE *pInstances = nullptr;
+            if (SUCCEEDED(m_spInstanceBuffer->Map((LPVOID *)&pInstances)))
             {
-                if (m_pEngine->GetMaterialManager()->EnableMaterial(pContext, kMaterial.first))
+                UINT32 nNumInstances = min(NUM_INSTANCES, (kModel.second.size() - nPass));
+                memcpy(pInstances, kModel.second.data(), (sizeof(INSTANCE) * nNumInstances));
+                m_spInstanceBuffer->UnMap();
+
+                for (auto &kMaterial : kModel.first->m_aMaterials)
                 {
-                    pContext->DrawInstancedIndexedPrimitive(kMaterial.second.m_nNumIndices, nNumInstances, kMaterial.second.m_nFirstIndex, kMaterial.second.m_nFirstVertex, 0);
+                    if (m_pEngine->GetMaterialManager()->EnableMaterial(pContext, kMaterial.first))
+                    {
+                        pContext->DrawInstancedIndexedPrimitive(kMaterial.second.m_nNumIndices, nNumInstances, kMaterial.second.m_nFirstIndex, kMaterial.second.m_nFirstVertex, 0);
+                    }
                 }
             }
         }
