@@ -107,9 +107,6 @@
     <ClInclude Include="..\..\api\IGEKSceneManager.h" />
     <ClInclude Include="GEKEngine.h" />
     <ClInclude Include="GEKEngineCLSIDs.h" />
-    <ClInclude Include="Include\CGEKComponentLight.h" />
-    <ClInclude Include="Include\CGEKComponentTransform.h" />
-    <ClInclude Include="Include\CGEKComponentViewer.h" />
     <ClInclude Include="Include\CGEKEngine.h" />
     <ClInclude Include="Include\CGEKPopulationSystem.h" />
     <ClInclude Include="Include\CGEKProperties.h" />
@@ -121,13 +118,9 @@
     <ClInclude Include="Public\IGEKRenderFilter.h" />
     <ClInclude Include="Public\IGEKRenderMaterial.h" />
     <ClInclude Include="Public\IGEKRenderSystem.h" />
-    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentLight.cpp" />
-    <ClCompile Include="Source\CGEKComponentTransform.cpp" />
-    <ClCompile Include="Source\CGEKComponentViewer.cpp" />
     <ClCompile Include="Source\CGEKEngine.cpp" />
     <ClCompile Include="Source\CGEKPopulationSystem.cpp" />
     <ClCompile Include="Source\CGEKProperties.cpp" />
@@ -137,7 +130,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
-    <ResourceCompile Include="engine.rc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\utility\utility.vcxproj">
@@ -145,7 +137,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="cursor.ani" />
     <None Include="pointer.ani" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

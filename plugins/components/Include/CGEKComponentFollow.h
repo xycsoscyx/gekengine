@@ -5,7 +5,8 @@
 #include "GEKAPI.h"
 #include <concurrent_unordered_map.h>
 
-DECLARE_COMPONENT(follow, CStringW, 0x00000010)
+DECLARE_COMPONENT(follow, 0x00000010)
+    DECLARE_COMPONENT_VALUE(CStringW, target)
     DECLARE_COMPONENT_VALUE(float3, offset)
     DECLARE_COMPONENT_VALUE(quaternion, rotation)
 END_DECLARE_COMPONENT(follow)

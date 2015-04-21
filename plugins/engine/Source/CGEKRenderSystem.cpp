@@ -4,6 +4,7 @@
 #include "GEKSystemCLSIDs.h"
 #include "GEKEngineCLSIDs.h"
 #include "GEKEngine.h"
+#include "GEKComponents.h"
 #include <windowsx.h>
 #include <atlpath.h>
 
@@ -1022,14 +1023,14 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             float nAspect = (nXSize / nYSize);
 
             ENGINEBUFFER kEngineBuffer;
-            float nFieldOfView = _DEGTORAD(kViewer.fieldofview);
+            float nFieldOfView = _DEGTORAD(kViewer.field_of_view);
             kEngineBuffer.m_nCameraFieldOfView.x = tan(nFieldOfView * 0.5f);
             kEngineBuffer.m_nCameraFieldOfView.y = (kEngineBuffer.m_nCameraFieldOfView.x / nAspect);
-            kEngineBuffer.m_nCameraMinDistance = kViewer.mindistance;
-            kEngineBuffer.m_nCameraMaxDistance = kViewer.maxdistance;
+            kEngineBuffer.m_nCameraMinDistance = kViewer.minimum_distance;
+            kEngineBuffer.m_nCameraMaxDistance = kViewer.maximum_distance;
 
             kEngineBuffer.m_nViewMatrix = nCameraMatrix.GetInverse();
-            kEngineBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kViewer.mindistance, kViewer.maxdistance);
+            kEngineBuffer.m_nProjectionMatrix.SetPerspective(nFieldOfView, nAspect, kViewer.minimum_distance, kViewer.maximum_distance);
             kEngineBuffer.m_nInvProjectionMatrix = kEngineBuffer.m_nProjectionMatrix.GetInverse();
             kEngineBuffer.m_nTransformMatrix = (kEngineBuffer.m_nViewMatrix * kEngineBuffer.m_nProjectionMatrix);
 
@@ -1037,17 +1038,18 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             nViewFrustum.Create(nCameraMatrix, kEngineBuffer.m_nProjectionMatrix);
 
             concurrency::concurrent_vector<LIGHTBUFFER> aVisibleLights;
-            m_pEngine->GetSceneManager()->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(light) }, [&](const GEKENTITYID &nEntityID) -> void
+            m_pEngine->GetSceneManager()->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(pointlight), GET_COMPONENT_ID(color) }, [&](const GEKENTITYID &nEntityID) -> void
             {
-                auto &kLight = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(light)>(nEntityID, GET_COMPONENT_ID(light));
                 auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
-                if (nViewFrustum.IsVisible(sphere(kTransform.position, kLight.range)))
+                auto &kLight = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(pointlight)>(nEntityID, GET_COMPONENT_ID(pointlight));
+                auto &kColor = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(color)>(nEntityID, GET_COMPONENT_ID(color));
+                if (nViewFrustum.IsVisible(sphere(kTransform.position, kLight.radius)))
                 {
                     auto pIterator = aVisibleLights.grow_by(1);
                     (*pIterator).m_nPosition = (kEngineBuffer.m_nViewMatrix * float4(kTransform.position, 1.0f));
-                    (*pIterator).m_nRange = kLight.range;
-                    (*pIterator).m_nInvRange = (1.0f / kLight.range);
-                    (*pIterator).m_nColor = kLight.color;
+                    (*pIterator).m_nRange = kLight.radius;
+                    (*pIterator).m_nInvRange = (1.0f / kLight.radius);
+                    (*pIterator).m_nColor = kColor.value;
                 }
             }, true);
 
@@ -1083,10 +1085,10 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             CGEKObservable::SendEvent(TGEKEvent<IGEKRenderObserver>(std::bind(&IGEKRenderObserver::OnRenderEnd, std::placeholders::_1, nViewerID)));
 
             GEK3DVIDEO::VIEWPORT kViewport;
-            kViewport.m_nTopLeftX = (kViewer.position.x * m_pEngine->GetVideoSystem()->GetXSize());
-            kViewport.m_nTopLeftY = (kViewer.position.y * m_pEngine->GetVideoSystem()->GetYSize());
-            kViewport.m_nXSize = (kViewer.size.x * m_pEngine->GetVideoSystem()->GetXSize());
-            kViewport.m_nYSize = (kViewer.size.y * m_pEngine->GetVideoSystem()->GetYSize());
+            kViewport.m_nTopLeftX = (kViewer.viewport.x * m_pEngine->GetVideoSystem()->GetXSize());
+            kViewport.m_nTopLeftY = (kViewer.viewport.y * m_pEngine->GetVideoSystem()->GetYSize());
+            kViewport.m_nXSize = (kViewer.viewport.z * m_pEngine->GetVideoSystem()->GetXSize());
+            kViewport.m_nYSize = (kViewer.viewport.w * m_pEngine->GetVideoSystem()->GetYSize());
             kViewport.m_nMinDepth = 0.0f;
             kViewport.m_nMaxDepth = 1.0f;
 

@@ -4,7 +4,8 @@
 #include "GEKContext.h"
 #include "GEKAPI.h"
 
-DECLARE_COMPONENT(color, float4, 0x00000011)
+DECLARE_COMPONENT(color, 0x00000011)
+    DECLARE_COMPONENT_VALUE(float4, value)
     DECLARE_COMPONENT_VALUE(float4, minimum)
     DECLARE_COMPONENT_VALUE(float4, maximum)
 END_DECLARE_COMPONENT(color)

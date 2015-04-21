@@ -9,7 +9,6 @@
 
 DECLARE_COMPONENT(dynamicbody, 0x00001000)
     DECLARE_COMPONENT_VALUE(CStringW, shape)
-    DECLARE_COMPONENT_VALUE(CStringW, params)
     DECLARE_COMPONENT_VALUE(CStringW, material)
     DECLARE_COMPONENT_VALUE(float, mass)
 END_DECLARE_COMPONENT(dynamicbody)
@@ -61,7 +60,9 @@ private:
     const MATERIAL &GetMaterial(INT32 nIndex) const;
     INT32 GetContactMaterial(const GEKENTITYID &nEntityID, NewtonBody *pBody, NewtonMaterial *pMaterial, const float3 &nPosition, const float3 &nNormal);
     INT32 LoadMaterial(LPCWSTR pName);
-    dNewtonCollision *LoadCollision(LPCWSTR pShape, LPCWSTR pParams);
+
+    dNewtonCollision *CreateCollision(const GEKENTITYID &nEntityID, const GET_COMPONENT_DATA(dynamicbody) &kDynamicBody);
+    dNewtonCollision *LoadCollision(const GEKENTITYID &nEntityID, const GET_COMPONENT_DATA(dynamicbody) &kDynamicBody);
 
 private:
     bool OnBodiesAABBOverlap(const dNewtonBody* const pBody0, const dNewtonBody* const pBody1, int nThreadID) const;

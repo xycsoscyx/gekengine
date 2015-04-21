@@ -128,23 +128,17 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
     {
         for (auto &kEntityNode : aEntities)
         {
-            CStringW strName;
-            std::map<CStringW, CStringW> aValues;
-            kEntityNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
-            {
-                if (_wcsicmp(pName, L"name") == 0)
-                {
-                    strName = pValue;
-                }
-                else
-                {
-                    aValues[FormatString(L"%%%s%%", pName).MakeLower()] = FormatString(L"%f", StrToFloat(pValue));
-                }
-            });
-
-            aValues[L""] = kEntityNode.GetText();
             GEKENTITYID nEntityID = GEKINVALIDENTITYID;
-            if (SUCCEEDED(CreateEntity(nEntityID, (strName.IsEmpty() ? nullptr : strName.GetString()))))
+            if (kEntityNode.HasAttribute(L"name"))
+            {
+                CreateEntity(nEntityID, kEntityNode.GetAttribute(L"name"));
+            }
+            else
+            {
+                CreateEntity(nEntityID, nullptr);
+            }
+
+            if (nEntityID != GEKINVALIDENTITYID)
             {
                 CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
                 while (kComponentNode)
@@ -153,15 +147,9 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
                     if (pIterator != m_aComponentNames.end())
                     {
                         std::unordered_map<CStringW, CStringW> aParams;
-                        kComponentNode.ListAttributes([&aValues, &aParams](LPCWSTR pName, LPCWSTR pValue) -> void
+                        kComponentNode.ListAttributes([&aParams](LPCWSTR pName, LPCWSTR pValue) -> void
                         {
-                            CStringW strValue(pValue);
-                            for (auto kPair : aValues)
-                            {
-                                strValue.Replace(kPair.first, kPair.second);
-                            }
-
-                            aParams[pName] = strValue;
+                            aParams[pName] = pValue;
                         });
 
                         AddComponent(nEntityID, (*pIterator).second, aParams);

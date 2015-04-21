@@ -5,7 +5,8 @@
 #include "GEKAPI.h"
 #include <concurrent_vector.h>
 
-DECLARE_COMPONENT(model, CStringW, 0x00000100)
+DECLARE_COMPONENT(model, 0x00000100)
+    DECLARE_COMPONENT_VALUE(CStringW, source)
     DECLARE_COMPONENT_VALUE(CStringW, params)
 END_DECLARE_COMPONENT(model)
 

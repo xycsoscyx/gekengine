@@ -2,15 +2,19 @@
 #include "GEKSystemCLSIDs.h"
 #include "GEKEngineCLSIDs.h"
 #include "GEKEngine.h"
+#include "GEKComponents.h"
 #include <ppl.h>
 
 #define NUM_INSTANCES                   500
 
-REGISTER_COMPONENT(model, L"")
+REGISTER_COMPONENT(model)
+    REGISTER_COMPONENT_DEFAULT_VALUE(source, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(params, L"")
-    REGISTER_COMPONENT_SERIALIZE(model, )
+    REGISTER_COMPONENT_SERIALIZE(model)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(source, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(params, )
-    REGISTER_COMPONENT_DESERIALIZE(model, )
+    REGISTER_COMPONENT_DESERIALIZE(model)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(source, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(params, )
 END_REGISTER_COMPONENT(model)
 
@@ -185,27 +189,34 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnRenderBegin(const GEKENTITYID &n
 STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const GEKENTITYID &nViewerID, const frustum &nViewFrustum)
 {
     m_aVisible.clear();
-    m_pEngine->GetSceneManager()->ListComponentsEntities({ GET_COMPONENT_ID(transform),
-                                                           GET_COMPONENT_ID(model),
-                                                           GET_COMPONENT_ID(color),
-                                                           GET_COMPONENT_ID(size) }, [&](const GEKENTITYID &nEntityID) -> void
+    m_pEngine->GetSceneManager()->ListComponentsEntities({ GET_COMPONENT_ID(transform), GET_COMPONENT_ID(model) }, [&](const GEKENTITYID &nEntityID) -> void
     {
         auto &kModel = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(model)>(nEntityID, GET_COMPONENT_ID(model));
-        MODEL *pModel = GetModel(kModel.value, kModel.params);
+        MODEL *pModel = GetModel(kModel.source, kModel.params);
         if (pModel)
         {
-            auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
-            auto &kColor = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(color)>(nEntityID, GET_COMPONENT_ID(color));
-            auto &kSize = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(size)>(nEntityID, GET_COMPONENT_ID(size));
+            float3 nSize(1.0f, 1.0f, 1.0f);
+            float4 nColor(1.0f, 1.0f, 1.0f, 1.0f);
 
+            if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(color)))
+            {
+                nColor = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(color)>(nEntityID, GET_COMPONENT_ID(color)).value;
+            }
+
+            if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(size)))
+            {
+                nSize = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(size)>(nEntityID, GET_COMPONENT_ID(size)).value;
+            }
+
+            auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
             float4x4 nMatrix(kTransform.rotation, kTransform.position);
 
             aabb nAABB(pModel->m_nAABB);
-            nAABB.minimum *= kSize.value;
-            nAABB.maximum *= kSize.value;
+            nAABB.minimum *= nSize;
+            nAABB.maximum *= nSize;
             if (nViewFrustum.IsVisible(obb(nAABB, nMatrix)))
             {
-                m_aVisible[pModel].emplace_back(nMatrix, kSize.value, kColor.value, nViewFrustum.origin.Distance(kTransform.position));
+                m_aVisible[pModel].emplace_back(nMatrix, nSize, nColor, nViewFrustum.origin.Distance(kTransform.position));
             }
         }
     });

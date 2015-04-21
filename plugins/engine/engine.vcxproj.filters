@@ -17,15 +17,6 @@
     <ClCompile Include="Source\CGEKRenderSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentLight.cpp">
-      <Filter>Source Files\Base Components</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKComponentTransform.cpp">
-      <Filter>Source Files\Base Components</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKComponentViewer.cpp">
-      <Filter>Source Files\Base Components</Filter>
-    </ClCompile>
     <ClCompile Include="Source\CGEKRenderMaterial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,18 +75,6 @@
     <ClInclude Include="..\..\api\IGEKProgramManager.h">
       <Filter>API Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Source Files\Base Components\Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentLight.h">
-      <Filter>Header Files\Base Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentTransform.h">
-      <Filter>Header Files\Base Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentViewer.h">
-      <Filter>Header Files\Base Components</Filter>
-    </ClInclude>
     <ClInclude Include="Public\IGEKRenderMaterial.h">
       <Filter>Interface Files</Filter>
     </ClInclude>
@@ -108,9 +87,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
-    <ResourceCompile Include="engine.rc">
-      <Filter>Source Files\Base Components\Resource Files</Filter>
-    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -125,20 +101,8 @@
     <Filter Include="API Files">
       <UniqueIdentifier>{38381644-ca93-4d78-bdd0-b63af13fa34c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Base Components">
-      <UniqueIdentifier>{993a8428-f81f-4ea1-83b7-0bb17913b94f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Base Components">
-      <UniqueIdentifier>{4872afeb-8a73-4fc2-ba8b-a8b0ca39d901}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Base Components\Resource Files">
-      <UniqueIdentifier>{3d76e04d-7863-4672-ae12-0f67536fc13b}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="cursor.ani">
-      <Filter>Source Files\Base Components\Resource Files</Filter>
-    </None>
     <None Include="pointer.ani" />
   </ItemGroup>
 </Project>

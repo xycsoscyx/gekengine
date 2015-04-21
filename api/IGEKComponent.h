@@ -40,7 +40,7 @@ DECLARE_INTERFACE_IID_(IGEKComponentSystem, IUnknown, "81A24012-F085-42D0-B931-9
     STDMETHOD(Initialize)                       (THIS_ IGEKEngineCore *pEngine) PURE;
 };
 
-#define DECLARE_COMPONENT(NAME, TYPE, ID)                                                   \
+#define DECLARE_COMPONENT(NAME, ID)                                                         \
 class CGEKComponent##NAME##                                                                 \
     : public CGEKUnknown                                                                    \
     , public IGEKComponent                                                                  \
@@ -64,13 +64,15 @@ public:                                                                         
     static const GEKCOMPONENTID gs_nComponentID = ID;                                       \
                                                                                             \
 public:                                                                                     \
-    struct DATA                                                                             \
-    {                                                                                       \
-        TYPE value;
+    struct BASE { };                                                                        \
+                                                                                            \
+    struct DATA : public BASE                                                               \
+    {
 
 #define DECLARE_COMPONENT_VALUE(TYPE, VALUE)                                                TYPE VALUE;
 
 #define END_DECLARE_COMPONENT(NAME)                                                         \
+        DATA(void *pData);                                                                  \
         DATA(void);                                                                         \
     };                                                                                      \
                                                                                             \
@@ -83,7 +85,7 @@ private:                                                                        
 #define GET_COMPONENT_ID(NAME)                                                              CGEKComponent##NAME##::gs_nComponentID
 #define GET_COMPONENT_DATA(NAME)                                                            CGEKComponent##NAME##::DATA
 
-#define REGISTER_COMPONENT(NAME, DEFAULT)                                                   \
+#define REGISTER_COMPONENT(NAME)                                                            \
 BEGIN_INTERFACE_LIST(CGEKComponent##NAME##)                                                 \
     INTERFACE_LIST_ENTRY_COM(IGEKComponent)                                                 \
 END_INTERFACE_LIST_UNKNOWN                                                                  \
@@ -91,11 +93,11 @@ END_INTERFACE_LIST_UNKNOWN                                                      
 REGISTER_CLASS(CGEKComponent##NAME##)                                                       \
                                                                                             \
 CGEKComponent##NAME##::DATA::DATA(void)                                                     \
-    : value(DEFAULT)
+    : BASE()
 
 #define REGISTER_COMPONENT_DEFAULT_VALUE(VALUE, DEFAULT)                                    , VALUE(DEFAULT)
 
-#define REGISTER_COMPONENT_SERIALIZE(NAME, DEFAULT)                                         \
+#define REGISTER_COMPONENT_SERIALIZE(NAME)                                                  \
 {                                                                                           \
 }                                                                                           \
                                                                                             \
@@ -201,12 +203,11 @@ STDMETHODIMP CGEKComponent##NAME##::Serialize(const GEKENTITYID &nEntityID, std:
     auto pIterator = m_aIndices.find(nEntityID);                                            \
     if (pIterator != m_aIndices.end())                                                      \
     {                                                                                       \
-        DATA &kData = m_aData[(*pIterator).second];                                         \
-        aParams[L""] = DEFAULT(kData.value);
+        DATA &kData = m_aData[(*pIterator).second];
 
 #define REGISTER_COMPONENT_SERIALIZE_VALUE(VALUE, SERIALIZE)                                aParams[L#VALUE] = SERIALIZE(kData.VALUE);
 
-#define REGISTER_COMPONENT_DESERIALIZE(NAME, DEFAULT)                                       \
+#define REGISTER_COMPONENT_DESERIALIZE(NAME)                                                \
         hRetVal = S_OK;                                                                     \
     }                                                                                       \
                                                                                             \
@@ -219,8 +220,7 @@ STDMETHODIMP CGEKComponent##NAME##::DeSerialize(const GEKENTITYID &nEntityID, co
     auto pIterator = m_aIndices.find(nEntityID);                                            \
     if (pIterator != m_aIndices.end())                                                      \
     {                                                                                       \
-        DATA &kData = m_aData[(*pIterator).second];                                         \
-        if(true) { auto pValue = aParams.find(L""); if(pValue != aParams.end()) { kData.value = DEFAULT((*pValue).second); }; };
+        DATA &kData = m_aData[(*pIterator).second];
 
 #define REGISTER_COMPONENT_DESERIALIZE_VALUE(VALUE, DESERIALIZE)                            if(true) { auto pValue = aParams.find(L#VALUE); if(pValue != aParams.end()) { kData.VALUE = DESERIALIZE((*pValue).second); }; };
 

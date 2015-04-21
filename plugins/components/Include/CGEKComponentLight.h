@@ -5,5 +5,6 @@
 #include "GEKAPI.h"
 #include <concurrent_unordered_map.h>
 
-DECLARE_COMPONENT(pointlight, float, 0x00000002)
+DECLARE_COMPONENT(pointlight, 0x00000002)
+    DECLARE_COMPONENT_VALUE(float, radius)
 END_DECLARE_COMPONENT(pointlight)

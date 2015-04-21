@@ -1,14 +1,19 @@
 #include "CGEKComponentFollow.h"
+#include "CGEKComponentTransform.h"
+#include "CGEKComponentFollow.h"
 #include "GEKEngineCLSIDs.h"
 #include "GEKEngine.h"
 
-REGISTER_COMPONENT(follow, L"")
+REGISTER_COMPONENT(follow)
+    REGISTER_COMPONENT_DEFAULT_VALUE(target, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(offset, float3(0.0f, 0.0f, 0.0f))
     REGISTER_COMPONENT_DEFAULT_VALUE(rotation, quaternion(0.0f, 0.0f, 0.0f, 1.0f))
-    REGISTER_COMPONENT_SERIALIZE(follow, )
+    REGISTER_COMPONENT_SERIALIZE(follow)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(target, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(offset, StrFromFloat3)
         REGISTER_COMPONENT_SERIALIZE_VALUE(rotation, StrFromQuaternion)
-    REGISTER_COMPONENT_DESERIALIZE(follow, )
+    REGISTER_COMPONENT_DESERIALIZE(follow)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(target, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(offset, StrToFloat3)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(rotation, StrToQuaternion)
 END_REGISTER_COMPONENT(follow)
@@ -45,7 +50,7 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnUpdateEnd(float nGameTime, floa
     {
         auto &kFollow = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(follow)>(nEntityID, GET_COMPONENT_ID(follow));
 
-        GEKENTITYID nTargetID = m_pEngine->GetSceneManager()->GetNamedEntity(kFollow.value);
+        GEKENTITYID nTargetID = m_pEngine->GetSceneManager()->GetNamedEntity(kFollow.target);
         if (nTargetID != GEKINVALIDENTITYID)
         {
             auto &kTargetTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nTargetID, GET_COMPONENT_ID(transform));
