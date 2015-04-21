@@ -165,6 +165,10 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
 
                         AddComponent(nEntityID, (*pIterator).second, aParams);
                     }
+                    else
+                    {
+                        m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to find component for entity (0x%08X): %s", nEntityID, kComponentNode.GetType().GetString());
+                    }
 
                     kComponentNode = kComponentNode.NextSiblingElement();
                 };
@@ -316,6 +320,10 @@ STDMETHODIMP CGEKPopulationSystem::AddComponent(const GEKENTITYID &nEntityID, co
                 CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentAdded, std::placeholders::_1, nEntityID, nComponentID)));
             }
         }
+    }
+    else
+    {
+        m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to find component for entity (0x%08X): 0x%08X", nEntityID, nComponentID);
     }
 
     return hRetVal;

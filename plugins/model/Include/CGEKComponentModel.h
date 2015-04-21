@@ -6,7 +6,7 @@
 #include <concurrent_vector.h>
 
 DECLARE_COMPONENT(model, 0x00000100)
-    DECLARE_COMPONENT_VALUE(CStringW, file)
+    DECLARE_COMPONENT_VALUE(CStringW, source)
     DECLARE_COMPONENT_VALUE(CStringW, params)
     DECLARE_COMPONENT_VALUE(float3, scale)
     DECLARE_COMPONENT_VALUE(float4, color)

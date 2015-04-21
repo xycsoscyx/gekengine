@@ -7,17 +7,17 @@
 #define NUM_INSTANCES                   500
 
 REGISTER_COMPONENT(model)
-    REGISTER_COMPONENT_DEFAULT_VALUE(file, L"")
+    REGISTER_COMPONENT_DEFAULT_VALUE(source, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(params, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(scale, float3(1.0f, 1.0f, 1.0f))
     REGISTER_COMPONENT_DEFAULT_VALUE(color, float4(1.0f, 1.0f, 1.0f, 1.0f))
     REGISTER_COMPONENT_SERIALIZE(model)
-        REGISTER_COMPONENT_SERIALIZE_VALUE(file, )
+        REGISTER_COMPONENT_SERIALIZE_VALUE(source, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(params, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(scale, StrFromFloat3)
         REGISTER_COMPONENT_SERIALIZE_VALUE(color, StrFromFloat4)
     REGISTER_COMPONENT_DESERIALIZE(model)
-        REGISTER_COMPONENT_DESERIALIZE_VALUE(file, )
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(source, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(params, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(scale, StrToFloat3)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(color, StrToFloat4)
@@ -198,7 +198,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const GEKENTITYID &nVi
     {
         auto &kModel = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(model)>(nEntityID, GET_COMPONENT_ID(model));
 
-        MODEL *pModel = GetModel(kModel.file, kModel.params);
+        MODEL *pModel = GetModel(kModel.source, kModel.params);
         if (pModel)
         {
             auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
