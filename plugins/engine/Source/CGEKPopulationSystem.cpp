@@ -142,6 +142,7 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
                 }
             });
 
+            aValues[L""] = kEntityNode.GetText();
             GEKENTITYID nEntityID = GEKINVALIDENTITYID;
             if (SUCCEEDED(CreateEntity(nEntityID, (strName.IsEmpty() ? nullptr : strName.GetString()))))
             {

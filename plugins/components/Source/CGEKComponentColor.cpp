@@ -1,0 +1,12 @@
+#include "CGEKComponentColor.h"
+
+REGISTER_COMPONENT(color, float4(1.0f, 1.0f, 1.0f, 1.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(minimum, float4(1.0f, 1.0f, 1.0f, 1.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(maximum, float4(1.0f, 1.0f, 1.0f, 1.0f))
+    REGISTER_COMPONENT_SERIALIZE(color, StrFromFloat4)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(minimum, StrFromFloat4)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(maximum, StrFromFloat4)
+    REGISTER_COMPONENT_DESERIALIZE(color, StrToFloat4)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(minimum, StrToFloat4)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(maximum, StrToFloat4)
+END_REGISTER_COMPONENT(color)
