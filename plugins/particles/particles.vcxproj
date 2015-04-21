@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{215A87CB-0AEA-4823-BFC0-56F30CB4C077}</ProjectGuid>
+    <ProjectGuid>{E79DD119-2CAA-43FE-B1C8-8E18DDF7725E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>components</RootNamespace>
+    <RootNamespace>engine</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -43,18 +43,16 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\api;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\api;$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName).debug</TargetName>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\api;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\api;$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -63,7 +61,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>LUABIND_DYNAMIC_LINK;WIN32;_DEBUG;_WINDOWS;_USRDLL;SYSTEM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;ENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnablePREfast>false</EnablePREfast>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -71,8 +69,6 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalDependencies>ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
       <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
@@ -84,7 +80,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SYSTEM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;ENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>
@@ -93,20 +89,21 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalDependencies>ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Source\CGEKComponentGravity.cpp" />
+    <ClCompile Include="Source\CGEKComponentOffset.cpp" />
+    <ClCompile Include="Source\CGEKComponentParticle.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\solution\gekengine.rc" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\utility\utility.vcxproj">
       <Project>{be4f1e7f-e045-4d30-aed6-02a60c83bd97}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentColor.cpp" />
-    <ClCompile Include="Source\CGEKComponentFollow.cpp" />
-    <ClCompile Include="Source\CGEKComponentSize.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\api\GEKAPI.h" />
@@ -118,13 +115,10 @@
     <ClInclude Include="..\..\api\IGEKProgramManager.h" />
     <ClInclude Include="..\..\api\IGEKRenderManager.h" />
     <ClInclude Include="..\..\api\IGEKSceneManager.h" />
-    <ClInclude Include="GEKComponentsCLSIDs.h" />
-    <ClInclude Include="Include\CGEKComponentColor.h" />
-    <ClInclude Include="Include\CGEKComponentFollow.h" />
-    <ClInclude Include="Include\CGEKComponentSize.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\..\solution\gekengine.rc" />
+    <ClInclude Include="GEKParticles.h" />
+    <ClInclude Include="Include\CGEKComponentGravity.h" />
+    <ClInclude Include="Include\CGEKComponentOffset.h" />
+    <ClInclude Include="Include\CGEKComponentParticle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

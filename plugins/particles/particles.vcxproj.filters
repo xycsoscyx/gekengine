@@ -1,30 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{1001397c-78bd-45f8-90d8-ca1bd84a4a19}</UniqueIdentifier>
-    </Filter>
+    <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Source\CGEKComponentGravity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CGEKComponentOffset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CGEKComponentParticle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\solution\gekengine.rc" />
+  </ItemGroup>
+  <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{dbbe75fd-d0dc-46a0-9e2b-248a58bd112a}</UniqueIdentifier>
+      <UniqueIdentifier>{71b0140f-1839-4f39-a96d-31b67a9529db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{66ba92d7-0828-4fe9-9d81-e6f572757744}</UniqueIdentifier>
     </Filter>
     <Filter Include="API Files">
-      <UniqueIdentifier>{ace7e109-320b-4a23-906b-a5346117e745}</UniqueIdentifier>
+      <UniqueIdentifier>{6466b3bf-3ae9-47f9-830e-d89c594d3dab}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentFollow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKComponentSize.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKComponentColor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="GEKComponentsCLSIDs.h" />
+    <ClInclude Include="GEKParticles.h" />
     <ClInclude Include="..\..\api\IGEKRenderManager.h">
       <Filter>API Files</Filter>
     </ClInclude>
@@ -49,20 +52,17 @@
     <ClInclude Include="..\..\api\IGEKProgramManager.h">
       <Filter>API Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKComponentFollow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\api\IGEKEngineCore.h">
       <Filter>API Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKComponentSize.h">
+    <ClInclude Include="Include\CGEKComponentGravity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKComponentColor.h">
+    <ClInclude Include="Include\CGEKComponentOffset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\..\solution\gekengine.rc" />
+    <ClInclude Include="Include\CGEKComponentParticle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
