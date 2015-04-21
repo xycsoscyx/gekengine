@@ -48,15 +48,11 @@ STDMETHODIMP_(void) CGEKComponentSystemGravity::OnFree(void)
 {
 }
 
+STDMETHODIMP_(void) CGEKComponentSystemGravity::OnEntityCreated(const GEKENTITYID &nEntityID)
+{
+}
+
 STDMETHODIMP_(void) CGEKComponentSystemGravity::OnEntityDestroyed(const GEKENTITYID &nEntityID)
-{
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemGravity::OnComponentAdded(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
-{
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemGravity::OnComponentRemoved(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
 {
 }
 

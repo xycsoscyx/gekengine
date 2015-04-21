@@ -607,20 +607,11 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnFree(void)
     DestroyAllBodies();
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemNewton::OnEntityDestroyed(const GEKENTITYID &nEntityID)
+STDMETHODIMP_(void) CGEKComponentSystemNewton::OnEntityCreated(const GEKENTITYID &nEntityID)
 {
-    auto pIterator = m_aBodies.find(nEntityID);
-    if (pIterator != m_aBodies.end())
+    if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
     {
-        m_aBodies.unsafe_erase(pIterator);
-    }
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
-{
-    if (nComponentID == GET_COMPONENT_ID(dynamicbody))
-    {
-        if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
+        if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(dynamicbody)))
         {
             auto &kDynamicBody = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(nEntityID, GET_COMPONENT_ID(dynamicbody));
             dNewtonCollision *pCollision = LoadCollision(nEntityID, kDynamicBody);
@@ -636,10 +627,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
                 }
             }
         }
-    }
-    else if (nComponentID == GET_COMPONENT_ID(player))
-    {
-        if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
+        else if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(player)))
         {
             auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
             auto &kPlayer = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(player)>(nEntityID, GET_COMPONENT_ID(player));
@@ -654,16 +642,12 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentAdded(const GEKENTITYI
     }
 }
 
-STDMETHODIMP_(void) CGEKComponentSystemNewton::OnComponentRemoved(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
+STDMETHODIMP_(void) CGEKComponentSystemNewton::OnEntityDestroyed(const GEKENTITYID &nEntityID)
 {
-    if (nComponentID == GET_COMPONENT_ID(dynamicbody) ||
-        nComponentID == GET_COMPONENT_ID(player))
+    auto pIterator = m_aBodies.find(nEntityID);
+    if (pIterator != m_aBodies.end())
     {
-        auto pIterator = m_aBodies.find(nEntityID);
-        if (pIterator != m_aBodies.end())
-        {
-            m_aBodies.unsafe_erase(pIterator);
-        }
+        m_aBodies.unsafe_erase(pIterator);
     }
 }
 

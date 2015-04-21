@@ -44,8 +44,7 @@ public:
     // IGEKSceneObserver
     STDMETHOD(OnLoadEnd)                        (THIS_ HRESULT hRetVal);
     STDMETHOD_(void, OnFree)                    (THIS);
+    STDMETHOD_(void, OnEntityCreated)           (THIS_ const GEKENTITYID &nEntityID);
     STDMETHOD_(void, OnEntityDestroyed)         (THIS_ const GEKENTITYID &nEntityID);
-    STDMETHOD_(void, OnComponentAdded)          (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
-    STDMETHOD_(void, OnComponentRemoved)        (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
     STDMETHOD_(void, OnUpdate)                  (THIS_ float nGameTime, float nFrameTime);
 };

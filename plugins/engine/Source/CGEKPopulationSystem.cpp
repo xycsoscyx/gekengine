@@ -90,7 +90,6 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadBegin, std::placeholders::_1)));
 
     CLibXMLDoc kDocument;
-    std::list<CLibXMLNode> aEntities;
     HRESULT hRetVal = kDocument.Load(FormatString(L"%%root%%\\data\\worlds\\%s.xml", pName));
     if (SUCCEEDED(hRetVal))
     {
@@ -103,7 +102,29 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
                 CLibXMLNode &kEntityNode = kPopulationNode.FirstChildElement(L"entity");
                 while (kEntityNode)
                 {
-                    aEntities.push_back(kEntityNode);
+                    std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> aEntity;
+                    CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
+                    while (kComponentNode)
+                    {
+                        std::unordered_map<CStringW, CStringW> &aParams = aEntity[kComponentNode.GetType()];
+                        kComponentNode.ListAttributes([&aParams](LPCWSTR pName, LPCWSTR pValue) -> void
+                        {
+                            aParams[pName] = pValue;
+                        });
+
+                        kComponentNode = kComponentNode.NextSiblingElement();
+                    };
+
+                    GEKENTITYID nEntityID = GEKINVALIDCOMPONENTID;
+                    if (kEntityNode.HasAttribute(L"name"))
+                    {
+                        CreateEntity(nEntityID, aEntity, kEntityNode.GetAttribute(L"name"));
+                    }
+                    else
+                    {
+                        CreateEntity(nEntityID, aEntity, nullptr);
+                    }
+
                     kEntityNode = kEntityNode.NextSiblingElement(L"entity");
                 };
             }
@@ -122,47 +143,6 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
     else
     {
         m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to load population");
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        for (auto &kEntityNode : aEntities)
-        {
-            GEKENTITYID nEntityID = GEKINVALIDENTITYID;
-            if (kEntityNode.HasAttribute(L"name"))
-            {
-                CreateEntity(nEntityID, kEntityNode.GetAttribute(L"name"));
-            }
-            else
-            {
-                CreateEntity(nEntityID, nullptr);
-            }
-
-            if (nEntityID != GEKINVALIDENTITYID)
-            {
-                CLibXMLNode &kComponentNode = kEntityNode.FirstChildElement();
-                while (kComponentNode)
-                {
-                    auto pIterator = m_aComponentNames.find(kComponentNode.GetType());
-                    if (pIterator != m_aComponentNames.end())
-                    {
-                        std::unordered_map<CStringW, CStringW> aParams;
-                        kComponentNode.ListAttributes([&aParams](LPCWSTR pName, LPCWSTR pValue) -> void
-                        {
-                            aParams[pName] = pValue;
-                        });
-
-                        AddComponent(nEntityID, (*pIterator).second, aParams);
-                    }
-                    else
-                    {
-                        m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to find component for entity (0x%08X): %s", nEntityID, kComponentNode.GetType().GetString());
-                    }
-
-                    kComponentNode = kComponentNode.NextSiblingElement();
-                };
-            }
-        }
     }
 
     hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnLoadEnd, std::placeholders::_1, hRetVal)));
@@ -229,6 +209,11 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Update(float nGameTime, float nFrameTi
 
         if (m_aPopulation.size() > 1)
         {
+            for (auto pComponent : m_aComponents)
+            {
+                pComponent.second->RemoveComponent(nDeadID);
+            }
+
             auto pPopulationIterator = std::find_if(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> bool
             {
                 return (nEntityID == nDeadID);
@@ -250,7 +235,7 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Update(float nGameTime, float nFrameTi
     m_aHitList.clear();
 }
 
-STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID, LPCWSTR pName)
+STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID, const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &aEntity, LPCWSTR pName)
 {
     if (pName)
     {
@@ -267,6 +252,30 @@ STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID, LPCWSTR 
     if (pName)
     {
         m_aNamedEntities[pName] = nEntityID;
+    }
+
+    for (auto aParams : aEntity)
+    {
+        auto pComponent = m_aComponentNames.find(aParams.first);
+        if (pComponent == m_aComponentNames.end())
+        {
+            m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to find component name: %s", aParams.first.GetString());
+        }
+        else
+        {
+            auto pIterator = m_aComponents.find(pComponent->second);
+            if (pIterator == m_aComponents.end())
+            {
+                m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to find component ID: 0x%08X", pComponent->second);
+            }
+            else
+            {
+                if (SUCCEEDED((*pIterator).second->AddComponent(nEntityID)))
+                {
+                    (*pIterator).second->DeSerialize(nEntityID, aParams.second);
+                }
+            }
+        }
     }
 
     CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnEntityCreated, std::placeholders::_1, nEntityID)));
@@ -292,43 +301,6 @@ STDMETHODIMP_(GEKENTITYID) CGEKPopulationSystem::GetNamedEntity(LPCWSTR pName)
     }
 
     return nEntityID;
-}
-
-STDMETHODIMP CGEKPopulationSystem::AddComponent(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID, const std::unordered_map<CStringW, CStringW> &aParams)
-{
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aComponents.find(nComponentID);
-    if (pIterator != m_aComponents.end())
-    {
-        hRetVal = (*pIterator).second->AddComponent(nEntityID);
-        if (SUCCEEDED(hRetVal))
-        {
-            hRetVal = (*pIterator).second->DeSerialize(nEntityID, aParams);
-            if (SUCCEEDED(hRetVal))
-            {
-                CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentAdded, std::placeholders::_1, nEntityID, nComponentID)));
-            }
-        }
-    }
-    else
-    {
-        m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Unable to find component for entity (0x%08X): 0x%08X", nEntityID, nComponentID);
-    }
-
-    return hRetVal;
-}
-
-STDMETHODIMP CGEKPopulationSystem::RemoveComponent(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
-{
-    HRESULT hRetVal = E_FAIL;
-    auto pIterator = m_aComponents.find(nComponentID);
-    if (pIterator != m_aComponents.end())
-    {
-        CGEKObservable::SendEvent(TGEKEvent<IGEKSceneObserver>(std::bind(&IGEKSceneObserver::OnComponentRemoved, std::placeholders::_1, nEntityID, nComponentID)));
-        hRetVal = (*pIterator).second->RemoveComponent(nEntityID);
-    }
-
-    return hRetVal;
 }
 
 STDMETHODIMP_(bool) CGEKPopulationSystem::HasComponent(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)

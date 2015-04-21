@@ -49,15 +49,11 @@ STDMETHODIMP_(void) CGEKComponentSystemOffset::OnFree(void)
 {
 }
 
+STDMETHODIMP_(void) CGEKComponentSystemOffset::OnEntityCreated(const GEKENTITYID &nEntityID)
+{
+}
+
 STDMETHODIMP_(void) CGEKComponentSystemOffset::OnEntityDestroyed(const GEKENTITYID &nEntityID)
-{
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemOffset::OnComponentAdded(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
-{
-}
-
-STDMETHODIMP_(void) CGEKComponentSystemOffset::OnComponentRemoved(const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID)
 {
 }
 

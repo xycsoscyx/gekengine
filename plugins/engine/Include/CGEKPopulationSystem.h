@@ -38,11 +38,9 @@ public:
     STDMETHOD_(void, Update)                    (THIS_ float nGameTime, float nFrameTime);
 
     // IGEKSceneManager
-    STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID, LPCWSTR pName = nullptr);
+    STDMETHOD(CreateEntity)                     (THIS_ GEKENTITYID &nEntityID, const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &aEntity, LPCWSTR pName = nullptr);
     STDMETHOD(DestroyEntity)                    (THIS_ const GEKENTITYID &nEntityID);
     STDMETHOD_(GEKENTITYID, GetNamedEntity)     (THIS_ LPCWSTR pName);
-    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID, const std::unordered_map<CStringW, CStringW> &aParams);
-    STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
     STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
     STDMETHOD_(LPVOID, GetComponent)            (THIS_ const GEKENTITYID &nEntityID, const GEKCOMPONENTID &nComponentID);
     STDMETHOD_(void, ListEntities)              (THIS_ std::function<void(const GEKENTITYID &)> OnEntity, bool bParallel = false);
