@@ -5,7 +5,7 @@
 #include "GEKAPI.h"
 #include <concurrent_unordered_map.h>
 
-DECLARE_COMPONENT(viewer, 0x00000003)
+DECLARE_COMPONENT(viewer, 0x00000100)
     DECLARE_COMPONENT_VALUE(float, field_of_view)
     DECLARE_COMPONENT_VALUE(float, minimum_distance)
     DECLARE_COMPONENT_VALUE(float, maximum_distance)

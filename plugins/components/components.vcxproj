@@ -107,6 +107,7 @@
     <ClCompile Include="Source\CGEKComponentColor.cpp" />
     <ClCompile Include="Source\CGEKComponentFollow.cpp" />
     <ClCompile Include="Source\CGEKComponentLight.cpp" />
+    <ClCompile Include="Source\CGEKComponentMass.cpp" />
     <ClCompile Include="Source\CGEKComponentSize.cpp" />
     <ClCompile Include="Source\CGEKComponentTransform.cpp" />
     <ClCompile Include="Source\CGEKComponentViewer.cpp" />
@@ -121,10 +122,12 @@
     <ClInclude Include="..\..\api\IGEKProgramManager.h" />
     <ClInclude Include="..\..\api\IGEKRenderManager.h" />
     <ClInclude Include="..\..\api\IGEKSceneManager.h" />
+    <ClInclude Include="GEKComponents.h" />
     <ClInclude Include="GEKComponentsCLSIDs.h" />
     <ClInclude Include="Include\CGEKComponentColor.h" />
     <ClInclude Include="Include\CGEKComponentFollow.h" />
     <ClInclude Include="Include\CGEKComponentLight.h" />
+    <ClInclude Include="Include\CGEKComponentMass.h" />
     <ClInclude Include="Include\CGEKComponentSize.h" />
     <ClInclude Include="Include\CGEKComponentTransform.h" />
     <ClInclude Include="Include\CGEKComponentViewer.h" />

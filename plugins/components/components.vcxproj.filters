@@ -31,6 +31,9 @@
     <ClCompile Include="Source\CGEKComponentLight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\CGEKComponentMass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKComponentsCLSIDs.h" />
@@ -79,6 +82,10 @@
     <ClInclude Include="Include\CGEKComponentTransform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\CGEKComponentMass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEKComponents.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

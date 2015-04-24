@@ -5,11 +5,13 @@
 			<transform position="0,0,0" rotation="0,0,0,1" />
             <model source="sponza" />
             <dynamicbody shape="sponza" />
+            <mass value="0" />
         </entity>
 
         <entity name="player">
 			<transform position="0,3,0" rotation="0,0,0,1" />
-            <player mass="250" outer_radius="1" inner_radius=".25" height="1.9" stair_step=".25"/>
+            <player outer_radius="1" inner_radius=".25" height="1.9" stair_step=".25"/>
+            <mass value="250" />
             <pointlight radius="lerp(15,30,arand(1))" />
             <color value="lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1" />
             <flames density="1000" />
@@ -30,35 +32,83 @@
         <!-- 0 -->
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+             <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
+           <size value="lerp(1,3,arand(1))" />
+            <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+			<model source="boulder" />
+        </entity>
+        <!-- 5 -->
+
+        <!-- 0 -->
+        <entity>
+			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
+            <size value="lerp(1,3,arand(1))" />
+            <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+			<model source="boulder" />
+        </entity>
+        <entity>
+			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
+            <size value="lerp(1,3,arand(1))" />
+            <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+			<model source="boulder" />
+        </entity>
+        <entity>
+			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
+            <size value="lerp(1,3,arand(1))" />
+            <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+			<model source="boulder" />
+        </entity>
+        <entity>
+			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
+            <size value="lerp(1,3,arand(1))" />
+            <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
+			<model source="boulder" />
+        </entity>
+        <entity>
+			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
@@ -68,73 +118,40 @@
         <!-- 0 -->
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
-            <size value="lerp(1,3,arand(1))" />
-            <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-			<model source="boulder" />
-        </entity>
-        <!-- 5 -->
-
-        <!-- 0 -->
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
-            <size value="lerp(1,3,arand(1))" />
-            <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-			<model source="boulder" />
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
-            <size value="lerp(1,3,arand(1))" />
-            <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-			<model source="boulder" />
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
-            <size value="lerp(1,3,arand(1))" />
-            <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-			<model source="boulder" />
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
-            <size value="lerp(1,3,arand(1))" />
-            <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
-			<model source="boulder" />
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
@@ -144,35 +161,40 @@
         <!-- 0 -->
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />
         </entity>
         <entity>
 			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamicbody shape="*sphere" mass="lerp(25,50,arand(1))" material="rock" />
+            <dynamicbody shape="*sphere" material="rock" />
+            <mass value="lerp(25,50,arand(1))" />
             <size value="lerp(1,3,arand(1))" />
             <color value="lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1" />
 			<model source="boulder" />

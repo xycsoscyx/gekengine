@@ -7,14 +7,12 @@
 #include <dNewtonDynamicBody.h>
 #include <concurrent_unordered_map.h>
 
-DECLARE_COMPONENT(dynamicbody, 0x00001000)
+DECLARE_COMPONENT(dynamicbody, 0x01000000)
     DECLARE_COMPONENT_VALUE(CStringW, shape)
     DECLARE_COMPONENT_VALUE(CStringW, material)
-    DECLARE_COMPONENT_VALUE(float, mass)
 END_DECLARE_COMPONENT(dynamicbody)
 
-DECLARE_COMPONENT(player, 0x00003000)
-    DECLARE_COMPONENT_VALUE(float, mass)
+DECLARE_COMPONENT(player, 0x01000001)
     DECLARE_COMPONENT_VALUE(float, outer_radius)
     DECLARE_COMPONENT_VALUE(float, inner_radius)
     DECLARE_COMPONENT_VALUE(float, height)
