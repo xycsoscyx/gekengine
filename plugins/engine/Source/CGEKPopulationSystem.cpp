@@ -153,6 +153,15 @@ STDMETHODIMP CGEKPopulationSystem::Save(LPCWSTR pName)
 {
     for (auto &nEntityID : m_aPopulation)
     {
+        auto pName = std::find_if(m_aNamedEntities.begin(), m_aNamedEntities.end(), [&](std::pair<const CStringW, GEKENTITYID> &kPair) -> bool
+        {
+            return (kPair.second == nEntityID);
+        });
+
+        if (pName != m_aNamedEntities.end())
+        {
+        }
+
         std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> aEntity;
         for (auto &kPair : m_aComponents)
         {
@@ -160,16 +169,6 @@ STDMETHODIMP CGEKPopulationSystem::Save(LPCWSTR pName)
             if (SUCCEEDED(kPair.second->Serialize(nEntityID, aParams)))
             {
                 aEntity[kPair.second->GetName()] = aParams;
-            }
-        }
-
-        CStringW strName;
-        for (auto &kPair : m_aNamedEntities)
-        {
-            if (kPair.second == nEntityID)
-            {
-                strName = kPair.first;
-                break;
             }
         }
     }
@@ -211,7 +210,7 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Update(float nGameTime, float nFrameTi
         {
             for (auto pComponent : m_aComponents)
             {
-                pComponent.second->DestroyComponent(nDeadID);
+                pComponent.second->RemoveComponent(nDeadID);
             }
 
             auto pPopulationIterator = std::find_if(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> bool
@@ -270,7 +269,7 @@ STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID, const st
             }
             else
             {
-                (*pIterator).second->CreateComponent(nEntityID);
+                (*pIterator).second->AddComponent(nEntityID);
                 (*pIterator).second->DeSerialize(nEntityID, aParams.second);
             }
         }

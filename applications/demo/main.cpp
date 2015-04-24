@@ -138,37 +138,8 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
     return FALSE;
 }
 
-struct transform
-{
-    float3 position;
-    quaternion rotation;
-};
-
-class CGEKComponentTransform : public TGEKComponent<transform>
-{
-};
-
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
 {
-    try
-    {
-        CGEKComponentTransform kTransform;
-        kTransform.CreateComponent(1);
-        kTransform.GetComponent(1).position.x = 1.0f;
-        kTransform.CreateComponent(2);
-        kTransform.GetComponent(2).position.x = 2.0f;
-        kTransform.CreateComponent(3);
-        kTransform.GetComponent(3).position.x = 3.0f;
-        kTransform.DestroyComponent(2);
-        kTransform.CreateComponent(4);
-        kTransform.GetComponent(4).position.x = 4.0f;
-        kTransform.GetComponent(5).position.x = 4.0f;
-    }
-    catch (const std::exception &strException)
-    {
-        MessageBoxA(nullptr, strException.what(), "Exception", MB_OK);
-    };
-
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
         CComPtr<IGEKContext> spContext;
