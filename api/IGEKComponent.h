@@ -12,6 +12,82 @@
 
 DECLARE_INTERFACE(IGEKEngineCore);
 
+template <typename TYPE>
+class TGEKComponent
+{
+private:
+    std::vector<TYPE> m_aData;
+    std::unodered_map<GEKENTITYID, UINT32> m_aIndices;
+    UINT32 m_nEmptyIndex;
+
+public:
+    TGEKComponent(void)
+        : m_nEmptyIndex(0)
+    {
+    }
+
+    void CreateComponent(const GEKENTITYID &nEntityID)
+    {
+        if (m_nEmptyIndex < m_aData.size())
+        {
+            m_aIndices[nEntityID] = m_nEmptyIndex;
+            m_aData[m_nEmptyIndex] = TYPE();
+            m_nEmptyIndex++;
+        }
+        else
+        {
+            m_nEmptyIndex = m_aData.size();
+            m_aIndices[nEntityID] = m_nEmptyIndex;
+            m_aData.push_back(TYPE());
+        }
+    }
+
+    void DestroyComponent(const GEKENTITYID &nEntityID)
+    {
+        if (m_aEntityToIndex.size() == 1)
+        {
+            m_aIndices.clear();
+            m_nEmptyIndex = 0;
+        }
+        else
+        {
+            auto pDestroyIterator = m_aIndices.find(nEntityID);
+            if (pDestroyIterator != m_aIndices.end())
+            {
+                m_nEmptyIndex--;
+                auto pMovingIterator = std::find_if(m_aIndices.begin(), m_aIndices.end(), [&](std::pair<GEKENTITYID, UINT32> &kPair) -> bool
+                {
+                    return (kPair.second == m_nEmptyIndex);
+                });
+
+                if (pMovingIterator != m_aIndices.end())
+                {
+                    m_aData[(*pDestroyIterator).second] = std::move(m_aData.back());
+                    m_aIndices[(*pMovingIterator).second] = (*pDestroyIterator).second;
+                }
+
+                m_aIndices.erase(pDestroyIterator);
+            }
+        }
+    }
+
+    bool HasComponent(const GEKENTITYID &nEntityID) const
+    {
+        return (m_aIndices.count(nEntityID) > 0);
+    }
+
+    LPVOID GetComponent(const GEKENTITYID &nEntityID)
+    {
+        auto pIterator = m_aIndices.find(nEntityID);
+        if (pIterator != m_aIndices.end())
+        {
+            return LPVOID(&m_aData[(*pIterator).second]);
+        }
+
+        return nullptr;
+    }
+};
+
 DECLARE_INTERFACE_IID_(IGEKComponent, IUnknown, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E")
 {
     STDMETHOD_(void, GetIntersectingSet)        (THIS_ std::set<GEKENTITYID> &aSet) PURE;
@@ -20,8 +96,8 @@ DECLARE_INTERFACE_IID_(IGEKComponent, IUnknown, "F1CA9EEC-0F09-45DA-BF24-0C70F5F
     STDMETHOD_(GEKCOMPONENTID, GetID)           (THIS) const PURE;
     STDMETHOD_(void, Clear)                     (THIS) PURE;
 
-    STDMETHOD(AddComponent)                     (THIS_ const GEKENTITYID &nEntityID) PURE;
-    STDMETHOD(RemoveComponent)                  (THIS_ const GEKENTITYID &nEntityID) PURE;
+    STDMETHOD_(void, CreateComponent)           (THIS_ const GEKENTITYID &nEntityID) PURE;
+    STDMETHOD_(void, DestroyComponent)          (THIS_ const GEKENTITYID &nEntityID) PURE;
     STDMETHOD_(bool, HasComponent)              (THIS_ const GEKENTITYID &nEntityID) const PURE;
     STDMETHOD_(LPVOID, GetComponent)            (THIS_ const GEKENTITYID &nEntityID) PURE;
 
@@ -49,12 +125,13 @@ public:                                                                         
     DECLARE_UNKNOWN(CGEKComponent##NAME##);                                                 \
     CGEKComponent##NAME##(void);                                                            \
     ~CGEKComponent##NAME##(void);                                                           \
+                                                                                            \
     STDMETHOD_(void, GetIntersectingSet)(THIS_ std::set<GEKENTITYID> &aSet);                \
     STDMETHOD_(LPCWSTR, GetName)        (THIS) const;                                       \
     STDMETHOD_(GEKCOMPONENTID, GetID)   (THIS) const;                                       \
     STDMETHOD_(void, Clear)             (THIS);                                             \
-    STDMETHOD(AddComponent)             (THIS_ const GEKENTITYID &nEntityID);               \
-    STDMETHOD(RemoveComponent)          (THIS_ const GEKENTITYID &nEntityID);               \
+    STDMETHOD_(void, CreateComponent)   (THIS_ const GEKENTITYID &nEntityID);               \
+    STDMETHOD_(void, DestroyComponent)  (THIS_ const GEKENTITYID &nEntityID);               \
     STDMETHOD_(bool, HasComponent)      (THIS_ const GEKENTITYID &nEntityID) const;         \
     STDMETHOD_(LPVOID, GetComponent)    (THIS_ const GEKENTITYID &nEntityID);               \
     STDMETHOD(Serialize)                (THIS_ const GEKENTITYID &nEntityID, std::unordered_map<CStringW, CStringW> &aParams);          \
@@ -150,7 +227,7 @@ STDMETHODIMP_(void) CGEKComponent##NAME##::Clear(void)                          
     m_aData.clear();                                                                        \
 }                                                                                           \
                                                                                             \
-STDMETHODIMP CGEKComponent##NAME##::AddComponent(const GEKENTITYID &nEntityID)              \
+STDMETHODIMP_(void) CGEKComponent##NAME##::CreateComponent(const GEKENTITYID &nEntityID)    \
 {                                                                                           \
     UINT32 nDataID = 0;                                                                     \
     if (m_aEmpty.try_pop(nDataID))                                                          \
@@ -163,22 +240,16 @@ STDMETHODIMP CGEKComponent##NAME##::AddComponent(const GEKENTITYID &nEntityID)  
         m_aIndices[nEntityID] = m_aData.size();                                             \
         m_aData.push_back(DATA());                                                          \
     }                                                                                       \
-                                                                                            \
-    return S_OK;                                                                            \
 }                                                                                           \
                                                                                             \
-STDMETHODIMP CGEKComponent##NAME##::RemoveComponent(const GEKENTITYID &nEntityID)           \
+STDMETHODIMP_(void) CGEKComponent##NAME##::DestroyComponent(const GEKENTITYID &nEntityID)   \
 {                                                                                           \
-    HRESULT hRetVal = E_FAIL;                                                               \
     auto pIterator = m_aIndices.find(nEntityID);                                            \
     if (pIterator != m_aIndices.end())                                                      \
     {                                                                                       \
         m_aEmpty.push((*pIterator).second);                                                 \
         m_aIndices.unsafe_erase(pIterator);                                                 \
-        hRetVal = S_OK;                                                                     \
     }                                                                                       \
-                                                                                            \
-    return hRetVal;                                                                         \
 }                                                                                           \
                                                                                             \
 STDMETHODIMP_(bool) CGEKComponent##NAME##::HasComponent(const GEKENTITYID &nEntityID) const \

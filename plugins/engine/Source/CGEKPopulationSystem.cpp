@@ -211,7 +211,7 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Update(float nGameTime, float nFrameTi
         {
             for (auto pComponent : m_aComponents)
             {
-                pComponent.second->RemoveComponent(nDeadID);
+                pComponent.second->DestroyComponent(nDeadID);
             }
 
             auto pPopulationIterator = std::find_if(m_aPopulation.begin(), m_aPopulation.end(), [&](const GEKENTITYID &nEntityID) -> bool
@@ -270,10 +270,8 @@ STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID, const st
             }
             else
             {
-                if (SUCCEEDED((*pIterator).second->AddComponent(nEntityID)))
-                {
-                    (*pIterator).second->DeSerialize(nEntityID, aParams.second);
-                }
+                (*pIterator).second->CreateComponent(nEntityID);
+                (*pIterator).second->DeSerialize(nEntityID, aParams.second);
             }
         }
     }
