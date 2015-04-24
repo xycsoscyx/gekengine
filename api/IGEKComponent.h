@@ -12,12 +12,12 @@
 
 DECLARE_INTERFACE(IGEKEngineCore);
 
-template <typename TYPE>
+template <typename DATA>
 class TGEKComponent
 {
 private:
-    std::vector<TYPE> m_aData;
-    std::unodered_map<GEKENTITYID, UINT32> m_aIndices;
+    std::vector<DATA> m_aData;
+    std::unordered_map<GEKENTITYID, UINT32> m_aIndices;
     UINT32 m_nEmptyIndex;
 
 public:
@@ -31,20 +31,20 @@ public:
         if (m_nEmptyIndex < m_aData.size())
         {
             m_aIndices[nEntityID] = m_nEmptyIndex;
-            m_aData[m_nEmptyIndex] = TYPE();
+            m_aData[m_nEmptyIndex] = DATA();
             m_nEmptyIndex++;
         }
         else
         {
-            m_nEmptyIndex = m_aData.size();
             m_aIndices[nEntityID] = m_nEmptyIndex;
-            m_aData.push_back(TYPE());
+            m_aData.push_back(DATA());
+            m_nEmptyIndex = m_aData.size();
         }
     }
 
     void DestroyComponent(const GEKENTITYID &nEntityID)
     {
-        if (m_aEntityToIndex.size() == 1)
+        if (m_aIndices.size() == 1)
         {
             m_aIndices.clear();
             m_nEmptyIndex = 0;
@@ -55,7 +55,7 @@ public:
             if (pDestroyIterator != m_aIndices.end())
             {
                 m_nEmptyIndex--;
-                auto pMovingIterator = std::find_if(m_aIndices.begin(), m_aIndices.end(), [&](std::pair<GEKENTITYID, UINT32> &kPair) -> bool
+                auto pMovingIterator = std::find_if(m_aIndices.begin(), m_aIndices.end(), [&](std::pair<const GEKENTITYID, UINT32> &kPair) -> bool
                 {
                     return (kPair.second == m_nEmptyIndex);
                 });
@@ -63,7 +63,7 @@ public:
                 if (pMovingIterator != m_aIndices.end())
                 {
                     m_aData[(*pDestroyIterator).second] = std::move(m_aData.back());
-                    m_aIndices[(*pMovingIterator).second] = (*pDestroyIterator).second;
+                    m_aIndices[(*pMovingIterator).first] = (*pDestroyIterator).second;
                 }
 
                 m_aIndices.erase(pDestroyIterator);
@@ -76,15 +76,26 @@ public:
         return (m_aIndices.count(nEntityID) > 0);
     }
 
-    LPVOID GetComponent(const GEKENTITYID &nEntityID)
+    DATA &GetComponent(const GEKENTITYID &nEntityID)
     {
         auto pIterator = m_aIndices.find(nEntityID);
-        if (pIterator != m_aIndices.end())
+        if (pIterator == m_aIndices.end())
         {
-            return LPVOID(&m_aData[(*pIterator).second]);
+            throw std::exception("Unable to locate entity in component index map");
         }
 
-        return nullptr;
+        return m_aData[(*pIterator).second];
+    }
+
+    const DATA &GetComponent(const GEKENTITYID &nEntityID) const
+    {
+        auto pIterator = m_aIndices.find(nEntityID);
+        if (pIterator == m_aIndices.end())
+        {
+            throw std::exception("Unable to locate entity in component index map");
+        }
+
+        return m_aData[(*pIterator).second];
     }
 };
 
