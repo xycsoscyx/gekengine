@@ -33,7 +33,7 @@
   <tile id="26" terrain="1,1,,"/>
   <tile id="27" terrain="1,,,"/>
  </tileset>
- <layer name="ground" width="100" height="100">
+ <layer name="0" width="100" height="100">
   <data>
    <tile gid="0"/>
    <tile gid="0"/>
@@ -10037,7 +10037,7 @@
    <tile gid="0"/>
   </data>
  </layer>
- <objectgroup name="objects">
+ <objectgroup name="0">
   <object id="5" name="player" type="player" x="588" y="784">
    <ellipse/>
   </object>
