@@ -487,7 +487,7 @@ STDMETHODIMP_(void) CGEKEngine::Run(void)
                             SUCCEEDED(m_spRenderManager->Initialize(this)) &&
                             SUCCEEDED(m_spPopulationManager->Initialize(this)))
                         {
-                            RunCommand(L"load", { L"demo" });
+                            RunCommand(L"load", { L"tiles" });
 
                             m_bIsRunning = true;
                             MSG kMessage = { 0 };

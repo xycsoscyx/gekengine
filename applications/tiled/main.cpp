@@ -43,65 +43,115 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         strTileSet = kTileSet.m_strPath;
     }
 
-    CLibXMLDoc kDocument;
-    HRESULT hRetVal = kDocument.Load(strInput);
-    if (SUCCEEDED(hRetVal))
+    FILE *pFile = nullptr;
+    _wfopen_s(&pFile, strOutput, L"w+b");
+    if (pFile)
     {
-        CLibXMLNode &kMapNode = kDocument.GetRoot();
-        if (kMapNode.GetType().CompareNoCase(L"map") == 0)
+        fwprintf(pFile, L"<?xml version=\"1.0\"?>\r\n");
+        fwprintf(pFile, L"<world name=\"Demo\">\r\n");
+        fwprintf(pFile, L"\t<population>\r\n");
+
+        CLibXMLDoc kDocument;
+        HRESULT hRetVal = kDocument.Load(strInput);
+        if (SUCCEEDED(hRetVal))
         {
-            UINT32 nXSize = StrToUINT32(kMapNode.GetAttribute(L"width"));
-            UINT32 nYSize = StrToUINT32(kMapNode.GetAttribute(L"height"));
-            CLibXMLNode &kLayerNode = kMapNode.FirstChildElement(L"layer");
-            while (kLayerNode)
+            CLibXMLNode &kMapNode = kDocument.GetRoot();
+            if (kMapNode.GetType().CompareNoCase(L"map") == 0)
             {
-                float nZPosition = StrToFloat(kLayerNode.GetAttribute(L"name"));
-                CLibXMLNode &kTileNode = kLayerNode.FirstChildElement(L"data").FirstChildElement(L"tile");
-                for (UINT32 nXPosition = 0; nXPosition < nXSize; nXPosition++)
+                UINT32 nXSize = StrToUINT32(kMapNode.GetAttribute(L"width"));
+                UINT32 nYSize = StrToUINT32(kMapNode.GetAttribute(L"height"));
+                float nTileXSize = StrToFloat(kMapNode.GetAttribute(L"tilewidth"));
+                float nTileYSize = StrToFloat(kMapNode.GetAttribute(L"tileheight"));
+                CLibXMLNode &kObjectGroupNode = kMapNode.FirstChildElement(L"objectgroup");
+                while (kObjectGroupNode)
                 {
-                    for (UINT32 nYPosition = 0; nYPosition < nYSize; nYPosition++)
+                    float nZPosition = StrToFloat(kObjectGroupNode.GetAttribute(L"name"));
+
+                    UINT32 nTileIndex = 0;
+                    CLibXMLNode &kObjectNode = kObjectGroupNode.FirstChildElement(L"object");
+                    while (kObjectNode)
                     {
-                        UINT32 nGID = StrToUINT32(kTileNode.GetAttribute(L"gid"));
-                        if (nGID > 0)
+                        UINT32 nID = StrToUINT32(kObjectNode.GetAttribute(L"id"));
+                        CStringW strType(kObjectNode.GetAttribute(L"type"));
+                        float nXPosition = (StrToFloat(kObjectNode.GetAttribute(L"x")) / nTileXSize);
+                        float nYPosition = (StrToFloat(kObjectNode.GetAttribute(L"y")) / nTileYSize);
+                        if (kObjectNode.HasAttribute(L"name"))
                         {
-                            printf("Tile %S%d: (%d,%d,%f)\r\n", strTileSet.GetString(), nGID, nXPosition, nYPosition, nZPosition);
+                            CStringW strName = kObjectNode.GetAttribute(L"name");
+                            printf("Entity %d (%s): Type(%S), (%f,%f,%f)\r\n", nID, strName.GetString(), strType.GetString(), nXPosition, nYPosition, nZPosition);
+                            fwprintf(pFile, L"\t\t<entity name=\"%s\">\r\n", strName.GetString());
+                        }
+                        else
+                        {
+                            printf("Entity %d: Type(%S), (%f,%f,%f)\r\n", nID, strType.GetString(), nXPosition, nYPosition, nZPosition);
+                            fwprintf(pFile, L"\t\t<entity>\r\n");
                         }
 
-                        kTileNode = kTileNode.NextSiblingElement(L"tile");
-                    }
-                }
 
-                kLayerNode = kLayerNode.NextSiblingElement(L"layer");
-            };
+                        fwprintf(pFile, L"\t\t\t<transform position=\"%f,%f,%f\" rotation=\"0,0,0,1\" />\r\n", nXPosition, nYPosition, nZPosition);
+                        if (strType.CompareNoCase(L"player") == 0)
+                        {
+                            fwprintf(pFile, L"\t\t\t<player outer_radius=\"1\" inner_radius=\".25\" height=\"1.9\" stair_step=\".25\"/>\r\n");
+                            fwprintf(pFile, L"\t\t\t<mass value=\"250\" />\r\n");
+                        }
+                        else if (strType.CompareNoCase(L"light") == 0)
+                        {
+                            fwprintf(pFile, L"\t\t\t<pointlight radius=\"lerp(15, 30, arand(1))\" />\r\n");
+                            fwprintf(pFile, L"\t\t\t<color value=\"lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1\" />\r\n");
+                        }
+                        if (strType.CompareNoCase(L"boulder") == 0)
+                        {
+                            fwprintf(pFile, L"\t\t\t<dynamicbody shape=\"*sphere\" material=\"rock\" />\r\n");
+                            fwprintf(pFile, L"\t\t\t<mass value=\"lerp(25,50,arand(1))\" />\r\n");
+                            fwprintf(pFile, L"\t\t\t<size value=\"lerp(1,3,arand(1))\" />\r\n");
+                            fwprintf(pFile, L"\t\t\t<size value=\"lerp(1,3,arand(1))\" />\r\n");
+                            fwprintf(pFile, L"\t\t\t<model source=\"boulder\" />\r\n");
+                        }
 
-            CLibXMLNode &kObjectGroupNode = kMapNode.FirstChildElement(L"objectgroup");
-            while (kObjectGroupNode)
-            {
-                float nZPosition = StrToFloat(kObjectGroupNode.GetAttribute(L"name"));
+                        fwprintf(pFile, L"\t\t</entity>\r\n");
 
-                UINT32 nTileIndex = 0;
-                CLibXMLNode &kObjectNode = kObjectGroupNode.FirstChildElement(L"object");
-                while (kObjectNode)
-                {
-                    CStringW strName;
-                    if (kObjectNode.HasAttribute(L"name"))
-                    {
-                        strName = kObjectNode.GetAttribute(L"name");
-                    }
+                        kObjectNode = kObjectNode.NextSiblingElement(L"object");
+                    };
 
-                    UINT32 nID = StrToUINT32(kObjectNode.GetAttribute(L"id"));
-                    CStringW strType(kObjectNode.GetAttribute(L"type"));
-                    float nXPosition = StrToFloat(kObjectNode.GetAttribute(L"x"));
-                    float nYPosition = StrToFloat(kObjectNode.GetAttribute(L"y"));
-
-                    printf("Entity %d (%S): Type(%S), (%f,%f,%f)\r\n", nID, strName.GetString(), strType.GetString(), nXPosition, nYPosition, nZPosition);
-
-                    kObjectNode = kObjectNode.NextSiblingElement(L"object");
+                    kObjectGroupNode = kObjectGroupNode.NextSiblingElement(L"objectgroup");
                 };
 
-                kObjectGroupNode = kObjectGroupNode.NextSiblingElement(L"objectgroup");
-            };
+                CLibXMLNode &kLayerNode = kMapNode.FirstChildElement(L"layer");
+                while (kLayerNode)
+                {
+                    float nZPosition = StrToFloat(kLayerNode.GetAttribute(L"name"));
+                    CLibXMLNode &kTileNode = kLayerNode.FirstChildElement(L"data").FirstChildElement(L"tile");
+                    for (UINT32 nXIndex = 0; nXIndex < nXSize; nXIndex++)
+                    {
+                        for (UINT32 nYIndex = 0; nYIndex < nYSize; nYIndex++)
+                        {
+                            float nXPosition = float(nXIndex);
+                            float nYPosition = float(nYIndex);
+                            UINT32 nGID = StrToUINT32(kTileNode.GetAttribute(L"gid"));
+                            if (nGID > 0)
+                            {
+                                printf("Tile %S%d: (%f,%f,%f)\r\n", strTileSet.GetString(), nGID, nXPosition, nYPosition, nZPosition);
+
+                                fwprintf(pFile, L"\t\t<entity>\r\n");
+                                fwprintf(pFile, L"\t\t\t<transform position=\"%f,%f,%f\" rotation=\"0,0,0,1\" />\r\n", nXPosition, nYPosition, nZPosition);
+                                fwprintf(pFile, L"\t\t\t<model source=\"%s%d\" />\r\n", strTileSet.GetString(), nGID);
+                                fwprintf(pFile, L"\t\t\t<dynamicbody shape=\"%s%d\" />\r\n", strTileSet.GetString(), nGID);
+                                fwprintf(pFile, L"\t\t\t<mass value=\"0\" />\r\n");
+                                fwprintf(pFile, L"\t\t</entity>\r\n");
+                            }
+
+                            kTileNode = kTileNode.NextSiblingElement(L"tile");
+                        }
+                    }
+
+                    kLayerNode = kLayerNode.NextSiblingElement(L"layer");
+                };
+            }
         }
+        
+        fwprintf(pFile, L"\t</population>\r\n");
+        fwprintf(pFile, L"</world>\r\n");
+        fclose(pFile);
     }
 
     printf("\r\n");
