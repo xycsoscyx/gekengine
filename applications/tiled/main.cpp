@@ -47,9 +47,9 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
     _wfopen_s(&pFile, strOutput, L"w+b");
     if (pFile)
     {
-        fwprintf(pFile, L"<?xml version=\"1.0\"?>\r\n");
-        fwprintf(pFile, L"<world name=\"Demo\">\r\n");
-        fwprintf(pFile, L"\t<population>\r\n");
+        fprintf(pFile, "<?xml version=\"1.0\"?>\r\n");
+        fprintf(pFile, "<world name=\"Demo\">\r\n");
+        fprintf(pFile, "\t<population>\r\n");
 
         CLibXMLDoc kDocument;
         HRESULT hRetVal = kDocument.Load(strInput);
@@ -78,37 +78,45 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                         if (kObjectNode.HasAttribute(L"name"))
                         {
                             CStringW strName = kObjectNode.GetAttribute(L"name");
-                            printf("Entity %d (%s): Type(%S), (%f,%f,%f)\r\n", nID, strName.GetString(), strType.GetString(), nXPosition, nYPosition, nZPosition);
-                            fwprintf(pFile, L"\t\t<entity name=\"%s\">\r\n", strName.GetString());
+                            printf("Entity %d (%S): Type(%S), (%f,%f,%f)\r\n", nID, strName.GetString(), strType.GetString(), nXPosition, nYPosition, nZPosition);
+                            fprintf(pFile, "\t\t<entity name=\"%S\">\r\n", strName.GetString());
                         }
                         else
                         {
                             printf("Entity %d: Type(%S), (%f,%f,%f)\r\n", nID, strType.GetString(), nXPosition, nYPosition, nZPosition);
-                            fwprintf(pFile, L"\t\t<entity>\r\n");
+                            fprintf(pFile, "\t\t<entity>\r\n");
                         }
 
 
-                        fwprintf(pFile, L"\t\t\t<transform position=\"%f,%f,%f\" rotation=\"0,0,0,1\" />\r\n", nXPosition, nYPosition, nZPosition);
+                        fprintf(pFile, "\t\t\t<transform position=\"%f,%f,%f\" rotation=\"0,0,0,1\" />\r\n", nXPosition, nYPosition, nZPosition);
                         if (strType.CompareNoCase(L"player") == 0)
                         {
-                            fwprintf(pFile, L"\t\t\t<player outer_radius=\"1\" inner_radius=\".25\" height=\"1.9\" stair_step=\".25\"/>\r\n");
-                            fwprintf(pFile, L"\t\t\t<mass value=\"250\" />\r\n");
+                            fprintf(pFile, "\t\t\t<player outer_radius=\"1\" inner_radius=\".25\" height=\"1.9\" stair_step=\".25\"/>\r\n");
+                            fprintf(pFile, "\t\t\t<mass value=\"250\" />\r\n");
                         }
                         else if (strType.CompareNoCase(L"light") == 0)
                         {
-                            fwprintf(pFile, L"\t\t\t<pointlight radius=\"lerp(15, 30, arand(1))\" />\r\n");
-                            fwprintf(pFile, L"\t\t\t<color value=\"lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1\" />\r\n");
+                            fprintf(pFile, "\t\t\t<pointlight radius=\"lerp(15, 30, arand(1))\" />\r\n");
+                            fprintf(pFile, "\t\t\t<color value=\"lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1\" />\r\n");
                         }
                         if (strType.CompareNoCase(L"boulder") == 0)
                         {
-                            fwprintf(pFile, L"\t\t\t<dynamicbody shape=\"*sphere\" material=\"rock\" />\r\n");
-                            fwprintf(pFile, L"\t\t\t<mass value=\"lerp(25,50,arand(1))\" />\r\n");
-                            fwprintf(pFile, L"\t\t\t<size value=\"lerp(1,3,arand(1))\" />\r\n");
-                            fwprintf(pFile, L"\t\t\t<size value=\"lerp(1,3,arand(1))\" />\r\n");
-                            fwprintf(pFile, L"\t\t\t<model source=\"boulder\" />\r\n");
+                            fprintf(pFile, "\t\t\t<dynamicbody shape=\"*sphere\" material=\"rock\" />\r\n");
+                            fprintf(pFile, "\t\t\t<mass value=\"lerp(25,50,arand(1))\" />\r\n");
+                            fprintf(pFile, "\t\t\t<size value=\"lerp(1,3,arand(1))\" />\r\n");
+                            fprintf(pFile, "\t\t\t<size value=\"lerp(1,3,arand(1))\" />\r\n");
+                            fprintf(pFile, "\t\t\t<model source=\"boulder\" />\r\n");
                         }
 
-                        fwprintf(pFile, L"\t\t</entity>\r\n");
+                        fprintf(pFile, "\t\t</entity>\r\n");
+                        if (strType.CompareNoCase(L"player") == 0 && kObjectNode.HasAttribute(L"name"))
+                        {
+                            fprintf(pFile, "\t\t<entity>\r\n");
+                            fprintf(pFile, "\t\t\t<transform />\r\n");
+                            fprintf(pFile, "\t\t\t<viewer type=\"perspective\" field_of_view=\"90\" minimum_distance=\"0.5\" maximum_distance=\"200\" pass=\"opaque\"/>\r\n");
+                            fprintf(pFile, "\t\t\t<follow target=\"%S\" offset=\"5,0,0\" />\r\n", kObjectNode.GetAttribute(L"name").GetString());
+                            fprintf(pFile, "\t\t</entity>\r\n");
+                        }
 
                         kObjectNode = kObjectNode.NextSiblingElement(L"object");
                     };
@@ -132,12 +140,12 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                             {
                                 printf("Tile %S%d: (%f,%f,%f)\r\n", strTileSet.GetString(), nGID, nXPosition, nYPosition, nZPosition);
 
-                                fwprintf(pFile, L"\t\t<entity>\r\n");
-                                fwprintf(pFile, L"\t\t\t<transform position=\"%f,%f,%f\" rotation=\"0,0,0,1\" />\r\n", nXPosition, nYPosition, nZPosition);
-                                fwprintf(pFile, L"\t\t\t<model source=\"%s%d\" />\r\n", strTileSet.GetString(), nGID);
-                                fwprintf(pFile, L"\t\t\t<dynamicbody shape=\"%s%d\" />\r\n", strTileSet.GetString(), nGID);
-                                fwprintf(pFile, L"\t\t\t<mass value=\"0\" />\r\n");
-                                fwprintf(pFile, L"\t\t</entity>\r\n");
+                                fprintf(pFile, "\t\t<entity>\r\n");
+                                fprintf(pFile, "\t\t\t<transform position=\"%f,%f,%f\" rotation=\"0,0,0,1\" />\r\n", nXPosition, nYPosition, nZPosition);
+                                fprintf(pFile, "\t\t\t<model source=\"%S%d\" />\r\n", strTileSet.GetString(), nGID);
+                                fprintf(pFile, "\t\t\t<dynamicbody shape=\"%S%d\" />\r\n", strTileSet.GetString(), nGID);
+                                fprintf(pFile, "\t\t\t<mass value=\"0\" />\r\n");
+                                fprintf(pFile, "\t\t</entity>\r\n");
                             }
 
                             kTileNode = kTileNode.NextSiblingElement(L"tile");
@@ -149,8 +157,8 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             }
         }
         
-        fwprintf(pFile, L"\t</population>\r\n");
-        fwprintf(pFile, L"</world>\r\n");
+        fprintf(pFile, "\t</population>\r\n");
+        fprintf(pFile, "</world>\r\n");
         fclose(pFile);
     }
 
