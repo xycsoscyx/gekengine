@@ -4,10 +4,10 @@
     <contributor>
       <author>MoJo</author>
       <authoring_tool>OpenCOLLADA for 3ds Max;  Version: 1.4.1;  Revision: exported;  Platform: x64;  Configuration: Release_Max2013_static</authoring_tool>
-      <source_data>file:///D:/GEK%20Engine/bin/data/models/dungeon/outside_bottom_left.max</source_data>
+      <source_data>file:///D:/GEK%20Engine/bin/data/models/dungeon/outside_top_left.max</source_data>
     </contributor>
-    <created>2015-04-26T14:29:17</created>
-    <modified>2015-04-26T14:29:17</modified>
+    <created>2015-04-26T14:29:43</created>
+    <modified>2015-04-26T14:29:43</modified>
     <unit name="inch" meter="0.0254"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -447,8 +447,8 @@
         <instance_light url="#EnvironmentAmbientLight"/>
       </node>
       <node id="node-Box001" name="Box001">
-        <translate>-19.68504 4.3023e-7 -9.84252</translate>
-        <rotate>0 -1 0 -44.99999</rotate>
+        <translate>-9.84252 -8.6046e-7 19.68504</translate>
+        <rotate>0 1 0 -225</rotate>
         <node>
           <matrix>1 0 0 19.68504 0 1 0 1.72092e-6 0 0 1 -39.37008 0 0 0 1</matrix>
           <instance_geometry url="#geom-Box001">
