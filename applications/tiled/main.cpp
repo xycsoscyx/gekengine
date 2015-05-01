@@ -129,15 +129,15 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                 {
                     float nZPosition = StrToFloat(kLayerNode.GetAttribute(L"name"));
                     CLibXMLNode &kTileNode = kLayerNode.FirstChildElement(L"data").FirstChildElement(L"tile");
-                    for (UINT32 nXIndex = 0; nXIndex < nXSize; nXIndex++)
+                    for (UINT32 nYIndex = 0; nYIndex < nYSize; nYIndex++)
                     {
-                        for (UINT32 nYIndex = 0; nYIndex < nYSize; nYIndex++)
+                        for (UINT32 nXIndex = 0; nXIndex < nXSize; nXIndex++)
                         {
-                            float nXPosition = float(nXIndex);
-                            float nYPosition = float(nYIndex);
                             UINT32 nGID = StrToUINT32(kTileNode.GetAttribute(L"gid"));
                             if (nGID > 0)
                             {
+                                float nXPosition = float(nXIndex);
+                                float nYPosition = float(nYSize - 1 - nYIndex);
                                 printf("Tile %S%d: (%f,%f,%f)\r\n", strTileSet.GetString(), nGID, nXPosition, nYPosition, nZPosition);
 
                                 fprintf(pFile, "\t\t<entity>\r\n");
