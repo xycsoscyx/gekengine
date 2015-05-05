@@ -27,11 +27,11 @@ public:
     // IUnknown
     STDMETHOD_(ULONG, AddRef)                   (THIS);
     STDMETHOD_(ULONG, Release)                  (THIS);
-    STDMETHOD(QueryInterface)                   (THIS_ REFIID rIID, LPVOID FAR *ppObject);
+    STDMETHOD(QueryInterface)                   (THIS_ REFIID nIID, LPVOID FAR *ppObject);
 
     // IGEKContext
     STDMETHOD(AddSearchPath)                    (THIS_ LPCWSTR pPath);
     STDMETHOD(Initialize)                       (THIS);
     STDMETHOD(CreateInstance)                   (THIS_ REFCLSID kCLSID, REFIID kIID, LPVOID FAR *ppObject);
-    STDMETHOD(CreateEachType)                   (THIS_ REFCLSID kTypeCLSID, std::function<HRESULT(IUnknown *pObject)> OnCreate);
+    STDMETHOD(CreateEachType)                   (THIS_ REFCLSID kTypeCLSID, std::function<HRESULT(REFCLSID, IUnknown *pObject)> OnCreate);
 };

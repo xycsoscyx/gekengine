@@ -42,19 +42,19 @@ public:
         return nRefCount;
     }
 
-    STDMETHOD(QueryInterface)                   (THIS_ REFIID rIID, LPVOID FAR *ppObject)
+    STDMETHOD(QueryInterface)                   (THIS_ REFIID nIID, LPVOID FAR *ppObject)
     {
         REQUIRE_RETURN(ppObject, E_INVALIDARG);
 
         HRESULT hRetVal = E_INVALIDARG;
-        if (IsEqualIID(IID_IUnknown, rIID))
+        if (IsEqualIID(IID_IUnknown, nIID))
         {
             AddRef();
             (*ppObject) = dynamic_cast<IUnknown *>(this);
             _ASSERTE(*ppObject);
             hRetVal = S_OK;
         }
-        else if (IsEqualIID(__uuidof(IGEKUnknown), rIID))
+        else if (IsEqualIID(__uuidof(IGEKUnknown), nIID))
         {
             AddRef();
             (*ppObject) = dynamic_cast<IGEKUnknown *>(this);
@@ -260,7 +260,7 @@ public:
 
 #define DECLARE_UNKNOWN(CLASS)                                                      \
     public:                                                                         \
-        STDMETHOD(QueryInterface)(THIS_ REFIID rIID, void** ppObject);              \
+        STDMETHOD(QueryInterface)(THIS_ REFIID nIID, void** ppObject);              \
         STDMETHOD_(ULONG, AddRef)(THIS);                                            \
         STDMETHOD_(ULONG, Release)(THIS);                                           \
     public:
@@ -276,12 +276,12 @@ public:
         return CGEKUnknown::Release();                                              \
     }                                                                               \
                                                                                     \
-    STDMETHODIMP CLASS::QueryInterface(THIS_ REFIID rIID, LPVOID FAR *ppObject)     \
+    STDMETHODIMP CLASS::QueryInterface(THIS_ REFIID nIID, LPVOID FAR *ppObject)     \
     {                                                                               \
         REQUIRE_RETURN(ppObject, E_INVALIDARG);
 
 #define INTERFACE_LIST_ENTRY(INTERFACE_IID, INTERFACE_CLASS)                        \
-        if (IsEqualIID(INTERFACE_IID, rIID))                                        \
+        if (IsEqualIID(INTERFACE_IID, nIID))                                        \
         {                                                                           \
             AddRef();                                                               \
             (*ppObject) = dynamic_cast<INTERFACE_CLASS *>(this);                    \
@@ -290,7 +290,7 @@ public:
         }
 
 #define INTERFACE_LIST_ENTRY_COM(INTERFACE_CLASS)                                   \
-        if (IsEqualIID(__uuidof(INTERFACE_CLASS), rIID))                            \
+        if (IsEqualIID(__uuidof(INTERFACE_CLASS), nIID))                            \
         {                                                                           \
             AddRef();                                                               \
             (*ppObject) = dynamic_cast<INTERFACE_CLASS *>(this);                    \
@@ -299,31 +299,31 @@ public:
         }
 
 #define INTERFACE_LIST_ENTRY_MEMBER(INTERFACE_IID, OBJECT)                          \
-        if ((OBJECT) && IsEqualIID(INTERFACE_IID, rIID))                            \
+        if ((OBJECT) && IsEqualIID(INTERFACE_IID, nIID))                            \
         {                                                                           \
-            return (OBJECT)->QueryInterface(rIID, ppObject);                        \
+            return (OBJECT)->QueryInterface(nIID, ppObject);                        \
         }
 
 #define INTERFACE_LIST_ENTRY_MEMBER_COM(INTERFACE_CLASS, OBJECT)                    \
-        if (IsEqualIID(__uuidof(INTERFACE_CLASS), rIID))                            \
+        if (IsEqualIID(__uuidof(INTERFACE_CLASS), nIID))                            \
         {                                                                           \
             return (OBJECT)->QueryInterface(__uuidof(INTERFACE_CLASS), ppObject);   \
         }
 
 #define INTERFACE_LIST_ENTRY_DELEGATE(INTERFACE_IID, FUNCTION)                      \
-        if (IsEqualIID(INTERFACE_IID, rIID))                                        \
+        if (IsEqualIID(INTERFACE_IID, nIID))                                        \
         {                                                                           \
-            return FUNCTION(rIID, ppObject);                                        \
+            return FUNCTION(nIID, ppObject);                                        \
         }
 
 #define INTERFACE_LIST_ENTRY_DELEGATE_COM(INTERFACE_CLASS, FUNCTION)                \
-        if (IsEqualIID(__uuidof(INTERFACE_CLASS), rIID))                            \
+        if (IsEqualIID(__uuidof(INTERFACE_CLASS), nIID))                            \
         {                                                                           \
-            return FUNCTION(rIID, ppObject);                                        \
+            return FUNCTION(nIID, ppObject);                                        \
         }
 
 #define INTERFACE_LIST_ENTRY_BASE(BASE_CLASS)                                       \
-        if (SUCCEEDED(BASE_CLASS::QueryInterface(rIID, ppObject)))                  \
+        if (SUCCEEDED(BASE_CLASS::QueryInterface(nIID, ppObject)))                  \
         {                                                                           \
             return S_OK;                                                            \
         }
@@ -334,15 +334,15 @@ public:
     }
 
 #define END_INTERFACE_LIST_UNKNOWN                                                  \
-        return CGEKUnknown::QueryInterface(rIID, ppObject);                         \
+        return CGEKUnknown::QueryInterface(nIID, ppObject);                         \
     }
 
 #define END_INTERFACE_LIST_BASE(BASE_CLASS)                                         \
-        return BASE_CLASS::QueryInterface(rIID, ppObject);                          \
+        return BASE_CLASS::QueryInterface(nIID, ppObject);                          \
     }
 
 #define END_INTERFACE_LIST_DELEGATE(FUNCTION)                                       \
-        return FUNCTION(rIID, ppObject);                                            \
+        return FUNCTION(nIID, ppObject);                                            \
     }
 
 #define REGISTER_CLASS(CLASS)                                                       \

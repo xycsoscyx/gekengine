@@ -49,26 +49,26 @@ STDMETHODIMP_(ULONG) CGEKContext::Release(void)
     return nRefCount;
 }
 
-STDMETHODIMP CGEKContext::QueryInterface(REFIID rIID, LPVOID FAR *ppObject)
+STDMETHODIMP CGEKContext::QueryInterface(REFIID nIID, LPVOID FAR *ppObject)
 {
     REQUIRE_RETURN(ppObject, E_INVALIDARG);
 
     HRESULT hRetVal = E_INVALIDARG;
-    if (IsEqualIID(IID_IUnknown, rIID))
+    if (IsEqualIID(IID_IUnknown, nIID))
     {
         AddRef();
         (*ppObject) = dynamic_cast<IUnknown *>(dynamic_cast<IGEKContext *>(this));
         _ASSERTE(*ppObject);
         hRetVal = S_OK;
     }
-    else if (IsEqualIID(__uuidof(IGEKUnknown), rIID))
+    else if (IsEqualIID(__uuidof(IGEKUnknown), nIID))
     {
         AddRef();
         (*ppObject) = dynamic_cast<IGEKUnknown *>(this);
         _ASSERTE(*ppObject);
         hRetVal = S_OK;
     }
-    else if (IsEqualIID(__uuidof(IGEKContext), rIID))
+    else if (IsEqualIID(__uuidof(IGEKContext), nIID))
     {
         AddRef();
         (*ppObject) = dynamic_cast<IGEKContext *>(this);
@@ -161,7 +161,7 @@ STDMETHODIMP CGEKContext::CreateInstance(REFGUID kCLSID, REFIID kIID, LPVOID FAR
     return hRetVal;
 }
 
-STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRESULT(IUnknown *pObject)> OnCreate)
+STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRESULT(REFCLSID, IUnknown *pObject)> OnCreate)
 {
     HRESULT hRetVal = S_OK;
     auto pIterator = m_aTypedClasses.find(kTypeCLSID);
@@ -173,7 +173,7 @@ STDMETHODIMP CGEKContext::CreateEachType(REFCLSID kTypeCLSID, std::function<HRES
             hRetVal = CreateInstance(kCLSID, IID_PPV_ARGS(&spObject));
             if (spObject)
             {
-                hRetVal = OnCreate(spObject);
+                hRetVal = OnCreate(kCLSID, spObject);
                 if (FAILED(hRetVal))
                 {
                     break;

@@ -26,7 +26,7 @@ STDMETHODIMP CGEKPopulationSystem::Initialize(IGEKEngineCore *pEngine)
     REQUIRE_RETURN(pEngine, E_INVALIDARG);
 
     m_pEngine = pEngine;
-    HRESULT hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentType, [&](IUnknown *pObject) -> HRESULT
+    HRESULT hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentType, [&](REFCLSID kCLSID, IUnknown *pObject) -> HRESULT
     {
         CComQIPtr<IGEKComponent> spComponent(pObject);
         if (spComponent)
@@ -55,14 +55,14 @@ STDMETHODIMP CGEKPopulationSystem::Initialize(IGEKEngineCore *pEngine)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentSystemType, [&](IUnknown *pObject) -> HRESULT
+        hRetVal = GetContext()->CreateEachType(CLSID_GEKComponentSystemType, [&](REFCLSID kCLSID, IUnknown *pObject) -> HRESULT
         {
             CComQIPtr<IGEKComponentSystem> spSystem(pObject);
             if (spSystem)
             {
                 if (SUCCEEDED(spSystem->Initialize(pEngine)))
                 {
-                    m_aComponentSystems.push_back(spSystem);
+                    m_aComponentSystems[kCLSID] = spSystem;
                 }
             }
 
@@ -232,6 +232,20 @@ STDMETHODIMP_(void) CGEKPopulationSystem::Update(float nGameTime, float nFrameTi
     }
 
     m_aHitList.clear();
+}
+
+STDMETHODIMP CGEKPopulationSystem::GetComponentSystem(REFCLSID nCLSID, REFIID nIID, LPVOID FAR *ppObject)
+{
+    REQUIRE_RETURN(ppObject, E_INVALIDARG);
+
+    HRESULT hRetVal = E_FAIL;
+    auto pIterator = m_aComponentSystems.find(nCLSID);
+    if (pIterator != m_aComponentSystems.end())
+    {
+        hRetVal = (*pIterator).second->QueryInterface(nIID, ppObject);
+    }
+
+    return hRetVal;
 }
 
 STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID, const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &aEntity, LPCWSTR pName)
