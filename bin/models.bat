@@ -4,7 +4,7 @@
 
 For /R "data/models/dungeon" %%# in (*.dae) Do (
     del "%%~dpn#.gek"
-    debug\optimizer.debug -input "%%~#" -output "%%~dpn#.gek" -smooth 75
+    debug\optimizer.debug -input "%%~#" -output "%%~dpn#.gek" -smooth 75 -flip
 )
 
 pause

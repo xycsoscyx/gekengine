@@ -88,7 +88,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                         }
 
 
-                        fprintf(pFile, "\t\t\t<transform position=\"%f,%f,%f\" rotation=\"0,0,0,1\" />\r\n", nXPosition, nYPosition, nZPosition);
+                        fprintf(pFile, "\t\t\t<transform position=\"%f,%f,%f\" />\r\n", nXPosition, nYPosition, nZPosition);
                         if (strType.CompareNoCase(L"player") == 0)
                         {
                             fprintf(pFile, "\t\t\t<player outer_radius=\"1\" inner_radius=\".25\" height=\"1.9\" stair_step=\".25\"/>\r\n");
@@ -113,8 +113,8 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                         {
                             fprintf(pFile, "\t\t<entity>\r\n");
                             fprintf(pFile, "\t\t\t<transform />\r\n");
-                            fprintf(pFile, "\t\t\t<viewer type=\"perspective\" field_of_view=\"90\" minimum_distance=\"0.5\" maximum_distance=\"200\" pass=\"opaque\"/>\r\n");
-                            fprintf(pFile, "\t\t\t<follow target=\"%S\" offset=\"5,0,0\" />\r\n", kObjectNode.GetAttribute(L"name").GetString());
+                            fprintf(pFile, "\t\t\t<viewer type=\"perspective\" field_of_view=\"90\" minimum_distance=\"0.5\" maximum_distance=\"200\" pass=\"toon\"/>\r\n");
+                            fprintf(pFile, "\t\t\t<follow target=\"%S\" offset=\"25,0,0\" />\r\n", kObjectNode.GetAttribute(L"name").GetString());
                             fprintf(pFile, "\t\t</entity>\r\n");
                         }
 
@@ -141,7 +141,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
                                 printf("Tile %S%d: (%f,%f,%f)\r\n", strTileSet.GetString(), nGID, nXPosition, nYPosition, nZPosition);
 
                                 fprintf(pFile, "\t\t<entity>\r\n");
-                                fprintf(pFile, "\t\t\t<transform position=\"%f,%f,%f\" rotation=\"0,0,0,1\" />\r\n", nXPosition, nYPosition, nZPosition);
+                                fprintf(pFile, "\t\t\t<transform position=\"%f,%f,%f\" />\r\n", nXPosition, nYPosition, nZPosition);
                                 fprintf(pFile, "\t\t\t<model source=\"%S%d\" />\r\n", strTileSet.GetString(), nGID);
                                 fprintf(pFile, "\t\t\t<dynamicbody shape=\"%S%d\" />\r\n", strTileSet.GetString(), nGID);
                                 fprintf(pFile, "\t\t\t<mass value=\"0\" />\r\n");

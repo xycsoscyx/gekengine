@@ -36,7 +36,7 @@ public:
     }
 };
 
-void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nParentTransform, std::multimap<CStringA, MODEL> &aModels, aabb &nAABB)
+void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nParentTransform, bool bFlip, std::multimap<CStringA, MODEL> &aModels, aabb &nAABB)
 {
     if (pNode == nullptr)
     {
@@ -126,6 +126,11 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                                      pMesh->mVertices[nVertex].y,
                                      pMesh->mVertices[nVertex].z);
                     nPosition = (nTransform * float4(nPosition, 1.0f));
+                    if (bFlip)
+                    {
+                        nPosition *= float3(-1.0f, 1.0f, -1.0f);
+                    }
+
                     kModel.m_aVertices.push_back(nPosition);
                     nAABB.Extend(nPosition);
 
@@ -139,6 +144,10 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
                     nNormal.y = pMesh->mNormals[nVertex].y;
                     nNormal.z = pMesh->mNormals[nVertex].z;
                     nNormal = (nRotation * nNormal);
+                    if (bFlip)
+                    {
+                        nNormal *= float3(-1.0f, 1.0f, -1.0f);
+                    }
 
                     kModel.m_aNormals.push_back(nNormal.GetNormal());
                 }
@@ -160,7 +169,7 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
 
         for (UINT32 nChild = 0; nChild < pNode->mNumChildren; ++nChild)
         {
-            GetMeshes(pScene, pNode->mChildren[nChild], nTransform, aModels, nAABB);
+            GetMeshes(pScene, pNode->mChildren[nChild], nTransform, bFlip, aModels, nAABB);
         }
     }
 }
@@ -171,6 +180,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
     CStringW strInput;
     CStringW strOutput;
+    bool bFlip = false;
     bool bSmooth = false;
     float nSmoothAngle = 80.0f;
     for (int nArgument = 1; nArgument < nNumArguments; nArgument++)
@@ -182,6 +192,10 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         else if (_wcsicmp(astrArguments[nArgument], L"-output") == 0 && ++nArgument < nNumArguments)
         {
             strOutput = astrArguments[nArgument];
+        }
+        else if (_wcsicmp(astrArguments[nArgument], L"-flip") == 0)
+        {
+            bFlip = true;
         }
         else if (_wcsicmp(astrArguments[nArgument], L"-smooth") == 0)
         {
@@ -229,7 +243,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
         aabb nAABB;
         std::multimap<CStringA, MODEL> aScene;
-        GetMeshes(pScene, pScene->mRootNode, float4x4(), aScene, nAABB);
+        GetMeshes(pScene, pScene->mRootNode, float4x4(), bFlip, aScene, nAABB);
         printf("< Num. Materials: %d\r\n", aScene.size());
 
         std::unordered_map<CStringA, MODEL> aMaterials;
