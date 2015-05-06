@@ -76,8 +76,6 @@ public:
 private:
     IGEKEngineCore *m_pEngine;
 
-    CComPtr<IGEKResourceSystem> m_spResourceSystem;
-
     CComPtr<IUnknown> m_spFrameEvent;
 
     CComPtr<IUnknown> m_spVertexProgram;

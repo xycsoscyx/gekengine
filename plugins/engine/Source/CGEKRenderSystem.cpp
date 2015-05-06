@@ -99,15 +99,6 @@ STDMETHODIMP CGEKRenderSystem::Initialize(IGEKEngineCore *pEngine)
     HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), GetClass<IGEKSceneObserver>());
     if (SUCCEEDED(hRetVal))
     {
-        GetContext()->CreateInstance(CLSID_GEKResourceSystem, IID_PPV_ARGS(&m_spResourceSystem));
-        if (m_spResourceSystem)
-        {
-            hRetVal = m_spResourceSystem->Initialize(m_pEngine->GetVideoSystem());
-        }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
         std::vector<GEK3DVIDEO::INPUTELEMENT> aLayout;
         aLayout.push_back(GEK3DVIDEO::INPUTELEMENT(GEK3DVIDEO::DATA::RG_FLOAT, "POSITION", 0));
         aLayout.push_back(GEK3DVIDEO::INPUTELEMENT(GEK3DVIDEO::DATA::RG_FLOAT, "TEXCOORD", 0));
