@@ -97,7 +97,6 @@
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Source\CGEKAudioSystem.cpp" />
     <ClCompile Include="Source\CGEKInputSystem.cpp" />
-    <ClCompile Include="Source\CGEKResourceSystem.cpp" />
     <ClCompile Include="Source\CGEKVideoSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -105,13 +104,11 @@
     <ClInclude Include="GEKSystemCLSIDs.h" />
     <ClInclude Include="Include\CGEKAudioSystem.h" />
     <ClInclude Include="Include\CGEKInputSystem.h" />
-    <ClInclude Include="Include\CGEKResourceSystem.h" />
     <ClInclude Include="Include\CGEKVideoSystem.h" />
     <ClInclude Include="Public\IGEK2DVideoSystem.h" />
     <ClInclude Include="Public\IGEK3DVideoSystem.h" />
     <ClInclude Include="Public\IGEKAudioSystem.h" />
     <ClInclude Include="Public\IGEKInputSystem.h" />
-    <ClInclude Include="Public\IGEKResourceSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\external\DirectXTex\DirectXTex_Desktop_2013.vcxproj">

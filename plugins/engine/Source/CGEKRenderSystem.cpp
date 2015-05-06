@@ -70,7 +70,6 @@ static GEK3DVIDEO::INPUT::SOURCE GetElementClass(LPCWSTR pValue)
 
 BEGIN_INTERFACE_LIST(CGEKRenderSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKObservable)
-    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKSceneObserver)
     INTERFACE_LIST_ENTRY_COM(IGEKRenderSystem)
     INTERFACE_LIST_ENTRY_COM(IGEKProgramManager)
@@ -90,7 +89,6 @@ CGEKRenderSystem::CGEKRenderSystem(void)
 CGEKRenderSystem::~CGEKRenderSystem(void)
 {
     CGEKObservable::RemoveObserver(m_pEngine->GetSceneManager(), GetClass<IGEKSceneObserver>());
-    CGEKObservable::RemoveObserver(m_pEngine->GetVideoSystem(), GetClass<IGEK3DVideoObserver>());
 }
 
 STDMETHODIMP CGEKRenderSystem::Initialize(IGEKEngineCore *pEngine)
@@ -98,12 +96,7 @@ STDMETHODIMP CGEKRenderSystem::Initialize(IGEKEngineCore *pEngine)
     REQUIRE_RETURN(pEngine, E_INVALIDARG);
 
     m_pEngine = pEngine;
-    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetVideoSystem(), GetClass<IGEK3DVideoObserver>());
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), GetClass<IGEKSceneObserver>());
-    }
-
+    HRESULT hRetVal = CGEKObservable::AddObserver(m_pEngine->GetSceneManager(), GetClass<IGEKSceneObserver>());
     if (SUCCEEDED(hRetVal))
     {
         GetContext()->CreateInstance(CLSID_GEKResourceSystem, IID_PPV_ARGS(&m_spResourceSystem));

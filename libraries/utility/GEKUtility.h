@@ -16,6 +16,9 @@
 #define REQUIRE_VOID_RETURN(CHECK)      do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (false)
 #define REQUIRE_RETURN(CHECK, RETURN)   do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (false)
 
+typedef UINT32 GEKHANDLE;
+const GEKHANDLE GEKINVALIDHANDLE = 0;
+
 enum GEKMODEASPECT
 {
     _ASPECT_INVALID     = -1,

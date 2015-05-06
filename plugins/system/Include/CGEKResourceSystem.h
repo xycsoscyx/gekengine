@@ -93,7 +93,6 @@ namespace std
 
 class CGEKResourceSystem : public CGEKUnknown
                          , public IGEKResourceSystem
-                         , public IGEK3DVideoObserver
 {
 private:
     IGEK3DVideoSystem *m_pVideoSystem;
@@ -140,8 +139,4 @@ public:
     STDMETHOD_(void, SetDepthStates)                    (THIS_ IGEK3DVideoContext *pContext, UINT32 nStencilReference, const GEKRESOURCEID &nResourceID);
     STDMETHOD_(void, SetBlendStates)                    (THIS_ IGEK3DVideoContext *pContext, const float4 &nBlendFactor, UINT32 nMask, const GEKRESOURCEID &nResourceID);
     STDMETHOD_(void, SetSamplerStates)                  (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, const GEKRESOURCEID &nResourceID);
-
-    // IGEK3DVideoObserver
-    STDMETHOD_(void, OnResizeBegin)                     (THIS);
-    STDMETHOD(OnResizeEnd)                              (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed);
 };

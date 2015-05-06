@@ -13,7 +13,6 @@ DECLARE_INTERFACE(IGEKRenderMaterial);
 
 class CGEKRenderSystem : public CGEKUnknown
                        , public CGEKObservable
-                       , public IGEK3DVideoObserver
                        , public IGEKSceneObserver
                        , public IGEKRenderSystem
                        , public IGEKProgramManager
@@ -120,10 +119,6 @@ public:
     CGEKRenderSystem(void);
     virtual ~CGEKRenderSystem(void);
     DECLARE_UNKNOWN(CGEKRenderSystem);
-
-    // IGEK3DVideoObserver
-    STDMETHOD_(void, OnResizeBegin)         (THIS);
-    STDMETHOD(OnResizeEnd)                  (THIS_ UINT32 nXSize, UINT32 nYSize, bool bWindowed);
 
     // IGEKSceneObserver
     STDMETHOD_(void, OnLoadBegin)           (THIS);

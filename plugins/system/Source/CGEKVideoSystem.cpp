@@ -13,171 +13,70 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 
-static D3D11_TEXTURE_ADDRESS_MODE GetAddressMode(GEK3DVIDEO::ADDRESS::MODE eMode)
+static const D3D11_TEXTURE_ADDRESS_MODE gs_aAddressModes[] = 
 {
-    switch (eMode)
-    {
-    case GEK3DVIDEO::ADDRESS::WRAP:
-        return D3D11_TEXTURE_ADDRESS_WRAP;
-
-    case GEK3DVIDEO::ADDRESS::MIRROR:
-        return D3D11_TEXTURE_ADDRESS_MIRROR;
-
-    case GEK3DVIDEO::ADDRESS::MIRROR_ONCE:
-        return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
-
-    case GEK3DVIDEO::ADDRESS::BORDER:
-        return D3D11_TEXTURE_ADDRESS_BORDER;
-
-    case GEK3DVIDEO::ADDRESS::CLAMP:
-    default:
-        return D3D11_TEXTURE_ADDRESS_CLAMP;
-    };
+    D3D11_TEXTURE_ADDRESS_CLAMP,
+    D3D11_TEXTURE_ADDRESS_WRAP,
+    D3D11_TEXTURE_ADDRESS_MIRROR,
+    D3D11_TEXTURE_ADDRESS_MIRROR_ONCE,
+    D3D11_TEXTURE_ADDRESS_BORDER,
 };
 
-static D3D11_COMPARISON_FUNC GetComparisonFunction(GEK3DVIDEO::COMPARISON::FUNCTION eFunction)
+static const D3D11_COMPARISON_FUNC gs_aComparisonFunctions[] = 
 {
-    switch (eFunction)
-    {
-    case GEK3DVIDEO::COMPARISON::NEVER:
-        return D3D11_COMPARISON_NEVER;
-
-    case GEK3DVIDEO::COMPARISON::EQUAL:
-        return D3D11_COMPARISON_EQUAL;
-
-    case GEK3DVIDEO::COMPARISON::NOT_EQUAL:
-        return D3D11_COMPARISON_NOT_EQUAL;
-
-    case GEK3DVIDEO::COMPARISON::LESS:
-        return D3D11_COMPARISON_LESS;
-
-    case GEK3DVIDEO::COMPARISON::LESS_EQUAL:
-        return D3D11_COMPARISON_LESS_EQUAL;
-
-    case GEK3DVIDEO::COMPARISON::GREATER:
-        return D3D11_COMPARISON_GREATER;
-
-    case GEK3DVIDEO::COMPARISON::GREATER_EQUAL:
-        return D3D11_COMPARISON_GREATER_EQUAL;
-
-    case GEK3DVIDEO::COMPARISON::ALWAYS:
-    default:
-        return D3D11_COMPARISON_ALWAYS;
-    };
-}
-
-static D3D11_STENCIL_OP GetStencilOperation(GEK3DVIDEO::STENCIL::OPERATION eOperation)
-{
-    switch (eOperation)
-    {
-    case GEK3DVIDEO::STENCIL::KEEP:
-        return D3D11_STENCIL_OP_KEEP;
-
-    case GEK3DVIDEO::STENCIL::REPLACE:
-        return D3D11_STENCIL_OP_REPLACE;
-
-    case GEK3DVIDEO::STENCIL::INVERT:
-        return D3D11_STENCIL_OP_INVERT;
-
-    case GEK3DVIDEO::STENCIL::INCREASE:
-        return D3D11_STENCIL_OP_INCR;
-
-    case GEK3DVIDEO::STENCIL::INCREASE_SATURATED:
-        return D3D11_STENCIL_OP_INCR_SAT;
-
-    case GEK3DVIDEO::STENCIL::DECREASE:
-        return D3D11_STENCIL_OP_DECR;
-
-    case GEK3DVIDEO::STENCIL::DECREASE_SATURATED:
-        return D3D11_STENCIL_OP_DECR_SAT;
-
-    case GEK3DVIDEO::STENCIL::ZERO:
-    default:
-        return D3D11_STENCIL_OP_ZERO;
-    };
+    D3D11_COMPARISON_ALWAYS,
+    D3D11_COMPARISON_NEVER,
+    D3D11_COMPARISON_EQUAL,
+    D3D11_COMPARISON_NOT_EQUAL,
+    D3D11_COMPARISON_LESS,
+    D3D11_COMPARISON_LESS_EQUAL,
+    D3D11_COMPARISON_GREATER,
+    D3D11_COMPARISON_GREATER_EQUAL,
 };
 
-static D3D11_BLEND GetBlendSource(GEK3DVIDEO::BLEND::FACTOR::SOURCE eSource)
+static const D3D11_STENCIL_OP gs_aStencilOperations[] = 
 {
-    switch (eSource)
-    {
-    case GEK3DVIDEO::BLEND::FACTOR::ONE:
-        return D3D11_BLEND_ONE;
-
-    case GEK3DVIDEO::BLEND::FACTOR::BLENDFACTOR:
-        return D3D11_BLEND_BLEND_FACTOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_BLENDFACTOR:
-        return D3D11_BLEND_INV_BLEND_FACTOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_COLOR:
-        return D3D11_BLEND_SRC_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SOURCE_COLOR:
-        return D3D11_BLEND_INV_SRC_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_ALPHA:
-        return D3D11_BLEND_SRC_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SOURCE_ALPHA:
-        return D3D11_BLEND_INV_SRC_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::SOURCE_ALPHA_SATURATE:
-        return D3D11_BLEND_SRC_ALPHA_SAT;
-
-    case GEK3DVIDEO::BLEND::FACTOR::DESTINATION_COLOR:
-        return D3D11_BLEND_DEST_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_COLOR:
-        return D3D11_BLEND_INV_DEST_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::DESTINATION_ALPHA:
-        return D3D11_BLEND_DEST_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_DESTINATION_ALPHA:
-        return D3D11_BLEND_INV_DEST_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_COLOR:
-        return D3D11_BLEND_SRC1_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_COLOR:
-        return D3D11_BLEND_INV_SRC1_COLOR;
-
-    case GEK3DVIDEO::BLEND::FACTOR::SECONRARY_SOURCE_ALPHA:
-        return D3D11_BLEND_SRC1_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::INVERSE_SECONRARY_SOURCE_ALPHA:
-        return D3D11_BLEND_INV_SRC1_ALPHA;
-
-    case GEK3DVIDEO::BLEND::FACTOR::ZERO:
-    default:
-        return D3D11_BLEND_ZERO;
-    };
-}
-
-static D3D11_BLEND_OP GetBlendOperation(GEK3DVIDEO::BLEND::OPERATION eOperation)
-{
-    switch (eOperation)
-    {
-    case GEK3DVIDEO::BLEND::SUBTRACT:
-        return D3D11_BLEND_OP_SUBTRACT;
-
-    case GEK3DVIDEO::BLEND::REVERSE_SUBTRACT:
-        return D3D11_BLEND_OP_REV_SUBTRACT;
-
-    case GEK3DVIDEO::BLEND::MINIMUM:
-        return D3D11_BLEND_OP_MIN;
-
-    case GEK3DVIDEO::BLEND::MAXIMUM:
-        return D3D11_BLEND_OP_MAX;
-
-    case GEK3DVIDEO::BLEND::ADD:
-    default:
-        return D3D11_BLEND_OP_ADD;
-    };
+    D3D11_STENCIL_OP_ZERO,
+    D3D11_STENCIL_OP_KEEP,
+    D3D11_STENCIL_OP_REPLACE,
+    D3D11_STENCIL_OP_INVERT,
+    D3D11_STENCIL_OP_INCR,
+    D3D11_STENCIL_OP_INCR_SAT,
+    D3D11_STENCIL_OP_DECR,
+    D3D11_STENCIL_OP_DECR_SAT,
 };
 
-class CGEKVideoComputeContextSystem : public IGEK3DVideoContextSystem
+static const D3D11_BLEND gs_aBlendSources[] =
+{
+    D3D11_BLEND_ZERO,
+    D3D11_BLEND_ONE,
+    D3D11_BLEND_BLEND_FACTOR,
+    D3D11_BLEND_INV_BLEND_FACTOR,
+    D3D11_BLEND_SRC_COLOR,
+    D3D11_BLEND_INV_SRC_COLOR,
+    D3D11_BLEND_SRC_ALPHA,
+    D3D11_BLEND_INV_SRC_ALPHA,
+    D3D11_BLEND_SRC_ALPHA_SAT,
+    D3D11_BLEND_DEST_COLOR,
+    D3D11_BLEND_INV_DEST_COLOR,
+    D3D11_BLEND_DEST_ALPHA,
+    D3D11_BLEND_INV_DEST_ALPHA,
+    D3D11_BLEND_SRC1_COLOR,
+    D3D11_BLEND_INV_SRC1_COLOR,
+    D3D11_BLEND_SRC1_ALPHA,
+    D3D11_BLEND_INV_SRC1_ALPHA,
+};
+
+static const D3D11_BLEND_OP gs_aBlendOperations[] = 
+{
+    D3D11_BLEND_OP_ADD,
+    D3D11_BLEND_OP_SUBTRACT,
+    D3D11_BLEND_OP_REV_SUBTRACT,
+    D3D11_BLEND_OP_MIN,
+    D3D11_BLEND_OP_MAX,
+};
+
+class CGEKVideoComputeContextSystem : public IGEK3DVideoContext::System
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -188,10 +87,10 @@ public:
     {
     }
 
-    STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
+    STDMETHODIMP_(void) SetProgram(const GEKHANDLE &nResourceID)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        CComQIPtr<ID3D11ComputeShader> spShader(pProgram);
+        CComQIPtr<ID3D11ComputeShader> spShader;
         if (spShader)
         {
             m_pDeviceContext->CSSetShader(spShader, nullptr, 0);
@@ -202,12 +101,11 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEK3DVideoBuffer *pBuffer)
+    STDMETHODIMP_(void) SetConstantBuffer(const GEKHANDLE &nResourceID, UINT32 nIndex)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pBuffer);
 
-        CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+        CComQIPtr<ID3D11Buffer> spBuffer;
         if (spBuffer)
         {
             ID3D11Buffer *apBuffer[1] = { spBuffer };
@@ -215,12 +113,11 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IUnknown *pStates)
+    STDMETHODIMP_(void) SetSamplerStates(const GEKHANDLE &nResourceID, UINT32 nStage)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pStates);
 
-        CComQIPtr<ID3D11SamplerState> spStates(pStates);
+        CComQIPtr<ID3D11SamplerState> spStates;
         if (spStates)
         {
             ID3D11SamplerState *apStates[1] = { spStates };
@@ -228,12 +125,12 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetResource(UINT32 nStage, IUnknown *pResource)
+    STDMETHODIMP_(void) SetResource(const GEKHANDLE &nResourceID, UINT32 nStage)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
 
         ID3D11ShaderResourceView *apView[1] = { nullptr };
-        CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
+        CComQIPtr<ID3D11ShaderResourceView> spView;
         if (spView)
         {
             apView[0] = spView;
@@ -242,12 +139,12 @@ public:
         m_pDeviceContext->CSSetShaderResources(nStage, 1, apView);
     }
 
-    STDMETHODIMP_(void) SetUnorderedAccess(UINT32 nStage, IUnknown *pResource)
+    STDMETHODIMP_(void) SetUnorderedAccess(const GEKHANDLE &nResourceID, UINT32 nStage)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
 
         ID3D11UnorderedAccessView *apView[1] = { nullptr };
-        CComQIPtr<ID3D11UnorderedAccessView> spView(pResource);
+        CComQIPtr<ID3D11UnorderedAccessView> spView;
         if (spView)
         {
             apView[0] = spView;
@@ -257,7 +154,7 @@ public:
     }
 };
 
-class CGEKVideoVertexContextSystem : public IGEK3DVideoContextSystem
+class CGEKVideoVertexContextSystem : public IGEK3DVideoContext::System
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -268,11 +165,11 @@ public:
     {
     }
 
-    STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
+    STDMETHODIMP_(void) SetProgram(const GEKHANDLE &nResourceID)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        CComQIPtr<ID3D11VertexShader> spShader(pProgram);
-        CComQIPtr<ID3D11InputLayout> spLayout(pProgram);
+        CComQIPtr<ID3D11VertexShader> spShader;
+        CComQIPtr<ID3D11InputLayout> spLayout;
         if (spShader &&
             spLayout)
         {
@@ -285,12 +182,11 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEK3DVideoBuffer *pBuffer)
+    STDMETHODIMP_(void) SetConstantBuffer(const GEKHANDLE &nResourceID, UINT32 nIndex)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pBuffer);
 
-        CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+        CComQIPtr<ID3D11Buffer> spBuffer;
         if (spBuffer)
         {
             ID3D11Buffer *apBuffer[1] = { spBuffer };
@@ -298,12 +194,11 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IUnknown *pStates)
+    STDMETHODIMP_(void) SetSamplerStates(const GEKHANDLE &nResourceID, UINT32 nStage)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pStates);
 
-        CComQIPtr<ID3D11SamplerState> spStates(pStates);
+        CComQIPtr<ID3D11SamplerState> spStates;
         if (spStates)
         {
             ID3D11SamplerState *apStates[1] = { spStates };
@@ -311,13 +206,12 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetResource(UINT32 nStage, IUnknown *pResource)
+    STDMETHODIMP_(void) SetResource(const GEKHANDLE &nResourceID, UINT32 nStage)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pResource);
 
         ID3D11ShaderResourceView *apView[1] = { nullptr };
-        CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
+        CComQIPtr<ID3D11ShaderResourceView> spView;
         if (spView)
         {
             apView[0] = spView;
@@ -327,7 +221,7 @@ public:
     }
 };
 
-class CGEKVideoGeometryContextSystem : public IGEK3DVideoContextSystem
+class CGEKVideoGeometryContextSystem : public IGEK3DVideoContext::System
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -338,10 +232,10 @@ public:
     {
     }
 
-    STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
+    STDMETHODIMP_(void) SetProgram(const GEKHANDLE &nResourceID)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        CComQIPtr<ID3D11GeometryShader> spShader(pProgram);
+        CComQIPtr<ID3D11GeometryShader> spShader;
         if (spShader)
         {
             m_pDeviceContext->GSSetShader(spShader, nullptr, 0);
@@ -352,12 +246,11 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEK3DVideoBuffer *pBuffer)
+    STDMETHODIMP_(void) SetConstantBuffer(const GEKHANDLE &nResourceID, UINT32 nIndex)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pBuffer);
 
-        CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+        CComQIPtr<ID3D11Buffer> spBuffer;
         if (spBuffer)
         {
             ID3D11Buffer *apBuffer[1] = { spBuffer };
@@ -365,12 +258,11 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IUnknown *pStates)
+    STDMETHODIMP_(void) SetSamplerStates(const GEKHANDLE &nResourceID, UINT32 nStage)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pStates);
 
-        CComQIPtr<ID3D11SamplerState> spStates(pStates);
+        CComQIPtr<ID3D11SamplerState> spStates;
         if (spStates)
         {
             ID3D11SamplerState *apStates[1] = { spStates };
@@ -378,13 +270,12 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetResource(UINT32 nStage, IUnknown *pResource)
+    STDMETHODIMP_(void) SetResource(const GEKHANDLE &nResourceID, UINT32 nStage)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pResource);
 
         ID3D11ShaderResourceView *apView[1] = { nullptr };
-        CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
+        CComQIPtr<ID3D11ShaderResourceView> spView;
         if (spView)
         {
             apView[0] = spView;
@@ -394,7 +285,7 @@ public:
     }
 };
 
-class CGEKVideoPixelContextSystem : public IGEK3DVideoContextSystem
+class CGEKVideoPixelContextSystem : public IGEK3DVideoContext::System
 {
 private:
     ID3D11DeviceContext *m_pDeviceContext;
@@ -405,10 +296,10 @@ public:
     {
     }
 
-    STDMETHODIMP_(void) SetProgram(IUnknown *pProgram)
+    STDMETHODIMP_(void) SetProgram(const GEKHANDLE &nResourceID)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        CComQIPtr<ID3D11PixelShader> spShader(pProgram);
+        CComQIPtr<ID3D11PixelShader> spShader;
         if (spShader)
         {
             m_pDeviceContext->PSSetShader(spShader, nullptr, 0);
@@ -419,12 +310,11 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetConstantBuffer(UINT32 nIndex, IGEK3DVideoBuffer *pBuffer)
+    STDMETHODIMP_(void) SetConstantBuffer(const GEKHANDLE &nResourceID, UINT32 nIndex)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pBuffer);
 
-        CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+        CComQIPtr<ID3D11Buffer> spBuffer;
         if (spBuffer)
         {
             ID3D11Buffer *apBuffer[1] = { spBuffer };
@@ -432,12 +322,11 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetSamplerStates(UINT32 nStage, IUnknown *pStates)
+    STDMETHODIMP_(void) SetSamplerStates(const GEKHANDLE &nResourceID, UINT32 nStage)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(pStates);
 
-        CComQIPtr<ID3D11SamplerState> spStates(pStates);
+        CComQIPtr<ID3D11SamplerState> spStates;
         if (spStates)
         {
             ID3D11SamplerState *apStates[1] = { spStates };
@@ -445,103 +334,18 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) SetResource(UINT32 nStage, IUnknown *pResource)
+    STDMETHODIMP_(void) SetResource(const GEKHANDLE &nResourceID, UINT32 nStage)
     {
         REQUIRE_VOID_RETURN(m_pDeviceContext);
 
         ID3D11ShaderResourceView *apView[1] = { nullptr };
-        CComQIPtr<ID3D11ShaderResourceView> spView(pResource);
+        CComQIPtr<ID3D11ShaderResourceView> spView;
         if (spView)
         {
             apView[0] = spView;
         }
 
         m_pDeviceContext->PSSetShaderResources(nStage, 1, apView);
-    }
-};
-
-class CGEKVideoRenderStates : public CGEKUnknown
-{
-private:
-    CComPtr<ID3D11RasterizerState> m_spStates;
-
-public:
-    DECLARE_UNKNOWN(CGEKVideoRenderStates);
-    CGEKVideoRenderStates(ID3D11RasterizerState *pStates)
-        : m_spStates(pStates)
-    {
-    }
-
-    virtual ~CGEKVideoRenderStates(void)
-    {
-    }
-};
-
-class CGEKVideoDepthStates : public CGEKUnknown
-{
-private:
-    CComPtr<ID3D11DepthStencilState> m_spStates;
-
-public:
-    DECLARE_UNKNOWN(CGEKVideoDepthStates);
-    CGEKVideoDepthStates(ID3D11DepthStencilState *pStates)
-        : m_spStates(pStates)
-    {
-    }
-
-    virtual ~CGEKVideoDepthStates(void)
-    {
-    }
-};
-
-class CGEKVideoBlendStates : public CGEKUnknown
-{
-private:
-    CComPtr<ID3D11BlendState> m_spStates;
-
-public:
-    DECLARE_UNKNOWN(CGEKVideoBlendStates);
-    CGEKVideoBlendStates(ID3D11BlendState *pStates)
-        : m_spStates(pStates)
-    {
-    }
-
-    virtual ~CGEKVideoBlendStates(void)
-    {
-    }
-};
-
-class CGEKVideoSamplerStates : public CGEKUnknown
-{
-private:
-    CComPtr<ID3D11SamplerState> m_spStates;
-
-public:
-    DECLARE_UNKNOWN(CGEKVideoSamplerStates);
-    CGEKVideoSamplerStates(ID3D11SamplerState *pStates)
-        : m_spStates(pStates)
-    {
-    }
-
-    virtual ~CGEKVideoSamplerStates(void)
-    {
-    }
-};
-
-class CGEKVideoComputeProgram : public CGEKUnknown
-{
-private:
-    CComPtr<ID3D11ComputeShader> m_spShader;
-
-public:
-    DECLARE_UNKNOWN(CGEKVideoComputeProgram);
-    CGEKVideoComputeProgram(ID3D11ComputeShader *pShader)
-        : m_spShader(pShader)
-    {
-    }
-
-    virtual ~CGEKVideoComputeProgram(void)
-    {
     }
 };
 
@@ -564,58 +368,17 @@ public:
     }
 };
 
-class CGEKVideoGeometryProgram : public CGEKUnknown
-{
-private:
-    CComPtr<ID3D11GeometryShader> m_spShader;
-
-public:
-    DECLARE_UNKNOWN(CGEKVideoGeometryProgram);
-    CGEKVideoGeometryProgram(ID3D11GeometryShader *pShader)
-        : m_spShader(pShader)
-    {
-    }
-
-    virtual ~CGEKVideoGeometryProgram(void)
-    {
-    }
-};
-
-class CGEKVideoPixelProgram : public CGEKUnknown
-{
-private:
-    CComPtr<ID3D11PixelShader> m_spShader;
-
-public:
-    DECLARE_UNKNOWN(CGEKVideoPixelProgram);
-    CGEKVideoPixelProgram(ID3D11PixelShader *pShader)
-        : m_spShader(pShader)
-    {
-    }
-
-    virtual ~CGEKVideoPixelProgram(void)
-    {
-    }
-};
-
 class CGEKVideoBuffer : public CGEKUnknown
-    , public IGEK3DVideoBuffer
 {
 private:
-    ID3D11DeviceContext *m_pDeviceContext;
     CComPtr<ID3D11Buffer> m_spBuffer;
     CComPtr<ID3D11ShaderResourceView> m_spShaderView;
     CComPtr<ID3D11UnorderedAccessView> m_spUnorderedView;
-    UINT32 m_nStride;
-    UINT32 m_nCount;
 
 public:
     DECLARE_UNKNOWN(CGEKVideoBuffer);
-    CGEKVideoBuffer(ID3D11DeviceContext *pDeviceContext, ID3D11Buffer *pBuffer, ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView, UINT32 nStride, UINT32 nCount)
-        : m_pDeviceContext(pDeviceContext)
-        , m_nStride(nStride)
-        , m_nCount(nCount)
-        , m_spBuffer(pBuffer)
+    CGEKVideoBuffer(ID3D11Buffer *pBuffer, ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView)
+        : m_spBuffer(pBuffer)
         , m_spShaderView(pShaderView)
         , m_spUnorderedView(pUnorderedView)
     {
@@ -624,91 +387,25 @@ public:
     virtual ~CGEKVideoBuffer(void)
     {
     }
-
-    STDMETHODIMP_(UINT32) GetStride(void)
-    {
-        return m_nStride;
-    }
-
-    STDMETHODIMP_(UINT32) GetCount(void)
-    {
-        return m_nCount;
-    }
-
-    STDMETHODIMP_(void) Update(const void *pData)
-    {
-        REQUIRE_VOID_RETURN(m_pDeviceContext);
-        REQUIRE_VOID_RETURN(m_spBuffer);
-        REQUIRE_VOID_RETURN(pData);
-
-        m_pDeviceContext->UpdateSubresource(m_spBuffer, 0, nullptr, pData, 0, 0);
-    }
-
-    STDMETHODIMP Map(LPVOID *ppData)
-    {
-        REQUIRE_RETURN(m_pDeviceContext, E_FAIL);
-        REQUIRE_RETURN(m_spBuffer, E_FAIL);
-        REQUIRE_RETURN(ppData, E_INVALIDARG);
-
-        D3D11_MAPPED_SUBRESOURCE kResource;
-        kResource.pData = nullptr;
-        kResource.RowPitch = 0;
-        kResource.DepthPitch = 0;
-        HRESULT hRetVal = m_pDeviceContext->Map(m_spBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &kResource);
-        if (SUCCEEDED(hRetVal))
-        {
-            (*ppData) = kResource.pData;
-        }
-
-        return hRetVal;
-    }
-
-    STDMETHODIMP_(void) UnMap(void)
-    {
-        m_pDeviceContext->Unmap(m_spBuffer, 0);
-    }
 };
 
 class CGEKVideoTexture : public CGEKUnknown
-                       , public IGEK3DVideoTexture
 {
 protected:
     ID3D11DeviceContext *m_pDeviceContext;
     CComPtr<ID3D11ShaderResourceView> m_spShaderView;
     CComPtr<ID3D11UnorderedAccessView> m_spUnorderedView;
-    UINT32 m_nXSize;
-    UINT32 m_nYSize;
-    UINT32 m_nZSize;
 
 public:
     DECLARE_UNKNOWN(CGEKVideoTexture);
-    CGEKVideoTexture(ID3D11DeviceContext *pDeviceContext, ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView, UINT32 nXSize, UINT32 nYSize, UINT32 nZSize)
-        : m_pDeviceContext(pDeviceContext)
-        , m_spShaderView(pShaderView)
+    CGEKVideoTexture(ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView)
+        : m_spShaderView(pShaderView)
         , m_spUnorderedView(pUnorderedView)
-        , m_nXSize(nXSize)
-        , m_nYSize(nYSize)
-        , m_nZSize(nZSize)
     {
     }
 
     virtual ~CGEKVideoTexture(void)
     {
-    }
-
-    STDMETHODIMP_(UINT32) GetXSize(void)
-    {
-        return m_nXSize;
-    }
-
-    STDMETHODIMP_(UINT32) GetYSize(void)
-    {
-        return m_nYSize;
-    }
-
-    STDMETHODIMP_(UINT32) GetZSize(void)
-    {
-        return m_nZSize;
     }
 };
 
@@ -719,8 +416,8 @@ private:
 
 public:
     DECLARE_UNKNOWN(CGEKVideoRenderTarget);
-    CGEKVideoRenderTarget(ID3D11DeviceContext *pDeviceContext, ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView, ID3D11RenderTargetView *pRenderView, UINT32 nXSize, UINT32 nYSize, UINT32 nZSize)
-        : CGEKVideoTexture(pDeviceContext, pShaderView, pUnorderedView, nXSize, nYSize, nZSize)
+    CGEKVideoRenderTarget(ID3D11ShaderResourceView *pShaderView, ID3D11UnorderedAccessView *pUnorderedView, ID3D11RenderTargetView *pRenderView)
+        : CGEKVideoTexture(pShaderView, pUnorderedView)
         , m_spRenderView(pRenderView)
     {
     }
@@ -867,7 +564,7 @@ public:
     {
     }
 
-    STDMETHOD(Open)     (THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
+    STDMETHODIMP Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
     {
         REQUIRE_RETURN(pFileName && pBytes && ppData, E_INVALIDARG);
 
@@ -893,57 +590,24 @@ public:
         return hRetVal;
     }
 
-    STDMETHOD(Close)    (THIS_ LPCVOID pData)
+    STDMETHODIMP Close(LPCVOID pData)
     {
         return (pData == m_aBuffer.data() ? S_OK : E_FAIL);
     }
 };
-
-BEGIN_INTERFACE_LIST(CGEKVideoRenderStates)
-    INTERFACE_LIST_ENTRY_COM(IUnknown)
-    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11RasterizerState, m_spStates)
-END_INTERFACE_LIST_UNKNOWN
-
-BEGIN_INTERFACE_LIST(CGEKVideoDepthStates)
-    INTERFACE_LIST_ENTRY_COM(IUnknown)
-    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DepthStencilState, m_spStates)
-END_INTERFACE_LIST_UNKNOWN
-
-BEGIN_INTERFACE_LIST(CGEKVideoBlendStates)
-    INTERFACE_LIST_ENTRY_COM(IUnknown)
-    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11BlendState, m_spStates)
-END_INTERFACE_LIST_UNKNOWN
-
-BEGIN_INTERFACE_LIST(CGEKVideoSamplerStates)
-    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11SamplerState, m_spStates)
-END_INTERFACE_LIST_UNKNOWN
-
-BEGIN_INTERFACE_LIST(CGEKVideoComputeProgram)
-    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ComputeShader, m_spShader)
-END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoVertexProgram)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11VertexShader, m_spShader)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11InputLayout, m_spLayout)
 END_INTERFACE_LIST_UNKNOWN
 
-BEGIN_INTERFACE_LIST(CGEKVideoGeometryProgram)
-    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11GeometryShader, m_spShader)
-END_INTERFACE_LIST_UNKNOWN
-
-BEGIN_INTERFACE_LIST(CGEKVideoPixelProgram)
-    INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11PixelShader, m_spShader)
-END_INTERFACE_LIST_UNKNOWN
-
 BEGIN_INTERFACE_LIST(CGEKVideoBuffer)
-    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Buffer, m_spBuffer)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, m_spShaderView)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, m_spUnorderedView)
 END_INTERFACE_LIST_UNKNOWN
 
 BEGIN_INTERFACE_LIST(CGEKVideoTexture)
-    INTERFACE_LIST_ENTRY_COM(IGEK3DVideoTexture)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, m_spShaderView)
     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, m_spUnorderedView)
 END_INTERFACE_LIST_UNKNOWN
@@ -992,22 +656,22 @@ CGEKVideoContext::~CGEKVideoContext(void)
 {
 }
 
-STDMETHODIMP_(IGEK3DVideoContextSystem *) CGEKVideoContext::GetComputeSystem(void)
+STDMETHODIMP_(IGEK3DVideoContext::System *) CGEKVideoContext::GetComputeSystem(void)
 {
     return m_spComputeSystem.get();
 }
 
-STDMETHODIMP_(IGEK3DVideoContextSystem *) CGEKVideoContext::GetVertexSystem(void)
+STDMETHODIMP_(IGEK3DVideoContext::System *) CGEKVideoContext::GetVertexSystem(void)
 {
     return m_spVertexSystem.get();
 }
 
-STDMETHODIMP_(IGEK3DVideoContextSystem *) CGEKVideoContext::GetGeometrySystem(void)
+STDMETHODIMP_(IGEK3DVideoContext::System *) CGEKVideoContext::GetGeometrySystem(void)
 {
     return m_spGeometrySystem.get();
 }
 
-STDMETHODIMP_(IGEK3DVideoContextSystem *) CGEKVideoContext::GetPixelSystem(void)
+STDMETHODIMP_(IGEK3DVideoContext::System *) CGEKVideoContext::GetPixelSystem(void)
 {
     return m_spPixelSystem.get();
 }
@@ -1045,22 +709,22 @@ STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<trect<UIN
     m_spDeviceContext->RSSetScissorRects(aRects.size(), (D3D11_RECT *)aRects.data());
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::ClearRenderTarget(IGEK3DVideoTexture *pTarget, const float4 &kColor)
+STDMETHODIMP_(void) CGEKVideoContext::ClearRenderTarget(const GEKHANDLE &nTargetID, const float4 &kColor)
 {
-    REQUIRE_VOID_RETURN(m_spDeviceContext && pTarget);
+    REQUIRE_VOID_RETURN(m_spDeviceContext);
 
-    CComQIPtr<ID3D11RenderTargetView> spD3DView(pTarget);
+    CComQIPtr<ID3D11RenderTargetView> spD3DView;
     if (spD3DView)
     {
         m_spDeviceContext->ClearRenderTargetView(spD3DView, kColor.rgba);
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::ClearDepthStencilTarget(IUnknown *pTarget, UINT32 nFlags, float fDepth, UINT32 nStencil)
+STDMETHODIMP_(void) CGEKVideoContext::ClearDepthStencilTarget(const GEKHANDLE &nTargetID, UINT32 nFlags, float fDepth, UINT32 nStencil)
 {
-    REQUIRE_VOID_RETURN(m_spDeviceContext && pTarget);
+    REQUIRE_VOID_RETURN(m_spDeviceContext);
 
-    CComQIPtr<ID3D11DepthStencilView> spD3DDepth(pTarget);
+    CComQIPtr<ID3D11DepthStencilView> spD3DDepth;
     if (spD3DDepth)
     {
         m_spDeviceContext->ClearDepthStencilView(spD3DDepth, 
@@ -1070,20 +734,20 @@ STDMETHODIMP_(void) CGEKVideoContext::ClearDepthStencilTarget(IUnknown *pTarget,
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEK3DVideoTexture *> &aTargets, IUnknown *pDepth)
+STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<GEKHANDLE> &aTargets, const GEKHANDLE &nDepthID)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
 
     std::vector<ID3D11RenderTargetView *> aD3DViews;
     for (auto &pTexture : aTargets)
     {
-        CComQIPtr<ID3D11RenderTargetView> spD3DView(pTexture);
+        CComQIPtr<ID3D11RenderTargetView> spD3DView;
         aD3DViews.push_back(spD3DView);
     }
 
-    if (pDepth != nullptr)
+    if (nDepthID != GEKINVALIDHANDLE)
     {
-        CComQIPtr<ID3D11DepthStencilView> spD3DDepth(pDepth);
+        CComQIPtr<ID3D11DepthStencilView> spD3DDepth;
         if (spD3DDepth)
         {
             m_spDeviceContext->OMSetRenderTargets(aD3DViews.size(), aD3DViews.data(), spD3DDepth);
@@ -1095,65 +759,60 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<IGEK3DV
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(IUnknown *pStates)
+STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(const GEKHANDLE &nResourceID)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
-    REQUIRE_VOID_RETURN(pStates);
 
-    CComQIPtr<ID3D11RasterizerState> spStates(pStates);
+    CComQIPtr<ID3D11RasterizerState> spStates;
     if (spStates)
     {
         m_spDeviceContext->RSSetState(spStates);
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(UINT32 nStencilReference, IUnknown *pStates)
+STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(const GEKHANDLE &nResourceID, UINT32 nStencilReference)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
-    REQUIRE_VOID_RETURN(pStates);
 
-    CComQIPtr<ID3D11DepthStencilState> spStates(pStates);
+    CComQIPtr<ID3D11DepthStencilState> spStates;
     if (spStates)
     {
         m_spDeviceContext->OMSetDepthStencilState(spStates, nStencilReference);
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates)
+STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const GEKHANDLE &nResourceID, const float4 &nBlendFactor, UINT32 nMask)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
-    REQUIRE_VOID_RETURN(pStates);
 
-    CComQIPtr<ID3D11BlendState> spStates(pStates);
+    CComQIPtr<ID3D11BlendState> spStates;
     if (spStates)
     {
         m_spDeviceContext->OMSetBlendState(spStates, nBlendFactor.rgba, nMask);
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetVertexBuffer(UINT32 nSlot, UINT32 nOffset, IGEK3DVideoBuffer *pBuffer)
+STDMETHODIMP_(void) CGEKVideoContext::SetVertexBuffer(const GEKHANDLE &nResourceID, UINT32 nSlot, UINT32 nOffset)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
-    REQUIRE_VOID_RETURN(pBuffer);
 
-    CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+    CComQIPtr<ID3D11Buffer> spBuffer;
     if (spBuffer)
     {
-        UINT32 nStride = pBuffer->GetStride();
+        UINT32 nStride = 0;// pBuffer->GetStride();
         ID3D11Buffer *pD3DBuffer = spBuffer;
         m_spDeviceContext->IASetVertexBuffers(nSlot, 1, &pD3DBuffer, &nStride, &nOffset);
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetIndexBuffer(UINT32 nOffset, IGEK3DVideoBuffer *pBuffer)
+STDMETHODIMP_(void) CGEKVideoContext::SetIndexBuffer(const GEKHANDLE &nResourceID, UINT32 nOffset)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
-    REQUIRE_VOID_RETURN(pBuffer);
 
-    CComQIPtr<ID3D11Buffer> spBuffer(pBuffer);
+    CComQIPtr<ID3D11Buffer> spBuffer;
     if (spBuffer)
     {
-        switch (pBuffer->GetStride())
+        switch (0)//pBuffer->GetStride())
         {
         case 2:
             m_spDeviceContext->IASetIndexBuffer(spBuffer, DXGI_FORMAT_R16_UINT, nOffset);
@@ -1240,7 +899,10 @@ STDMETHODIMP_(void) CGEKVideoContext::FinishCommandList(IUnknown **ppUnknown)
 }
 
 CGEKVideoSystem::CGEKVideoSystem(void)
-    : m_bWindowed(false)
+    : m_nNextResourceID(GEKINVALIDHANDLE)
+    , m_bWindowed(false)
+    , m_nXSize(0)
+    , m_nYSize(0)
 {
 }
 
@@ -1248,7 +910,7 @@ CGEKVideoSystem::~CGEKVideoSystem(void)
 {
 }
 
-HRESULT CGEKVideoSystem::GetDefaultTargets(void)
+HRESULT CGEKVideoSystem::GetDefaultTargets(const GEK3DVIDEO::DATA::FORMAT &nDepthFormat)
 {
     CComPtr<IDXGISurface> spSurface;
     HRESULT hRetVal = m_spSwapChain->GetBuffer(0, IID_PPV_ARGS(&spSurface));
@@ -1274,7 +936,7 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
         }
     }
 
-    if (SUCCEEDED(hRetVal))
+    if (SUCCEEDED(hRetVal) && nDepthFormat != GEK3DVIDEO::DATA::UNKNOWN)
     {
         CComPtr<ID3D11Texture2D> spTexture2D;
         hRetVal = m_spSwapChain->GetBuffer(0, IID_PPV_ARGS(&spTexture2D));
@@ -1285,14 +947,46 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
             hRetVal = m_spDevice->CreateRenderTargetView(spTexture2D, nullptr, &m_spRenderTargetView);
             if (m_spRenderTargetView)
             {
-                m_spDefaultTarget = new CGEKVideoRenderTarget(m_spDeviceContext, nullptr, nullptr, m_spRenderTargetView, kDesc.Width, kDesc.Height, 0);
-                if (m_spDefaultTarget)
+                D3D11_TEXTURE2D_DESC kDepthBufferDesc;
+                kDepthBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+                kDepthBufferDesc.Width = m_nXSize;
+                kDepthBufferDesc.Height = m_nYSize;
+                kDepthBufferDesc.MipLevels = 1;
+                kDepthBufferDesc.ArraySize = 1;
+                kDepthBufferDesc.SampleDesc.Count = 1;
+                kDepthBufferDesc.SampleDesc.Quality = 0;
+                kDepthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+                kDepthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+                kDepthBufferDesc.CPUAccessFlags = 0;
+                kDepthBufferDesc.MiscFlags = 0;
+
+                switch (nDepthFormat)
                 {
-                    CComPtr<IUnknown> spDepthView;
-                    hRetVal = CreateDepthTarget(kDesc.Width, kDesc.Height, GEK3DVIDEO::DATA::D24_S8, &spDepthView);
-                    if (spDepthView)
+                case GEK3DVIDEO::DATA::D16:
+                    kDepthBufferDesc.Format = DXGI_FORMAT_D16_UNORM;
+                    break;
+
+                case GEK3DVIDEO::DATA::D24_S8:
+                    kDepthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+                    break;
+
+                case GEK3DVIDEO::DATA::D32:
+                    kDepthBufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+                    break;
+                };
+
+                if (kDepthBufferDesc.Format != DXGI_FORMAT_UNKNOWN)
+                {
+                    CComPtr<ID3D11Texture2D> spTexture;
+                    hRetVal = m_spDevice->CreateTexture2D(&kDepthBufferDesc, nullptr, &spTexture);
+                    if (spTexture)
                     {
-                        hRetVal = spDepthView->QueryInterface(IID_ID3D11DepthStencilView, (LPVOID FAR *)&m_spDepthStencilView);
+                        D3D11_DEPTH_STENCIL_VIEW_DESC kDepthStencilViewDesc;
+                        kDepthStencilViewDesc.Format = kDepthBufferDesc.Format;
+                        kDepthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+                        kDepthStencilViewDesc.Flags = 0;
+                        kDepthStencilViewDesc.Texture2D.MipSlice = 0;
+                        hRetVal = m_spDevice->CreateDepthStencilView(spTexture, &kDepthStencilViewDesc, &m_spDepthStencilView);
                         if (m_spDepthStencilView)
                         {
                             ID3D11RenderTargetView *pRenderTargetView = m_spRenderTargetView;
@@ -1307,8 +1001,10 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(void)
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::Initialize(HWND hWindow, UINT32 nXSize, UINT32 nYSize, bool bWindowed)
+STDMETHODIMP CGEKVideoSystem::Initialize(HWND hWindow, bool bWindowed, UINT32 nXSize, UINT32 nYSize, const GEK3DVIDEO::DATA::FORMAT &nDepthFormat)
 {
+    m_nXSize = nXSize;
+    m_nYSize = nYSize;
     m_bWindowed = bWindowed;
     DXGI_SWAP_CHAIN_DESC kSwapChainDesc;
     kSwapChainDesc.BufferDesc.Width = nXSize;
@@ -1378,7 +1074,7 @@ STDMETHODIMP CGEKVideoSystem::Initialize(HWND hWindow, UINT32 nXSize, UINT32 nYS
 
         if (SUCCEEDED(hRetVal))
         {
-            hRetVal = GetDefaultTargets();
+            hRetVal = GetDefaultTargets(nDepthFormat);
         }
     }
 
@@ -1398,17 +1094,16 @@ STDMETHODIMP CGEKVideoSystem::Initialize(HWND hWindow, UINT32 nXSize, UINT32 nYS
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::Resize(UINT32 nXSize, UINT32 nYSize, bool bWindowed)
+STDMETHODIMP CGEKVideoSystem::Resize(bool bWindowed, UINT32 nXSize, UINT32 nYSize, const GEK3DVIDEO::DATA::FORMAT &nDepthFormat)
 {
     REQUIRE_RETURN(m_spDevice, E_FAIL);
     REQUIRE_RETURN(m_spDeviceContext, E_FAIL);
     REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
 
-    CGEKObservable::SendEvent(TGEKEvent<IGEK3DVideoObserver>(std::bind(&IGEK3DVideoObserver::OnResizeBegin, std::placeholders::_1)));
-
+    m_nXSize = nXSize;
+    m_nYSize = nYSize;
     m_bWindowed = bWindowed;
     m_spD2DDeviceContext->SetTarget(nullptr);
-    m_spDefaultTarget.Release();
     m_spRenderTargetView.Release();
     m_spDepthStencilView.Release();
 
@@ -1429,14 +1124,9 @@ STDMETHODIMP CGEKVideoSystem::Resize(UINT32 nXSize, UINT32 nYSize, bool bWindowe
             hRetVal = m_spSwapChain->ResizeBuffers(0, nXSize, nYSize, DXGI_FORMAT_UNKNOWN, 0);
             if (SUCCEEDED(hRetVal))
             {
-                hRetVal = GetDefaultTargets();
+                hRetVal = GetDefaultTargets(nDepthFormat);
             }
         }
-    }
-
-    if (SUCCEEDED(hRetVal))
-    {
-        hRetVal = CGEKObservable::CheckEvent(TGEKCheck<IGEK3DVideoObserver>(std::bind(&IGEK3DVideoObserver::OnResizeEnd, std::placeholders::_1, nXSize, nYSize, bWindowed)));
     }
 
     return hRetVal;
@@ -1444,12 +1134,12 @@ STDMETHODIMP CGEKVideoSystem::Resize(UINT32 nXSize, UINT32 nYSize, bool bWindowe
 
 STDMETHODIMP_(UINT32) CGEKVideoSystem::GetXSize(void)
 {
-    return (m_spDefaultTarget ? m_spDefaultTarget->GetXSize() : 0);
+    return m_nXSize;
 }
 
 STDMETHODIMP_(UINT32) CGEKVideoSystem::GetYSize(void)
 {
-    return (m_spDefaultTarget ? m_spDefaultTarget->GetYSize() : 0);
+    return m_nYSize;
 }
 
 STDMETHODIMP_(bool) CGEKVideoSystem::IsWindowed(void)
@@ -1477,44 +1167,43 @@ STDMETHODIMP CGEKVideoSystem::CreateDeferredContext(IGEK3DVideoContext **ppConte
     return hRetVal;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateEvent(IUnknown **ppEvent)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateEvent(void)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppEvent, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     D3D11_QUERY_DESC kDesc;
     kDesc.Query = D3D11_QUERY_EVENT;
     kDesc.MiscFlags = 0;
 
     CComPtr<ID3D11Query> spEvent;
-    HRESULT hRetVal = m_spDevice->CreateQuery(&kDesc, &spEvent);
+    m_spDevice->CreateQuery(&kDesc, &spEvent);
     if (spEvent)
     {
-        hRetVal = spEvent->QueryInterface(IID_PPV_ARGS(ppEvent));
+        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+        m_aResources[nResourceID] = spEvent;
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::SetEvent(IUnknown *pEvent)
+STDMETHODIMP_(void) CGEKVideoSystem::SetEvent(const GEKHANDLE &nResourceID)
 {
     REQUIRE_VOID_RETURN(m_spDevice && m_spDeviceContext);
-    REQUIRE_VOID_RETURN(pEvent);
-
-    CComQIPtr<ID3D11Query> spEvent(pEvent);
+    CComQIPtr<ID3D11Query> spEvent(GetResource(nResourceID));
     if (spEvent)
     {
         m_spDeviceContext->End(spEvent);
     }
 }
 
-STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(IUnknown *pEvent)
+STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(const GEKHANDLE &nResourceID)
 {
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, false);
-    REQUIRE_RETURN(pEvent, false);
 
     bool bIsSet = false;
-    CComQIPtr<ID3D11Query> spEvent(pEvent);
+    CComQIPtr<ID3D11Query> spEvent(GetResource(nResourceID));
     if (spEvent)
     {
         UINT32 nIsSet = 0;
@@ -1527,10 +1216,9 @@ STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(IUnknown *pEvent)
     return bIsSet;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES &kStates, IUnknown **ppStates)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES &kStates)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppStates, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
 
     D3D11_RASTERIZER_DESC kRasterDesc;
     kRasterDesc.FrontCounterClockwise = kStates.m_bFrontCounterClockwise;
@@ -1569,40 +1257,37 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES 
         break;
     };
 
-    CComPtr<ID3D11RasterizerState> spRasterStates;
-    HRESULT hRetVal = m_spDevice->CreateRasterizerState(&kRasterDesc, &spRasterStates);
-    if (spRasterStates)
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+
+    CComPtr<ID3D11RasterizerState> spStates;
+    m_spDevice->CreateRasterizerState(&kRasterDesc, &spStates);
+    if (spStates)
     {
-        hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKVideoRenderStates> spStates(new CGEKVideoRenderStates(spRasterStates));
-        if (spStates)
-        {
-            hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
-        }
+        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+        m_aResources[nResourceID] = spStates;
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &kStates, IUnknown **ppStates)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &kStates)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppStates, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
 
     D3D11_DEPTH_STENCIL_DESC kDepthStencilDesc;
     kDepthStencilDesc.DepthEnable = kStates.m_bDepthEnable;
-    kDepthStencilDesc.DepthFunc = GetComparisonFunction(kStates.m_eDepthComparison);
+    kDepthStencilDesc.DepthFunc = gs_aComparisonFunctions[kStates.m_eDepthComparison];
     kDepthStencilDesc.StencilEnable = kStates.m_bStencilEnable;
     kDepthStencilDesc.StencilReadMask = kStates.m_nStencilReadMask;
     kDepthStencilDesc.StencilWriteMask = kStates.m_nStencilWriteMask;
-    kDepthStencilDesc.FrontFace.StencilFailOp = GetStencilOperation(kStates.m_kStencilFrontStates.m_eStencilFailOperation);
-    kDepthStencilDesc.FrontFace.StencilDepthFailOp = GetStencilOperation(kStates.m_kStencilFrontStates.m_eStencilDepthFailOperation);
-    kDepthStencilDesc.FrontFace.StencilPassOp = GetStencilOperation(kStates.m_kStencilFrontStates.m_eStencilPassOperation);
-    kDepthStencilDesc.FrontFace.StencilFunc = GetComparisonFunction(kStates.m_kStencilFrontStates.m_eStencilComparison);
-    kDepthStencilDesc.BackFace.StencilFailOp = GetStencilOperation(kStates.m_kStencilBackStates.m_eStencilFailOperation);
-    kDepthStencilDesc.BackFace.StencilDepthFailOp = GetStencilOperation(kStates.m_kStencilBackStates.m_eStencilDepthFailOperation);
-    kDepthStencilDesc.BackFace.StencilPassOp = GetStencilOperation(kStates.m_kStencilBackStates.m_eStencilPassOperation);
-    kDepthStencilDesc.BackFace.StencilFunc = GetComparisonFunction(kStates.m_kStencilBackStates.m_eStencilComparison);
+    kDepthStencilDesc.FrontFace.StencilFailOp = gs_aStencilOperations[kStates.m_kStencilFrontStates.m_eStencilFailOperation];
+    kDepthStencilDesc.FrontFace.StencilDepthFailOp = gs_aStencilOperations[kStates.m_kStencilFrontStates.m_eStencilDepthFailOperation];
+    kDepthStencilDesc.FrontFace.StencilPassOp = gs_aStencilOperations[kStates.m_kStencilFrontStates.m_eStencilPassOperation];
+    kDepthStencilDesc.FrontFace.StencilFunc = gs_aComparisonFunctions[kStates.m_kStencilFrontStates.m_eStencilComparison];
+    kDepthStencilDesc.BackFace.StencilFailOp = gs_aStencilOperations[kStates.m_kStencilBackStates.m_eStencilFailOperation];
+    kDepthStencilDesc.BackFace.StencilDepthFailOp = gs_aStencilOperations[kStates.m_kStencilBackStates.m_eStencilDepthFailOperation];
+    kDepthStencilDesc.BackFace.StencilPassOp = gs_aStencilOperations[kStates.m_kStencilBackStates.m_eStencilPassOperation];
+    kDepthStencilDesc.BackFace.StencilFunc = gs_aComparisonFunctions[kStates.m_kStencilBackStates.m_eStencilComparison];
     switch (kStates.m_eDepthWriteMask)
     {
     case GEK3DVIDEO::DEPTHWRITE::ZERO:
@@ -1615,36 +1300,33 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &k
         break;
     };
 
-    CComPtr<ID3D11DepthStencilState> spDepthStencilStates;
-    HRESULT hRetVal = m_spDevice->CreateDepthStencilState(&kDepthStencilDesc, &spDepthStencilStates);
-    if (spDepthStencilStates)
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+
+    CComPtr<ID3D11DepthStencilState> spStates;
+    m_spDevice->CreateDepthStencilState(&kDepthStencilDesc, &spStates);
+    if (spStates)
     {
-        hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKVideoDepthStates> spStates(new CGEKVideoDepthStates(spDepthStencilStates));
-        if (spStates)
-        {
-            hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
-        }
+        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+        m_aResources[nResourceID] = spStates;
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates, IUnknown **ppStates)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppStates, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
 
     D3D11_BLEND_DESC kBlendDesc;
     kBlendDesc.AlphaToCoverageEnable = kStates.m_bAlphaToCoverage;
     kBlendDesc.IndependentBlendEnable = false;
     kBlendDesc.RenderTarget[0].BlendEnable = kStates.m_bEnable;
-    kBlendDesc.RenderTarget[0].SrcBlend = GetBlendSource(kStates.m_eColorSource);
-    kBlendDesc.RenderTarget[0].DestBlend = GetBlendSource(kStates.m_eColorDestination);
-    kBlendDesc.RenderTarget[0].BlendOp = GetBlendOperation(kStates.m_eColorOperation);
-    kBlendDesc.RenderTarget[0].SrcBlendAlpha = GetBlendSource(kStates.m_eAlphaSource);
-    kBlendDesc.RenderTarget[0].DestBlendAlpha = GetBlendSource(kStates.m_eAlphaDestination);
-    kBlendDesc.RenderTarget[0].BlendOpAlpha = GetBlendOperation(kStates.m_eAlphaOperation);
+    kBlendDesc.RenderTarget[0].SrcBlend = gs_aBlendSources[kStates.m_eColorSource];
+    kBlendDesc.RenderTarget[0].DestBlend = gs_aBlendSources[kStates.m_eColorDestination];
+    kBlendDesc.RenderTarget[0].BlendOp = gs_aBlendOperations[kStates.m_eColorOperation];
+    kBlendDesc.RenderTarget[0].SrcBlendAlpha = gs_aBlendSources[kStates.m_eAlphaSource];
+    kBlendDesc.RenderTarget[0].DestBlendAlpha = gs_aBlendSources[kStates.m_eAlphaDestination];
+    kBlendDesc.RenderTarget[0].BlendOpAlpha = gs_aBlendOperations[kStates.m_eAlphaOperation];
     kBlendDesc.RenderTarget[0].RenderTargetWriteMask = 0;
     if (kStates.m_nWriteMask & GEK3DVIDEO::COLOR::R) 
     {
@@ -1666,25 +1348,22 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDST
         kBlendDesc.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
     }
 
-    CComPtr<ID3D11BlendState> spBlendStates;
-    HRESULT hRetVal = m_spDevice->CreateBlendState(&kBlendDesc, &spBlendStates);
-    if (spBlendStates)
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+
+    CComPtr<ID3D11BlendState> spStates;
+    m_spDevice->CreateBlendState(&kBlendDesc, &spStates);
+    if (spStates)
     {
-        hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKVideoBlendStates> spStates(new CGEKVideoBlendStates(spBlendStates));
-        if (spStates)
-        {
-            hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
-        }
+        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+        m_aResources[nResourceID] = spStates;
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates, IUnknown **ppStates)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppStates, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
 
     D3D11_BLEND_DESC kBlendDesc;
     kBlendDesc.AlphaToCoverageEnable = kStates.m_bAlphaToCoverage;
@@ -1692,12 +1371,12 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLE
     for(UINT32 nTarget = 0; nTarget < 8; ++nTarget)
     {
         kBlendDesc.RenderTarget[nTarget].BlendEnable = kStates.m_aTargetStates[nTarget].m_bEnable;
-        kBlendDesc.RenderTarget[nTarget].SrcBlend = GetBlendSource(kStates.m_aTargetStates[nTarget].m_eColorSource);
-        kBlendDesc.RenderTarget[nTarget].DestBlend = GetBlendSource(kStates.m_aTargetStates[nTarget].m_eColorDestination);
-        kBlendDesc.RenderTarget[nTarget].BlendOp = GetBlendOperation(kStates.m_aTargetStates[nTarget].m_eColorOperation);
-        kBlendDesc.RenderTarget[nTarget].SrcBlendAlpha = GetBlendSource(kStates.m_aTargetStates[nTarget].m_eAlphaSource);
-        kBlendDesc.RenderTarget[nTarget].DestBlendAlpha = GetBlendSource(kStates.m_aTargetStates[nTarget].m_eAlphaDestination);
-        kBlendDesc.RenderTarget[nTarget].BlendOpAlpha = GetBlendOperation(kStates.m_aTargetStates[nTarget].m_eAlphaOperation);
+        kBlendDesc.RenderTarget[nTarget].SrcBlend = gs_aBlendSources[kStates.m_aTargetStates[nTarget].m_eColorSource];
+        kBlendDesc.RenderTarget[nTarget].DestBlend = gs_aBlendSources[kStates.m_aTargetStates[nTarget].m_eColorDestination];
+        kBlendDesc.RenderTarget[nTarget].BlendOp = gs_aBlendOperations[kStates.m_aTargetStates[nTarget].m_eColorOperation];
+        kBlendDesc.RenderTarget[nTarget].SrcBlendAlpha = gs_aBlendSources[kStates.m_aTargetStates[nTarget].m_eAlphaSource];
+        kBlendDesc.RenderTarget[nTarget].DestBlendAlpha = gs_aBlendSources[kStates.m_aTargetStates[nTarget].m_eAlphaDestination];
+        kBlendDesc.RenderTarget[nTarget].BlendOpAlpha = gs_aBlendOperations[kStates.m_aTargetStates[nTarget].m_eAlphaOperation];
         kBlendDesc.RenderTarget[nTarget].RenderTargetWriteMask = 0;
         if (kStates.m_aTargetStates[nTarget].m_nWriteMask & GEK3DVIDEO::COLOR::R) 
         {
@@ -1720,33 +1399,30 @@ STDMETHODIMP CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLE
         }
     }
 
-    CComPtr<ID3D11BlendState> spBlendStates;
-    HRESULT hRetVal = m_spDevice->CreateBlendState(&kBlendDesc, &spBlendStates);
-    if (spBlendStates)
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+
+    CComPtr<ID3D11BlendState> spStates;
+    m_spDevice->CreateBlendState(&kBlendDesc, &spStates);
+    if (spStates)
     {
-        hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKVideoBlendStates> spStates(new CGEKVideoBlendStates(spBlendStates));
-        if (spStates)
-        {
-            hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
-        }
+        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+        m_aResources[nResourceID] = spStates;
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::SAMPLERSTATES &kStates, IUnknown **ppStates)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::SAMPLERSTATES &kStates)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppStates, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
 
     D3D11_SAMPLER_DESC kSamplerStates;
-    kSamplerStates.AddressU = GetAddressMode(kStates.m_eAddressU);
-    kSamplerStates.AddressV = GetAddressMode(kStates.m_eAddressV);
-    kSamplerStates.AddressW = GetAddressMode(kStates.m_eAddressW);
+    kSamplerStates.AddressU = gs_aAddressModes[kStates.m_eAddressU];
+    kSamplerStates.AddressV = gs_aAddressModes[kStates.m_eAddressV];
+    kSamplerStates.AddressW = gs_aAddressModes[kStates.m_eAddressW];
     kSamplerStates.MipLODBias = kStates.m_nMipLODBias;
     kSamplerStates.MaxAnisotropy = kStates.m_nMaxAnisotropy;
-    kSamplerStates.ComparisonFunc = GetComparisonFunction(kStates.m_eComparison);
+    kSamplerStates.ComparisonFunc = gs_aComparisonFunctions[kStates.m_eComparison];
     kSamplerStates.BorderColor[0] = kStates.m_nBorderColor.r;
     kSamplerStates.BorderColor[1] = kStates.m_nBorderColor.g;
     kSamplerStates.BorderColor[2] = kStates.m_nBorderColor.b;
@@ -1793,28 +1469,27 @@ STDMETHODIMP CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::SAMPLERSTATE
         break;
     };
 
-    CComPtr<ID3D11SamplerState> spSamplerStates;
-    HRESULT hRetVal = m_spDevice->CreateSamplerState(&kSamplerStates, &spSamplerStates);
-    if (spSamplerStates)
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+
+    CComPtr<ID3D11SamplerState> spStates;
+    m_spDevice->CreateSamplerState(&kSamplerStates, &spStates);
+    if (spStates)
     {
-        hRetVal = E_OUTOFMEMORY;
-        CComPtr<CGEKVideoSamplerStates> spStates(new CGEKVideoSamplerStates(spSamplerStates));
-        if (spStates)
-        {
-            hRetVal = spStates->QueryInterface(IID_PPV_ARGS(ppStates));
-        }
+        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+        m_aResources[nResourceID] = spStates;
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IGEK3DVideoTexture **ppTarget)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(nXSize > 0 && nYSize > 0 && ppTarget, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(nXSize > 0 && nYSize > 0, GEKINVALIDHANDLE);
 
 	D3D11_TEXTURE2D_DESC kTextureDesc;
-	kTextureDesc.Width = nXSize;
+    kTextureDesc.Format = DXGI_FORMAT_UNKNOWN;
+    kTextureDesc.Width = nXSize;
 	kTextureDesc.Height = nYSize;
 	kTextureDesc.MipLevels = 1;
 	kTextureDesc.ArraySize = 1;
@@ -1825,7 +1500,6 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 	kTextureDesc.CPUAccessFlags = 0;
 	kTextureDesc.MiscFlags = 0;
 
-    HRESULT hRetVal = S_OK;
     switch (eFormat)
     {
     case GEK3DVIDEO::DATA::R_UINT8:
@@ -1867,16 +1541,13 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
     case GEK3DVIDEO::DATA::RGBA_HALF:
         kTextureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
         break;
-
-    default:
-        hRetVal = E_INVALIDARG;
-        break;
     };
 
-    if (SUCCEEDED(hRetVal))
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+    if (kTextureDesc.Format != DXGI_FORMAT_UNKNOWN)
     {
         CComPtr<ID3D11Texture2D> spTexture;
-	    hRetVal = m_spDevice->CreateTexture2D(&kTextureDesc, nullptr, &spTexture);
+	    m_spDevice->CreateTexture2D(&kTextureDesc, nullptr, &spTexture);
         if (spTexture)
         {
 	        D3D11_RENDER_TARGET_VIEW_DESC kRenderViewDesc;
@@ -1885,7 +1556,7 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 	        kRenderViewDesc.Texture2D.MipSlice = 0;
 
             CComPtr<ID3D11RenderTargetView> spRenderView;
-	        hRetVal = m_spDevice->CreateRenderTargetView(spTexture, &kRenderViewDesc, &spRenderView);
+	        m_spDevice->CreateRenderTargetView(spTexture, &kRenderViewDesc, &spRenderView);
             if (spRenderView)
             {
 	            D3D11_SHADER_RESOURCE_VIEW_DESC kShaderViewDesc;
@@ -1895,29 +1566,30 @@ STDMETHODIMP CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, G
 	            kShaderViewDesc.Texture2D.MipLevels = 1;
 
                 CComPtr<ID3D11ShaderResourceView> spShaderView;
-	            hRetVal = m_spDevice->CreateShaderResourceView(spTexture, &kShaderViewDesc, &spShaderView);
+	            m_spDevice->CreateShaderResourceView(spTexture, &kShaderViewDesc, &spShaderView);
                 if (spShaderView)
 	            {
-                    hRetVal = E_OUTOFMEMORY;
-                    CComPtr<CGEKVideoRenderTarget> spTexture(new CGEKVideoRenderTarget(m_spDeviceContext, spShaderView, nullptr, spRenderView, nXSize, nYSize, 0));
+                    CComPtr<CGEKVideoRenderTarget> spTexture(new CGEKVideoRenderTarget(spShaderView, nullptr, spRenderView));
                     if (spTexture)
                     {
-                        hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTarget));
+                        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+                        m_aResources[nResourceID] = spTexture;
                     }
 	            }
             }
         }
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat, IUnknown **ppTarget)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(nXSize > 0 && nYSize > 0 && ppTarget, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(nXSize > 0 && nYSize > 0, GEKINVALIDHANDLE);
 
     D3D11_TEXTURE2D_DESC kDepthBufferDesc;
+    kDepthBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
     kDepthBufferDesc.Width = nXSize;
     kDepthBufferDesc.Height = nYSize;
     kDepthBufferDesc.MipLevels = 1;
@@ -1929,7 +1601,6 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GE
     kDepthBufferDesc.CPUAccessFlags = 0;
     kDepthBufferDesc.MiscFlags = 0;
 
-    HRESULT hRetVal = S_OK;
     switch (eFormat)
     {
     case GEK3DVIDEO::DATA::D16:
@@ -1943,16 +1614,13 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GE
     case GEK3DVIDEO::DATA::D32:
         kDepthBufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
         break;
-
-    default:
-        hRetVal = E_INVALIDARG;
-        break;
     };
 
-    if (SUCCEEDED(hRetVal))
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+    if (kDepthBufferDesc.Format != DXGI_FORMAT_UNKNOWN)
     {
         CComPtr<ID3D11Texture2D> spTexture;
-        hRetVal = m_spDevice->CreateTexture2D(&kDepthBufferDesc, nullptr, &spTexture);
+        m_spDevice->CreateTexture2D(&kDepthBufferDesc, nullptr, &spTexture);
         if (spTexture)
         {
             D3D11_DEPTH_STENCIL_VIEW_DESC kDepthStencilViewDesc;
@@ -1962,21 +1630,22 @@ STDMETHODIMP CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GE
             kDepthStencilViewDesc.Texture2D.MipSlice = 0;
 
             CComPtr<ID3D11DepthStencilView> spDepthView;
-            hRetVal = m_spDevice->CreateDepthStencilView(spTexture, &kDepthStencilViewDesc, &spDepthView);
+            m_spDevice->CreateDepthStencilView(spTexture, &kDepthStencilViewDesc, &spDepthView);
             if (spDepthView)
             {
-                hRetVal = spDepthView->QueryInterface(IID_IUnknown, (LPVOID FAR *)ppTarget);
+                nResourceID = InterlockedIncrement(&m_nNextResourceID);
+                m_aResources[nResourceID] = spDepthView;
             }
         }
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32 nFlags, IGEK3DVideoBuffer **ppBuffer, LPCVOID pData)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32 nFlags, LPCVOID pData)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(nStride > 0 && nCount > 0 && ppBuffer, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(nStride > 0 && nCount > 0, GEKINVALIDHANDLE);
 
     D3D11_BUFFER_DESC kBufferDesc;
     kBufferDesc.ByteWidth = (nStride * nCount);
@@ -1984,7 +1653,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
     {
         if (pData == nullptr)
         {
-            return E_INVALIDARG;
+            return GEKINVALIDHANDLE;
         }
 
         kBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
@@ -2045,11 +1714,10 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         kBufferDesc.StructureByteStride = 0;
     }
 
-    HRESULT hRetVal = E_FAIL;
     CComPtr<ID3D11Buffer> spBuffer;
     if (pData == nullptr)
     {
-        hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, nullptr, &spBuffer);
+        m_spDevice->CreateBuffer(&kBufferDesc, nullptr, &spBuffer);
     }
     else
     {
@@ -2057,9 +1725,10 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
         kData.pSysMem = pData;
         kData.SysMemPitch = 0;
         kData.SysMemSlicePitch = 0;
-        hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, &kData, &spBuffer);
+        m_spDevice->CreateBuffer(&kBufferDesc, &kData, &spBuffer);
     }
 
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
     if (spBuffer)
     {
         CComPtr<ID3D11ShaderResourceView> spShaderView;
@@ -2071,11 +1740,11 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
             kViewDesc.Buffer.FirstElement = 0;
             kViewDesc.Buffer.NumElements = nCount;
 
-            hRetVal = m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
+            m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
         }
 
         CComPtr<ID3D11UnorderedAccessView> spUnorderedView;
-        if (SUCCEEDED(hRetVal) && nFlags & GEK3DVIDEO::BUFFER::UNORDERED_ACCESS)
+        if (nFlags & GEK3DVIDEO::BUFFER::UNORDERED_ACCESS)
         {
             D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
             kViewDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -2084,31 +1753,27 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32
             kViewDesc.Buffer.NumElements = nCount;
             kViewDesc.Buffer.Flags = 0;
 
-            hRetVal = m_spDevice->CreateUnorderedAccessView(spBuffer, &kViewDesc, &spUnorderedView);
+            m_spDevice->CreateUnorderedAccessView(spBuffer, &kViewDesc, &spUnorderedView);
         }
 
-        if (SUCCEEDED(hRetVal))
+        CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(spBuffer, spShaderView, spUnorderedView));
+        if (spBuffer)
         {
-            hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, spUnorderedView, nStride, nCount));
-            if (spBuffer)
-            {
-                hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
-            }
+            nResourceID = InterlockedIncrement(&m_nNextResourceID);
+            m_aResources[nResourceID] = spBuffer;
         }
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, IGEK3DVideoBuffer **ppBuffer, LPCVOID pData)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, LPCVOID pData)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(eFormat != GEK3DVIDEO::DATA::UNKNOWN && nCount > 0 && ppBuffer, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(eFormat != GEK3DVIDEO::DATA::UNKNOWN && nCount > 0, GEKINVALIDHANDLE);
 
     UINT32 nStride = 0;
     DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
-    HRESULT hRetVal = S_OK;
     switch (eFormat)
     {
     case GEK3DVIDEO::DATA::R_UINT8:
@@ -2195,13 +1860,10 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
         eNewFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
         nStride = (sizeof(float) * 2);
         break;
-
-    default:
-        hRetVal = E_INVALIDARG;
-        break;
     };
 
-    if (SUCCEEDED(hRetVal))
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+    if (eNewFormat != DXGI_FORMAT_UNKNOWN)
     {
         D3D11_BUFFER_DESC kBufferDesc;
         kBufferDesc.ByteWidth = (nStride * nCount);
@@ -2209,7 +1871,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
         {
             if (pData == nullptr)
             {
-                return E_INVALIDARG;
+                return GEKINVALIDHANDLE;
             }
 
             kBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
@@ -2261,7 +1923,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
         CComPtr<ID3D11Buffer> spBuffer;
         if (pData == nullptr)
         {
-            hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, nullptr, &spBuffer);
+            m_spDevice->CreateBuffer(&kBufferDesc, nullptr, &spBuffer);
         }
         else
         {
@@ -2269,7 +1931,7 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
             kData.pSysMem = pData;
             kData.SysMemPitch = 0;
             kData.SysMemSlicePitch = 0;
-            hRetVal = m_spDevice->CreateBuffer(&kBufferDesc, &kData, &spBuffer);
+            m_spDevice->CreateBuffer(&kBufferDesc, &kData, &spBuffer);
         }
 
         if (spBuffer)
@@ -2283,11 +1945,11 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
                 kViewDesc.Buffer.FirstElement = 0;
                 kViewDesc.Buffer.NumElements = nCount;
 
-                hRetVal = m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
+                m_spDevice->CreateShaderResourceView(spBuffer, &kViewDesc, &spShaderView);
             }
 
             CComPtr<ID3D11UnorderedAccessView> spUnorderedView;
-            if (SUCCEEDED(hRetVal) && nFlags & GEK3DVIDEO::BUFFER::UNORDERED_ACCESS)
+            if (nFlags & GEK3DVIDEO::BUFFER::UNORDERED_ACCESS)
             {
                 D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
                 kViewDesc.Format = eNewFormat;
@@ -2296,28 +1958,70 @@ STDMETHODIMP CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UIN
                 kViewDesc.Buffer.NumElements = nCount;
                 kViewDesc.Buffer.Flags = 0;
 
-                hRetVal = m_spDevice->CreateUnorderedAccessView(spBuffer, &kViewDesc, &spUnorderedView);
+                m_spDevice->CreateUnorderedAccessView(spBuffer, &kViewDesc, &spUnorderedView);
             }
 
-            if (SUCCEEDED(hRetVal))
+            CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(spBuffer, spShaderView, spUnorderedView));
+            if (spBuffer)
             {
-                hRetVal = E_OUTOFMEMORY;
-                CComPtr<CGEKVideoBuffer> spBuffer(new CGEKVideoBuffer(m_spDeviceContext, spBuffer, spShaderView, spUnorderedView, nStride, nCount));
-                if (spBuffer)
-                {
-                    hRetVal = spBuffer->QueryInterface(IID_PPV_ARGS(ppBuffer));
-                }
+                nResourceID = InterlockedIncrement(&m_nNextResourceID);
+                m_aResources[nResourceID] = spBuffer;
             }
+        }
+    }
+
+    return nResourceID;
+}
+
+STDMETHODIMP_(void) CGEKVideoSystem::UpdateBuffer(const GEKHANDLE &nResourceID, LPCVOID pData)
+{
+    REQUIRE_VOID_RETURN(m_spDeviceContext);
+    REQUIRE_VOID_RETURN(pData);
+
+    CComQIPtr<ID3D11Resource> spBuffer(GetResource(nResourceID));
+    if (spBuffer)
+    {
+        m_spDeviceContext->UpdateSubresource(spBuffer, 0, nullptr, pData, 0, 0);
+    }
+}
+
+STDMETHODIMP CGEKVideoSystem::MapBuffer(const GEKHANDLE &nResourceID, LPVOID *ppData)
+{
+    REQUIRE_RETURN(m_spDeviceContext, E_FAIL);
+    REQUIRE_RETURN(ppData, E_INVALIDARG);
+
+    HRESULT hRetVal = E_FAIL;
+    CComQIPtr<ID3D11Resource> spBuffer(GetResource(nResourceID));
+    if (spBuffer)
+    {
+        D3D11_MAPPED_SUBRESOURCE kResource;
+        kResource.pData = nullptr;
+        kResource.RowPitch = 0;
+        kResource.DepthPitch = 0;
+        hRetVal = m_spDeviceContext->Map(spBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &kResource);
+        if (SUCCEEDED(hRetVal))
+        {
+            (*ppData) = kResource.pData;
         }
     }
 
     return hRetVal;
 }
 
-HRESULT CGEKVideoSystem::CompileComputeProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
+STDMETHODIMP_(void) CGEKVideoSystem::UnMapBuffer(const GEKHANDLE &nResourceID)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+    CComQIPtr<ID3D11Resource> spBuffer(GetResource(nResourceID));
+    if (spBuffer)
+    {
+        m_spDeviceContext->Unmap(spBuffer, 0);
+    }
+}
+
+GEKHANDLE CGEKVideoSystem::CompileComputeProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
+{
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     DWORD nFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2334,24 +2038,25 @@ HRESULT CGEKVideoSystem::CompileComputeProgram(LPCWSTR pFileName, LPCSTR pProgra
         }
     }
 
-    D3D10_SHADER_MACRO kMacro = { nullptr, nullptr };
+    static const D3D10_SHADER_MACRO kMacro =
+    {
+        nullptr,
+        nullptr
+    };
+
     aDefines.push_back(kMacro);
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "cs_5_0", nFlags, 0, &spBlob, &spErrors);
+    D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "cs_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11ComputeShader> spProgram;
-        hRetVal = m_spDevice->CreateComputeShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
+        m_spDevice->CreateComputeShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
         if (spProgram)
         {
-            hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoComputeProgram> spProgram(new CGEKVideoComputeProgram(spProgram));
-            if (spProgram)
-            {
-                hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
-            }
+            nResourceID = InterlockedIncrement(&m_nNextResourceID);
+            m_aResources[nResourceID] = spProgram;
         }
     }
     else if (spErrors)
@@ -2359,13 +2064,14 @@ HRESULT CGEKVideoSystem::CompileComputeProgram(LPCWSTR pFileName, LPCSTR pProgra
         OutputDebugStringA(FormatString("Compute Error: %s", (LPCSTR)spErrors->GetBufferPointer()));
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-HRESULT CGEKVideoSystem::CompileVertexProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
+GEKHANDLE CGEKVideoSystem::CompileVertexProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     DWORD nFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2387,16 +2093,16 @@ HRESULT CGEKVideoSystem::CompileVertexProgram(LPCWSTR pFileName, LPCSTR pProgram
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "vs_5_0", nFlags, 0, &spBlob, &spErrors);
+    D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "vs_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11VertexShader> spProgram;
-        hRetVal = m_spDevice->CreateVertexShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
+        m_spDevice->CreateVertexShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
         if (spProgram)
         {
             GEK3DVIDEO::INPUT::SOURCE eLastClass = GEK3DVIDEO::INPUT::UNKNOWN;
             std::vector<D3D11_INPUT_ELEMENT_DESC> aLayoutDesc(aLayout.size());
-            for(UINT32 nIndex = 0; nIndex < aLayout.size() && SUCCEEDED(hRetVal); ++nIndex)
+            for(UINT32 nIndex = 0; nIndex < aLayout.size(); ++nIndex)
             {
                 if (eLastClass != aLayout[nIndex].m_eClass)
                 {
@@ -2424,6 +2130,7 @@ HRESULT CGEKVideoSystem::CompileVertexProgram(LPCWSTR pFileName, LPCSTR pProgram
                     aLayoutDesc[nIndex].InstanceDataStepRate = 0;
                 };
 
+                aLayoutDesc[nIndex].Format = DXGI_FORMAT_UNKNOWN;
                 switch (aLayout[nIndex].m_eType)
                 {
                 case GEK3DVIDEO::DATA::R_FLOAT:
@@ -2469,25 +2176,26 @@ HRESULT CGEKVideoSystem::CompileVertexProgram(LPCWSTR pFileName, LPCSTR pProgram
                 case GEK3DVIDEO::DATA::RGBA_UINT32:
                     aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32A32_UINT;
                     break;
-
-                default:
-                    hRetVal = E_INVALIDARG;
-                    _ASSERTE(FALSE);
-                    break;
                 };
+
+                if (aLayoutDesc[nIndex].Format == DXGI_FORMAT_UNKNOWN)
+                {
+                    aLayoutDesc.clear();
+                    break;
+                }
             }
 
-            if (SUCCEEDED(hRetVal))
+            if (!aLayoutDesc.empty())
             {
                 CComPtr<ID3D11InputLayout> spLayout;
-                hRetVal = m_spDevice->CreateInputLayout(aLayoutDesc.data(), aLayoutDesc.size(), spBlob->GetBufferPointer(), spBlob->GetBufferSize(), &spLayout);
+                m_spDevice->CreateInputLayout(aLayoutDesc.data(), aLayoutDesc.size(), spBlob->GetBufferPointer(), spBlob->GetBufferSize(), &spLayout);
                 if (spLayout)
                 {
-                    hRetVal = E_OUTOFMEMORY;
                     CComPtr<CGEKVideoVertexProgram> spProgram(new CGEKVideoVertexProgram(spProgram, spLayout));
                     if (spProgram)
                     {
-                        hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
+                        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+                        m_aResources[nResourceID] = spProgram;
                     }
                 }
             }
@@ -2498,13 +2206,14 @@ HRESULT CGEKVideoSystem::CompileVertexProgram(LPCWSTR pFileName, LPCSTR pProgram
         OutputDebugStringA(FormatString("Vertex Error: %s", (LPCSTR)spErrors->GetBufferPointer()));
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-HRESULT CGEKVideoSystem::CompileGeometryProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
+GEKHANDLE CGEKVideoSystem::CompileGeometryProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     DWORD nFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2526,19 +2235,15 @@ HRESULT CGEKVideoSystem::CompileGeometryProgram(LPCWSTR pFileName, LPCSTR pProgr
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "gs_5_0", nFlags, 0, &spBlob, &spErrors);
+    D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "gs_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11GeometryShader> spProgram;
-        hRetVal = m_spDevice->CreateGeometryShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
+        m_spDevice->CreateGeometryShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
         if (spProgram)
         {
-            hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoGeometryProgram> spProgram(new CGEKVideoGeometryProgram(spProgram));
-            if (spProgram)
-            {
-                hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
-            }
+            nResourceID = InterlockedIncrement(&m_nNextResourceID);
+            m_aResources[nResourceID] = spProgram;
         }
     }
     else if (spErrors)
@@ -2546,13 +2251,14 @@ HRESULT CGEKVideoSystem::CompileGeometryProgram(LPCWSTR pFileName, LPCSTR pProgr
         OutputDebugStringA(FormatString("Geometry Error: %s", (LPCSTR)spErrors->GetBufferPointer()));
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-HRESULT CGEKVideoSystem::CompilePixelProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
+GEKHANDLE CGEKVideoSystem::CompilePixelProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     DWORD nFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2574,19 +2280,15 @@ HRESULT CGEKVideoSystem::CompilePixelProgram(LPCWSTR pFileName, LPCSTR pProgram,
 
     CComPtr<ID3DBlob> spBlob;
     CComPtr<ID3DBlob> spErrors;
-    HRESULT hRetVal = D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "ps_5_0", nFlags, 0, &spBlob, &spErrors);
+    D3DCompile(pProgram, (strlen(pProgram) + 1), CW2A(pFileName), aDefines.data(), pIncludes, pEntry, "ps_5_0", nFlags, 0, &spBlob, &spErrors);
     if (spBlob)
     {
         CComPtr<ID3D11PixelShader> spProgram;
-        hRetVal = m_spDevice->CreatePixelShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
+        m_spDevice->CreatePixelShader(spBlob->GetBufferPointer(), spBlob->GetBufferSize(), nullptr, &spProgram);
         if (spProgram)
         {
-            hRetVal = E_OUTOFMEMORY;
-            CComPtr<CGEKVideoPixelProgram> spProgram(new CGEKVideoPixelProgram(spProgram));
-            if (spProgram)
-            {
-                hRetVal = spProgram->QueryInterface(IID_PPV_ARGS(ppProgram));
-            }
+            nResourceID = InterlockedIncrement(&m_nNextResourceID);
+            m_aResources[nResourceID] = spProgram;
         }
     }
     else if (spErrors)
@@ -2594,97 +2296,95 @@ HRESULT CGEKVideoSystem::CompilePixelProgram(LPCWSTR pFileName, LPCSTR pProgram,
         OutputDebugStringA(FormatString("Pixel Error: %s", (LPCSTR)spErrors->GetBufferPointer()));
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CompileComputeProgram(LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    return CompileComputeProgram(nullptr, pProgram, pEntry, ppProgram, pDefines, nullptr);
+    return CompileComputeProgram(nullptr, pProgram, pEntry, pDefines, nullptr);
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CompileVertexProgram(LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    return CompileVertexProgram(nullptr, pProgram, pEntry, aLayout, ppProgram, pDefines, nullptr);
+    return CompileVertexProgram(nullptr, pProgram, pEntry, aLayout, pDefines, nullptr);
 }
 
-STDMETHODIMP CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CompileGeometryProgram(LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    return CompileGeometryProgram(nullptr, pProgram, pEntry, ppProgram, pDefines, nullptr);
+    return CompileGeometryProgram(nullptr, pProgram, pEntry, pDefines, nullptr);
 }
 
-STDMETHODIMP CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    return CompilePixelProgram(nullptr, pProgram, pEntry, ppProgram, pDefines, nullptr);
+    return CompilePixelProgram(nullptr, pProgram, pEntry, pDefines, nullptr);
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     CStringA strProgram;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
-    if (SUCCEEDED(hRetVal))
+    if (SUCCEEDED(GEKLoadFromFile(pFileName, strProgram)))
     {
         CComPtr<CGEKInclude> spInclude(new CGEKInclude(pFileName));
-        hRetVal = CompileComputeProgram(pFileName, strProgram, pEntry, ppProgram, pDefines, spInclude);
+        nResourceID = CompileComputeProgram(pFileName, strProgram, pEntry, pDefines, spInclude);
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     CStringA strProgram;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
-    if (SUCCEEDED(hRetVal))
+    if (SUCCEEDED(GEKLoadFromFile(pFileName, strProgram)))
     {
         CComPtr<CGEKInclude> spInclude(new CGEKInclude(pFileName));
-        hRetVal = CompileVertexProgram(pFileName, strProgram, pEntry, aLayout, ppProgram, pDefines, spInclude);
+        nResourceID = CompileVertexProgram(pFileName, strProgram, pEntry, aLayout, pDefines, spInclude);
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     CStringA strProgram;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
-    if (SUCCEEDED(hRetVal))
+    if (SUCCEEDED(GEKLoadFromFile(pFileName, strProgram)))
     {
         CComPtr<CGEKInclude> spInclude(new CGEKInclude(pFileName));
-        hRetVal = CompileGeometryProgram(pFileName, strProgram, pEntry, ppProgram, pDefines, spInclude);
+        nResourceID = CompileGeometryProgram(pFileName, strProgram, pEntry, pDefines, spInclude);
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, IUnknown **ppProgram, std::unordered_map<CStringA, CStringA> *pDefines)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppProgram, E_INVALIDARG);
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     CStringA strProgram;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, strProgram);
-    if (SUCCEEDED(hRetVal))
+    if (SUCCEEDED(GEKLoadFromFile(pFileName, strProgram)))
     {
         CComPtr<CGEKInclude> spInclude(new CGEKInclude(pFileName));
-        hRetVal = CompilePixelProgram(pFileName, strProgram, pEntry, ppProgram, pDefines, spInclude);
+        nResourceID = CompilePixelProgram(pFileName, strProgram, pEntry, pDefines, spInclude);
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags, IGEK3DVideoTexture **ppTexture)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags)
 {
-
-    HRESULT hRetVal = S_OK;
     DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
     switch (eFormat)
     {
@@ -2723,13 +2423,10 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
     case GEK3DVIDEO::DATA::RGBA_HALF:
         eNewFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
         break;
-
-    default:
-        hRetVal = E_INVALIDARG;
-        break;
     };
 
-    if (SUCCEEDED(hRetVal))
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+    if (eNewFormat != DXGI_FORMAT_UNKNOWN)
     {
         UINT32 nBindFlags = 0;
         if (nFlags & GEK3DVIDEO::TEXTURE::RESOURCE)
@@ -2759,7 +2456,7 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
             kTextureDesc.MiscFlags = 0;
 
             CComPtr<ID3D11Texture2D> spTexture;
-            hRetVal = m_spDevice->CreateTexture2D(&kTextureDesc, nullptr, &spTexture);
+            m_spDevice->CreateTexture2D(&kTextureDesc, nullptr, &spTexture);
             if (spTexture)
             {
                 spResource = spTexture;
@@ -2779,7 +2476,7 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
             kTextureDesc.MiscFlags = 0;
 
             CComPtr<ID3D11Texture3D> spTexture;
-            hRetVal = m_spDevice->CreateTexture3D(&kTextureDesc, nullptr, &spTexture);
+            m_spDevice->CreateTexture3D(&kTextureDesc, nullptr, &spTexture);
             if (spTexture)
             {
                 spResource = spTexture;
@@ -2791,11 +2488,11 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
             CComPtr<ID3D11ShaderResourceView> spResourceView;
             if (nFlags & GEK3DVIDEO::TEXTURE::RESOURCE)
             {
-                hRetVal = m_spDevice->CreateShaderResourceView(spResource, nullptr, &spResourceView);
+                m_spDevice->CreateShaderResourceView(spResource, nullptr, &spResourceView);
             }
 
             CComPtr<ID3D11UnorderedAccessView> spUnderedView;
-            if (SUCCEEDED(hRetVal) && nFlags & GEK3DVIDEO::TEXTURE::UNORDERED_ACCESS)
+            if (nFlags & GEK3DVIDEO::TEXTURE::UNORDERED_ACCESS)
             {
                 D3D11_UNORDERED_ACCESS_VIEW_DESC kViewDesc;
                 kViewDesc.Format = eNewFormat;
@@ -2812,33 +2509,123 @@ STDMETHODIMP CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32
                     kViewDesc.Texture3D.WSize = nZSize;
                 }
 
-                hRetVal = m_spDevice->CreateUnorderedAccessView(spResource, &kViewDesc, &spUnderedView);
+                m_spDevice->CreateUnorderedAccessView(spResource, &kViewDesc, &spUnderedView);
             }
 
-            if (SUCCEEDED(hRetVal))
+            CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(spResourceView, spUnderedView));
+            if (spTexture)
             {
-                hRetVal = E_OUTOFMEMORY;
-                CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, spUnderedView, nXSize, nYSize, nZSize));
+                nResourceID = InterlockedIncrement(&m_nNextResourceID);
+                m_aResources[nResourceID] = spTexture;
+            }
+        }
+    }
+
+    return nResourceID;
+}
+
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, UINT32 nFlags)
+{
+    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(pFileName, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+
+    std::vector<UINT8> aBuffer;
+    if (SUCCEEDED(GEKLoadFromFile(pFileName, aBuffer)))
+    {
+        DirectX::ScratchImage kImage;
+        DirectX::TexMetadata kMetadata;
+        if (FAILED(DirectX::LoadFromDDSMemory(aBuffer.data(), aBuffer.size(), 0, &kMetadata, kImage)))
+        {
+            if (FAILED(DirectX::LoadFromTGAMemory(aBuffer.data(), aBuffer.size(), &kMetadata, kImage)))
+            {
+                DWORD aFormats[] =
+                {
+                    DirectX::WIC_CODEC_PNG,              // Portable Network Graphics (.png)
+                    DirectX::WIC_CODEC_BMP,              // Windows Bitmap (.bmp)
+                    DirectX::WIC_CODEC_JPEG,             // Joint Photographic Experts Group (.jpg, .jpeg)
+                };
+
+                for (UINT32 nFormat = 0; nFormat < _ARRAYSIZE(aFormats); nFormat++)
+                {
+                    if (SUCCEEDED(DirectX::LoadFromWICMemory(aBuffer.data(), aBuffer.size(), aFormats[nFormat], &kMetadata, kImage)))
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        CComPtr<ID3D11ShaderResourceView> spResourceView;
+        DirectX::CreateShaderResourceView(m_spDevice, kImage.GetImages(), kImage.GetImageCount(), kMetadata, &spResourceView);
+        if (spResourceView)
+        {
+            CComPtr<ID3D11Resource> spResource;
+            spResourceView->GetResource(&spResource);
+            if (spResource)
+            {
+                D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
+                spResourceView->GetDesc(&kViewDesc);
+
+                UINT32 nXSize = 1;
+                UINT32 nYSize = 1;
+                UINT32 nZSize = 1;
+                if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE1D)
+                {
+                    CComQIPtr<ID3D11Texture1D> spTexture1D(spResource);
+                    if (spTexture1D)
+                    {
+                        D3D11_TEXTURE1D_DESC kDesc;
+                        spTexture1D->GetDesc(&kDesc);
+                        nXSize = kDesc.Width;
+                    }
+                }
+                else if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2D)
+                {
+                    CComQIPtr<ID3D11Texture2D> spTexture2D(spResource);
+                    if (spTexture2D)
+                    {
+                        D3D11_TEXTURE2D_DESC kDesc;
+                        spTexture2D->GetDesc(&kDesc);
+                        nXSize = kDesc.Width;
+                        nYSize = kDesc.Height;
+                    }
+                }
+                else if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE3D)
+                {
+                    CComQIPtr<ID3D11Texture3D> spTexture3D(spResource);
+                    if (spTexture3D)
+                    {
+                        D3D11_TEXTURE3D_DESC kDesc;
+                        spTexture3D->GetDesc(&kDesc);
+                        nXSize = kDesc.Width;
+                        nYSize = kDesc.Height;
+                        nZSize = kDesc.Width;
+                    }
+                }
+
+                CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(spResourceView, nullptr));
                 if (spTexture)
                 {
-                    hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
+                    nResourceID = InterlockedIncrement(&m_nNextResourceID);
+                    m_aResources[nResourceID] = spTexture;
                 }
             }
         }
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEK3DVideoTexture *pTexture, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect)
+STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(const GEKHANDLE &nResourceID, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect)
 {
     REQUIRE_VOID_RETURN(m_spDevice && m_spDeviceContext);
-    REQUIRE_VOID_RETURN(pTexture);
 
-    CComQIPtr<ID3D11ShaderResourceView> spD3DView(pTexture);
+    CComQIPtr<ID3D11ShaderResourceView> spD3DView(GetResource(nResourceID));
     if (spD3DView)
     {
-        CComQIPtr<ID3D11Resource> spResource(pTexture);
+        CComQIPtr<ID3D11Resource> spResource;
         spD3DView->GetResource(&spResource);
         if (spResource)
         {
@@ -2864,107 +2651,6 @@ STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(IGEK3DVideoTexture *pTexture,
     }
 }
 
-STDMETHODIMP CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, UINT32 nFlags, IGEK3DVideoTexture **ppTexture)
-{
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppTexture, E_INVALIDARG);
-
-    std::vector<UINT8> aBuffer;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, aBuffer);
-    if (SUCCEEDED(hRetVal))
-    {
-        DirectX::ScratchImage kImage;
-        DirectX::TexMetadata kMetadata;
-        hRetVal = DirectX::LoadFromDDSMemory(aBuffer.data(), aBuffer.size(), 0, &kMetadata, kImage);
-        if (FAILED(hRetVal))
-        {
-            hRetVal = DirectX::LoadFromTGAMemory(aBuffer.data(), aBuffer.size(), &kMetadata, kImage);
-        }
-
-        if (FAILED(hRetVal))
-        {
-            DWORD aFormats[] =
-            {
-                DirectX::WIC_CODEC_PNG,              // Portable Network Graphics (.png)
-                DirectX::WIC_CODEC_BMP,              // Windows Bitmap (.bmp)
-                DirectX::WIC_CODEC_JPEG,             // Joint Photographic Experts Group (.jpg, .jpeg)
-            };
-
-            for (UINT32 nFormat = 0; nFormat < _ARRAYSIZE(aFormats) && FAILED(hRetVal); nFormat++)
-            {
-                hRetVal = DirectX::LoadFromWICMemory(aBuffer.data(), aBuffer.size(), aFormats[nFormat], &kMetadata, kImage);
-            }
-        }
-
-        if (SUCCEEDED(hRetVal))
-        {
-            if (nFlags & GEK3DVIDEO::TEXTURE::FORCE_1D)
-            {
-                kMetadata.dimension = DirectX::TEX_DIMENSION_TEXTURE1D;
-            }
-
-            CComPtr<ID3D11ShaderResourceView> spResourceView;
-            hRetVal = DirectX::CreateShaderResourceView(m_spDevice, kImage.GetImages(), kImage.GetImageCount(), kMetadata, &spResourceView);
-            if (spResourceView)
-            {
-                CComPtr<ID3D11Resource> spResource;
-                spResourceView->GetResource(&spResource);
-                if (spResource)
-                {
-                    D3D11_SHADER_RESOURCE_VIEW_DESC kViewDesc;
-                    spResourceView->GetDesc(&kViewDesc);
-
-                    UINT32 nXSize = 1;
-                    UINT32 nYSize = 1;
-                    UINT32 nZSize = 1;
-                    if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE1D)
-                    {
-                        CComQIPtr<ID3D11Texture1D> spTexture1D(spResource);
-                        if (spTexture1D)
-                        {
-                            D3D11_TEXTURE1D_DESC kDesc;
-                            spTexture1D->GetDesc(&kDesc);
-                            nXSize = kDesc.Width;
-                        }
-                    }
-                    else if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2D)
-                    {
-                        CComQIPtr<ID3D11Texture2D> spTexture2D(spResource);
-                        if (spTexture2D)
-                        {
-                            D3D11_TEXTURE2D_DESC kDesc;
-                            spTexture2D->GetDesc(&kDesc);
-                            nXSize = kDesc.Width;
-                            nYSize = kDesc.Height;
-                        }
-                    }
-                    else if (kViewDesc.ViewDimension == D3D11_SRV_DIMENSION_TEXTURE3D)
-                    {
-                        CComQIPtr<ID3D11Texture3D> spTexture3D(spResource);
-                        if (spTexture3D)
-                        {
-                            D3D11_TEXTURE3D_DESC kDesc;
-                            spTexture3D->GetDesc(&kDesc);
-                            nXSize = kDesc.Width;
-                            nYSize = kDesc.Height;
-                            nZSize = kDesc.Width;
-                        }
-                    }
-
-                    hRetVal = E_OUTOFMEMORY;
-                    CComPtr<CGEKVideoTexture> spTexture(new CGEKVideoTexture(m_spDeviceContext, spResourceView, nullptr, nXSize, nYSize, nZSize));
-                    if (spTexture)
-                    {
-                        hRetVal = spTexture->QueryInterface(IID_PPV_ARGS(ppTexture));
-                    }
-                }
-            }
-        }
-    }
-
-    return hRetVal;
-}
-
 STDMETHODIMP_(void) CGEKVideoSystem::ClearDefaultRenderTarget(const float4 &kColor)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
@@ -2977,11 +2663,11 @@ STDMETHODIMP_(void) CGEKVideoSystem::ClearDefaultDepthStencilTarget(UINT32 nFlag
     REQUIRE_VOID_RETURN(m_spDeviceContext && m_spDepthStencilView);
     m_spDeviceContext->ClearDepthStencilView(m_spDepthStencilView, 
         ((nFlags & GEK3DVIDEO::CLEAR::DEPTH ? D3D11_CLEAR_DEPTH : 0) | 
-        (nFlags & GEK3DVIDEO::CLEAR::STENCIL ? D3D11_CLEAR_STENCIL : 0)), 
-        fDepth, nStencil);
+         (nFlags & GEK3DVIDEO::CLEAR::STENCIL ? D3D11_CLEAR_STENCIL : 0)), 
+          fDepth, nStencil);
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::SetDefaultTargets(IGEK3DVideoContext *pContext, IUnknown *pDepth)
+STDMETHODIMP_(void) CGEKVideoSystem::SetDefaultTargets(IGEK3DVideoContext *pContext, const GEKHANDLE &nDepthID)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext || pContext);
     REQUIRE_VOID_RETURN(m_spRenderTargetView);
@@ -2990,10 +2676,11 @@ STDMETHODIMP_(void) CGEKVideoSystem::SetDefaultTargets(IGEK3DVideoContext *pCont
     D3D11_VIEWPORT kViewport;
     kViewport.TopLeftX = 0.0f;
     kViewport.TopLeftY = 0.0f;
-    kViewport.Width = float(m_spDefaultTarget->GetXSize());
-    kViewport.Height = float(m_spDefaultTarget->GetYSize());
+    kViewport.Width = float(m_nXSize);
+    kViewport.Height = float(m_nYSize);
     kViewport.MinDepth = 0.0f;
     kViewport.MaxDepth = 1.0f;
+    IUnknown *pDepth = GetResource(nDepthID);
     ID3D11RenderTargetView *pD3DView = m_spRenderTargetView;
     CComQIPtr<ID3D11DepthStencilView> spDepth(pDepth ? pDepth : m_spDepthStencilView);
     if (pContext != nullptr)
@@ -3010,18 +2697,6 @@ STDMETHODIMP_(void) CGEKVideoSystem::SetDefaultTargets(IGEK3DVideoContext *pCont
         m_spDeviceContext->OMSetRenderTargets(1, &pD3DView, spDepth);
         m_spDeviceContext->RSSetViewports(1, &kViewport);
     }
-}
-
-STDMETHODIMP CGEKVideoSystem::GetDefaultRenderTarget(IGEK3DVideoTexture **ppTarget)
-{
-    REQUIRE_RETURN(m_spRenderTargetView, E_FAIL);
-    return m_spDefaultTarget->QueryInterface(IID_PPV_ARGS(ppTarget));
-}
-
-STDMETHODIMP CGEKVideoSystem::GetDefaultDepthStencilTarget(IUnknown **ppBuffer)
-{
-    REQUIRE_RETURN(m_spDepthStencilView, E_FAIL);
-    return m_spDepthStencilView->QueryInterface(IID_PPV_ARGS(ppBuffer));
 }
 
 STDMETHODIMP_(void) CGEKVideoSystem::ExecuteCommandList(IUnknown *pUnknown)
@@ -3042,45 +2717,51 @@ STDMETHODIMP_(void) CGEKVideoSystem::Present(bool bWaitForVSync)
     m_spSwapChain->Present(bWaitForVSync ? 1 : 0, 0);
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBrush(const float4 &nColor, IUnknown **ppBrush)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBrush(const float4 &nColor)
 {
-    REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppBrush, E_INVALIDARG);
+    REQUIRE_RETURN(m_spD2DDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     CComPtr<ID2D1SolidColorBrush> spBrush;
-    HRESULT hRetVal = m_spD2DDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&nColor, &spBrush);
+    m_spD2DDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&nColor, &spBrush);
     if (spBrush)
     {
-        hRetVal = spBrush->QueryInterface(IID_PPV_ARGS(ppBrush));
+        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+        m_aResources[nResourceID] = spBrush;
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateBrush(const std::vector<GEK2DVIDEO::GRADIENT::STOP> &aStops, const trect<float> &kRect, IUnknown **ppBrush)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBrush(const std::vector<GEK2DVIDEO::GRADIENT::STOP> &aStops, const trect<float> &kRect)
 {
-    REQUIRE_RETURN(m_spD2DDeviceContext, E_FAIL);
-    REQUIRE_RETURN(ppBrush, E_INVALIDARG);
+    REQUIRE_RETURN(m_spD2DDeviceContext, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     CComPtr<ID2D1GradientStopCollection> spStops;
-    HRESULT hRetVal = m_spD2DDeviceContext->CreateGradientStopCollection((D2D1_GRADIENT_STOP *)aStops.data(), aStops.size(), &spStops);
+    m_spD2DDeviceContext->CreateGradientStopCollection((D2D1_GRADIENT_STOP *)aStops.data(), aStops.size(), &spStops);
     if (spStops)
     {
         CComPtr<ID2D1LinearGradientBrush> spBrush;
-        hRetVal = m_spD2DDeviceContext->CreateLinearGradientBrush(*(D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES *)&kRect, spStops, &spBrush);
+        m_spD2DDeviceContext->CreateLinearGradientBrush(*(D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES *)&kRect, spStops, &spBrush);
         if (spBrush)
         {
-            hRetVal = spBrush->QueryInterface(IID_PPV_ARGS(ppBrush));
+            nResourceID = InterlockedIncrement(&m_nNextResourceID);
+            m_aResources[nResourceID] = spBrush;
         }
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
-STDMETHODIMP CGEKVideoSystem::CreateFont(LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize, IUnknown **ppFont)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateFont(LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize)
 {
-    REQUIRE_RETURN(m_spDWriteFactory, E_FAIL);
-    REQUIRE_RETURN(pFace && ppFont, E_INVALIDARG);
+    REQUIRE_RETURN(m_spD2DDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(pFace, GEKINVALIDHANDLE);
+
+    GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     DWRITE_FONT_WEIGHT eD2DWeight = DWRITE_FONT_WEIGHT(nWeight);
     DWRITE_FONT_STYLE eD2DStyle = DWRITE_FONT_STYLE_NORMAL;
@@ -3096,13 +2777,14 @@ STDMETHODIMP CGEKVideoSystem::CreateFont(LPCWSTR pFace, UINT32 nWeight, GEK2DVID
     };
 
     CComPtr<IDWriteTextFormat> spFormat;
-    HRESULT hRetVal = m_spDWriteFactory->CreateTextFormat(pFace, nullptr, eD2DWeight, eD2DStyle, DWRITE_FONT_STRETCH_NORMAL, nSize, L"", &spFormat);
+    m_spDWriteFactory->CreateTextFormat(pFace, nullptr, eD2DWeight, eD2DStyle, DWRITE_FONT_STRETCH_NORMAL, nSize, L"", &spFormat);
     if (spFormat)
     {
-        hRetVal = spFormat->QueryInterface(IID_PPV_ARGS(ppFont));
+        nResourceID = InterlockedIncrement(&m_nNextResourceID);
+        m_aResources[nResourceID] = spFormat;
     }
 
-    return hRetVal;
+    return nResourceID;
 }
 
 STDMETHODIMP CGEKVideoSystem::CreateGeometry(IGEK2DVideoGeometry **ppGeometry)
@@ -3132,10 +2814,10 @@ STDMETHODIMP_(void) CGEKVideoSystem::SetTransform(const float3x2 &nTransform)
     m_spD2DDeviceContext->SetTransform(*(D2D1_MATRIX_3X2_F *)&nTransform);
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::DrawText(const trect<float> &kLayout, IUnknown *pFont, IUnknown *pBrush, LPCWSTR pMessage, ...)
+STDMETHODIMP_(void) CGEKVideoSystem::DrawText(const trect<float> &kLayout, const GEKHANDLE &nFontID, const GEKHANDLE &nBrushID, LPCWSTR pMessage, ...)
 {
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
-    REQUIRE_VOID_RETURN(pFont && pBrush && pMessage);
+    REQUIRE_VOID_RETURN(pMessage);
 
     CStringW strMessage;
 
@@ -3146,8 +2828,8 @@ STDMETHODIMP_(void) CGEKVideoSystem::DrawText(const trect<float> &kLayout, IUnkn
 
     if (!strMessage.IsEmpty())
     {
-        CComQIPtr<IDWriteTextFormat> spFormat(pFont);
-        CComQIPtr<ID2D1SolidColorBrush> spBrush(pBrush);
+        CComQIPtr<IDWriteTextFormat> spFormat(GetResource(nFontID));
+        CComQIPtr<ID2D1SolidColorBrush> spBrush(GetResource(nBrushID));
         if (spFormat && spBrush)
         {
             m_spD2DDeviceContext->DrawText(strMessage, strMessage.GetLength(), spFormat, *(D2D1_RECT_F *)&kLayout, spBrush);
@@ -3155,12 +2837,11 @@ STDMETHODIMP_(void) CGEKVideoSystem::DrawText(const trect<float> &kLayout, IUnkn
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, IUnknown *pBrush, bool bFilled)
+STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, const GEKHANDLE &nBrushID, bool bFilled)
 {
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
-    REQUIRE_VOID_RETURN(pBrush);
 
-    CComQIPtr<ID2D1Brush> spBrush(pBrush);
+    CComQIPtr<ID2D1Brush> spBrush(GetResource(nBrushID));
     if (spBrush)
     {
         if (bFilled)
@@ -3174,12 +2855,11 @@ STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, IU
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, const float2 &nRadius, IUnknown *pBrush, bool bFilled)
+STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, const float2 &nRadius, const GEKHANDLE &nBrushID, bool bFilled)
 {
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
-    REQUIRE_VOID_RETURN(pBrush);
 
-    CComQIPtr<ID2D1Brush> spBrush(pBrush);
+    CComQIPtr<ID2D1Brush> spBrush(GetResource(nBrushID));
     if (spBrush)
     {
         if (bFilled)
@@ -3193,12 +2873,12 @@ STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, co
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::DrawGeometry(IGEK2DVideoGeometry *pGeometry, IUnknown *pBrush, bool bFilled)
+STDMETHODIMP_(void) CGEKVideoSystem::DrawGeometry(IGEK2DVideoGeometry *pGeometry, const GEKHANDLE &nBrushID, bool bFilled)
 {
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
-    REQUIRE_VOID_RETURN(pGeometry && pBrush);
+    REQUIRE_VOID_RETURN(pGeometry);
 
-    CComQIPtr<ID2D1Brush> spBrush(pBrush);
+    CComQIPtr<ID2D1Brush> spBrush(GetResource(nBrushID));
     CComQIPtr<ID2D1PathGeometry> spGeometry(pGeometry);
     if (spBrush && spGeometry)
     {
