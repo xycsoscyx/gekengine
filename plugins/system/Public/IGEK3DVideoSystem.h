@@ -399,7 +399,7 @@ namespace GEK3DVIDEO
         float                   m_nMaxLOD;
 
         SAMPLERSTATES(void)
-            : m_eFilter(FILTER::MIN_MAG_MIP_LINEAR)
+            : m_eFilter(FILTER::MIN_MAG_MIP_POINT)
             , m_eAddressU(ADDRESS::CLAMP)
             , m_eAddressV(ADDRESS::CLAMP)
             , m_eAddressW(ADDRESS::CLAMP)

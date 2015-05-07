@@ -67,8 +67,8 @@ static const UINT32 gs_aFormatStrides[] =
 
 static const D3D11_DEPTH_WRITE_MASK gs_aDepthWriteMasks[] =
 {
-    D3D11_DEPTH_WRITE_MASK_ALL,
     D3D11_DEPTH_WRITE_MASK_ZERO,
+    D3D11_DEPTH_WRITE_MASK_ALL,
 };
 
 static const D3D11_TEXTURE_ADDRESS_MODE gs_aAddressModes[] = 
@@ -136,8 +136,8 @@ static const D3D11_BLEND_OP gs_aBlendOperations[] =
 
 static const D3D11_FILL_MODE gs_aFillModes[] =
 {
-    D3D11_FILL_SOLID,
     D3D11_FILL_WIREFRAME,
+    D3D11_FILL_SOLID,
 };
 
 static const D3D11_CULL_MODE gs_aCullModes[] =
@@ -768,9 +768,8 @@ STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<trect<UIN
 
 STDMETHODIMP_(void) CGEKVideoContext::ClearRenderTarget(const GEKHANDLE &nTargetID, const float4 &kColor)
 {
-    REQUIRE_VOID_RETURN(m_spDeviceContext);
-
-    CComQIPtr<ID3D11RenderTargetView> spRenderTargetView;
+    REQUIRE_VOID_RETURN(m_spDeviceContext && m_pResourceHandler);
+    CComQIPtr<ID3D11RenderTargetView> spRenderTargetView(m_pResourceHandler->GetResource(nTargetID));
     if (spRenderTargetView)
     {
         m_spDeviceContext->ClearRenderTargetView(spRenderTargetView, kColor.rgba);
@@ -779,9 +778,8 @@ STDMETHODIMP_(void) CGEKVideoContext::ClearRenderTarget(const GEKHANDLE &nTarget
 
 STDMETHODIMP_(void) CGEKVideoContext::ClearDepthStencilTarget(const GEKHANDLE &nTargetID, UINT32 nFlags, float fDepth, UINT32 nStencil)
 {
-    REQUIRE_VOID_RETURN(m_spDeviceContext);
-
-    CComQIPtr<ID3D11DepthStencilView> spDepthStencilView;
+    REQUIRE_VOID_RETURN(m_spDeviceContext && m_pResourceHandler);
+    CComQIPtr<ID3D11DepthStencilView> spDepthStencilView(m_pResourceHandler->GetResource(nTargetID));
     if (spDepthStencilView)
     {
         m_spDeviceContext->ClearDepthStencilView(spDepthStencilView, 
@@ -793,12 +791,11 @@ STDMETHODIMP_(void) CGEKVideoContext::ClearDepthStencilTarget(const GEKHANDLE &n
 
 STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<GEKHANDLE> &aTargets, const GEKHANDLE &nDepthID)
 {
-    REQUIRE_VOID_RETURN(m_spDeviceContext);
-
+    REQUIRE_VOID_RETURN(m_spDeviceContext && m_pResourceHandler);
     std::vector<ID3D11RenderTargetView *> aRenderTargetViews;
-    for (auto &pTexture : aTargets)
+    for (auto &nTargetID : aTargets)
     {
-        CComQIPtr<ID3D11RenderTargetView> spRenderTargetView;
+        CComQIPtr<ID3D11RenderTargetView> spRenderTargetView(m_pResourceHandler->GetResource(nTargetID));
         aRenderTargetViews.push_back(spRenderTargetView);
     }
 
@@ -815,9 +812,8 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderTargets(const std::vector<GEKHAND
 
 STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(const GEKHANDLE &nResourceID)
 {
-    REQUIRE_VOID_RETURN(m_spDeviceContext);
-
-    CComQIPtr<ID3D11RasterizerState> spStates;
+    REQUIRE_VOID_RETURN(m_spDeviceContext && m_pResourceHandler);
+    CComQIPtr<ID3D11RasterizerState> spStates(m_pResourceHandler->GetResource(nResourceID));
     if (spStates)
     {
         m_spDeviceContext->RSSetState(spStates);
@@ -826,9 +822,8 @@ STDMETHODIMP_(void) CGEKVideoContext::SetRenderStates(const GEKHANDLE &nResource
 
 STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(const GEKHANDLE &nResourceID, UINT32 nStencilReference)
 {
-    REQUIRE_VOID_RETURN(m_spDeviceContext);
-
-    CComQIPtr<ID3D11DepthStencilState> spStates;
+    REQUIRE_VOID_RETURN(m_spDeviceContext && m_pResourceHandler);
+    CComQIPtr<ID3D11DepthStencilState> spStates(m_pResourceHandler->GetResource(nResourceID));
     if (spStates)
     {
         m_spDeviceContext->OMSetDepthStencilState(spStates, nStencilReference);
@@ -837,9 +832,8 @@ STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(const GEKHANDLE &nResourceI
 
 STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const GEKHANDLE &nResourceID, const float4 &nBlendFactor, UINT32 nMask)
 {
-    REQUIRE_VOID_RETURN(m_spDeviceContext);
-
-    CComQIPtr<ID3D11BlendState> spStates;
+    REQUIRE_VOID_RETURN(m_spDeviceContext && m_pResourceHandler);
+    CComQIPtr<ID3D11BlendState> spStates(m_pResourceHandler->GetResource(nResourceID));
     if (spStates)
     {
         m_spDeviceContext->OMSetBlendState(spStates, nBlendFactor.rgba, nMask);
@@ -950,6 +944,7 @@ CGEKVideoSystem::CGEKVideoSystem(void)
 
 CGEKVideoSystem::~CGEKVideoSystem(void)
 {
+    m_aResources.clear();
 }
 
 HRESULT CGEKVideoSystem::GetDefaultTargets(const GEK3DVIDEO::DATA::FORMAT &eDepthFormat)
@@ -1239,7 +1234,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::FreeResource(const GEKHANDLE &nResourceID)
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateEvent(void)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
@@ -1260,7 +1255,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateEvent(void)
 
 STDMETHODIMP_(void) CGEKVideoSystem::SetEvent(const GEKHANDLE &nResourceID)
 {
-    REQUIRE_VOID_RETURN(m_spDevice && m_spDeviceContext);
+    REQUIRE_VOID_RETURN(m_spDeviceContext);
     CComQIPtr<ID3D11Query> spEvent(GetResource(nResourceID));
     if (spEvent)
     {
@@ -1270,7 +1265,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::SetEvent(const GEKHANDLE &nResourceID)
 
 STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(const GEKHANDLE &nResourceID)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, false);
+    REQUIRE_RETURN(m_spDeviceContext, false);
 
     bool bIsSet = false;
     CComQIPtr<ID3D11Query> spEvent(GetResource(nResourceID));
@@ -1288,7 +1283,7 @@ STDMETHODIMP_(bool) CGEKVideoSystem::IsEventSet(const GEKHANDLE &nResourceID)
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateRenderStates(const GEK3DVIDEO::RENDERSTATES &kStates)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
 
     D3D11_RASTERIZER_DESC kRasterDesc;
     kRasterDesc.FrontCounterClockwise = kStates.m_bFrontCounterClockwise;
@@ -1317,7 +1312,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateRenderStates(const GEK3DVIDEO::R
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DEPTHSTATES &kStates)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
 
     D3D11_DEPTH_STENCIL_DESC kDepthStencilDesc;
     kDepthStencilDesc.DepthEnable = kStates.m_bDepthEnable;
@@ -1350,7 +1345,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DE
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
 
     D3D11_BLEND_DESC kBlendDesc;
     kBlendDesc.AlphaToCoverageEnable = kStates.m_bAlphaToCoverage;
@@ -1398,7 +1393,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::UN
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
 
     D3D11_BLEND_DESC kBlendDesc;
     kBlendDesc.AlphaToCoverageEnable = kStates.m_bAlphaToCoverage;
@@ -1449,7 +1444,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBlendStates(const GEK3DVIDEO::IN
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::SAMPLERSTATES &kStates)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
 
     D3D11_SAMPLER_DESC kSamplerStates;
     kSamplerStates.AddressU = gs_aAddressModes[kStates.m_eAddressU];
@@ -1481,7 +1476,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
     REQUIRE_RETURN(nXSize > 0 && nYSize > 0, GEKINVALIDHANDLE);
 
 	D3D11_TEXTURE2D_DESC kTextureDesc;
@@ -1576,7 +1571,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
     REQUIRE_RETURN(nXSize > 0 && nYSize > 0, GEKINVALIDHANDLE);
 
     D3D11_TEXTURE2D_DESC kDepthBufferDesc;
@@ -1621,7 +1616,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT3
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nCount, UINT32 nFlags, LPCVOID pData)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
     REQUIRE_RETURN(nStride > 0 && nCount > 0, GEKINVALIDHANDLE);
 
     D3D11_BUFFER_DESC kBufferDesc;
@@ -1746,7 +1741,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBuffer(UINT32 nStride, UINT32 nC
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, LPCVOID pData)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
     REQUIRE_RETURN(eFormat != GEK3DVIDEO::DATA::UNKNOWN && nCount > 0, GEKINVALIDHANDLE);
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
@@ -1867,7 +1862,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::UpdateBuffer(const GEKHANDLE &nResourceID, 
     REQUIRE_VOID_RETURN(m_spDeviceContext);
     REQUIRE_VOID_RETURN(pData);
 
-    CComQIPtr<ID3D11Resource> spBuffer(GetResource(nResourceID));
+    CComQIPtr<ID3D11Buffer> spBuffer(GetResource(nResourceID));
     if (spBuffer)
     {
         m_spDeviceContext->UpdateSubresource(spBuffer, 0, nullptr, pData, 0, 0);
@@ -1880,7 +1875,7 @@ STDMETHODIMP CGEKVideoSystem::MapBuffer(const GEKHANDLE &nResourceID, LPVOID *pp
     REQUIRE_RETURN(ppData, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
-    CComQIPtr<ID3D11Resource> spBuffer(GetResource(nResourceID));
+    CComQIPtr<ID3D11Buffer> spBuffer(GetResource(nResourceID));
     if (spBuffer)
     {
         D3D11_MAPPED_SUBRESOURCE kResource;
@@ -1899,7 +1894,8 @@ STDMETHODIMP CGEKVideoSystem::MapBuffer(const GEKHANDLE &nResourceID, LPVOID *pp
 
 STDMETHODIMP_(void) CGEKVideoSystem::UnMapBuffer(const GEKHANDLE &nResourceID)
 {
-    CComQIPtr<ID3D11Resource> spBuffer(GetResource(nResourceID));
+    REQUIRE_VOID_RETURN(m_spDeviceContext);
+    CComQIPtr<ID3D11Buffer> spBuffer(GetResource(nResourceID));
     if (spBuffer)
     {
         m_spDeviceContext->Unmap(spBuffer, 0);
@@ -1908,7 +1904,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::UnMapBuffer(const GEKHANDLE &nResourceID)
 
 GEKHANDLE CGEKVideoSystem::CompileComputeProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
@@ -1958,7 +1954,7 @@ GEKHANDLE CGEKVideoSystem::CompileComputeProgram(LPCWSTR pFileName, LPCSTR pProg
 
 GEKHANDLE CGEKVideoSystem::CompileVertexProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
@@ -2053,7 +2049,7 @@ GEKHANDLE CGEKVideoSystem::CompileVertexProgram(LPCWSTR pFileName, LPCSTR pProgr
 
 GEKHANDLE CGEKVideoSystem::CompileGeometryProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
@@ -2098,7 +2094,7 @@ GEKHANDLE CGEKVideoSystem::CompileGeometryProgram(LPCWSTR pFileName, LPCSTR pPro
 
 GEKHANDLE CGEKVideoSystem::CompilePixelProgram(LPCWSTR pFileName, LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines, ID3DInclude *pIncludes)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
@@ -2163,8 +2159,6 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CompilePixelProgram(LPCSTR pProgram, L
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
-
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     CStringA strProgram;
@@ -2179,8 +2173,6 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadComputeProgram(LPCWSTR pFileName, 
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
-
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     CStringA strProgram;
@@ -2195,8 +2187,6 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadVertexProgram(LPCWSTR pFileName, L
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
-
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     CStringA strProgram;
@@ -2211,8 +2201,6 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadGeometryProgram(LPCWSTR pFileName,
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
-
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     CStringA strProgram;
@@ -2227,6 +2215,8 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LP
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags)
 {
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
+
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
     DXGI_FORMAT eNewFormat = gs_aFormats[eFormat];
     if (eNewFormat != DXGI_FORMAT_UNKNOWN)
@@ -2329,7 +2319,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nY
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, UINT32 nFlags)
 {
-    REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
+    REQUIRE_RETURN(m_spDevice, GEKINVALIDHANDLE);
     REQUIRE_RETURN(pFileName, GEKINVALIDHANDLE);
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
@@ -2423,7 +2413,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, UINT32 
 
 STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(const GEKHANDLE &nResourceID, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect)
 {
-    REQUIRE_VOID_RETURN(m_spDevice && m_spDeviceContext);
+    REQUIRE_VOID_RETURN(m_spDeviceContext);
 
     CComQIPtr<ID3D11ShaderResourceView> spRenderTargetView(GetResource(nResourceID));
     if (spRenderTargetView)
@@ -2456,8 +2446,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(const GEKHANDLE &nResourceID,
 
 STDMETHODIMP_(void) CGEKVideoSystem::ClearDefaultRenderTarget(const float4 &kColor)
 {
-    REQUIRE_VOID_RETURN(m_spDeviceContext);
-    REQUIRE_VOID_RETURN(m_spRenderTargetView);
+    REQUIRE_VOID_RETURN(m_spDeviceContext && m_spRenderTargetView);
     m_spDeviceContext->ClearRenderTargetView(m_spRenderTargetView, kColor.rgba);
 }
 
@@ -2486,14 +2475,11 @@ STDMETHODIMP_(void) CGEKVideoSystem::SetDefaultTargets(IGEK3DVideoContext *pCont
     IUnknown *pDepth = GetResource(nDepthID);
     ID3D11RenderTargetView *pRenderTargetView = m_spRenderTargetView;
     CComQIPtr<ID3D11DepthStencilView> spDepth(pDepth ? pDepth : m_spDepthStencilView);
-    if (pContext != nullptr)
+    CComQIPtr<ID3D11DeviceContext> spContext(pContext);
+    if (spContext)
     {
-        CComQIPtr<ID3D11DeviceContext> spContext(pContext);
-        if (spContext)
-        {
-            spContext->OMSetRenderTargets(1, &pRenderTargetView, spDepth);
-            spContext->RSSetViewports(1, &kViewport);
-        }
+        spContext->OMSetRenderTargets(1, &pRenderTargetView, spDepth);
+        spContext->RSSetViewports(1, &kViewport);
     }
     else
     {

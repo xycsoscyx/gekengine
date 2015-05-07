@@ -12,6 +12,10 @@
 
 #include "GEKSystemCLSIDs.h"
 
+GEKHANDLE gs_nSampleStatesID = GEKINVALIDHANDLE;
+GEKHANDLE gs_nRenderStatesID = GEKINVALIDHANDLE;
+GEKHANDLE gs_nBlendStatesID = GEKINVALIDHANDLE;
+GEKHANDLE gs_nDepthStatesID = GEKINVALIDHANDLE;
 GEKHANDLE gs_nVertexProgramID = GEKINVALIDHANDLE;
 GEKHANDLE gs_nPixelProgramID = GEKINVALIDHANDLE;
 GEKHANDLE gs_nConstantBufferID = GEKINVALIDHANDLE;
@@ -63,6 +67,18 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
                     0, 2, 3,
                 };
 
+                GEK3DVIDEO::SAMPLERSTATES kStates;
+                gs_nSampleStatesID = spVideoSystem->CreateSamplerStates(kStates);
+
+                GEK3DVIDEO::RENDERSTATES kRenderStates;
+                gs_nRenderStatesID = spVideoSystem->CreateRenderStates(kRenderStates);
+
+                GEK3DVIDEO::UNIFIEDBLENDSTATES kBlendStates;
+                gs_nBlendStatesID = spVideoSystem->CreateBlendStates(kBlendStates);
+
+                GEK3DVIDEO::DEPTHSTATES kDepthStates;
+                gs_nDepthStatesID = spVideoSystem->CreateDepthStates(kDepthStates);
+
                 gs_nVertexBufferID = spVideoSystem->CreateBuffer(sizeof(float2), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, aVertices);
 
                 gs_nIndexBufferID = spVideoSystem->CreateBuffer(sizeof(UINT16), 6, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, aIndices);
@@ -96,9 +112,13 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
 
             CComQIPtr<IGEK3DVideoContext> spContext(pVideoSystem);
             pVideoSystem->SetDefaultTargets(spContext);
+            spContext->SetRenderStates(gs_nRenderStatesID);
+            spContext->SetBlendStates(gs_nBlendStatesID, float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+            spContext->SetDepthStates(gs_nDepthStatesID, 0);
             spContext->GetVertexSystem()->SetProgram(gs_nVertexProgramID);
             spContext->GetVertexSystem()->SetConstantBuffer(gs_nConstantBufferID, 1);
             spContext->GetPixelSystem()->SetProgram(gs_nPixelProgramID);
+            spContext->GetPixelSystem()->SetSamplerStates(gs_nSampleStatesID, 0);
             spContext->GetPixelSystem()->SetResource(gs_nTextureID, 0);
             spContext->SetVertexBuffer(gs_nVertexBufferID, 0, 0);
             spContext->SetIndexBuffer(gs_nIndexBufferID, 0);
