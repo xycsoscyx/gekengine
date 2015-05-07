@@ -222,7 +222,7 @@ STDMETHODIMP CGEKComponent##NAME##::Serialize(const GEKENTITYID &nEntityID, std:
         DATA &kData = m_aData[(*pIterator).second];
 
 #define REGISTER_COMPONENT_SERIALIZE_VALUE(VALUE, SERIALIZE)                                \
-        aParams[L#VALUE] = SERIALIZE(kData.VALUE);
+        aParams.insert(std::make_pair(L#VALUE, SERIALIZE(kData.VALUE)));
 
 #define REGISTER_COMPONENT_DESERIALIZE(NAME)                                                \
         hRetVal = S_OK;                                                                     \

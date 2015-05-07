@@ -153,8 +153,8 @@ HRESULT CGEKRenderFilter::LoadDefines(CLibXMLNode &kFilterNode)
             {
                 CStringA strName = CW2A(kDefineNode.GetAttribute(L"name"), CP_UTF8);
                 CStringA strValue = CW2A(kDefineNode.GetAttribute(L"value"), CP_UTF8);
+                m_aDefines.insert(std::make_pair(strName, strValue));
 
-                m_aDefines[strName] = strValue;
                 kDefineNode = kDefineNode.NextSiblingElement(L"define");
             }
             else

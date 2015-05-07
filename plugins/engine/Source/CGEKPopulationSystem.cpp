@@ -13,6 +13,7 @@ REGISTER_CLASS(CGEKPopulationSystem)
 
 CGEKPopulationSystem::CGEKPopulationSystem(void)
     : m_pEngine(nullptr)
+    , m_nNextEntityID(GEKINVALIDENTITYID)
 {
 }
 
@@ -32,21 +33,14 @@ STDMETHODIMP CGEKPopulationSystem::Initialize(IGEKEngineCore *pEngine)
         if (spComponent)
         {
             m_pEngine->ShowMessage(GEKMESSAGE_NORMAL, L"population", L"Component Found : ID(0x % 08X), Name(%s)", spComponent->GetID(), spComponent->GetName());
-
-            auto pIDIterator = m_aComponents.find(spComponent->GetID());
-            auto pNamesIterator = m_aComponentNames.find(spComponent->GetName());
-            if (pIDIterator != m_aComponents.end())
-            {
-                m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Component ID Already Used: 0x%08X", spComponent->GetID());
-            }
-            else if (pNamesIterator != m_aComponentNames.end())
+            if (!m_aComponentNames.insert(std::make_pair(spComponent->GetName(), spComponent->GetID())).second)
             {
                 m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Component Name Already Used: %s", spComponent->GetName());
             }
-            else
+
+            if (!m_aComponents.insert(std::make_pair(spComponent->GetID(), spComponent)).second)
             {
-                m_aComponentNames[spComponent->GetName()] = spComponent->GetID();
-                m_aComponents[spComponent->GetID()] = spComponent;
+                m_pEngine->ShowMessage(GEKMESSAGE_WARNING, L"population", L"Component ID Already Used: 0x%08X", spComponent->GetID());
             }
         }
 
@@ -62,7 +56,7 @@ STDMETHODIMP CGEKPopulationSystem::Initialize(IGEKEngineCore *pEngine)
             {
                 if (SUCCEEDED(spSystem->Initialize(pEngine)))
                 {
-                    m_aComponentSystems[kCLSID] = spSystem;
+                    m_aComponentSystems.insert(std::make_pair(kCLSID, spSystem));
                 }
             }
 
@@ -109,7 +103,7 @@ STDMETHODIMP CGEKPopulationSystem::Load(LPCWSTR pName)
                         std::unordered_map<CStringW, CStringW> &aParams = aEntity[kComponentNode.GetType()];
                         kComponentNode.ListAttributes([&aParams](LPCWSTR pName, LPCWSTR pValue) -> void
                         {
-                            aParams[pName] = pValue;
+                            aParams.insert(std::make_pair(pName, pValue));
                         });
 
                         kComponentNode = kComponentNode.NextSiblingElement();
@@ -168,7 +162,7 @@ STDMETHODIMP CGEKPopulationSystem::Save(LPCWSTR pName)
             std::unordered_map<CStringW, CStringW> aParams;
             if (SUCCEEDED(kPair.second->Serialize(nEntityID, aParams)))
             {
-                aEntity[kPair.second->GetName()] = aParams;
+                aEntity.insert(std::make_pair(kPair.second->GetName(), aParams));
             }
         }
     }
@@ -250,23 +244,16 @@ STDMETHODIMP CGEKPopulationSystem::GetComponentSystem(REFCLSID nCLSID, REFIID nI
 
 STDMETHODIMP CGEKPopulationSystem::CreateEntity(GEKENTITYID &nEntityID, const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &aEntity, LPCWSTR pName)
 {
+    GEKENTITYID nEntityID = InterlockedIncrement(&m_nNextEntityID);
     if (pName)
     {
-        auto pIterator = m_aNamedEntities.find(pName);
-        if (pIterator != m_aNamedEntities.end())
+        if (!m_aNamedEntities.insert(std::make_pair(pName, nEntityID)).second)
         {
             return E_FAIL;
         }
     }
 
-    static GEKENTITYID nNextEntityID = GEKINVALIDENTITYID;
-    m_aPopulation.push_back(++nNextEntityID);
-    nEntityID = nNextEntityID;
-    if (pName)
-    {
-        m_aNamedEntities[pName] = nEntityID;
-    }
-
+    m_aPopulation.push_back(nEntityID);
     for (auto aParams : aEntity)
     {
         auto pComponent = m_aComponentNames.find(aParams.first);

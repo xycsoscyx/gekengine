@@ -16,6 +16,8 @@ class CGEKPopulationSystem : public CGEKUnknown
                            , public IGEKSceneManager
 {
 private:
+    GEKENTITYID m_nNextEntityID;
+
     IGEKEngineCore *m_pEngine;
     std::unordered_map<CStringW, GEKCOMPONENTID> m_aComponentNames;
     std::unordered_map<GEKCOMPONENTID, CComPtr<IGEKComponent>> m_aComponents;

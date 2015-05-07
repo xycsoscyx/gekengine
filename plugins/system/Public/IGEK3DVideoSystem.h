@@ -418,93 +418,95 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoContext, IUnknown, "95262C77-0F56-4447-9337-58
 {
     DECLARE_INTERFACE(System)
     {
-        STDMETHOD_(void, SetProgram)                   (THIS_ const GEKHANDLE &nResourceID) PURE;
-        STDMETHOD_(void, SetConstantBuffer)            (THIS_ const GEKHANDLE &nResourceID, UINT32 nIndex) PURE;
-        STDMETHOD_(void, SetSamplerStates)             (THIS_ const GEKHANDLE &nResourceID, UINT32 nStage) PURE;
-        STDMETHOD_(void, SetResource)                  (THIS_ const GEKHANDLE &nResourceID, UINT32 nIndex) PURE;
-        STDMETHOD_(void, SetUnorderedAccess)           (THIS_ const GEKHANDLE &nResourceID, UINT32 nStage) { };
+        STDMETHOD_(void, SetProgram)                    (THIS_ const GEKHANDLE &nResourceID) PURE;
+        STDMETHOD_(void, SetConstantBuffer)             (THIS_ const GEKHANDLE &nResourceID, UINT32 nIndex) PURE;
+        STDMETHOD_(void, SetSamplerStates)              (THIS_ const GEKHANDLE &nResourceID, UINT32 nStage) PURE;
+        STDMETHOD_(void, SetResource)                   (THIS_ const GEKHANDLE &nResourceID, UINT32 nIndex) PURE;
+        STDMETHOD_(void, SetUnorderedAccess)            (THIS_ const GEKHANDLE &nResourceID, UINT32 nStage) { };
     };
 
-    STDMETHOD_(System *, GetComputeSystem)             (THIS) PURE;
-    STDMETHOD_(System *, GetVertexSystem)              (THIS) PURE;
-    STDMETHOD_(System *, GetGeometrySystem)            (THIS) PURE;
-    STDMETHOD_(System *, GetPixelSystem)               (THIS) PURE;
+    STDMETHOD_(System *, GetComputeSystem)              (THIS) PURE;
+    STDMETHOD_(System *, GetVertexSystem)               (THIS) PURE;
+    STDMETHOD_(System *, GetGeometrySystem)             (THIS) PURE;
+    STDMETHOD_(System *, GetPixelSystem)                (THIS) PURE;
 
-    STDMETHOD_(void, ClearResources)                   (THIS) PURE;
+    STDMETHOD_(void, ClearResources)                    (THIS) PURE;
 
-    STDMETHOD_(void, SetViewports)                     (THIS_ const std::vector<GEK3DVIDEO::VIEWPORT> &aViewports) PURE;
-    STDMETHOD_(void, SetScissorRect)                   (THIS_ const std::vector<trect<UINT32>> &aRects) PURE;
+    STDMETHOD_(void, SetViewports)                      (THIS_ const std::vector<GEK3DVIDEO::VIEWPORT> &aViewports) PURE;
+    STDMETHOD_(void, SetScissorRect)                    (THIS_ const std::vector<trect<UINT32>> &aRects) PURE;
 
-    STDMETHOD_(void, ClearRenderTarget)                (THIS_ const GEKHANDLE &nTargetID, const float4 &kColor) PURE;
-    STDMETHOD_(void, ClearDepthStencilTarget)          (THIS_ const GEKHANDLE &nTargetID, UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;
-    STDMETHOD_(void, SetRenderTargets)                 (THIS_ const std::vector<GEKHANDLE> &aTargets, const GEKHANDLE &nDepthID) PURE;
+    STDMETHOD_(void, ClearRenderTarget)                 (THIS_ const GEKHANDLE &nTargetID, const float4 &kColor) PURE;
+    STDMETHOD_(void, ClearDepthStencilTarget)           (THIS_ const GEKHANDLE &nTargetID, UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;
+    STDMETHOD_(void, SetRenderTargets)                  (THIS_ const std::vector<GEKHANDLE> &aTargets, const GEKHANDLE &nDepthID) PURE;
 
-    STDMETHOD_(void, SetRenderStates)                  (THIS_ const GEKHANDLE &nResourceID) PURE;
-    STDMETHOD_(void, SetDepthStates)                   (THIS_ const GEKHANDLE &nResourceID, UINT32 nStencilReference) PURE;
-    STDMETHOD_(void, SetBlendStates)                   (THIS_ const GEKHANDLE &nResourceID, const float4 &nBlendFactor, UINT32 nMask) PURE;
+    STDMETHOD_(void, SetRenderStates)                   (THIS_ const GEKHANDLE &nResourceID) PURE;
+    STDMETHOD_(void, SetDepthStates)                    (THIS_ const GEKHANDLE &nResourceID, UINT32 nStencilReference) PURE;
+    STDMETHOD_(void, SetBlendStates)                    (THIS_ const GEKHANDLE &nResourceID, const float4 &nBlendFactor, UINT32 nMask) PURE;
 
-    STDMETHOD_(void, SetVertexBuffer)                  (THIS_ const GEKHANDLE &nResourceID, UINT32 nSlot, UINT32 nOffset) PURE;
-    STDMETHOD_(void, SetIndexBuffer)                   (THIS_ const GEKHANDLE &nResourceID, UINT32 nOffset) PURE;
-    STDMETHOD_(void, SetPrimitiveType)                 (THIS_ GEK3DVIDEO::PRIMITIVE::TYPE eType) PURE;
-    STDMETHOD_(void, DrawIndexedPrimitive)             (THIS_ UINT32 nNumIndices, UINT32 nStartIndex, UINT32 nBaseVertex) PURE;
-    STDMETHOD_(void, DrawPrimitive)                    (THIS_ UINT32 nNumVertices, UINT32 nStartVertex) PURE;
-    STDMETHOD_(void, DrawInstancedIndexedPrimitive)    (THIS_ UINT32 nNumIndices, UINT32 nNumInstances, UINT32 nStartIndex, UINT32 nBaseVertex, UINT32 nStartInstance) PURE;
-    STDMETHOD_(void, DrawInstancedPrimitive)           (THIS_ UINT32 nNumVertices, UINT32 nNumInstances, UINT32 nStartVertex, UINT32 nStartInstance) PURE;
+    STDMETHOD_(void, SetVertexBuffer)                   (THIS_ const GEKHANDLE &nResourceID, UINT32 nSlot, UINT32 nOffset) PURE;
+    STDMETHOD_(void, SetIndexBuffer)                    (THIS_ const GEKHANDLE &nResourceID, UINT32 nOffset) PURE;
+    STDMETHOD_(void, SetPrimitiveType)                  (THIS_ GEK3DVIDEO::PRIMITIVE::TYPE eType) PURE;
+    STDMETHOD_(void, DrawIndexedPrimitive)              (THIS_ UINT32 nNumIndices, UINT32 nStartIndex, UINT32 nBaseVertex) PURE;
+    STDMETHOD_(void, DrawPrimitive)                     (THIS_ UINT32 nNumVertices, UINT32 nStartVertex) PURE;
+    STDMETHOD_(void, DrawInstancedIndexedPrimitive)     (THIS_ UINT32 nNumIndices, UINT32 nNumInstances, UINT32 nStartIndex, UINT32 nBaseVertex, UINT32 nStartInstance) PURE;
+    STDMETHOD_(void, DrawInstancedPrimitive)            (THIS_ UINT32 nNumVertices, UINT32 nNumInstances, UINT32 nStartVertex, UINT32 nStartInstance) PURE;
 
-    STDMETHOD_(void, Dispatch)                         (THIS_ UINT32 nThreadGroupCountX, UINT32 nThreadGroupCountY, UINT32 nThreadGroupCountZ) PURE;
+    STDMETHOD_(void, Dispatch)                          (THIS_ UINT32 nThreadGroupCountX, UINT32 nThreadGroupCountY, UINT32 nThreadGroupCountZ) PURE;
 
-    STDMETHOD_(void, FinishCommandList)                (THIS_ IUnknown **ppUnknown) PURE;
+    STDMETHOD_(void, FinishCommandList)                 (THIS_ IUnknown **ppUnknown) PURE;
 };
 
 DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6")
 {
-    STDMETHOD(Initialize)                              (THIS_ HWND hWindow, bool bWindowed, UINT32 nXSize, UINT32 nYSize, const GEK3DVIDEO::DATA::FORMAT &nDepthFormat = GEK3DVIDEO::DATA::UNKNOWN) PURE;
-    STDMETHOD(Resize)                                  (THIS_ bool bWindowed, UINT32 nXSize, UINT32 nYSize, const GEK3DVIDEO::DATA::FORMAT &nDepthFormat = GEK3DVIDEO::DATA::UNKNOWN) PURE;
+    STDMETHOD(Initialize)                               (THIS_ HWND hWindow, bool bWindowed, UINT32 nXSize, UINT32 nYSize, const GEK3DVIDEO::DATA::FORMAT &eDepthFormat = GEK3DVIDEO::DATA::UNKNOWN) PURE;
+    STDMETHOD(Resize)                                   (THIS_ bool bWindowed, UINT32 nXSize, UINT32 nYSize, const GEK3DVIDEO::DATA::FORMAT &eDepthFormat = GEK3DVIDEO::DATA::UNKNOWN) PURE;
 
-    STDMETHOD_(UINT32, GetXSize)                       (THIS) PURE;
-    STDMETHOD_(UINT32, GetYSize)                       (THIS) PURE;
-    STDMETHOD_(bool, IsWindowed)                       (THIS) PURE;
+    STDMETHOD_(UINT32, GetXSize)                        (THIS) PURE;
+    STDMETHOD_(UINT32, GetYSize)                        (THIS) PURE;
+    STDMETHOD_(bool, IsWindowed)                        (THIS) PURE;
 
-    STDMETHOD(CreateDeferredContext)                   (THIS_ IGEK3DVideoContext **ppContext) PURE;
+    STDMETHOD(CreateDeferredContext)                    (THIS_ IGEK3DVideoContext **ppContext) PURE;
 
-    STDMETHOD_(GEKHANDLE, CreateEvent)                 (THIS) PURE;
-    STDMETHOD_(void, SetEvent)                         (THIS_ const GEKHANDLE &nResourceID) PURE;
-    STDMETHOD_(bool, IsEventSet)                       (THIS_ const GEKHANDLE &nResourceID) PURE;
+    STDMETHOD_(void, FreeResource)                      (THIS_ const GEKHANDLE &nResourceID) PURE;
 
-    STDMETHOD_(GEKHANDLE, CreateRenderStates)          (THIS_ const GEK3DVIDEO::RENDERSTATES &kStates) PURE;
-    STDMETHOD_(GEKHANDLE, CreateDepthStates)           (THIS_ const GEK3DVIDEO::DEPTHSTATES &kStates) PURE;
-    STDMETHOD_(GEKHANDLE, CreateBlendStates)           (THIS_ const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates) PURE;
-    STDMETHOD_(GEKHANDLE, CreateBlendStates)           (THIS_ const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates) PURE;
-    STDMETHOD_(GEKHANDLE, CreateSamplerStates)         (THIS_ const GEK3DVIDEO::SAMPLERSTATES &kStates) PURE;
+    STDMETHOD_(GEKHANDLE, CreateEvent)                  (THIS) PURE;
+    STDMETHOD_(void, SetEvent)                          (THIS_ const GEKHANDLE &nResourceID) PURE;
+    STDMETHOD_(bool, IsEventSet)                        (THIS_ const GEKHANDLE &nResourceID) PURE;
 
-    STDMETHOD_(GEKHANDLE, CreateRenderTarget)          (THIS_ UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat) PURE;
-    STDMETHOD_(GEKHANDLE, CreateDepthTarget)           (THIS_ UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat) PURE;
+    STDMETHOD_(GEKHANDLE, CreateRenderStates)           (THIS_ const GEK3DVIDEO::RENDERSTATES &kStates) PURE;
+    STDMETHOD_(GEKHANDLE, CreateDepthStates)            (THIS_ const GEK3DVIDEO::DEPTHSTATES &kStates) PURE;
+    STDMETHOD_(GEKHANDLE, CreateBlendStates)            (THIS_ const GEK3DVIDEO::UNIFIEDBLENDSTATES &kStates) PURE;
+    STDMETHOD_(GEKHANDLE, CreateBlendStates)            (THIS_ const GEK3DVIDEO::INDEPENDENTBLENDSTATES &kStates) PURE;
+    STDMETHOD_(GEKHANDLE, CreateSamplerStates)          (THIS_ const GEK3DVIDEO::SAMPLERSTATES &kStates) PURE;
 
-    STDMETHOD_(GEKHANDLE, CreateBuffer)                (THIS_ UINT32 nStride, UINT32 nCount, UINT32 nFlags, LPCVOID pData = nullptr) PURE;
-    STDMETHOD_(GEKHANDLE, CreateBuffer)                (THIS_ GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, LPCVOID pData = nullptr) PURE;
-    STDMETHOD_(void, UpdateBuffer)                     (THIS_ const GEKHANDLE &nResourceID, LPCVOID pData) PURE;
-    STDMETHOD(MapBuffer)                               (THIS_ const GEKHANDLE &nResourceID, LPVOID *ppData) PURE;
-    STDMETHOD_(void, UnMapBuffer)                      (THIS_ const GEKHANDLE &nResourceID) PURE;
+    STDMETHOD_(GEKHANDLE, CreateRenderTarget)           (THIS_ UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat) PURE;
+    STDMETHOD_(GEKHANDLE, CreateDepthTarget)            (THIS_ UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat) PURE;
 
-    STDMETHOD_(GEKHANDLE, CompileComputeProgram)       (THIS_ LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
-    STDMETHOD_(GEKHANDLE, CompileVertexProgram)        (THIS_ LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
-    STDMETHOD_(GEKHANDLE, CompileGeometryProgram)      (THIS_ LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
-    STDMETHOD_(GEKHANDLE, CompilePixelProgram)         (THIS_ LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
+    STDMETHOD_(GEKHANDLE, CreateBuffer)                 (THIS_ UINT32 nStride, UINT32 nCount, UINT32 nFlags, LPCVOID pData = nullptr) PURE;
+    STDMETHOD_(GEKHANDLE, CreateBuffer)                 (THIS_ GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nCount, UINT32 nFlags, LPCVOID pData = nullptr) PURE;
+    STDMETHOD_(void, UpdateBuffer)                      (THIS_ const GEKHANDLE &nResourceID, LPCVOID pData) PURE;
+    STDMETHOD(MapBuffer)                                (THIS_ const GEKHANDLE &nResourceID, LPVOID *ppData) PURE;
+    STDMETHOD_(void, UnMapBuffer)                       (THIS_ const GEKHANDLE &nResourceID) PURE;
 
-    STDMETHOD_(GEKHANDLE, LoadComputeProgram)          (THIS_ LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
-    STDMETHOD_(GEKHANDLE, LoadVertexProgram)           (THIS_ LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
-    STDMETHOD_(GEKHANDLE, LoadGeometryProgram)         (THIS_ LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
-    STDMETHOD_(GEKHANDLE, LoadPixelProgram)            (THIS_ LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
+    STDMETHOD_(GEKHANDLE, CompileComputeProgram)        (THIS_ LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
+    STDMETHOD_(GEKHANDLE, CompileVertexProgram)         (THIS_ LPCSTR pProgram, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
+    STDMETHOD_(GEKHANDLE, CompileGeometryProgram)       (THIS_ LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
+    STDMETHOD_(GEKHANDLE, CompilePixelProgram)          (THIS_ LPCSTR pProgram, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
 
-    STDMETHOD_(GEKHANDLE, CreateTexture)               (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlagse) PURE;
-    STDMETHOD_(GEKHANDLE, LoadTexture)                 (THIS_ LPCWSTR pFileName, UINT32 nFlags) PURE;
-    STDMETHOD_(void, UpdateTexture)                    (THIS_ const GEKHANDLE &nResourceID, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect = nullptr) PURE;
+    STDMETHOD_(GEKHANDLE, LoadComputeProgram)           (THIS_ LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
+    STDMETHOD_(GEKHANDLE, LoadVertexProgram)            (THIS_ LPCWSTR pFileName, LPCSTR pEntry, const std::vector<GEK3DVIDEO::INPUTELEMENT> &aLayout, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
+    STDMETHOD_(GEKHANDLE, LoadGeometryProgram)          (THIS_ LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
+    STDMETHOD_(GEKHANDLE, LoadPixelProgram)             (THIS_ LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr) PURE;
 
-    STDMETHOD_(void, ClearDefaultRenderTarget)         (THIS_ const float4 &kColor) PURE;
-    STDMETHOD_(void, ClearDefaultDepthStencilTarget)   (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;
-    STDMETHOD_(void, SetDefaultTargets)                (THIS_ IGEK3DVideoContext *pContext = nullptr, const GEKHANDLE &nResourceID = GEKINVALIDHANDLE) PURE;
+    STDMETHOD_(GEKHANDLE, CreateTexture)                (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlagse) PURE;
+    STDMETHOD_(GEKHANDLE, LoadTexture)                  (THIS_ LPCWSTR pFileName, UINT32 nFlags) PURE;
+    STDMETHOD_(void, UpdateTexture)                     (THIS_ const GEKHANDLE &nResourceID, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect = nullptr) PURE;
 
-    STDMETHOD_(void, ExecuteCommandList)               (THIS_ IUnknown *pUnknown) PURE;
+    STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor) PURE;
+    STDMETHOD_(void, ClearDefaultDepthStencilTarget)    (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;
+    STDMETHOD_(void, SetDefaultTargets)                 (THIS_ IGEK3DVideoContext *pContext = nullptr, const GEKHANDLE &nResourceID = GEKINVALIDHANDLE) PURE;
 
-    STDMETHOD_(void, Present)                          (THIS_ bool bWaitForVSync) PURE;
+    STDMETHOD_(void, ExecuteCommandList)                (THIS_ IUnknown *pUnknown) PURE;
+
+    STDMETHOD_(void, Present)                           (THIS_ bool bWaitForVSync) PURE;
 };

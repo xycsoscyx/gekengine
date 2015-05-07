@@ -27,7 +27,7 @@ void CGEKConfigGroup::Load(CLibXMLNode &kNode)
     m_strText = kNode.GetText();
     kNode.ListAttributes([&](LPCWSTR pName, LPCWSTR pValue) -> void
     {
-        m_aValues[pName] = pValue;
+        m_aValues.insert(std::make_pair(pName, pValue));
     });
 
     CLibXMLNode &kChild = kNode.FirstChildElement();
@@ -121,7 +121,7 @@ STDMETHODIMP_(LPCWSTR) CGEKConfigGroup::GetValue(LPCWSTR pName, LPCWSTR pDefault
     auto pIterator = m_aValues.find(pName);
     if (pIterator == m_aValues.end())
     {
-        m_aValues[pName] = pDefault;
+        m_aValues.insert(std::make_pair(pName, pDefault));
         pIterator = m_aValues.find(pName);
     }
 
