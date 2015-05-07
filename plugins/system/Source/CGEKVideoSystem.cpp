@@ -13,6 +13,64 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 
+static const DXGI_FORMAT gs_aFormats[] =
+{
+    DXGI_FORMAT_UNKNOWN,
+    DXGI_FORMAT_R8_UNORM,
+    DXGI_FORMAT_R8G8_UNORM,
+    DXGI_FORMAT_R8G8B8A8_UNORM,
+    DXGI_FORMAT_B8G8R8A8_UNORM,
+    DXGI_FORMAT_R16_UINT,
+    DXGI_FORMAT_R16G16_UINT,
+    DXGI_FORMAT_R16G16B16A16_UINT,
+    DXGI_FORMAT_R32_UINT,
+    DXGI_FORMAT_R32G32_UINT,
+    DXGI_FORMAT_R32G32B32_UINT,
+    DXGI_FORMAT_R32G32B32A32_UINT,
+    DXGI_FORMAT_R32_FLOAT,
+    DXGI_FORMAT_R32G32_FLOAT,
+    DXGI_FORMAT_R32G32B32_FLOAT,
+    DXGI_FORMAT_R32G32B32A32_FLOAT,
+    DXGI_FORMAT_R16_FLOAT,
+    DXGI_FORMAT_R16G16_FLOAT,
+    DXGI_FORMAT_R16G16B16A16_FLOAT,
+    DXGI_FORMAT_D16_UNORM,
+    DXGI_FORMAT_D24_UNORM_S8_UINT,
+    DXGI_FORMAT_D32_FLOAT,
+};
+
+static const UINT32 gs_aFormatStrides[] = 
+{
+    0,
+    sizeof(UINT8),
+    (sizeof(UINT8) * 2),
+    (sizeof(UINT8) * 4),
+    (sizeof(UINT8) * 4),
+    sizeof(UINT16),
+    (sizeof(UINT16) * 2),
+    (sizeof(UINT16) * 4),
+    sizeof(UINT32),
+    (sizeof(UINT32) * 2),
+    (sizeof(UINT32) * 3),
+    (sizeof(UINT32) * 4),
+    sizeof(float),
+    (sizeof(float) * 2),
+    (sizeof(float) * 3),
+    (sizeof(float) * 4),
+    (sizeof(float) / 2),
+    sizeof(float),
+    (sizeof(float) * 2),
+    sizeof(UINT16),
+    sizeof(UINT32),
+    (sizeof(float) * 4),
+};
+
+static const D3D11_DEPTH_WRITE_MASK gs_aDepthWriteMasks[] =
+{
+    D3D11_DEPTH_WRITE_MASK_ALL,
+    D3D11_DEPTH_WRITE_MASK_ZERO,
+};
+
 static const D3D11_TEXTURE_ADDRESS_MODE gs_aAddressModes[] = 
 {
     D3D11_TEXTURE_ADDRESS_CLAMP,
@@ -74,6 +132,47 @@ static const D3D11_BLEND_OP gs_aBlendOperations[] =
     D3D11_BLEND_OP_REV_SUBTRACT,
     D3D11_BLEND_OP_MIN,
     D3D11_BLEND_OP_MAX,
+};
+
+static const D3D11_FILL_MODE gs_aFillModes[] =
+{
+    D3D11_FILL_SOLID,
+    D3D11_FILL_WIREFRAME,
+};
+
+static const D3D11_CULL_MODE gs_aCullModes[] =
+{
+    D3D11_CULL_NONE,
+    D3D11_CULL_FRONT,
+    D3D11_CULL_BACK,
+};
+
+static const D3D11_FILTER gs_aFilters[] =
+{
+    D3D11_FILTER_MIN_MAG_MIP_POINT,
+    D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR,
+    D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT,
+    D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR,
+    D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT,
+    D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR,
+    D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+    D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+    D3D11_FILTER_ANISOTROPIC,
+};
+
+static const D3D11_PRIMITIVE_TOPOLOGY gs_aTopology[] = 
+{
+    D3D11_PRIMITIVE_TOPOLOGY_POINTLIST,
+    D3D11_PRIMITIVE_TOPOLOGY_LINELIST,
+    D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP,
+    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP,
+};
+
+static const DWRITE_FONT_STYLE gs_aFontStyles[] =
+{
+    DWRITE_FONT_STYLE_NORMAL,
+    DWRITE_FONT_STYLE_ITALIC,
 };
 
 class CGEKVideoVertexProgram : public CGEKUnknown
@@ -428,8 +527,9 @@ CGEKVideoContext::VertexSystem::VertexSystem(ID3D11DeviceContext *pContext, IGEK
 STDMETHODIMP_(void) CGEKVideoContext::VertexSystem::SetProgram(const GEKHANDLE &nResourceID)
 {
     REQUIRE_VOID_RETURN(m_pDeviceContext && m_pResourceHandler);
-    CComQIPtr<ID3D11VertexShader> spShader(m_pResourceHandler->GetResource(nResourceID));
-    CComQIPtr<ID3D11InputLayout> spLayout(m_pResourceHandler->GetResource(nResourceID));
+    IUnknown *pResource = m_pResourceHandler->GetResource(nResourceID);
+    CComQIPtr<ID3D11VertexShader> spShader(pResource);
+    CComQIPtr<ID3D11InputLayout> spLayout(pResource);
     if (spShader &&
         spLayout)
     {
@@ -784,32 +884,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetIndexBuffer(const GEKHANDLE &nResourceI
 STDMETHODIMP_(void) CGEKVideoContext::SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TYPE eType)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
-    D3D11_PRIMITIVE_TOPOLOGY eTopology = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
-    switch (eType)
-    {
-    case GEK3DVIDEO::PRIMITIVE::LINELIST:
-        eTopology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
-        break;
-
-    case GEK3DVIDEO::PRIMITIVE::LINESTRIP:
-        eTopology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
-        break;
-
-    case GEK3DVIDEO::PRIMITIVE::TRIANGLELIST:
-        eTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        break;
-
-    case GEK3DVIDEO::PRIMITIVE::TRIANGLESTRIP:
-        eTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-        break;
-
-    case GEK3DVIDEO::PRIMITIVE::POINTLIST:
-    default:
-        eTopology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
-        break;
-    };
-
-    m_spDeviceContext->IASetPrimitiveTopology(eTopology);
+    m_spDeviceContext->IASetPrimitiveTopology(gs_aTopology[eType]);
 }
 
 STDMETHODIMP_(void) CGEKVideoContext::DrawIndexedPrimitive(UINT32 nNumIndices, UINT32 nStartIndex, UINT32 nBaseVertex)
@@ -928,21 +1003,7 @@ HRESULT CGEKVideoSystem::GetDefaultTargets(const GEK3DVIDEO::DATA::FORMAT &eDept
                 kDepthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
                 kDepthBufferDesc.CPUAccessFlags = 0;
                 kDepthBufferDesc.MiscFlags = 0;
-
-                switch (eDepthFormat)
-                {
-                case GEK3DVIDEO::DATA::D16:
-                    kDepthBufferDesc.Format = DXGI_FORMAT_D16_UNORM;
-                    break;
-
-                case GEK3DVIDEO::DATA::D24_S8:
-                    kDepthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-                    break;
-
-                case GEK3DVIDEO::DATA::D32:
-                    kDepthBufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
-                    break;
-                };
+                kDepthBufferDesc.Format = gs_aFormats[eDepthFormat];
 
                 if (kDepthBufferDesc.Format != DXGI_FORMAT_UNKNOWN)
                 {
@@ -1238,33 +1299,8 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateRenderStates(const GEK3DVIDEO::R
     kRasterDesc.ScissorEnable = kStates.m_bScissorEnable;
     kRasterDesc.MultisampleEnable = kStates.m_bMultisampleEnable;
     kRasterDesc.AntialiasedLineEnable = kStates.m_bAntialiasedLineEnable;
-    switch (kStates.m_eFillMode)
-    {
-    case GEK3DVIDEO::FILL::WIREFRAME:
-        kRasterDesc.FillMode = D3D11_FILL_WIREFRAME;
-        break;
-
-    case GEK3DVIDEO::FILL::SOLID:
-    default:
-        kRasterDesc.FillMode = D3D11_FILL_SOLID;
-        break;
-    };
-        
-    switch (kStates.m_eCullMode)
-    {
-    case GEK3DVIDEO::CULL::FRONT:
-        kRasterDesc.CullMode = D3D11_CULL_FRONT;
-        break;
-
-    case GEK3DVIDEO::CULL::BACK:
-        kRasterDesc.CullMode = D3D11_CULL_BACK;
-        break;
-
-    case GEK3DVIDEO::CULL::NONE:
-    default:
-        kRasterDesc.CullMode = D3D11_CULL_NONE;
-        break;
-    };
+    kRasterDesc.FillMode = gs_aFillModes[kStates.m_eFillMode];
+    kRasterDesc.CullMode = gs_aCullModes[kStates.m_eCullMode];
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
@@ -1297,17 +1333,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateDepthStates(const GEK3DVIDEO::DE
     kDepthStencilDesc.BackFace.StencilDepthFailOp = gs_aStencilOperations[kStates.m_kStencilBackStates.m_eStencilDepthFailOperation];
     kDepthStencilDesc.BackFace.StencilPassOp = gs_aStencilOperations[kStates.m_kStencilBackStates.m_eStencilPassOperation];
     kDepthStencilDesc.BackFace.StencilFunc = gs_aComparisonFunctions[kStates.m_kStencilBackStates.m_eStencilComparison];
-    switch (kStates.m_eDepthWriteMask)
-    {
-    case GEK3DVIDEO::DEPTHWRITE::ZERO:
-        kDepthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-        break;
-
-    case GEK3DVIDEO::DEPTHWRITE::ALL:
-    default:
-        kDepthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-        break;
-    };
+    kDepthStencilDesc.DepthWriteMask = gs_aDepthWriteMasks[kStates.m_eDepthWriteMask];
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
@@ -1438,45 +1464,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateSamplerStates(const GEK3DVIDEO::
     kSamplerStates.BorderColor[3] = kStates.m_nBorderColor.a;
     kSamplerStates.MinLOD = kStates.m_nMinLOD;
     kSamplerStates.MaxLOD = kStates.m_nMaxLOD;
-    switch (kStates.m_eFilter)
-    {
-    case GEK3DVIDEO::FILTER::MIN_MAG_POINT_MIP_LINEAR:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_POINT_MAG_LINEAR_MIP_POINT:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_POINT_MAG_MIP_LINEAR:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_LINEAR_MAG_MIP_POINT:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_LINEAR_MAG_POINT_MIP_LINEAR:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_MAG_LINEAR_MIP_POINT:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_MAG_MIP_LINEAR:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-        break;
-
-    case GEK3DVIDEO::FILTER::ANISOTROPIC:
-        kSamplerStates.Filter = D3D11_FILTER_ANISOTROPIC;
-        break;
-
-    case GEK3DVIDEO::FILTER::MIN_MAG_MIP_POINT:
-    default:
-        kSamplerStates.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-        break;
-    };
+    kSamplerStates.Filter = gs_aFilters[kStates.m_eFilter];
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
@@ -1508,49 +1496,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateRenderTarget(UINT32 nXSize, UINT
     kTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	kTextureDesc.CPUAccessFlags = 0;
 	kTextureDesc.MiscFlags = 0;
-
-    switch (eFormat)
-    {
-    case GEK3DVIDEO::DATA::R_UINT8:
-        kTextureDesc.Format = DXGI_FORMAT_R8_UNORM;
-        break;
-
-    case GEK3DVIDEO::DATA::RG_UINT8:
-        kTextureDesc.Format = DXGI_FORMAT_R8G8_UNORM;
-        break;
-
-    case GEK3DVIDEO::DATA::RGBA_UINT8:
-        kTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        break;
-
-    case GEK3DVIDEO::DATA::R_FLOAT:
-        kTextureDesc.Format = DXGI_FORMAT_R32_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::RG_FLOAT:
-        kTextureDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::RGB_FLOAT:
-        kTextureDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::RGBA_FLOAT:
-        kTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::R_HALF:
-        kTextureDesc.Format = DXGI_FORMAT_R16_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::RG_HALF:
-        kTextureDesc.Format = DXGI_FORMAT_R16G16_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::RGBA_HALF:
-        kTextureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-        break;
-    };
+    kTextureDesc.Format = gs_aFormats[eFormat];
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
     if (kTextureDesc.Format != DXGI_FORMAT_UNKNOWN)
@@ -1645,21 +1591,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateDepthTarget(UINT32 nXSize, UINT3
     kDepthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
     kDepthBufferDesc.CPUAccessFlags = 0;
     kDepthBufferDesc.MiscFlags = 0;
-
-    switch (eFormat)
-    {
-    case GEK3DVIDEO::DATA::D16:
-        kDepthBufferDesc.Format = DXGI_FORMAT_D16_UNORM;
-        break;
-
-    case GEK3DVIDEO::DATA::D24_S8:
-        kDepthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-        break;
-
-    case GEK3DVIDEO::DATA::D32:
-        kDepthBufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
-        break;
-    };
+    kDepthBufferDesc.Format = gs_aFormats[eFormat];
 
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
     if (kDepthBufferDesc.Format != DXGI_FORMAT_UNKNOWN)
@@ -1817,97 +1749,9 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBuffer(GEK3DVIDEO::DATA::FORMAT 
     REQUIRE_RETURN(m_spDevice && m_spDeviceContext, GEKINVALIDHANDLE);
     REQUIRE_RETURN(eFormat != GEK3DVIDEO::DATA::UNKNOWN && nCount > 0, GEKINVALIDHANDLE);
 
-    UINT32 nStride = 0;
-    DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
-    switch (eFormat)
-    {
-    case GEK3DVIDEO::DATA::R_UINT8:
-        eNewFormat = DXGI_FORMAT_R8_UINT;
-        nStride = sizeof(UINT8);
-        break;
-
-    case GEK3DVIDEO::DATA::RG_UINT8:
-        eNewFormat = DXGI_FORMAT_R8G8_UINT;
-        nStride = (sizeof(UINT8) * 2);
-        break;
-
-    case GEK3DVIDEO::DATA::RGBA_UINT8:
-        eNewFormat = DXGI_FORMAT_R8G8B8A8_UINT;
-        nStride = (sizeof(UINT8) * 4);
-        break;
-
-    case GEK3DVIDEO::DATA::R_UINT16:
-        eNewFormat = DXGI_FORMAT_R16_UINT;
-        nStride = sizeof(UINT16);
-        break;
-
-    case GEK3DVIDEO::DATA::RG_UINT16:
-        eNewFormat = DXGI_FORMAT_R16G16_UINT;
-        nStride = (sizeof(UINT16) * 2);
-        break;
-
-    case GEK3DVIDEO::DATA::RGBA_UINT16:
-        eNewFormat = DXGI_FORMAT_R16G16B16A16_UINT;
-        nStride = (sizeof(UINT16) * 4);
-        break;
-
-    case GEK3DVIDEO::DATA::R_UINT32:
-        eNewFormat = DXGI_FORMAT_R32_UINT;
-        nStride = sizeof(UINT32);
-        break;
-
-    case GEK3DVIDEO::DATA::RG_UINT32:
-        eNewFormat = DXGI_FORMAT_R32G32_UINT;
-        nStride = (sizeof(UINT32) * 2);
-        break;
-
-    case GEK3DVIDEO::DATA::RGB_UINT32:
-        eNewFormat = DXGI_FORMAT_R32G32B32_UINT;
-        nStride = (sizeof(UINT32) * 3);
-        break;
-
-    case GEK3DVIDEO::DATA::RGBA_UINT32:
-        eNewFormat = DXGI_FORMAT_R32G32B32A32_UINT;
-        nStride = (sizeof(UINT32) * 4);
-        break;
-
-    case GEK3DVIDEO::DATA::R_FLOAT:
-        eNewFormat = DXGI_FORMAT_R32_FLOAT;
-        nStride = sizeof(float);
-        break;
-
-    case GEK3DVIDEO::DATA::RG_FLOAT:
-        eNewFormat = DXGI_FORMAT_R32G32_FLOAT;
-        nStride = (sizeof(float) * 2);
-        break;
-
-    case GEK3DVIDEO::DATA::RGB_FLOAT:
-        eNewFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-        nStride = (sizeof(float) * 3);
-        break;
-
-    case GEK3DVIDEO::DATA::RGBA_FLOAT:
-        eNewFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-        nStride = (sizeof(float) * 4);
-        break;
-
-    case GEK3DVIDEO::DATA::R_HALF:
-        eNewFormat = DXGI_FORMAT_R16_FLOAT;
-        nStride = (sizeof(float) / 2);
-        break;
-
-    case GEK3DVIDEO::DATA::RG_HALF:
-        eNewFormat = DXGI_FORMAT_R16G16_FLOAT;
-        nStride = sizeof(float);
-        break;
-
-    case GEK3DVIDEO::DATA::RGBA_HALF:
-        eNewFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-        nStride = (sizeof(float) * 2);
-        break;
-    };
-
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+    UINT32 nStride = gs_aFormatStrides[eFormat];
+    DXGI_FORMAT eNewFormat = gs_aFormats[eFormat];
     if (eNewFormat != DXGI_FORMAT_UNKNOWN)
     {
         D3D11_BUFFER_DESC kBufferDesc;
@@ -2175,54 +2019,7 @@ GEKHANDLE CGEKVideoSystem::CompileVertexProgram(LPCWSTR pFileName, LPCSTR pProgr
                     aLayoutDesc[nIndex].InstanceDataStepRate = 0;
                 };
 
-                aLayoutDesc[nIndex].Format = DXGI_FORMAT_UNKNOWN;
-                switch (aLayout[nIndex].m_eType)
-                {
-                case GEK3DVIDEO::DATA::R_FLOAT:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32_FLOAT;
-                    break;
-
-                case GEK3DVIDEO::DATA::RG_FLOAT:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32_FLOAT;
-                    break;
-
-                case GEK3DVIDEO::DATA::RGB_FLOAT:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-                    break;
-
-                case GEK3DVIDEO::DATA::RGBA_FLOAT:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-                    break;
-
-                case GEK3DVIDEO::DATA::R_HALF:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R16_FLOAT;
-                    break;
-
-                case GEK3DVIDEO::DATA::RG_HALF:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R16G16_FLOAT;
-                    break;
-
-                case GEK3DVIDEO::DATA::RGBA_HALF:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-                    break;
-
-                case GEK3DVIDEO::DATA::R_UINT32:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32_UINT;
-                    break;
-
-                case GEK3DVIDEO::DATA::RG_UINT32:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32_UINT;
-                    break;
-
-                case GEK3DVIDEO::DATA::RGB_UINT32:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32_UINT;
-                    break;
-
-                case GEK3DVIDEO::DATA::RGBA_UINT32:
-                    aLayoutDesc[nIndex].Format = DXGI_FORMAT_R32G32B32A32_UINT;
-                    break;
-                };
-
+                aLayoutDesc[nIndex].Format = gs_aFormats[aLayout[nIndex].m_eType];
                 if (aLayoutDesc[nIndex].Format == DXGI_FORMAT_UNKNOWN)
                 {
                     aLayoutDesc.clear();
@@ -2430,47 +2227,8 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadPixelProgram(LPCWSTR pFileName, LP
 
 STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateTexture(UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlags)
 {
-    DXGI_FORMAT eNewFormat = DXGI_FORMAT_UNKNOWN;
-    switch (eFormat)
-    {
-    case GEK3DVIDEO::DATA::RGBA_UINT8:
-        eNewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-        break;
-
-    case GEK3DVIDEO::DATA::BGRA_UINT8:
-        eNewFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
-        break;
-
-    case GEK3DVIDEO::DATA::R_FLOAT:
-        eNewFormat = DXGI_FORMAT_R32_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::RG_FLOAT:
-        eNewFormat = DXGI_FORMAT_R32G32_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::RGB_FLOAT:
-        eNewFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::RGBA_FLOAT:
-        eNewFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::R_HALF:
-        eNewFormat = DXGI_FORMAT_R16_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::RG_HALF:
-        eNewFormat = DXGI_FORMAT_R16G16_FLOAT;
-        break;
-
-    case GEK3DVIDEO::DATA::RGBA_HALF:
-        eNewFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-        break;
-    };
-
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
+    DXGI_FORMAT eNewFormat = gs_aFormats[eFormat];
     if (eNewFormat != DXGI_FORMAT_UNKNOWN)
     {
         UINT32 nBindFlags = 0;
@@ -2809,17 +2567,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateFont(LPCWSTR pFace, UINT32 nWeig
     GEKHANDLE nResourceID = GEKINVALIDHANDLE;
 
     DWRITE_FONT_WEIGHT eD2DWeight = DWRITE_FONT_WEIGHT(nWeight);
-    DWRITE_FONT_STYLE eD2DStyle = DWRITE_FONT_STYLE_NORMAL;
-    switch (eStyle)
-    {
-    case GEK2DVIDEO::FONT::NORMAL:
-        eD2DStyle = DWRITE_FONT_STYLE_NORMAL;
-        break;
-
-    case GEK2DVIDEO::FONT::ITALIC:
-        eD2DStyle = DWRITE_FONT_STYLE_ITALIC;
-        break;
-    };
+    DWRITE_FONT_STYLE eD2DStyle = gs_aFontStyles[eStyle];
 
     CComPtr<IDWriteTextFormat> spFormat;
     m_spDWriteFactory->CreateTextFormat(pFace, nullptr, eD2DWeight, eD2DStyle, DWRITE_FONT_STRETCH_NORMAL, nSize, L"", &spFormat);
