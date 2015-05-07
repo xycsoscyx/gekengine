@@ -23,8 +23,8 @@ protected:
     class System
     {
     protected:
-        ID3D11DeviceContext *m_pDeviceContext;
         IGEKVideoResourceHandler *m_pResourceHandler;
+        ID3D11DeviceContext *m_pDeviceContext;
 
     public:
         System(ID3D11DeviceContext *pContext, IGEKVideoResourceHandler *pHandler);
@@ -95,7 +95,7 @@ protected:
     CGEKVideoContext(ID3D11DeviceContext *pContext, IGEKVideoResourceHandler *pHandler);
 
 public:
-    CGEKVideoContext(void);
+    CGEKVideoContext(IGEKVideoResourceHandler *pHandler);
     virtual ~CGEKVideoContext(void);
     DECLARE_UNKNOWN(CGEKVideoContext);
     
@@ -213,7 +213,7 @@ public:
     STDMETHOD_(void, UpdateTexture)                     (THIS_ const GEKHANDLE &nResourceID, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect = nullptr);
     STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor);
     STDMETHOD_(void, ClearDefaultDepthStencilTarget)    (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil);
-    STDMETHOD_(void, SetDefaultTargets)                 (THIS_ IGEK3DVideoContext *pContext = nullptr, const GEKHANDLE &nResourceID = GEKINVALIDHANDLE);
+    STDMETHOD_(void, SetDefaultTargets)                 (THIS_ IGEK3DVideoContext *pContext = nullptr, const GEKHANDLE &nDepthID = GEKINVALIDHANDLE);
     STDMETHOD_(void, ExecuteCommandList)                (THIS_ IUnknown *pUnknown);
     STDMETHOD_(void, Present)                           (THIS_ bool bWaitForVSync);
 

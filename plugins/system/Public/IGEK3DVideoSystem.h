@@ -504,7 +504,7 @@ DECLARE_INTERFACE_IID_(IGEK3DVideoSystem, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF
 
     STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor) PURE;
     STDMETHOD_(void, ClearDefaultDepthStencilTarget)    (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil) PURE;
-    STDMETHOD_(void, SetDefaultTargets)                 (THIS_ IGEK3DVideoContext *pContext = nullptr, const GEKHANDLE &nResourceID = GEKINVALIDHANDLE) PURE;
+    STDMETHOD_(void, SetDefaultTargets)                 (THIS_ IGEK3DVideoContext *pContext = nullptr, const GEKHANDLE &nDepthID = GEKINVALIDHANDLE) PURE;
 
     STDMETHOD_(void, ExecuteCommandList)                (THIS_ IUnknown *pUnknown) PURE;
 
