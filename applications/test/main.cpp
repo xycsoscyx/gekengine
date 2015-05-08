@@ -110,20 +110,20 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
             IGEK3DVideoSystem *pVideoSystem = (IGEK3DVideoSystem *)GetWindowLongPtr(hDialog, GWLP_USERDATA);
             pVideoSystem->ClearDefaultRenderTarget(float4(1.0f, 0.0f, 0.0f, 1.0f));
 
-            CComQIPtr<IGEK3DVideoContext> spContext(pVideoSystem);
-            pVideoSystem->SetDefaultTargets(spContext);
-            spContext->SetRenderStates(gs_nRenderStatesID);
-            spContext->SetBlendStates(gs_nBlendStatesID, float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
-            spContext->SetDepthStates(gs_nDepthStatesID, 0);
-            spContext->GetVertexSystem()->SetProgram(gs_nVertexProgramID);
-            spContext->GetVertexSystem()->SetConstantBuffer(gs_nConstantBufferID, 1);
-            spContext->GetPixelSystem()->SetProgram(gs_nPixelProgramID);
-            spContext->GetPixelSystem()->SetSamplerStates(gs_nSampleStatesID, 0);
-            spContext->GetPixelSystem()->SetResource(gs_nTextureID, 0);
-            spContext->SetVertexBuffer(gs_nVertexBufferID, 0, 0);
-            spContext->SetIndexBuffer(gs_nIndexBufferID, 0);
-            spContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);
-            spContext->DrawIndexedPrimitive(6, 0, 0);
+            CComQIPtr<IGEK3DVideoContext> spVideoContext(pVideoSystem);
+            pVideoSystem->SetDefaultTargets(spVideoContext);
+            spVideoContext->SetRenderStates(gs_nRenderStatesID);
+            spVideoContext->SetBlendStates(gs_nBlendStatesID, float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+            spVideoContext->SetDepthStates(gs_nDepthStatesID, 0);
+            spVideoContext->GetVertexSystem()->SetProgram(gs_nVertexProgramID);
+            spVideoContext->GetVertexSystem()->SetConstantBuffer(gs_nConstantBufferID, 1);
+            spVideoContext->GetPixelSystem()->SetProgram(gs_nPixelProgramID);
+            spVideoContext->GetPixelSystem()->SetSamplerStates(gs_nSampleStatesID, 0);
+            spVideoContext->GetPixelSystem()->SetResource(gs_nTextureID, 0);
+            spVideoContext->SetVertexBuffer(gs_nVertexBufferID, 0, 0);
+            spVideoContext->SetIndexBuffer(gs_nIndexBufferID, 0);
+            spVideoContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);
+            spVideoContext->DrawIndexedPrimitive(6, 0, 0);
 
             pVideoSystem->Present(false);
             return TRUE;
@@ -134,7 +134,29 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
-        case IDCANCEL:
+        case ID_FILE_LOAD:
+            if (true)
+            {
+                CStringW strFileName;
+                OPENFILENAMEW kOpenFileName;
+                ZeroMemory(&kOpenFileName, sizeof(OPENFILENAMEW));
+                kOpenFileName.lStructSize = sizeof(OPENFILENAMEW);
+                kOpenFileName.hwndOwner = hDialog;
+                kOpenFileName.lpstrFile = strFileName.GetBuffer(MAX_PATH + 1);
+                kOpenFileName.nMaxFile = MAX_PATH;
+                kOpenFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+                if (GetOpenFileNameW((LPOPENFILENAMEW)&kOpenFileName))
+                {
+                    strFileName.ReleaseBuffer();
+                    IGEK3DVideoSystem *pVideoSystem = (IGEK3DVideoSystem *)GetWindowLongPtr(hDialog, GWLP_USERDATA);
+                    pVideoSystem->FreeResource(gs_nTextureID);
+                    gs_nTextureID = pVideoSystem->LoadTexture(strFileName, 0);
+                }
+            }
+
+            return TRUE;
+
+        case ID_FILE_QUIT:
             if (true)
             {
                 CComPtr<IGEK3DVideoSystem> spVideoSystem;
@@ -167,9 +189,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
         if (SUCCEEDED(spContext->Initialize()))
         {
-            if (DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_TEST_DIALOG), nullptr, DialogProc, LPARAM((IGEKContext *)spContext)) == IDOK)
-            {
-            }
+            DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_TEST_DIALOG), nullptr, DialogProc, LPARAM((IGEKContext *)spContext));
         }
     }
 

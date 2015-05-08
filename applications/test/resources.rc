@@ -52,11 +52,11 @@ END
 
 IDD_TEST_DIALOG DIALOGEX 0, 0, 463, 286
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "GEKvX Engine"
+CAPTION "GEKvX Engine - Video System Test"
+MENU IDR_DIALOG_MENU
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    PUSHBUTTON      "Quit",IDCANCEL,406,265,50,14
-    CONTROL         "",IDC_VIDEO_WINDOW,"Static",SS_BLACKFRAME,7,7,449,252
+    CONTROL         "",IDC_VIDEO_WINDOW,"Static",SS_BLACKFRAME,7,7,449,272
 END
 
 
@@ -77,6 +77,21 @@ BEGIN
     END
 END
 #endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_DIALOG_MENU MENU
+BEGIN
+    POPUP "File"
+    BEGIN
+        MENUITEM "&Load",                       ID_FILE_LOAD
+        MENUITEM "&Quit",                       ID_FILE_QUIT
+    END
+END
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
