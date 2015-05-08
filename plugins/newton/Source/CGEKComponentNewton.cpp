@@ -342,7 +342,7 @@ dNewtonCollision *CGEKComponentSystemNewton::CreateCollision(const GEKENTITYID &
     float3 nSize(1.0f, 1.0f, 1.0f);
     if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(size)))
     {
-        nSize = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(size)>(nEntityID, GET_COMPONENT_ID(size)).value;
+        nSize = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(size)>(nEntityID, GET_COMPONENT_ID(size));
     }
 
     CStringW strShape(FormatString(L"%s:%f,%f,%f", kDynamicBody.shape.GetString(), nSize.x, nSize.y, nSize.z));

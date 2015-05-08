@@ -28,6 +28,9 @@
     <ClCompile Include="Source\CGEKComponentCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\CGEKComponentSize.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKComponentsCLSIDs.h" />
@@ -72,6 +75,9 @@
     </ClInclude>
     <ClInclude Include="GEKComponents.h" />
     <ClInclude Include="Include\CGEKComponentCamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\CGEKComponentSize.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
