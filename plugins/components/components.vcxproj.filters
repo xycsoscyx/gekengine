@@ -16,22 +16,16 @@
     <ClCompile Include="Source\CGEKComponentFollow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentSize.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\CGEKComponentColor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\CGEKComponentTransform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentViewer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\CGEKComponentLight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentMass.cpp">
+    <ClCompile Include="Source\CGEKComponentCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -67,13 +61,7 @@
     <ClInclude Include="..\..\api\IGEKEngineCore.h">
       <Filter>API Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKComponentSize.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\CGEKComponentColor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentViewer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKComponentLight.h">
@@ -82,10 +70,10 @@
     <ClInclude Include="Include\CGEKComponentTransform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\CGEKComponentMass.h">
+    <ClInclude Include="GEKComponents.h" />
+    <ClInclude Include="Include\CGEKComponentCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEKComponents.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

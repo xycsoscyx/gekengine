@@ -17,12 +17,15 @@
 REGISTER_COMPONENT(dynamicbody)
     REGISTER_COMPONENT_DEFAULT_VALUE(shape, L"")
     REGISTER_COMPONENT_DEFAULT_VALUE(material, L"")
+    REGISTER_COMPONENT_DEFAULT_VALUE(mass, 0.0f)
     REGISTER_COMPONENT_SERIALIZE(dynamicbody)
         REGISTER_COMPONENT_SERIALIZE_VALUE(shape, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(material, )
+        REGISTER_COMPONENT_SERIALIZE_VALUE(mass, StrFromFloat)
     REGISTER_COMPONENT_DESERIALIZE(dynamicbody)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(shape, )
         REGISTER_COMPONENT_DESERIALIZE_VALUE(material, )
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(mass, StrToFloat)
 END_REGISTER_COMPONENT(dynamicbody)
 
 REGISTER_COMPONENT(player)
@@ -30,16 +33,19 @@ REGISTER_COMPONENT(player)
     REGISTER_COMPONENT_DEFAULT_VALUE(inner_radius, 0.25f)
     REGISTER_COMPONENT_DEFAULT_VALUE(height, 1.9f)
     REGISTER_COMPONENT_DEFAULT_VALUE(stair_step, 0.25f)
+    REGISTER_COMPONENT_DEFAULT_VALUE(mass, 0.0f)
     REGISTER_COMPONENT_SERIALIZE(player)
         REGISTER_COMPONENT_SERIALIZE_VALUE(outer_radius, StrFromFloat)
         REGISTER_COMPONENT_SERIALIZE_VALUE(inner_radius, StrFromFloat)
         REGISTER_COMPONENT_SERIALIZE_VALUE(height, StrFromFloat)
         REGISTER_COMPONENT_SERIALIZE_VALUE(stair_step, StrFromFloat)
+        REGISTER_COMPONENT_SERIALIZE_VALUE(mass, StrFromFloat)
     REGISTER_COMPONENT_DESERIALIZE(player)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(outer_radius, StrToFloat)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(inner_radius, StrToFloat)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(height, StrToFloat)
         REGISTER_COMPONENT_DESERIALIZE_VALUE(stair_step, StrToFloat)
+        REGISTER_COMPONENT_DESERIALIZE_VALUE(mass, StrToFloat)
 END_REGISTER_COMPONENT(player)
 
 class CGEKNewtonBaseBody
@@ -113,9 +119,8 @@ public:
     // dNewtonDynamicBody
     void OnForceAndTorque(dFloat nTimeStep, int nThreadID)
     {
-        auto &kMass = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(mass)>(GetEntityID(), GET_COMPONENT_ID(mass));
         auto &kDynamicBody = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(GetEntityID(), GET_COMPONENT_ID(dynamicbody));
-        AddForce((GetNewtonSystem()->GetGravity() * kMass.value).xyz);
+        AddForce((GetNewtonSystem()->GetGravity() * kDynamicBody.mass).xyz);
     }
 };
 
@@ -604,11 +609,9 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnFree(void)
 
 STDMETHODIMP_(void) CGEKComponentSystemNewton::OnEntityCreated(const GEKENTITYID &nEntityID)
 {
-    if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(transform)) &&
-        m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(mass)))
+    if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(transform)))
     {
         auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
-        auto &kMass = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(mass)>(nEntityID, GET_COMPONENT_ID(mass));
         if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(dynamicbody)))
         {
             auto &kDynamicBody = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(dynamicbody)>(nEntityID, GET_COMPONENT_ID(dynamicbody));
@@ -617,7 +620,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnEntityCreated(const GEKENTITYID
             {
                 float4x4 nMatrix(kTransform.rotation, kTransform.position);
 
-                CComPtr<IGEKUnknown> spBody = new CGEKDynamicBody(m_pEngine, this, nEntityID, kMass.value, pCollision, nMatrix);
+                CComPtr<IGEKUnknown> spBody = new CGEKDynamicBody(m_pEngine, this, nEntityID, kDynamicBody.mass, pCollision, nMatrix);
                 if (spBody)
                 {
                     m_aBodies[nEntityID] = spBody;
@@ -627,7 +630,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnEntityCreated(const GEKENTITYID
         else if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(player)))
         {
             auto &kPlayer = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(player)>(nEntityID, GET_COMPONENT_ID(player));
-            CComPtr<CGEKPlayer> spPlayer = new CGEKPlayer(m_pEngine, this, nEntityID, kMass.value, kPlayer.outer_radius, kPlayer.inner_radius, kPlayer.height, kPlayer.stair_step);
+            CComPtr<CGEKPlayer> spPlayer = new CGEKPlayer(m_pEngine, this, nEntityID, kPlayer.mass, kPlayer.outer_radius, kPlayer.inner_radius, kPlayer.height, kPlayer.stair_step);
             if (spPlayer)
             {
                 CGEKObservable::AddObserver(m_pEngine, spPlayer->GetClass<IGEKInputObserver>());

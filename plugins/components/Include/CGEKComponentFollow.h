@@ -3,7 +3,6 @@
 #include "GEKUtility.h"
 #include "GEKContext.h"
 #include "GEKAPI.h"
-#include <concurrent_unordered_map.h>
 
 DECLARE_COMPONENT(follow, 0x00001000)
     DECLARE_COMPONENT_VALUE(CStringW, target)
