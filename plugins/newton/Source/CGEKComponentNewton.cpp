@@ -91,7 +91,7 @@ class CGEKDynamicBody : public CGEKUnknown
 {
 public:
     DECLARE_UNKNOWN(CGEKDynamicBody)
-    CGEKDynamicBody(IGEKEngineCore *pEngine, IGEKNewtonSystem *pNewton, const GEKENTITYID &nEntityID, float nMass, const dNewtonCollision* const pCollision, const float4x4& nMatrix)
+    CGEKDynamicBody(IGEKEngineCore *pEngine, IGEKNewtonSystem *pNewton, const GEKENTITYID &nEntityID, float nMass, const dNewtonCollision* const pCollision, const Math::Float4x4& nMatrix)
         : CGEKNewtonBaseBody(pEngine, pNewton, nEntityID)
         , dNewtonDynamicBody(pNewton->GetCore(), nMass, pCollision, nullptr, nMatrix.data, NULL)
     {
@@ -110,7 +110,7 @@ public:
     // dNewtonBody
     void OnBodyTransform(const dFloat* const pMatrix, int nThreadID)
     {
-        const float4x4 &nMatrix = *reinterpret_cast<const float4x4 *>(pMatrix);
+        const Math::Float4x4 &nMatrix = *reinterpret_cast<const Math::Float4x4 *>(pMatrix);
         auto &kTransform = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(GetEntityID(), GET_COMPONENT_ID(transform));
         kTransform.position = nMatrix.t;
         kTransform.rotation = nMatrix;
@@ -141,7 +141,7 @@ public:
     DECLARE_UNKNOWN(CGEKPlayer)
     CGEKPlayer(IGEKEngineCore *pEngine, IGEKNewtonSystem *pNewton, const GEKENTITYID &nEntityID, float nMass, float nOuterRadius, float nInnerRadius, float nHeight, float nStairStep)
         : CGEKNewtonBaseBody(pEngine, pNewton, nEntityID)
-        , dNewtonPlayer(pNewton->GetPlayerManager(), nullptr, nMass, nOuterRadius, nInnerRadius, nHeight, nStairStep, float3(0.0f, 1.0f, 0.0f).xyz, float3(0.0f, 0.0f, 1.0f).xyz, 1)
+        , dNewtonPlayer(pNewton->GetPlayerManager(), nullptr, nMass, nOuterRadius, nInnerRadius, nHeight, nStairStep, Math::Float3(0.0f, 1.0f, 0.0f).xyz, Math::Float3(0.0f, 0.0f, 1.0f).xyz, 1)
         , m_nTurn(0.0f)
     {
     }
@@ -160,7 +160,7 @@ public:
     // dNewtonBody
     void OnBodyTransform(const dFloat* const pMatrix, int nThreadID)
     {
-        const float4x4 &nMatrix = *reinterpret_cast<const float4x4 *>(pMatrix);
+        const Math::Float4x4 &nMatrix = *reinterpret_cast<const Math::Float4x4 *>(pMatrix);
         auto &kTransform = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(GetEntityID(), GET_COMPONENT_ID(transform));
         kTransform.position = nMatrix.t;
         kTransform.rotation = nMatrix;
@@ -189,7 +189,7 @@ public:
         GetInput(m_aConstantActions);
 
         auto &kPlayer = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(player)>(GetEntityID(), GET_COMPONENT_ID(player));
-        SetPlayerVelocity(nForward, nStrafe, nHeight, m_nTurn, float3(0.0f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.xyz, nTimeStep);
+        SetPlayerVelocity(nForward, nStrafe, nHeight, m_nTurn, Math::Float3(0.0f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.xyz, nTimeStep);
     }
 
     // IGEKInputObserver
@@ -254,7 +254,7 @@ const CGEKComponentSystemNewton::MATERIAL &CGEKComponentSystemNewton::GetMateria
     }
 }
 
-INT32 CGEKComponentSystemNewton::GetContactMaterial(const GEKENTITYID &nEntityID, NewtonBody *pBody, NewtonMaterial *pMaterial, const float3 &nPosition, const float3 &nNormal)
+INT32 CGEKComponentSystemNewton::GetContactMaterial(const GEKENTITYID &nEntityID, NewtonBody *pBody, NewtonMaterial *pMaterial, const Math::Float3 &nPosition, const Math::Float3 &nNormal)
 {
     if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(dynamicbody)))
     {
@@ -265,7 +265,7 @@ INT32 CGEKComponentSystemNewton::GetContactMaterial(const GEKENTITYID &nEntityID
             if (pCollision)
             {
                 dLong nAttribute = 0;
-                float3 nCollisionNormal;
+                Math::Float3 nCollisionNormal;
                 NewtonCollisionRayCast(pCollision, (nPosition - nNormal).xyz, (nPosition + nNormal).xyz, nCollisionNormal.xyz, &nAttribute);
                 if (nAttribute > 0)
                 {
@@ -339,7 +339,7 @@ INT32 CGEKComponentSystemNewton::LoadMaterial(LPCWSTR pName)
 
 dNewtonCollision *CGEKComponentSystemNewton::CreateCollision(const GEKENTITYID &nEntityID, const GET_COMPONENT_DATA(dynamicbody) &kDynamicBody)
 {
-    float3 nSize(1.0f, 1.0f, 1.0f);
+    Math::Float3 nSize(1.0f, 1.0f, 1.0f);
     if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(size)))
     {
         nSize = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(size)>(nEntityID, GET_COMPONENT_ID(size));
@@ -472,10 +472,10 @@ dNewtonCollision *CGEKComponentSystemNewton::LoadCollision(const GEKENTITYID &nE
                     UINT32 nNumVertices = *((UINT32 *)pBuffer);
                     pBuffer += sizeof(UINT32);
 
-                    float3 *pVertices = (float3 *)pBuffer;
-                    pBuffer += (sizeof(float3) * nNumVertices);
-                    pBuffer += (sizeof(float2) * nNumVertices);
-                    pBuffer += (sizeof(float3) * nNumVertices);
+                    Math::Float3 *pVertices = (Math::Float3 *)pBuffer;
+                    pBuffer += (sizeof(Math::Float3) * nNumVertices);
+                    pBuffer += (sizeof(Math::Float2) * nNumVertices);
+                    pBuffer += (sizeof(Math::Float3) * nNumVertices);
 
                     UINT32 nNumIndices = *((UINT32 *)pBuffer);
                     pBuffer += sizeof(UINT32);
@@ -484,13 +484,13 @@ dNewtonCollision *CGEKComponentSystemNewton::LoadCollision(const GEKENTITYID &nE
 
                     if (aMaterials.empty())
                     {
-                        std::vector<float3> aCloud(nNumIndices);
+                        std::vector<Math::Float3> aCloud(nNumIndices);
                         for (UINT32 nIndex = 0; nIndex < nNumIndices; ++nIndex)
                         {
                             aCloud[nIndex] = pVertices[pIndices[nIndex]];
                         }
 
-                        pCollision = new dNewtonCollisionConvexHull(this, aCloud.size(), aCloud[0].xyz, sizeof(float3), 0.025f, 1);
+                        pCollision = new dNewtonCollisionConvexHull(this, aCloud.size(), aCloud[0].xyz, sizeof(Math::Float3), 0.025f, 1);
                     }
                     else
                     {
@@ -504,14 +504,14 @@ dNewtonCollision *CGEKComponentSystemNewton::LoadCollision(const GEKENTITYID &nE
                                 INT32 nMaterialIndex = LoadMaterial(kPair.first);
                                 for (UINT32 nIndex = 0; nIndex < kMaterial.m_nNumIndices; nIndex += 3)
                                 {
-                                    float3 aFace[3] =
+                                    Math::Float3 aFace[3] =
                                     {
                                         pVertices[kMaterial.m_nFirstVertex + pIndices[kMaterial.m_nFirstIndex + nIndex + 0]],
                                         pVertices[kMaterial.m_nFirstVertex + pIndices[kMaterial.m_nFirstIndex + nIndex + 1]],
                                         pVertices[kMaterial.m_nFirstVertex + pIndices[kMaterial.m_nFirstIndex + nIndex + 2]],
                                     };
 
-                                    pMesh->AddFace(3, aFace[0].xyz, sizeof(float3), nMaterialIndex);
+                                    pMesh->AddFace(3, aFace[0].xyz, sizeof(Math::Float3), nMaterialIndex);
                                 }
                             }
 
@@ -553,7 +553,7 @@ void CGEKComponentSystemNewton::OnContactProcess(dNewtonContactMaterial* const p
         {
             NewtonMaterial *pMaterial = NewtonContactGetMaterial(pContact);
 
-            float3 nPosition, nNormal;
+            Math::Float3 nPosition, nNormal;
             NewtonMaterialGetContactPositionAndNormal(pMaterial, pBody0->GetNewtonBody(), nPosition.xyz, nNormal.xyz);
 
             INT32 nMaterialIndex0 = GetContactMaterial(pBody0->GetEntityID(), pBody0->GetNewtonBody(), pMaterial, nPosition, nNormal);
@@ -618,7 +618,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnEntityCreated(const GEKENTITYID
             dNewtonCollision *pCollision = LoadCollision(nEntityID, kDynamicBody);
             if (pCollision != nullptr)
             {
-                float4x4 nMatrix(kTransform.rotation, kTransform.position);
+                Math::Float4x4 nMatrix(kTransform.rotation, kTransform.position);
 
                 CComPtr<IGEKUnknown> spBody = new CGEKDynamicBody(m_pEngine, this, nEntityID, kDynamicBody.mass, pCollision, nMatrix);
                 if (spBody)
@@ -634,7 +634,7 @@ STDMETHODIMP_(void) CGEKComponentSystemNewton::OnEntityCreated(const GEKENTITYID
             if (spPlayer)
             {
                 CGEKObservable::AddObserver(m_pEngine, spPlayer->GetClass<IGEKInputObserver>());
-                spPlayer->SetMatrix(float4x4(kTransform.rotation, kTransform.position).data);
+                spPlayer->SetMatrix(Math::Float4x4(kTransform.rotation, kTransform.position).data);
                 spPlayer.QueryInterface(&m_aBodies[nEntityID]);
             }
         }
@@ -665,7 +665,7 @@ STDMETHODIMP_(dNewtonPlayerManager *) CGEKComponentSystemNewton::GetPlayerManage
     return m_pPlayerManager;
 }
 
-STDMETHODIMP_(float3) CGEKComponentSystemNewton::GetGravity(void)
+STDMETHODIMP_(Math::Float3) CGEKComponentSystemNewton::GetGravity(void)
 {
     return m_nGravity;
 }

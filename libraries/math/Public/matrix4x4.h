@@ -40,6 +40,11 @@ namespace Gek
                 setIdentity();
             }
 
+            BaseMatrix4x4(const TYPE *data)
+            {
+                memcpy(this->data, data, sizeof(this->data));
+            }
+
             BaseMatrix4x4(const BaseMatrix4x4 &matrix)
             {
                 memcpy(data, matrix.data, sizeof(data));
@@ -234,7 +239,7 @@ namespace Gek
                 table[3][0] = TYPE(0);  table[3][1] = TYPE(0);  table[3][2] = TYPE(0); table[3][3] = TYPE(1);
             }
 
-            void setOrthographic(TYPE left, TYPE top, TYPE right, TYPE bottom, TYPE near, TYPE far)
+            void setOrthographic(TYPE left, TYPE top, TYPE right, TYPE bottom, TYPE nearDepth, TYPE farDepth)
             {
                 table[0][0] = (TYPE(2) / (right - left));
                 table[1][0] = TYPE(0);
@@ -248,8 +253,8 @@ namespace Gek
 
                 table[0][2] = TYPE(0);
                 table[1][2] = TYPE(0);
-                table[2][2] = (-TYPE(2) / (far - near));
-                table[3][2] = -((far + near) / (far - near));
+                table[2][2] = (-TYPE(2) / (farDepth - nearDepth));
+                table[3][2] = -((farDepth + nearDepth) / (farDepth - nearDepth));
 
                 table[0][3] = TYPE(0);
                 table[1][3] = TYPE(0);
@@ -257,11 +262,11 @@ namespace Gek
                 table[3][3] = TYPE(1);
             }
 
-            void setPerspective(TYPE fieldOfView, TYPE aspectRatio, TYPE near, TYPE far)
+            void setPerspective(TYPE fieldOfView, TYPE aspectRatio, TYPE nearDepth, TYPE farDepth)
             {
                 TYPE x(TYPE(1) / tan(fieldOfView * TYPE(0.5)));
                 TYPE y(x * aspectRatio);
-                TYPE distance(far - near);
+                TYPE distance(farDepth - nearDepth);
 
                 table[0][0] = x;
                 table[0][1] = TYPE(0);
@@ -275,12 +280,12 @@ namespace Gek
 
                 table[2][0] = TYPE(0);
                 table[2][1] = TYPE(0);
-                table[2][2] = ((far + near) / distance);
+                table[2][2] = ((farDepth + nearDepth) / distance);
                 table[2][3] = TYPE(1);
 
                 table[3][0] = TYPE(0);
                 table[3][1] = TYPE(0);
-                table[3][2] = -((TYPE(2) * far * near) / distance);
+                table[3][2] = -((TYPE(2) * farDepth * nearDepth) / distance);
                 table[3][3] = TYPE(0);
             }
 
@@ -368,10 +373,10 @@ namespace Gek
 
             BaseMatrix4x4 getTranspose(void) const
             {
-                return BaseMatrix4x4(_11, _21, _31, _41,
-                                     _12, _22, _32, _42,
-                                     _13, _23, _33, _43,
-                                     _14, _24, _34, _44);
+                return BaseMatrix4x4({ _11, _21, _31, _41,
+                                       _12, _22, _32, _42,
+                                       _13, _23, _33, _43, 
+                                       _14, _24, _34, _44 });
             }
 
             BaseMatrix4x4 getInverse(void) const

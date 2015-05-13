@@ -106,13 +106,13 @@ public:
     STDMETHOD_(IGEK3DVideoContext::System *, GetPixelSystem)    (THIS);
     STDMETHOD_(void, ClearResources)                   (THIS);
     STDMETHOD_(void, SetViewports)                     (THIS_ const std::vector<GEK3DVIDEO::VIEWPORT> &aViewports);
-    STDMETHOD_(void, SetScissorRect)                   (THIS_ const std::vector<trect<UINT32>> &aRects);
-    STDMETHOD_(void, ClearRenderTarget)                (THIS_ const GEKHANDLE &nTargetID, const float4 &kColor);
+    STDMETHOD_(void, SetScissorRect)                   (THIS_ const std::vector<Rectangle<UINT32>> &aRects);
+    STDMETHOD_(void, ClearRenderTarget)                (THIS_ const GEKHANDLE &nTargetID, const Math::Float4 &kColor);
     STDMETHOD_(void, ClearDepthStencilTarget)          (THIS_ const GEKHANDLE &nTargetID, UINT32 nFlags, float fDepth, UINT32 nStencil);
     STDMETHOD_(void, SetRenderTargets)                 (THIS_ const std::vector<GEKHANDLE> &aTargets, const GEKHANDLE &nDepthID);
     STDMETHOD_(void, SetRenderStates)                  (THIS_ const GEKHANDLE &nResourceID);
     STDMETHOD_(void, SetDepthStates)                   (THIS_ const GEKHANDLE &nResourceID, UINT32 nStencilReference);
-    STDMETHOD_(void, SetBlendStates)                   (THIS_ const GEKHANDLE &nResourceID, const float4 &nBlendFactor, UINT32 nMask);
+    STDMETHOD_(void, SetBlendStates)                   (THIS_ const GEKHANDLE &nResourceID, const Math::Float4 &nBlendFactor, UINT32 nMask);
     STDMETHOD_(void, SetVertexBuffer)                  (THIS_ const GEKHANDLE &nResourceID, UINT32 nSlot, UINT32 nOffset);
     STDMETHOD_(void, SetIndexBuffer)                   (THIS_ const GEKHANDLE &nResourceID, UINT32 nOffset);
     STDMETHOD_(void, SetPrimitiveType)                 (THIS_ GEK3DVIDEO::PRIMITIVE::TYPE eType);
@@ -210,22 +210,22 @@ public:
     STDMETHOD_(GEKHANDLE, LoadPixelProgram)             (THIS_ LPCWSTR pFileName, LPCSTR pEntry, std::unordered_map<CStringA, CStringA> *pDefines = nullptr);
     STDMETHOD_(GEKHANDLE, CreateTexture)                (THIS_ UINT32 nXSize, UINT32 nYSize, UINT32 nZSize, GEK3DVIDEO::DATA::FORMAT eFormat, UINT32 nFlagse);
     STDMETHOD_(GEKHANDLE, LoadTexture)                  (THIS_ LPCWSTR pFileName, UINT32 nFlags);
-    STDMETHOD_(void, UpdateTexture)                     (THIS_ const GEKHANDLE &nResourceID, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect = nullptr);
-    STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const float4 &kColor);
+    STDMETHOD_(void, UpdateTexture)                     (THIS_ const GEKHANDLE &nResourceID, void *pBuffer, UINT32 nPitch, Rectangle<UINT32> *pDestRect = nullptr);
+    STDMETHOD_(void, ClearDefaultRenderTarget)          (THIS_ const Math::Float4 &kColor);
     STDMETHOD_(void, ClearDefaultDepthStencilTarget)    (THIS_ UINT32 nFlags, float fDepth, UINT32 nStencil);
     STDMETHOD_(void, SetDefaultTargets)                 (THIS_ IGEK3DVideoContext *pContext = nullptr, const GEKHANDLE &nDepthID = GEKINVALIDHANDLE);
     STDMETHOD_(void, ExecuteCommandList)                (THIS_ IUnknown *pUnknown);
     STDMETHOD_(void, Present)                           (THIS_ bool bWaitForVSync);
 
     // IGEK2DVideoSystem
-    STDMETHOD_(GEKHANDLE, CreateBrush)                  (THIS_ const float4 &nColor);
-    STDMETHOD_(GEKHANDLE, CreateBrush)                  (THIS_ const std::vector<GEK2DVIDEO::GRADIENT::STOP> &aStops, const trect<float> &kRect);
+    STDMETHOD_(GEKHANDLE, CreateBrush)                  (THIS_ const Math::Float4 &nColor);
+    STDMETHOD_(GEKHANDLE, CreateBrush)                  (THIS_ const std::vector<GEK2DVIDEO::GRADIENT::STOP> &aStops, const Rectangle<float> &kRect);
     STDMETHOD_(GEKHANDLE, CreateFont)                   (THIS_ LPCWSTR pFace, UINT32 nWeight, GEK2DVIDEO::FONT::STYLE eStyle, float nSize);
     STDMETHOD(CreateGeometry)                           (THIS_ IGEK2DVideoGeometry **ppGeometry);
-    STDMETHOD_(void, SetTransform)                      (THIS_ const float3x2 &nTransform);
-    STDMETHOD_(void, DrawText)                          (THIS_ const trect<float> &kLayout, const GEKHANDLE &nFontID, const GEKHANDLE &nBrushID, LPCWSTR pMessage, ...);
-    STDMETHOD_(void, DrawRectangle)                     (THIS_ const trect<float> &kRect, const GEKHANDLE &nBrushID, bool bFilled);
-    STDMETHOD_(void, DrawRectangle)                     (THIS_ const trect<float> &kRect, const float2 &nRadius, const GEKHANDLE &nBrushID, bool bFilled);
+    STDMETHOD_(void, SetTransform)                      (THIS_ const Math::Float3x2 &nTransform);
+    STDMETHOD_(void, DrawText)                          (THIS_ const Rectangle<float> &kLayout, const GEKHANDLE &nFontID, const GEKHANDLE &nBrushID, LPCWSTR pMessage, ...);
+    STDMETHOD_(void, DrawRectangle)                     (THIS_ const Rectangle<float> &kRect, const GEKHANDLE &nBrushID, bool bFilled);
+    STDMETHOD_(void, DrawRectangle)                     (THIS_ const Rectangle<float> &kRect, const Math::Float2 &nRadius, const GEKHANDLE &nBrushID, bool bFilled);
     STDMETHOD_(void, DrawGeometry)                      (THIS_ IGEK2DVideoGeometry *pGeometry, const GEKHANDLE &nBrushID, bool bFilled);
     STDMETHOD_(void, Begin)                             (THIS);
     STDMETHOD(End)                                      (THIS);

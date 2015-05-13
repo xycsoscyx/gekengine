@@ -107,20 +107,20 @@ CGEKComponentSystemModel::MODEL *CGEKComponentSystemModel::GetModel(LPCWSTR pSou
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(float3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spPositionBuffer, pBuffer);
-                    pBuffer += (sizeof(float3) * nNumVertices);
+                    hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(Math::Float3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spPositionBuffer, pBuffer);
+                    pBuffer += (sizeof(Math::Float3) * nNumVertices);
                 }
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(float2), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spTexCoordBuffer, pBuffer);
-                    pBuffer += (sizeof(float2) * nNumVertices);
+                    hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(Math::Float2), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spTexCoordBuffer, pBuffer);
+                    pBuffer += (sizeof(Math::Float2) * nNumVertices);
                 }
 
                 if (SUCCEEDED(hRetVal))
                 {
-                    hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(float3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spNormalBuffer, pBuffer);
-                    pBuffer += (sizeof(float3) * nNumVertices);
+                    hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(Math::Float3), nNumVertices, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &kModel.m_spNormalBuffer, pBuffer);
+                    pBuffer += (sizeof(Math::Float3) * nNumVertices);
                 }
 
                 if (SUCCEEDED(hRetVal))
@@ -191,20 +191,20 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnCullScene(const GEKENTITYID &nVi
         MODEL *pModel = GetModel(kModel.source);
         if (pModel)
         {
-            float3 nSize(1.0f, 1.0f, 1.0f);
+            Math::Float3 nSize(1.0f, 1.0f, 1.0f);
             if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(size)))
             {
                 nSize = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(size)>(nEntityID, GET_COMPONENT_ID(size)).value;
             }
 
-            float4 nColor(1.0f, 1.0f, 1.0f, 1.0f);
+            Math::Float4 nColor(1.0f, 1.0f, 1.0f, 1.0f);
             if (m_pEngine->GetSceneManager()->HasComponent(nEntityID, GET_COMPONENT_ID(color)))
             {
                 nColor = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(color)>(nEntityID, GET_COMPONENT_ID(color)).value;
             }
 
             auto &kTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
-            float4x4 nMatrix(kTransform.rotation, kTransform.position);
+            Math::Float4x4 nMatrix(kTransform.rotation, kTransform.position);
 
             aabb nAABB(pModel->m_nAABB);
             nAABB.minimum *= nSize;

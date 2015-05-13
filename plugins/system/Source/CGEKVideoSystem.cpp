@@ -313,7 +313,7 @@ public:
         return hRetVal;
     }
 
-    STDMETHODIMP_(void) Begin(const float2 &nPoint, bool bFilled)
+    STDMETHODIMP_(void) Begin(const Math::Float2 &nPoint, bool bFilled)
     {
         REQUIRE_VOID_RETURN(m_spGeometry && m_spSink);
 
@@ -335,7 +335,7 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) AddLine(const float2 &nPoint)
+    STDMETHODIMP_(void) AddLine(const Math::Float2 &nPoint)
     {
         REQUIRE_VOID_RETURN(m_spSink);
 
@@ -345,7 +345,7 @@ public:
         }
     }
 
-    STDMETHODIMP_(void) AddBezier(const float2 &nPoint1, const float2 &nPoint2, const float2 &nPoint3)
+    STDMETHODIMP_(void) AddBezier(const Math::Float2 &nPoint1, const Math::Float2 &nPoint2, const Math::Float2 &nPoint3)
     {
         REQUIRE_VOID_RETURN(m_spSink);
 
@@ -760,13 +760,13 @@ STDMETHODIMP_(void) CGEKVideoContext::SetViewports(const std::vector<GEK3DVIDEO:
     m_spDeviceContext->RSSetViewports(aViewports.size(), (D3D11_VIEWPORT *)aViewports.data());
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<trect<UINT32>> &aRects)
+STDMETHODIMP_(void) CGEKVideoContext::SetScissorRect(const std::vector<Rectangle<UINT32>> &aRects)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && aRects.size() > 0);
     m_spDeviceContext->RSSetScissorRects(aRects.size(), (D3D11_RECT *)aRects.data());
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::ClearRenderTarget(const GEKHANDLE &nTargetID, const float4 &kColor)
+STDMETHODIMP_(void) CGEKVideoContext::ClearRenderTarget(const GEKHANDLE &nTargetID, const Math::Float4 &kColor)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && m_pResourceHandler);
     CComQIPtr<ID3D11RenderTargetView> spRenderTargetView(m_pResourceHandler->GetResource(nTargetID));
@@ -830,7 +830,7 @@ STDMETHODIMP_(void) CGEKVideoContext::SetDepthStates(const GEKHANDLE &nResourceI
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const GEKHANDLE &nResourceID, const float4 &nBlendFactor, UINT32 nMask)
+STDMETHODIMP_(void) CGEKVideoContext::SetBlendStates(const GEKHANDLE &nResourceID, const Math::Float4 &nBlendFactor, UINT32 nMask)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && m_pResourceHandler);
     CComQIPtr<ID3D11BlendState> spStates(m_pResourceHandler->GetResource(nResourceID));
@@ -2411,7 +2411,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::LoadTexture(LPCWSTR pFileName, UINT32 
     return nResourceID;
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(const GEKHANDLE &nResourceID, void *pBuffer, UINT32 nPitch, trect<UINT32> *pDestRect)
+STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(const GEKHANDLE &nResourceID, void *pBuffer, UINT32 nPitch, Rectangle<UINT32> *pDestRect)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext);
 
@@ -2444,7 +2444,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::UpdateTexture(const GEKHANDLE &nResourceID,
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::ClearDefaultRenderTarget(const float4 &kColor)
+STDMETHODIMP_(void) CGEKVideoSystem::ClearDefaultRenderTarget(const Math::Float4 &kColor)
 {
     REQUIRE_VOID_RETURN(m_spDeviceContext && m_spRenderTargetView);
     m_spDeviceContext->ClearRenderTargetView(m_spRenderTargetView, kColor.rgba);
@@ -2506,7 +2506,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::Present(bool bWaitForVSync)
     m_spSwapChain->Present(bWaitForVSync ? 1 : 0, 0);
 }
 
-STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBrush(const float4 &nColor)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBrush(const Math::Float4 &nColor)
 {
     REQUIRE_RETURN(m_spD2DDeviceContext, GEKINVALIDHANDLE);
 
@@ -2523,7 +2523,7 @@ STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBrush(const float4 &nColor)
     return nResourceID;
 }
 
-STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBrush(const std::vector<GEK2DVIDEO::GRADIENT::STOP> &aStops, const trect<float> &kRect)
+STDMETHODIMP_(GEKHANDLE) CGEKVideoSystem::CreateBrush(const std::vector<GEK2DVIDEO::GRADIENT::STOP> &aStops, const Rectangle<float> &kRect)
 {
     REQUIRE_RETURN(m_spD2DDeviceContext, GEKINVALIDHANDLE);
 
@@ -2586,14 +2586,14 @@ STDMETHODIMP CGEKVideoSystem::CreateGeometry(IGEK2DVideoGeometry **ppGeometry)
     return hRetVal;
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::SetTransform(const float3x2 &nTransform)
+STDMETHODIMP_(void) CGEKVideoSystem::SetTransform(const Math::Float3x2 &nTransform)
 {
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
 
     m_spD2DDeviceContext->SetTransform(*(D2D1_MATRIX_3X2_F *)&nTransform);
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::DrawText(const trect<float> &kLayout, const GEKHANDLE &nFontID, const GEKHANDLE &nBrushID, LPCWSTR pMessage, ...)
+STDMETHODIMP_(void) CGEKVideoSystem::DrawText(const Rectangle<float> &kLayout, const GEKHANDLE &nFontID, const GEKHANDLE &nBrushID, LPCWSTR pMessage, ...)
 {
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
     REQUIRE_VOID_RETURN(pMessage);
@@ -2616,7 +2616,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::DrawText(const trect<float> &kLayout, const
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, const GEKHANDLE &nBrushID, bool bFilled)
+STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const Rectangle<float> &kRect, const GEKHANDLE &nBrushID, bool bFilled)
 {
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
 
@@ -2634,7 +2634,7 @@ STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, co
     }
 }
 
-STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const trect<float> &kRect, const float2 &nRadius, const GEKHANDLE &nBrushID, bool bFilled)
+STDMETHODIMP_(void) CGEKVideoSystem::DrawRectangle(const Rectangle<float> &kRect, const Math::Float2 &nRadius, const GEKHANDLE &nBrushID, bool bFilled)
 {
     REQUIRE_VOID_RETURN(m_spD2DDeviceContext);
 

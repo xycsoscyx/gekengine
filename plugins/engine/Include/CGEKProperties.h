@@ -24,7 +24,7 @@ public:
 class CGEKBlendStates
 {
 protected:
-    float4 m_nBlendFactor;
+    Math::Float4 m_nBlendFactor;
     UINT32 m_nSampleMask;
     CComPtr<IUnknown> m_spBlendStates;
 

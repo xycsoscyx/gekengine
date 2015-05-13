@@ -40,8 +40,8 @@ protected:
 
     std::vector<UINT32> m_aStates;
 
-    float3 m_nAxis;
-    float3 m_nRotation;
+    Math::Float3 m_nAxis;
+    Math::Float3 m_nRotation;
     float m_nPOV;
 
 public:
@@ -72,12 +72,12 @@ public:
         return m_nNumAxis; 
     }
     
-    STDMETHODIMP_(float3) GetAxis(void) const
+    STDMETHODIMP_(Math::Float3) GetAxis(void) const
     {
         return m_nAxis;
     }
 
-    STDMETHODIMP_(float3) GetRotation(void) const
+    STDMETHODIMP_(Math::Float3) GetRotation(void) const
     {
         return m_nRotation;
     }

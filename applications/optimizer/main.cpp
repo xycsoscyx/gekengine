@@ -14,9 +14,9 @@
 struct MODEL
 {
     std::vector<UINT16> m_aIndices;
-    std::vector<float3> m_aVertices;
-    std::vector<float2> m_aTexCoords;
-    std::vector<float3> m_aNormals;
+    std::vector<Math::Float3> m_aVertices;
+    std::vector<Math::Float2> m_aTexCoords;
+    std::vector<Math::Float3> m_aNormals;
 };
 
 class CMyException
@@ -36,19 +36,19 @@ public:
     }
 };
 
-void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nParentTransform, bool bFlip, std::multimap<CStringA, MODEL> &aModels, aabb &nAABB)
+void GetMeshes(const aiScene *pScene, const aiNode *pNode, const Math::Float4x4 &nParentTransform, bool bFlip, std::multimap<CStringA, MODEL> &aModels, aabb &nAABB)
 {
     if (pNode == nullptr)
     {
         throw CMyException(__LINE__, L"Invalid node encountered");
     }
 
-    float4x4 nLocalTransform(*(float4x4 *)&pNode->mTransformation);
+    Math::Float4x4 nLocalTransform(*(Math::Float4x4 *)&pNode->mTransformation);
     nLocalTransform.Transpose();
 
-    float4x4 nTransform(nLocalTransform * nParentTransform);
-    float4x4 nRotation(quaternion(nTransform).GetInverse());
-    float4x4 nInverseTransform(nTransform.GetInverse());
+    Math::Float4x4 nTransform(nLocalTransform * nParentTransform);
+    Math::Float4x4 nRotation(Math::Quaternion(nTransform).GetInverse());
+    Math::Float4x4 nInverseTransform(nTransform.GetInverse());
     if (pNode->mNumMeshes > 0)
     {
         if (pNode->mMeshes == nullptr)
@@ -122,31 +122,31 @@ void GetMeshes(const aiScene *pScene, const aiNode *pNode, const float4x4 &nPare
 
                 for (UINT32 nVertex = 0; nVertex < pMesh->mNumVertices; ++nVertex)
                 {
-                    float3 nPosition(pMesh->mVertices[nVertex].x,
+                    Math::Float3 nPosition(pMesh->mVertices[nVertex].x,
                                      pMesh->mVertices[nVertex].y,
                                      pMesh->mVertices[nVertex].z);
-                    nPosition = (nTransform * float4(nPosition, 1.0f));
+                    nPosition = (nTransform * Math::Float4(nPosition, 1.0f));
                     if (bFlip)
                     {
-                        nPosition *= float3(-1.0f, 1.0f, -1.0f);
+                        nPosition *= Math::Float3(-1.0f, 1.0f, -1.0f);
                     }
 
                     kModel.m_aVertices.push_back(nPosition);
                     nAABB.Extend(nPosition);
 
-                    float2 nTexCoord;
+                    Math::Float2 nTexCoord;
                     nTexCoord.x = pMesh->mTextureCoords[0][nVertex].x;
                     nTexCoord.y = pMesh->mTextureCoords[0][nVertex].y;
                     kModel.m_aTexCoords.push_back(nTexCoord);
 
-                    float3 nNormal;
+                    Math::Float3 nNormal;
                     nNormal.x = pMesh->mNormals[nVertex].x;
                     nNormal.y = pMesh->mNormals[nVertex].y;
                     nNormal.z = pMesh->mNormals[nVertex].z;
                     nNormal = (nRotation * nNormal);
                     if (bFlip)
                     {
-                        nNormal *= float3(-1.0f, 1.0f, -1.0f);
+                        nNormal *= Math::Float3(-1.0f, 1.0f, -1.0f);
                     }
 
                     kModel.m_aNormals.push_back(nNormal.GetNormal());
@@ -243,7 +243,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
         aabb nAABB;
         std::multimap<CStringA, MODEL> aScene;
-        GetMeshes(pScene, pScene->mRootNode, float4x4(), bFlip, aScene, nAABB);
+        GetMeshes(pScene, pScene->mRootNode, Math::Float4x4(), bFlip, aScene, nAABB);
         printf("< Num. Materials: %d\r\n", aScene.size());
 
         std::unordered_map<CStringA, MODEL> aMaterials;
@@ -317,9 +317,9 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
             UINT32 nNumVertices = kFinal.m_aVertices.size();
             fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
             printf("-< Num. Total Vertices: %d\r\n", kFinal.m_aVertices.size());
-            fwrite(kFinal.m_aVertices.data(), sizeof(float3), kFinal.m_aVertices.size(), pFile);
-            fwrite(kFinal.m_aTexCoords.data(), sizeof(float2), kFinal.m_aTexCoords.size(), pFile);
-            fwrite(kFinal.m_aNormals.data(), sizeof(float3), kFinal.m_aNormals.size(), pFile);
+            fwrite(kFinal.m_aVertices.data(), sizeof(Math::Float3), kFinal.m_aVertices.size(), pFile);
+            fwrite(kFinal.m_aTexCoords.data(), sizeof(Math::Float2), kFinal.m_aTexCoords.size(), pFile);
+            fwrite(kFinal.m_aNormals.data(), sizeof(Math::Float3), kFinal.m_aNormals.size(), pFile);
 
             UINT32 nNumIndices = kFinal.m_aIndices.size();
             fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);

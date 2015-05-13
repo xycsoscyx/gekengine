@@ -40,12 +40,12 @@ public:
 
     struct INSTANCE
     {
-        float4x4 m_nMatrix;
-        float3 m_nScale;
-        float4 m_nColor;
+        Math::Float4x4 m_nMatrix;
+        Math::Float3 m_nScale;
+        Math::Float4 m_nColor;
         float m_nDistance;
 
-        INSTANCE(const float4x4 &nMatrix, const float3 &nScale, const float4 &nColor, float nDistance)
+        INSTANCE(const Math::Float4x4 &nMatrix, const Math::Float3 &nScale, const Math::Float4 &nColor, float nDistance)
             : m_nMatrix(nMatrix)
             , m_nScale(nScale)
             , m_nColor(nColor)

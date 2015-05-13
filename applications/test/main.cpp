@@ -53,12 +53,12 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
                 GetClientRect(hWindow, &kRect);
                 spVideoSystem->Initialize(hWindow, false, kRect.right, kRect.bottom, GEK3DVIDEO::DATA::D24_S8);
 
-                static const float2 aVertices[] =
+                static const Math::Float2 aVertices[] =
                 {
-                    float2(0.0f, 0.0f),
-                    float2(1.0f, 0.0f),
-                    float2(1.0f, 1.0f),
-                    float2(0.0f, 1.0f),
+                    Math::Float2(0.0f, 0.0f),
+                    Math::Float2(1.0f, 0.0f),
+                    Math::Float2(1.0f, 1.0f),
+                    Math::Float2(0.0f, 1.0f),
                 };
 
                 static const UINT16 aIndices[6] =
@@ -79,7 +79,7 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
                 GEK3DVIDEO::DEPTHSTATES kDepthStates;
                 gs_nDepthStatesID = spVideoSystem->CreateDepthStates(kDepthStates);
 
-                gs_nVertexBufferID = spVideoSystem->CreateBuffer(sizeof(float2), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, aVertices);
+                gs_nVertexBufferID = spVideoSystem->CreateBuffer(sizeof(Math::Float2), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, aVertices);
 
                 gs_nIndexBufferID = spVideoSystem->CreateBuffer(sizeof(UINT16), 6, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, aIndices);
 
@@ -91,9 +91,9 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
 
                 gs_nPixelProgramID = spVideoSystem->LoadPixelProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainPixelProgram");
 
-                gs_nConstantBufferID = spVideoSystem->CreateBuffer(sizeof(float4x4), 1, GEK3DVIDEO::BUFFER::CONSTANT_BUFFER);
+                gs_nConstantBufferID = spVideoSystem->CreateBuffer(sizeof(Math::Float4x4), 1, GEK3DVIDEO::BUFFER::CONSTANT_BUFFER);
 
-                float4x4 nOverlayMatrix;
+                Math::Float4x4 nOverlayMatrix;
                 nOverlayMatrix.SetOrthographic(0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f);
                 spVideoSystem->UpdateBuffer(gs_nConstantBufferID, LPCVOID(&nOverlayMatrix));
 
@@ -108,12 +108,12 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
         {
             CComCritSecLock<CComAutoCriticalSection> kLock(m_kSection);
             IGEK3DVideoSystem *pVideoSystem = (IGEK3DVideoSystem *)GetWindowLongPtr(hDialog, GWLP_USERDATA);
-            pVideoSystem->ClearDefaultRenderTarget(float4(1.0f, 0.0f, 0.0f, 1.0f));
+            pVideoSystem->ClearDefaultRenderTarget(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
 
             CComQIPtr<IGEK3DVideoContext> spVideoContext(pVideoSystem);
             pVideoSystem->SetDefaultTargets(spVideoContext);
             spVideoContext->SetRenderStates(gs_nRenderStatesID);
-            spVideoContext->SetBlendStates(gs_nBlendStatesID, float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+            spVideoContext->SetBlendStates(gs_nBlendStatesID, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
             spVideoContext->SetDepthStates(gs_nDepthStatesID, 0);
             spVideoContext->GetVertexSystem()->SetProgram(gs_nVertexProgramID);
             spVideoContext->GetVertexSystem()->SetConstantBuffer(gs_nConstantBufferID, 1);

@@ -17,27 +17,27 @@ namespace Gek
 {
     namespace Display
     {
-        AspectRatios getAspectRatio(UINT32 width, UINT32 height)
+        UINT8 getAspectRatio(UINT32 width, UINT32 height)
         {
-            const float AspectRatioValue4x3 = (float(INT32((4.0f / 3.0f) * 100.0f)) / 100.0f);
-            const float AspectRatioValue16x9 = (float(INT32((16.0f / 9.0f) * 100.0f)) / 100.0f);
-            const float AspectRatioValue16x10 = (float(INT32((16.0f / 10.0f) * 100.0f)) / 100.0f);
+            const float AspectRatio4x3 = (float(INT32((4.0f / 3.0f) * 100.0f)) / 100.0f);
+            const float AspectRatio16x9 = (float(INT32((16.0f / 9.0f) * 100.0f)) / 100.0f);
+            const float AspectRatio16x10 = (float(INT32((16.0f / 10.0f) * 100.0f)) / 100.0f);
             float aspectRatio = (float(INT32((float(width) / float(height)) * 100.0f)) / 100.0f);
-            if (aspectRatio == AspectRatioValue4x3)
+            if (aspectRatio == AspectRatio4x3)
             {
-                return AspectRatio4x3;
+                return AspectRatio::_4x3;
             }
-            else if (aspectRatio == AspectRatioValue16x9)
+            else if (aspectRatio == AspectRatio16x9)
             {
-                return AspectRatio16x9;
+                return AspectRatio::_16x9;
             }
-            else if (aspectRatio == AspectRatioValue16x10)
+            else if (aspectRatio == AspectRatio16x10)
             {
-                return AspectRatio16x10;
+                return AspectRatio::_16x10;
             }
             else
             {
-                return AspectRatioUnknown;
+                return AspectRatio::Unknown;
             }
         }
 
@@ -517,7 +517,7 @@ namespace Gek
 
         HRESULT find(LPCWSTR basePath, LPCWSTR filterTypes, bool searchRecursively, std::function<HRESULT(LPCWSTR)> onFileFound)
         {
-            HRESULT result = S_OK;
+            HRESULT returnValue = S_OK;
 
             CStringW fullPath(expandPath(basePath));
             PathAddBackslashW(fullPath.GetBuffer(MAX_PATH + 1));
@@ -534,15 +534,15 @@ namespace Gek
                     {
                         if (searchRecursively && findData.cFileName[0] != L'.')
                         {
-                            result = find((fullPath + findData.cFileName), filterTypes, searchRecursively, onFileFound);
+                            returnValue = find((fullPath + findData.cFileName), filterTypes, searchRecursively, onFileFound);
                         }
                     }
                     else
                     {
-                        result = onFileFound(fullPath + findData.cFileName);
+                        returnValue = onFileFound(fullPath + findData.cFileName);
                     }
 
-                    if (FAILED(result))
+                    if (FAILED(returnValue))
                     {
                         break;
                     }
@@ -551,7 +551,7 @@ namespace Gek
                 FindClose(findHandle);
             }
 
-            return result;
+            return returnValue;
         }
 
         HMODULE loadLibrary(LPCWSTR basePath)

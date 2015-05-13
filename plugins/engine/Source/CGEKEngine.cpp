@@ -727,13 +727,13 @@ STDMETHODIMP_(void) CGEKEngine::OnRenderOverlay(void)
         float nHalfHeight = (nYSize* 0.5f);
 
         CComPtr<IUnknown> spBackground;
-        spVideoSystem->CreateBrush({ { 0.0f, float4(0.5f, 0.0f, 0.0f, 1.0f) }, { 1.0f, float4(0.25f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, nHalfHeight }, &spBackground);
+        spVideoSystem->CreateBrush({ { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 1.0f) }, { 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, nHalfHeight }, &spBackground);
 
         CComPtr<IUnknown> spForeground;
-        spVideoSystem->CreateBrush({ { 0.0f, float4(0.0f, 0.0f, 0.0f, 1.0f) }, { 1.0f, float4(0.25f, 0.25f, 0.25f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, nHalfHeight }, &spForeground);
+        spVideoSystem->CreateBrush({ { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 1.0f) }, { 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, nHalfHeight }, &spForeground);
 
         CComPtr<IUnknown> spText;
-        spVideoSystem->CreateBrush(float4(1.0f, 1.0f, 1.0f, 1.0f), &spText);
+        spVideoSystem->CreateBrush(Math::Float4(1.0f, 1.0f, 1.0f, 1.0f), &spText);
 
         CComPtr<IUnknown> spFont;
         spVideoSystem->CreateFont(L"Tahoma", 400, GEK2DVIDEO::FONT::NORMAL, 15.0f, &spFont);
@@ -765,14 +765,14 @@ STDMETHODIMP_(void) CGEKEngine::OnRenderOverlay(void)
             nAverageFPS /= aFPS.size();
         }
 
-        spVideoSystem->SetTransform(float3x2());
+        spVideoSystem->SetTransform(Math::Float3x2());
         spVideoSystem->DrawText({ 0.0f, nYSize - 15.0f, nXSize, nYSize }, spFont, spText, L"FPS: %d", nAverageFPS);
         if (m_nConsolePosition > 0.0f)
         {
             float nTop = -((1.0f - m_nConsolePosition) * nHalfHeight);
 
-            float3x2 nTransform;
-            nTransform.SetTranslation(float2(0.0f, nTop));
+            Math::Float3x2 nTransform;
+            nTransform.SetTranslation(Math::Float2(0.0f, nTop));
             spVideoSystem->SetTransform(nTransform);
 
             spVideoSystem->DrawRectangle({ 0.0f, 0.0f, nXSize, nHalfHeight }, spBackground, true);
@@ -781,10 +781,10 @@ STDMETHODIMP_(void) CGEKEngine::OnRenderOverlay(void)
             spVideoSystem->DrawText({ 15.0f, (nHalfHeight - 30.0f), (nXSize - 15.0f), (nHalfHeight - 10.0f) }, spFont, spText, m_strConsole + ((GetTickCount() / 500 % 2) ? L"_" : L""));
 
             CComPtr<IUnknown> spLogTypes[4];
-            spVideoSystem->CreateBrush(float4(1.0f, 1.0f, 1.0f, 1.0f), &spLogTypes[0]);
-            spVideoSystem->CreateBrush(float4(1.0f, 1.0f, 0.0f, 1.0f), &spLogTypes[1]);
-            spVideoSystem->CreateBrush(float4(1.0f, 0.0f, 0.0f, 1.0f), &spLogTypes[2]);
-            spVideoSystem->CreateBrush(float4(1.0f, 0.0f, 0.0f, 1.0f), &spLogTypes[3]);
+            spVideoSystem->CreateBrush(Math::Float4(1.0f, 1.0f, 1.0f, 1.0f), &spLogTypes[0]);
+            spVideoSystem->CreateBrush(Math::Float4(1.0f, 1.0f, 0.0f, 1.0f), &spLogTypes[1]);
+            spVideoSystem->CreateBrush(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f), &spLogTypes[2]);
+            spVideoSystem->CreateBrush(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f), &spLogTypes[3]);
 
             float nPosition = (nHalfHeight - 40.0f);
             for (auto &kMessage : m_aConsoleLog)

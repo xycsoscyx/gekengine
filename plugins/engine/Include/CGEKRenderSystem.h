@@ -49,28 +49,28 @@ public:
 
     struct LIGHTBUFFER
     {
-        float3 m_nPosition;
+        Math::Float3 m_nPosition;
         float m_nRange;
-        float3 m_nColor;
+        Math::Float3 m_nColor;
         float m_nInvRange;
     };
 
     struct ENGINEBUFFER
     {
-        float2 m_nCameraFieldOfView;
+        Math::Float2 m_nCameraFieldOfView;
         float m_nCameraMinDistance;
         float m_nCameraMaxDistance;
-        float4x4 m_nViewMatrix;
-        float4x4 m_nProjectionMatrix;
-        float4x4 m_nInvProjectionMatrix;
-        float4x4 m_nTransformMatrix;
+        Math::Float4x4 m_nViewMatrix;
+        Math::Float4x4 m_nProjectionMatrix;
+        Math::Float4x4 m_nInvProjectionMatrix;
+        Math::Float4x4 m_nTransformMatrix;
     };
 
     struct MATERIALBUFFER
     {
-        float4 m_nColor;
+        Math::Float4 m_nColor;
         UINT32 m_bFullBright;
-        float3 m_nPadding;
+        Math::Float3 m_nPadding;
     };
 
 private:
@@ -106,7 +106,7 @@ private:
     PASS *m_pCurrentPass;
     FILTER *m_pCurrentFilter;
     CComPtr<IUnknown> m_spDefaultRenderStates;
-    float4 m_nDefaultBlendFactor;
+    Math::Float4 m_nDefaultBlendFactor;
     UINT32 m_nDefaultSampleMask;
     CComPtr<IUnknown> m_spDefaultBlendStates;
 
@@ -140,7 +140,7 @@ public:
     STDMETHOD(CreateBuffer)                 (THIS_ LPCWSTR pName, UINT32 nXSize, UINT32 nYSize, GEK3DVIDEO::DATA::FORMAT eFormat);
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppResource);
     STDMETHOD_(void, SetDefaultRenderStates)(THIS_ IUnknown *pStates);
-    STDMETHOD_(void, SetDefaultBlendStates) (THIS_ const float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates);
+    STDMETHOD_(void, SetDefaultBlendStates) (THIS_ const Math::Float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates);
     STDMETHOD_(void, EnableDefaultRenderStates) (THIS_ IGEK3DVideoContext *pContext);
     STDMETHOD_(void, EnableDefaultBlendStates)  (THIS_ IGEK3DVideoContext *pContext);
     STDMETHOD_(void, SetResource)           (THIS_ IGEK3DVideoContextSystem *pSystem, UINT32 nStage, IUnknown *pResource);

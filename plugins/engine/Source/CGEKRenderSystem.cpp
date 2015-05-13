@@ -112,15 +112,15 @@ STDMETHODIMP CGEKRenderSystem::Initialize(IGEKEngineCore *pEngine)
 
     if (SUCCEEDED(hRetVal))
     {
-        float2 aVertices[] =
+        Math::Float2 aVertices[] =
         {
-            float2(0.0f, 0.0f),
-            float2(1.0f, 0.0f),
-            float2(1.0f, 1.0f),
-            float2(0.0f, 1.0f),
+            Math::Float2(0.0f, 0.0f),
+            Math::Float2(1.0f, 0.0f),
+            Math::Float2(1.0f, 1.0f),
+            Math::Float2(0.0f, 1.0f),
         };
 
-        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(float2), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
+        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(Math::Float2), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, &m_spVertexBuffer, aVertices);
     }
 
     if (SUCCEEDED(hRetVal))
@@ -136,10 +136,10 @@ STDMETHODIMP CGEKRenderSystem::Initialize(IGEKEngineCore *pEngine)
 
     if (SUCCEEDED(hRetVal))
     {
-        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(float4x4), 1, GEK3DVIDEO::BUFFER::CONSTANT_BUFFER, &m_spOrthoBuffer);
+        hRetVal = m_pEngine->GetVideoSystem()->CreateBuffer(sizeof(Math::Float4x4), 1, GEK3DVIDEO::BUFFER::CONSTANT_BUFFER, &m_spOrthoBuffer);
         if (m_spOrthoBuffer)
         {
-            float4x4 nOverlayMatrix;
+            Math::Float4x4 nOverlayMatrix;
             nOverlayMatrix.SetOrthographic(0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f);
             m_spOrthoBuffer->Update((void *)&nOverlayMatrix);
         }
@@ -517,7 +517,7 @@ STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource
             if (strType.CompareNoCase(L"color") == 0)
             {
                 CStringW strColor(strName.Tokenize(L":", nPosition));
-                float4 nColor = StrToFloat4(strColor);
+                Math::Float4 nColor = StrToFloat4(strColor);
 
                 CComPtr<IGEK3DVideoTexture> spColorTexture;
                 hRetVal = m_pEngine->GetVideoSystem()->CreateTexture(1, 1, 1, GEK3DVIDEO::DATA::RGBA_UINT8, GEK3DVIDEO::TEXTURE::RESOURCE, &spColorTexture);
@@ -557,7 +557,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::SetDefaultRenderStates(IUnknown *pStates)
     m_spDefaultRenderStates = pStates;
 }
 
-STDMETHODIMP_(void) CGEKRenderSystem::SetDefaultBlendStates(const float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates)
+STDMETHODIMP_(void) CGEKRenderSystem::SetDefaultBlendStates(const Math::Float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates)
 {
     m_nDefaultBlendFactor = nBlendFactor;
     m_nDefaultSampleMask = nMask;
@@ -1000,7 +1000,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
 
             auto &kViewerTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nViewerID, GET_COMPONENT_ID(transform));
 
-            float4x4 nCameraMatrix(kViewerTransform.rotation, kViewerTransform.position);
+            Math::Float4x4 nCameraMatrix(kViewerTransform.rotation, kViewerTransform.position);
 
             float nXSize = float(m_pEngine->GetVideoSystem()->GetXSize());
             float nYSize = float(m_pEngine->GetVideoSystem()->GetYSize());
@@ -1029,7 +1029,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
                 if (nViewFrustum.IsVisible(sphere(kTransform.position, kLight.radius)))
                 {
                     auto pIterator = aVisibleLights.grow_by(1);
-                    (*pIterator).m_nPosition = (kEngineBuffer.m_nViewMatrix * float4(kTransform.position, 1.0f));
+                    (*pIterator).m_nPosition = (kEngineBuffer.m_nViewMatrix * Math::Float4(kTransform.position, 1.0f));
                     (*pIterator).m_nRange = kLight.radius;
                     (*pIterator).m_nInvRange = (1.0f / kLight.radius);
                     (*pIterator).m_nColor = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(color)>(nEntityID, GET_COMPONENT_ID(color)).value;
@@ -1079,7 +1079,7 @@ STDMETHODIMP_(void) CGEKRenderSystem::Render(void)
             spContext->SetViewports({ kViewport });
 
             spContext->SetRenderStates(m_spRenderStates);
-            spContext->SetBlendStates(float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
+            spContext->SetBlendStates(Math::Float4(1.0f), 0xFFFFFFFF, m_spBlendStates);
             spContext->SetDepthStates(0x0, m_spDepthStates);
             spContext->GetComputeSystem()->SetProgram(nullptr);
             spContext->GetVertexSystem()->SetProgram(m_spVertexProgram);

@@ -6,8 +6,8 @@
 
 DECLARE_COMPONENT(follow, 0x00001000)
     DECLARE_COMPONENT_VALUE(CStringW, target)
-    DECLARE_COMPONENT_VALUE(float3, offset)
-    DECLARE_COMPONENT_VALUE(quaternion, rotation)
+    DECLARE_COMPONENT_VALUE(Math::Float3, offset)
+    DECLARE_COMPONENT_VALUE(Math::Quaternion, rotation)
 END_DECLARE_COMPONENT(follow)
 
 class CGEKComponentSystemFollow : public CGEKUnknown

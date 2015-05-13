@@ -460,7 +460,7 @@ HRESULT CGEKRenderFilter::LoadComputeProgram(CLibXMLNode &kFilterNode)
         {
             int nPosition = 0;
             CStringW strDispatchSize = kComputeNode.GetAttribute(L"dispatch");
-            float3 nDispatchSize = StrToFloat3(ParseValue(strDispatchSize));
+            Math::Float3 nDispatchSize = StrToFloat3(ParseValue(strDispatchSize));
             m_nDispatchXSize = UINT32(nDispatchSize.x);
             m_nDispatchYSize = UINT32(nDispatchSize.y);
             m_nDispatchZSize = UINT32(nDispatchSize.z);

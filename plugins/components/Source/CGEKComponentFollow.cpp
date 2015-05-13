@@ -6,8 +6,8 @@
 
 REGISTER_COMPONENT(follow)
     REGISTER_COMPONENT_DEFAULT_VALUE(target, L"")
-    REGISTER_COMPONENT_DEFAULT_VALUE(offset, float3(0.0f, 0.0f, 0.0f))
-    REGISTER_COMPONENT_DEFAULT_VALUE(rotation, quaternion(0.0f, 0.0f, 0.0f, 1.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(offset, Math::Float3(0.0f, 0.0f, 0.0f))
+    REGISTER_COMPONENT_DEFAULT_VALUE(rotation, Math::Quaternion(0.0f, 0.0f, 0.0f, 1.0f))
     REGISTER_COMPONENT_SERIALIZE(follow)
         REGISTER_COMPONENT_SERIALIZE_VALUE(target, )
         REGISTER_COMPONENT_SERIALIZE_VALUE(offset, StrFromFloat3)
@@ -57,10 +57,10 @@ STDMETHODIMP_(void) CGEKComponentSystemFollow::OnUpdateEnd(float nGameTime, floa
 
             kFollow.rotation = kFollow.rotation.Slerp(kTargetTransform.rotation, 0.5f);
 
-            float3 nTarget(kTargetTransform.position + kFollow.rotation * kFollow.offset);
+            Math::Float3 nTarget(kTargetTransform.position + kFollow.rotation * kFollow.offset);
                 
-            float4x4 nLookAt;
-            nLookAt.LookAt(nTarget, kTargetTransform.position, float3(0.0f, 1.0f, 0.0f));
+            Math::Float4x4 nLookAt;
+            nLookAt.LookAt(nTarget, kTargetTransform.position, Math::Float3(0.0f, 1.0f, 0.0f));
 
             auto &kCurrentTransform = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(nEntityID, GET_COMPONENT_ID(transform));
             kCurrentTransform.position = nTarget;

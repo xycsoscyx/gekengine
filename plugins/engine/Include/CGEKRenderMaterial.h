@@ -17,7 +17,7 @@ public:
         CGEKRenderStates m_kRenderStates;
         CGEKBlendStates m_kBlendStates;
         bool m_bFullBright;
-        float4 m_nColor;
+        Math::Float4 m_nColor;
 
         LAYER(void)
             : m_bFullBright(false)

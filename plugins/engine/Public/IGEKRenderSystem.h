@@ -19,7 +19,7 @@ DECLARE_INTERFACE_IID_(IGEKRenderSystem, IUnknown, "77161A84-61C4-4C05-9550-4EEB
     STDMETHOD(GetBuffer)                    (THIS_ LPCWSTR pName, IUnknown **ppResource) PURE;
 
     STDMETHOD_(void, SetDefaultRenderStates)(THIS_ IUnknown *pStates) PURE;
-    STDMETHOD_(void, SetDefaultBlendStates) (THIS_ const float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates) PURE;
+    STDMETHOD_(void, SetDefaultBlendStates) (THIS_ const Math::Float4 &nBlendFactor, UINT32 nMask, IUnknown *pStates) PURE;
     STDMETHOD_(void, EnableDefaultRenderStates) (THIS_ IGEK3DVideoContext *pContext) PURE;
     STDMETHOD_(void, EnableDefaultBlendStates)  (THIS_ IGEK3DVideoContext *pContext) PURE;
 

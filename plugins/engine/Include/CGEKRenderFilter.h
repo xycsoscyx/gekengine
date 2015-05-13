@@ -24,7 +24,7 @@ public:
     struct TARGET
     {
         bool m_bClear;
-        float4 m_nClearColor;
+        Math::Float4 m_nClearColor;
         CStringW m_strSource;
 
         TARGET(void)

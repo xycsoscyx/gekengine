@@ -50,7 +50,7 @@ private:
 
     dNewtonPlayerManager *m_pPlayerManager;
 
-    float3 m_nGravity;
+    Math::Float3 m_nGravity;
     std::vector<MATERIAL> m_aMaterials;
     std::map<CStringW, INT32> m_aMaterialIndices;
     concurrency::concurrent_unordered_map<GEKENTITYID, CComPtr<IUnknown>> m_aBodies;
@@ -58,7 +58,7 @@ private:
 
 private:
     const MATERIAL &GetMaterial(INT32 nIndex) const;
-    INT32 GetContactMaterial(const GEKENTITYID &nEntityID, NewtonBody *pBody, NewtonMaterial *pMaterial, const float3 &nPosition, const float3 &nNormal);
+    INT32 GetContactMaterial(const GEKENTITYID &nEntityID, NewtonBody *pBody, NewtonMaterial *pMaterial, const Math::Float3 &nPosition, const Math::Float3 &nNormal);
     INT32 LoadMaterial(LPCWSTR pName);
 
     dNewtonCollision *CreateCollision(const GEKENTITYID &nEntityID, const GET_COMPONENT_DATA(dynamicbody) &kDynamicBody);
@@ -87,5 +87,5 @@ public:
     // IGEKNewtonSystem
     STDMETHOD_(dNewton *, GetCore)                          (THIS);
     STDMETHOD_(dNewtonPlayerManager *, GetPlayerManager)    (THIS);
-    STDMETHOD_(float3, GetGravity)                          (THIS);
+    STDMETHOD_(Math::Float3, GetGravity)                          (THIS);
 };
