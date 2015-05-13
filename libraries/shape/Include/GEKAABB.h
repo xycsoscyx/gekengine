@@ -65,14 +65,14 @@ public:
         }
     }
 
-    Eigen::Vector3f GetSize(void) const
+    Eigen::Vector3f getSize(void) const
     {
         return (maximum - minimum);
     }
 
-    Eigen::Vector3f GetCenter(void) const
+    Eigen::Vector3f getCenter(void) const
     {
-        return (minimum + (GetSize() * 0.5f));
+        return (minimum + (getSize() * 0.5f));
     }
 
     int GetPosition(const GEKPlane &nPlane) const

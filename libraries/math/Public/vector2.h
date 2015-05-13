@@ -1,315 +1,317 @@
 #pragma once
 
-template <typename TYPE>
-struct tvector2
+namespace Gek
 {
-public:
-    union
+    namespace Math
     {
-        struct { TYPE x, y; };
-        struct { TYPE xy[2]; };
-        struct { TYPE u, v; };
-        struct { TYPE uv[2]; };
-    };
+        template <typename TYPE> struct BaseVector3;
+        template <typename TYPE> struct BaseVector4;
 
-public:
-    tvector2(void)
-    {
-        x = y = TYPE(0);
-    }
-
-    tvector2(TYPE fValue)
-    {
-        x = y = fValue;
-    }
-
-    tvector2(const tvector2<TYPE> &nVector)
-    {
-        x = nVector.x;
-        y = nVector.y;
-    }
-
-    tvector2(const tvector3<TYPE> &nVector)
-    {
-        x = nVector.x;
-        y = nVector.y;
-    }
-
-    tvector2(const tvector4<TYPE> &nVector)
-    {
-        x = nVector.x;
-        y = nVector.y;
-    }
-
-    tvector2(TYPE nX, TYPE nY)
-    {
-        x = nX;
-        y = nY;
-    }
-
-    void Set(TYPE nX, TYPE nY)
-    {
-        x = nX;
-        y = nY;
-    }
-
-    void Set(TYPE nX, TYPE nY, TYPE nZ)
-    {
-        x = nX;
-        y = nY;
-    }
-
-    void Set(TYPE nX, TYPE nY, TYPE nZ, TYPE nW)
-    {
-        x = nX;
-        y = nY;
-    }
-
-    void SetLength(TYPE nLength)
-    {
-        (*this) *= (nLength / GetLength());
-    }
-
-    TYPE GetLength(void) const
-    {
-        return sqrt((x * x) + (y * y));
-    }
-
-    TYPE GetLengthSqr(void) const
-    {
-        return ((x * x) + (y * y));
-    }
-
-    TYPE GetMax(void) const
-    {
-        return max(x, y);
-    }
-
-    tvector2 GetNormal(void) const
-    {
-        TYPE nLength = GetLength();
-        if (nLength != TYPE(0))
+        template <typename TYPE>
+        struct BaseVector2
         {
-            return ((*this) * (TYPE(1) / GetLength()));
+        public:
+            union
+            {
+                struct { TYPE x, y; };
+                struct { TYPE u, v; };
+                struct { TYPE xy[2]; };
+                struct { TYPE uv[2]; };
+            };
+
+        public:
+            BaseVector2(void)
+                : x(0)
+                , y(0)
+            {
+            }
+
+            BaseVector2(TYPE scalar)
+                : x(value)
+                , y(value)
+            {
+                x = y = scalar;
+            }
+
+            BaseVector2(const BaseVector2<TYPE> &vector)
+                : x(vector.x)
+                , y(vector.y)
+            {
+            }
+
+            BaseVector2(const BaseVector3<TYPE> &vector)
+                : x(vector.x)
+                , y(vector.y)
+            {
+            }
+
+            BaseVector2(const BaseVector4<TYPE> &vector)
+                : x(vector.x)
+                , y(vector.y)
+            {
+            }
+
+            BaseVector2(TYPE x, TYPE y)
+                : x(x)
+                , y(y)
+            {
+            }
+
+            void set(TYPE x, TYPE y)
+            {
+                this->x = x;
+                this->y = y;
+            }
+
+            void setLength(TYPE length)
+            {
+                (*this) *= (length / getLength());
+            }
+
+            TYPE getLengthSquared(void) const
+            {
+                return ((x * x) + (y * y));
+            }
+
+            TYPE getLength(void) const
+            {
+                return sqrt(getLengthSquared());
+            }
+
+            TYPE getMax(void) const
+            {
+                return max(x, y);
+            }
+
+            TYPE getDistance(const BaseVector2<TYPE> &vector) const
+            {
+                return (vector - (*this)).getLength();
+            }
+
+            BaseVector2 getNormal(void) const
+            {
+                TYPE length = getLength();
+                if (length != TYPE(0))
+                {
+                    return ((*this) * (TYPE(1) / length));
+                }
+
+                return (*this);
+            }
+
+            void normalize(void)
+            {
+                (*this) = getNormal();
+            }
+
+            TYPE dot(const BaseVector2<TYPE> &vector) const
+            {
+                return ((x * vector.x) + (y * vector.y));
+            }
+
+            BaseVector2 lerp(const BaseVector2<TYPE> &vector, TYPE factor) const
+            {
+                return lerp((*this), vector, factor);
+            }
+
+            TYPE operator [] (int axis) const
+            {
+                return xy[axis];
+            }
+
+            TYPE &operator [] (int axis)
+            {
+                return xy[axis];
+            }
+
+            bool operator < (const BaseVector2<TYPE> &vector) const
+            {
+                if (x >= vector.x) return false;
+                if (y >= vector.y) return false;
+                return true;
+            }
+
+            bool operator > (const BaseVector2<TYPE> &vector) const
+            {
+                if (x <= vector.x) return false;
+                if (y <= vector.y) return false;
+                return true;
+            }
+
+            bool operator <= (const BaseVector2<TYPE> &vector) const
+            {
+                if (x > vector.x) return false;
+                if (y > vector.y) return false;
+                return true;
+            }
+
+            bool operator >= (const BaseVector2<TYPE> &vector) const
+            {
+                if (x < vector.x) return false;
+                if (y < vector.y) return false;
+                return true;
+            }
+
+            bool operator == (const BaseVector2<TYPE> &vector) const
+            {
+                if (x != vector.x) return false;
+                if (y != vector.y) return false;
+                return true;
+            }
+
+            bool operator != (const BaseVector2<TYPE> &vector) const
+            {
+                if (x != vector.x) return true;
+                if (y != vector.y) return true;
+                return false;
+            }
+
+            BaseVector2 operator = (float scalar)
+            {
+                x = y = scalar;
+                return (*this);
+            }
+
+            BaseVector2 operator = (const BaseVector2<TYPE> &vector)
+            {
+                x = vector.x;
+                y = vector.y;
+                return (*this);
+            }
+
+            BaseVector2 operator = (const BaseVector3<TYPE> &vector)
+            {
+                x = vector.x;
+                y = vector.y;
+                return (*this);
+            }
+
+            BaseVector2 operator = (const BaseVector4<TYPE> &vector)
+            {
+                x = vector.x;
+                y = vector.y;
+                return (*this);
+            }
+
+            void operator -= (const BaseVector2<TYPE> &vector)
+            {
+                x -= vector.x;
+                y -= vector.y;
+            }
+
+            void operator += (const BaseVector2<TYPE> &vector)
+            {
+                x += vector.x;
+                y += vector.y;
+            }
+
+            void operator /= (const BaseVector2<TYPE> &vector)
+            {
+                x /= vector.x;
+                y /= vector.y;
+            }
+
+            void operator *= (const BaseVector2<TYPE> &vector)
+            {
+                x *= vector.x;
+                y *= vector.y;
+            }
+
+            void operator -= (TYPE scalar)
+            {
+                x -= scalar;
+                y -= scalar;
+            }
+
+            void operator += (TYPE scalar)
+            {
+                x += scalar;
+                y += scalar;
+            }
+
+            void operator /= (TYPE scalar)
+            {
+                x /= scalar;
+                y /= scalar;
+            }
+
+            void operator *= (TYPE scalar)
+            {
+                x *= scalar;
+                y *= scalar;
+            }
+
+            BaseVector2 operator - (const BaseVector2<TYPE> &vector) const
+            {
+                return BaseVector2((x - vector.x), (y - vector.y));
+            }
+
+            BaseVector2 operator + (const BaseVector2<TYPE> &vector) const
+            {
+                return BaseVector2((x + vector.x), (y + vector.y));
+            }
+
+            BaseVector2 operator / (const BaseVector2<TYPE> &vector) const
+            {
+                return BaseVector2((x / vector.x), (y / vector.y));
+            }
+
+            BaseVector2 operator * (const BaseVector2<TYPE> &vector) const
+            {
+                return BaseVector2((x * vector.x), (y * vector.y));
+            }
+
+            BaseVector2 operator - (TYPE scalar) const
+            {
+                return BaseVector2((x - scalar), (y - scalar));
+            }
+
+            BaseVector2 operator + (TYPE scalar) const
+            {
+                return BaseVector2((x + scalar), (y + scalar));
+            }
+
+            BaseVector2 operator / (TYPE scalar) const
+            {
+                return BaseVector2((x / scalar), (y / scalar));
+            }
+
+            BaseVector2 operator * (TYPE scalar) const
+            {
+                return BaseVector2((x * scalar), (y * scalar));
+            }
+        };
+
+        template <typename TYPE>
+        BaseVector2<TYPE> operator - (const BaseVector2<TYPE> &vector)
+        {
+            return BaseVector2(-vector.x, -vector.y);
         }
 
-        return (*this);
-    }
+        template <typename TYPE>
+        BaseVector2<TYPE> operator - (TYPE scalar, const BaseVector2<TYPE> &vector)
+        {
+            return BaseVector2((scalar - vector.x), (scalar - vector.y));
+        }
 
-    void Normalize(void)
-    {
-        (*this) = GetNormal();
-    }
+        template <typename TYPE>
+        BaseVector2<TYPE> operator + (TYPE scalar, const BaseVector2<TYPE> &vector)
+        {
+            return BaseVector2((scalar + vector.x), (scalar + vector.y));
+        }
 
-    TYPE Dot(const tvector2<TYPE> &nVector) const
-    {
-        return ((x * nVector.x) + (y * nVector.y));
-    }
+        template <typename TYPE>
+        BaseVector2<TYPE> operator / (TYPE scalar, const BaseVector2<TYPE> &vector)
+        {
+            return BaseVector2((scalar / vector.x), (scalar / vector.y));
+        }
 
-    TYPE Distance(const tvector2 &nVector) const
-    {
-        return (nVector - (*this)).GetLength();
-    }
+        template <typename TYPE>
+        BaseVector2<TYPE> operator * (TYPE scalar, const BaseVector2<TYPE> &vector)
+        {
+            return BaseVector2((scalar * vector.x), (scalar * vector.y));
+        }
 
-    tvector2 Lerp(const tvector2 &nVector, TYPE nFactor) const
-    {
-        return ((*this) + ((nVector - (*this)) * nFactor));
-    }
-
-    TYPE operator [] (int nIndex) const
-    {
-        return xy[nIndex];
-    }
-
-    TYPE &operator [] (int nIndex)
-    {
-        return xy[nIndex];
-    }
-
-    bool operator < (const tvector2 &nVector) const
-    {
-        if (x >= nVector.x) return false;
-        if (y >= nVector.y) return false;
-        return true;
-    }
-
-    bool operator > (const tvector2 &nVector) const
-    {
-        if (x <= nVector.x) return false;
-        if (y <= nVector.y) return false;
-        return true;
-    }
-
-    bool operator <= (const tvector2 &nVector) const
-    {
-        if (x > nVector.x) return false;
-        if (y > nVector.y) return false;
-        return true;
-    }
-
-    bool operator >= (const tvector2 &nVector) const
-    {
-        if (x < nVector.x) return false;
-        if (y < nVector.y) return false;
-        return true;
-    }
-
-    bool operator == (const tvector2 &nVector) const
-    {
-        if (x != nVector.x) return false;
-        if (y != nVector.y) return false;
-        return true;
-    }
-
-    bool operator != (const tvector2 &nVector) const
-    {
-        if (x != nVector.x) return true;
-        if (y != nVector.y) return true;
-        return false;
-    }
-
-    tvector2<TYPE> operator = (float nValue)
-    {
-        x = y = nValue;
-        return (*this);
-    }
-
-    tvector2<TYPE> operator = (const tvector2<TYPE> &nVector)
-    {
-        x = nVector.x;
-        y = nVector.y;
-        return (*this);
-    }
-
-    tvector2<TYPE> operator = (const tvector3<TYPE> &nVector)
-    {
-        x = nVector.x;
-        y = nVector.y;
-        return (*this);
-    }
-
-    tvector2<TYPE> operator = (const tvector4<TYPE> &nVector)
-    {
-        x = nVector.x;
-        y = nVector.y;
-        return (*this);
-    }
-
-    void operator -= (const tvector2<TYPE> &nVector)
-    {
-        x -= nVector.x;
-        y -= nVector.y;
-    }
-
-    void operator += (const tvector2<TYPE> &nVector)
-    {
-        x += nVector.x;
-        y += nVector.y;
-    }
-
-    void operator /= (const tvector2<TYPE> &nVector)
-    {
-        x /= nVector.x;
-        y /= nVector.y;
-    }
-
-    void operator *= (const tvector2<TYPE> &nVector)
-    {
-        x *= nVector.x;
-        y *= nVector.y;
-    }
-
-    void operator -= (TYPE nScalar)
-    {
-        x -= nScalar;
-        y -= nScalar;
-    }
-
-    void operator += (TYPE nScalar)
-    {
-        x += nScalar;
-        y += nScalar;
-    }
-
-    void operator /= (TYPE nScalar)
-    {
-        x /= nScalar;
-        y /= nScalar;
-    }
-
-    void operator *= (TYPE nScalar)
-    {
-        x *= nScalar;
-        y *= nScalar;
-    }
-
-    tvector2<TYPE> operator - (const tvector2<TYPE> &nVector) const
-    {
-        return tvector2<TYPE>((x - nVector.x), (y - nVector.y));
-    }
-
-    tvector2<TYPE> operator + (const tvector2<TYPE> &nVector) const
-    {
-        return tvector2<TYPE>((x + nVector.x), (y + nVector.y));
-    }
-
-    tvector2<TYPE> operator / (const tvector2<TYPE> &nVector) const
-    {
-        return tvector2<TYPE>((x / nVector.x), (y / nVector.y));
-    }
-
-    tvector2<TYPE> operator * (const tvector2<TYPE> &nVector) const
-    {
-        return tvector2<TYPE>((x * nVector.x), (y * nVector.y));
-    }
-
-    tvector2<TYPE> operator - (TYPE nScalar) const
-    {
-        return tvector2<TYPE>((x - nScalar), (y - nScalar));
-    }
-
-    tvector2<TYPE> operator + (TYPE nScalar) const
-    {
-        return tvector2<TYPE>((x + nScalar), (y + nScalar));
-    }
-
-    tvector2<TYPE> operator / (TYPE nScalar) const
-    {
-        return tvector2<TYPE>((x / nScalar), (y / nScalar));
-    }
-
-    tvector2<TYPE> operator * (TYPE nScalar) const
-    {
-        return tvector2<TYPE>((x * nScalar), (y * nScalar));
-    }
-};
-
-template <typename TYPE>
-tvector2<TYPE> operator - (const tvector2<TYPE> &nVector)
-{
-    return tvector2<TYPE>(-nVector.x, -nVector.y);
-}
-
-template <typename TYPE>
-tvector2<TYPE> operator - (TYPE fValue, const tvector2<TYPE> &nVector)
-{
-    return tvector2<TYPE>((fValue - nVector.x), (fValue - nVector.y));
-}
-
-template <typename TYPE>
-tvector2<TYPE> operator + (TYPE fValue, const tvector2<TYPE> &nVector)
-{
-    return tvector2<TYPE>((fValue + nVector.x), (fValue + nVector.y));
-}
-
-template <typename TYPE>
-tvector2<TYPE> operator / (TYPE fValue, const tvector2<TYPE> &nVector)
-{
-    return tvector2<TYPE>((fValue / nVector.x), (fValue / nVector.y));
-}
-
-template <typename TYPE>
-tvector2<TYPE> operator * (TYPE fValue, const tvector2<TYPE> &nVector)
-{
-    return tvector2<TYPE>((fValue * nVector.x), (fValue * nVector.y));
-}
+        typedef BaseVector2<float> Float2;
+    }; // namespace Math
+}; // namespace Gek

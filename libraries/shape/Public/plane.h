@@ -1,83 +1,63 @@
 #pragma once
 
-template <typename TYPE>
-struct tplane
+namespace Gek
 {
-public:
-    tvector3<TYPE> normal;
-    TYPE distance;
-
-public:
-    tplane(void)
+    namespace Shape
     {
-        normal.x = TYPE(0);
-        normal.y = TYPE(0);
-        normal.z = TYPE(0);
-        distance = TYPE(0);
-    }
+        template <typename TYPE>
+        struct BasePlane : public Math::BaseVector4<TYPE>
+        {
+        public:
+            BasePlane(void)
+                : x(0)
+                , y(0)
+                , z(0)
+                , w(0)
+            {
+            }
 
-    tplane(const tplane<TYPE> &nPlane)
-    {
-        normal = nPlane.normal;
-        distance = nPlane.distance;
-    }
+            BasePlane(const Math::BaseVector4<TYPE> &vector)
+                : Math::BaseVector4(vector)
+            {
+            }
 
-    tplane(const tvector4<TYPE> &nPlane)
-    {
-        normal.x = nPlane.x;
-        normal.y = nPlane.y;
-        normal.z = nPlane.z;
-        distance = nPlane.w;
-    }
+            BasePlane(TYPE a, TYPE b, TYPE c, TYPE d)
+                : Math::BaseVector4(a, b, c, d)
+            {
+            }
 
-    tplane(TYPE nA, TYPE nB, TYPE nC, TYPE nD)
-    {
-        normal.x = nA;
-        normal.y = nB;
-        normal.z = nC;
-        distance = nD;
-    }
+            BasePlane(const Math::BaseVector3<TYPE> &normal, TYPE distance)
+                : Math::BaseVector4(normal, distance)
+            {
+            }
 
-    tplane(const tvector3<TYPE> &nNormal, TYPE nDistance)
-    {
-        normal = nNormal;
-        distance = nDistance;
-    }
+            BasePlane(const Math::BaseVector3<TYPE> &pointA, const Math::BaseVector3<TYPE> &pointB, const Math::BaseVector3<TYPE> &pointC)
+            {
+                Math::BaseVector3 sideA(pointB - pointA);
+                Math::BaseVector3 sideB(pointC - pointA);
+                Math::BaseVector3 sideC(sideA.Cross(sideB));
 
-    tplane(const tvector3<TYPE> &nPointA, const tvector3<TYPE> &nPointB, const tvector3<TYPE> &nPointC)
-    {
-        tvector3 kSideA(nPointB - nPointA);
-        tvector3 kSideB(nPointC - nPointA);
-        tvector3 kCross(kSideA.Cross(kSideB));
+                normal = sideC.getNormal();
+                distance = -normal.dot(pointA);
+            }
 
-        normal = kCross.GetNormal();
-        distance = -normal.Dot(nPointA);
-    }
+            BasePlane(const Math::BaseVector3<TYPE> &nNormal, const Math::BaseVector3<TYPE> &nPointOnPlane)
+            {
+                normal = nNormal;
+                distance = -normal.Dot(nPointOnPlane);
+            }
 
-    tplane(const tvector3<TYPE> &nNormal, const tvector3<TYPE> &nPointOnPlane)
-    {
-        normal = nNormal;
-        distance = -normal.Dot(nPointOnPlane);
-    }
+            void normalize(void)
+            {
+                (*this) *= (TYPE(1) / normal.getLength());
+            }
 
-    tplane<TYPE> operator = (const tplane<TYPE> &nPlane)
-    {
-        normal = nPlane.normal;
-        distance = nPlane.distance;
-        return *this;
-    }
+            TYPE getDistance(const Math::BaseVector3<TYPE> &point) const
+            {
+                return (normal.Dot(point) + distance);
+            }
+        };
 
-    void Normalize(void)
-    {
-        TYPE nLength = (TYPE(1) / normal.GetLength());
-        normal.x *= nLength;
-        normal.y *= nLength;
-        normal.z *= nLength;
-        distance *= nLength;
-    }
-
-    TYPE Distance(const tvector3<TYPE> &nPoint) const
-    {
-        return (normal.Dot(nPoint) + distance);
-    }
-};
+        typedef BasePlane<float> Plane;
+    }; // namespace Shape
+}; // namespace Gek

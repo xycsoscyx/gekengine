@@ -1,65 +1,73 @@
 #pragma once
 
-template <typename TYPE>
-struct tobb
+namespace Gek
 {
-public:
-    tvector3<TYPE> position;
-    tmatrix4x4<TYPE> rotation;
-    tvector3<TYPE> halfsize;
-
-public:
-    tobb(void)
+    namespace Shape
     {
-    }
-
-    tobb(const tobb<TYPE> &nBox)
-        : position(nBox.position)
-        , rotation(nBox.rotation)
-        , halfsize(nBox.halfsize)
-    {
-    }
-
-    tobb(const taabb<TYPE> &nBox, const tquaternion<TYPE> &nRotation, const tvector3<TYPE> &nPosition)
-    {
-        rotation = nRotation;
-        position = (nPosition + nBox.GetCenter());
-        halfsize = (nBox.GetSize() * TYPE(0.5));
-    }
-
-    tobb(const taabb<TYPE> &nBox, const tmatrix4x4<TYPE> &nMatrix)
-    {
-        rotation = nMatrix;
-        position = (nMatrix.t + nBox.GetCenter());
-        halfsize = (nBox.GetSize() * TYPE(0.5));
-    }
-
-    tobb operator = (const tobb<TYPE> &nBox)
-    {
-        position = nBox.position;
-        rotation = nBox.rotation;
-        halfsize = nBox.halfsize;
-        return (*this);
-    }
-
-    int GetPosition(const tplane<TYPE> &nPlane) const
-    {
-        TYPE nDistance = nPlane.Distance(position);
-        TYPE nRadiusX = fabs(rotation.rx.Dot(nPlane.normal) * halfsize.x);
-        TYPE nRadiusY = fabs(rotation.ry.Dot(nPlane.normal) * halfsize.y);
-        TYPE nRadiusZ = fabs(rotation.rz.Dot(nPlane.normal) * halfsize.z);
-        TYPE nRadius = (nRadiusX + nRadiusY + nRadiusZ);
-        if (nDistance < -nRadius)
+        template <typename TYPE>
+        struct BaseOrientedBox
         {
-            return -1;
-        }
-        else if (nDistance > nRadius)
-        {
-            return 1;
-        }
-        else
-        {
-            return 0;
-        }
-    }
-};
+        public:
+            Math::BaseVector3<TYPE> position;
+            Math::BaseMatrix4x4<TYPE> rotation;
+            Math::BaseVector3<TYPE> halfsize;
+
+        public:
+            BaseOrientedBox(void)
+            {
+            }
+
+            BaseOrientedBox(const BaseOrientedBox<TYPE> &box)
+                : position(box.position)
+                , rotation(box.rotation)
+                , halfsize(box.halfsize)
+            {
+            }
+
+            BaseOrientedBox(const BaseAlignedBox<TYPE> &box, const Math::BaseQuaternion<TYPE> &rotation, const Math::BaseVector3<TYPE> &translation)
+            {
+                rotation = rotation;
+                position = (translation + box.getCenter());
+                halfsize = (box.getSize() * TYPE(0.5));
+            }
+
+            BaseOrientedBox(const BaseAlignedBox<TYPE> &box, const Math::BaseMatrix4x4<TYPE> &matrix)
+            {
+                rotation = matrix;
+                position = (matrix.translation + box.getCenter());
+                halfsize = (box.getSize() * TYPE(0.5));
+            }
+
+            BaseOrientedBox operator = (const BaseOrientedBox<TYPE> &box)
+            {
+                position = box.position;
+                rotation = box.rotation;
+                halfsize = box.halfsize;
+                return (*this);
+            }
+
+            int getPosition(const BasePlane<TYPE> &plane) const
+            {
+                TYPE distance = plane.getDistance(position);
+                TYPE radiusX = fabs(rotation.rx.xyz.Dot(plane.normal) * halfsize.x);
+                TYPE radiusY = fabs(rotation.ry.xyz.Dot(plane.normal) * halfsize.y);
+                TYPE radiusZ = fabs(rotation.rz.xyz.Dot(plane.normal) * halfsize.z);
+                TYPE radius = (radiusX + radiusY + radiusZ);
+                if (distance < -radius)
+                {
+                    return -1;
+                }
+                else if (distance > radius)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        };
+
+        typedef BaseOrientedBox<float> OrientedBox;
+    }; // namespace Shape
+}; // namespace Gek

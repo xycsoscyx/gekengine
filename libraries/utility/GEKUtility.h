@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEKMath.h"
+#include "GEKShape.h"
 #include <assert.h>
 #include <windows.h>
 #include <atlbase.h>
@@ -16,154 +17,156 @@
 #define REQUIRE_VOID_RETURN(CHECK)      do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (false)
 #define REQUIRE_RETURN(CHECK, RETURN)   do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (false)
 
-typedef UINT32 GEKHANDLE;
-const GEKHANDLE GEKINVALIDHANDLE = 0;
-
-enum GEKMODEASPECT
-{
-    _ASPECT_INVALID     = -1,
-    _ASPECT_4x3         = 0,
-    _ASPECT_16x9        = 1,
-    _ASPECT_16x10       = 2,
-};
-
-struct GEKMODE
-{
-public:
-    UINT32 xsize;
-    UINT32 ysize;
-
-public:
-    GEKMODEASPECT GetAspect(void) const;
-};
-
-std::map<UINT32, std::vector<GEKMODE>> GEKGetDisplayModes(void);
-
 namespace std
 {
-    template<typename CharType, typename TraitsType>
-    struct hash<ATL::CStringT<CharType, TraitsType>> : public unary_function<ATL::CStringT<CharType, TraitsType>, size_t>
+    template<typename CHARTYPE, typename TRAITSTYPE>
+    struct hash<ATL::CStringT<CHARTYPE, TRAITSTYPE>> : public unary_function<ATL::CStringT<CHARTYPE, TRAITSTYPE>, size_t>
     {
-        size_t operator()(const ATL::CStringT<CharType, TraitsType> &strString) const
+        size_t operator()(const ATL::CStringT<CHARTYPE, TRAITSTYPE> &string) const
         {
-            return CStringElementTraits<typename TraitsType>::Hash(strString);
+            return CStringElementTraits<typename TRAITSTYPE>::Hash(string);
         }
     };
 
-    template<typename CharType, typename TraitsType>
-    struct equal_to<ATL::CStringT<CharType, TraitsType>> : public unary_function<ATL::CStringT<CharType, TraitsType>, bool>
+    template<typename CHARTYPE, typename TRAITSTYPE>
+    struct equal_to<ATL::CStringT<CHARTYPE, TRAITSTYPE>> : public unary_function<ATL::CStringT<CHARTYPE, TRAITSTYPE>, bool>
     {
-        bool operator()(const ATL::CStringT<CharType, TraitsType> &strStringA, const ATL::CStringT<CharType, TraitsType> &strStringB) const
+        bool operator()(const ATL::CStringT<CHARTYPE, TRAITSTYPE> &leftString, const ATL::CStringT<CHARTYPE, TRAITSTYPE> &rightString) const
         {
-            return (strStringA == strStringB);
+            return (leftString == rightString);
         }
     };
 
     template <>
     struct hash<GUID> : public unary_function<GUID, size_t>
     {
-        size_t operator()(REFGUID kGUID) const
+        size_t operator()(REFGUID guid) const
         {
-            DWORD *pLast = (DWORD *)&kGUID.Data4[0];
-            return (kGUID.Data1 ^ (kGUID.Data2 << 16 | kGUID.Data3) ^ (pLast[0] | pLast[1]));
+            DWORD *last = (DWORD *)&guid.Data4[0];
+            return (guid.Data1 ^ (guid.Data2 << 16 | guid.Data3) ^ (last[0] | last[1]));
         }
     };
 
     template <>
     struct equal_to<GUID> : public unary_function<GUID, bool>
     {
-        bool operator()(REFGUID kGUIDA, REFGUID kGUIDB) const
+        bool operator()(REFGUID leftGuid, REFGUID rightGuid) const
         {
-            return (memcmp(&kGUIDA, &kGUIDB, sizeof(GUID)) == 0);
+            return (memcmp(&leftGuid, &rightGuid, sizeof(GUID)) == 0);
         }
     };
 };
 
 __forceinline
-bool operator < (REFGUID kGUIDA, REFGUID kGUIDB)
+bool operator < (REFGUID leftGuid, REFGUID rightGuid)
 {
-    return (memcmp(&kGUIDA, &kGUIDB, sizeof(GUID)) < 0);
+    return (memcmp(&leftGuid, &rightGuid, sizeof(GUID)) < 0);
 }
+
+namespace Gek
+{
+    typedef UINT32 Handle;
+    const Handle InvalidHandle = 0;
+
+    template <typename TYPE>
+    struct Rectangle
+    {
+        TYPE left;
+        TYPE top;
+        TYPE right;
+        TYPE bottom;
+    };
+
+    namespace Display
+    {
+        enum AspectRatios
+        {
+            AspectRatioUnknown = -1,
+            AspectRatio4x3 = 0,
+            AspectRatio16x9 = 1,
+            AspectRatio16x10 = 2,
+        };
+
+        struct Mode
+        {
+            UINT32 width;
+            UINT32 height;
+            AspectRatios aspectRatio;
+
+            Mode(UINT32 width, UINT32 height, AspectRatios aspectRatio)
+                : width(width)
+                , height(height)
+                , aspectRatio(aspectRatio)
+            {
+            }
+        };
+
+        std::map<UINT32, std::vector<Mode>> getModes(void);
+    }; // namespace Display
+
+    namespace Evaluator
+    {
+        bool getDouble(LPCWSTR expression, double &result);
+        bool getFloat(LPCWSTR expression, float &result);
+        bool getFloat2(LPCWSTR expression, Gek::Math::Float2 &result);
+        bool getFloat3(LPCWSTR expression, Gek::Math::Float3 &result);
+        bool getFloat4(LPCWSTR expression, Gek::Math::Float4 &result);
+        bool getQuaternion(LPCWSTR expression, Gek::Math::Quaternion &result);
+        bool getINT32(LPCWSTR expression, INT32 &result);
+        bool getUINT32(LPCWSTR expression, UINT32 &result);
+        bool getINT64(LPCWSTR expression, INT64 &result);
+        bool getUINT64(LPCWSTR expression, UINT64 &result);
+        bool getBoolean(LPCWSTR expression, bool &result);
+    }; // namespace Evaluator
+
+    namespace String
+    {
+        double getDouble(LPCWSTR expression);
+        float getFloat(LPCWSTR expression);
+        Gek::Math::Float2 getFloat2(LPCWSTR expression);
+        Gek::Math::Float3 getFloat3(LPCWSTR expression);
+        Gek::Math::Float4 getFloat4(LPCWSTR expression);
+        Gek::Math::Quaternion getQuaternion(LPCWSTR expression);
+        INT32 getINT32(LPCWSTR expression);
+        UINT32 getUINT32(LPCWSTR expression);
+        INT64 getINT64(LPCWSTR expression);
+        UINT64 getUINT64(LPCWSTR expression);
+        bool getBoolean(LPCWSTR expression);
+
+        CStringW setDouble(const double &value);
+        CStringW setFloat(const float &value);
+        CStringW setFloat2(const Gek::Math::Float2 &value);
+        CStringW setFloat3(const Gek::Math::Float3 &value);
+        CStringW setFloat4(const Gek::Math::Float4 &value);
+        CStringW setQuaternion(const Gek::Math::Quaternion &value);
+        CStringW setINT32(const INT32 &value);
+        CStringW setUINT32(const UINT32 &value);
+        CStringW setINT64(const INT64 &value);
+        CStringW setUINT64(const UINT64 &value);
+        CStringW setBoolean(const bool &value);
+
+        CStringA format(LPCSTR format, ...);
+        CStringW format(LPCWSTR format, ...);
+    }; // namespace String
+
+    namespace FileSystem
+    {
+        CStringW expandPath(LPCWSTR basePath);
+
+        HRESULT find(LPCWSTR basePath, LPCWSTR filterTypes, bool searchRecursively, std::function<HRESULT(LPCWSTR fileName)> onFileFound);
+
+        HMODULE loadLibrary(LPCWSTR fileName);
+
+        HRESULT load(LPCWSTR fileName, std::vector<UINT8> &buffer, size_t limitReadSize = -1);
+        HRESULT load(LPCWSTR fileName, CStringA &string);
+        HRESULT load(LPCWSTR fileName, CStringW &string, bool convertUTF8 = true);
+
+        HRESULT save(LPCWSTR fileName, const std::vector<UINT8> &buffer);
+        HRESULT save(LPCWSTR fileName, LPCSTR pString);
+        HRESULT save(LPCWSTR fileName, LPCWSTR pString, bool convertUTF8 = true);
+    }; // namespace File
+}; // namespace Gek
 
 #include "Include\CGEKTimer.h"
 #include "Include\CGEKPerformance.h"
 #include "Include\CGEKLibXML2.h"
-
-bool        EvaluateDouble(LPCWSTR pExpression,     double &nValue);
-bool        EvaluateFloat(LPCWSTR pExpression,      float &nValue);
-bool        EvaluateFloat2(LPCWSTR pExpression,     float2 &nValue);
-bool        EvaluateFloat3(LPCWSTR pExpression,     float3 &nValue);
-bool        EvaluateFloat4(LPCWSTR pExpression,     float4 &nValue);
-bool        EvaluateQuaternion(LPCWSTR pExpression, quaternion &nValue);
-bool        EvaluateINT32(LPCWSTR pExpression,      INT32 &nValue);
-bool        EvaluateUINT32(LPCWSTR pExpression,     UINT32 &nValue);
-bool        EvaluateINT64(LPCWSTR pExpression,      INT64 &nValue);
-bool        EvaluateUINT64(LPCWSTR pExpression,     UINT64 &nValue);
-bool        EvaluateBoolean(LPCWSTR pExpression,    bool &nValue);
-
-double      StrToDouble(LPCWSTR pExpression);
-float       StrToFloat(LPCWSTR pExpression);
-float2      StrToFloat2(LPCWSTR pExpression);
-float3      StrToFloat3(LPCWSTR pExpression);
-float4      StrToFloat4(LPCWSTR pExpression);
-quaternion  StrToQuaternion(LPCWSTR pExpression);
-INT32       StrToINT32(LPCWSTR pExpression);
-UINT32      StrToUINT32(LPCWSTR pExpression);
-INT64       StrToINT64(LPCWSTR pExpression);
-UINT64      StrToUINT64(LPCWSTR pExpression);
-bool        StrToBoolean(LPCWSTR pExpression);
-
-CStringW    StrFromDouble(double nValue);
-CStringW    StrFromFloat(float nValue);
-CStringW    StrFromFloat2(float2 nValue);
-CStringW    StrFromFloat3(float3 nValue);
-CStringW    StrFromFloat4(float4 nValue);
-CStringW    StrFromQuaternion(quaternion nValue);
-CStringW    StrFromINT32(INT32 nValue);
-CStringW    StrFromUINT32(UINT32 nValue);
-CStringW    StrFromINT64(INT64 nValue);
-CStringW    StrFromUINT64(UINT64 nValue);
-CStringW    StrFromBoolean(bool nValue);
-
-CStringA    FormatString(LPCSTR pFormat, ...);
-CStringW    FormatString(LPCWSTR pFormat, ...);
-
-namespace std
-{
-    wstring to_string(const float2 &nValue);
-    wstring to_string(const float3 &nValue);
-    wstring to_string(const float4 &nValue);
-    wstring to_string(const quaternion &nValue);
-
-    template<typename ... ARGS>
-    string format(LPCSTR pFormat, ARGS ... pArgs)
-    {
-        size_t nLength = _snprintf(nullptr, 0, pFormat, pArgs ...);
-        string strReturn(++nLength, '\0');
-        _snprintf(&strReturn.front(), nLength, pFormat, pArgs ...);
-        return strReturn;
-    }
-
-    template<typename ... ARGS>
-    wstring format(LPCWSTR pFormat, ARGS ... pArgs)
-    {
-        size_t nLength = _snwprintf(nullptr, 0, pFormat, pArgs ...);
-        wstring strReturn(++nLength, L'\0');
-        _snwprintf(&strReturn.front(), nLength, pFormat, pArgs ...);
-        return strReturn;
-    }
-};
-
-CStringW GEKParseFileName(LPCWSTR pFileName);
-
-HRESULT GEKFindFiles(LPCWSTR pBasePath, LPCWSTR pFilter, bool bRecursive, std::function<HRESULT (LPCWSTR pFileName)> Callback);
-
-HMODULE GEKLoadLibrary(LPCWSTR pFileName);
-
-HRESULT GEKLoadFromFile(LPCWSTR pFileName, std::vector<UINT8> &aBuffer, UINT32 nSize = -1);
-HRESULT GEKLoadFromFile(LPCWSTR pFileName, CStringA &strString);
-HRESULT GEKLoadFromFile(LPCWSTR pFileName, CStringW &strString, bool bConvertFromUTF8 = true);
-
-HRESULT GEKSaveToFile(LPCWSTR pFileName, const std::vector<UINT8> &aBuffer);
-HRESULT GEKSaveToFile(LPCWSTR pFileName, LPCSTR pString);
-HRESULT GEKSaveToFile(LPCWSTR pFileName, LPCWSTR pString, bool bConvertToUTF8 = true);

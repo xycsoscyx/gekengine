@@ -1,548 +1,487 @@
 #pragma once
 
-template <typename TYPE>
-struct tmatrix4x4
+namespace Gek
 {
-public:
-    union
+    namespace Math
     {
-        struct { TYPE data[16]; };
-        struct { TYPE matrix[4][4]; };
+        template <typename TYPE> struct BaseVector3;
+        template <typename TYPE> struct BaseVector4;
 
-        struct
+        template <typename TYPE>
+        struct BaseMatrix4x4
         {
-            TYPE _11, _12, _13, _14;    
-            TYPE _21, _22, _23, _24;
-            TYPE _31, _32, _33, _34;
-            TYPE _41, _42, _43, _44;
-        };
-
-        struct
-        {
+        public:
             union
             {
+                struct { TYPE data[16]; };
+                struct { TYPE table[4][4]; };
+                struct { BaseVector4<TYPE> rows[4]; };
+
                 struct
                 {
-                    tvector4<TYPE> rx;
-                    tvector4<TYPE> ry;
-                    tvector4<TYPE> rz;
+                    TYPE _11, _12, _13, _14;
+                    TYPE _21, _22, _23, _24;
+                    TYPE _31, _32, _33, _34;
+                    TYPE _41, _42, _43, _44;
                 };
 
                 struct
                 {
-                    tvector4<TYPE> r[3];
+                    BaseVector4<TYPE> rx;
+                    BaseVector4<TYPE> ry;
+                    BaseVector4<TYPE> rz;
+                    BaseVector4<TYPE> translation;
                 };
             };
-            union
+
+        public:
+            BaseMatrix4x4(void)
             {
-                struct
-                {
-                    tvector4<TYPE> rw;
-                };
+                setIdentity();
+            }
 
-                struct
-                {
-                    tvector3<TYPE> t;
-                    TYPE w;
-                };
+            BaseMatrix4x4(const BaseMatrix4x4 &matrix)
+            {
+                memcpy(data, matrix.data, sizeof(data));
+            }
 
-                struct
+            BaseMatrix4x4(const BaseVector4<TYPE> &euler)
+            {
+                setEuler(euler);
+            }
+
+            BaseMatrix4x4(TYPE x, TYPE y, TYPE z)
+            {
+                setEuler(x, y, z);
+            }
+
+            BaseMatrix4x4(const BaseVector4<TYPE> &axis, TYPE radians)
+            {
+                setRotation(axis, radians);
+            }
+
+            BaseMatrix4x4(const BaseQuaternion<TYPE> &rotation)
+            {
+                setRotation(rotation);
+            }
+
+            BaseMatrix4x4(const BaseQuaternion<TYPE> &rotation, const BaseVector4<TYPE> &translation)
+            {
+                setRotation(rotation);
+                this->translation = translation;
+            }
+
+            void setZero(void)
+            {
+                memset(data, 0, sizeof(data));
+            }
+
+            void setIdentity(void)
+            {
+                _11 = _22 = _33 = _44 = TYPE(1);
+                _12 = _13 = _14 = TYPE(0);
+                _21 = _23 = _24 = TYPE(0);
+                _31 = _32 = _34 = TYPE(0);
+                _41 = _42 = _43 = TYPE(0);
+            }
+
+            void setScaling(TYPE scalar)
+            {
+                _11 = scalar;
+                _22 = scalar;
+                _33 = scalar;
+            }
+
+            void setScaling(const BaseVector4<TYPE> &vector)
+            {
+                _11 = vector.x;
+                _22 = vector.y;
+                _33 = vector.z;
+            }
+
+            void setTranslation(const BaseVector4<TYPE> &nTranslation)
+            {
+                _41 = nTranslation.x;
+                _42 = nTranslation.y;
+                _43 = nTranslation.z;
+            }
+
+            void setEuler(const BaseVector4<TYPE> &euler)
+            {
+                setEuler(euler.x, euler.y, euler.z);
+            }
+
+            void setEuler(TYPE x, TYPE y, TYPE z)
+            {
+                TYPE cosX(cos(x));
+                TYPE sinX(sin(x));
+                TYPE cosY(cos(y));
+                TYPE sinY(sin(y));
+                TYPE cosZ(cos(z));
+                TYPE sinZ(sin(z));
+                TYPE cosXsinY(cosX * sinY);
+                TYPE sinXsinY(sinX * sinY);
+
+                table[0][0] = ( cosY * cosZ);
+                table[1][0] = (-cosY * sinZ);
+                table[2][0] =  sinY;
+                table[3][0] = TYPE(0);
+
+                table[0][1] = ( sinXsinY * cosZ + cosX * sinZ);
+                table[1][1] = (-sinXsinY * sinZ + cosX * cosZ);
+                table[2][1] = (-sinX * cosY);
+                table[3][1] = TYPE(0);
+
+                table[0][2] = (-cosXsinY * cosZ + sinX * sinZ);
+                table[1][2] = ( cosXsinY * sinZ + sinX * cosZ);
+                table[2][2] = ( cosX * cosY);
+                table[3][2] = TYPE(0);
+
+                table[0][3] = TYPE(0);
+                table[1][3] = TYPE(0);
+                table[2][3] = TYPE(0);
+                table[3][3] = TYPE(1);
+            }
+
+            void setRotation(const BaseVector4<TYPE> &axis, TYPE radians)
+            {
+                TYPE cosAngle(cos(radians));
+                TYPE sinAngle(sin(radians));
+
+                table[0][0] = (cosAngle + axis.x * axis.x * (TYPE(1) - cosAngle));
+                table[0][1] = ( axis.z * sinAngle + axis.y * axis.x * (TYPE(1) - cosAngle));
+                table[0][2] = (-axis.y * sinAngle + axis.z * axis.x * (TYPE(1) - cosAngle));
+                table[0][3] = TYPE(0);
+
+                table[1][0] = (-axis.z * sinAngle + axis.x * axis.y * (TYPE(1) - cosAngle));
+                table[1][1] = (cosAngle + axis.y * axis.y * (TYPE(1) - cosAngle));
+                table[1][2] = ( axis.x * sinAngle + axis.z * axis.y * (TYPE(1) - cosAngle));
+                table[1][3] = TYPE(0);
+
+                table[2][0] = ( axis.y * sinAngle + axis.x * axis.z * (TYPE(1) - cosAngle));
+                table[2][1] = (-axis.x * sinAngle + axis.y * axis.z * (TYPE(1) - cosAngle));
+                table[2][2] = (cosAngle + axis.z * axis.z * (TYPE(1) - cosAngle));
+                table[2][3] = TYPE(0);
+
+                table[3][0] = TYPE(0);
+                table[3][1] = TYPE(0);
+                table[3][2] = TYPE(0);
+                table[3][3] = TYPE(1);
+            }
+
+            void setRotation(const BaseQuaternion<TYPE> &rotation)
+            {
+                TYPE xy(rotation.x * rotation.y);
+                TYPE zw(rotation.z * rotation.w);
+                TYPE xz(rotation.x * rotation.z);
+                TYPE yw(rotation.y * rotation.w);
+                TYPE yz(rotation.y * rotation.z);
+                TYPE xw(rotation.x * rotation.w);
+                TYPE squareX(rotation.x * rotation.x);
+                TYPE squareY(rotation.y * rotation.y);
+                TYPE squareZ(rotation.z * rotation.z);
+                TYPE squareW(rotation.w * rotation.w);
+                TYPE determinant(TYPE(1) / (squareX + squareY + squareZ + squareW));
+
+                table[0][0] = (( squareX - squareY - squareZ + squareW) * determinant);
+                table[0][1] = (TYPE(2) * (xy + zw) * determinant);
+                table[0][2] = (TYPE(2) * (xz - yw) * determinant);
+                table[0][3] = TYPE(0);
+
+                table[1][0] = (TYPE(2) * (xy - zw) * determinant);
+                table[1][1] = ((-squareX + squareY - squareZ + squareW) * determinant);
+                table[1][2] = (TYPE(2) * (yz + xw) * determinant);
+                table[1][3] = TYPE(0);
+
+                table[2][0] = (TYPE(2) * (xz + yw) * determinant);
+                table[2][1] = (TYPE(2) * (yz - xw) * determinant);
+                table[2][2] = ((-squareX - squareY + squareZ + squareW) * determinant);
+                table[2][3] = TYPE(0);
+
+                table[3][0] = TYPE(0);
+                table[3][1] = TYPE(0);
+                table[3][2] = TYPE(0);
+                table[3][3] = TYPE(1);
+            }
+
+            void setRotationX(TYPE radians)
+            {
+                TYPE cosAngle(cos(radians));
+                TYPE sinAngle(sin(radians));
+                table[0][0] = TYPE(1); table[0][1] = TYPE(0);   table[0][2] = TYPE(0);  table[0][3] = TYPE(0);
+                table[1][0] = TYPE(0); table[1][1] = cosAngle;  table[1][2] = sinAngle; table[1][3] = TYPE(0);
+                table[2][0] = TYPE(0); table[2][1] = -sinAngle; table[2][2] = cosAngle; table[2][3] = TYPE(0);
+                table[3][0] = TYPE(0); table[3][1] = TYPE(0);   table[3][2] = TYPE(0);  table[3][3] = TYPE(1);
+            }
+
+            void setRotationY(TYPE radians)
+            {
+                TYPE cosAngle(cos(radians));
+                TYPE sinAngle(sin(radians));
+                table[0][0] = cosAngle; table[0][1] = TYPE(0); table[0][2] = -sinAngle; table[0][3] = TYPE(0);
+                table[1][0] = TYPE(0);  table[1][1] = TYPE(1); table[1][2] = TYPE(0);   table[1][3] = TYPE(0);
+                table[2][0] = sinAngle; table[2][1] = TYPE(0); table[2][2] = cosAngle;  table[2][3] = TYPE(0);
+                table[3][0] = TYPE(0);  table[3][1] = TYPE(0); table[3][2] = TYPE(0);   table[3][3] = TYPE(1);
+            }
+
+            void setRotationZ(TYPE radians)
+            {
+                TYPE cosAngle(cos(radians));
+                TYPE sinAngle(sin(radians));
+                table[0][0] = cosAngle; table[0][1] = sinAngle; table[0][2] = TYPE(0); table[0][3] = TYPE(0);
+                table[1][0] =-sinAngle; table[1][1] = cosAngle; table[1][2] = TYPE(0); table[1][3] = TYPE(0);
+                table[2][0] = TYPE(0);  table[2][1] = TYPE(0);  table[2][2] = TYPE(1); table[2][3] = TYPE(0);
+                table[3][0] = TYPE(0);  table[3][1] = TYPE(0);  table[3][2] = TYPE(0); table[3][3] = TYPE(1);
+            }
+
+            void setOrthographic(TYPE left, TYPE top, TYPE right, TYPE bottom, TYPE near, TYPE far)
+            {
+                table[0][0] = (TYPE(2) / (right - left));
+                table[1][0] = TYPE(0);
+                table[2][0] = TYPE(0);
+                table[3][0] = -((right + left) / (right - left));;
+
+                table[0][1] = TYPE(0);
+                table[1][1] = (TYPE(2) / (top - bottom));
+                table[2][1] = TYPE(0);
+                table[3][1] = -((top + bottom) / (top - bottom));
+
+                table[0][2] = TYPE(0);
+                table[1][2] = TYPE(0);
+                table[2][2] = (-TYPE(2) / (far - near));
+                table[3][2] = -((far + near) / (far - near));
+
+                table[0][3] = TYPE(0);
+                table[1][3] = TYPE(0);
+                table[2][3] = TYPE(0);
+                table[3][3] = TYPE(1);
+            }
+
+            void setPerspective(TYPE fieldOfView, TYPE aspectRatio, TYPE near, TYPE far)
+            {
+                TYPE x(TYPE(1) / tan(fieldOfView * TYPE(0.5)));
+                TYPE y(x * aspectRatio);
+                TYPE distance(far - near);
+
+                table[0][0] = x;
+                table[0][1] = TYPE(0);
+                table[0][2] = TYPE(0);
+                table[0][3] = TYPE(0);
+
+                table[1][0] = TYPE(0);
+                table[1][1] = y;
+                table[1][2] = TYPE(0);
+                table[1][3] = TYPE(0);
+
+                table[2][0] = TYPE(0);
+                table[2][1] = TYPE(0);
+                table[2][2] = ((far + near) / distance);
+                table[2][3] = TYPE(1);
+
+                table[3][0] = TYPE(0);
+                table[3][1] = TYPE(0);
+                table[3][2] = -((TYPE(2) * far * near) / distance);
+                table[3][3] = TYPE(0);
+            }
+
+            void setLookAt(const BaseVector4<TYPE> &source, const BaseVector4<TYPE> &target, const BaseVector4<TYPE> &worldUpVector)
+            {
+                rz = ((target - source).getNormal());
+                rx = (worldUpVector.Cross(rz).getNormal());
+                ry = (rz.Cross(rx).getNormal());
+
+                table[0][3] = TYPE(0);
+                table[1][3] = TYPE(0);
+                table[2][3] = TYPE(0);
+                table[3][3] = TYPE(1);
+
+                invert();
+            }
+
+            void setLookAt(const BaseVector4<TYPE> &direction, const BaseVector4<TYPE> &worldUpVector)
+            {
+                rz = (direction.getNormal());
+                rx = (worldUpVector.Cross(rz).getNormal());
+                ry = (rz.Cross(rx).getNormal());
+
+                table[0][3] = TYPE(0);
+                table[1][3] = TYPE(0);
+                table[2][3] = TYPE(0);
+                table[3][3] = TYPE(1);
+            }
+
+            BaseVector3<TYPE> getEuler(void) const
+            {
+                BaseVector3 euler;
+                euler.y = asin(_31);
+
+                TYPE cosAngle = cos(euler.y);
+                if (abs(cosAngle) > 0.005)
                 {
-                    TYPE x, y, z, w;
-                };
-            };
+                    euler.x = atan2(-(_32 / cosAngle), (_33 / cosAngle));
+                    euler.z = atan2(-(_21 / cosAngle), (_11 / cosAngle));
+                }
+                else
+                {
+                    euler.x = TYPE(0);
+                    euler.y = atan2(_12, _22);
+                }
+
+                if (euler.x < TYPE(0))
+                {
+                    euler.x += (Pi * TYPE(2));
+                }
+
+                if (euler.y < TYPE(0))
+                {
+                    euler.y += (Pi * TYPE(2));
+                }
+
+                if (euler.z < TYPE(0))
+                {
+                    euler.z += (Pi * TYPE(2));
+                }
+
+                return euler;
+            }
+
+            BaseVector3<TYPE> getScaling(void) const
+            {
+                return BaseVector3(_11, _22, _33);
+            }
+
+            TYPE getDeterminant(void) const
+            {
+                return ((table[0][0] * table[1][1] - table[1][0] * table[0][1]) *
+                        (table[2][2] * table[3][3] - table[3][2] * table[2][3]) -
+                        (table[0][0] * table[2][1] - table[2][0] * table[0][1]) *
+                        (table[1][2] * table[3][3] - table[3][2] * table[1][3]) +
+                        (table[0][0] * table[3][1] - table[3][0] * table[0][1]) *
+                        (table[1][2] * table[2][3] - table[2][2] * table[1][3]) +
+                        (table[1][0] * table[2][1] - table[2][0] * table[1][1]) *
+                        (table[0][2] * table[3][3] - table[3][2] * table[0][3]) -
+                        (table[1][0] * table[3][1] - table[3][0] * table[1][1]) *
+                        (table[0][2] * table[2][3] - table[2][2] * table[0][3]) +
+                        (table[2][0] * table[3][1] - table[3][0] * table[2][1]) *
+                        (table[0][2] * table[1][3] - table[1][2] * table[0][3]));
+            }
+
+            BaseMatrix4x4 getTranspose(void) const
+            {
+                return BaseMatrix4x4(_11, _21, _31, _41,
+                                     _12, _22, _32, _42,
+                                     _13, _23, _33, _43,
+                                     _14, _24, _34, _44);
+            }
+
+            BaseMatrix4x4 getInverse(void) const
+            {
+                TYPE determinant(getDeterminant());
+                if (abs(determinant) < _EPSILON)
+                {
+                    return BaseMatrix4x4();
+                }
+                else
+                {
+                    determinant = (TYPE(1) / determinant);
+
+                    BaseMatrix4x4 matrix;
+                    matrix.table[0][0] = (determinant * (table[1][1] * (table[2][2] * table[3][3] - table[3][2] * table[2][3]) + table[2][1] * (table[3][2] * table[1][3] - table[1][2] * table[3][3]) + table[3][1] * (table[1][2] * table[2][3] - table[2][2] * table[1][3])));
+                    matrix.table[1][0] = (determinant * (table[1][2] * (table[2][0] * table[3][3] - table[3][0] * table[2][3]) + table[2][2] * (table[3][0] * table[1][3] - table[1][0] * table[3][3]) + table[3][2] * (table[1][0] * table[2][3] - table[2][0] * table[1][3])));
+                    matrix.table[2][0] = (determinant * (table[1][3] * (table[2][0] * table[3][1] - table[3][0] * table[2][1]) + table[2][3] * (table[3][0] * table[1][1] - table[1][0] * table[3][1]) + table[3][3] * (table[1][0] * table[2][1] - table[2][0] * table[1][1])));
+                    matrix.table[3][0] = (determinant * (table[1][0] * (table[3][1] * table[2][2] - table[2][1] * table[3][2]) + table[2][0] * (table[1][1] * table[3][2] - table[3][1] * table[1][2]) + table[3][0] * (table[2][1] * table[1][2] - table[1][1] * table[2][2])));
+                    matrix.table[0][1] = (determinant * (table[2][1] * (table[0][2] * table[3][3] - table[3][2] * table[0][3]) + table[3][1] * (table[2][2] * table[0][3] - table[0][2] * table[2][3]) + table[0][1] * (table[3][2] * table[2][3] - table[2][2] * table[3][3])));
+                    matrix.table[1][1] = (determinant * (table[2][2] * (table[0][0] * table[3][3] - table[3][0] * table[0][3]) + table[3][2] * (table[2][0] * table[0][3] - table[0][0] * table[2][3]) + table[0][2] * (table[3][0] * table[2][3] - table[2][0] * table[3][3])));
+                    matrix.table[2][1] = (determinant * (table[2][3] * (table[0][0] * table[3][1] - table[3][0] * table[0][1]) + table[3][3] * (table[2][0] * table[0][1] - table[0][0] * table[2][1]) + table[0][3] * (table[3][0] * table[2][1] - table[2][0] * table[3][1])));
+                    matrix.table[3][1] = (determinant * (table[2][0] * (table[3][1] * table[0][2] - table[0][1] * table[3][2]) + table[3][0] * (table[0][1] * table[2][2] - table[2][1] * table[0][2]) + table[0][0] * (table[2][1] * table[3][2] - table[3][1] * table[2][2])));
+                    matrix.table[0][2] = (determinant * (table[3][1] * (table[0][2] * table[1][3] - table[1][2] * table[0][3]) + table[0][1] * (table[1][2] * table[3][3] - table[3][2] * table[1][3]) + table[1][1] * (table[3][2] * table[0][3] - table[0][2] * table[3][3])));
+                    matrix.table[1][2] = (determinant * (table[3][2] * (table[0][0] * table[1][3] - table[1][0] * table[0][3]) + table[0][2] * (table[1][0] * table[3][3] - table[3][0] * table[1][3]) + table[1][2] * (table[3][0] * table[0][3] - table[0][0] * table[3][3])));
+                    matrix.table[2][2] = (determinant * (table[3][3] * (table[0][0] * table[1][1] - table[1][0] * table[0][1]) + table[0][3] * (table[1][0] * table[3][1] - table[3][0] * table[1][1]) + table[1][3] * (table[3][0] * table[0][1] - table[0][0] * table[3][1])));
+                    matrix.table[3][2] = (determinant * (table[3][0] * (table[1][1] * table[0][2] - table[0][1] * table[1][2]) + table[0][0] * (table[3][1] * table[1][2] - table[1][1] * table[3][2]) + table[1][0] * (table[0][1] * table[3][2] - table[3][1] * table[0][2])));
+                    matrix.table[0][3] = (determinant * (table[0][1] * (table[2][2] * table[1][3] - table[1][2] * table[2][3]) + table[1][1] * (table[0][2] * table[2][3] - table[2][2] * table[0][3]) + table[2][1] * (table[1][2] * table[0][3] - table[0][2] * table[1][3])));
+                    matrix.table[1][3] = (determinant * (table[0][2] * (table[2][0] * table[1][3] - table[1][0] * table[2][3]) + table[1][2] * (table[0][0] * table[2][3] - table[2][0] * table[0][3]) + table[2][2] * (table[1][0] * table[0][3] - table[0][0] * table[1][3])));
+                    matrix.table[2][3] = (determinant * (table[0][3] * (table[2][0] * table[1][1] - table[1][0] * table[2][1]) + table[1][3] * (table[0][0] * table[2][1] - table[2][0] * table[0][1]) + table[2][3] * (table[1][0] * table[0][1] - table[0][0] * table[1][1])));
+                    matrix.table[3][3] = (determinant * (table[0][0] * (table[1][1] * table[2][2] - table[2][1] * table[1][2]) + table[1][0] * (table[2][1] * table[0][2] - table[0][1] * table[2][2]) + table[2][0] * (table[0][1] * table[1][2] - table[1][1] * table[0][2])));
+                    return matrix;
+                }
+            }
+
+            void transpose(void)
+            {
+                (*this) = getTranspose();
+            }
+
+            void invert(void)
+            {
+                (*this) = getInverse();
+            }
+
+            void operator *= (const BaseMatrix4x4 &matrix)
+            {
+                (*this) = ((*this) * matrix);
+            }
+
+            BaseMatrix4x4 operator * (const BaseMatrix4x4 &matrix) const
+            {
+                BaseMatrix4x4 transpose(matrix.getTranspose());
+                return BaseMatrix4x4(rx.Dot(transpose.rx), rx.Dot(transpose.ry), rx.Dot(transpose.rz), rx.Dot(transpose.rw),
+                                     ry.Dot(transpose.rx), ry.Dot(transpose.ry), ry.Dot(transpose.rz), ry.Dot(transpose.rw),
+                                     rz.Dot(transpose.rx), rz.Dot(transpose.ry), rz.Dot(transpose.rz), rz.Dot(transpose.rw),
+                                     rw.Dot(transpose.rx), rw.Dot(transpose.ry), rw.Dot(transpose.rz), rw.Dot(transpose.rw));
+            }
+
+            BaseMatrix4x4 operator = (const BaseMatrix4x4 &matrix)
+            {
+                memcpy(data, matrix.data, sizeof(data));
+                return (*this);
+            }
+
+            BaseMatrix4x4 operator = (const BaseQuaternion<TYPE> &rotation)
+            {
+                setRotation(rotation);
+                return (*this);
+            }
+
+            BaseVector3<TYPE> operator * (const BaseVector3<TYPE> &vector) const
+            {
+                return BaseVector3(((vector.x * _11) + (vector.y * _21) + (vector.z * _31)),
+                                   ((vector.x * _12) + (vector.y * _22) + (vector.z * _32)),
+                                   ((vector.x * _13) + (vector.y * _23) + (vector.z * _33)));
+            }
+
+            BaseVector4<TYPE> operator * (const BaseVector4<TYPE> &vector) const
+            {
+                return BaseVector4(((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + (vector.w * _41)),
+                                   ((vector.x * _12) + (vector.y * _22) + (vector.z * _32) + (vector.w * _42)),
+                                   ((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + (vector.w * _43)),
+                                   ((vector.x * _14) + (vector.y * _24) + (vector.z * _34) + (vector.w * _44)));
+            }
+
+            BaseMatrix4x4 operator * (TYPE nScalar) const
+            {
+                return BaseMatrix4x4((_11 * nScalar), (_12 * nScalar), (_13 * nScalar), (_14 * nScalar),
+                    (_21 * nScalar), (_22 * nScalar), (_23 * nScalar), (_24 * nScalar),
+                    (_31 * nScalar), (_32 * nScalar), (_33 * nScalar), (_34 * nScalar),
+                    (_41 * nScalar), (_42 * nScalar), (_43 * nScalar), (_44 * nScalar));
+            }
+
+            BaseMatrix4x4 operator + (const BaseMatrix4x4 &matrix) const
+            {
+                return BaseMatrix4x4(_11 + matrix._11, _12 + matrix._12, _13 + matrix._13, _14 + matrix._14,
+                                     _21 + matrix._21, _22 + matrix._22, _23 + matrix._23, _24 + matrix._24,
+                                     _31 + matrix._31, _32 + matrix._32, _33 + matrix._33, _34 + matrix._34,
+                                     _41 + matrix._41, _42 + matrix._42, _43 + matrix._43, _44 + matrix._44);
+            }
+
+            void operator += (const BaseMatrix4x4 &matrix)
+            {
+                _11 += matrix._11; _12 += matrix._12; _13 += matrix._13; _14 += matrix._14;
+                _21 += matrix._21; _22 += matrix._22; _23 += matrix._23; _24 += matrix._24;
+                _31 += matrix._31; _32 += matrix._32; _33 += matrix._33; _34 += matrix._34;
+                _41 += matrix._41; _42 += matrix._42; _43 += matrix._43; _44 += matrix._44;
+            }
         };
-    };
 
-public:
-    tmatrix4x4(void)
-    {
-        SetIdentity();
-    }
-
-    tmatrix4x4(const tmatrix4x4<TYPE> &nMatrix)
-    {
-        _11 = nMatrix._11;    _12 = nMatrix._12;    _13 = nMatrix._13;    _14 = nMatrix._14;
-        _21 = nMatrix._21;    _22 = nMatrix._22;    _23 = nMatrix._23;    _24 = nMatrix._24;
-        _31 = nMatrix._31;    _32 = nMatrix._32;    _33 = nMatrix._33;    _34 = nMatrix._34;
-        _41 = nMatrix._41;    _42 = nMatrix._42;    _43 = nMatrix._43;    _44 = nMatrix._44;
-    }
-
-    tmatrix4x4(TYPE f11, TYPE f12, TYPE f13, TYPE f14,
-               TYPE f21, TYPE f22, TYPE f23, TYPE f24,
-               TYPE f31, TYPE f32, TYPE f33, TYPE f34,
-               TYPE f41, TYPE f42, TYPE f43, TYPE f44)
-    {
-        _11 = f11;    _12 = f12;    _13 = f13;    _14 = f14;
-        _21 = f21;    _22 = f22;    _23 = f23;    _24 = f24;
-        _31 = f31;    _32 = f32;    _33 = f33;    _34 = f34;
-        _41 = f41;    _42 = f42;    _43 = f43;    _44 = f44;
-    }
-
-    tmatrix4x4(const tvector3<TYPE> &nEuler)
-    {
-        SetEuler(nEuler);
-    }
-
-    tmatrix4x4(TYPE nX, TYPE nY, TYPE nZ)
-    {
-        SetEuler(nX, nY, nZ);
-    }
-
-    tmatrix4x4(const tvector3<TYPE> &nAxis, TYPE nAngle)
-    {
-        SetRotation(nAxis, nAngle);
-    }
-
-    tmatrix4x4(const tquaternion<TYPE> &nRotation)
-    {
-        SetQuaternion(nRotation);
-    }
-
-    tmatrix4x4(const tquaternion<TYPE> &nRotation, const tvector3<TYPE> &nTranslation)
-    {
-        SetQuaternion(nRotation);
-        t = nTranslation;
-    }
-
-    void SetZero(void)
-    {
-        _11 = _12 = _13 = _14 = TYPE(0);
-        _21 = _22 = _23 = _24 = TYPE(0);
-        _31 = _32 = _33 = _34 = TYPE(0);
-        _41 = _42 = _43 = _44 = TYPE(0);
-    }
-
-    void SetIdentity(void)
-    {
-        _11 = _22 = _33 = _44 = TYPE(1);
-        _12 = _13 = _14 = TYPE(0);
-        _21 = _23 = _24 = TYPE(0);
-        _31 = _32 = _34 = TYPE(0);
-        _41 = _42 = _43 = TYPE(0);
-    }
-
-    void SetScaling(TYPE nScale)
-    {
-        _11 = nScale;
-        _22 = nScale;
-        _33 = nScale;
-    }
-
-    void SetScaling(const tvector3<TYPE> &nScale)
-    {
-        _11 = nScale.x;
-        _22 = nScale.y;
-        _33 = nScale.z;
-    }
-
-    void SetTranslation(const tvector3<TYPE> &nTranslation)
-    {
-        _41 = nTranslation.x;
-        _42 = nTranslation.y;
-        _43 = nTranslation.z;
-    }
-
-    void SetEuler(const tvector3<TYPE> &nEuler)
-    {
-        SetEuler(nEuler.x, nEuler.y, nEuler.z);
-    }
-
-    void SetEuler(TYPE nX, TYPE nY, TYPE nZ)
-    {
-        TYPE nCosX     = cos(nX);
-        TYPE nSinX     = sin(nX);
-        TYPE nCosY     = cos(nY);
-        TYPE nSinY     = sin(nY);
-        TYPE nCosZ     = cos(nZ);
-        TYPE nSinZ     = sin(nZ);
-        TYPE nCosX_SinY = nCosX * nSinY;
-        TYPE nSinX_SinY = nSinX * nSinY;
-
-        matrix[0][0] =  nCosY * nCosZ;
-        matrix[1][0] = -nCosY * nSinZ;
-        matrix[2][0] =  nSinY;
-        matrix[3][0] = TYPE(0);
-
-        matrix[0][1] =  nSinX_SinY * nCosZ + nCosX * nSinZ;
-        matrix[1][1] = -nSinX_SinY * nSinZ + nCosX * nCosZ;
-        matrix[2][1] = -nSinX * nCosY;
-        matrix[3][1] = TYPE(0);
-
-        matrix[0][2] = -nCosX_SinY * nCosZ + nSinX * nSinZ;
-        matrix[1][2] =  nCosX_SinY * nSinZ + nSinX * nCosZ;
-        matrix[2][2] =  nCosX * nCosY;
-        matrix[3][2] = TYPE(0);
-
-        matrix[0][3] = TYPE(0);
-        matrix[1][3] = TYPE(0);
-        matrix[2][3] = TYPE(0);
-        matrix[3][3] = TYPE(1);
-    }
-
-    void SetRotation(const tvector3<TYPE> &nAxis, TYPE nAngle)
-    {
-        TYPE nCos = cos(nAngle);
-        TYPE nSin = sin(nAngle);
-
-        matrix[0][0] = (            nCos + nAxis.x * nAxis.x * (TYPE(1) - nCos));
-        matrix[0][1] = (  nAxis.z * nSin + nAxis.y * nAxis.x * (TYPE(1) - nCos));
-        matrix[0][2] = (- nAxis.y * nSin + nAxis.z * nAxis.x * (TYPE(1) - nCos));
-        matrix[0][3] = TYPE(0);
-
-        matrix[1][0] = (- nAxis.z * nSin + nAxis.x * nAxis.y * (TYPE(1) - nCos));
-        matrix[1][1] = (            nCos + nAxis.y * nAxis.y * (TYPE(1) - nCos));
-        matrix[1][2] = (  nAxis.x * nSin + nAxis.z * nAxis.y * (TYPE(1) - nCos));
-        matrix[1][3] = TYPE(0);
-
-        matrix[2][0] = (  nAxis.y * nSin + nAxis.x * nAxis.z * (TYPE(1) - nCos));
-        matrix[2][1] = (- nAxis.x * nSin + nAxis.y * nAxis.z * (TYPE(1) - nCos));
-        matrix[2][2] = (            nCos + nAxis.z * nAxis.z * (TYPE(1) - nCos));
-        matrix[2][3] = TYPE(0);
-
-        matrix[3][0] = TYPE(0);
-        matrix[3][1] = TYPE(0);
-        matrix[3][2] = TYPE(0);
-        matrix[3][3] = TYPE(1);
-    }
-
-    void SetQuaternion(const tquaternion<TYPE> &nQuaternion)
-    {
-        SetIdentity();
-
-        TYPE nSquareX(nQuaternion.x * nQuaternion.x);
-        TYPE nSquareY(nQuaternion.y * nQuaternion.y);
-        TYPE nSquareZ(nQuaternion.z * nQuaternion.z);
-        TYPE nSquareW(nQuaternion.w * nQuaternion.w);
-
-        TYPE nInverse(TYPE(1) / (nSquareX + nSquareY + nSquareZ + nSquareW));
-        matrix[0][0] = (( nSquareX - nSquareY - nSquareZ + nSquareW) * nInverse);
-        matrix[1][1] = ((-nSquareX + nSquareY - nSquareZ + nSquareW) * nInverse);
-        matrix[2][2] = ((-nSquareX - nSquareY + nSquareZ + nSquareW) * nInverse);
-
-        TYPE nXY(nQuaternion.x * nQuaternion.y);
-        TYPE nZW(nQuaternion.z * nQuaternion.w);
-        matrix[0][1] = (TYPE(2) * (nXY + nZW) * nInverse);
-        matrix[1][0] = (TYPE(2) * (nXY - nZW) * nInverse);
-
-        nXY = (nQuaternion.x * nQuaternion.z);
-        nZW = (nQuaternion.y * nQuaternion.w);
-        matrix[0][2] = (TYPE(2) * (nXY - nZW) * nInverse);
-        matrix[2][0] = (TYPE(2) * (nXY + nZW) * nInverse);
-
-        nXY = (nQuaternion.y * nQuaternion.z);
-        nZW = (nQuaternion.x * nQuaternion.w);
-        matrix[1][2] = (TYPE(2) * (nXY + nZW) * nInverse);
-        matrix[2][1] = (TYPE(2) * (nXY - nZW) * nInverse);
-    }
-
-    void SetXAngle(TYPE nAngle)
-    {
-        TYPE nCos(cos(nAngle));
-        TYPE nSin(sin(nAngle));
-        matrix[0][0] = TYPE(1); matrix[0][1] = TYPE(0); matrix[0][2] = TYPE(0); matrix[0][3] = TYPE(0);
-        matrix[1][0] = TYPE(0); matrix[1][1] = nCos;    matrix[1][2] = nSin;    matrix[1][3] = TYPE(0);
-        matrix[2][0] = TYPE(0); matrix[2][1] =-nSin;    matrix[2][2] = nCos;    matrix[2][3] = TYPE(0);
-        matrix[3][0] = TYPE(0); matrix[3][1] = TYPE(0); matrix[3][2] = TYPE(0); matrix[3][3] = TYPE(1);
-    }
-
-    void SetYAngle(TYPE nAngle)
-    {
-        TYPE nCos(cos(nAngle));
-        TYPE nSin(sin(nAngle));
-        matrix[0][0] = nCos;    matrix[0][1] = TYPE(0); matrix[0][2] =-nSin;    matrix[0][3] = TYPE(0);
-        matrix[1][0] = TYPE(0); matrix[1][1] = TYPE(1); matrix[1][2] = TYPE(0); matrix[1][3] = TYPE(0);
-        matrix[2][0] = nSin;    matrix[2][1] = TYPE(0); matrix[2][2] = nCos;    matrix[2][3] = TYPE(0);
-        matrix[3][0] = TYPE(0); matrix[3][1] = TYPE(0); matrix[3][2] = TYPE(0); matrix[3][3] = TYPE(1);
-    }
-
-    void SetZAngle(TYPE nAngle)
-    {
-        TYPE nCos(cos(nAngle));
-        TYPE nSin(sin(nAngle));
-        matrix[0][0] = nCos;    matrix[0][1] = nSin;    matrix[0][2] = TYPE(0); matrix[0][3] = TYPE(0);
-        matrix[1][0] =-nSin;    matrix[1][1] = nCos;    matrix[1][2] = TYPE(0); matrix[1][3] = TYPE(0);
-        matrix[2][0] = TYPE(0); matrix[2][1] = TYPE(0); matrix[2][2] = TYPE(1); matrix[2][3] = TYPE(0);
-        matrix[3][0] = TYPE(0); matrix[3][1] = TYPE(0); matrix[3][2] = TYPE(0); matrix[3][3] = TYPE(1);
-    }
-
-    void SetOrthographic(TYPE nMinX, TYPE nMinY, TYPE nMaxX, TYPE nMaxY, TYPE nMinZ, TYPE nMaxZ)
-    {
-        TYPE nScaleX( TYPE(2) / (nMaxX - nMinX));
-        TYPE nScaleY( TYPE(2) / (nMinY - nMaxY));
-        TYPE nScaleZ(-TYPE(2) / (nMaxZ - nMinZ));
-        TYPE nTranslationX = -((nMaxX + nMinX) / (nMaxX - nMinX));
-        TYPE nTranslationY = -((nMinY + nMaxY) / (nMinY - nMaxY));
-        TYPE nTranslationZ = -((nMaxZ + nMinZ) / (nMaxZ - nMinZ));
-
-        SetIdentity();
-        SetScaling(float3(nScaleX, nScaleY, nScaleZ));
-        SetTranslation(float3(nTranslationX, nTranslationY, nTranslationZ));
-    }
-
-    void SetPerspective(TYPE nFOV, TYPE nAspect, TYPE nNear, TYPE nFar)
-    {
-	    TYPE nX(TYPE(1) / tan(nFOV * TYPE(0.5)));
-	    TYPE nY(nX * nAspect); 
-	    TYPE nDistance(nFar - nNear);
-
-	    matrix[0][0] = nX;
-	    matrix[0][1] = TYPE(0);
-	    matrix[0][2] = TYPE(0);
-	    matrix[0][3] = TYPE(0);
-
-	    matrix[1][0] = TYPE(0);
-	    matrix[1][1] = nY;
-	    matrix[1][2] = TYPE(0);
-	    matrix[1][3] = TYPE(0);
-
-	    matrix[2][0] = TYPE(0);
-	    matrix[2][1] = TYPE(0);
-	    matrix[2][2] = ((nFar + nNear) / nDistance);
-	    matrix[2][3] = TYPE(1);
-
-	    matrix[3][0] = TYPE(0);
-	    matrix[3][1] = TYPE(0);
-	    matrix[3][2] =-((TYPE(2) * nFar * nNear) / nDistance);
-	    matrix[3][3] = TYPE(0);
-    }
-
-    void LookAt(const tvector3<TYPE> &nPointSource, const tvector3<TYPE> &nPointTarget, const tvector3<TYPE> &nUpDirection)
-    {
-        tvector3<TYPE> nAxisZ((nPointTarget - nPointSource).GetNormal());
-        tvector3<TYPE> nAxisX(nUpDirection.Cross(nAxisZ).GetNormal());
-        tvector3<TYPE> nAxisY(nAxisZ.Cross(nAxisX).GetNormal());
-
-        _11 = nAxisX.x;
-        _21 = nAxisX.y;
-        _31 = nAxisX.z;
-        _41 = 0.0f;
-
-        _12 = nAxisY.x;
-        _22 = nAxisY.y;
-        _32 = nAxisY.z;
-        _42 = 0.0f;
-
-        _13 = nAxisZ.x;
-        _23 = nAxisZ.y;
-        _33 = nAxisZ.z;
-        _43 = 0.0f;
-
-        _14 = 0.0f;
-        _24 = 0.0f;
-        _34 = 0.0f;
-        _44 = 1.0f;
-
-        Invert();
-    }
-
-    void LookAt(const tvector3<TYPE> &nViewDirection, const tvector3<TYPE> &nUpDirection)
-    {
-        tvector3<TYPE> nAxisZ(nViewDirection.GetNormal());
-        tvector3<TYPE> nAxisX(nUpDirection.Cross(nAxisZ).GetNormal());
-        tvector3<TYPE> nAxisY(nAxisZ.Cross(nAxisX).GetNormal());
-
-        _11 = nAxisX.x;
-        _21 = nAxisX.y;
-        _31 = nAxisX.z;
-        _41 = 0.0f;
-
-        _12 = nAxisY.x;
-        _22 = nAxisY.y;
-        _32 = nAxisY.z;
-        _42 = 0.0f;
-
-        _13 = nAxisZ.x;
-        _23 = nAxisZ.y;
-        _33 = nAxisZ.z;
-        _43 = 0.0f;
-
-        _14 = 0.0f;
-        _24 = 0.0f;
-        _34 = 0.0f;
-        _44 = 1.0f;
-    }
-
-    tvector3<TYPE> GetEuler(void) const
-    {
-        tvector3<TYPE> nEuler;
-        nEuler.y = asin(_31);
-
-        TYPE nX, nY;
-        TYPE nCos = cos(nEuler.y);
-        if (abs(nCos) > 0.005)
-        {
-            nX = (_33 / nCos);
-            nY =-(_32 / nCos);
-            nEuler.x = atan2(nY, nX);
-
-            nX = (_11 / nCos);
-            nY =-(_21 / nCos);
-            nEuler.z = atan2(nY, nX);
-        }
-        else
-        {
-            nEuler.x = TYPE(0);
-
-            nX = _22;
-            nY = _12;
-            nEuler.y = atan2(nY, nX);
-        }
-
-        if (nEuler.x < TYPE(0))
-        {
-            nEuler.x += _2_PI;
-        }
-
-        if (nEuler.y < TYPE(0))
-        {
-            nEuler.y += _2_PI;
-        }
-
-        if (nEuler.z < TYPE(0))
-        {
-            nEuler.z += _2_PI;
-        }
-
-        return nEuler;
-    }
-
-    tvector3<TYPE> GetScaling(void) const
-    {
-        return tvector3<TYPE>(_11, _22, _33);
-    }
-
-    TYPE GetDeterminant(void) const
-    {
-        return ((matrix[0][0] * matrix[1][1] - matrix[1][0] * matrix[0][1]) * 
-                (matrix[2][2] * matrix[3][3] - matrix[3][2] * matrix[2][3]) - 
-                (matrix[0][0] * matrix[2][1] - matrix[2][0] * matrix[0][1]) * 
-                (matrix[1][2] * matrix[3][3] - matrix[3][2] * matrix[1][3]) + 
-                (matrix[0][0] * matrix[3][1] - matrix[3][0] * matrix[0][1]) * 
-                (matrix[1][2] * matrix[2][3] - matrix[2][2] * matrix[1][3]) + 
-                (matrix[1][0] * matrix[2][1] - matrix[2][0] * matrix[1][1]) * 
-                (matrix[0][2] * matrix[3][3] - matrix[3][2] * matrix[0][3]) - 
-                (matrix[1][0] * matrix[3][1] - matrix[3][0] * matrix[1][1]) * 
-                (matrix[0][2] * matrix[2][3] - matrix[2][2] * matrix[0][3]) + 
-                (matrix[2][0] * matrix[3][1] - matrix[3][0] * matrix[2][1]) * 
-                (matrix[0][2] * matrix[1][3] - matrix[1][2] * matrix[0][3]));
-    }
-
-    tmatrix4x4<TYPE> GetTranspose(void) const
-    {
-        return tmatrix4x4<TYPE>(_11, _21, _31, _41,
-                                _12, _22, _32, _42,
-                                _13, _23, _33, _43,
-                                _14, _24, _34, _44);
-    }
-
-    tmatrix4x4<TYPE> GetInverse(void) const
-    {
-        TYPE nDerminant(GetDeterminant());
-        if (abs(nDerminant) < _EPSILON) 
-        {
-            return tmatrix4x4<TYPE>();
-        }
-        else
-        {
-            nDerminant = (TYPE(1) / nDerminant);
-
-            tmatrix4x4<TYPE> nMatrix;
-            nMatrix.matrix[0][0] = (nDerminant * (matrix[1][1] * (matrix[2][2] * matrix[3][3] - matrix[3][2] * matrix[2][3]) + matrix[2][1] * (matrix[3][2] * matrix[1][3] - matrix[1][2] * matrix[3][3]) + matrix[3][1] * (matrix[1][2] * matrix[2][3] - matrix[2][2] * matrix[1][3])));
-            nMatrix.matrix[1][0] = (nDerminant * (matrix[1][2] * (matrix[2][0] * matrix[3][3] - matrix[3][0] * matrix[2][3]) + matrix[2][2] * (matrix[3][0] * matrix[1][3] - matrix[1][0] * matrix[3][3]) + matrix[3][2] * (matrix[1][0] * matrix[2][3] - matrix[2][0] * matrix[1][3])));
-            nMatrix.matrix[2][0] = (nDerminant * (matrix[1][3] * (matrix[2][0] * matrix[3][1] - matrix[3][0] * matrix[2][1]) + matrix[2][3] * (matrix[3][0] * matrix[1][1] - matrix[1][0] * matrix[3][1]) + matrix[3][3] * (matrix[1][0] * matrix[2][1] - matrix[2][0] * matrix[1][1])));
-            nMatrix.matrix[3][0] = (nDerminant * (matrix[1][0] * (matrix[3][1] * matrix[2][2] - matrix[2][1] * matrix[3][2]) + matrix[2][0] * (matrix[1][1] * matrix[3][2] - matrix[3][1] * matrix[1][2]) + matrix[3][0] * (matrix[2][1] * matrix[1][2] - matrix[1][1] * matrix[2][2])));
-            nMatrix.matrix[0][1] = (nDerminant * (matrix[2][1] * (matrix[0][2] * matrix[3][3] - matrix[3][2] * matrix[0][3]) + matrix[3][1] * (matrix[2][2] * matrix[0][3] - matrix[0][2] * matrix[2][3]) + matrix[0][1] * (matrix[3][2] * matrix[2][3] - matrix[2][2] * matrix[3][3])));
-            nMatrix.matrix[1][1] = (nDerminant * (matrix[2][2] * (matrix[0][0] * matrix[3][3] - matrix[3][0] * matrix[0][3]) + matrix[3][2] * (matrix[2][0] * matrix[0][3] - matrix[0][0] * matrix[2][3]) + matrix[0][2] * (matrix[3][0] * matrix[2][3] - matrix[2][0] * matrix[3][3])));
-            nMatrix.matrix[2][1] = (nDerminant * (matrix[2][3] * (matrix[0][0] * matrix[3][1] - matrix[3][0] * matrix[0][1]) + matrix[3][3] * (matrix[2][0] * matrix[0][1] - matrix[0][0] * matrix[2][1]) + matrix[0][3] * (matrix[3][0] * matrix[2][1] - matrix[2][0] * matrix[3][1])));
-            nMatrix.matrix[3][1] = (nDerminant * (matrix[2][0] * (matrix[3][1] * matrix[0][2] - matrix[0][1] * matrix[3][2]) + matrix[3][0] * (matrix[0][1] * matrix[2][2] - matrix[2][1] * matrix[0][2]) + matrix[0][0] * (matrix[2][1] * matrix[3][2] - matrix[3][1] * matrix[2][2])));
-            nMatrix.matrix[0][2] = (nDerminant * (matrix[3][1] * (matrix[0][2] * matrix[1][3] - matrix[1][2] * matrix[0][3]) + matrix[0][1] * (matrix[1][2] * matrix[3][3] - matrix[3][2] * matrix[1][3]) + matrix[1][1] * (matrix[3][2] * matrix[0][3] - matrix[0][2] * matrix[3][3])));
-            nMatrix.matrix[1][2] = (nDerminant * (matrix[3][2] * (matrix[0][0] * matrix[1][3] - matrix[1][0] * matrix[0][3]) + matrix[0][2] * (matrix[1][0] * matrix[3][3] - matrix[3][0] * matrix[1][3]) + matrix[1][2] * (matrix[3][0] * matrix[0][3] - matrix[0][0] * matrix[3][3])));
-            nMatrix.matrix[2][2] = (nDerminant * (matrix[3][3] * (matrix[0][0] * matrix[1][1] - matrix[1][0] * matrix[0][1]) + matrix[0][3] * (matrix[1][0] * matrix[3][1] - matrix[3][0] * matrix[1][1]) + matrix[1][3] * (matrix[3][0] * matrix[0][1] - matrix[0][0] * matrix[3][1])));
-            nMatrix.matrix[3][2] = (nDerminant * (matrix[3][0] * (matrix[1][1] * matrix[0][2] - matrix[0][1] * matrix[1][2]) + matrix[0][0] * (matrix[3][1] * matrix[1][2] - matrix[1][1] * matrix[3][2]) + matrix[1][0] * (matrix[0][1] * matrix[3][2] - matrix[3][1] * matrix[0][2])));
-            nMatrix.matrix[0][3] = (nDerminant * (matrix[0][1] * (matrix[2][2] * matrix[1][3] - matrix[1][2] * matrix[2][3]) + matrix[1][1] * (matrix[0][2] * matrix[2][3] - matrix[2][2] * matrix[0][3]) + matrix[2][1] * (matrix[1][2] * matrix[0][3] - matrix[0][2] * matrix[1][3])));
-            nMatrix.matrix[1][3] = (nDerminant * (matrix[0][2] * (matrix[2][0] * matrix[1][3] - matrix[1][0] * matrix[2][3]) + matrix[1][2] * (matrix[0][0] * matrix[2][3] - matrix[2][0] * matrix[0][3]) + matrix[2][2] * (matrix[1][0] * matrix[0][3] - matrix[0][0] * matrix[1][3])));
-            nMatrix.matrix[2][3] = (nDerminant * (matrix[0][3] * (matrix[2][0] * matrix[1][1] - matrix[1][0] * matrix[2][1]) + matrix[1][3] * (matrix[0][0] * matrix[2][1] - matrix[2][0] * matrix[0][1]) + matrix[2][3] * (matrix[1][0] * matrix[0][1] - matrix[0][0] * matrix[1][1])));
-            nMatrix.matrix[3][3] = (nDerminant * (matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[2][1] * matrix[1][2]) + matrix[1][0] * (matrix[2][1] * matrix[0][2] - matrix[0][1] * matrix[2][2]) + matrix[2][0] * (matrix[0][1] * matrix[1][2] - matrix[1][1] * matrix[0][2])));
-            return nMatrix;
-        }
-    }
-
-    void Transpose(void)
-    {
-        (*this) = GetTranspose();
-    }
-
-    void Invert(void)
-    {
-        (*this) = GetInverse();
-    }
-
-    void operator *= (const tmatrix4x4<TYPE> &nMatrix)
-    {
-        (*this) = ((*this) * nMatrix);
-    }
-
-    tmatrix4x4<TYPE> operator * (const tmatrix4x4<TYPE> &nMatrix) const
-    {
-        tmatrix4x4<TYPE> nTranspose(nMatrix.GetTranspose());
-        return tmatrix4x4<TYPE>(rx.Dot(nTranspose.rx), rx.Dot(nTranspose.ry), rx.Dot(nTranspose.rz), rx.Dot(nTranspose.rw),
-                                ry.Dot(nTranspose.rx), ry.Dot(nTranspose.ry), ry.Dot(nTranspose.rz), ry.Dot(nTranspose.rw),
-                                rz.Dot(nTranspose.rx), rz.Dot(nTranspose.ry), rz.Dot(nTranspose.rz), rz.Dot(nTranspose.rw),
-                                rw.Dot(nTranspose.rx), rw.Dot(nTranspose.ry), rw.Dot(nTranspose.rz), rw.Dot(nTranspose.rw));
-    }
-
-    tmatrix4x4<TYPE> operator = (const tmatrix4x4<TYPE> &nMatrix)
-    {
-        _11 = nMatrix._11;    _12 = nMatrix._12;    _13 = nMatrix._13;    _14 = nMatrix._14;
-        _21 = nMatrix._21;    _22 = nMatrix._22;    _23 = nMatrix._23;    _24 = nMatrix._24;
-        _31 = nMatrix._31;    _32 = nMatrix._32;    _33 = nMatrix._33;    _34 = nMatrix._34;
-        _41 = nMatrix._41;    _42 = nMatrix._42;    _43 = nMatrix._43;    _44 = nMatrix._44;
-        return *this;
-    }
-
-    tmatrix4x4<TYPE> operator = (const tquaternion<TYPE> &nQuaternion)
-    {
-        SetQuaternion(nQuaternion);
-        return *this;
-    }
-
-    tvector3<TYPE> operator * (const tvector3<TYPE> &nVector) const
-    {
-        return tvector3<TYPE>(((nVector.x * _11) + (nVector.y * _21) + (nVector.z * _31)),
-                              ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32)),
-                              ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33)));
-    }
-
-    tvector4<TYPE> operator * (const tvector4<TYPE> &nVector) const
-    {
-        return tvector4<TYPE>(((nVector.x * _11) + (nVector.y * _21) + (nVector.z * _31) + (nVector.w * _41)),
-                              ((nVector.x * _12) + (nVector.y * _22) + (nVector.z * _32) + (nVector.w * _42)),
-                              ((nVector.x * _13) + (nVector.y * _23) + (nVector.z * _33) + (nVector.w * _43)),
-                              ((nVector.x * _14) + (nVector.y * _24) + (nVector.z * _34) + (nVector.w * _44)));
-    }
-
-    tmatrix4x4<TYPE> operator * (TYPE nScalar) const
-    {
-        return tmatrix4x4<TYPE>((_11 * nScalar), (_12 * nScalar), (_13 * nScalar), (_14 * nScalar),
-                                (_21 * nScalar), (_22 * nScalar), (_23 * nScalar), (_24 * nScalar),
-                                (_31 * nScalar), (_32 * nScalar), (_33 * nScalar), (_34 * nScalar),
-                                (_41 * nScalar), (_42 * nScalar), (_43 * nScalar), (_44 * nScalar));
-    }
-
-    tmatrix4x4<TYPE> operator + (const tmatrix4x4<TYPE> &nMatrix) const
-    {
-        return tmatrix4x4<TYPE>(_11 + nMatrix._11, _12 + nMatrix._12, _13 + nMatrix._13, _14 + nMatrix._14,
-                                _21 + nMatrix._21, _22 + nMatrix._22, _23 + nMatrix._23, _24 + nMatrix._24,
-                                _31 + nMatrix._31, _32 + nMatrix._32, _33 + nMatrix._33, _34 + nMatrix._34,
-                                _41 + nMatrix._41, _42 + nMatrix._42, _43 + nMatrix._43, _44 + nMatrix._44);
-    }
-
-    void operator += (const tmatrix4x4<TYPE> &nMatrix)
-    {
-        _11 += nMatrix._11; _12 += nMatrix._12; _13 += nMatrix._13; _14 += nMatrix._14;
-        _21 += nMatrix._21; _22 += nMatrix._22; _23 += nMatrix._23; _24 += nMatrix._24;
-        _31 += nMatrix._31; _32 += nMatrix._32; _33 += nMatrix._33; _34 += nMatrix._34;
-        _41 += nMatrix._41; _42 += nMatrix._42; _43 += nMatrix._43; _44 += nMatrix._44;
-    }
-};
+        typedef BaseMatrix4x4<float> Float4x4;
+    }; // namespace Math
+}; // namespace Gek

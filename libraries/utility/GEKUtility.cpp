@@ -13,680 +13,662 @@
 
 #include "exprtk.hpp"
 
-static std::random_device gs_kRandomDevice;
-static std::mt19937 gs_kMersineTwister(gs_kRandomDevice());
-
-template <typename TYPE>
-struct CGEKRandom : public exprtk::ifunction<TYPE>
+namespace Gek
 {
-    std::uniform_real_distribution<TYPE> m_kRandom;
-    CGEKRandom(TYPE nMin, TYPE nMax) 
-        : exprtk::ifunction<TYPE>(1)
-        , m_kRandom(nMin, nMax)
+    namespace Display
     {
-    }
-
-    inline TYPE operator()(const TYPE& nRange)
-    {
-        return (nRange * m_kRandom(gs_kMersineTwister));
-    }
-};
-
-template <typename TYPE>
-struct CGEKLerp : public exprtk::ifunction<TYPE>
-{
-    CGEKLerp(void) : exprtk::ifunction<TYPE>(3)
-    {
-    }
-
-    inline TYPE operator()(const TYPE& nMinimum, const TYPE& nMaximum, const TYPE& nFactor)
-    {
-        return ((nFactor * (nMaximum - nMinimum)) + nMinimum);
-    }
-};
-
-template <typename TYPE>
-class TGEKEvaluateValue
-{
-private:
-    CGEKRandom<TYPE> m_kRand;
-    CGEKRandom<TYPE> m_kAbsRand;
-    CGEKLerp<TYPE> m_kLerp;
-    exprtk::symbol_table<TYPE> m_kSymbolTable;
-    exprtk::expression<TYPE> m_kExpression;
-    exprtk::parser<TYPE> m_kParser;
-
-public:
-    TGEKEvaluateValue(void)
-        : m_kRand(TYPE(-1), TYPE(1))
-        , m_kAbsRand(TYPE(0), TYPE(1))
-    {
-        m_kSymbolTable.add_function("rand", m_kRand);
-        m_kSymbolTable.add_function("arand", m_kAbsRand);
-        m_kSymbolTable.add_function("lerp", m_kLerp);
-
-        m_kSymbolTable.add_constants();
-        m_kExpression.register_symbol_table(m_kSymbolTable);
-    }
-
-    bool EvaluateValue(LPCWSTR pExpression, TYPE &nValue)
-    {
-        m_kSymbolTable.remove_vector("value");
-        if (m_kParser.compile(CW2A(pExpression).m_psz, m_kExpression))
+        AspectRatios getAspectRatio(UINT32 width, UINT32 height)
         {
-            nValue = m_kExpression.value();
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    template <std::size_t SIZE>
-    bool EvaluateVector(LPCWSTR pExpression, TYPE (&aValue)[SIZE])
-    {
-        m_kSymbolTable.remove_vector("value");
-        m_kSymbolTable.add_vector("value", aValue);
-        if (m_kParser.compile(FormatString("var vector[%d] := {%S}; value := vector;", SIZE, pExpression).GetString(), m_kExpression))
-        {
-            m_kExpression.value();
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-};
-
-static TGEKEvaluateValue<float> gs_kEvalulateFloat;
-static TGEKEvaluateValue<double> gs_kEvalulateDouble;
-
-static __forceinline float ClipFloat(float nValue)
-{
-    INT32 nInteger = INT32(nValue * 100.0f);
-    return (float(nInteger) / 100.0f);
-}
-
-GEKMODEASPECT GEKMODE::GetAspect(void) const
-{
-    const float fAspect4x3 = ClipFloat(4.0f / 3.0f);
-    const float fAspect16x9 = ClipFloat(16.0f / 9.0f);
-    const float fAspect16x10 = ClipFloat(16.0f / 10.0f);
-    float nAspect = ClipFloat(float(xsize) / float(ysize));
-    if (nAspect == fAspect4x3)
-    {
-        return _ASPECT_4x3;
-    }
-    else if (nAspect == fAspect16x9)
-    {
-        return _ASPECT_16x9;
-    }
-    else if (nAspect == fAspect16x10)
-    {
-        return _ASPECT_16x10;
-    }
-    else
-    {
-        return _ASPECT_INVALID;
-    }
-}
-
-std::map<UINT32, std::vector<GEKMODE>> GEKGetDisplayModes(void)
-{
-    UINT32 iMode = 0;
-    DEVMODE kDisplay = { 0 };
-    std::map<UINT32, std::vector<GEKMODE>> aDisplayModes;
-    while (EnumDisplaySettings(0, iMode++, &kDisplay))
-    {
-        bool bExists = false;
-        std::vector<GEKMODE> &akModes = aDisplayModes[kDisplay.dmBitsPerPel];
-        for (UINT32 nSize = 0; nSize < akModes.size(); ++nSize)
-        {
-            if (akModes[nSize].xsize != kDisplay.dmPelsWidth) continue;
-            if (akModes[nSize].ysize != kDisplay.dmPelsHeight) continue;
-            bExists = true;
-            break;
-        }
-
-        if (!bExists)
-        {
-            GEKMODE kMode;
-            kMode.xsize = kDisplay.dmPelsWidth;
-            kMode.ysize = kDisplay.dmPelsHeight;
-            akModes.push_back(kMode);
-        }
-    };
-
-    return aDisplayModes;
-}
-
-CStringA FormatString(LPCSTR pFormat, ...)
-{
-    CStringA strValue;
-    if (pFormat != nullptr)
-    {
-        va_list pArgs;
-        va_start(pArgs, pFormat);
-        strValue.FormatV(pFormat, pArgs);
-        va_end(pArgs);
-    }
-
-    return strValue;
-}
-
-CStringW FormatString(LPCWSTR pFormat, ...)
-{
-    CStringW strValue;
-    if (pFormat != nullptr)
-    {
-        va_list pArgs;
-        va_start(pArgs, pFormat);
-        strValue.FormatV(pFormat, pArgs);
-        va_end(pArgs);
-    }
-
-    return strValue;
-}
-
-namespace std
-{
-    wstring to_string(const float2 &nValue)
-    {
-        return format(L"%f,%f", nValue.x, nValue.y);
-    }
-
-    wstring to_string(const float3 &nValue)
-    {
-        return format(L"%f,%f,%f", nValue.x, nValue.y, nValue.z);
-    }
-
-    wstring to_string(const float4 &nValue)
-    {
-        return format(L"%f,%f,%f,%f", nValue.x, nValue.y, nValue.z, nValue.w);
-    }
-
-    wstring to_string(const quaternion &nValue)
-    {
-        return format(L"%f,%f,%f,%f", nValue.x, nValue.y, nValue.z, nValue.w);
-    }
-};
-
-CStringW GEKParseFileName(LPCWSTR pFileName)
-{
-    CStringW strParsed(pFileName);
-    if (strParsed.Find(L"%root%") >= 0)
-    {
-        CStringW strModule;
-        GetModuleFileName(nullptr, strModule.GetBuffer(MAX_PATH + 1), MAX_PATH);
-        strModule.ReleaseBuffer();
-
-        CPathW strPath;
-        CStringW &strAbsoluteModule = strPath;
-        GetFullPathName(strModule, MAX_PATH, strAbsoluteModule.GetBuffer(MAX_PATH + 1), nullptr);
-        strAbsoluteModule.ReleaseBuffer();
-
-        strPath.RemoveFileSpec();
-        strPath.RemoveFileSpec();
-        strParsed.Replace(L"%root%", strPath);
-    }
-
-    strParsed.Replace(L"/", L"\\");
-    return strParsed;
-}
-
-HRESULT GEKFindFiles(LPCWSTR pBasePath, LPCWSTR pFilter, bool bRecursive, std::function<HRESULT (LPCWSTR pFileName)> Callback)
-{
-    HRESULT hRetVal = S_OK;
-
-    CStringW strFullBasePath(GEKParseFileName(pBasePath));
-    PathAddBackslashW(strFullBasePath.GetBuffer(MAX_PATH + 1));
-    strFullBasePath.ReleaseBuffer();
-
-    WIN32_FIND_DATA kData;
-    CStringW strFullSearchPath(strFullBasePath + pFilter);
-    HANDLE hFind = FindFirstFile(strFullSearchPath, &kData);
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if (kData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            const float AspectRatioValue4x3 = (float(INT32((4.0f / 3.0f) * 100.0f)) / 100.0f);
+            const float AspectRatioValue16x9 = (float(INT32((16.0f / 9.0f) * 100.0f)) / 100.0f);
+            const float AspectRatioValue16x10 = (float(INT32((16.0f / 10.0f) * 100.0f)) / 100.0f);
+            float aspectRatio = (float(INT32((float(width) / float(height)) * 100.0f)) / 100.0f);
+            if (aspectRatio == AspectRatioValue4x3)
             {
-                if (kData.cFileName[0] == L'.')
-                {
-                    continue;
-                }
-                else if (bRecursive)
-                {
-                    hRetVal = GEKFindFiles((strFullBasePath + kData.cFileName), pFilter, bRecursive, Callback);
-                }
-                else
-                {
-                    continue;
-                }
+                return AspectRatio4x3;
+            }
+            else if (aspectRatio == AspectRatioValue16x9)
+            {
+                return AspectRatio16x9;
+            }
+            else if (aspectRatio == AspectRatioValue16x10)
+            {
+                return AspectRatio16x10;
             }
             else
             {
-                hRetVal = Callback(strFullBasePath + kData.cFileName);
+                return AspectRatioUnknown;
             }
-
-            if (FAILED(hRetVal))
-            {
-                break;
-            }
-        } while (FindNextFile(hFind, &kData));
-
-        FindClose(hFind);
-    }
-
-    return hRetVal;
-}
-
-HMODULE GEKLoadLibrary(LPCWSTR pFileName)
-{
-    return LoadLibraryW(GEKParseFileName(pFileName));
-}
-
-HRESULT GEKLoadFromFile(LPCWSTR pFileName, std::vector<UINT8> &aBuffer, UINT32 nSize)
-{
-    HRESULT hRetVal = E_FAIL;
-    CStringW strFullFileName(GEKParseFileName(pFileName));
-    HANDLE hFile = CreateFile(strFullFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (hFile == INVALID_HANDLE_VALUE)
-    {
-        hRetVal = E_FAIL;
-    }
-    else
-    {
-        DWORD nFileSize = GetFileSize(hFile, nullptr);
-        if (nFileSize == 0)
-        {
-            hRetVal = S_OK;
         }
-        else
+
+        std::map<UINT32, std::vector<Mode>> getModes(void)
         {
-            UINT32 nReadSize = nFileSize;
-            if (nSize != -1)
+            UINT32 displayMode = 0;
+            DEVMODE displayModeData = { 0 };
+            std::map<UINT32, std::vector<Mode>> availableModes;
+            while (EnumDisplaySettings(0, displayMode++, &displayModeData))
             {
-                nReadSize = nSize;
+                std::vector<Mode> &currentModes = availableModes[displayModeData.dmBitsPerPel];
+                auto findIterator = std::find_if(currentModes.begin(), currentModes.end(), [&](const Mode &mode) -> bool
+                {
+                    if (mode.width != displayModeData.dmPelsWidth) return false;
+                    if (mode.height != displayModeData.dmPelsHeight) return false;
+                    return true;
+                });
+
+                if (findIterator == currentModes.end())
+                {
+                    currentModes.emplace_back(displayModeData.dmPanningWidth, displayModeData.dmPanningHeight,
+                        getAspectRatio(displayModeData.dmPanningWidth, displayModeData.dmPanningHeight));
+                }
+            };
+
+            return availableModes;
+        }
+    }; // namespace Display
+
+    namespace Evaluator
+    {
+        static std::random_device randomDevice;
+        static std::mt19937 mersineTwister(randomDevice());
+
+        template <typename TYPE>
+        struct RandomFunction : public exprtk::ifunction<TYPE>
+        {
+            std::uniform_real_distribution<TYPE> uniformRealDistribution;
+            RandomFunction(TYPE minimum, TYPE maximum)
+                : exprtk::ifunction<TYPE>(1)
+                , uniformRealDistribution(minimum, maximum)
+            {
             }
 
-            aBuffer.resize(nReadSize);
-            if (aBuffer.size() == nReadSize)
+            inline TYPE operator()(const TYPE& range)
             {
-                DWORD nBytesRead = 0;
-                if (ReadFile(hFile, aBuffer.data(), nReadSize, &nBytesRead, nullptr))
+                return (range * uniformRealDistribution(mersineTwister));
+            }
+        };
+
+        template <typename TYPE>
+        struct LerpFunction : public exprtk::ifunction<TYPE>
+        {
+            LerpFunction(void) : exprtk::ifunction<TYPE>(3)
+            {
+            }
+
+            inline TYPE operator()(const TYPE& x, const TYPE& y, const TYPE& step)
+            {
+                return Math::lerp(x, y, step);
+            }
+        };
+
+        template <typename TYPE>
+        class EquationEvaluator
+        {
+        private:
+            RandomFunction<TYPE> signedRandomFunction;
+            RandomFunction<TYPE> unsignedRandomFunction;
+            LerpFunction<TYPE> lerpFunction;
+            exprtk::symbol_table<TYPE> symbolTable;
+            exprtk::expression<TYPE> expression;
+            exprtk::parser<TYPE> parser;
+
+        public:
+            EquationEvaluator(void)
+                : signedRandomFunction(TYPE(-1), TYPE(1))
+                , unsignedRandomFunction(TYPE(0), TYPE(1))
+            {
+                symbolTable.add_function("rand", signedRandomFunction);
+                symbolTable.add_function("arand", unsignedRandomFunction);
+                symbolTable.add_function("lerp", lerpFunction);
+
+                symbolTable.add_constants();
+                expression.register_symbol_table(symbolTable);
+            }
+
+            bool getValue(LPCWSTR equation, TYPE &value)
+            {
+                symbolTable.remove_vector("value");
+                if (parser.compile(CW2A(equation).m_psz, expression))
                 {
-                    hRetVal = (nBytesRead == nReadSize ? S_OK : E_FAIL);
+                    value = expression.value();
+                    return true;
                 }
                 else
                 {
-                    hRetVal = E_FAIL;
+                    return false;
                 }
+            }
+
+            template <std::size_t SIZE>
+            bool getVector(LPCWSTR equation, TYPE(&vector)[SIZE])
+            {
+                symbolTable.remove_vector("value");
+                symbolTable.add_vector("value", vector);
+                if (parser.compile(String::format("var vector[%d] := {%S}; value := vector;", SIZE, equation).GetString(), expression))
+                {
+                    expression.value();
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        };
+
+        static EquationEvaluator<float> evaluateFloat;
+        static EquationEvaluator<double> evaluateDouble;
+
+        bool getDouble(LPCWSTR expression, double &result)
+        {
+            return evaluateDouble.getValue(expression, result);
+        }
+
+        bool getFloat(LPCWSTR expression, float &result)
+        {
+            return evaluateFloat.getValue(expression, result);
+        }
+
+        bool getFloat2(LPCWSTR expression, Gek::Math::Float2 &result)
+        {
+            return evaluateFloat.getVector(expression, result.xy);
+        }
+
+        bool getFloat3(LPCWSTR expression, Gek::Math::Float3 &result)
+        {
+            return evaluateFloat.getVector(expression, result.xyz);
+        }
+
+        bool getFloat4(LPCWSTR expression, Gek::Math::Float4 &result)
+        {
+            return evaluateFloat.getVector(expression, result.xyzw);
+        }
+
+        bool getQuaternion(LPCWSTR expression, Gek::Math::Quaternion &result)
+        {
+            return evaluateFloat.getVector(expression, result.xyzw);
+        }
+
+        bool getINT32(LPCWSTR expression, INT32 &result)
+        {
+            float value = 0.0f;
+            if (getFloat(expression, value))
+            {
+                result = INT32(value);
+                return true;
             }
             else
             {
-                hRetVal = E_OUTOFMEMORY;
+                return false;
             }
         }
 
-        CloseHandle(hFile);
-    }
-
-    return hRetVal;
-}
-
-HRESULT GEKLoadFromFile(LPCWSTR pFileName, CStringA &strString)
-{
-    std::vector<UINT8> aBuffer;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, aBuffer);
-    if (SUCCEEDED(hRetVal))
-    {
-        aBuffer.push_back('\0');
-        strString = LPCSTR(aBuffer.data());
-    }
-
-    return hRetVal;
-}
-
-HRESULT GEKLoadFromFile(LPCWSTR pFileName, CStringW &strString, bool bConvertFromUTF8)
-{
-    CStringA strMultiString;
-    HRESULT hRetVal = GEKLoadFromFile(pFileName, strMultiString);
-    if (SUCCEEDED(hRetVal))
-    {
-        strString = CA2W(strMultiString, (bConvertFromUTF8 ? CP_UTF8 : CP_ACP));
-    }
-
-    return hRetVal;
-}
-
-HRESULT GEKSaveToFile(LPCWSTR pFileName, const std::vector<UINT8> &aBuffer)
-{
-    CStringW strFullFileName(GEKParseFileName(pFileName));
-    HANDLE hFile = CreateFile(strFullFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (hFile != INVALID_HANDLE_VALUE)
-    {
-        DWORD nBytesWritten = 0;
-        WriteFile(hFile, aBuffer.data(), aBuffer.size(), &nBytesWritten, nullptr);
-        CloseHandle(hFile);
-    }
-
-    return E_FAIL;
-}
-
-HRESULT GEKSaveToFile(LPCWSTR pFileName, LPCSTR pString)
-{
-    HRESULT hRetVal = E_FAIL;
-    UINT32 nSize = strlen(pString);
-    std::vector<UINT8> aBuffer(nSize);
-    if (aBuffer.size() == nSize)
-    {
-        memcpy(aBuffer.data(), pString, nSize);
-        hRetVal = GEKSaveToFile(pFileName, aBuffer);
-    }
-
-    return hRetVal;
-}
-
-HRESULT GEKSaveToFile(LPCWSTR pFileName, LPCWSTR pString, bool bConvertToUTF8)
-{
-    CStringA strMultiString = CW2A(pString, (bConvertToUTF8 ? CP_UTF8 : CP_ACP));
-    return GEKSaveToFile(pFileName, strMultiString);
-}
-
-bool EvaluateDouble(LPCWSTR pExpression, double &nValue)
-{
-    return gs_kEvalulateDouble.EvaluateValue(pExpression, nValue);
-}
-
-bool EvaluateFloat(LPCWSTR pExpression, float &nValue)
-{
-    return gs_kEvalulateFloat.EvaluateValue(pExpression, nValue);
-}
-
-bool EvaluateFloat2(LPCWSTR pExpression, float2 &nValue)
-{
-    return gs_kEvalulateFloat.EvaluateVector(pExpression, nValue.xy);
-}
-
-bool EvaluateFloat3(LPCWSTR pExpression, float3 &nValue)
-{
-    return gs_kEvalulateFloat.EvaluateVector(pExpression, nValue.xyz);
-}
-
-bool EvaluateFloat4(LPCWSTR pExpression, float4 &nValue)
-{
-    return gs_kEvalulateFloat.EvaluateVector(pExpression, nValue.xyzw);
-}
-
-bool EvaluateQuaternion(LPCWSTR pExpression, quaternion &nValue)
-{
-    return EvaluateFloat4(pExpression, *(float4 *)&nValue);
-}
-
-bool EvaluateINT32(LPCWSTR pExpression, INT32 &nValue)
-{
-    float nFloatValue = 0.0f;
-    if (EvaluateFloat(pExpression, nFloatValue))
-    {
-        nValue = INT32(nFloatValue);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool EvaluateUINT32(LPCWSTR pExpression, UINT32 &nValue)
-{
-    float nFloatValue = 0.0f;
-    if (EvaluateFloat(pExpression, nFloatValue))
-    {
-        nValue = UINT32(nFloatValue);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool EvaluateINT64(LPCWSTR pExpression, INT64 &nValue)
-{
-    double nDoubleValue = 0.0;
-    if (EvaluateDouble(pExpression, nDoubleValue))
-    {
-        nValue = INT64(nDoubleValue);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool EvaluateUINT64(LPCWSTR pExpression, UINT64 &nValue)
-{
-    double nDoubleValue = 0.0;
-    if (EvaluateDouble(pExpression, nDoubleValue))
-    {
-        nValue = UINT64(nDoubleValue);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool EvaluateBoolean(LPCWSTR pExpression, bool &nValue)
-{
-    if (_wcsicmp(pExpression, L"true") == 0 ||
-        _wcsicmp(pExpression, L"yes") == 0)
-    {
-        nValue = true;
-        return true;
-    }
-
-    INT32 nIntValue = 0;
-    if (EvaluateINT32(pExpression, nIntValue))
-    {
-        nValue = (nIntValue == 0 ? false : true);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-double StrToDouble(LPCWSTR pExpression)
-{
-    double nValue = 0.0;
-    EvaluateDouble(pExpression, nValue);
-    return nValue;
-}
-
-float StrToFloat(LPCWSTR pExpression)
-{
-    float nValue = 0.0f;
-    EvaluateFloat(pExpression, nValue);
-    return nValue;
-}
-
-float2 StrToFloat2(LPCWSTR pExpression)
-{
-    float2 nValue;
-    if (!EvaluateFloat2(pExpression, nValue))
-    {
-        if (EvaluateFloat(pExpression, nValue.x))
+        bool getUINT32(LPCWSTR expression, UINT32 &result)
         {
-            nValue.y = nValue.x;
-        }
-    }
-
-    return nValue;
-}
-
-float3 StrToFloat3(LPCWSTR pExpression)
-{
-    float3 nValue;
-    if (!EvaluateFloat3(pExpression, nValue))
-    {
-        if (EvaluateFloat(pExpression, nValue.x))
-        {
-            nValue.y = nValue.z = nValue.x;
-        }
-    }
-
-    return nValue;
-}
-
-float4 StrToFloat4(LPCWSTR pExpression)
-{
-    float4 nValue;
-    if (!EvaluateFloat4(pExpression, nValue))
-    {
-        if (EvaluateFloat3(pExpression, *(float3 *)&nValue))
-        {
-            nValue.w = 1.0f;
-        }
-        else
-        {
-            if (EvaluateFloat(pExpression, nValue.x))
+            float value = 0.0f;
+            if (getFloat(expression, value))
             {
-                nValue.y = nValue.z = nValue.w = nValue.x;
+                result = UINT32(value);
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
-    }
 
-    return nValue;
-}
-
-quaternion StrToQuaternion(LPCWSTR pExpression)
-{
-    quaternion nValue;
-    if (!EvaluateQuaternion(pExpression, nValue))
-    {
-        float3 nEuler;
-        if (EvaluateFloat3(pExpression, nEuler))
+        bool getINT64(LPCWSTR expression, INT64 &result)
         {
-            nValue.SetEuler(nEuler);
+            double value = 0.0;
+            if (getDouble(expression, value))
+            {
+                result = INT64(value);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
-    }
 
-    return nValue;
-}
+        bool getUINT64(LPCWSTR expression, UINT64 &result)
+        {
+            double value = 0.0;
+            if (getDouble(expression, value))
+            {
+                result = UINT64(value);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
-INT32 StrToINT32(LPCWSTR pExpression)
-{
-    INT32 nValue = 0;
-    EvaluateINT32(pExpression, nValue);
-    return nValue;
-}
+        bool getBoolean(LPCWSTR expression, bool &result)
+        {
+            if (_wcsicmp(expression, L"true") == 0 ||
+                _wcsicmp(expression, L"yes") == 0)
+            {
+                result = true;
+                return true;
+            }
 
-UINT32 StrToUINT32(LPCWSTR pExpression)
-{
-    UINT32 nValue = 0;
-    EvaluateUINT32(pExpression, nValue);
-    return nValue;
-}
+            INT32 value = 0;
+            if (getINT32(expression, value))
+            {
+                result = (value == 0 ? false : true);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }; // namespace Evaluator
 
-INT64 StrToINT64(LPCWSTR pExpression)
-{
-    INT64 nValue = 0;
-    EvaluateINT64(pExpression, nValue);
-    return nValue;
-}
+    namespace String
+    {
+        double getDouble(LPCWSTR expression)
+        {
+            double value = 0.0;
+            Evaluator::getDouble(expression, value);
+            return value;
+        }
 
-UINT64 StrToUINT64(LPCWSTR pExpression)
-{
-    UINT64 nValue = 0;
-    EvaluateUINT64(pExpression, nValue);
-    return nValue;
-}
+        float getFloat(LPCWSTR expression)
+        {
+            float value = 0.0f;
+            Evaluator::getFloat(expression, value);
+            return value;
+        }
 
-bool StrToBoolean(LPCWSTR pExpression)
-{
-    bool nValue = false;
-    EvaluateBoolean(pExpression, nValue);
-    return nValue;
-}
+        Gek::Math::Float2 getFloat2(LPCWSTR expression)
+        {
+            Gek::Math::Float2 vector;
+            if (!Evaluator::getFloat2(expression, vector))
+            {
+                if (Evaluator::getFloat(expression, vector.x))
+                {
+                    vector.y = vector.x;
+                }
+            }
 
-CStringW StrFromDouble(double nValue)
-{
-    CStringW strValue;
-    strValue.Format(L"%f", nValue);
-    return strValue;
-}
+            return vector;
+        }
 
-CStringW StrFromFloat(float nValue)
-{
-    CStringW strValue;
-    strValue.Format(L"%f", nValue);
-    return strValue;
-}
+        Gek::Math::Float3 getFloat3(LPCWSTR expression)
+        {
+            Gek::Math::Float3 vector;
+            if (!Evaluator::getFloat3(expression, vector))
+            {
+                if (Evaluator::getFloat(expression, vector.x))
+                {
+                    vector.y = vector.z = vector.x;
+                }
+            }
 
-CStringW StrFromFloat2(float2 nValue)
-{
-    CStringW strValue;
-    strValue.Format(L"%f,%f", nValue.x, nValue.y);
-    return strValue;
-}
+            return vector;
+        }
 
-CStringW StrFromFloat3(float3 nValue)
-{
-    CStringW strValue;
-    strValue.Format(L"%f,%f,%f", nValue.x, nValue.y, nValue.z);
-    return strValue;
-}
+        Gek::Math::Float4 getFloat4(LPCWSTR expression)
+        {
+            Gek::Math::Float4 vector;
+            if (!Evaluator::getFloat4(expression, vector))
+            {
+                if (Evaluator::getFloat3(expression, *(Gek::Math::Float3 *)&vector))
+                {
+                    vector.w = 1.0f;
+                }
+                else
+                {
+                    if (Evaluator::getFloat(expression, vector.x))
+                    {
+                        vector.y = vector.z = vector.w = vector.x;
+                    }
+                }
+            }
 
-CStringW StrFromFloat4(float4 nValue)
-{
-    CStringW strValue;
-    strValue.Format(L"%f,%f,%f,%f", nValue.x, nValue.y, nValue.z, nValue.w);
-    return strValue;
-}
+            return vector;
+        }
 
-CStringW StrFromQuaternion(quaternion nValue)
-{
-    CStringW strValue;
-    strValue.Format(L"%f,%f,%f,%f", nValue.x, nValue.y, nValue.z, nValue.w);
-    return strValue;
-}
+        Gek::Math::Quaternion getQuaternion(LPCWSTR expression)
+        {
+            Gek::Math::Quaternion rotation;
+            if (!Evaluator::getQuaternion(expression, rotation))
+            {
+                Gek::Math::Float3 euler;
+                if (Evaluator::getFloat3(expression, euler))
+                {
+                    rotation.setEuler(euler);
+                }
+            }
 
-CStringW StrFromINT32(INT32 nValue)
-{
-    CStringW strValue;
-    strValue.Format(L"%d", nValue);
-    return strValue;
-}
+            return rotation;
+        }
 
-CStringW StrFromUINT32(UINT32 nValue)
-{
-    CStringW strValue;
-    strValue.Format(L"%u", nValue);
-    return strValue;
-}
+        INT32 getINT32(LPCWSTR expression)
+        {
+            INT32 value = 0;
+            Evaluator::getINT32(expression, value);
+            return value;
+        }
 
-CStringW StrFromINT64(INT64 nValue)
-{
-    CStringW strValue;
-    strValue.Format(L"%lld", nValue);
-    return strValue;
-}
+        UINT32 getUINT32(LPCWSTR expression)
+        {
+            UINT32 value = 0;
+            Evaluator::getUINT32(expression, value);
+            return value;
+        }
 
-CStringW StrFromUINT64(UINT64 nValue)
-{
-    CStringW strValue;
-    strValue.Format(L"%llu", nValue);
-    return strValue;
-}
+        INT64 getINT64(LPCWSTR expression)
+        {
+            INT64 value = 0;
+            Evaluator::getINT64(expression, value);
+            return value;
+        }
 
-CStringW StrFromBoolean(bool nValue)
-{
-    return (nValue ? L"true" : L"false");
-}
+        UINT64 getUINT64(LPCWSTR expression)
+        {
+            UINT64 value = 0;
+            Evaluator::getUINT64(expression, value);
+            return value;
+        }
+
+        bool getBoolean(LPCWSTR expression)
+        {
+            bool value = false;
+            Evaluator::getBoolean(expression, value);
+            return value;
+        }
+
+        CStringW setDouble(double value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%f", value);
+            return strValue;
+        }
+
+        CStringW setFloat(float value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%f", value);
+            return strValue;
+        }
+
+        CStringW setFloat2(Gek::Math::Float2 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%f,%f", value.x, value.y);
+            return strValue;
+        }
+
+        CStringW setFloat3(Gek::Math::Float3 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%f,%f,%f", value.x, value.y, value.z);
+            return strValue;
+        }
+
+        CStringW setFloat4(Gek::Math::Float4 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);
+            return strValue;
+        }
+
+        CStringW setQuaternion(Gek::Math::Quaternion value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);
+            return strValue;
+        }
+
+        CStringW setINT32(INT32 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%d", value);
+            return strValue;
+        }
+
+        CStringW setUINT32(UINT32 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%u", value);
+            return strValue;
+        }
+
+        CStringW setINT64(INT64 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%lld", value);
+            return strValue;
+        }
+
+        CStringW setUINT64(UINT64 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%llu", value);
+            return strValue;
+        }
+
+        CStringW setBoolean(bool value)
+        {
+            return (value ? L"true" : L"false");
+        }
+
+        CStringA format(LPCSTR format, ...)
+        {
+            CStringA result;
+            if (format != nullptr)
+            {
+                va_list variableList;
+                va_start(variableList, format);
+                result.FormatV(format, variableList);
+                va_end(variableList);
+            }
+
+            return result;
+        }
+
+        CStringW format(LPCWSTR format, ...)
+        {
+            CStringW result;
+            if (format != nullptr)
+            {
+                va_list variableList;
+                va_start(variableList, format);
+                result.FormatV(format, variableList);
+                va_end(variableList);
+            }
+
+            return result;
+        }
+    }; // namespace String
+
+    namespace FileSystem
+    {
+        CStringW expandPath(LPCWSTR basePath)
+        {
+            CStringW fullPath(basePath);
+            if (fullPath.Find(L"%root%") >= 0)
+            {
+                CStringW currentModuleName;
+                GetModuleFileName(nullptr, currentModuleName.GetBuffer(MAX_PATH + 1), MAX_PATH);
+                currentModuleName.ReleaseBuffer();
+
+                CPathW currentModulePath;
+                CStringW &currentModulePathString = currentModulePath;
+                GetFullPathName(currentModuleName, MAX_PATH, currentModulePathString.GetBuffer(MAX_PATH + 1), nullptr);
+                currentModulePathString.ReleaseBuffer();
+
+                // Remove filename from path
+                currentModulePath.RemoveFileSpec();
+
+                // Remove debug/release form path
+                currentModulePath.RemoveFileSpec();
+
+                fullPath.Replace(L"%root%", currentModulePath);
+            }
+
+            fullPath.Replace(L"/", L"\\");
+            return fullPath;
+        }
+
+        HRESULT find(LPCWSTR basePath, LPCWSTR filterTypes, bool searchRecursively, std::function<HRESULT(LPCWSTR)> onFileFound)
+        {
+            HRESULT result = S_OK;
+
+            CStringW fullPath(expandPath(basePath));
+            PathAddBackslashW(fullPath.GetBuffer(MAX_PATH + 1));
+            fullPath.ReleaseBuffer();
+
+            WIN32_FIND_DATA findData;
+            CStringW fullPathFilter(fullPath + filterTypes);
+            HANDLE findHandle = FindFirstFile(fullPathFilter, &findData);
+            if (findHandle != INVALID_HANDLE_VALUE)
+            {
+                do
+                {
+                    if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                    {
+                        if (searchRecursively && findData.cFileName[0] != L'.')
+                        {
+                            result = find((fullPath + findData.cFileName), filterTypes, searchRecursively, onFileFound);
+                        }
+                    }
+                    else
+                    {
+                        result = onFileFound(fullPath + findData.cFileName);
+                    }
+
+                    if (FAILED(result))
+                    {
+                        break;
+                    }
+                } while (FindNextFile(findHandle, &findData));
+
+                FindClose(findHandle);
+            }
+
+            return result;
+        }
+
+        HMODULE loadLibrary(LPCWSTR basePath)
+        {
+            return LoadLibraryW(expandPath(basePath));
+        }
+
+        HRESULT load(LPCWSTR basePath, std::vector<UINT8> &buffer, size_t limitReadSize)
+        {
+            HRESULT returnValue = E_FAIL;
+            CStringW fullPath(expandPath(basePath));
+            HANDLE fileHandle = CreateFile(fullPath, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+            if (fileHandle == INVALID_HANDLE_VALUE)
+            {
+                returnValue = E_FAIL;
+            }
+            else
+            {
+                DWORD fileSize = GetFileSize(fileHandle, nullptr);
+                if (fileSize == 0)
+                {
+                    returnValue = S_OK;
+                }
+                else
+                {
+                    if (limitReadSize > 0)
+                    {
+                        buffer.resize(limitReadSize);
+                    }
+                    else
+                    {
+                        buffer.resize(fileSize);
+                    }
+
+                    if (!buffer.empty())
+                    {
+                        DWORD bytesRead = 0;
+                        if (ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, nullptr))
+                        {
+                            returnValue = (bytesRead == buffer.size() ? S_OK : E_FAIL);
+                        }
+                        else
+                        {
+                            returnValue = E_FAIL;
+                        }
+                    }
+                    else
+                    {
+                        returnValue = E_OUTOFMEMORY;
+                    }
+                }
+
+                CloseHandle(fileHandle);
+            }
+
+            return returnValue;
+        }
+
+        HRESULT load(LPCWSTR basePath, CStringA &string)
+        {
+            std::vector<UINT8> buffer;
+            HRESULT returnValue = load(basePath, buffer);
+            if (SUCCEEDED(returnValue))
+            {
+                buffer.push_back('\0');
+                string = LPCSTR(buffer.data());
+            }
+
+            return returnValue;
+        }
+
+        HRESULT load(LPCWSTR basePath, CStringW &string, bool convertUTF8)
+        {
+            CStringA readString;
+            HRESULT returnValue = load(basePath, readString);
+            if (SUCCEEDED(returnValue))
+            {
+                string = CA2W(readString, (convertUTF8 ? CP_UTF8 : CP_ACP));
+            }
+
+            return returnValue;
+        }
+
+        HRESULT GEKSaveToFile(LPCWSTR basePath, const std::vector<UINT8> &buffer)
+        {
+            HRESULT returnValue = E_FAIL;
+            CStringW fullPath(expandPath(basePath));
+            HANDLE fileHandle = CreateFile(fullPath, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+            if (fileHandle != INVALID_HANDLE_VALUE)
+            {
+                DWORD bytesWritten = 0;
+                WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
+                returnValue = (bytesWritten == buffer.size() ? S_OK : E_FAIL);
+                CloseHandle(fileHandle);
+            }
+
+            return returnValue;
+        }
+
+        HRESULT GEKSaveToFile(LPCWSTR basePath, LPCSTR string)
+        {
+            HRESULT returnValue = E_FAIL;
+            UINT32 stringLength = strlen(string);
+            std::vector<UINT8> buffer(stringLength);
+            if (buffer.size() == stringLength)
+            {
+                memcpy(buffer.data(), string, stringLength);
+                returnValue = save(basePath, buffer);
+            }
+
+            return returnValue;
+        }
+
+        HRESULT GEKSaveToFile(LPCWSTR basePath, LPCWSTR string, bool convertUTF8)
+        {
+            CStringA writeString = CW2A(string, (convertUTF8 ? CP_UTF8 : CP_ACP));
+            return save(basePath, writeString);
+        }
+    } // namespace FileSystem
+}; // namespace Gek

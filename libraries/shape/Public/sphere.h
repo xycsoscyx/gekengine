@@ -1,51 +1,59 @@
 #pragma once
 
-template <typename TYPE>
-struct tsphere
+namespace Gek
 {
-public:
-    tvector3<TYPE> position;
-    TYPE radius;
-
-public:
-    tsphere(void)
-        : radius(TYPE(0))
+    namespace Shape
     {
-    }
-
-    tsphere(const tsphere<TYPE> &nSphere)
-        : position(nSphere.position)
-        , radius(nSphere.radius)
-    {
-    }
-
-    tsphere(const tvector3<TYPE> &nPosition, TYPE nRadius)
-        : position(nPosition)
-        , radius(nRadius)
-    {
-    }
-
-    tsphere operator = (const tsphere<TYPE> &nSphere)
-    {
-        position = nBox.position;
-        radius = nBox.radius;
-        return (*this);
-    }
-
-    int GetPosition(const tplane<TYPE> &nPlane) const
-    {
-        TYPE nDistance = nPlane.Distance(position);
-        if (nDistance < -radius)
+        template <typename TYPE>
+        struct BaseSphere
         {
-            return -1;
-        }
-        else if (nDistance > radius)
-        {
-            return 1;
-        }
-        else
-        {
-            return 0;
-        }
-    }
-};
+        public:
+            Math::BaseVector3<TYPE> position;
+            TYPE radius;
+
+        public:
+            BaseSphere(void)
+                : radius(TYPE(0))
+            {
+            }
+
+            BaseSphere(const BaseSphere<TYPE> &nSphere)
+                : position(nSphere.position)
+                , radius(nSphere.radius)
+            {
+            }
+
+            BaseSphere(const Math::BaseVector3<TYPE> &nPosition, TYPE nRadius)
+                : position(nPosition)
+                , radius(nRadius)
+            {
+            }
+
+            BaseSphere operator = (const BaseSphere<TYPE> &nSphere)
+            {
+                position = nBox.position;
+                radius = nBox.radius;
+                return (*this);
+            }
+
+            int getPosition(const BasePlane<TYPE> &nPlane) const
+            {
+                TYPE nDistance = nPlane.Distance(position);
+                if (nDistance < -radius)
+                {
+                    return -1;
+                }
+                else if (nDistance > radius)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        };
+
+        typedef BaseSphere<float> Sphere;
+    }; // namespace Shape
+}; // namespace Gek

@@ -1,105 +1,89 @@
 #pragma once
 
-template <typename TYPE>
-struct taabb
+namespace Gek
 {
-public:
-    tvector3<TYPE> minimum;
-    tvector3<TYPE> maximum;
-
-public:
-    taabb(void)
-        : minimum( _INFINITY)
-        , maximum(-_INFINITY)
+    namespace Shape
     {
-    }
-
-    taabb(const taabb<TYPE> &nBox)
-        : minimum(nBox.minimum)
-        , maximum(nBox.maximum)
-    {
-    }
-
-    taabb(TYPE nSize)
-        : minimum(-(nSize * TYPE(0.5)))
-        , maximum( (nSize * TYPE(0.5)))
-    {
-    }
-
-    taabb(const tvector3<TYPE> &nMinimum, const tvector3<TYPE> &nMaximum)
-        : minimum(nMinimum)
-        , maximum(nMaximum)
-    {
-    }
-
-    taabb operator = (const taabb<TYPE> &nBox)
-    {
-        minimum = nBox.minimum;
-        maximum = nBox.maximum;
-        return (*this);
-    }
-
-    void Extend(tvector3<TYPE> &nPoint)
-    {
-        if (nPoint.x < minimum.x)
+        template <typename TYPE>
+        struct BaseAlignedBox
         {
-            minimum.x = nPoint.x;
-        }
+        public:
+            Math::BaseVector3<TYPE> minimum;
+            Math::BaseVector3<TYPE> maximum;
 
-        if (nPoint.y < minimum.y)
-        {
-            minimum.y = nPoint.y;
-        }
+        public:
+            BaseAlignedBox(void)
+                : minimum(Math::Infinity)
+                , maximum(-Math::Infinity)
+            {
+            }
 
-        if (nPoint.z < minimum.z)
-        {
-            minimum.z = nPoint.z;
-        }
+            BaseAlignedBox(const BaseAlignedBox<TYPE> &box)
+                : minimum(box.minimum)
+                , maximum(box.maximum)
+            {
+            }
 
-        if (nPoint.x > maximum.x)
-        {
-            maximum.x = nPoint.x;
-        }
+            BaseAlignedBox(TYPE size)
+                : minimum(-(size * TYPE(0.5)))
+                , maximum( (size * TYPE(0.5)))
+            {
+            }
 
-        if (nPoint.y > maximum.y)
-        {
-            maximum.y = nPoint.y;
-        }
+            BaseAlignedBox(const Math::BaseVector3<TYPE> &minimum, const Math::BaseVector3<TYPE> &maximum)
+                : minimum(minimum)
+                , maximum(maximum)
+            {
+            }
 
-        if (nPoint.z > maximum.z)
-        {
-            maximum.z = nPoint.z;
-        }
-    }
+            BaseAlignedBox operator = (const BaseAlignedBox<TYPE> &box)
+            {
+                minimum = box.minimum;
+                maximum = box.maximum;
+                return (*this);
+            }
 
-    tvector3<TYPE> GetSize(void) const
-    {
-        return (maximum - minimum);
-    }
+            void Extend(Math::BaseVector3<TYPE> &point)
+            {
+                minimum.x = min(point.x, minimum.x);
+                minimum.y = min(point.y, minimum.y);
+                minimum.z = min(point.z, minimum.z);
 
-    tvector3<TYPE> GetCenter(void) const
-    {
-        return (minimum + (GetSize() * TYPE(0.5)));
-    }
+                maximum.x = max(point.x, maximum.x);
+                maximum.y = max(point.y, maximum.y);
+                maximum.z = max(point.z, maximum.z);
+            }
 
-    int GetPosition(const tplane<TYPE> &nPlane) const
-    {
-        tvector3<TYPE> nMinimum((nPlane.normal.x > TYPE(0) ? maximum.x : minimum.x),
-                                (nPlane.normal.y > TYPE(0) ? maximum.y : minimum.y),
-                                (nPlane.normal.z > TYPE(0) ? maximum.z : minimum.z));
-        if (nPlane.Distance(nMinimum) < TYPE(0))
-        {
-            return -1;
-        }
+            Math::BaseVector3<TYPE> getSize(void) const
+            {
+                return (maximum - minimum);
+            }
 
-        tvector3<TYPE> nMaximum((nPlane.normal.x < TYPE(0) ? maximum.x : minimum.x),
-                                (nPlane.normal.y < TYPE(0) ? maximum.y : minimum.y),
-                                (nPlane.normal.z < TYPE(0) ? maximum.z : minimum.z));
-        if (nPlane.Distance(nMaximum) < TYPE(0))
-        {
-            return 0;
-        }
+            Math::BaseVector3<TYPE> getCenter(void) const
+            {
+                return (minimum + (getSize() * TYPE(0.5)));
+            }
 
-        return 1;
-    }
-};
+            int getPosition(const BasePlane<TYPE> &plane) const
+            {
+                if (plane.Distance(Math::BaseVector3<TYPE>((plane.normal.x > TYPE(0) ? maximum.x : minimum.x),
+                                                           (plane.normal.y > TYPE(0) ? maximum.y : minimum.y),
+                                                           (plane.normal.z > TYPE(0) ? maximum.z : minimum.z))) < TYPE(0))
+                {
+                    return -1;
+                }
+
+                if (plane.Distance(Math::BaseVector3<TYPE>((plane.normal.x < TYPE(0) ? maximum.x : minimum.x),
+                                                           (plane.normal.y < TYPE(0) ? maximum.y : minimum.y),
+                                                           (plane.normal.z < TYPE(0) ? maximum.z : minimum.z))) < TYPE(0))
+                {
+                    return 0;
+                }
+
+                return 1;
+            }
+        };
+        
+        typedef BaseAlignedBox<float> AlignedBox;
+    }; // namespace Shape
+}; // namespace Gek

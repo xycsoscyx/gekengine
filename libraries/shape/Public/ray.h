@@ -1,78 +1,91 @@
 #pragma once
 
-template <typename TYPE>
-struct tray
+namespace Gek
 {
-public:
-    tvector3<TYPE> origin;
-    tvector3<TYPE> normal;
-
-public:
-    tray(void)
+    namespace Shape
     {
-    }
-
-    tray(const tvector3<TYPE> &nOrigin, const tvector3<TYPE> &nNormal)
-        : origin(nOrigin)
-        , normal(nNormal)
-    {
-    }
-
-    tray operator = (const tray<TYPE> &nRay)
-    {
-        origin = nRay.origin;
-        normal = nRay.normal;
-        return (*this);
-    }
-
-    TYPE GetDistance(const tobb<TYPE> &nBox) const
-    {
-	    TYPE nMin = TYPE(0);
-	    TYPE nMax = TYPE(100000);
-	    tvector3<TYPE> nDelta(nBox.position - origin);
-        tmatrix4x4<TYPE> nBoxMatrix(nBox.rotation);
-        tvector3<TYPE> nHalfSize(nBox.size * TYPE(0.5));
-        for(UINT32 nAxis = 0; nAxis < 3; ++nAxis)
+        template <typename TYPE>
+        struct BaseRay
         {
-		    tvector3<TYPE> nMatrixAxis(nBoxMatrix.r[nAxis]);
-		    TYPE nAxisAngle = nMatrixAxis.Dot(nDelta);
-		    TYPE nRayAngle = normal.Dot(nMatrixAxis);
-		    if (fabs(nRayAngle) > TYPE(0.001))
+        public:
+            Math::BaseVector3<TYPE> origin;
+            Math::BaseVector3<TYPE> normal;
+
+        public:
+            BaseRay(void)
             {
-                TYPE nDelta1 = ((nAxisAngle - nHalfSize.xyz[nAxis]) / nRayAngle);
-			    TYPE nDelta2 = ((nAxisAngle + nHalfSize.xyz[nAxis]) / nRayAngle);
-			    if (nDelta1 > nDelta2)
-                {
-				    TYPE nDeltaSwap = nDelta1;
-                    nDelta1 = nDelta2;
-                    nDelta2 = nDeltaSwap;
-			    }
+            }
 
-			    if (nDelta2 < nMax)
-                {
-				    nMax = nDelta2;
-                }
-
-                if (nDelta1 > nMin)
-                {
-				    nMin = nDelta1;
-                }
-
-			    if (nMax < nMin)
-                {
-				    return TYPE(-1);
-                }
-		    }
-            else
+            BaseRay(const Math::BaseVector3<TYPE> &origin, const Math::BaseVector3<TYPE> &normal)
+                : origin(origin)
+                , normal(normal)
             {
-			    if ((-nAxisAngle - nHalfSize.xyz[nAxis]) > TYPE(0) ||
-                   (-nAxisAngle + nHalfSize.xyz[nAxis]) < TYPE(0))
-                {
-				    return TYPE(-1);
-                }
-		    }
-	    }
+            }
 
-	    return nMin;
-    }
-};
+            BaseRay(const BaseRay<TYPE> &ray)
+                : origin(ray.origin)
+                , normal(ray.normal)
+            {
+            }
+
+            BaseRay operator = (const BaseRay<TYPE> &ray)
+            {
+                origin = ray.origin;
+                normal = ray.normal;
+                return (*this);
+            }
+
+            TYPE getDistance(const BaseOrientedBox<TYPE> &orientedBox) const
+            {
+                TYPE minimum(TYPE(0));
+                TYPE maximum(TYPE(Math::Infinity));
+                Math::BaseVector3<TYPE> positionDelta(orientedBox.position - origin);
+                Math::BaseMatrix4x4<TYPE> orientedBoxMatrix(orientedBox.rotation);
+                Math::BaseVector3<TYPE> orientedBoxHalfSize(orientedBox.size * TYPE(0.5));
+                for (UINT32 axis = 0; axis < 3; ++axis)
+                {
+                    TYPE axisAngle = orientedBoxMatrix.r[axis].xyz.Dot(positionDelta);
+                    TYPE rayAngle = normal.Dot(orientedBoxMatrix.r[axis].xyz);
+                    if (fabs(rayAngle) > TYPE(Math::Epsilon))
+                    {
+                        TYPE positionDelta1 = ((axisAngle - orientedBoxHalfSize.xyz[axis]) / rayAngle);
+                        TYPE positionDelta2 = ((axisAngle + orientedBoxHalfSize.xyz[axis]) / rayAngle);
+                        if (positionDelta1 > positionDelta2)
+                        {
+                            TYPE positionDeltaSwap = positionDelta1;
+                            positionDelta1 = positionDelta2;
+                            positionDelta2 = positionDeltaSwap;
+                        }
+
+                        if (positionDelta2 < maximum)
+                        {
+                            maximum = positionDelta2;
+                        }
+
+                        if (positionDelta1 > minimum)
+                        {
+                            minimum = positionDelta1;
+                        }
+
+                        if (maximum < minimum)
+                        {
+                            return TYPE(-1);
+                        }
+                    }
+                    else
+                    {
+                        if ((-axisAngle - orientedBoxHalfSize.xyz[axis]) > TYPE(0) ||
+                            (-axisAngle + orientedBoxHalfSize.xyz[axis]) < TYPE(0))
+                        {
+                            return TYPE(-1);
+                        }
+                    }
+                }
+
+                return minimum;
+            }
+        };
+
+        typedef BaseRay<float> Ray;
+    }; // namespace Shape
+}; // namespace Gek

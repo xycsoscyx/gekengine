@@ -5,6 +5,9 @@
 #include <atlstr.h>
 #include <chrono>
 
+namespace Gek
+{
+}; // namespace Gek
 class CGEKPerformance
 {
 private:

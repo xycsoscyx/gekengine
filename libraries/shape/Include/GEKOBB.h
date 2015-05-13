@@ -22,16 +22,16 @@ public:
     GEKOBB(const GEKAABB &nBox, const Eigen::Quaternionf &nRotation, const Eigen::Vector3f &nPosition)
     {
         rotation = nRotation.toRotationMatrix();
-        position = (nPosition + nBox.GetCenter());
-        halfsize = (nBox.GetSize() * 0.5f);
+        position = (nPosition + nBox.getCenter());
+        halfsize = (nBox.getSize() * 0.5f);
     }
 
     GEKOBB(const GEKAABB &nBox, const Eigen::Matrix4Xf &nMatrix)
     {
         rotation = nMatrix;
-        position = nBox.GetCenter();
+        position = nBox.getCenter();
         position += nMatrix.row(3);
-        halfsize = (nBox.GetSize() * 0.5f);
+        halfsize = (nBox.getSize() * 0.5f);
     }
 
     GEKOBB operator = (const GEKOBB &nBox)

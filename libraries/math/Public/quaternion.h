@@ -1,313 +1,268 @@
 #pragma once
 
-template <typename TYPE>
-struct tquaternion
+namespace Gek
 {
-public:
-    union
+    namespace Math
     {
-        struct { TYPE xyzw[4]; };
-        struct { TYPE x, y, z, w; };
-    };
+        template <typename TYPE> struct BaseVector3;
+        template <typename TYPE> struct BaseMatrix4x4;
 
-public:
-    tquaternion(void)
-    {
-        x = TYPE(0);
-        y = TYPE(0);
-        z = TYPE(0);
-        w = TYPE(1);
-    }
-
-    tquaternion(float nValue)
-    {
-        x = y = z = w = nValue;
-    }
-
-    tquaternion(float nX, float nY, float nZ, float nW)
-    {
-        x = nX;
-        y = nY;
-        z = nZ;
-        w = nW;
-    }
-
-    tquaternion(const tquaternion<TYPE> &nQuaternion)
-    {
-        x = nQuaternion.x;
-        y = nQuaternion.y;
-        z = nQuaternion.z;
-        w = nQuaternion.w;
-    }
-
-    tquaternion(const tmatrix4x4<TYPE> &nMatrix)
-    {
-        SetMatrix(nMatrix);
-    }
-
-    tquaternion(const tvector3<TYPE> &nAxis, TYPE nAngle)
-    {
-        SetRotation(nAxis, nAngle);
-    }
-
-    tquaternion(TYPE nX, TYPE nY, TYPE nZ)
-    {
-        SetEuler(nX, nY, nZ);
-    }
-
-    tquaternion(const tvector3<TYPE> &nEuler)
-    {
-        SetEuler(nEuler);
-    }
-
-    tquaternion(const tvector4<TYPE> &nVector)
-    {
-        x = nVector.x;
-        y = nVector.y;
-        z = nVector.z;
-        w = nVector.w;
-    }
-
-    void SetIdentity(void)
-    {
-        x = y = z = TYPE(0);
-        w = TYPE(1);
-    }
-
-    void SetLength(TYPE nLength)
-    {
-        nLength = (nLength / GetLength());
-        x *= nLength;
-        y *= nLength;
-        z *= nLength;
-        w *= nLength;
-    }
-
-    void SetEuler(const tvector3<TYPE> &nEuler)
-    {
-        SetEuler(nEuler.x, nEuler.y, nEuler.z);
-    }
-
-    void SetEuler(TYPE nX, TYPE nY, TYPE nZ)
-    {
-        TYPE nSinX(sin(nX * TYPE(0.5)));
-        TYPE nSinY(sin(nY * TYPE(0.5)));
-        TYPE nSinZ(sin(nZ * TYPE(0.5)));
-        TYPE nCosX(cos(nX * TYPE(0.5)));
-        TYPE nCosY(cos(nY * TYPE(0.5)));
-        TYPE nCosZ(cos(nZ * TYPE(0.5)));
-        x = ((nSinX * nCosY * nCosZ) - (nCosX * nSinY * nSinZ));
-        y = ((nSinX * nCosY * nSinZ) + (nCosX * nSinY * nCosZ));
-        z = ((nCosX * nCosY * nSinZ) - (nSinX * nSinY * nCosZ));
-        w = ((nCosX * nCosY * nCosZ) + (nSinX * nSinY * nSinZ));
-    }
-
-    void SetRotation(const tvector3<TYPE> &nAxis, TYPE nAngle)
-    {
-        tvector3<TYPE> nNormal(nAxis.GetNormal());
-        TYPE nSin(sin(nAngle * TYPE(0.5)));
-        x = (nNormal.x * nSin);
-        y = (nNormal.y * nSin);
-        z = (nNormal.z * nSin);
-        w = cos(nAngle * TYPE(0.5));
-    }
-
-    void SetMatrix(const tmatrix4x4<TYPE> &nMatrix)
-    {
-        TYPE nTrace(nMatrix.matrix[0][0] + nMatrix.matrix[1][1] + nMatrix.matrix[2][2] + TYPE(1));  
-        if (nTrace > _EPSILON) 
+        template <typename TYPE>
+        struct BaseQuaternion : public BaseVector4<TYPE>
         {
-            TYPE nInverse(TYPE(0.5) / sqrt(nTrace));
-            w =  (TYPE(0.25) / nInverse);
-            x = ((nMatrix.matrix[1][2] - nMatrix.matrix[2][1] ) * nInverse);
-            y = ((nMatrix.matrix[2][0] - nMatrix.matrix[0][2] ) * nInverse);
-            z = ((nMatrix.matrix[0][1] - nMatrix.matrix[1][0] ) * nInverse);
-        } 
-        else 
-        {
-            if ((nMatrix.matrix[0][0] > nMatrix.matrix[1][1])&&(nMatrix.matrix[0][0] > nMatrix.matrix[2][2])) 
+        public:
+            BaseQuaternion(void)
+                : BaseVector4()
             {
-                TYPE nInverse(TYPE(2) * sqrt(TYPE(1) + nMatrix.matrix[0][0] - nMatrix.matrix[1][1] - nMatrix.matrix[2][2]));
-                x =  (TYPE(0.25) * nInverse);
-                y = ((nMatrix.matrix[1][0] + nMatrix.matrix[0][1]) / nInverse);
-                z = ((nMatrix.matrix[2][0] + nMatrix.matrix[0][2]) / nInverse);
-                w = ((nMatrix.matrix[2][1] - nMatrix.matrix[1][2]) / nInverse);    
-            } 
-            else if (nMatrix.matrix[1][1] > nMatrix.matrix[2][2]) 
-            {
-                TYPE nInverse(TYPE(2) * (sqrt(TYPE(1) + nMatrix.matrix[1][1] - nMatrix.matrix[0][0] - nMatrix.matrix[2][2])));
-                x = ((nMatrix.matrix[1][0] + nMatrix.matrix[0][1]) / nInverse);
-                y =  (TYPE(0.25) * nInverse);
-                z = ((nMatrix.matrix[2][1] + nMatrix.matrix[1][2]) / nInverse);
-                w = ((nMatrix.matrix[2][0] - nMatrix.matrix[0][2]) / nInverse);   
             }
-            else 
+
+            BaseQuaternion(const BaseVector4<TYPE> &vector)
+                : BaseVector4(vector)
             {
-                TYPE nInverse(TYPE(2) * (sqrt(TYPE(1) + nMatrix.matrix[2][2] - nMatrix.matrix[0][0] - nMatrix.matrix[1][1])));
-                x = ((nMatrix.matrix[2][0] + nMatrix.matrix[0][2]) / nInverse);
-                y = ((nMatrix.matrix[2][1] + nMatrix.matrix[1][2]) / nInverse);
-                z =  (TYPE(0.25) * nInverse);
-                w = ((nMatrix.matrix[1][0] - nMatrix.matrix[0][1]) / nInverse);
             }
-        }
 
-        Normalize();
-    }
+            BaseQuaternion(TYPE x, TYPE y, TYPE z, TYPE w)
+                : BaseVector4(x, y, z, w)
+            {
+            }
 
-    float GetLengthSqr(void) const
-    {
-        return ((x * x) + (y * y) + (z * z) + (w * w));
-    }
+            BaseQuaternion(const BaseMatrix4x4<TYPE> &rotation)
+            {
+                SeBaseMatrix(rotation);
+            }
 
-    TYPE GetLength(void) const
-    {
-        return sqrt((x * x) + (y * y) + (z * z) + (w * w));
-    }
+            BaseQuaternion(const BaseVector3<TYPE> &axis, TYPE radians)
+            {
+                setRotation(axis, radians);
+            }
 
-    tvector3<TYPE> GetEuler(void) const
-    {
-        TYPE nSquareX(x * x);
-        TYPE nSquareY(y * y);
-        TYPE nSquareZ(z * z);
-        TYPE nSquareW(w * w);
-        return tvector3<TYPE>(TYPE(atan2(TYPE(2) * ((y * z) + (x * w)), (-nSquareX - nSquareY + nSquareZ + nSquareW))),
-                              TYPE(asin(-TYPE(2) * ((x * z) - (y * w)))),
-                              TYPE(atan2(TYPE(2) * ((x * y) + (z * w)), ( nSquareX - nSquareY - nSquareZ + nSquareW))));
-    }
+            BaseQuaternion(TYPE x, TYPE y, TYPE z)
+            {
+                setEuler(x, y, z);
+            }
 
-    tmatrix4x4<TYPE> GetMatrix(void) const
-    {
-        return tmatrix4x4<TYPE>(*this);
-    }
+            BaseQuaternion(const BaseVector3<TYPE> &euler)
+            {
+                setEuler(euler);
+            }
 
-    tquaternion<TYPE> GetNormal(void) const
-    {
-        TYPE nLength(TYPE(1) / GetLength());
-        return tquaternion<TYPE>((x * nLength), (y * nLength), (z * nLength), (w * nLength));
-    }
+            void setIdentity(void)
+            {
+                x = y = z = TYPE(0);
+                w = TYPE(1);
+            }
 
-    tquaternion<TYPE> GetInverse(void) const
-    {
-        return tquaternion<TYPE>(-x, -y, -z, w);
-    }
+            void setLength(TYPE length)
+            {
+                length = (length / getLength());
+                x *= length;
+                y *= length;
+                z *= length;
+                w *= length;
+            }
 
-    void Normalize(void)
-    {
-        TYPE nLength(TYPE(1) / GetLength());
-        x *= nLength;
-        y *= nLength;
-        z *= nLength;
-        w *= nLength;
-    }
+            void setEuler(const BaseVector3<TYPE> &euler)
+            {
+                setEuler(euler.x, euler.y, euler.z);
+            }
 
-    void Invert(void)
-    {
-        x = -x;
-        y = -y;
-        z = -z;
-        w =  w;
-    }
+            void setEuler(TYPE x, TYPE y, TYPE z)
+            {
+                TYPE sinX(sin(x * TYPE(0.5)));
+                TYPE sinY(sin(y * TYPE(0.5)));
+                TYPE sinZ(sin(z * TYPE(0.5)));
+                TYPE cosX(cos(x * TYPE(0.5)));
+                TYPE cosY(cos(y * TYPE(0.5)));
+                TYPE cosZ(cos(z * TYPE(0.5)));
+                this->x = ((sinX * cosY * cosZ) - (cosX * sinY * sinZ));
+                this->y = ((sinX * cosY * sinZ) + (cosX * sinY * cosZ));
+                this->z = ((cosX * cosY * sinZ) - (sinX * sinY * cosZ));
+                this->w = ((cosX * cosY * cosZ) + (sinX * sinY * sinZ));
+            }
 
-    float Dot(const tquaternion<TYPE> &nQuaternion) const
-    {
-        return ((x * nQuaternion.x) + (y * nQuaternion.y) + (z * nQuaternion.z) + (w * nQuaternion.w));
-    }
+            void setRotation(const BaseVector3<TYPE> &axis, TYPE radians)
+            {
+                BaseVector3<TYPE> normal(axis.getNormal());
+                TYPE sinAngle(sin(radians * TYPE(0.5)));
+                x = (normal.x * sinAngle);
+                y = (normal.y * sinAngle);
+                z = (normal.z * sinAngle);
+                w = cos(radians * TYPE(0.5));
+            }
 
-    tquaternion<TYPE> Slerp(const tquaternion<TYPE> &nQuaternion, TYPE nFactor) const
-    {
-        tquaternion<TYPE> nOriginal(nQuaternion);
-        TYPE nCos(nQuaternion.Dot(*this));
-        if (nCos < TYPE(0))
-        {
-            nCos = -nCos;
-            nOriginal.x = -nOriginal.x;
-            nOriginal.y = -nOriginal.y;
-            nOriginal.z = -nOriginal.z;
-            nOriginal.w = -nOriginal.w;
-        }
+            void setRotation(const BaseMatrix4x4<TYPE> &rotation)
+            {
+                TYPE trace(rotation.table[0][0] + rotation.table[1][1] + rotation.table[2][2] + TYPE(1));
+                if (trace > _EPSILON)
+                {
+                    TYPE denominator(TYPE(0.5) / sqrt(trace));
+                    w = (TYPE(0.25) / denominator);
+                    x = ((rotation.table[1][2] - rotation.table[2][1]) * denominator);
+                    y = ((rotation.table[2][0] - rotation.table[0][2]) * denominator);
+                    z = ((rotation.table[0][1] - rotation.table[1][0]) * denominator);
+                }
+                else
+                {
+                    if ((rotation.table[0][0] > rotation.table[1][1]) && (rotation.table[0][0] > rotation.table[2][2]))
+                    {
+                        TYPE denominator(TYPE(2) * sqrt(TYPE(1) + rotation.table[0][0] - rotation.table[1][1] - rotation.table[2][2]));
+                        x = (TYPE(0.25) * denominator);
+                        y = ((rotation.table[1][0] + rotation.table[0][1]) / denominator);
+                        z = ((rotation.table[2][0] + rotation.table[0][2]) / denominator);
+                        w = ((rotation.table[2][1] - rotation.table[1][2]) / denominator);
+                    }
+                    else if (rotation.table[1][1] > rotation.table[2][2])
+                    {
+                        TYPE denominator(TYPE(2) * (sqrt(TYPE(1) + rotation.table[1][1] - rotation.table[0][0] - rotation.table[2][2])));
+                        x = ((rotation.table[1][0] + rotation.table[0][1]) / denominator);
+                        y = (TYPE(0.25) * denominator);
+                        z = ((rotation.table[2][1] + rotation.table[1][2]) / denominator);
+                        w = ((rotation.table[2][0] - rotation.table[0][2]) / denominator);
+                    }
+                    else
+                    {
+                        TYPE denominator(TYPE(2) * (sqrt(TYPE(1) + rotation.table[2][2] - rotation.table[0][0] - rotation.table[1][1])));
+                        x = ((rotation.table[2][0] + rotation.table[0][2]) / denominator);
+                        y = ((rotation.table[2][1] + rotation.table[1][2]) / denominator);
+                        z = (TYPE(0.25) * denominator);
+                        w = ((rotation.table[1][0] - rotation.table[0][1]) / denominator);
+                    }
+                }
 
-        TYPE nScale0;
-        TYPE nScale1;
-        if (abs(TYPE(1) - nCos) < _EPSILON)
-        {
-            nScale0 = (TYPE(1) - nFactor);
-            nScale1 = nFactor;
-        }
-        else
-        {
-            TYPE nOmega(acos(nCos));
-            TYPE nSinom(sin(nOmega));
-            nScale0 = (sin((TYPE(1) - nFactor) * nOmega) / nSinom);
-            nScale1 = (sin(nFactor * nOmega) / nSinom);
-        }
+                normalize();
+            }
 
-        return tquaternion<TYPE>(((nScale0 * x) + (nScale1 * nOriginal.x)),
-                                 ((nScale0 * y) + (nScale1 * nOriginal.y)),
-                                 ((nScale0 * z) + (nScale1 * nOriginal.z)),
-                                 ((nScale0 * w) + (nScale1 * nOriginal.w)));
-    }
+            BaseVector3<TYPE> getEuler(void) const
+            {
+                TYPE squareX(x * x);
+                TYPE squareY(y * y);
+                TYPE squareZ(z * z);
+                TYPE squareW(w * w);
+                return BaseVector3<TYPE>(TYPE(atan2(TYPE(2) * ((y * z) + (x * w)), (-squareX - squareY + squareZ + squareW))),
+                                         TYPE(asin(-TYPE(2) * ((x * z) - (y * w)))),
+                                         TYPE(atan2(TYPE(2) * ((x * y) + (z * w)), (squareX - squareY - squareZ + squareW))));
+            }
 
-    tvector3<TYPE> operator * (const tvector3<TYPE> &nVector) const
-    {
-        float nX2 = x * TYPE(2);
-        float nY2 = y * TYPE(2);
-        float nZ2 = z * TYPE(2);
-        float nX3 = x * nX2;
-        float nY3 = y * nY2;
-        float nZ3 = z * nZ2;
-        float nXY2 = x * nY2;
-        float nXZ2 = x * nZ2;
-        float nYZ2 = y * nZ2;
-        float nWX2 = w * nX2;
-        float nWY2 = w * nY2;
-        float nWZ2 = w * nZ2;
-        return tvector3<TYPE>(((TYPE(1) - (nY3 + nZ3)) * nVector.x + (nXY2 - nWZ2) * nVector.y + (nXZ2 + nWY2) * nVector.z),
-                              ((nXY2 + nWZ2) * nVector.x + (TYPE(1) - (nX3 + nZ3)) * nVector.y + (nYZ2 - nWX2) * nVector.z),
-                              ((nXZ2 - nWY2) * nVector.x + (nYZ2 + nWX2) * nVector.y + (TYPE(1) - (nX3 + nY3)) * nVector.z));
-    }
+            BaseMatrix4x4<TYPE> getMatrix(void) const
+            {
+                return BaseMatrix4x4<TYPE>(*this);
+            }
 
-    tquaternion<TYPE> operator * (const tquaternion<TYPE> &nQuaternion) const
-    {
-        TYPE nX((w * nQuaternion.x) + (x * nQuaternion.w) + (y * nQuaternion.z) - (z * nQuaternion.y));
-        TYPE nY((w * nQuaternion.y) + (y * nQuaternion.w) + (z * nQuaternion.x) - (x * nQuaternion.z));
-        TYPE nZ((w * nQuaternion.z) + (z * nQuaternion.w) + (x * nQuaternion.y) - (y * nQuaternion.x));
-        TYPE nW((w * nQuaternion.w) - (x * nQuaternion.x) - (y * nQuaternion.y) - (z * nQuaternion.z));
-        return tquaternion<TYPE>(nX, nY, nZ, nW);
-    }
+            BaseQuaternion<TYPE> getNormal(void) const
+            {
+                TYPE inverseLength(TYPE(1) / getLength());
+                return BaseQuaternion<TYPE>((x * inverseLength), (y * inverseLength), (z * inverseLength), (w * inverseLength));
+            }
 
-    void operator *= (const tquaternion<TYPE> &nQuaternion)
-    {
-        TYPE nX((w * nQuaternion.x) + (x * nQuaternion.w) + (y * nQuaternion.z) - (z * nQuaternion.y));
-        TYPE nY((w * nQuaternion.y) + (y * nQuaternion.w) + (z * nQuaternion.x) - (x * nQuaternion.z));
-        TYPE nZ((w * nQuaternion.z) + (z * nQuaternion.w) + (x * nQuaternion.y) - (y * nQuaternion.x));
-        TYPE nW((w * nQuaternion.w) - (x * nQuaternion.x) - (y * nQuaternion.y) - (z * nQuaternion.z));
-        x = nX;
-        y = nY;
-        z = nZ;
-        w = nW;
-    }
+            BaseQuaternion<TYPE> getInverse(void) const
+            {
+                return BaseQuaternion<TYPE>(-x, -y, -z, w);
+            }
 
-    tquaternion<TYPE> operator = (const tvector4<TYPE> &nVector)
-    {
-        x = nVector.x;
-        y = nVector.y;
-        z = nVector.z;
-        w = nVector.w;
-        return *this;
-    }
+            void normalize(void)
+            {
+                TYPE inverseLength(TYPE(1) / getLength());
+                x *= inverseLength;
+                y *= inverseLength;
+                z *= inverseLength;
+                w *= inverseLength;
+            }
 
-    tquaternion<TYPE> operator = (const tquaternion<TYPE> &nQuaternion)
-    {
-        x = nQuaternion.x;
-        y = nQuaternion.y;
-        z = nQuaternion.z;
-        w = nQuaternion.w;
-        return *this;
-    }
+            void invert(void)
+            {
+                x = -x;
+                y = -y;
+                z = -z;
+                w = w;
+            }
 
-    tquaternion<TYPE> operator = (const tmatrix4x4<TYPE> &nMatrix)
-    {
-        SetMatrix(nMatrix);
-        return *this;
-    }
-};
+            BaseQuaternion<TYPE> slerp(const BaseQuaternion<TYPE> &rotation, TYPE factor) const
+            {
+                BaseQuaternion<TYPE> adjustedRotation(rotation);
+                TYPE cosAngle(rotation.Dot(*this));
+                if (cosAngle < TYPE(0))
+                {
+                    cosAngle = -cosAngle;
+                    adjustedRotation.x = -adjustedRotation.x;
+                    adjustedRotation.y = -adjustedRotation.y;
+                    adjustedRotation.z = -adjustedRotation.z;
+                    adjustedRotation.w = -adjustedRotation.w;
+                }
+
+                if (abs(TYPE(1) - cosAngle) < Epsilon)
+                {
+                    return blend((*this), adjustedRotation, factor);
+                }
+                else
+                {
+                    TYPE omega(acos(cosAngle));
+                    TYPE sinOmega(sin(omega));
+                    TYPE factorA = (sin((TYPE(1) - factor) * omega) / sinOmega);
+                    TYPE factorB = (sin(factor * omega) / sinOmega);
+                    return BaseQuaternion<TYPE>(((factorA * x) + (factorB * adjustedRotation.x)),
+                                                ((factorA * y) + (factorB * adjustedRotation.y)),
+                                                ((factorA * z) + (factorB * adjustedRotation.z)),
+                                                ((factorA * w) + (factorB * adjustedRotation.w)));
+                }
+            }
+
+            BaseVector3<TYPE> operator * (const BaseVector3<TYPE> &vector) const
+            {
+                TYPE x2(x * TYPE(2));
+                TYPE y2(y * TYPE(2));
+                TYPE z2(z * TYPE(2));
+                TYPE xx2(x * x2);
+                TYPE yy2(y * y2);
+                TYPE zz2(z * z2);
+                TYPE xy2(x * y2);
+                TYPE xz2(x * z2);
+                TYPE yz2(y * z2);
+                TYPE wx2(w * x2);
+                TYPE wy2(w * y2);
+                TYPE wz2(w * z2);
+                return BaseVector3<TYPE>(((TYPE(1) - (yy2 + zz2)) * vector.x + (xy2 - wz2) * vector.y + (xz2 + wy2) * vector.z),
+                                         ((xy2 + wz2) * vector.x + (TYPE(1) - (xx2 + zz2)) * vector.y + (yz2 - wx2) * vector.z),
+                                         ((xz2 - wy2) * vector.x + (yz2 + wx2) * vector.y + (TYPE(1) - (xx2 + yy2)) * vector.z));
+            }
+
+            BaseQuaternion<TYPE> operator * (const BaseQuaternion<TYPE> &rotation) const
+            {
+                return BaseQuaternion<TYPE>(((w * rotation.x) + (x * rotation.w) + (y * rotation.z) - (z * rotation.y)),
+                                            ((w * rotation.y) + (y * rotation.w) + (z * rotation.x) - (x * rotation.z)),
+                                            ((w * rotation.z) + (z * rotation.w) + (x * rotation.y) - (y * rotation.x)),
+                                            ((w * rotation.w) - (x * rotation.x) - (y * rotation.y) - (z * rotation.z)));
+            }
+
+            void operator *= (const BaseQuaternion<TYPE> &rotation)
+            {
+                (*this) = ((*this) * rotation);
+            }
+
+            BaseQuaternion<TYPE> operator = (const BaseVector4<TYPE> &vector)
+            {
+                x = vector.x;
+                y = vector.y;
+                z = vector.z;
+                w = vector.w;
+                return (*this);
+            }
+
+            BaseQuaternion<TYPE> operator = (const BaseQuaternion<TYPE> &rotation)
+            {
+                x = rotation.x;
+                y = rotation.y;
+                z = rotation.z;
+                w = rotation.w;
+                return (*this);
+            }
+
+            BaseQuaternion<TYPE> operator = (const BaseMatrix4x4<TYPE> &rotation)
+            {
+                setRotation(rotation);
+                return (*this);
+            }
+        };
+
+        typedef BaseQuaternion<float> Quaternion;
+    }; // namespace Math
+}; // namespace Gek

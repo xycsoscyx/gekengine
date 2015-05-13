@@ -4,356 +4,321 @@
 
 #pragma comment(lib, "libxml2.lib")
 
-CLibXMLNode::CLibXMLNode(xmlNode *pNode)
-    : m_pNode(pNode)
+namespace Gek
 {
-}
-
-bool CLibXMLNode::IsValid(void) const
-{
-    return (m_pNode ? true : false);
-}
-
-HRESULT CLibXMLNode::Create(LPCWSTR pType)
-{
-    HRESULT hRetVal = E_FAIL;
-
-    CStringA strTypeUTF8 = CW2A(pType, CP_UTF8);
-    xmlNodePtr pNewNode = xmlNewNode(nullptr, BAD_CAST strTypeUTF8.GetString());
-    if (pNewNode != nullptr)
+    namespace Xml
     {
-        m_pNode = pNewNode;
-        hRetVal = S_OK;
-    }
-
-    return hRetVal;
-}
-
-void CLibXMLNode::SetType(LPCWSTR pType)
-{
-    if (m_pNode != nullptr)
-    {
-        CStringA strTypeUTF8 = CW2A(pType, CP_UTF8);
-        xmlNodeSetName(m_pNode, BAD_CAST strTypeUTF8.GetString());
-    }
-}
-
-CStringW CLibXMLNode::GetType(void) const
-{
-    CStringW strReturn;
-    if (m_pNode != nullptr)
-    {
-        strReturn = CA2W((const char *)m_pNode->name, CP_UTF8);
-    }
-
-    return strReturn;
-}
-
-CStringW CLibXMLNode::GetText(void) const
-{
-    CStringW strReturn;
-    if (m_pNode != nullptr)
-    {
-        xmlChar *pProperty = xmlNodeGetContent(m_pNode);
-        if (pProperty != nullptr)
+        Node::Node(xmlNode *node)
+            : node(node)
         {
-            strReturn = CA2W((const char *)pProperty, CP_UTF8);
-            xmlFree(pProperty);
-        }
-    }
-
-    return strReturn;
-}
-
-void CLibXMLNode::SetText(LPCWSTR pValueFormat, ...)
-{
-    if (m_pNode != nullptr)
-    {
-        CStringW strValue;
-        if (pValueFormat != nullptr)
-        {
-            va_list pArgs;
-            va_start(pArgs, pValueFormat);
-            strValue.FormatV(pValueFormat, pArgs);
-            va_end(pArgs);
         }
 
-        CStringA strValueUTF8 = CW2A(strValue, CP_UTF8);
-        xmlNodeSetContent(m_pNode, BAD_CAST strValueUTF8.GetString());
-    }
-}
-
-bool CLibXMLNode::HasAttribute(LPCWSTR pName) const
-{
-    if (m_pNode != nullptr)
-    {
-        CStringA strNameUTF8 = CW2A(pName, CP_UTF8);
-        return (xmlHasProp(m_pNode, BAD_CAST strNameUTF8.GetString()) ? true : false);
-    }
-
-    return false;
-}
-
-CStringW CLibXMLNode::GetAttribute(LPCWSTR pName) const
-{
-    CStringW strReturn;
-    if (m_pNode != nullptr)
-    {
-        CStringA strNameUTF8 = CW2A(pName, CP_UTF8);
-        xmlChar *pProperty = xmlGetProp(m_pNode, BAD_CAST strNameUTF8.GetString());
-        if (pProperty != nullptr)
+        HRESULT Node::create(LPCWSTR type)
         {
-            strReturn = CA2W((const char *)pProperty, CP_UTF8);
-            xmlFree(pProperty);
-        }
-    }
+            HRESULT returnValue = E_FAIL;
 
-    return strReturn;
-}
-
-void CLibXMLNode::SetAttribute(LPCWSTR pName, LPCWSTR pValueFormat, ...)
-{
-    if (m_pNode != nullptr)
-    {
-        CStringA strNameUTF8 = CW2A(pName, CP_UTF8);
-
-        CStringW strValue;
-        if (pValueFormat != nullptr)
-        {
-            va_list pArgs;
-            va_start(pArgs, pValueFormat);
-            strValue.FormatV(pValueFormat, pArgs);
-            va_end(pArgs);
-        }
-
-        CStringA strValueUTF8 = CW2A(strValue, CP_UTF8);
-        if (HasAttribute(pName))
-        {
-            xmlSetProp(m_pNode, BAD_CAST strNameUTF8.GetString(), BAD_CAST strValueUTF8.GetString());
-        }
-        else
-        {
-            xmlNewProp(m_pNode, BAD_CAST strNameUTF8.GetString(), BAD_CAST strValueUTF8.GetString());
-        }
-    }
-}
-
-void CLibXMLNode::ListAttributes(std::function<void(LPCWSTR, LPCWSTR)> OnAttribute) const
-{
-    if (m_pNode != nullptr)
-    {
-        for(xmlAttrPtr pAttribute = m_pNode->properties; pAttribute != nullptr; pAttribute = pAttribute->next)
-        {
-            CStringA strNameUTF8(pAttribute->name);
-            CStringW strName(CA2W(strNameUTF8, CP_UTF8));
-            CStringW strValue(GetAttribute(strName));
-            OnAttribute(strName, strValue);
-        }
-    }
-}
-
-bool CLibXMLNode::HasSiblingElement(LPCWSTR pType) const
-{
-    bool bReturn = false;
-    if (m_pNode != nullptr)
-    {
-        xmlNode *pNode = m_pNode;
-        CStringA strTypeUTF8(CW2A(pType, CP_UTF8));
-        for (; pNode; pNode = pNode->next)
-        {
-            if (pNode->type == XML_ELEMENT_NODE)
+            CStringA strTypeUTF8 = CW2A(type, CP_UTF8);
+            xmlNodePtr pNewNode = xmlNewNode(nullptr, BAD_CAST strTypeUTF8.GetString());
+            if (pNewNode != nullptr)
             {
-                if (strTypeUTF8.IsEmpty() || strTypeUTF8 == pNode->name)
-                {
-                    bReturn = true;
-                    break;
-                }
+                node = pNewNode;
+                returnValue = S_OK;
+            }
+
+            return returnValue;
+        }
+
+        void Node::setType(LPCWSTR type)
+        {
+            if (node != nullptr)
+            {
+                CStringA strTypeUTF8 = CW2A(type, CP_UTF8);
+                xmlNodeSetName(node, BAD_CAST strTypeUTF8.GetString());
             }
         }
-    }
 
-    return bReturn;
-}
-
-CLibXMLNode CLibXMLNode::NextSiblingElement(LPCWSTR pType) const
-{
-    if (m_pNode != nullptr)
-    {
-        xmlNode *pNode = m_pNode->next;
-        CStringA strTypeUTF8(CW2A(pType, CP_UTF8));
-        for (; pNode; pNode = pNode->next)
+        CStringW Node::getType(void) const
         {
-            if (pNode->type == XML_ELEMENT_NODE)
+            CStringW type;
+            if (node != nullptr)
             {
-                if (strTypeUTF8.IsEmpty() || strTypeUTF8 == pNode->name)
+                type = CA2W((const char *)node->name, CP_UTF8);
+            }
+
+            return type;
+        }
+
+        CStringW Node::getText(void) const
+        {
+            CStringW text;
+            if (node != nullptr)
+            {
+                xmlChar *content = xmlNodeGetContent(node);
+                if (content != nullptr)
                 {
-                    break;
+                    text = CA2W((const char *)content, CP_UTF8);
+                    xmlFree(content);
+                }
+            }
+
+            return text;
+        }
+
+        void Node::setText(LPCWSTR format, ...)
+        {
+            if (node != nullptr)
+            {
+                CStringW text;
+                if (format != nullptr)
+                {
+                    va_list pArgs;
+                    va_start(pArgs, format);
+                    text.FormatV(format, pArgs);
+                    va_end(pArgs);
+                }
+
+                xmlNodeSetContent(node, BAD_CAST LPCSTR(CW2A(text, CP_UTF8)));
+            }
+        }
+
+        bool Node::hasAttribute(LPCWSTR name) const
+        {
+            if (node != nullptr)
+            {
+                return (xmlHasProp(node, BAD_CAST LPCSTR(CW2A(name, CP_UTF8))) ? true : false);
+            }
+
+            return false;
+        }
+
+        CStringW Node::getAttribute(LPCWSTR name) const
+        {
+            CStringW value;
+            if (node != nullptr)
+            {
+                xmlChar *attribute = xmlGetProp(node, BAD_CAST LPCSTR(CW2A(name, CP_UTF8)));
+                if (attribute != nullptr)
+                {
+                    value = CA2W((const char *)attribute, CP_UTF8);
+                    xmlFree(attribute);
+                }
+            }
+
+            return value;
+        }
+
+        void Node::setAttribute(LPCWSTR name, LPCWSTR format, ...)
+        {
+            if (node != nullptr)
+            {
+                CStringW value;
+                if (format != nullptr)
+                {
+                    va_list pArgs;
+                    va_start(pArgs, format);
+                    value.FormatV(format, pArgs);
+                    va_end(pArgs);
+                }
+
+                if (hasAttribute(name))
+                {
+                    xmlSetProp(node, BAD_CAST LPCSTR(CW2A(name, CP_UTF8)), BAD_CAST LPCSTR(CW2A(value, CP_UTF8)));
+                }
+                else
+                {
+                    xmlNewProp(node, BAD_CAST LPCSTR(CW2A(name, CP_UTF8)), BAD_CAST LPCSTR(CW2A(value, CP_UTF8)));
                 }
             }
         }
 
-        if (pNode != nullptr)
+        void Node::listAttributes(std::function<void(LPCWSTR, LPCWSTR)> onAttribute) const
         {
-            return CLibXMLNode(pNode);
-        }
-    }
-
-    return CLibXMLNode(nullptr);
-}
-
-bool CLibXMLNode::HasChildElement(LPCWSTR pType) const
-{
-    bool bReturn = false;
-    if (m_pNode != nullptr)
-    {
-        xmlNode *pNode = m_pNode->children;
-        CStringA strTypeUTF8(CW2A(pType, CP_UTF8));
-        for (; pNode; pNode = pNode->next)
-        {
-            if (pNode->type == XML_ELEMENT_NODE)
+            if (node != nullptr)
             {
-                if (strTypeUTF8.IsEmpty() || strTypeUTF8 == pNode->name)
+                for (xmlAttrPtr attribute = node->properties; attribute != nullptr; attribute = attribute->next)
                 {
-                    bReturn = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    return bReturn;
-}
-
-CLibXMLNode CLibXMLNode::FirstChildElement(LPCWSTR pType) const
-{
-    if (m_pNode != nullptr)
-    {
-        xmlNode *pNode = m_pNode->children;
-        CStringA strTypeUTF8(CW2A(pType, CP_UTF8));
-        for (; pNode; pNode = pNode->next)
-        {
-            if (pNode->type == XML_ELEMENT_NODE)
-            {
-                if (strTypeUTF8.IsEmpty() || strTypeUTF8 == pNode->name)
-                {
-                    break;
+                    CA2W name(LPCSTR(attribute->name), CP_UTF8);
+                    onAttribute(name, getAttribute(name));
                 }
             }
         }
 
-        if (pNode != nullptr)
+        bool Node::hasSiblingElement(LPCWSTR type) const
         {
-            return CLibXMLNode(pNode);
-        }
-    }
+            bool hasSiblingElement = false;
+            if (type != nullptr && node != nullptr)
+            {
+                CStringA typeUtf8(CW2A(type, CP_UTF8));
+                for (xmlNode *checkingNode = node; checkingNode; checkingNode = checkingNode->next)
+                {
+                    if (checkingNode->type == XML_ELEMENT_NODE && typeUtf8 == checkingNode->name)
+                    {
+                        hasSiblingElement = true;
+                        break;
+                    }
+                }
+            }
 
-    return CLibXMLNode(nullptr);
-}
-
-CLibXMLNode CLibXMLNode::CreateChildElement(LPCWSTR pType, LPCWSTR pContentFormat, ...)
-{
-    if (m_pNode != nullptr)
-    {
-        CStringA strTypeUTF8(CW2A(pType, CP_UTF8));
-
-        CStringW strContent;
-        if (pContentFormat != nullptr)
-        {
-            va_list pArgs;
-            va_start(pArgs, pContentFormat);
-            strContent.FormatV(pContentFormat, pArgs);
-            va_end(pArgs);
+            return hasSiblingElement;
         }
 
-        CStringA strContentUTF8(CW2A(strContent, CP_UTF8));
-        xmlNodePtr pNewNode = xmlNewChild(m_pNode, nullptr, BAD_CAST strTypeUTF8.GetString(), BAD_CAST strContentUTF8.GetString());
-        if (pNewNode != nullptr)
+        Node Node::nextSiblingElement(LPCWSTR type) const
         {
-            xmlAddChild(m_pNode, pNewNode);
-            return CLibXMLNode(pNewNode);
+            Node nextNode(nullptr);
+            if (type != nullptr && node != nullptr)
+            {
+                CStringA typeUtf8(CW2A(type, CP_UTF8));
+                for (xmlNode *checkingNode = node->next; checkingNode; checkingNode = checkingNode->next)
+                {
+                    if (checkingNode->type == XML_ELEMENT_NODE && typeUtf8 == checkingNode->name)
+                    {
+                        nextNode = Node(checkingNode);
+                        break;
+                    }
+                }
+            }
+
+            return nextNode;
         }
-    }
 
-    return CLibXMLNode(nullptr);
-}
-
-CLibXMLDoc::CLibXMLDoc(void)
-    : m_pDocument(nullptr)
-{
-}
-
-CLibXMLDoc::~CLibXMLDoc(void)
-{
-    if (m_pDocument != nullptr)
-    {
-        xmlFreeDoc(m_pDocument);
-    }
-}
-
-HRESULT CLibXMLDoc::Create(LPCWSTR pRootNode)
-{
-    if (m_pDocument != nullptr)
-    {
-        xmlFreeDoc(m_pDocument);
-        m_pDocument = nullptr;
-    }
-
-    HRESULT hRetVal = E_FAIL;
-    xmlDoc *pDocument = xmlNewDoc(BAD_CAST "1.0");
-    if (pDocument != nullptr)
-    {
-        CStringA strRootNodeUTF8(CW2A(pRootNode, CP_UTF8));
-        xmlNodePtr pRoot = xmlNewNode(nullptr, BAD_CAST strRootNodeUTF8.GetString());
-        if (pRoot != nullptr)
+        bool Node::hasChildElement(LPCWSTR type) const
         {
-            xmlDocSetRootElement(pDocument, pRoot);
-            m_pDocument = pDocument;
-            hRetVal = S_OK;
+            bool hasChildElement = false;
+            if (type != nullptr && node != nullptr)
+            {
+                CStringA typeUtf8(CW2A(type, CP_UTF8));
+                for (xmlNode *checkingNode = node->children; checkingNode; checkingNode = checkingNode->next)
+                {
+                    if (checkingNode->type == XML_ELEMENT_NODE && typeUtf8 == checkingNode->name)
+                    {
+                        hasChildElement = true;
+                        break;
+                    }
+                }
+            }
+
+            return hasChildElement;
         }
-    }
 
-    return hRetVal;
-}
+        Node Node::firstChildElement(LPCWSTR type) const
+        {
+            Node nextNode(nullptr);
+            if (type != nullptr && node != nullptr)
+            {
+                CStringA typeUtf8(CW2A(type, CP_UTF8));
+                for (xmlNode *checkingNode = node->children; checkingNode; checkingNode = checkingNode->next)
+                {
+                    if (checkingNode->type == XML_ELEMENT_NODE && typeUtf8 == checkingNode->name)
+                    {
+                        nextNode = Node(checkingNode);
+                        break;
+                    }
+                }
+            }
 
-HRESULT CLibXMLDoc::Load(LPCWSTR pFileName)
-{
-    if (m_pDocument != nullptr)
-    {
-        xmlFreeDoc(m_pDocument);
-        m_pDocument = nullptr;
-    }
+            return nextNode;
+        }
 
-    HRESULT hRetVal = E_FAIL;
-    CStringW strFullFileName(GEKParseFileName(pFileName));
-    CStringA strFileNameUTF8(CW2A(strFullFileName, CP_UTF8));
-    m_pDocument = xmlReadFile(strFileNameUTF8, nullptr, XML_PARSE_DTDATTR | XML_PARSE_NOENT | XML_PARSE_DTDVALID);
-    if (m_pDocument != nullptr)
-    {
-        hRetVal = S_OK;
-    }
+        Node Node::createChildElement(LPCWSTR type, LPCWSTR format, ...)
+        {
+            Node newNode(nullptr);
+            if (node != nullptr)
+            {
+                CStringW content;
+                if (format != nullptr)
+                {
+                    va_list pArgs;
+                    va_start(pArgs, format);
+                    content.FormatV(format, pArgs);
+                    va_end(pArgs);
+                }
 
-    return hRetVal;
-}
+                xmlNodePtr childNode = xmlNewChild(node, nullptr, BAD_CAST LPCSTR(CW2A(type, CP_UTF8)), BAD_CAST LPCSTR(CW2A(content, CP_UTF8)));
+                if (childNode != nullptr)
+                {
+                    xmlAddChild(node, childNode);
+                    newNode = Node(childNode);
+                }
+            }
 
-HRESULT CLibXMLDoc::Save(LPCWSTR pFileName)
-{
-    HRESULT hRetVal = E_FAIL;
-    if (m_pDocument != nullptr)
-    {
-        CStringW strFullFileName(GEKParseFileName(pFileName));
-        CStringA strFileNameUTF8(CW2A(strFullFileName, CP_UTF8));
-        xmlSaveFormatFileEnc(strFileNameUTF8, m_pDocument, "UTF-8", 1);
-    }
+            return newNode;
+        }
 
-    return hRetVal;
-}
+        Document::Document(void)
+            : document(nullptr)
+        {
+        }
 
-CLibXMLNode CLibXMLDoc::GetRoot(void) const
-{
-    if (m_pDocument != nullptr)
-    {
-        return CLibXMLNode(xmlDocGetRootElement(m_pDocument));
-    }
+        Document::~Document(void)
+        {
+            if (document != nullptr)
+            {
+                xmlFreeDoc(document);
+            }
+        }
 
-    return CLibXMLNode(nullptr);
-}
+        HRESULT Document::create(LPCWSTR rootType)
+        {
+            if (document != nullptr)
+            {
+                xmlFreeDoc(document);
+                document = nullptr;
+            }
+
+            HRESULT returnValue = E_FAIL;
+            document = xmlNewDoc(BAD_CAST "1.0");
+            if (document != nullptr)
+            {
+                xmlNodePtr rootNode = xmlNewNode(nullptr, BAD_CAST LPCSTR(CW2A(rootType, CP_UTF8)));
+                if (rootNode != nullptr)
+                {
+                    xmlDocSetRootElement(document, rootNode);
+                    returnValue = S_OK;
+                }
+            }
+
+            return returnValue;
+        }
+
+        HRESULT Document::load(LPCWSTR basePath)
+        {
+            if (document != nullptr)
+            {
+                xmlFreeDoc(document);
+                document = nullptr;
+            }
+
+            HRESULT returnValue = E_FAIL;
+            CStringW fullPath(Gek::FileSystem::expandPath(basePath));
+            document = xmlReadFile(CW2A(fullPath, CP_UTF8), nullptr, XML_PARSE_DTDATTR | XML_PARSE_NOENT | XML_PARSE_DTDVALID);
+            if (document != nullptr)
+            {
+                returnValue = S_OK;
+            }
+
+            return returnValue;
+        }
+
+        HRESULT Document::save(LPCWSTR basePath)
+        {
+            HRESULT returnValue = E_FAIL;
+            if (document != nullptr)
+            {
+                CStringW fullPath(Gek::FileSystem::expandPath(basePath));
+                xmlSaveFormatFileEnc(CW2A(fullPath, CP_UTF8), document, "UTF-8", 1);
+            }
+
+            return returnValue;
+        }
+
+        Node Document::getRoot(void) const
+        {
+            if (document != nullptr)
+            {
+                return Node(xmlDocGetRootElement(document));
+            }
+
+            return Node(nullptr);
+        }
+    }; // namespace Xml
+}; // namespace Gek

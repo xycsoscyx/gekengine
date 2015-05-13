@@ -1,45 +1,48 @@
 #include "CGEKTimer.h"
 #include <windows.h>
 
-CGEKTimer::CGEKTimer(void)
-    : m_bPaused(false)
+namespace Gek
 {
-    Reset();
-}
-
-void CGEKTimer::Reset(void)
-{
-    m_kPrevious = m_kCurrent = m_kStart = m_kClock.now();
-}
-
-void CGEKTimer::Update(void) 
-{
-    m_kPrevious = m_kCurrent;
-    m_kCurrent = m_kClock.now();
-}
-
-void CGEKTimer::Pause(bool bState)
-{
-    if (bState && !m_bPaused)
+    Timer::Timer(void)
+        : pausedState(false)
     {
-        m_bPaused = true;
-        m_kPaused = m_kClock.now();
+        reset();
     }
-    else if (!bState && m_bPaused)
+
+    void Timer::reset(void)
     {
-        auto kTime = m_kClock.now();
-        auto kPaused = (kTime - m_kPaused);
-        m_kStart += kPaused;
-        m_bPaused = false;
+        previousTime = currentTime = startTime = clock.now();
     }
-}
 
-double CGEKTimer::GetUpdateTime(void) const 
-{
-    return (std::chrono::duration<double, std::milli>(m_kCurrent - m_kPrevious).count() * 0.001);
-}
+    void Timer::update(void)
+    {
+        previousTime = currentTime;
+        currentTime = clock.now();
+    }
 
-double CGEKTimer::GetAbsoluteTime(void) const
-{
-    return (std::chrono::duration<double, std::milli>(m_kCurrent - m_kStart).count() * 0.001);
-}
+    void Timer::pause(bool state)
+    {
+        if (state && !pausedState)
+        {
+            pausedState = true;
+            pausedTime = clock.now();
+        }
+        else if (!state && pausedState)
+        {
+            auto kTime = clock.now();
+            auto kPaused = (kTime - pausedTime);
+            startTime += kPaused;
+            pausedState = false;
+        }
+    }
+
+    double Timer::getUpdateTime(void) const
+    {
+        return (std::chrono::duration<double, std::milli>(currentTime - previousTime).count() * 0.001);
+    }
+
+    double Timer::getAbsoluteTime(void) const
+    {
+        return (std::chrono::duration<double, std::milli>(currentTime - startTime).count() * 0.001);
+    }
+}; // namespace Gek

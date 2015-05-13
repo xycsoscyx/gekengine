@@ -8,9 +8,6 @@
     <ClCompile Include="Source\CGEKTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKPerformance.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEKUtility.h" />
@@ -18,9 +15,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\CGEKTimer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKPerformance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

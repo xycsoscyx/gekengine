@@ -5,52 +5,57 @@
 #include <libxml/tree.h>
 #include <unordered_map>
 
-class CLibXMLNode
+namespace Gek
 {
-private:
-    xmlNode *m_pNode;
-
-public:
-    CLibXMLNode(xmlNode *pNode);
-
-    bool IsValid(void) const;
-    operator bool() const
+    namespace Xml
     {
-        return IsValid();
-    }
+        class Node
+        {
+        private:
+            xmlNode *node;
 
-    HRESULT Create(LPCWSTR pType);
-    void SetType(LPCWSTR pType);
-    CStringW GetType(void) const;
+        public:
+            Node(xmlNode *node);
 
-    CStringW GetText(void) const;
-    void SetText(LPCWSTR pValueFormat, ...);
+            operator bool() const
+            {
+                return (node ? true : false);
+            }
 
-    bool HasAttribute(LPCWSTR pName) const;
-    CStringW GetAttribute(LPCWSTR pName) const;
-    void SetAttribute(LPCWSTR pName, LPCWSTR pValueFormat, ...);
-    void ListAttributes(std::function<void(LPCWSTR, LPCWSTR)> OnAttribute) const;
+            HRESULT create(LPCWSTR type);
+            void setType(LPCWSTR type);
+            CStringW getType(void) const;
 
-    bool HasSiblingElement(LPCWSTR pType = nullptr) const;
-    CLibXMLNode NextSiblingElement(LPCWSTR pType = nullptr) const;
+            CStringW getText(void) const;
+            void setText(LPCWSTR format, ...);
 
-    bool HasChildElement(LPCWSTR pType = nullptr) const;
-    CLibXMLNode FirstChildElement(LPCWSTR pType = nullptr) const;
-    CLibXMLNode CreateChildElement(LPCWSTR pType, LPCWSTR pContentFormat = nullptr, ...);
-};
+            bool hasAttribute(LPCWSTR name) const;
+            CStringW getAttribute(LPCWSTR name) const;
+            void setAttribute(LPCWSTR name, LPCWSTR format, ...);
+            void listAttributes(std::function<void(LPCWSTR, LPCWSTR)> onAttribute) const;
 
-class CLibXMLDoc
-{
-private:
-    xmlDoc *m_pDocument;
+            bool hasChildElement(LPCWSTR type = nullptr) const;
+            Node firstChildElement(LPCWSTR type = nullptr) const;
+            Node createChildElement(LPCWSTR type, LPCWSTR format = nullptr, ...);
 
-public:
-    CLibXMLDoc(void);
-    ~CLibXMLDoc(void);
+            bool hasSiblingElement(LPCWSTR type = nullptr) const;
+            Node nextSiblingElement(LPCWSTR type = nullptr) const;
+        };
 
-    HRESULT Create(LPCWSTR pRootNode);
-    HRESULT Load(LPCWSTR pFileName);
-    HRESULT Save(LPCWSTR pFileName);
+        class Document
+        {
+        private:
+            xmlDoc *document;
 
-    CLibXMLNode GetRoot(void) const;
-};
+        public:
+            Document(void);
+            ~Document(void);
+
+            HRESULT create(LPCWSTR rootType);
+            HRESULT load(LPCWSTR basePath);
+            HRESULT save(LPCWSTR basePath);
+
+            Node getRoot(void) const;
+        };
+    }; // namespace Xml
+}; // namespace Gek
