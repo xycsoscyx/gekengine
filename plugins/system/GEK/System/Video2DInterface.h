@@ -1,9 +1,12 @@
 #pragma once
 
-#include "GEKMath.h"
-#include "GEKContext.h"
-#include <atlbase.h>
-#include <atlstr.h>
+#include "GEK\Math\Common.h"
+#include "GEK\Math\Vector2.h"
+#include "GEK\Math\Vector3.h"
+#include "GEK\Math\Vector4.h"
+#include "GEK\Math\Matrix3x2.h"
+#include "GEK\Utility\Common.h"
+#include <unordered_map>
 
 namespace Gek
 {

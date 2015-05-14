@@ -4,8 +4,7 @@
 #include "GEK\Math\Vector2.h"
 #include "GEK\Math\Vector3.h"
 #include "GEK\Math\Vector4.h"
-#include <atlbase.h>
-#include <atlstr.h>
+#include "GEK\Utility\Common.h"
 #include <unordered_map>
 
 namespace Gek
@@ -439,8 +438,8 @@ namespace Gek
             STDMETHOD_(void, setScissorRect)                    (THIS_ const std::vector<Rectangle<UINT32>> &rectangles) PURE;
 
             STDMETHOD_(void, clearRenderTarget)                 (THIS_ Handle targetHandle, const Math::Float4 &color) PURE;
-            STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ Handle targetHandle, UINT32 flags, float depth, UINT32 stencil) PURE;
-            STDMETHOD_(void, setRenderTargets)                  (THIS_ const std::vector<Handle> &targetHandles, Handle depthHandle) PURE;
+            STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ Handle depthHandle, UINT32 flags, float depth, UINT32 stencil) PURE;
+            STDMETHOD_(void, setRenderTargets)                  (THIS_ const std::vector<Handle> &targetHandleList, Handle depthHandle) PURE;
 
             STDMETHOD_(void, setRenderStates)                   (THIS_ Handle resourceHandle) PURE;
             STDMETHOD_(void, setDepthStates)                    (THIS_ Handle resourceHandle, UINT32 stencilReference) PURE;
@@ -458,7 +457,7 @@ namespace Gek
 
             STDMETHOD_(void, dispatch)                          (THIS_ UINT32 threadGroupCountX, UINT32 threadGroupCountY, UINT32 threadGroupCountZ) PURE;
 
-            STDMETHOD_(void, finishCommandList)                 (THIS_ IUnknown **commandList) PURE;
+            STDMETHOD_(void, finishCommandList)                 (THIS_ IUnknown **instance) PURE;
         };
 
         DECLARE_INTERFACE_IID_(SystemInterface, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6")
@@ -470,7 +469,7 @@ namespace Gek
             STDMETHOD_(UINT32, getHeight)                       (THIS) PURE;
             STDMETHOD_(bool, isWindowed)                        (THIS) PURE;
 
-            STDMETHOD(createDeferredContext)                    (THIS_ ContextInterface **context) PURE;
+            STDMETHOD(createDeferredContext)                    (THIS_ ContextInterface **instance) PURE;
 
             STDMETHOD_(void, freeResource)                      (THIS_ Handle resourceHandle) PURE;
 
@@ -498,13 +497,13 @@ namespace Gek
             STDMETHOD_(Handle, compileGeometryProgram)          (THIS_ LPCSTR program, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
             STDMETHOD_(Handle, compilePixelProgram)             (THIS_ LPCSTR program, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
 
-            STDMETHOD_(Handle, loadComputeProgram)              (THIS_ LPCWSTR basePath, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
-            STDMETHOD_(Handle, loadVertexProgram)               (THIS_ LPCWSTR basePath, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
-            STDMETHOD_(Handle, loadGeometryProgram)             (THIS_ LPCWSTR basePath, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
-            STDMETHOD_(Handle, loadPixelProgram)                (THIS_ LPCWSTR basePath, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
+            STDMETHOD_(Handle, loadComputeProgram)              (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
+            STDMETHOD_(Handle, loadVertexProgram)               (THIS_ LPCWSTR fileName, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
+            STDMETHOD_(Handle, loadGeometryProgram)             (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
+            STDMETHOD_(Handle, loadPixelProgram)                (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
 
             STDMETHOD_(Handle, createTexture)                   (THIS_ UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags) PURE;
-            STDMETHOD_(Handle, loadTexture)                     (THIS_ LPCWSTR basePath, UINT32 flags) PURE;
+            STDMETHOD_(Handle, loadTexture)                     (THIS_ LPCWSTR fileName, UINT32 flags) PURE;
             STDMETHOD_(void, updateTexture)                     (THIS_ Handle resourceHandle, void *data, UINT32 pitch, Rectangle<UINT32> *rectangle = nullptr) PURE;
 
             STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Float4 &color) PURE;

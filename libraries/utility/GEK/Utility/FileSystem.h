@@ -10,9 +10,9 @@ namespace Gek
 {
     namespace FileSystem
     {
-        CStringW expandPath(LPCWSTR basePath);
+        CStringW expandPath(LPCWSTR fileName);
 
-        HRESULT find(LPCWSTR basePath, LPCWSTR filterTypes, bool searchRecursively, std::function<HRESULT(LPCWSTR fileName)> onFileFound);
+        HRESULT find(LPCWSTR fileName, LPCWSTR filterTypes, bool searchRecursively, std::function<HRESULT(LPCWSTR fileName)> onFileFound);
 
         HMODULE loadLibrary(LPCWSTR fileName);
 

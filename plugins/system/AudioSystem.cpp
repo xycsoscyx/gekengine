@@ -346,13 +346,13 @@ namespace Gek
                 return returnValue;
             }
 
-            HRESULT loadFromFile(LPCWSTR basePath, DWORD nFlags, GUID nAlgorithm, IDirectSoundBuffer **ppBuffer)
+            HRESULT loadFromFile(LPCWSTR fileName, DWORD nFlags, GUID nAlgorithm, IDirectSoundBuffer **ppBuffer)
             {
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(ppBuffer, E_INVALIDARG);
 
                 std::vector<UINT8> fileData;
-                HRESULT returnValue = Gek::FileSystem::load(basePath, fileData);
+                HRESULT returnValue = Gek::FileSystem::load(fileName, fileData);
                 if (SUCCEEDED(returnValue))
                 {
                     returnValue = E_FAIL;
@@ -407,13 +407,13 @@ namespace Gek
                 return returnValue;
             }
 
-            STDMETHODIMP loadEffect(LPCWSTR basePath, EffectInterface **instance)
+            STDMETHODIMP loadEffect(LPCWSTR fileName, EffectInterface **instance)
             {
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(instance, E_INVALIDARG);
 
                 CComPtr<IDirectSoundBuffer> buffer;
-                HRESULT returnValue = loadFromFile(basePath, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &buffer);
+                HRESULT returnValue = loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &buffer);
                 if (buffer)
                 {
                     returnValue = E_FAIL;
@@ -431,13 +431,13 @@ namespace Gek
                 return returnValue;
             }
 
-            STDMETHODIMP loadSound(LPCWSTR basePath, SoundInterface **instance)
+            STDMETHODIMP loadSound(LPCWSTR fileName, SoundInterface **instance)
             {
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(instance, E_INVALIDARG);
 
                 CComPtr<IDirectSoundBuffer> buffer;
-                HRESULT returnValue = loadFromFile(basePath, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &buffer);
+                HRESULT returnValue = loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &buffer);
                 if (buffer)
                 {
                     returnValue = E_FAIL;

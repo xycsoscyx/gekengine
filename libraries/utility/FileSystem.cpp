@@ -6,10 +6,10 @@ namespace Gek
 {
     namespace FileSystem
     {
-        CStringW expandPath(LPCWSTR basePath)
+        CStringW expandPath(LPCWSTR fileName)
         {
-            CStringW fullPath(basePath);
-            if (fullPath.Find(L"%root%") >= 0)
+            CStringW expandedFileName(fileName);
+            if (expandedFileName.Find(L"%root%") >= 0)
             {
                 CStringW currentModuleName;
                 GetModuleFileName(nullptr, currentModuleName.GetBuffer(MAX_PATH + 1), MAX_PATH);
@@ -26,24 +26,24 @@ namespace Gek
                 // Remove debug/release form path
                 currentModulePath.RemoveFileSpec();
 
-                fullPath.Replace(L"%root%", currentModulePath);
+                expandedFileName.Replace(L"%root%", currentModulePath);
             }
 
-            fullPath.Replace(L"/", L"\\");
-            return fullPath;
+            expandedFileName.Replace(L"/", L"\\");
+            return expandedFileName;
         }
 
-        HRESULT find(LPCWSTR basePath, LPCWSTR filterTypes, bool searchRecursively, std::function<HRESULT(LPCWSTR)> onFileFound)
+        HRESULT find(LPCWSTR fileName, LPCWSTR filterTypes, bool searchRecursively, std::function<HRESULT(LPCWSTR)> onFileFound)
         {
             HRESULT returnValue = S_OK;
 
-            CStringW fullPath(expandPath(basePath));
-            PathAddBackslashW(fullPath.GetBuffer(MAX_PATH + 1));
-            fullPath.ReleaseBuffer();
+            CStringW expandedFileName(expandPath(fileName));
+            PathAddBackslashW(expandedFileName.GetBuffer(MAX_PATH + 1));
+            expandedFileName.ReleaseBuffer();
 
             WIN32_FIND_DATA findData;
-            CStringW fullPathFilter(fullPath + filterTypes);
-            HANDLE findHandle = FindFirstFile(fullPathFilter, &findData);
+            CStringW expandedFileNameFilter(expandedFileName + filterTypes);
+            HANDLE findHandle = FindFirstFile(expandedFileNameFilter, &findData);
             if (findHandle != INVALID_HANDLE_VALUE)
             {
                 do
@@ -52,12 +52,12 @@ namespace Gek
                     {
                         if (searchRecursively && findData.cFileName[0] != L'.')
                         {
-                            returnValue = find((fullPath + findData.cFileName), filterTypes, searchRecursively, onFileFound);
+                            returnValue = find((expandedFileName + findData.cFileName), filterTypes, searchRecursively, onFileFound);
                         }
                     }
                     else
                     {
-                        returnValue = onFileFound(fullPath + findData.cFileName);
+                        returnValue = onFileFound(expandedFileName + findData.cFileName);
                     }
 
                     if (FAILED(returnValue))
@@ -72,16 +72,16 @@ namespace Gek
             return returnValue;
         }
 
-        HMODULE loadLibrary(LPCWSTR basePath)
+        HMODULE loadLibrary(LPCWSTR fileName)
         {
-            return LoadLibraryW(expandPath(basePath));
+            return LoadLibraryW(expandPath(fileName));
         }
 
-        HRESULT load(LPCWSTR basePath, std::vector<UINT8> &buffer, size_t limitReadSize)
+        HRESULT load(LPCWSTR fileName, std::vector<UINT8> &buffer, size_t limitReadSize)
         {
             HRESULT returnValue = E_FAIL;
-            CStringW fullPath(expandPath(basePath));
-            HANDLE fileHandle = CreateFile(fullPath, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+            CStringW expandedFileName(expandPath(fileName));
+            HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
             if (fileHandle == INVALID_HANDLE_VALUE)
             {
                 returnValue = E_FAIL;
@@ -128,10 +128,10 @@ namespace Gek
             return returnValue;
         }
 
-        HRESULT load(LPCWSTR basePath, CStringA &string)
+        HRESULT load(LPCWSTR fileName, CStringA &string)
         {
             std::vector<UINT8> buffer;
-            HRESULT returnValue = load(basePath, buffer);
+            HRESULT returnValue = load(fileName, buffer);
             if (SUCCEEDED(returnValue))
             {
                 buffer.push_back('\0');
@@ -141,10 +141,10 @@ namespace Gek
             return returnValue;
         }
 
-        HRESULT load(LPCWSTR basePath, CStringW &string, bool convertUTF8)
+        HRESULT load(LPCWSTR fileName, CStringW &string, bool convertUTF8)
         {
             CStringA readString;
-            HRESULT returnValue = load(basePath, readString);
+            HRESULT returnValue = load(fileName, readString);
             if (SUCCEEDED(returnValue))
             {
                 string = CA2W(readString, (convertUTF8 ? CP_UTF8 : CP_ACP));
@@ -153,11 +153,11 @@ namespace Gek
             return returnValue;
         }
 
-        HRESULT save(LPCWSTR basePath, const std::vector<UINT8> &buffer)
+        HRESULT save(LPCWSTR fileName, const std::vector<UINT8> &buffer)
         {
             HRESULT returnValue = E_FAIL;
-            CStringW fullPath(expandPath(basePath));
-            HANDLE fileHandle = CreateFile(fullPath, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+            CStringW expandedFileName(expandPath(fileName));
+            HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
             if (fileHandle != INVALID_HANDLE_VALUE)
             {
                 DWORD bytesWritten = 0;
@@ -169,7 +169,7 @@ namespace Gek
             return returnValue;
         }
 
-        HRESULT save(LPCWSTR basePath, LPCSTR string)
+        HRESULT save(LPCWSTR fileName, LPCSTR string)
         {
             HRESULT returnValue = E_FAIL;
             UINT32 stringLength = strlen(string);
@@ -177,16 +177,16 @@ namespace Gek
             if (buffer.size() == stringLength)
             {
                 memcpy(buffer.data(), string, stringLength);
-                returnValue = save(basePath, buffer);
+                returnValue = save(fileName, buffer);
             }
 
             return returnValue;
         }
 
-        HRESULT save(LPCWSTR basePath, LPCWSTR string, bool convertUTF8)
+        HRESULT save(LPCWSTR fileName, LPCWSTR string, bool convertUTF8)
         {
             CStringA writeString = CW2A(string, (convertUTF8 ? CP_UTF8 : CP_ACP));
-            return save(basePath, writeString);
+            return save(fileName, writeString);
         }
     } // namespace FileSystem
 }; // namespace Gek

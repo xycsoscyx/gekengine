@@ -42,7 +42,7 @@ namespace Gek
             CComPtr<IDirectInputDevice8> device;
             UINT32 buttonCount;
 
-            std::vector<UINT32> buttonStates;
+            std::vector<UINT32> buttonStateList;
 
             Math::Float3 axisValues;
             Math::Float3 rotationValues;
@@ -70,7 +70,7 @@ namespace Gek
 
             STDMETHODIMP_(UINT32) getButtonState(UINT32 buttonIndex) const
             {
-                return buttonStates[buttonIndex];
+                return buttonStateList[buttonIndex];
             }
 
             STDMETHODIMP_(Math::Float3) getAxis(void) const
@@ -94,7 +94,7 @@ namespace Gek
         public:
             KeyboardDevice(void)
             {
-                buttonStates.resize(256);
+                buttonStateList.resize(256);
             }
 
             HRESULT initialize(IDirectInput8 *directInput, HWND window)
@@ -138,24 +138,24 @@ namespace Gek
                     {
                         if (rawKeyBuffer[keyIndex] & 0x80 ? true : false)
                         {
-                            if (buttonStates[keyIndex] & State::NONE)
+                            if (buttonStateList[keyIndex] & State::NONE)
                             {
-                                buttonStates[keyIndex] = (State::DOWN | State::PRESSED);
+                                buttonStateList[keyIndex] = (State::DOWN | State::PRESSED);
                             }
                             else
                             {
-                                buttonStates[keyIndex] = State::DOWN;
+                                buttonStateList[keyIndex] = State::DOWN;
                             }
                         }
                         else
                         {
-                            if (buttonStates[keyIndex] & State::DOWN)
+                            if (buttonStateList[keyIndex] & State::DOWN)
                             {
-                                buttonStates[keyIndex] = (State::NONE | State::RELEASED);
+                                buttonStateList[keyIndex] = (State::NONE | State::RELEASED);
                             }
                             else
                             {
-                                buttonStates[keyIndex] = State::NONE;
+                                buttonStateList[keyIndex] = State::NONE;
                             }
                         }
                     }
@@ -196,7 +196,7 @@ namespace Gek
                                 device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
 
                                 buttonCount = deviceCaps.dwButtons;
-                                buttonStates.resize(buttonCount);
+                                buttonStateList.resize(buttonCount);
 
                                 resultValue = device->Acquire();
                             }
@@ -231,24 +231,24 @@ namespace Gek
                     {
                         if (mouseStates.rgbButtons[buttonIndex] & 0x80 ? true : false)
                         {
-                            if (buttonStates[buttonIndex] & State::NONE)
+                            if (buttonStateList[buttonIndex] & State::NONE)
                             {
-                                buttonStates[buttonIndex] = (State::DOWN | State::PRESSED);
+                                buttonStateList[buttonIndex] = (State::DOWN | State::PRESSED);
                             }
                             else
                             {
-                                buttonStates[buttonIndex] = State::DOWN;
+                                buttonStateList[buttonIndex] = State::DOWN;
                             }
                         }
                         else
                         {
-                            if (buttonStates[buttonIndex] & State::DOWN)
+                            if (buttonStateList[buttonIndex] & State::DOWN)
                             {
-                                buttonStates[buttonIndex] = (State::NONE | State::RELEASED);
+                                buttonStateList[buttonIndex] = (State::NONE | State::RELEASED);
                             }
                             else
                             {
-                                buttonStates[buttonIndex] = State::NONE;
+                                buttonStateList[buttonIndex] = State::NONE;
                             }
                         }
                     }
@@ -289,7 +289,7 @@ namespace Gek
                                 device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
 
                                 buttonCount = deviceCaps.dwButtons;
-                                buttonStates.resize(buttonCount);
+                                buttonStateList.resize(buttonCount);
 
                                 resultValue = device->Acquire();
                             }
@@ -337,24 +337,24 @@ namespace Gek
                     {
                         if (joystickStates.rgbButtons[buttonIndex] & 0x80 ? true : false)
                         {
-                            if (buttonStates[buttonIndex] & State::NONE)
+                            if (buttonStateList[buttonIndex] & State::NONE)
                             {
-                                buttonStates[buttonIndex] = (State::DOWN | State::PRESSED);
+                                buttonStateList[buttonIndex] = (State::DOWN | State::PRESSED);
                             }
                             else
                             {
-                                buttonStates[buttonIndex] = State::DOWN;
+                                buttonStateList[buttonIndex] = State::DOWN;
                             }
                         }
                         else
                         {
-                            if (buttonStates[buttonIndex] & State::DOWN)
+                            if (buttonStateList[buttonIndex] & State::DOWN)
                             {
-                                buttonStates[buttonIndex] = (State::NONE | State::RELEASED);
+                                buttonStateList[buttonIndex] = (State::NONE | State::RELEASED);
                             }
                             else
                             {
-                                buttonStates[buttonIndex] = State::NONE;
+                                buttonStateList[buttonIndex] = State::NONE;
                             }
                         }
                     }

@@ -281,7 +281,7 @@ namespace Gek
             return returnValue;
         }
 
-        HRESULT Document::load(LPCWSTR basePath)
+        HRESULT Document::load(LPCWSTR fileName)
         {
             if (document != nullptr)
             {
@@ -290,8 +290,8 @@ namespace Gek
             }
 
             HRESULT returnValue = E_FAIL;
-            CStringW fullPath(Gek::FileSystem::expandPath(basePath));
-            document = xmlReadFile(CW2A(fullPath, CP_UTF8), nullptr, XML_PARSE_DTDATTR | XML_PARSE_NOENT | XML_PARSE_DTDVALID);
+            CStringW expandedFileName(Gek::FileSystem::expandPath(fileName));
+            document = xmlReadFile(CW2A(expandedFileName, CP_UTF8), nullptr, XML_PARSE_DTDATTR | XML_PARSE_NOENT | XML_PARSE_DTDVALID);
             if (document != nullptr)
             {
                 returnValue = S_OK;
@@ -300,13 +300,13 @@ namespace Gek
             return returnValue;
         }
 
-        HRESULT Document::save(LPCWSTR basePath)
+        HRESULT Document::save(LPCWSTR fileName)
         {
             HRESULT returnValue = E_FAIL;
             if (document != nullptr)
             {
-                CStringW fullPath(Gek::FileSystem::expandPath(basePath));
-                xmlSaveFormatFileEnc(CW2A(fullPath, CP_UTF8), document, "UTF-8", 1);
+                CStringW expandedFileName(Gek::FileSystem::expandPath(fileName));
+                xmlSaveFormatFileEnc(CW2A(expandedFileName, CP_UTF8), document, "UTF-8", 1);
             }
 
             return returnValue;

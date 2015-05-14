@@ -19,16 +19,16 @@ namespace Gek
 
         std::list<CStringW> searchPaths;
 
-        std::list<HMODULE> modules;
-        std::unordered_map<CLSID, std::function<HRESULT(ContextUserInterface **)>> classes;
-        std::unordered_map<CLSID, std::vector<CLSID>> typedClasses;
+        std::list<HMODULE> moduleList;
+        std::unordered_map<CLSID, std::function<HRESULT(ContextUserInterface **)>> classList;
+        std::unordered_map<CLSID, std::vector<CLSID>> typedClassList;
 
     public:
         ~Context(void)
         {
-            classes.clear();
-            typedClasses.clear();
-            for (auto &module : modules)
+            classList.clear();
+            typedClassList.clear();
+            for (auto &module : moduleList)
             {
                 FreeLibrary(module);
             }
@@ -75,9 +75,9 @@ namespace Gek
         }
 
         // ContextInterface
-        STDMETHODIMP_(void) addSearchPath(LPCWSTR basePath)
+        STDMETHODIMP_(void) addSearchPath(LPCWSTR fileName)
         {
-            searchPaths.push_back(basePath);
+            searchPaths.push_back(fileName);
         }
 
         STDMETHODIMP_(void) initialize(void)
@@ -96,16 +96,17 @@ namespace Gek
                         {
                             OutputDebugString(Gek::String::format(L"GEK Plugin Found: %s\r\n", fileName));
 
-                            std::unordered_map<CLSID, std::function<HRESULT(ContextUserInterface **)>> moduleClasses;
-                            std::unordered_map<CLSID, std::vector<CLSID>> moduleTypedClasses;
+                            moduleList.push_back(module);
+                            std::unordered_map<CLSID, std::function<HRESULT(ContextUserInterface **)>> moduleClassList;
+                            std::unordered_map<CLSID, std::vector<CLSID>> moduleTypedClassList;
 
-                            if (SUCCEEDED(getModuleClasses(moduleClasses, moduleTypedClasses)))
+                            if (SUCCEEDED(getModuleClasses(moduleClassList, moduleTypedClassList)))
                             {
-                                for (auto &moduleClass : moduleClasses)
+                                for (auto &moduleClass : moduleClassList)
                                 {
-                                    if (classes.find(moduleClass.first) == classes.end())
+                                    if (classList.find(moduleClass.first) == classList.end())
                                     {
-                                        classes[moduleClass.first] = moduleClass.second;
+                                        classList[moduleClass.first] = moduleClass.second;
                                         OutputDebugString(Gek::String::format(L"- Adding class from plugin: %s\r\n", CStringW(CComBSTR(moduleClass.first)).GetString()));
                                     }
                                     else
@@ -114,9 +115,9 @@ namespace Gek
                                     }
                                 }
 
-                                for (auto &moduleTypedClass : moduleTypedClasses)
+                                for (auto &moduleTypedClass : moduleTypedClassList)
                                 {
-                                    typedClasses[moduleTypedClass.first].insert(typedClasses[moduleTypedClass.first].end(), moduleTypedClass.second.begin(), moduleTypedClass.second.end());
+                                    typedClassList[moduleTypedClass.first].insert(typedClassList[moduleTypedClass.first].end(), moduleTypedClass.second.begin(), moduleTypedClass.second.end());
                                 }
                             }
                             else
@@ -136,8 +137,8 @@ namespace Gek
             REQUIRE_RETURN(newInstance, E_INVALIDARG);
 
             HRESULT returnValue = E_FAIL;
-            auto classIterator = classes.find(classID);
-            if (classIterator != classes.end())
+            auto classIterator = classList.find(classID);
+            if (classIterator != classList.end())
             {
                 CComPtr<ContextUserInterface> classInstance;
                 returnValue = ((*classIterator).second)(&classInstance);
@@ -154,8 +155,8 @@ namespace Gek
         STDMETHODIMP createEachType(REFCLSID typeID, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance)
         {
             HRESULT returnValue = S_OK;
-            auto typedClassIterator = typedClasses.find(typeID);
-            if (typedClassIterator != typedClasses.end())
+            auto typedClassIterator = typedClassList.find(typeID);
+            if (typedClassIterator != typedClassList.end())
             {
                 for (auto &classID : (*typedClassIterator).second)
                 {

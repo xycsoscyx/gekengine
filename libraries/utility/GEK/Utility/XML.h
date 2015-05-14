@@ -53,8 +53,8 @@ namespace Gek
             ~Document(void);
 
             HRESULT create(LPCWSTR rootType);
-            HRESULT load(LPCWSTR basePath);
-            HRESULT save(LPCWSTR basePath);
+            HRESULT load(LPCWSTR fileName);
+            HRESULT save(LPCWSTR fileName);
 
             Node getRoot(void) const;
         };

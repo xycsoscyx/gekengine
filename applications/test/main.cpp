@@ -173,7 +173,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
     if (context)
     {
 #ifdef _DEBUG
-        SetCurrentDirectory(Gek::FileSystem::expandPath (L"%root%\\Debug"));
+        SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
         context->addSearchPath(L"%root%\\Debug\\Plugins");
 #else
         SetCurrentDirectory(GEKParseFileName(L"%root%\\Release"));

@@ -44,8 +44,8 @@ namespace Gek
             STDMETHOD(copyEffect)               (THIS_ EffectInterface *source, EffectInterface **copy) PURE;
             STDMETHOD(copySound)                (THIS_ SoundInterface *source, SoundInterface **copy) PURE;
 
-            STDMETHOD(loadEffect)               (THIS_ LPCWSTR basePath, EffectInterface **sample) PURE;
-            STDMETHOD(loadSound)                (THIS_ LPCWSTR basePath, SoundInterface **sample) PURE;
+            STDMETHOD(loadEffect)               (THIS_ LPCWSTR fileName, EffectInterface **sample) PURE;
+            STDMETHOD(loadSound)                (THIS_ LPCWSTR fileName, SoundInterface **sample) PURE;
         };
 
         // {525E4F27-8A87-409C-A25F-8740393A4B7B}

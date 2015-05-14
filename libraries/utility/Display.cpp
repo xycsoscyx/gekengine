@@ -33,10 +33,10 @@ namespace Gek
         {
             UINT32 displayMode = 0;
             DEVMODE displayModeData = { 0 };
-            std::map<UINT32, std::vector<Mode>> availableModes;
+            std::map<UINT32, std::vector<Mode>> availbleModeList;
             while (EnumDisplaySettings(0, displayMode++, &displayModeData))
             {
-                std::vector<Mode> &currentModes = availableModes[displayModeData.dmBitsPerPel];
+                std::vector<Mode> &currentModes = availbleModeList[displayModeData.dmBitsPerPel];
                 auto findIterator = std::find_if(currentModes.begin(), currentModes.end(), [&](const Mode &mode) -> bool
                 {
                     if (mode.width != displayModeData.dmPelsWidth) return false;
@@ -51,7 +51,7 @@ namespace Gek
                 }
             };
 
-            return availableModes;
+            return availbleModeList;
         }
     }; // namespace Display
 }; // namespace Gek
