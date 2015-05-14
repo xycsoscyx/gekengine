@@ -1,39 +1,32 @@
-#include <Windows.h>
-#include <Commctrl.h>
-#include <initguid.h>
-#include <cguid.h>
-
+#include "GEK\Math\Matrix4x4.h"
+#include "GEK\Utility\Common.h"
+#include "GEK\Utility\FileSystem.h"
+#include "GEK\Context\ContextInterface.h"
+#include "GEK\System\Video3DInterface.h"
 #include "resource.h"
 
-#include "GEKMath.h"
-#include "GEKUtility.h"
-#include "GEKContext.h"
-#include "GEKSystem.h"
+Gek::Handle gs_nSampleStatesID = Gek::InvalidHandle;
+Gek::Handle gs_nRenderStatesID = Gek::InvalidHandle;
+Gek::Handle gs_nBlendStatesID = Gek::InvalidHandle;
+Gek::Handle gs_nDepthStatesID = Gek::InvalidHandle;
+Gek::Handle gs_nVertexProgramID = Gek::InvalidHandle;
+Gek::Handle gs_nPixelProgramID = Gek::InvalidHandle;
+Gek::Handle gs_nConstantBufferID = Gek::InvalidHandle;
+Gek::Handle gs_nVertexBufferID = Gek::InvalidHandle;
+Gek::Handle gs_nIndexBufferID = Gek::InvalidHandle;
+Gek::Handle gs_nTextureID = Gek::InvalidHandle;
+CComAutoCriticalSection criticalSection;
 
-#include "GEKSystemCLSIDs.h"
-
-GEKHANDLE gs_nSampleStatesID = GEKINVALIDHANDLE;
-GEKHANDLE gs_nRenderStatesID = GEKINVALIDHANDLE;
-GEKHANDLE gs_nBlendStatesID = GEKINVALIDHANDLE;
-GEKHANDLE gs_nDepthStatesID = GEKINVALIDHANDLE;
-GEKHANDLE gs_nVertexProgramID = GEKINVALIDHANDLE;
-GEKHANDLE gs_nPixelProgramID = GEKINVALIDHANDLE;
-GEKHANDLE gs_nConstantBufferID = GEKINVALIDHANDLE;
-GEKHANDLE gs_nVertexBufferID = GEKINVALIDHANDLE;
-GEKHANDLE gs_nIndexBufferID = GEKINVALIDHANDLE;
-GEKHANDLE gs_nTextureID = GEKINVALIDHANDLE;
-CComAutoCriticalSection m_kSection;
-
-INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    switch (nMessage)
+    switch (message)
     {
     case WM_CLOSE:
         if (true)
         {
-            CComPtr<IGEK3DVideoSystem> spVideoSystem;
-            spVideoSystem.Attach((IGEK3DVideoSystem *)GetWindowLongPtr(hDialog, GWLP_USERDATA));
-            EndDialog(hDialog, IDCANCEL);
+            CComPtr<Gek::Video3D::SystemInterface> videoSystem;
+            videoSystem.Attach((Gek::Video3D::SystemInterface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA));
+            EndDialog(dialogWindow, IDCANCEL);
         }
 
         return TRUE;
@@ -41,24 +34,24 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
     case WM_INITDIALOG:
         if (true)
         {
-            IGEKContext *pContext = (IGEKContext *)lParam;
+            Gek::ContextInterface *context = (Gek::ContextInterface *)lParam;
 
-            CComPtr<IGEK3DVideoSystem> spVideoSystem;
-            pContext->CreateInstance(CLSID_GEKVideoSystem, IID_PPV_ARGS(&spVideoSystem));
-            if (spVideoSystem)
+            CComPtr<Gek::Video3D::SystemInterface> videoSystem;
+            context->createInstance(Gek::Video3D::Class, IID_PPV_ARGS(&videoSystem));
+            if (videoSystem)
             {
-                HWND hWindow = GetDlgItem(hDialog, IDC_VIDEO_WINDOW);
+                HWND renderWindow = GetDlgItem(dialogWindow, IDC_VIDEO_WINDOW);
 
-                RECT kRect;
-                GetClientRect(hWindow, &kRect);
-                spVideoSystem->Initialize(hWindow, false, kRect.right, kRect.bottom, GEK3DVIDEO::DATA::D24_S8);
+                RECT renderClientRect;
+                GetClientRect(renderWindow, &renderClientRect);
+                videoSystem->initialize(renderWindow, false, renderClientRect.right, renderClientRect.bottom, Gek::Video3D::Format::D24_S8);
 
-                static const Math::Float2 aVertices[] =
+                static const Gek::Math::Float2 aVertices[] =
                 {
-                    Math::Float2(0.0f, 0.0f),
-                    Math::Float2(1.0f, 0.0f),
-                    Math::Float2(1.0f, 1.0f),
-                    Math::Float2(0.0f, 1.0f),
+                    Gek::Math::Float2(0.0f, 0.0f),
+                    Gek::Math::Float2(1.0f, 0.0f),
+                    Gek::Math::Float2(1.0f, 1.0f),
+                    Gek::Math::Float2(0.0f, 1.0f),
                 };
 
                 static const UINT16 aIndices[6] =
@@ -67,37 +60,37 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
                     0, 2, 3,
                 };
 
-                GEK3DVIDEO::SAMPLERSTATES kStates;
-                gs_nSampleStatesID = spVideoSystem->CreateSamplerStates(kStates);
+                Gek::Video3D::SamplerStates samplerStates;
+                gs_nSampleStatesID = videoSystem->createSamplerStates(samplerStates);
 
-                GEK3DVIDEO::RENDERSTATES kRenderStates;
-                gs_nRenderStatesID = spVideoSystem->CreateRenderStates(kRenderStates);
+                Gek::Video3D::RenderStates renderStates;
+                gs_nRenderStatesID = videoSystem->createRenderStates(renderStates);
 
-                GEK3DVIDEO::UNIFIEDBLENDSTATES kBlendStates;
-                gs_nBlendStatesID = spVideoSystem->CreateBlendStates(kBlendStates);
+                Gek::Video3D::UnifiedBlendStates blendStates;
+                gs_nBlendStatesID = videoSystem->createBlendStates(blendStates);
 
-                GEK3DVIDEO::DEPTHSTATES kDepthStates;
-                gs_nDepthStatesID = spVideoSystem->CreateDepthStates(kDepthStates);
+                Gek::Video3D::DepthStates depthStates;
+                gs_nDepthStatesID = videoSystem->createDepthStates(depthStates);
 
-                gs_nVertexBufferID = spVideoSystem->CreateBuffer(sizeof(Math::Float2), 4, GEK3DVIDEO::BUFFER::VERTEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, aVertices);
+                gs_nVertexBufferID = videoSystem->createBuffer(sizeof(Gek::Math::Float2), 4, Gek::Video3D::BufferFlags::VERTEX_BUFFER | Gek::Video3D::BufferFlags::STATIC, aVertices);
 
-                gs_nIndexBufferID = spVideoSystem->CreateBuffer(sizeof(UINT16), 6, GEK3DVIDEO::BUFFER::INDEX_BUFFER | GEK3DVIDEO::BUFFER::STATIC, aIndices);
+                gs_nIndexBufferID = videoSystem->createBuffer(sizeof(UINT16), 6, Gek::Video3D::BufferFlags::INDEX_BUFFER | Gek::Video3D::BufferFlags::STATIC, aIndices);
 
-                gs_nTextureID = spVideoSystem->LoadTexture(L"%root%\\data\\textures\\flames.NormalMap.dds", 0);
+                gs_nTextureID = videoSystem->loadTexture(L"%root%\\data\\textures\\flames.NormalMap.dds", 0);
 
-                std::vector<GEK3DVIDEO::INPUTELEMENT> aLayout;
-                aLayout.push_back(GEK3DVIDEO::INPUTELEMENT(GEK3DVIDEO::DATA::RG_FLOAT, "POSITION", 0));
-                gs_nVertexProgramID = spVideoSystem->LoadVertexProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainVertexProgram", aLayout);
+                std::vector<Gek::Video3D::InputElement> overlayVertexLayout;
+                overlayVertexLayout.push_back(Gek::Video3D::InputElement(Gek::Video3D::Format::RG_FLOAT, "POSITION", 0));
+                gs_nVertexProgramID = videoSystem->loadVertexProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainVertexProgram", overlayVertexLayout);
 
-                gs_nPixelProgramID = spVideoSystem->LoadPixelProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainPixelProgram");
+                gs_nPixelProgramID = videoSystem->loadPixelProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainPixelProgram");
 
-                gs_nConstantBufferID = spVideoSystem->CreateBuffer(sizeof(Math::Float4x4), 1, GEK3DVIDEO::BUFFER::CONSTANT_BUFFER);
+                gs_nConstantBufferID = videoSystem->createBuffer(sizeof(Gek::Math::Float4x4), 1, Gek::Video3D::BufferFlags::CONSTANT_BUFFER);
 
-                Math::Float4x4 nOverlayMatrix;
-                nOverlayMatrix.SetOrthographic(0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f);
-                spVideoSystem->UpdateBuffer(gs_nConstantBufferID, LPCVOID(&nOverlayMatrix));
+                Gek::Math::Float4x4 orthoMatrix;
+                orthoMatrix.setOrthographic(0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f);
+                videoSystem->updateBuffer(gs_nConstantBufferID, LPCVOID(&orthoMatrix));
 
-                SetWindowLongPtr(hDialog, GWLP_USERDATA, LONG(spVideoSystem.Detach()));
+                SetWindowLongPtr(dialogWindow, GWLP_USERDATA, LONG(videoSystem.Detach()));
             }
         }
 
@@ -106,26 +99,26 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
     case WM_PAINT:
         if (true)
         {
-            CComCritSecLock<CComAutoCriticalSection> kLock(m_kSection);
-            IGEK3DVideoSystem *pVideoSystem = (IGEK3DVideoSystem *)GetWindowLongPtr(hDialog, GWLP_USERDATA);
-            pVideoSystem->ClearDefaultRenderTarget(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+            CComCritSecLock<CComAutoCriticalSection> scopedLock(criticalSection);
+            Gek::Video3D::SystemInterface *videoSystem = (Gek::Video3D::SystemInterface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
+            videoSystem->clearDefaultRenderTarget(Gek::Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
 
-            CComQIPtr<IGEK3DVideoContext> spVideoContext(pVideoSystem);
-            pVideoSystem->SetDefaultTargets(spVideoContext);
-            spVideoContext->SetRenderStates(gs_nRenderStatesID);
-            spVideoContext->SetBlendStates(gs_nBlendStatesID, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
-            spVideoContext->SetDepthStates(gs_nDepthStatesID, 0);
-            spVideoContext->GetVertexSystem()->SetProgram(gs_nVertexProgramID);
-            spVideoContext->GetVertexSystem()->SetConstantBuffer(gs_nConstantBufferID, 1);
-            spVideoContext->GetPixelSystem()->SetProgram(gs_nPixelProgramID);
-            spVideoContext->GetPixelSystem()->SetSamplerStates(gs_nSampleStatesID, 0);
-            spVideoContext->GetPixelSystem()->SetResource(gs_nTextureID, 0);
-            spVideoContext->SetVertexBuffer(gs_nVertexBufferID, 0, 0);
-            spVideoContext->SetIndexBuffer(gs_nIndexBufferID, 0);
-            spVideoContext->SetPrimitiveType(GEK3DVIDEO::PRIMITIVE::TRIANGLELIST);
-            spVideoContext->DrawIndexedPrimitive(6, 0, 0);
+            CComQIPtr<Gek::Video3D::ContextInterface> videoContext(videoSystem);
+            videoSystem->setDefaultTargets(videoContext);
+            videoContext->setRenderStates(gs_nRenderStatesID);
+            videoContext->setBlendStates(gs_nBlendStatesID, Gek::Math::Float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+            videoContext->setDepthStates(gs_nDepthStatesID, 0);
+            videoContext->getVertexSystem()->setProgram(gs_nVertexProgramID);
+            videoContext->getVertexSystem()->setConstantBuffer(gs_nConstantBufferID, 1);
+            videoContext->getPixelSystem()->setProgram(gs_nPixelProgramID);
+            videoContext->getPixelSystem()->setSamplerStates(gs_nSampleStatesID, 0);
+            videoContext->getPixelSystem()->setResource(gs_nTextureID, 0);
+            videoContext->setVertexBuffer(gs_nVertexBufferID, 0, 0);
+            videoContext->setIndexBuffer(gs_nIndexBufferID, 0);
+            videoContext->setPrimitiveType(Gek::Video3D::PrimitiveType::TRIANGLELIST);
+            videoContext->drawIndexedPrimitive(6, 0, 0);
 
-            pVideoSystem->Present(false);
+            videoSystem->present(false);
             return TRUE;
         }
 
@@ -137,20 +130,20 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
         case ID_FILE_LOAD:
             if (true)
             {
-                CStringW strFileName;
-                OPENFILENAMEW kOpenFileName;
-                ZeroMemory(&kOpenFileName, sizeof(OPENFILENAMEW));
-                kOpenFileName.lStructSize = sizeof(OPENFILENAMEW);
-                kOpenFileName.hwndOwner = hDialog;
-                kOpenFileName.lpstrFile = strFileName.GetBuffer(MAX_PATH + 1);
-                kOpenFileName.nMaxFile = MAX_PATH;
-                kOpenFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER;
-                if (GetOpenFileNameW((LPOPENFILENAMEW)&kOpenFileName))
+                CStringW fileName;
+                OPENFILENAMEW openFileName;
+                ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
+                openFileName.lStructSize = sizeof(OPENFILENAMEW);
+                openFileName.hwndOwner = dialogWindow;
+                openFileName.lpstrFile = fileName.GetBuffer(MAX_PATH + 1);
+                openFileName.nMaxFile = MAX_PATH;
+                openFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+                if (GetOpenFileNameW((LPOPENFILENAMEW)&openFileName))
                 {
-                    strFileName.ReleaseBuffer();
-                    IGEK3DVideoSystem *pVideoSystem = (IGEK3DVideoSystem *)GetWindowLongPtr(hDialog, GWLP_USERDATA);
-                    pVideoSystem->FreeResource(gs_nTextureID);
-                    gs_nTextureID = pVideoSystem->LoadTexture(strFileName, 0);
+                    fileName.ReleaseBuffer();
+                    Gek::Video3D::SystemInterface *videoSystem = (Gek::Video3D::SystemInterface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
+                    videoSystem->freeResource(gs_nTextureID);
+                    gs_nTextureID = videoSystem->loadTexture(fileName, 0);
                 }
             }
 
@@ -159,9 +152,9 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
         case ID_FILE_QUIT:
             if (true)
             {
-                CComPtr<IGEK3DVideoSystem> spVideoSystem;
-                spVideoSystem.Attach((IGEK3DVideoSystem *)GetWindowLongPtr(hDialog, GWLP_USERDATA));
-                EndDialog(hDialog, IDCANCEL);
+                CComPtr<Gek::Video3D::SystemInterface> videoSystem;
+                videoSystem.Attach((Gek::Video3D::SystemInterface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA));
+                EndDialog(dialogWindow, IDCANCEL);
             }
 
             return TRUE;
@@ -173,24 +166,22 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
     return FALSE;
 }
 
-int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
+int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ LPWSTR commandLine, _In_ int commandShow)
 {
-    CComPtr<IGEKContext> spContext;
-    GEKCreateContext(&spContext);
-    if (spContext)
+    CComPtr<Gek::ContextInterface> context;
+    Gek::createContext(&context);
+    if (context)
     {
 #ifdef _DEBUG
-        SetCurrentDirectory(GEKParseFileName(L"%root%\\Debug"));
-        spContext->AddSearchPath(GEKParseFileName(L"%root%\\Debug\\Plugins"));
+        SetCurrentDirectory(Gek::FileSystem::expandPath (L"%root%\\Debug"));
+        context->addSearchPath(L"%root%\\Debug\\Plugins");
 #else
         SetCurrentDirectory(GEKParseFileName(L"%root%\\Release"));
-        spContext->AddSearchPath(GEKParseFileName(L"%root%\\Release\\Plugins"));
+        context->AddSearchPath(GEKParseFileName(L"%root%\\Release\\Plugins"));
 #endif
 
-        if (SUCCEEDED(spContext->Initialize()))
-        {
-            DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_TEST_DIALOG), nullptr, DialogProc, LPARAM((IGEKContext *)spContext));
-        }
+        context->initialize();
+        DialogBoxParam(instance, MAKEINTRESOURCE(IDD_TEST_DIALOG), nullptr, dialogProcedure, LPARAM((Gek::ContextInterface *)context));
     }
 
     return 0;

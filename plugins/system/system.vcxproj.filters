@@ -4,9 +4,13 @@
     <ClCompile Include="AudioSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="entrypoints.cpp">
+    <ClCompile Include="VideoSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InputSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="entrypoints.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
@@ -15,5 +19,22 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{0342dbe3-8582-46b6-a8c8-1e34c2b6a33d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{17c28eb5-2da6-4fd6-8da9-197995ba49b0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GEK\System\Video2DInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\System\Video3DInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\System\AudioInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\System\InputInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

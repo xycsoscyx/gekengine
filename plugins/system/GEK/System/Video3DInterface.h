@@ -1,9 +1,12 @@
 #pragma once
 
-#include "GEKMath.h"
-#include "GEKContext.h"
+#include "GEK\Math\Common.h"
+#include "GEK\Math\Vector2.h"
+#include "GEK\Math\Vector3.h"
+#include "GEK\Math\Vector4.h"
 #include <atlbase.h>
 #include <atlstr.h>
+#include <unordered_map>
 
 namespace Gek
 {
@@ -386,7 +389,7 @@ namespace Gek
             }
         };
 
-        struct SampleStates
+        struct SamplerStates
         {
             UINT8 filterMode;
             UINT8 addressModeU;
@@ -399,7 +402,7 @@ namespace Gek
             float minimumMipLevel;
             float maximumMipLevel;
 
-            SampleStates(void)
+            SamplerStates(void)
                 : filterMode(FilterMode::MIN_MAG_MIP_POINT)
                 , addressModeU(AddressMode::CLAMP)
                 , addressModeV(AddressMode::CLAMP)
@@ -479,7 +482,7 @@ namespace Gek
             STDMETHOD_(Handle, createDepthStates)               (THIS_ const DepthStates &kStates) PURE;
             STDMETHOD_(Handle, createBlendStates)               (THIS_ const UnifiedBlendStates &kStates) PURE;
             STDMETHOD_(Handle, createBlendStates)               (THIS_ const IndependentBlendStates &kStates) PURE;
-            STDMETHOD_(Handle, createSamplerStates)             (THIS_ const SampleStates &kStates) PURE;
+            STDMETHOD_(Handle, createSamplerStates)             (THIS_ const SamplerStates &kStates) PURE;
 
             STDMETHOD_(Handle, createRenderTarget)              (THIS_ UINT32 width, UINT32 height, UINT8 format) PURE;
             STDMETHOD_(Handle, createDepthTarget)               (THIS_ UINT32 width, UINT32 height, UINT8 format) PURE;

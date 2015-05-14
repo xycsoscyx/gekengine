@@ -1,4 +1,4 @@
-#include "Utility\FileSystem.h"
+#include "GEK\Utility\FileSystem.h"
 #include <atlbase.h>
 #include <atlpath.h>
 
@@ -153,7 +153,7 @@ namespace Gek
             return returnValue;
         }
 
-        HRESULT GEKSaveToFile(LPCWSTR basePath, const std::vector<UINT8> &buffer)
+        HRESULT save(LPCWSTR basePath, const std::vector<UINT8> &buffer)
         {
             HRESULT returnValue = E_FAIL;
             CStringW fullPath(expandPath(basePath));
@@ -169,7 +169,7 @@ namespace Gek
             return returnValue;
         }
 
-        HRESULT GEKSaveToFile(LPCWSTR basePath, LPCSTR string)
+        HRESULT save(LPCWSTR basePath, LPCSTR string)
         {
             HRESULT returnValue = E_FAIL;
             UINT32 stringLength = strlen(string);
@@ -183,7 +183,7 @@ namespace Gek
             return returnValue;
         }
 
-        HRESULT GEKSaveToFile(LPCWSTR basePath, LPCWSTR string, bool convertUTF8)
+        HRESULT save(LPCWSTR basePath, LPCWSTR string, bool convertUTF8)
         {
             CStringA writeString = CW2A(string, (convertUTF8 ? CP_UTF8 : CP_ACP));
             return save(basePath, writeString);

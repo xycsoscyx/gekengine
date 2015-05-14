@@ -1,8 +1,7 @@
 #pragma once
 
-#include "GEKContext.h"
-#include <atlbase.h>
-#include <vector>
+#include "GEK\Math\Vector3.h"
+#include <Windows.h>
 
 namespace Gek
 {
@@ -193,11 +192,12 @@ namespace Gek
         {
             STDMETHOD(update)                           (THIS) PURE;
 
-            STDMETHOD_(UINT32, getNumButtons)           (THIS) const PURE;
-            STDMETHOD_(UINT32, getState)                (THIS_ UINT32 button) const PURE;
+            STDMETHOD_(UINT32, getButtonCount)          (THIS) const PURE;
+            STDMETHOD_(UINT32, getButtonState)          (THIS_ UINT32 buttonIndex) const PURE;
 
             STDMETHOD_(Math::Float3, getAxis)           (THIS) const PURE;
             STDMETHOD_(Math::Float3, getRotation)       (THIS) const PURE;
+            STDMETHOD_(float, getPointOfView)           (THIS) const PURE;
         };
 
         DECLARE_INTERFACE_IID_(SystemInterface, IUnknown, "1F96303C-C8CD-4FE8-944F-C2B1B55747F2")
@@ -207,10 +207,13 @@ namespace Gek
             STDMETHOD_(DeviceInterface *, getKeyboard)  (THIS) PURE;
             STDMETHOD_(DeviceInterface *, getMouse)     (THIS) PURE;
 
-            STDMETHOD_(UINT32, getNumJoysticks)         (THIS) PURE;
+            STDMETHOD_(UINT32, getJoystickCount)        (THIS) PURE;
             STDMETHOD_(DeviceInterface *, getJoystick)  (THIS_ UINT32 deviceIndex) PURE;
 
             STDMETHOD(update)                           (THIS) PURE;
         };
+
+        // {3A8EA46C-573A-40E6-8741-71ACCA90BAB4}
+        DEFINE_GUID(Class, 0x3a8ea46c, 0x573a, 0x40e6, 0x87, 0x41, 0x71, 0xac, 0xca, 0x90, 0xba, 0xb4);
     }; // namespace Input
 }; // namespace Gek

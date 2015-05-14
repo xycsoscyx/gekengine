@@ -1,5 +1,7 @@
-#include "System\AudioInterface.h"
-#include "GEKContext.h"
+#include "GEK\System\AudioInterface.h"
+#include "GEK\Context\Common.h"
+#include "GEK\Context\ContextUser.h"
+#include "GEK\Utility\FileSystem.h"
 #include "audiere.h"
 
 #include <mmsystem.h>
@@ -14,7 +16,7 @@ namespace Gek
 {
     namespace Audio
     {
-        class Sample : public CGEKUnknown
+        class Sample : public ContextUser
                      , public SampleInterface
         {
         protected:
@@ -166,7 +168,7 @@ namespace Gek
             }
         };
 
-        class System : public CGEKUnknown
+        class System : public ContextUser
                      , public SystemInterface
         {
         private:
@@ -280,10 +282,10 @@ namespace Gek
                 listener->SetRolloffFactor(factor, DS3D_DEFERRED);
             }
 
-            STDMETHODIMP copyEffect(EffectInterface *source, EffectInterface **copy)
+            STDMETHODIMP copyEffect(EffectInterface *source, EffectInterface **instance)
             {
                 REQUIRE_RETURN(directSound, E_FAIL);
-                REQUIRE_RETURN(source && copy, E_INVALIDARG);
+                REQUIRE_RETURN(source && instance, E_INVALIDARG);
 
                 HRESULT returnValue = E_FAIL;
                 CComQIPtr<SampleInterface> sourceSample(source);
@@ -301,7 +303,7 @@ namespace Gek
                             CComPtr<Effect> effect = new Effect(duplicateBuffer8);
                             if (effect)
                             {
-                                returnValue = effect->QueryInterface(IID_PPV_ARGS(copy));
+                                returnValue = effect->QueryInterface(IID_PPV_ARGS(instance));
                             }
                         }
                     }
@@ -310,10 +312,10 @@ namespace Gek
                 return returnValue;
             }
 
-            STDMETHODIMP copySound(SoundInterface *source, SoundInterface **copy)
+            STDMETHODIMP copySound(SoundInterface *source, SoundInterface **instance)
             {
                 REQUIRE_RETURN(directSound, E_FAIL);
-                REQUIRE_RETURN(source && copy, E_INVALIDARG);
+                REQUIRE_RETURN(source && instance, E_INVALIDARG);
 
                 HRESULT returnValue = E_FAIL;
                 CComQIPtr<SampleInterface> sourceSample(source);
@@ -334,7 +336,7 @@ namespace Gek
                                 CComPtr<Sound> sound = new Sound(duplicateBuffer8, duplicateBuffer3D);
                                 if (sound)
                                 {
-                                    returnValue = sound->QueryInterface(IID_PPV_ARGS(copy));
+                                    returnValue = sound->QueryInterface(IID_PPV_ARGS(instance));
                                 }
                             }
                         }
@@ -405,10 +407,10 @@ namespace Gek
                 return returnValue;
             }
 
-            STDMETHODIMP loadEffect(LPCWSTR basePath, EffectInterface **sample)
+            STDMETHODIMP loadEffect(LPCWSTR basePath, EffectInterface **instance)
             {
                 REQUIRE_RETURN(directSound, E_FAIL);
-                REQUIRE_RETURN(sample, E_INVALIDARG);
+                REQUIRE_RETURN(instance, E_INVALIDARG);
 
                 CComPtr<IDirectSoundBuffer> buffer;
                 HRESULT returnValue = loadFromFile(basePath, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &buffer);
@@ -421,7 +423,7 @@ namespace Gek
                         CComPtr<Effect> effect = new Effect(buffer8);
                         if (effect)
                         {
-                            returnValue = effect->QueryInterface(IID_PPV_ARGS(sample));
+                            returnValue = effect->QueryInterface(IID_PPV_ARGS(instance));
                         }
                     }
                 }
@@ -429,10 +431,10 @@ namespace Gek
                 return returnValue;
             }
 
-            STDMETHODIMP loadSound(LPCWSTR basePath, SoundInterface **sample)
+            STDMETHODIMP loadSound(LPCWSTR basePath, SoundInterface **instance)
             {
                 REQUIRE_RETURN(directSound, E_FAIL);
-                REQUIRE_RETURN(sample, E_INVALIDARG);
+                REQUIRE_RETURN(instance, E_INVALIDARG);
 
                 CComPtr<IDirectSoundBuffer> buffer;
                 HRESULT returnValue = loadFromFile(basePath, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &buffer);
@@ -448,7 +450,7 @@ namespace Gek
                             CComPtr<Sound> sound = new Sound(buffer8, buffer3D);
                             if (sound)
                             {
-                                returnValue = sound->QueryInterface(IID_PPV_ARGS(sample));
+                                returnValue = sound->QueryInterface(IID_PPV_ARGS(instance));
                             }
                         }
                     }
@@ -457,7 +459,7 @@ namespace Gek
                 return returnValue;
             }
         };
+
+        REGISTER_CLASS(System)
     }; // namespace Audio
 }; // namespace Gek
-
-REGISTER_CLASS(Gek::Audio::System)

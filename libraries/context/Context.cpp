@@ -1,9 +1,9 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
-#include "Context\Common.h"
-#include "Context\ContextInterface.h"
-#include "Context\ContextUserInterface.h"
-#include "Context\Observable.h"
+#include "GEK\Context\Common.h"
+#include "GEK\Context\ContextInterface.h"
+#include "GEK\Context\ContextUserInterface.h"
+#include "GEK\Context\Observable.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <list>
