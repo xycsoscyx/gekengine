@@ -1,16 +1,18 @@
 #include <initguid.h>
 #include <cguid.h>
 
-#include "GEKContext.h"
+#include "GEK\Context\Common.h"
 
-#include "GEKSystemCLSIDs.h"
+#include "System\AudioInterface.h"
 
-DECLARE_REGISTERED_CLASS(CGEKInputSystem)
-DECLARE_REGISTERED_CLASS(CGEKAudioSystem)
-DECLARE_REGISTERED_CLASS(CGEKVideoSystem)
+namespace Gek
+{
+    namespace Audio
+    {
+        DECLARE_REGISTERED_CLASS(System)
+    }; // namespace Audio
+}; // namespace Gek
 
 DECLARE_CONTEXT_SOURCE(System)
-    ADD_CONTEXT_CLASS(CLSID_GEKInputSystem, CGEKInputSystem)
-    ADD_CONTEXT_CLASS(CLSID_GEKAudioSystem, CGEKAudioSystem)
-    ADD_CONTEXT_CLASS(CLSID_GEKVideoSystem, CGEKVideoSystem)
+    ADD_CONTEXT_CLASS(Gek::Audio::Class, Gek::Audio::System)
 END_CONTEXT_SOURCE

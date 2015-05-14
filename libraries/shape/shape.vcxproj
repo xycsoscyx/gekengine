@@ -10,6 +10,14 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GEK\Shape\AlignedBox.h" />
+    <ClInclude Include="GEK\Shape\Frustum.h" />
+    <ClInclude Include="GEK\Shape\OrientedBox.h" />
+    <ClInclude Include="GEK\Shape\Plane.h" />
+    <ClInclude Include="GEK\Shape\Ray.h" />
+    <ClInclude Include="GEK\Shape\Sphere.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -83,15 +91,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="GEKShape.h" />
-    <ClInclude Include="Public\aabb.h" />
-    <ClInclude Include="Public\frustum.h" />
-    <ClInclude Include="Public\obb.h" />
-    <ClInclude Include="Public\plane.h" />
-    <ClInclude Include="Public\ray.h" />
-    <ClInclude Include="Public\sphere.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

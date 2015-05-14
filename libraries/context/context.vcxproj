@@ -10,6 +10,20 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Context.cpp" />
+    <ClCompile Include="ContextUser.cpp" />
+    <ClCompile Include="Observable.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GEK\Context\Common.h" />
+    <ClInclude Include="GEK\Context\ContextInterface.h" />
+    <ClInclude Include="GEK\Context\ContextUser.h" />
+    <ClInclude Include="GEK\Context\ContextUserInterface.h" />
+    <ClInclude Include="GEK\Context\Observable.h" />
+    <ClInclude Include="GEK\Context\ObservableInterface.h" />
+    <ClInclude Include="GEK\Context\ObserverInterface.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E4015F2B-C176-414F-8733-1C2D88EF3FB5}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -85,16 +99,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="GEKContext.h" />
-    <ClInclude Include="Include\CGEKContext.h" />
-    <ClInclude Include="Public\IGEKContext.h" />
-    <ClInclude Include="Public\IGEKObservable.h" />
-    <ClInclude Include="Public\IGEKUnknown.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Source\CGEKContext.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

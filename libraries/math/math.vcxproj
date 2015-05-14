@@ -10,6 +10,15 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GEK\Math\Common.h" />
+    <ClInclude Include="GEK\Math\Matrix3x2.h" />
+    <ClInclude Include="GEK\Math\Matrix4x4.h" />
+    <ClInclude Include="GEK\Math\Quaternion.h" />
+    <ClInclude Include="GEK\Math\Vector2.h" />
+    <ClInclude Include="GEK\Math\Vector3.h" />
+    <ClInclude Include="GEK\Math\Vector4.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{80C85026-E106-47BF-91FA-43220B44141B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -83,15 +92,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="GEKMath.h" />
-    <ClInclude Include="Public\matrix3x2.h" />
-    <ClInclude Include="Public\matrix4x4.h" />
-    <ClInclude Include="Public\quaternion.h" />
-    <ClInclude Include="Public\vector2.h" />
-    <ClInclude Include="Public\vector3.h" />
-    <ClInclude Include="Public\vector4.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
