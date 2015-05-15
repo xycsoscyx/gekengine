@@ -2026,7 +2026,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    OutputDebugStringA(Gek::String::format("Compute Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer()));
+                    gekLogMessage("Compute Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2120,7 +2120,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    OutputDebugStringA(Gek::String::format("Vertex Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer()));
+                    gekLogMessage("Vertex Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2164,7 +2164,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    OutputDebugStringA(Gek::String::format("Geometry Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer()));
+                    gekLogMessage("Geometry Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2208,7 +2208,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    OutputDebugStringA(Gek::String::format("Pixel Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer()));
+                    gekLogMessage("Pixel Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;

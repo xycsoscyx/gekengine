@@ -12,6 +12,8 @@
 #define REQUIRE_VOID_RETURN(CHECK)      do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (false)
 #define REQUIRE_RETURN(CHECK, RETURN)   do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (false)
 
+#define gekLogMessage(FORMAT, ...)          getContext()->logMessage(__FILE__, __LINE__, FORMAT, __VA_ARGS__)
+
 namespace std
 {
     template<typename CHARTYPE, typename TRAITSTYPE>

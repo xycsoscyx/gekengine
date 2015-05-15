@@ -6,6 +6,7 @@
 #include "GEK\Context\Observable.h"
 #include <atlbase.h>
 #include <atlstr.h>
+#include <atlpath.h>
 #include <list>
 #include <unordered_map>
 
@@ -23,7 +24,16 @@ namespace Gek
         std::unordered_map<CLSID, std::function<HRESULT(ContextUserInterface **)>> classList;
         std::unordered_map<CLSID, std::vector<CLSID>> typedClassList;
 
+        Handle nextListenerHandle;
+        std::unordered_map<Handle, std::function<void(LPCSTR, UINT32, LPCWSTR)>> logMessageListenerList;
+
     public:
+        Context(void)
+            : referenceCount(0)
+            , nextListenerHandle(InvalidHandle)
+        {
+        }
+
         ~Context(void)
         {
             classList.clear();
@@ -94,7 +104,7 @@ namespace Gek
                         GEKGETMODULECLASSES getModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(module, "GEKGetModuleClasses");
                         if (getModuleClasses)
                         {
-                            OutputDebugString(Gek::String::format(L"GEK Plugin Found: %s\r\n", fileName));
+                            logMessage(__FILE__, __LINE__, L"GEK Plugin Found: %s\r\n", fileName);
 
                             moduleList.push_back(module);
                             std::unordered_map<CLSID, std::function<HRESULT(ContextUserInterface **)>> moduleClassList;
@@ -107,11 +117,11 @@ namespace Gek
                                     if (classList.find(moduleClass.first) == classList.end())
                                     {
                                         classList[moduleClass.first] = moduleClass.second;
-                                        OutputDebugString(Gek::String::format(L"- Adding class from plugin: %s\r\n", CStringW(CComBSTR(moduleClass.first)).GetString()));
+                                        logMessage(__FILE__, __LINE__, L"- Adding class from plugin: %s\r\n", CStringW(CComBSTR(moduleClass.first)).GetString());
                                     }
                                     else
                                     {
-                                        OutputDebugString(Gek::String::format(L"! Duplicate class found: %s\r\n", CStringW(CComBSTR(moduleClass.first)).GetString()));
+                                        logMessage(__FILE__, __LINE__, L"! Duplicate class found: %s\r\n", CStringW(CComBSTR(moduleClass.first)).GetString());
                                     }
                                 }
 
@@ -122,7 +132,7 @@ namespace Gek
                             }
                             else
                             {
-                                OutputDebugString(L"! Unable to get class list from module");
+                                logMessage(__FILE__, __LINE__, L"! Unable to get class list from module");
                             }
                         }
                     }
@@ -174,6 +184,41 @@ namespace Gek
             }
 
             return returnValue;
+        }
+
+        STDMETHODIMP_(Handle) addLogListener(std::function<void(LPCSTR, UINT32, LPCWSTR)> onLogMessage)
+        {
+            Handle listenerHandle = InterlockedIncrement(&nextListenerHandle);
+            logMessageListenerList[listenerHandle] = onLogMessage;
+            return listenerHandle;
+        }
+
+        STDMETHODIMP_(void) removeLogListener(Handle listenerHandle)
+        {
+            auto listenerIterator = logMessageListenerList.find(listenerHandle);
+            if (listenerIterator != logMessageListenerList.end())
+            {
+                logMessageListenerList.erase(listenerIterator);
+            }
+        }
+
+        STDMETHODIMP_(void) logMessage(LPCSTR file, UINT32 line, LPCWSTR format, ...)
+        {
+            if (format != nullptr)
+            {
+                CStringW message;
+
+                va_list variableList;
+                va_start(variableList, format);
+                message.FormatV(format, variableList);
+                va_end(variableList);
+
+                OutputDebugString(Gek::String::format(L"%S (%d): %s\r\n", file, line, message.GetString()));
+                for (auto &logMessageListener : logMessageListenerList)
+                {
+                    logMessageListener.second(file, line, message);
+                }
+            }
         }
     };
 
