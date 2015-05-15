@@ -154,6 +154,7 @@ namespace Gek
                                         componentParameterList.insert(std::make_pair(name, value));
                                     });
 
+                                    componentParameterList[L""] = xmlComponentNode.getText();
                                     xmlComponentNode = xmlComponentNode.nextSiblingElement();
                                 };
 

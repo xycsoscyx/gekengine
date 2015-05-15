@@ -96,37 +96,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="GEKEngine.h" />
-    <ClInclude Include="GEKEngineCLSIDs.h" />
     <ClInclude Include="GEK\Engine\ActionInterface.h" />
     <ClInclude Include="GEK\Engine\Component.h" />
     <ClInclude Include="GEK\Engine\ComponentInterface.h" />
     <ClInclude Include="GEK\Engine\PopulationInterface.h" />
     <ClInclude Include="GEK\Engine\RenderInterface.h" />
-    <ClInclude Include="Include\CGEKEngine.h" />
-    <ClInclude Include="Include\CGEKPopulationSystem.h" />
-    <ClInclude Include="Include\CGEKProperties.h" />
-    <ClInclude Include="Include\CGEKRenderFilter.h" />
-    <ClInclude Include="Include\CGEKRenderMaterial.h" />
-    <ClInclude Include="Include\CGEKRenderSystem.h" />
-    <ClInclude Include="Public\IGEKGameApplication.h" />
-    <ClInclude Include="Public\IGEKPopulationSystem.h" />
-    <ClInclude Include="Public\IGEKRenderFilter.h" />
-    <ClInclude Include="Public\IGEKRenderMaterial.h" />
-    <ClInclude Include="Public\IGEKRenderSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Population.cpp" />
-    <ClCompile Include="Source\CGEKEngine.cpp" />
-    <ClCompile Include="Source\CGEKPopulationSystem.cpp" />
-    <ClCompile Include="Source\CGEKProperties.cpp" />
-    <ClCompile Include="Source\CGEKRenderFilter.cpp" />
-    <ClCompile Include="Source\CGEKRenderMaterial.cpp" />
-    <ClCompile Include="Source\CGEKRenderSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
+    <ResourceCompile Include="resources.rc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\context\context.vcxproj">

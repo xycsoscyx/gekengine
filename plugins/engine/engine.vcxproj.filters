@@ -4,64 +4,9 @@
     <ClCompile Include="Population.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKEngine.cpp">
-      <Filter>Old Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKPopulationSystem.cpp">
-      <Filter>Old Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKProperties.cpp">
-      <Filter>Old Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKRenderFilter.cpp">
-      <Filter>Old Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKRenderMaterial.cpp">
-      <Filter>Old Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\CGEKRenderSystem.cpp">
-      <Filter>Old Files</Filter>
-    </ClCompile>
-    <ClCompile Include="entrypoints.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClCompile Include="entrypoints.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEKEngine.h" />
-    <ClInclude Include="GEKEngineCLSIDs.h" />
-    <ClInclude Include="Include\CGEKEngine.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKPopulationSystem.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKProperties.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKRenderFilter.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKRenderMaterial.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKRenderSystem.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\IGEKGameApplication.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\IGEKPopulationSystem.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\IGEKRenderFilter.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\IGEKRenderMaterial.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\IGEKRenderSystem.h">
-      <Filter>Old Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Engine\ActionInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -80,6 +25,7 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
+    <ResourceCompile Include="resources.rc" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -87,9 +33,6 @@
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{66ba92d7-0828-4fe9-9d81-e6f572757744}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Old Files">
-      <UniqueIdentifier>{5575dd70-0aa7-447f-b34d-7994ab10dabf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

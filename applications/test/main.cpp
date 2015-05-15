@@ -8,6 +8,8 @@
 #include "GEK\System\VideoInterface.h"
 #include "resource.h"
 
+#include "GEK\Engine\PopulationInterface.h"
+
 Gek::Handle gs_nSampleStatesID = Gek::InvalidHandle;
 Gek::Handle gs_nRenderStatesID = Gek::InvalidHandle;
 Gek::Handle gs_nBlendStatesID = Gek::InvalidHandle;
@@ -207,6 +209,14 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
 #endif
 
         context->initialize();
+
+        CComPtr<Gek::Population::SystemInterface> population;
+        context->createInstance(Gek::PopulationSystem, IID_PPV_ARGS(&population));
+        if (population)
+        {
+            population->load(L"demo");
+        }
+
         DialogBoxParam(instance, MAKEINTRESOURCE(IDD_TEST_DIALOG), nullptr, dialogProcedure, LPARAM((Gek::ContextInterface *)context));
     }
 

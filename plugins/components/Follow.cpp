@@ -13,7 +13,7 @@ namespace Gek
 
         HRESULT Follow::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
         {
-            componentParameterList[L"target"] = target;
+            componentParameterList[L""] = target;
             componentParameterList[L"offset"] = String::setFloat3(offset);
             componentParameterList[L"rotation"] = String::setQuaternion(rotation);
             return S_OK;
@@ -21,7 +21,7 @@ namespace Gek
 
         HRESULT Follow::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
         {
-            setComponentParameter(componentParameterList, L"target", target, [] (LPCWSTR value) -> LPCWSTR { return value; });
+            setComponentParameter(componentParameterList, L"", target, [] (LPCWSTR value) -> LPCWSTR { return value; });
             setComponentParameter(componentParameterList, L"offset", offset, String::getFloat3);
             setComponentParameter(componentParameterList, L"rotation", rotation, String::getQuaternion);
             return S_OK;
