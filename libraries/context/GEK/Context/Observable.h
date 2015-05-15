@@ -35,10 +35,10 @@ namespace Gek
 
             virtual void operator () (ObserverInterface *observer) const
             {
-                CComQIPtr<INTERFACE> handler(observer);
-                if (handler)
+                CComQIPtr<INTERFACE> eventHandler(observer);
+                if (eventHandler)
                 {
-                    onEvent(handler);
+                    onEvent(eventHandler);
                 }
             }
         };
@@ -57,10 +57,10 @@ namespace Gek
 
             virtual HRESULT operator () (ObserverInterface *observer) const
             {
-                CComQIPtr<INTERFACE> handler(observer);
-                if (handler)
+                CComQIPtr<INTERFACE> eventHandler(observer);
+                if (eventHandler)
                 {
-                    return onEvent(handler);
+                    return onEvent(eventHandler);
                 }
 
                 return E_FAIL;
@@ -76,8 +76,8 @@ namespace Gek
         void sendEvent(const BaseEvent<void> &event);
         HRESULT checkEvent(const BaseEvent<HRESULT> &event);
 
-        static HRESULT addObserver(IUnknown *object, ObserverInterface *observer);
-        static HRESULT removeObserver(IUnknown *object, ObserverInterface *observer);
+        static HRESULT addObserver(IUnknown *observableBase, ObserverInterface *observer);
+        static HRESULT removeObserver(IUnknown *observableBase, ObserverInterface *observer);
 
         // ObservableInterface
         STDMETHOD(addObserver)      (THIS_ ObserverInterface *observer);

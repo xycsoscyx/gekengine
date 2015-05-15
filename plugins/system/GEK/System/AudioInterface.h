@@ -8,6 +8,9 @@
 
 namespace Gek
 {
+    // {525E4F27-8A87-409C-A25F-8740393A4B7B}
+    DEFINE_GUID(AudioSystem, 0x525e4f27, 0x8a87, 0x409c, 0xa2, 0x5f, 0x87, 0x40, 0x39, 0x3a, 0x4b, 0x7b);
+
     namespace Audio
     {
         DECLARE_INTERFACE_IID_(SampleInterface, IUnknown, "35560CF2-6972-44A3-9489-9CA0A5FE95C9")
@@ -41,14 +44,11 @@ namespace Gek
             STDMETHOD_(void, setDopplerFactor)  (THIS_ float factor) PURE;
             STDMETHOD_(void, setRollOffFactor)  (THIS_ float factor) PURE;
 
-            STDMETHOD(copyEffect)               (THIS_ EffectInterface *source, EffectInterface **copy) PURE;
-            STDMETHOD(copySound)                (THIS_ SoundInterface *source, SoundInterface **copy) PURE;
+            STDMETHOD(copyEffect)               (THIS_ EffectInterface *source, EffectInterface **returnObject) PURE;
+            STDMETHOD(copySound)                (THIS_ SoundInterface *source, SoundInterface **returnObject) PURE;
 
-            STDMETHOD(loadEffect)               (THIS_ LPCWSTR fileName, EffectInterface **sample) PURE;
-            STDMETHOD(loadSound)                (THIS_ LPCWSTR fileName, SoundInterface **sample) PURE;
+            STDMETHOD(loadEffect)               (THIS_ LPCWSTR fileName, EffectInterface **returnObject) PURE;
+            STDMETHOD(loadSound)                (THIS_ LPCWSTR fileName, SoundInterface **returnObject) PURE;
         };
-
-        // {525E4F27-8A87-409C-A25F-8740393A4B7B}
-        DEFINE_GUID(Class, 0x525e4f27, 0x8a87, 0x409c, 0xa2, 0x5f, 0x87, 0x40, 0x39, 0x3a, 0x4b, 0x7b);
     }; // namespace Audio
 }; // namespace Gek

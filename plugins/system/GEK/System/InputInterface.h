@@ -5,6 +5,9 @@
 
 namespace Gek
 {
+    // {3A8EA46C-573A-40E6-8741-71ACCA90BAB4}
+    DEFINE_GUID(InputSystem, 0x3a8ea46c, 0x573a, 0x40e6, 0x87, 0x41, 0x71, 0xac, 0xca, 0x90, 0xba, 0xb4);
+
     namespace Input
     {
         namespace Key
@@ -212,8 +215,5 @@ namespace Gek
 
             STDMETHOD(update)                           (THIS) PURE;
         };
-
-        // {3A8EA46C-573A-40E6-8741-71ACCA90BAB4}
-        DEFINE_GUID(Class, 0x3a8ea46c, 0x573a, 0x40e6, 0x87, 0x41, 0x71, 0xac, 0xca, 0x90, 0xba, 0xb4);
     }; // namespace Input
 }; // namespace Gek

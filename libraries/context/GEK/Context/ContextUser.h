@@ -18,7 +18,7 @@ namespace Gek
         // IUnknown
         STDMETHOD_(ULONG, AddRef)                           (THIS);
         STDMETHOD_(ULONG, Release)                          (THIS);
-        STDMETHOD(QueryInterface)                           (THIS_ REFIID interfaceID, LPVOID FAR *object);
+        STDMETHOD(QueryInterface)                           (THIS_ REFIID interfaceType, LPVOID FAR *returnObject);
 
         // ContextUserInterface
         STDMETHOD_(void, registerContext)                   (THIS_ ContextInterface *context);

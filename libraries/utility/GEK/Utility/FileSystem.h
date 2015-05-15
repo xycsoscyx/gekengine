@@ -16,7 +16,7 @@ namespace Gek
 
         HMODULE loadLibrary(LPCWSTR fileName);
 
-        HRESULT load(LPCWSTR fileName, std::vector<UINT8> &buffer, size_t limitReadSize = -1);
+        HRESULT load(LPCWSTR fileName, std::vector<UINT8> &buffer, size_t limitReadSize = 0);
         HRESULT load(LPCWSTR fileName, CStringA &string);
         HRESULT load(LPCWSTR fileName, CStringW &string, bool convertUTF8 = true);
 

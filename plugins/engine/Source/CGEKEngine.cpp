@@ -619,11 +619,11 @@ STDMETHODIMP_(IGEKMaterialManager *) CGEKEngine::GetMaterialManager(void)
 
 STDMETHODIMP_(void) CGEKEngine::ShowMessage(GEKMESSAGETYPE eType, LPCWSTR pSystem, LPCWSTR pMessage, ...)
 {
-    va_list pArgs;
+    va_list variableList;
     CStringW strMessage;
-    va_start(pArgs, pMessage);
-    strMessage.FormatV(pMessage, pArgs);
-    va_end(pArgs);
+    va_start(variableList, pMessage);
+    strMessage.FormatV(pMessage, variableList);
+    va_end(variableList);
 
     if (pSystem)
     {

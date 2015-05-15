@@ -29,10 +29,10 @@ public:
     CMyException(int nLine, LPCWSTR pFormat, ...)
         : m_nLine(nLine)
     {
-        va_list pArgs;
-        va_start(pArgs, pFormat);
-        m_strMessage.FormatV(pFormat, pArgs);
-        va_end(pArgs);
+        va_list variableList;
+        va_start(variableList, pFormat);
+        m_strMessage.FormatV(pFormat, variableList);
+        va_end(variableList);
     }
 };
 

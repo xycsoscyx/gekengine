@@ -20,32 +20,32 @@ namespace Gek
 
     STDMETHODIMP_(ULONG) ContextUser::Release(void)
     {
-        LONG nRefCount = InterlockedDecrement(&referenceCount);
-        if (nRefCount == 0)
+        LONG currentReferenceCount = InterlockedDecrement(&referenceCount);
+        if (currentReferenceCount == 0)
         {
             delete this;
         }
 
-        return nRefCount;
+        return currentReferenceCount;
     }
 
-    STDMETHODIMP ContextUser::QueryInterface(REFIID interfaceID, LPVOID FAR *object)
+    STDMETHODIMP ContextUser::QueryInterface(REFIID interfaceType, LPVOID FAR *returnObject)
     {
-        REQUIRE_RETURN(object, E_INVALIDARG);
+        REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
         HRESULT returnValue = E_INVALIDARG;
-        if (IsEqualIID(IID_IUnknown, interfaceID))
+        if (IsEqualIID(IID_IUnknown, interfaceType))
         {
             AddRef();
-            (*object) = dynamic_cast<IUnknown *>(this);
-            _ASSERTE(*object);
+            (*returnObject) = dynamic_cast<IUnknown *>(this);
+            _ASSERTE(*returnObject);
             returnValue = S_OK;
         }
-        else if (IsEqualIID(__uuidof(ContextUserInterface), interfaceID))
+        else if (IsEqualIID(__uuidof(ContextUserInterface), interfaceType))
         {
             AddRef();
-            (*object) = dynamic_cast<ContextUserInterface *>(this);
-            _ASSERTE(*object);
+            (*returnObject) = dynamic_cast<ContextUserInterface *>(this);
+            _ASSERTE(*returnObject);
             returnValue = S_OK;
         }
 

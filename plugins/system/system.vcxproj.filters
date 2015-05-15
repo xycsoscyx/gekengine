@@ -36,5 +36,8 @@
     <ClInclude Include="GEK\System\InputInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GEK\System\VideoInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -10,8 +10,8 @@ namespace Gek
         STDMETHOD_(void, addSearchPath)                 (THIS_ LPCWSTR fileName) PURE;
         STDMETHOD_(void, initialize)                    (THIS) PURE;
 
-        STDMETHOD(createInstance)                       (THIS_ REFCLSID classID, REFIID interfaceID, LPVOID FAR *newInstance) PURE;
-        STDMETHOD(createEachType)                       (THIS_ REFCLSID typeID, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance) PURE;
+        STDMETHOD(createInstance)                       (THIS_ REFCLSID classType, REFIID interfaceType, LPVOID FAR *returnObject) PURE;
+        STDMETHOD(createEachType)                       (THIS_ REFCLSID type, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance) PURE;
     };
 
     HRESULT createContext(ContextInterface **context);

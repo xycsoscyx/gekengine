@@ -72,10 +72,10 @@ namespace Gek
                 CStringW text;
                 if (format != nullptr)
                 {
-                    va_list pArgs;
-                    va_start(pArgs, format);
-                    text.FormatV(format, pArgs);
-                    va_end(pArgs);
+                    va_list variableList;
+                    va_start(variableList, format);
+                    text.FormatV(format, variableList);
+                    va_end(variableList);
                 }
 
                 xmlNodeSetContent(node, BAD_CAST LPCSTR(CW2A(text, CP_UTF8)));
@@ -115,10 +115,10 @@ namespace Gek
                 CStringW value;
                 if (format != nullptr)
                 {
-                    va_list pArgs;
-                    va_start(pArgs, format);
-                    value.FormatV(format, pArgs);
-                    va_end(pArgs);
+                    va_list variableList;
+                    va_start(variableList, format);
+                    value.FormatV(format, variableList);
+                    va_end(variableList);
                 }
 
                 if (hasAttribute(name))
@@ -228,10 +228,10 @@ namespace Gek
                 CStringW content;
                 if (format != nullptr)
                 {
-                    va_list pArgs;
-                    va_start(pArgs, format);
-                    content.FormatV(format, pArgs);
-                    va_end(pArgs);
+                    va_list variableList;
+                    va_start(variableList, format);
+                    content.FormatV(format, variableList);
+                    va_end(variableList);
                 }
 
                 xmlNodePtr childNode = xmlNewChild(node, nullptr, BAD_CAST LPCSTR(CW2A(type, CP_UTF8)), BAD_CAST LPCSTR(CW2A(content, CP_UTF8)));

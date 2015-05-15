@@ -44,20 +44,20 @@ namespace Gek
         DECLARE_INTERFACE_IID_(SystemInterface, IUnknown, "D3B65773-4EB1-46F8-A38D-009CA43CE77F")
         {
             STDMETHOD_(Handle, createBrush)         (THIS_ const Math::Float4 &color) PURE;
-            STDMETHOD_(Handle, createBrush)         (THIS_ const std::vector<GradientPoint> &stepPoints, const Rectangle<float> &extents) PURE;
+            STDMETHOD_(Handle, createBrush)         (THIS_ const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents) PURE;
 
             STDMETHOD_(Handle, createFont)          (THIS_ LPCWSTR face, UINT32 weight, UINT8 style, float size) PURE;
 
-            STDMETHOD(createGeometry)               (THIS_ GeometryInterface **geometry) PURE;
+            STDMETHOD(createGeometry)               (THIS_ GeometryInterface **returnObject) PURE;
 
             STDMETHOD_(void, setTransform)          (THIS_ const Math::Float3x2 &matrix) PURE;
 
-            STDMETHOD_(void, drawText)              (THIS_ const Rectangle<float> &extents, const Handle &fontHandle, const Handle &brushHandle, LPCWSTR pMessage, ...) PURE;
+            STDMETHOD_(void, drawText)              (THIS_ const Rectangle<float> &extents, Handle fontHandle, Handle brushHandle, LPCWSTR format, ...) PURE;
 
-            STDMETHOD_(void, drawRectangle)         (THIS_ const Rectangle<float> &extents, const Handle &brushHandle, bool fillShape) PURE;
-            STDMETHOD_(void, drawRectangle)         (THIS_ const Rectangle<float> &extents, const Math::Float2 &cornerRadius, const Handle &brushHandle, bool fillShape) PURE;
+            STDMETHOD_(void, drawRectangle)         (THIS_ const Rectangle<float> &extents, Handle brushHandle, bool fillShape) PURE;
+            STDMETHOD_(void, drawRectangle)         (THIS_ const Rectangle<float> &extents, const Math::Float2 &cornerRadius, Handle brushHandle, bool fillShape) PURE;
 
-            STDMETHOD_(void, drawGeometry)          (THIS_ GeometryInterface *geometry, const Handle &brushHandle, bool fillShape) PURE;
+            STDMETHOD_(void, drawGeometry)          (THIS_ GeometryInterface *geometry, Handle brushHandle, bool fillShape) PURE;
 
             STDMETHOD_(void, beginDraw)             (THIS) PURE;
             STDMETHOD(endDraw)                      (THIS) PURE;

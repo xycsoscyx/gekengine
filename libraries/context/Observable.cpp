@@ -29,10 +29,10 @@ namespace Gek
         return returnValue;
     }
 
-    HRESULT Observable::addObserver(IUnknown *object, ObserverInterface *observer)
+    HRESULT Observable::addObserver(IUnknown *observableBase, ObserverInterface *observer)
     {
         HRESULT returnValue = E_FAIL;
-        ObservableInterface *observable = dynamic_cast<ObservableInterface *>(object);
+        ObservableInterface *observable = dynamic_cast<ObservableInterface *>(observableBase);
         if (observable)
         {
             returnValue = observable->addObserver(observer);
@@ -41,10 +41,10 @@ namespace Gek
         return returnValue;
     }
 
-    HRESULT Observable::removeObserver(IUnknown *object, ObserverInterface *observer)
+    HRESULT Observable::removeObserver(IUnknown *observableBase, ObserverInterface *observer)
     {
         HRESULT returnValue = E_FAIL;
-        ObservableInterface *observable = dynamic_cast<ObservableInterface *>(object);
+        ObservableInterface *observable = dynamic_cast<ObservableInterface *>(observableBase);
         if (observable)
         {
             returnValue = observable->removeObserver(observer);
@@ -57,8 +57,8 @@ namespace Gek
     STDMETHODIMP Observable::addObserver(ObserverInterface *observer)
     {
         HRESULT returnValue = E_FAIL;
-        auto pIterator = observerList.find(observer);
-        if (pIterator == observerList.end())
+        auto observerIterator = observerList.find(observer);
+        if (observerIterator == observerList.end())
         {
             observerList.insert(observer);
             returnValue = S_OK;
@@ -70,10 +70,10 @@ namespace Gek
     STDMETHODIMP Observable::removeObserver(ObserverInterface *observer)
     {
         HRESULT returnValue = E_FAIL;
-        auto pIterator = observerList.find(observer);
-        if (pIterator != observerList.end())
+        auto observerIterator = observerList.find(observer);
+        if (observerIterator != observerList.end())
         {
-            observerList.unsafe_erase(pIterator);
+            observerList.unsafe_erase(observerIterator);
             returnValue = S_OK;
         }
 

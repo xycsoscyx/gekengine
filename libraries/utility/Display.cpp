@@ -36,17 +36,17 @@ namespace Gek
             std::map<UINT32, std::vector<Mode>> availbleModeList;
             while (EnumDisplaySettings(0, displayMode++, &displayModeData))
             {
-                std::vector<Mode> &currentModes = availbleModeList[displayModeData.dmBitsPerPel];
-                auto findIterator = std::find_if(currentModes.begin(), currentModes.end(), [&](const Mode &mode) -> bool
+                std::vector<Mode> &currentModeList = availbleModeList[displayModeData.dmBitsPerPel];
+                auto findIterator = std::find_if(currentModeList.begin(), currentModeList.end(), [&](const Mode &mode) -> bool
                 {
                     if (mode.width != displayModeData.dmPelsWidth) return false;
                     if (mode.height != displayModeData.dmPelsHeight) return false;
                     return true;
                 });
 
-                if (findIterator == currentModes.end())
+                if (findIterator == currentModeList.end())
                 {
-                    currentModes.emplace_back(displayModeData.dmPanningWidth, displayModeData.dmPanningHeight,
+                    currentModeList.emplace_back(displayModeData.dmPanningWidth, displayModeData.dmPanningHeight,
                         getAspectRatio(displayModeData.dmPanningWidth, displayModeData.dmPanningHeight));
                 }
             };

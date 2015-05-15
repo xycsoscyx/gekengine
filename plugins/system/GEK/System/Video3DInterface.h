@@ -434,8 +434,8 @@ namespace Gek
 
             STDMETHOD_(void, clearResources)                    (THIS) PURE;
 
-            STDMETHOD_(void, setViewports)                      (THIS_ const std::vector<ViewPort> &viewPorts) PURE;
-            STDMETHOD_(void, setScissorRect)                    (THIS_ const std::vector<Rectangle<UINT32>> &rectangles) PURE;
+            STDMETHOD_(void, setViewports)                      (THIS_ const std::vector<ViewPort> &viewPortList) PURE;
+            STDMETHOD_(void, setScissorRect)                    (THIS_ const std::vector<Rectangle<UINT32>> &rectangleList) PURE;
 
             STDMETHOD_(void, clearRenderTarget)                 (THIS_ Handle targetHandle, const Math::Float4 &color) PURE;
             STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ Handle depthHandle, UINT32 flags, float depth, UINT32 stencil) PURE;
@@ -475,7 +475,7 @@ namespace Gek
 
             STDMETHOD_(Handle, createEvent)                     (THIS) PURE;
             STDMETHOD_(void, setEvent)                          (THIS_ Handle resourceHandle) PURE;
-            STDMETHOD_(bool, isEventset)                        (THIS_ Handle resourceHandle) PURE;
+            STDMETHOD_(bool, isEventSet)                        (THIS_ Handle resourceHandle) PURE;
 
             STDMETHOD_(Handle, createRenderStates)              (THIS_ const RenderStates &kStates) PURE;
             STDMETHOD_(Handle, createDepthStates)               (THIS_ const DepthStates &kStates) PURE;
@@ -492,19 +492,19 @@ namespace Gek
             STDMETHOD(mapBuffer)                                (THIS_ Handle resourceHandle, LPVOID *data) PURE;
             STDMETHOD_(void, unmapBuffer)                       (THIS_ Handle resourceHandle) PURE;
 
-            STDMETHOD_(Handle, compileComputeProgram)           (THIS_ LPCSTR program, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
-            STDMETHOD_(Handle, compileVertexProgram)            (THIS_ LPCSTR program, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
-            STDMETHOD_(Handle, compileGeometryProgram)          (THIS_ LPCSTR program, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
-            STDMETHOD_(Handle, compilePixelProgram)             (THIS_ LPCSTR program, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
+            STDMETHOD_(Handle, compileComputeProgram)           (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, compileVertexProgram)            (THIS_ LPCSTR programScript, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, compileGeometryProgram)          (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, compilePixelProgram)             (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-            STDMETHOD_(Handle, loadComputeProgram)              (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
-            STDMETHOD_(Handle, loadVertexProgram)               (THIS_ LPCWSTR fileName, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
-            STDMETHOD_(Handle, loadGeometryProgram)             (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
-            STDMETHOD_(Handle, loadPixelProgram)                (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defines = nullptr) PURE;
+            STDMETHOD_(Handle, loadComputeProgram)              (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadVertexProgram)               (THIS_ LPCWSTR fileName, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadGeometryProgram)             (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadPixelProgram)                (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
             STDMETHOD_(Handle, createTexture)                   (THIS_ UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags) PURE;
             STDMETHOD_(Handle, loadTexture)                     (THIS_ LPCWSTR fileName, UINT32 flags) PURE;
-            STDMETHOD_(void, updateTexture)                     (THIS_ Handle resourceHandle, void *data, UINT32 pitch, Rectangle<UINT32> *rectangle = nullptr) PURE;
+            STDMETHOD_(void, updateTexture)                     (THIS_ Handle resourceHandle, LPCVOID data, UINT32 pitch, Rectangle<UINT32> *rectangle = nullptr) PURE;
 
             STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Float4 &color) PURE;
             STDMETHOD_(void, clearDefaultDepthStencilTarget)    (THIS_ UINT32 flags, float depth, UINT32 stencil) PURE;

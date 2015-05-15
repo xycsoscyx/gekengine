@@ -17,7 +17,7 @@ namespace Gek
     private:
         ULONG referenceCount;
 
-        std::list<CStringW> searchPaths;
+        std::list<CStringW> searchPathList;
 
         std::list<HMODULE> moduleList;
         std::unordered_map<CLSID, std::function<HRESULT(ContextUserInterface **)>> classList;
@@ -51,23 +51,23 @@ namespace Gek
             return newReferenceCount;
         }
 
-        STDMETHODIMP QueryInterface(REFIID interfaceID, LPVOID FAR *object)
+        STDMETHODIMP QueryInterface(REFIID interfaceType, LPVOID FAR *returnObject)
         {
-            REQUIRE_RETURN(object, E_INVALIDARG);
+            REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
             HRESULT returnValue = E_INVALIDARG;
-            if (IsEqualIID(IID_IUnknown, interfaceID))
+            if (IsEqualIID(IID_IUnknown, interfaceType))
             {
                 AddRef();
-                (*object) = dynamic_cast<IUnknown *>(dynamic_cast<ContextInterface *>(this));
-                _ASSERTE(*object);
+                (*returnObject) = dynamic_cast<IUnknown *>(dynamic_cast<ContextInterface *>(this));
+                _ASSERTE(*returnObject);
                 returnValue = S_OK;
             }
-            else if (IsEqualIID(__uuidof(ContextInterface), interfaceID))
+            else if (IsEqualIID(__uuidof(ContextInterface), interfaceType))
             {
                 AddRef();
-                (*object) = dynamic_cast<ContextInterface *>(this);
-                _ASSERTE(*object);
+                (*returnObject) = dynamic_cast<ContextInterface *>(this);
+                _ASSERTE(*returnObject);
                 returnValue = S_OK;
             }
 
@@ -77,13 +77,13 @@ namespace Gek
         // ContextInterface
         STDMETHODIMP_(void) addSearchPath(LPCWSTR fileName)
         {
-            searchPaths.push_back(fileName);
+            searchPathList.push_back(fileName);
         }
 
         STDMETHODIMP_(void) initialize(void)
         {
-            searchPaths.push_back(L"%root%");
-            for (auto &searchPath : searchPaths)
+            searchPathList.push_back(L"%root%");
+            for (auto &searchPath : searchPathList)
             {
                 Gek::FileSystem::find(searchPath, L"*.dll", false, [&](LPCWSTR fileName) -> HRESULT
                 {
@@ -91,7 +91,7 @@ namespace Gek
                     if (module)
                     {
                         typedef HRESULT(*GEKGETMODULECLASSES)(std::unordered_map<CLSID, std::function<HRESULT(ContextUserInterface **)>> &, std::unordered_map<CLSID, std::vector<CLSID >> &);
-                        GEKGETMODULECLASSES getModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(module, "getModuleClasses");
+                        GEKGETMODULECLASSES getModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(module, "GEKGetModuleClasses");
                         if (getModuleClasses)
                         {
                             OutputDebugString(Gek::String::format(L"GEK Plugin Found: %s\r\n", fileName));
@@ -132,12 +132,12 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP createInstance(REFGUID classID, REFIID interfaceID, LPVOID FAR *newInstance)
+        STDMETHODIMP createInstance(REFGUID classType, REFIID interfaceType, LPVOID FAR *returnObject)
         {
-            REQUIRE_RETURN(newInstance, E_INVALIDARG);
+            REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
             HRESULT returnValue = E_FAIL;
-            auto classIterator = classList.find(classID);
+            auto classIterator = classList.find(classType);
             if (classIterator != classList.end())
             {
                 CComPtr<ContextUserInterface> classInstance;
@@ -145,7 +145,7 @@ namespace Gek
                 if (SUCCEEDED(returnValue) && classInstance)
                 {
                     classInstance->registerContext(this);
-                    returnValue = classInstance->QueryInterface(interfaceID, newInstance);
+                    returnValue = classInstance->QueryInterface(interfaceType, returnObject);
                 }
             }
 
@@ -158,13 +158,13 @@ namespace Gek
             auto typedClassIterator = typedClassList.find(typeID);
             if (typedClassIterator != typedClassList.end())
             {
-                for (auto &classID : (*typedClassIterator).second)
+                for (auto &classType : (*typedClassIterator).second)
                 {
                     CComPtr<IUnknown> classInstance;
-                    returnValue = createInstance(classID, IID_PPV_ARGS(&classInstance));
+                    returnValue = createInstance(classType, IID_PPV_ARGS(&classInstance));
                     if (classInstance)
                     {
-                        returnValue = onCreateInstance(classID, classInstance);
+                        returnValue = onCreateInstance(classType, classInstance);
                         if (FAILED(returnValue))
                         {
                             break;
@@ -177,16 +177,16 @@ namespace Gek
         }
     };
 
-    HRESULT createContext(ContextInterface **output)
+    HRESULT createContext(ContextInterface **returnObject)
     {
-        REQUIRE_RETURN(output, E_INVALIDARG);
+        REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
         HRESULT returnValue = E_OUTOFMEMORY;
         CComPtr<Context> context(new Context());
         _ASSERTE(context);
         if (context)
         {
-            returnValue = context->QueryInterface(IID_PPV_ARGS(output));
+            returnValue = context->QueryInterface(IID_PPV_ARGS(returnObject));
         }
 
         return returnValue;

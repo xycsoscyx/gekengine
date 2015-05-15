@@ -1,8 +1,11 @@
+#include <initguid.h>
+#include <cguid.h>
+
 #include "GEK\Math\Matrix4x4.h"
 #include "GEK\Utility\Common.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\ContextInterface.h"
-#include "GEK\System\Video3DInterface.h"
+#include "GEK\System\VideoInterface.h"
 #include "resource.h"
 
 Gek::Handle gs_nSampleStatesID = Gek::InvalidHandle;
@@ -37,7 +40,7 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
             Gek::ContextInterface *context = (Gek::ContextInterface *)lParam;
 
             CComPtr<Gek::Video3D::SystemInterface> videoSystem;
-            context->createInstance(Gek::Video3D::Class, IID_PPV_ARGS(&videoSystem));
+            context->createInstance(Gek::VideoSystem, IID_PPV_ARGS(&videoSystem));
             if (videoSystem)
             {
                 HWND renderWindow = GetDlgItem(dialogWindow, IDC_VIDEO_WINDOW);

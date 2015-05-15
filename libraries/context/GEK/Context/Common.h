@@ -60,8 +60,8 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
 
 #define DECLARE_UNKNOWN(CLASS)                                                                  \
     public:                                                                                     \
-        STDMETHOD(QueryInterface)(THIS_ REFIID interfaceID, void** object);                     \
-        STDMETHOD_(ULONG, AddRef)(THIS);                                                        \
+        STDMETHOD(QueryInterface) (THIS_ REFIID interfaceType, void** returnObject);            \
+        STDMETHOD_(ULONG, AddRef) (THIS);                                                       \
         STDMETHOD_(ULONG, Release)(THIS);                                                       \
     public:
 
@@ -76,105 +76,105 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
         return ContextUser::Release();                                                          \
     }                                                                                           \
                                                                                                 \
-    STDMETHODIMP CLASS::QueryInterface(THIS_ REFIID interfaceID, LPVOID FAR *object)            \
+    STDMETHODIMP CLASS::QueryInterface(THIS_ REFIID interfaceType, LPVOID FAR *returnObject)    \
     {                                                                                           \
-        REQUIRE_RETURN(object, E_INVALIDARG);
+        REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
 #define INTERFACE_LIST_ENTRY(INTERFACE_IID, INTERFACE_CLASS)                                    \
-        if (IsEqualIID(INTERFACE_IID, interfaceID))                                             \
+        if (IsEqualIID(INTERFACE_IID, interfaceType))                                           \
         {                                                                                       \
             AddRef();                                                                           \
-            (*object) = dynamic_cast<INTERFACE_CLASS *>(this);                                  \
-            _ASSERTE(*object);                                                                  \
+            (*returnObject) = dynamic_cast<INTERFACE_CLASS *>(this);                            \
+            _ASSERTE(*returnObject);                                                            \
             return S_OK;                                                                        \
         }
 
 #define INTERFACE_LIST_ENTRY_COM(INTERFACE_CLASS)                                               \
-        if (IsEqualIID(__uuidof(INTERFACE_CLASS), interfaceID))                                 \
+        if (IsEqualIID(__uuidof(INTERFACE_CLASS), interfaceType))                               \
         {                                                                                       \
             AddRef();                                                                           \
-            (*object) = dynamic_cast<INTERFACE_CLASS *>(this);                                  \
-            _ASSERTE(*object);                                                                  \
+            (*returnObject) = dynamic_cast<INTERFACE_CLASS *>(this);                            \
+            _ASSERTE(*returnObject);                                                            \
             return S_OK;                                                                        \
         }
 
 #define INTERFACE_LIST_ENTRY_MEMBER(INTERFACE_IID, OBJECT)                                      \
-        if ((OBJECT) && IsEqualIID(INTERFACE_IID, interfaceID))                                 \
+        if ((OBJECT) && IsEqualIID(INTERFACE_IID, interfaceType))                               \
         {                                                                                       \
-            return (OBJECT)->QueryInterface(interfaceID, object);                               \
+            return (OBJECT)->QueryInterface(interfaceType, returnObject);                       \
         }
 
 #define INTERFACE_LIST_ENTRY_MEMBER_COM(INTERFACE_CLASS, OBJECT)                                \
-        if (IsEqualIID(__uuidof(INTERFACE_CLASS), interfaceID))                                 \
+        if (IsEqualIID(__uuidof(INTERFACE_CLASS), interfaceType))                               \
         {                                                                                       \
-            return (OBJECT)->QueryInterface(__uuidof(INTERFACE_CLASS), object);                 \
+            return (OBJECT)->QueryInterface(__uuidof(INTERFACE_CLASS), returnObject);           \
         }
 
 #define INTERFACE_LIST_ENTRY_DELEGATE(INTERFACE_IID, FUNCTION)                                  \
-        if (IsEqualIID(INTERFACE_IID, interfaceID))                                             \
+        if (IsEqualIID(INTERFACE_IID, interfaceType))                                           \
         {                                                                                       \
-            return FUNCTION(interfaceID, object);                                               \
+            return FUNCTION(interfaceType, returnObject);                                       \
         }
 
 #define INTERFACE_LIST_ENTRY_DELEGATE_COM(INTERFACE_CLASS, FUNCTION)                            \
-        if (IsEqualIID(__uuidof(INTERFACE_CLASS), interfaceID))                                 \
+        if (IsEqualIID(__uuidof(INTERFACE_CLASS), interfaceType))                               \
         {                                                                                       \
-            return FUNCTION(interfaceID, object);                                               \
+            return FUNCTION(interfaceType, returnObject);                                       \
         }
 
 #define INTERFACE_LIST_ENTRY_BASE(BASE_CLASS)                                                   \
-        if (SUCCEEDED(BASE_CLASS::QueryInterface(interfaceID, object)))                         \
+        if (SUCCEEDED(BASE_CLASS::QueryInterface(interfaceType, returnObject)))                 \
         {                                                                                       \
             return S_OK;                                                                        \
         }
 
 #define END_INTERFACE_LIST                                                                      \
-        (*object) = nullptr;                                                                    \
+        (*returnObject) = nullptr;                                                              \
         return E_INVALIDARG;                                                                    \
     }
 
 #define END_INTERFACE_LIST_UNKNOWN                                                              \
-        return ContextUser::QueryInterface(interfaceID, object);                                \
+        return ContextUser::QueryInterface(interfaceType, returnObject);                        \
     }
 
 #define END_INTERFACE_LIST_BASE(BASE_CLASS)                                                     \
-        return BASE_CLASS::QueryInterface(interfaceID, object);                                 \
+        return BASE_CLASS::QueryInterface(interfaceType, returnObject);                         \
     }
 
 #define END_INTERFACE_LIST_DELEGATE(FUNCTION)                                                   \
-        return FUNCTION(interfaceID, object);                                                   \
+        return FUNCTION(interfaceType, returnObject);                                           \
     }
 
 #define REGISTER_CLASS(CLASS)                                                                   \
-HRESULT CLASS##CreateInstance(Gek::ContextUserInterface **object)                               \
+HRESULT CLASS##CreateInstance(Gek::ContextUserInterface **returnObject)                         \
 {                                                                                               \
-    REQUIRE_RETURN(object, E_INVALIDARG);                                                       \
+    REQUIRE_RETURN(returnObject, E_INVALIDARG);                                                 \
                                                                                                 \
     HRESULT resultValue = E_OUTOFMEMORY;                                                        \
-    CComPtr<CLASS> instance(new CLASS());                                                       \
-    if (instance != nullptr)                                                                    \
+    CComPtr<CLASS> classObject(new CLASS());                                                    \
+    if (classObject != nullptr)                                                                 \
     {                                                                                           \
-        resultValue = instance->QueryInterface(IID_PPV_ARGS(object));                           \
+        resultValue = classObject->QueryInterface(IID_PPV_ARGS(returnObject));                  \
     }                                                                                           \
                                                                                                 \
     return resultValue;                                                                         \
 }
 
 #define DECLARE_REGISTERED_CLASS(CLASS)                                                         \
-extern HRESULT CLASS##CreateInstance(Gek::ContextUserInterface **object);
+extern HRESULT CLASS##CreateInstance(Gek::ContextUserInterface **returnObject);
 
 #define DECLARE_CONTEXT_SOURCE(SOURCENAME)                                                      \
 extern "C" __declspec(dllexport)                                                                \
 HRESULT GEKGetModuleClasses(                                                                    \
-    std::unordered_map<CLSID, std::function<HRESULT (Gek::ContextUserInterface **)>> &classes,  \
-    std::unordered_map<CLSID, std::vector<CLSID>> &typedClasses)                                \
+    std::unordered_map<CLSID, std::function<HRESULT (Gek::ContextUserInterface **)>> &classList,\
+    std::unordered_map<CLSID, std::vector<CLSID>> &typedClassList)                              \
 {                                                                                               \
     CLSID lastClassID = GUID_NULL;
 
 #define ADD_CONTEXT_CLASS(CLASSID, CLASS)                                                       \
-    if (classes.find(CLASSID) == classes.end())                                                 \
+    if (classList.find(CLASSID) == classList.end())                                             \
     {                                                                                           \
-        classes[CLASSID] = CLASS##CreateInstance;                                               \
+        classList[CLASSID] = CLASS##CreateInstance;                                             \
         lastClassID = CLASSID;                                                                  \
     }                                                                                           \
     else                                                                                        \
@@ -183,7 +183,7 @@ HRESULT GEKGetModuleClasses(                                                    
     }
 
 #define ADD_CLASS_TYPE(TYPEID)                                                                  \
-    typedClasses[TYPEID].push_back(lastClassID);
+    typedClassList[TYPEID].push_back(lastClassID);
 
 #define END_CONTEXT_SOURCE                                                                      \
     return S_OK;                                                                                \
