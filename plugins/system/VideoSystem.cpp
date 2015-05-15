@@ -994,6 +994,7 @@ namespace Gek
             };
 
         private:
+            bool isChildWindow;
             bool windowed;
             UINT32 width;
             UINT32 height;
@@ -1015,6 +1016,7 @@ namespace Gek
             System(void)
                 : Context(this)
                 , nextResourceHandle(Gek::InvalidHandle)
+                , isChildWindow(false)
                 , windowed(false)
                 , width(0)
                 , height(0)
@@ -1130,6 +1132,7 @@ namespace Gek
                 this->width = width;
                 this->height = height;
                 this->windowed = windowed;
+                isChildWindow = (GetParent(window) != nullptr);
                 DXGI_SWAP_CHAIN_DESC swapChainDescription;
                 swapChainDescription.BufferDesc.Width = width;
                 swapChainDescription.BufferDesc.Height = height;
@@ -1210,7 +1213,7 @@ namespace Gek
                     pixelSystem.reset(new PixelSystem(d3dDeviceContext, this));
                 }
 
-                if (SUCCEEDED(resultValue) && !windowed)
+                if (SUCCEEDED(resultValue) && !windowed && !isChildWindow)
                 {
                     resultValue = dxSwapChain->SetFullscreenState(true, nullptr);
                 }
@@ -1238,7 +1241,12 @@ namespace Gek
                     }
                 }
 
-                HRESULT resultValue = dxSwapChain->SetFullscreenState(!windowed, nullptr);
+                HRESULT resultValue = S_OK;
+                if (!isChildWindow)
+                {
+                    resultValue = dxSwapChain->SetFullscreenState(!windowed, nullptr);
+                }
+
                 if (SUCCEEDED(resultValue))
                 {
                     DXGI_MODE_DESC description;

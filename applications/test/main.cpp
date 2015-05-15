@@ -99,6 +99,29 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
 
         return TRUE;
 
+    case WM_SIZE:
+        if (true)
+        {
+            CComCritSecLock<CComAutoCriticalSection> scopedLock(criticalSection);
+            Gek::Video3D::SystemInterface *videoSystem = (Gek::Video3D::SystemInterface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
+
+            RECT dialogClientRect;
+            GetClientRect(dialogWindow, &dialogClientRect);
+
+            RECT renderClientRect(dialogClientRect);
+            renderClientRect.left += 10;
+            renderClientRect.right -= 10;
+            renderClientRect.top += 10;
+            renderClientRect.bottom -= 10;
+            UINT32 clientWidth = (renderClientRect.right - renderClientRect.left);
+            UINT32 clientHeight = (renderClientRect.bottom - renderClientRect.top);
+
+            HWND renderWindow = GetDlgItem(dialogWindow, IDC_VIDEO_WINDOW);
+            SetWindowPos(renderWindow, nullptr, renderClientRect.left, renderClientRect.top, clientWidth, clientHeight, SWP_NOZORDER);
+            videoSystem->resize(false, clientWidth, clientHeight, Gek::Video3D::Format::D24_S8);
+        }
+        break;
+
     case WM_PAINT:
         if (true)
         {
