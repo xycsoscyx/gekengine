@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "ContextUserInterface.h"
+#include "ContextInterface.h"
 
 namespace Gek
 {

@@ -22,7 +22,9 @@ CGEKRenderMaterial::~CGEKRenderMaterial(void)
 // IGEKRenderMaterial
 STDMETHODIMP CGEKRenderMaterial::Load(IGEKEngineCore *pEngine, IGEKRenderSystem *pRenderSystem, LPCWSTR pName)
 {
-    REQUIRE_RETURN(pEngine && pRenderSystem && pName, E_INVALIDARG);
+    REQUIRE_RETURN(pEngine, E_INVALIDARG);
+    REQUIRE_RETURN(pRenderSystem && pName, E_INVALIDARG);
+    REQUIRE_RETURN(pName, E_INVALIDARG);
 
     m_pEngine = pEngine;
     m_pRenderSystem = pRenderSystem;

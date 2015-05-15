@@ -16,67 +16,67 @@ namespace Gek
 
     HRESULT Observable::checkEvent(const BaseEvent<HRESULT> &event)
     {
-        HRESULT returnValue = S_OK;
+        HRESULT resultValue = S_OK;
         for (auto &observer : observerList)
         {
-            returnValue = event(observer);
-            if (FAILED(returnValue))
+            resultValue = event(observer);
+            if (FAILED(resultValue))
             {
                 break;
             }
         }
 
-        return returnValue;
+        return resultValue;
     }
 
     HRESULT Observable::addObserver(IUnknown *observableBase, ObserverInterface *observer)
     {
-        HRESULT returnValue = E_FAIL;
+        HRESULT resultValue = E_FAIL;
         ObservableInterface *observable = dynamic_cast<ObservableInterface *>(observableBase);
         if (observable)
         {
-            returnValue = observable->addObserver(observer);
+            resultValue = observable->addObserver(observer);
         }
 
-        return returnValue;
+        return resultValue;
     }
 
     HRESULT Observable::removeObserver(IUnknown *observableBase, ObserverInterface *observer)
     {
-        HRESULT returnValue = E_FAIL;
+        HRESULT resultValue = E_FAIL;
         ObservableInterface *observable = dynamic_cast<ObservableInterface *>(observableBase);
         if (observable)
         {
-            returnValue = observable->removeObserver(observer);
+            resultValue = observable->removeObserver(observer);
         }
 
-        return returnValue;
+        return resultValue;
     }
 
     // ObservableInterface
     STDMETHODIMP Observable::addObserver(ObserverInterface *observer)
     {
-        HRESULT returnValue = E_FAIL;
+        HRESULT resultValue = E_FAIL;
         auto observerIterator = observerList.find(observer);
         if (observerIterator == observerList.end())
         {
             observerList.insert(observer);
-            returnValue = S_OK;
+            resultValue = S_OK;
         }
 
-        return returnValue;
+        return resultValue;
     }
 
     STDMETHODIMP Observable::removeObserver(ObserverInterface *observer)
     {
-        HRESULT returnValue = E_FAIL;
+        HRESULT resultValue = E_FAIL;
         auto observerIterator = observerList.find(observer);
         if (observerIterator != observerList.end())
         {
             observerList.unsafe_erase(observerIterator);
-            returnValue = S_OK;
+            resultValue = S_OK;
         }
 
-        return returnValue;
+        return resultValue;
     }
 }; // namespace Gek

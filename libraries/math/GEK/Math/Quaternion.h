@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEK\Math\Common.h"
+#include "GEK\Math\Vector4.h"
 #include <Math.h>
 
 namespace Gek

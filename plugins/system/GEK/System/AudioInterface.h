@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GEK\Math\Vector3.h"
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Matrix4x4.h"
 #include <atlbase.h>

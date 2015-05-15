@@ -35,7 +35,7 @@ namespace Gek
 
         HRESULT find(LPCWSTR fileName, LPCWSTR filterTypes, bool searchRecursively, std::function<HRESULT(LPCWSTR)> onFileFound)
         {
-            HRESULT returnValue = S_OK;
+            HRESULT resultValue = S_OK;
 
             CStringW expandedFileName(expandPath(fileName));
             PathAddBackslashW(expandedFileName.GetBuffer(MAX_PATH + 1));
@@ -52,15 +52,15 @@ namespace Gek
                     {
                         if (searchRecursively && findData.cFileName[0] != L'.')
                         {
-                            returnValue = find((expandedFileName + findData.cFileName), filterTypes, searchRecursively, onFileFound);
+                            resultValue = find((expandedFileName + findData.cFileName), filterTypes, searchRecursively, onFileFound);
                         }
                     }
                     else
                     {
-                        returnValue = onFileFound(expandedFileName + findData.cFileName);
+                        resultValue = onFileFound(expandedFileName + findData.cFileName);
                     }
 
-                    if (FAILED(returnValue))
+                    if (FAILED(resultValue))
                     {
                         break;
                     }
@@ -69,7 +69,7 @@ namespace Gek
                 FindClose(findHandle);
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         HMODULE loadLibrary(LPCWSTR fileName)
@@ -79,19 +79,19 @@ namespace Gek
 
         HRESULT load(LPCWSTR fileName, std::vector<UINT8> &buffer, size_t limitReadSize)
         {
-            HRESULT returnValue = E_FAIL;
+            HRESULT resultValue = E_FAIL;
             CStringW expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
             if (fileHandle == INVALID_HANDLE_VALUE)
             {
-                returnValue = E_FAIL;
+                resultValue = E_FAIL;
             }
             else
             {
                 DWORD fileSize = GetFileSize(fileHandle, nullptr);
                 if (fileSize == 0)
                 {
-                    returnValue = S_OK;
+                    resultValue = S_OK;
                 }
                 else
                 {
@@ -109,78 +109,78 @@ namespace Gek
                         DWORD bytesRead = 0;
                         if (ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, nullptr))
                         {
-                            returnValue = (bytesRead == buffer.size() ? S_OK : E_FAIL);
+                            resultValue = (bytesRead == buffer.size() ? S_OK : E_FAIL);
                         }
                         else
                         {
-                            returnValue = E_FAIL;
+                            resultValue = E_FAIL;
                         }
                     }
                     else
                     {
-                        returnValue = E_OUTOFMEMORY;
+                        resultValue = E_OUTOFMEMORY;
                     }
                 }
 
                 CloseHandle(fileHandle);
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         HRESULT load(LPCWSTR fileName, CStringA &string)
         {
             std::vector<UINT8> buffer;
-            HRESULT returnValue = load(fileName, buffer);
-            if (SUCCEEDED(returnValue))
+            HRESULT resultValue = load(fileName, buffer);
+            if (SUCCEEDED(resultValue))
             {
                 buffer.push_back('\0');
                 string = LPCSTR(buffer.data());
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         HRESULT load(LPCWSTR fileName, CStringW &string, bool convertUTF8)
         {
             CStringA readString;
-            HRESULT returnValue = load(fileName, readString);
-            if (SUCCEEDED(returnValue))
+            HRESULT resultValue = load(fileName, readString);
+            if (SUCCEEDED(resultValue))
             {
                 string = CA2W(readString, (convertUTF8 ? CP_UTF8 : CP_ACP));
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         HRESULT save(LPCWSTR fileName, const std::vector<UINT8> &buffer)
         {
-            HRESULT returnValue = E_FAIL;
+            HRESULT resultValue = E_FAIL;
             CStringW expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
             if (fileHandle != INVALID_HANDLE_VALUE)
             {
                 DWORD bytesWritten = 0;
                 WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
-                returnValue = (bytesWritten == buffer.size() ? S_OK : E_FAIL);
+                resultValue = (bytesWritten == buffer.size() ? S_OK : E_FAIL);
                 CloseHandle(fileHandle);
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         HRESULT save(LPCWSTR fileName, LPCSTR string)
         {
-            HRESULT returnValue = E_FAIL;
+            HRESULT resultValue = E_FAIL;
             UINT32 stringLength = strlen(string);
             std::vector<UINT8> buffer(stringLength);
             if (buffer.size() == stringLength)
             {
                 memcpy(buffer.data(), string, stringLength);
-                returnValue = save(fileName, buffer);
+                resultValue = save(fileName, buffer);
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         HRESULT save(LPCWSTR fileName, LPCWSTR string, bool convertUTF8)

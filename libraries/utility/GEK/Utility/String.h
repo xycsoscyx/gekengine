@@ -24,17 +24,17 @@ namespace Gek
         UINT64 getUINT64(LPCWSTR expression);
         bool getBoolean(LPCWSTR expression);
 
-        CStringW setDouble(const double &value);
-        CStringW setFloat(const float &value);
+        CStringW setDouble(double value);
+        CStringW setFloat(float value);
         CStringW setFloat2(const Gek::Math::Float2 &value);
         CStringW setFloat3(const Gek::Math::Float3 &value);
         CStringW setFloat4(const Gek::Math::Float4 &value);
         CStringW setQuaternion(const Gek::Math::Quaternion &value);
-        CStringW setINT32(const INT32 &value);
-        CStringW setUINT32(const UINT32 &value);
-        CStringW setINT64(const INT64 &value);
-        CStringW setUINT64(const UINT64 &value);
-        CStringW setBoolean(const bool &value);
+        CStringW setINT32(INT32 value);
+        CStringW setUINT32(UINT32 value);
+        CStringW setINT64(INT64 value);
+        CStringW setUINT64(UINT64 value);
+        CStringW setBoolean(bool value);
 
         CStringA format(LPCSTR format, ...);
         CStringW format(LPCWSTR format, ...);

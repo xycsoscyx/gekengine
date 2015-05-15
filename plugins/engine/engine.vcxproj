@@ -96,17 +96,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\api\GEKAPI.h" />
-    <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
-    <ClInclude Include="..\..\api\IGEKComponent.h" />
-    <ClInclude Include="..\..\api\IGEKEngineCore.h" />
-    <ClInclude Include="..\..\api\IGEKInputManager.h" />
-    <ClInclude Include="..\..\api\IGEKMaterialManager.h" />
-    <ClInclude Include="..\..\api\IGEKProgramManager.h" />
-    <ClInclude Include="..\..\api\IGEKRenderManager.h" />
-    <ClInclude Include="..\..\api\IGEKSceneManager.h" />
     <ClInclude Include="GEKEngine.h" />
     <ClInclude Include="GEKEngineCLSIDs.h" />
+    <ClInclude Include="GEK\Engine\ActionInterface.h" />
+    <ClInclude Include="GEK\Engine\Component.h" />
+    <ClInclude Include="GEK\Engine\ComponentInterface.h" />
+    <ClInclude Include="GEK\Engine\PopulationInterface.h" />
+    <ClInclude Include="GEK\Engine\RenderInterface.h" />
     <ClInclude Include="Include\CGEKEngine.h" />
     <ClInclude Include="Include\CGEKPopulationSystem.h" />
     <ClInclude Include="Include\CGEKProperties.h" />
@@ -121,6 +117,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Population.cpp" />
     <ClCompile Include="Source\CGEKEngine.cpp" />
     <ClCompile Include="Source\CGEKPopulationSystem.cpp" />
     <ClCompile Include="Source\CGEKProperties.cpp" />

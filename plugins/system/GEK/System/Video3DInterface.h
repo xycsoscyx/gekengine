@@ -1,8 +1,6 @@
 #pragma once
 
 #include "GEK\Math\Common.h"
-#include "GEK\Math\Vector2.h"
-#include "GEK\Math\Vector3.h"
 #include "GEK\Math\Vector4.h"
 #include "GEK\Utility\Common.h"
 #include <unordered_map>

@@ -132,28 +132,28 @@ namespace Gek
             return strValue;
         }
 
-        CStringW setFloat2(Gek::Math::Float2 value)
+        CStringW setFloat2(const Gek::Math::Float2 &value)
         {
             CStringW strValue;
             strValue.Format(L"%f,%f", value.x, value.y);
             return strValue;
         }
 
-        CStringW setFloat3(Gek::Math::Float3 value)
+        CStringW setFloat3(const Gek::Math::Float3 &value)
         {
             CStringW strValue;
             strValue.Format(L"%f,%f,%f", value.x, value.y, value.z);
             return strValue;
         }
 
-        CStringW setFloat4(Gek::Math::Float4 value)
+        CStringW setFloat4(const Gek::Math::Float4 &value)
         {
             CStringW strValue;
             strValue.Format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);
             return strValue;
         }
 
-        CStringW setQuaternion(Gek::Math::Quaternion value)
+        CStringW setQuaternion(const Gek::Math::Quaternion &value)
         {
             CStringW strValue;
             strValue.Format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);

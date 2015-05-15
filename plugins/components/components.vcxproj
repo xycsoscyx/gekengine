@@ -106,35 +106,24 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Color.cpp" />
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentCamera.cpp" />
-    <ClCompile Include="Source\CGEKComponentColor.cpp" />
-    <ClCompile Include="Source\CGEKComponentFollow.cpp" />
-    <ClCompile Include="Source\CGEKComponentLight.cpp" />
-    <ClCompile Include="Source\CGEKComponentSize.cpp" />
-    <ClCompile Include="Source\CGEKComponentTransform.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\api\GEKAPI.h" />
-    <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
-    <ClInclude Include="..\..\api\IGEKComponent.h" />
-    <ClInclude Include="..\..\api\IGEKEngineCore.h" />
-    <ClInclude Include="..\..\api\IGEKInputManager.h" />
-    <ClInclude Include="..\..\api\IGEKMaterialManager.h" />
-    <ClInclude Include="..\..\api\IGEKProgramManager.h" />
-    <ClInclude Include="..\..\api\IGEKRenderManager.h" />
-    <ClInclude Include="..\..\api\IGEKSceneManager.h" />
-    <ClInclude Include="GEKComponents.h" />
-    <ClInclude Include="GEKComponentsCLSIDs.h" />
-    <ClInclude Include="Include\CGEKComponentCamera.h" />
-    <ClInclude Include="Include\CGEKComponentColor.h" />
-    <ClInclude Include="Include\CGEKComponentFollow.h" />
-    <ClInclude Include="Include\CGEKComponentLight.h" />
-    <ClInclude Include="Include\CGEKComponentSize.h" />
-    <ClInclude Include="Include\CGEKComponentTransform.h" />
+    <ClCompile Include="Follow.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Size.cpp" />
+    <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GEK\Components\Camera.h" />
+    <ClInclude Include="GEK\Components\Color.h" />
+    <ClInclude Include="GEK\Components\Follow.h" />
+    <ClInclude Include="GEK\Components\Light.h" />
+    <ClInclude Include="GEK\Components\Size.h" />
+    <ClInclude Include="GEK\Components\Transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -488,7 +488,8 @@ namespace Gek
 
             STDMETHODIMP update(void)
             {
-                REQUIRE_RETURN(mouseDevice && keyboardDevice, E_INVALIDARG);
+                REQUIRE_RETURN(keyboardDevice, E_INVALIDARG);
+                REQUIRE_RETURN(mouseDevice, E_INVALIDARG);
 
                 mouseDevice->update();
                 keyboardDevice->update();

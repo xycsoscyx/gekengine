@@ -65,23 +65,23 @@ namespace Gek
         {
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
-            HRESULT returnValue = E_INVALIDARG;
+            HRESULT resultValue = E_INVALIDARG;
             if (IsEqualIID(IID_IUnknown, interfaceType))
             {
                 AddRef();
                 (*returnObject) = dynamic_cast<IUnknown *>(dynamic_cast<ContextInterface *>(this));
                 _ASSERTE(*returnObject);
-                returnValue = S_OK;
+                resultValue = S_OK;
             }
             else if (IsEqualIID(__uuidof(ContextInterface), interfaceType))
             {
                 AddRef();
                 (*returnObject) = dynamic_cast<ContextInterface *>(this);
                 _ASSERTE(*returnObject);
-                returnValue = S_OK;
+                resultValue = S_OK;
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         // ContextInterface
@@ -146,36 +146,36 @@ namespace Gek
         {
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
-            HRESULT returnValue = E_FAIL;
+            HRESULT resultValue = E_FAIL;
             auto classIterator = classList.find(classType);
             if (classIterator != classList.end())
             {
                 CComPtr<ContextUserInterface> classInstance;
-                returnValue = ((*classIterator).second)(&classInstance);
-                if (SUCCEEDED(returnValue) && classInstance)
+                resultValue = ((*classIterator).second)(&classInstance);
+                if (SUCCEEDED(resultValue) && classInstance)
                 {
                     classInstance->registerContext(this);
-                    returnValue = classInstance->QueryInterface(interfaceType, returnObject);
+                    resultValue = classInstance->QueryInterface(interfaceType, returnObject);
                 }
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         STDMETHODIMP createEachType(REFCLSID typeID, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance)
         {
-            HRESULT returnValue = S_OK;
+            HRESULT resultValue = S_OK;
             auto typedClassIterator = typedClassList.find(typeID);
             if (typedClassIterator != typedClassList.end())
             {
                 for (auto &classType : (*typedClassIterator).second)
                 {
                     CComPtr<IUnknown> classInstance;
-                    returnValue = createInstance(classType, IID_PPV_ARGS(&classInstance));
+                    resultValue = createInstance(classType, IID_PPV_ARGS(&classInstance));
                     if (classInstance)
                     {
-                        returnValue = onCreateInstance(classType, classInstance);
-                        if (FAILED(returnValue))
+                        resultValue = onCreateInstance(classType, classInstance);
+                        if (FAILED(resultValue))
                         {
                             break;
                         }
@@ -183,7 +183,7 @@ namespace Gek
                 };
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         STDMETHODIMP_(Handle) addLogListener(std::function<void(LPCSTR, UINT32, LPCWSTR)> onLogMessage)
@@ -226,14 +226,14 @@ namespace Gek
     {
         REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
-        HRESULT returnValue = E_OUTOFMEMORY;
+        HRESULT resultValue = E_OUTOFMEMORY;
         CComPtr<Context> context(new Context());
         _ASSERTE(context);
         if (context)
         {
-            returnValue = context->QueryInterface(IID_PPV_ARGS(returnObject));
+            resultValue = context->QueryInterface(IID_PPV_ARGS(returnObject));
         }
 
-        return returnValue;
+        return resultValue;
     }
 };

@@ -33,23 +33,23 @@ namespace Gek
     {
         REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
-        HRESULT returnValue = E_INVALIDARG;
+        HRESULT resultValue = E_INVALIDARG;
         if (IsEqualIID(IID_IUnknown, interfaceType))
         {
             AddRef();
             (*returnObject) = dynamic_cast<IUnknown *>(this);
             _ASSERTE(*returnObject);
-            returnValue = S_OK;
+            resultValue = S_OK;
         }
         else if (IsEqualIID(__uuidof(ContextUserInterface), interfaceType))
         {
             AddRef();
             (*returnObject) = dynamic_cast<ContextUserInterface *>(this);
             _ASSERTE(*returnObject);
-            returnValue = S_OK;
+            resultValue = S_OK;
         }
 
-        return returnValue;
+        return resultValue;
     }
 
     // ContextUserInterface

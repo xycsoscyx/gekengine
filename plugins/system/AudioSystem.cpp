@@ -186,24 +186,24 @@ namespace Gek
             {
                 REQUIRE_RETURN(window, E_INVALIDARG);
 
-                HRESULT returnValue = E_FAIL;
+                HRESULT resultValue = E_FAIL;
                 if (directSound)
                 {
-                    returnValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
+                    resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
                 }
                 else
                 {
-                    returnValue = DirectSoundCreate8(nullptr, &directSound, nullptr);
-                    if (SUCCEEDED(returnValue))
+                    resultValue = DirectSoundCreate8(nullptr, &directSound, nullptr);
+                    if (SUCCEEDED(resultValue))
                     {
-                        returnValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
-                        if (SUCCEEDED(returnValue))
+                        resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
+                        if (SUCCEEDED(resultValue))
                         {
                             DSBUFFERDESC primaryBufferDescription = { 0 };
                             primaryBufferDescription.dwSize = sizeof(DSBUFFERDESC);
                             primaryBufferDescription.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
-                            returnValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr);
-                            if (SUCCEEDED(returnValue))
+                            resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr);
+                            if (SUCCEEDED(resultValue))
                             {
                                 WAVEFORMATEX primaryBufferFormat;
                                 ZeroMemory(&primaryBufferFormat, sizeof(WAVEFORMATEX));
@@ -213,14 +213,14 @@ namespace Gek
                                 primaryBufferFormat.nSamplesPerSec = 48000;
                                 primaryBufferFormat.nBlockAlign = (primaryBufferFormat.wBitsPerSample / 8 * primaryBufferFormat.nChannels);
                                 primaryBufferFormat.nAvgBytesPerSec = (primaryBufferFormat.nSamplesPerSec * primaryBufferFormat.nBlockAlign);
-                                returnValue = primarySoundBuffer->SetFormat(&primaryBufferFormat);
-                                if (SUCCEEDED(returnValue))
+                                resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat);
+                                if (SUCCEEDED(resultValue))
                                 {
-                                    returnValue = E_FAIL;
+                                    resultValue = E_FAIL;
                                     directSoundListener = primarySoundBuffer;
                                     if (directSoundListener)
                                     {
-                                        returnValue = S_OK;
+                                        resultValue = S_OK;
                                         setMasterVolume(1.0f);
                                         setDistanceFactor(1.0f);
                                         setDopplerFactor(0.0f);
@@ -232,7 +232,7 @@ namespace Gek
                     }
                 }
 
-                return returnValue;
+                return resultValue;
             }
 
             STDMETHODIMP_(void) setMasterVolume(float volume)
@@ -285,65 +285,67 @@ namespace Gek
             STDMETHODIMP copyEffect(EffectInterface *source, EffectInterface **returnObject)
             {
                 REQUIRE_RETURN(directSound, E_FAIL);
-                REQUIRE_RETURN(source && returnObject, E_INVALIDARG);
+                REQUIRE_RETURN(source, E_INVALIDARG);
+                REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
-                HRESULT returnValue = E_FAIL;
+                HRESULT resultValue = E_FAIL;
                 CComQIPtr<SampleInterface> sourceSample(source);
                 if (sourceSample)
                 {
                     CComPtr<IDirectSoundBuffer> directSoundBuffer;
-                    returnValue = directSound->DuplicateSoundBuffer((LPDIRECTSOUNDBUFFER)sourceSample->getBuffer(), &directSoundBuffer);
+                    resultValue = directSound->DuplicateSoundBuffer((LPDIRECTSOUNDBUFFER)sourceSample->getBuffer(), &directSoundBuffer);
                     if (directSoundBuffer)
                     {
-                        returnValue = E_FAIL;
+                        resultValue = E_FAIL;
                         CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
                         if (directSound8Buffer)
                         {
-                            returnValue = E_OUTOFMEMORY;
+                            resultValue = E_OUTOFMEMORY;
                             CComPtr<Effect> effect = new Effect(directSound8Buffer);
                             if (effect)
                             {
-                                returnValue = effect->QueryInterface(IID_PPV_ARGS(returnObject));
+                                resultValue = effect->QueryInterface(IID_PPV_ARGS(returnObject));
                             }
                         }
                     }
                 }
 
-                return returnValue;
+                return resultValue;
             }
 
             STDMETHODIMP copySound(SoundInterface *source, SoundInterface **returnObject)
             {
                 REQUIRE_RETURN(directSound, E_FAIL);
-                REQUIRE_RETURN(source && returnObject, E_INVALIDARG);
+                REQUIRE_RETURN(source, E_INVALIDARG);
+                REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
-                HRESULT returnValue = E_FAIL;
+                HRESULT resultValue = E_FAIL;
                 CComQIPtr<SampleInterface> sourceSample(source);
                 if (sourceSample)
                 {
                     CComPtr<IDirectSoundBuffer> directSoundBuffer;
-                    returnValue = directSound->DuplicateSoundBuffer(LPDIRECTSOUNDBUFFER(sourceSample->getBuffer()), &directSoundBuffer);
+                    resultValue = directSound->DuplicateSoundBuffer(LPDIRECTSOUNDBUFFER(sourceSample->getBuffer()), &directSoundBuffer);
                     if (directSoundBuffer)
                     {
-                        returnValue = E_FAIL;
+                        resultValue = E_FAIL;
                         CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
                         if (directSound8Buffer)
                         {
                             CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> directSound8Buffer3D(directSound8Buffer);
                             if (directSound8Buffer3D)
                             {
-                                returnValue = E_OUTOFMEMORY;
+                                resultValue = E_OUTOFMEMORY;
                                 CComPtr<Sound> sound = new Sound(directSound8Buffer, directSound8Buffer3D);
                                 if (sound)
                                 {
-                                    returnValue = sound->QueryInterface(IID_PPV_ARGS(returnObject));
+                                    resultValue = sound->QueryInterface(IID_PPV_ARGS(returnObject));
                                 }
                             }
                         }
                     }
                 }
 
-                return returnValue;
+                return resultValue;
             }
 
             HRESULT loadFromFile(LPCWSTR fileName, DWORD flags, GUID soundAlgorithm, IDirectSoundBuffer **returnObject)
@@ -352,10 +354,10 @@ namespace Gek
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
                 std::vector<UINT8> fileData;
-                HRESULT returnValue = Gek::FileSystem::load(fileName, fileData);
-                if (SUCCEEDED(returnValue))
+                HRESULT resultValue = Gek::FileSystem::load(fileName, fileData);
+                if (SUCCEEDED(resultValue))
                 {
-                    returnValue = E_FAIL;
+                    resultValue = E_FAIL;
                     audiere::RefPtr<audiere::File> audiereFile(audiere::CreateMemoryFile(fileData.data(), fileData.size()));
                     if (audiereFile)
                     {
@@ -388,7 +390,7 @@ namespace Gek
                             bufferDescription.dwFlags = flags;
 
                             CComPtr<IDirectSoundBuffer> directSoundBuffer;
-                            returnValue = directSound->CreateSoundBuffer(&bufferDescription, &directSoundBuffer, nullptr);
+                            resultValue = directSound->CreateSoundBuffer(&bufferDescription, &directSoundBuffer, nullptr);
                             if (directSoundBuffer)
                             {
                                 void *sampleData = nullptr;
@@ -398,13 +400,13 @@ namespace Gek
                                     directSoundBuffer->Unlock(sampleData, sampleLength, 0, 0);
                                 }
 
-                                returnValue = directSoundBuffer->QueryInterface(IID_IDirectSoundBuffer, (LPVOID FAR *)returnObject);
+                                resultValue = directSoundBuffer->QueryInterface(IID_IDirectSoundBuffer, (LPVOID FAR *)returnObject);
                             }
                         }
                     }
                 }
 
-                return returnValue;
+                return resultValue;
             }
 
             STDMETHODIMP loadEffect(LPCWSTR fileName, EffectInterface **returnObject)
@@ -413,22 +415,22 @@ namespace Gek
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
                 CComPtr<IDirectSoundBuffer> directSoundBuffer;
-                HRESULT returnValue = loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &directSoundBuffer);
+                HRESULT resultValue = loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &directSoundBuffer);
                 if (directSoundBuffer)
                 {
-                    returnValue = E_FAIL;
+                    resultValue = E_FAIL;
                     CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
                     if (directSound8Buffer)
                     {
                         CComPtr<Effect> effect = new Effect(directSound8Buffer);
                         if (effect)
                         {
-                            returnValue = effect->QueryInterface(IID_PPV_ARGS(returnObject));
+                            resultValue = effect->QueryInterface(IID_PPV_ARGS(returnObject));
                         }
                     }
                 }
 
-                return returnValue;
+                return resultValue;
             }
 
             STDMETHODIMP loadSound(LPCWSTR fileName, SoundInterface **returnObject)
@@ -437,10 +439,10 @@ namespace Gek
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
                 CComPtr<IDirectSoundBuffer> directSoundBuffer;
-                HRESULT returnValue = loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &directSoundBuffer);
+                HRESULT resultValue = loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &directSoundBuffer);
                 if (directSoundBuffer)
                 {
-                    returnValue = E_FAIL;
+                    resultValue = E_FAIL;
                     CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
                     if (directSound8Buffer)
                     {
@@ -450,13 +452,13 @@ namespace Gek
                             CComPtr<Sound> sound = new Sound(directSound8Buffer, directSound8Buffer3D);
                             if (sound)
                             {
-                                returnValue = sound->QueryInterface(IID_PPV_ARGS(returnObject));
+                                resultValue = sound->QueryInterface(IID_PPV_ARGS(returnObject));
                             }
                         }
                     }
                 }
 
-                return returnValue;
+                return resultValue;
             }
         };
 

@@ -117,7 +117,8 @@ CGEKRenderFilter::~CGEKRenderFilter(void)
 
 STDMETHODIMP CGEKRenderFilter::Initialize(IGEKEngineCore *pEngine, IGEKRenderSystem *pRenderSystem)
 {
-    REQUIRE_RETURN(pEngine && pRenderSystem, E_INVALIDARG);
+    REQUIRE_RETURN(pEngine, E_INVALIDARG);
+    REQUIRE_RETURN(pRenderSystem, E_INVALIDARG);
 
     m_pEngine = pEngine;
     m_pRenderSystem = pRenderSystem;

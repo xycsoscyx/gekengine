@@ -7,81 +7,49 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{dbbe75fd-d0dc-46a0-9e2b-248a58bd112a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="API Files">
-      <UniqueIdentifier>{ace7e109-320b-4a23-906b-a5346117e745}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentFollow.cpp">
+    <ClCompile Include="Color.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentColor.cpp">
+    <ClCompile Include="Follow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentTransform.cpp">
+    <ClCompile Include="Light.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentLight.cpp">
+    <ClCompile Include="Size.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentCamera.cpp">
+    <ClCompile Include="Transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\CGEKComponentSize.cpp">
+    <ClCompile Include="Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="GEKComponentsCLSIDs.h" />
-    <ClInclude Include="..\..\api\IGEKRenderManager.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKSceneManager.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\GEKAPI.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\GEKAPICLSIDs.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKComponent.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKInputManager.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKMaterialManager.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKProgramManager.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentFollow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKEngineCore.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentColor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentLight.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentTransform.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEKComponents.h" />
-    <ClInclude Include="Include\CGEKComponentCamera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\CGEKComponentSize.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GEK\Components\Follow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Components\Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Components\Size.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Components\Transform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Components\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Components\Color.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

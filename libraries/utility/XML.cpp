@@ -16,17 +16,17 @@ namespace Gek
 
         HRESULT Node::create(LPCWSTR type)
         {
-            HRESULT returnValue = E_FAIL;
+            HRESULT resultValue = E_FAIL;
 
             CStringA strTypeUTF8 = CW2A(type, CP_UTF8);
             xmlNodePtr pNewNode = xmlNewNode(nullptr, BAD_CAST strTypeUTF8.GetString());
             if (pNewNode != nullptr)
             {
                 node = pNewNode;
-                returnValue = S_OK;
+                resultValue = S_OK;
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         void Node::setType(LPCWSTR type)
@@ -266,7 +266,7 @@ namespace Gek
                 document = nullptr;
             }
 
-            HRESULT returnValue = E_FAIL;
+            HRESULT resultValue = E_FAIL;
             document = xmlNewDoc(BAD_CAST "1.0");
             if (document != nullptr)
             {
@@ -274,11 +274,11 @@ namespace Gek
                 if (rootNode != nullptr)
                 {
                     xmlDocSetRootElement(document, rootNode);
-                    returnValue = S_OK;
+                    resultValue = S_OK;
                 }
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         HRESULT Document::load(LPCWSTR fileName)
@@ -289,27 +289,27 @@ namespace Gek
                 document = nullptr;
             }
 
-            HRESULT returnValue = E_FAIL;
+            HRESULT resultValue = E_FAIL;
             CStringW expandedFileName(Gek::FileSystem::expandPath(fileName));
             document = xmlReadFile(CW2A(expandedFileName, CP_UTF8), nullptr, XML_PARSE_DTDATTR | XML_PARSE_NOENT | XML_PARSE_DTDVALID);
             if (document != nullptr)
             {
-                returnValue = S_OK;
+                resultValue = S_OK;
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         HRESULT Document::save(LPCWSTR fileName)
         {
-            HRESULT returnValue = E_FAIL;
+            HRESULT resultValue = E_FAIL;
             if (document != nullptr)
             {
                 CStringW expandedFileName(Gek::FileSystem::expandPath(fileName));
                 xmlSaveFormatFileEnc(CW2A(expandedFileName, CP_UTF8), document, "UTF-8", 1);
             }
 
-            return returnValue;
+            return resultValue;
         }
 
         Node Document::getRoot(void) const

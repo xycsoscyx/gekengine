@@ -27,7 +27,7 @@ namespace Gek
     using namespace Video3D;
     namespace Video
     {        
-        static const DXGI_FORMAT gs_aFormats[] =
+        static const DXGI_FORMAT d3dFormatList[] =
         {
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_R8_UNORM,
@@ -53,7 +53,7 @@ namespace Gek
             DXGI_FORMAT_D32_FLOAT,
         };
 
-        static const UINT32 gs_aFormatStrides[] = 
+        static const UINT32 d3dFormatStrideList[] = 
         {
             0,
             sizeof(UINT8),
@@ -79,13 +79,13 @@ namespace Gek
             (sizeof(float) * 4),
         };
 
-        static const D3D11_DEPTH_WRITE_MASK gs_aDepthWriteMasks[] =
+        static const D3D11_DEPTH_WRITE_MASK d3dDepthWriteMaskList[] =
         {
             D3D11_DEPTH_WRITE_MASK_ZERO,
             D3D11_DEPTH_WRITE_MASK_ALL,
         };
 
-        static const D3D11_TEXTURE_ADDRESS_MODE gs_aAddressModes[] = 
+        static const D3D11_TEXTURE_ADDRESS_MODE d3dAddressModeList[] = 
         {
             D3D11_TEXTURE_ADDRESS_CLAMP,
             D3D11_TEXTURE_ADDRESS_WRAP,
@@ -94,7 +94,7 @@ namespace Gek
             D3D11_TEXTURE_ADDRESS_BORDER,
         };
 
-        static const D3D11_COMPARISON_FUNC gs_aComparisonFunctions[] = 
+        static const D3D11_COMPARISON_FUNC d3dComparisonFunctionList[] = 
         {
             D3D11_COMPARISON_ALWAYS,
             D3D11_COMPARISON_NEVER,
@@ -106,7 +106,7 @@ namespace Gek
             D3D11_COMPARISON_GREATER_EQUAL,
         };
 
-        static const D3D11_STENCIL_OP gs_aStencilOperations[] = 
+        static const D3D11_STENCIL_OP d3dStencilOperationList[] = 
         {
             D3D11_STENCIL_OP_ZERO,
             D3D11_STENCIL_OP_KEEP,
@@ -118,7 +118,7 @@ namespace Gek
             D3D11_STENCIL_OP_DECR_SAT,
         };
 
-        static const D3D11_BLEND gs_aBlendSources[] =
+        static const D3D11_BLEND d3dBlendSourceList[] =
         {
             D3D11_BLEND_ZERO,
             D3D11_BLEND_ONE,
@@ -139,7 +139,7 @@ namespace Gek
             D3D11_BLEND_INV_SRC1_ALPHA,
         };
 
-        static const D3D11_BLEND_OP gs_aBlendOperations[] = 
+        static const D3D11_BLEND_OP d3dBlendOperationList[] = 
         {
             D3D11_BLEND_OP_ADD,
             D3D11_BLEND_OP_SUBTRACT,
@@ -148,20 +148,20 @@ namespace Gek
             D3D11_BLEND_OP_MAX,
         };
 
-        static const D3D11_FILL_MODE gs_aFillModes[] =
+        static const D3D11_FILL_MODE d3dFillModeList[] =
         {
             D3D11_FILL_WIREFRAME,
             D3D11_FILL_SOLID,
         };
 
-        static const D3D11_CULL_MODE gs_aCullModes[] =
+        static const D3D11_CULL_MODE d3dCullModeList[] =
         {
             D3D11_CULL_NONE,
             D3D11_CULL_FRONT,
             D3D11_CULL_BACK,
         };
 
-        static const D3D11_FILTER gs_aFilters[] =
+        static const D3D11_FILTER d3dFilterList[] =
         {
             D3D11_FILTER_MIN_MAG_MIP_POINT,
             D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR,
@@ -174,7 +174,7 @@ namespace Gek
             D3D11_FILTER_ANISOTROPIC,
         };
 
-        static const D3D11_PRIMITIVE_TOPOLOGY gs_aTopology[] = 
+        static const D3D11_PRIMITIVE_TOPOLOGY d3dTopologList[] = 
         {
             D3D11_PRIMITIVE_TOPOLOGY_POINTLIST,
             D3D11_PRIMITIVE_TOPOLOGY_LINELIST,
@@ -183,7 +183,7 @@ namespace Gek
             D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP,
         };
 
-        static const DWRITE_FONT_STYLE gs_aFontStyles[] =
+        static const DWRITE_FONT_STYLE d3dFontStyleList[] =
         {
             DWRITE_FONT_STYLE_NORMAL,
             DWRITE_FONT_STYLE_ITALIC,
@@ -317,7 +317,7 @@ namespace Gek
 
             STDMETHODIMP closeShape(void)
             {
-                REQUIRE_RETURN(d2dPathGeometry && d2dGeometrySink, E_FAIL);
+                REQUIRE_RETURN(d2dGeometrySink, E_FAIL);
 
                 HRESULT resultValue = d2dGeometrySink->Close();
                 if (SUCCEEDED(resultValue))
@@ -330,7 +330,7 @@ namespace Gek
 
             STDMETHODIMP_(void) beginModifications(const Math::Float2 &point, bool fillShape)
             {
-                REQUIRE_VOID_RETURN(d2dPathGeometry && d2dGeometrySink);
+                REQUIRE_VOID_RETURN(d2dGeometrySink);
 
                 if (!figureHasBegun)
                 {
@@ -341,7 +341,7 @@ namespace Gek
 
             STDMETHODIMP_(void) endModifications(bool openEnded)
             {
-                REQUIRE_VOID_RETURN(d2dPathGeometry && d2dGeometrySink);
+                REQUIRE_VOID_RETURN(d2dGeometrySink);
 
                 if (figureHasBegun)
                 {
@@ -372,7 +372,8 @@ namespace Gek
 
             STDMETHODIMP createWidened(float width, float tolerance, GeometryInterface **returnObject)
             {
-                REQUIRE_RETURN(d2dPathGeometry && returnObject, E_INVALIDARG);
+                REQUIRE_RETURN(d2dPathGeometry, E_INVALIDARG);
+                REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
                 HRESULT resultValue = E_FAIL;
                 CComPtr<ID2D1Factory> d2dFactory;
@@ -427,7 +428,9 @@ namespace Gek
             // ID3DInclude
             STDMETHODIMP Open(D3D_INCLUDE_TYPE includeType, LPCSTR fileName, LPCVOID parentData, LPCVOID *data, UINT *dataSize)
             {
-                REQUIRE_RETURN(fileName && data && dataSize, E_INVALIDARG);
+                REQUIRE_RETURN(fileName, E_INVALIDARG);
+                REQUIRE_RETURN(data, E_INVALIDARG);
+                REQUIRE_RETURN(dataSize, E_INVALIDARG);
 
                 includeBuffer.clear();
                 HRESULT resultValue = Gek::FileSystem::load(CA2W(fileName), includeBuffer);
@@ -927,8 +930,8 @@ namespace Gek
 
             STDMETHODIMP_(void) setPrimitiveType(UINT8 primitiveType)
             {
-                REQUIRE_VOID_RETURN(d3dDeviceContext);
-                d3dDeviceContext->IASetPrimitiveTopology(gs_aTopology[primitiveType]);
+                REQUIRE_VOID_RETURN(d3dDeviceContext && primitiveType < ARRAYSIZE(d3dTopologList));
+                d3dDeviceContext->IASetPrimitiveTopology(d3dTopologList[primitiveType]);
             }
 
             STDMETHODIMP_(void) drawPrimitive(UINT32 vertexCount, UINT32 firstVertex)
@@ -1037,6 +1040,8 @@ namespace Gek
 
             HRESULT getDefaultTargets(UINT8 depthFormat)
             {
+                REQUIRE_RETURN(depthFormat < ARRAYSIZE(d3dFormatList), E_FAIL);
+
                 this->depthFormat = DXGI_FORMAT_UNKNOWN;
 
                 CComPtr<IDXGISurface> dxSurface;
@@ -1084,7 +1089,7 @@ namespace Gek
                             depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
                             depthDescription.CPUAccessFlags = 0;
                             depthDescription.MiscFlags = 0;
-                            depthDescription.Format = gs_aFormats[depthFormat];
+                            depthDescription.Format = d3dFormatList[depthFormat];
                             if (depthDescription.Format != DXGI_FORMAT_UNKNOWN)
                             {
                                 CComPtr<ID3D11Texture2D> d3dDepthTarget;
@@ -1129,6 +1134,11 @@ namespace Gek
             // Video3D::SystemInterface
             STDMETHODIMP initialize(HWND window, bool windowed, UINT32 width, UINT32 height, UINT8 depthFormat)
             {
+                REQUIRE_RETURN(window, E_INVALIDARG);
+                REQUIRE_RETURN(width > 0, E_INVALIDARG);
+                REQUIRE_RETURN(height > 0, E_INVALIDARG);
+                REQUIRE_RETURN(depthFormat < ARRAYSIZE(d3dFormatList), E_INVALIDARG);
+
                 this->width = width;
                 this->height = height;
                 this->windowed = windowed;
@@ -1225,7 +1235,10 @@ namespace Gek
             {
                 REQUIRE_RETURN(d3dDevice, E_FAIL);
                 REQUIRE_RETURN(d3dDeviceContext, E_FAIL);
-                REQUIRE_RETURN(d2dDeviceContext, E_FAIL);
+                REQUIRE_RETURN(dxSwapChain, E_FAIL);
+                REQUIRE_RETURN(width > 0, E_INVALIDARG);
+                REQUIRE_RETURN(height > 0, E_INVALIDARG);
+                REQUIRE_RETURN(depthFormat < ARRAYSIZE(d3dFormatList), E_INVALIDARG);
 
                 this->width = width;
                 this->height = height;
@@ -1376,6 +1389,8 @@ namespace Gek
             STDMETHODIMP_(Gek::Handle) createRenderStates(const Gek::Video3D::RenderStates &renderStates)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
+                REQUIRE_RETURN(renderStates.fillMode < ARRAYSIZE(d3dFillModeList), Gek::InvalidHandle);
+                REQUIRE_RETURN(renderStates.cullMode < ARRAYSIZE(d3dCullModeList), Gek::InvalidHandle);
 
                 D3D11_RASTERIZER_DESC rasterizerDescription;
                 rasterizerDescription.FrontCounterClockwise = renderStates.frontCounterClockwise;
@@ -1386,8 +1401,8 @@ namespace Gek
                 rasterizerDescription.ScissorEnable = renderStates.scissorEnable;
                 rasterizerDescription.MultisampleEnable = renderStates.multisampleEnable;
                 rasterizerDescription.AntialiasedLineEnable = renderStates.antialiasedLineEnable;
-                rasterizerDescription.FillMode = gs_aFillModes[renderStates.fillMode];
-                rasterizerDescription.CullMode = gs_aCullModes[renderStates.cullMode];
+                rasterizerDescription.FillMode = d3dFillModeList[renderStates.fillMode];
+                rasterizerDescription.CullMode = d3dCullModeList[renderStates.cullMode];
 
                 Gek::Handle resourceHandle = Gek::InvalidHandle;
 
@@ -1408,19 +1423,19 @@ namespace Gek
 
                 D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
                 depthStencilDescription.DepthEnable = depthStates.depthEnable;
-                depthStencilDescription.DepthFunc = gs_aComparisonFunctions[depthStates.depthComparison];
+                depthStencilDescription.DepthFunc = d3dComparisonFunctionList[depthStates.depthComparison];
                 depthStencilDescription.StencilEnable = depthStates.stencilEnable;
                 depthStencilDescription.StencilReadMask = depthStates.stencilReadMask;
                 depthStencilDescription.StencilWriteMask = depthStates.stencilWriteMask;
-                depthStencilDescription.FrontFace.StencilFailOp = gs_aStencilOperations[depthStates.stencilFrontStates.stencilFailOperation];
-                depthStencilDescription.FrontFace.StencilDepthFailOp = gs_aStencilOperations[depthStates.stencilFrontStates.stencilDepthFailOperation];
-                depthStencilDescription.FrontFace.StencilPassOp = gs_aStencilOperations[depthStates.stencilFrontStates.stencilPassOperation];
-                depthStencilDescription.FrontFace.StencilFunc = gs_aComparisonFunctions[depthStates.stencilFrontStates.stencilComparison];
-                depthStencilDescription.BackFace.StencilFailOp = gs_aStencilOperations[depthStates.stencilBackStates.stencilFailOperation];
-                depthStencilDescription.BackFace.StencilDepthFailOp = gs_aStencilOperations[depthStates.stencilBackStates.stencilDepthFailOperation];
-                depthStencilDescription.BackFace.StencilPassOp = gs_aStencilOperations[depthStates.stencilBackStates.stencilPassOperation];
-                depthStencilDescription.BackFace.StencilFunc = gs_aComparisonFunctions[depthStates.stencilBackStates.stencilComparison];
-                depthStencilDescription.DepthWriteMask = gs_aDepthWriteMasks[depthStates.depthWriteMask];
+                depthStencilDescription.FrontFace.StencilFailOp = d3dStencilOperationList[depthStates.stencilFrontStates.stencilFailOperation];
+                depthStencilDescription.FrontFace.StencilDepthFailOp = d3dStencilOperationList[depthStates.stencilFrontStates.stencilDepthFailOperation];
+                depthStencilDescription.FrontFace.StencilPassOp = d3dStencilOperationList[depthStates.stencilFrontStates.stencilPassOperation];
+                depthStencilDescription.FrontFace.StencilFunc = d3dComparisonFunctionList[depthStates.stencilFrontStates.stencilComparison];
+                depthStencilDescription.BackFace.StencilFailOp = d3dStencilOperationList[depthStates.stencilBackStates.stencilFailOperation];
+                depthStencilDescription.BackFace.StencilDepthFailOp = d3dStencilOperationList[depthStates.stencilBackStates.stencilDepthFailOperation];
+                depthStencilDescription.BackFace.StencilPassOp = d3dStencilOperationList[depthStates.stencilBackStates.stencilPassOperation];
+                depthStencilDescription.BackFace.StencilFunc = d3dComparisonFunctionList[depthStates.stencilBackStates.stencilComparison];
+                depthStencilDescription.DepthWriteMask = d3dDepthWriteMaskList[depthStates.depthWriteMask];
 
                 Gek::Handle resourceHandle = Gek::InvalidHandle;
 
@@ -1443,12 +1458,12 @@ namespace Gek
                 blendDescription.AlphaToCoverageEnable = blendStates.alphaToCoverage;
                 blendDescription.IndependentBlendEnable = false;
                 blendDescription.RenderTarget[0].BlendEnable = blendStates.enable;
-                blendDescription.RenderTarget[0].SrcBlend = gs_aBlendSources[blendStates.colorSource];
-                blendDescription.RenderTarget[0].DestBlend = gs_aBlendSources[blendStates.colorDestination];
-                blendDescription.RenderTarget[0].BlendOp = gs_aBlendOperations[blendStates.colorOperation];
-                blendDescription.RenderTarget[0].SrcBlendAlpha = gs_aBlendSources[blendStates.alphaSource];
-                blendDescription.RenderTarget[0].DestBlendAlpha = gs_aBlendSources[blendStates.alphaDestination];
-                blendDescription.RenderTarget[0].BlendOpAlpha = gs_aBlendOperations[blendStates.alphaOperation];
+                blendDescription.RenderTarget[0].SrcBlend = d3dBlendSourceList[blendStates.colorSource];
+                blendDescription.RenderTarget[0].DestBlend = d3dBlendSourceList[blendStates.colorDestination];
+                blendDescription.RenderTarget[0].BlendOp = d3dBlendOperationList[blendStates.colorOperation];
+                blendDescription.RenderTarget[0].SrcBlendAlpha = d3dBlendSourceList[blendStates.alphaSource];
+                blendDescription.RenderTarget[0].DestBlendAlpha = d3dBlendSourceList[blendStates.alphaDestination];
+                blendDescription.RenderTarget[0].BlendOpAlpha = d3dBlendOperationList[blendStates.alphaOperation];
                 blendDescription.RenderTarget[0].RenderTargetWriteMask = 0;
                 if (blendStates.writeMask & Gek::Video3D::ColorMask::R)
                 {
@@ -1493,12 +1508,12 @@ namespace Gek
                 for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
                 {
                     blendDescription.RenderTarget[renderTarget].BlendEnable = blendStates.targetStates[renderTarget].enable;
-                    blendDescription.RenderTarget[renderTarget].SrcBlend = gs_aBlendSources[blendStates.targetStates[renderTarget].colorSource];
-                    blendDescription.RenderTarget[renderTarget].DestBlend = gs_aBlendSources[blendStates.targetStates[renderTarget].colorDestination];
-                    blendDescription.RenderTarget[renderTarget].BlendOp = gs_aBlendOperations[blendStates.targetStates[renderTarget].colorOperation];
-                    blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = gs_aBlendSources[blendStates.targetStates[renderTarget].alphaSource];
-                    blendDescription.RenderTarget[renderTarget].DestBlendAlpha = gs_aBlendSources[blendStates.targetStates[renderTarget].alphaDestination];
-                    blendDescription.RenderTarget[renderTarget].BlendOpAlpha = gs_aBlendOperations[blendStates.targetStates[renderTarget].alphaOperation];
+                    blendDescription.RenderTarget[renderTarget].SrcBlend = d3dBlendSourceList[blendStates.targetStates[renderTarget].colorSource];
+                    blendDescription.RenderTarget[renderTarget].DestBlend = d3dBlendSourceList[blendStates.targetStates[renderTarget].colorDestination];
+                    blendDescription.RenderTarget[renderTarget].BlendOp = d3dBlendOperationList[blendStates.targetStates[renderTarget].colorOperation];
+                    blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = d3dBlendSourceList[blendStates.targetStates[renderTarget].alphaSource];
+                    blendDescription.RenderTarget[renderTarget].DestBlendAlpha = d3dBlendSourceList[blendStates.targetStates[renderTarget].alphaDestination];
+                    blendDescription.RenderTarget[renderTarget].BlendOpAlpha = d3dBlendOperationList[blendStates.targetStates[renderTarget].alphaOperation];
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
                     if (blendStates.targetStates[renderTarget].writeMask & Gek::Video3D::ColorMask::R)
                     {
@@ -1539,19 +1554,19 @@ namespace Gek
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 D3D11_SAMPLER_DESC samplerDescription;
-                samplerDescription.AddressU = gs_aAddressModes[samplerStates.addressModeU];
-                samplerDescription.AddressV = gs_aAddressModes[samplerStates.addressModeV];
-                samplerDescription.AddressW = gs_aAddressModes[samplerStates.addressModeW];
+                samplerDescription.AddressU = d3dAddressModeList[samplerStates.addressModeU];
+                samplerDescription.AddressV = d3dAddressModeList[samplerStates.addressModeV];
+                samplerDescription.AddressW = d3dAddressModeList[samplerStates.addressModeW];
                 samplerDescription.MipLODBias = samplerStates.mipLevelBias;
                 samplerDescription.MaxAnisotropy = samplerStates.maximumAnisotropy;
-                samplerDescription.ComparisonFunc = gs_aComparisonFunctions[samplerStates.comparisonFunction];
+                samplerDescription.ComparisonFunc = d3dComparisonFunctionList[samplerStates.comparisonFunction];
                 samplerDescription.BorderColor[0] = samplerStates.borderColor.r;
                 samplerDescription.BorderColor[1] = samplerStates.borderColor.g;
                 samplerDescription.BorderColor[2] = samplerStates.borderColor.b;
                 samplerDescription.BorderColor[3] = samplerStates.borderColor.a;
                 samplerDescription.MinLOD = samplerStates.minimumMipLevel;
                 samplerDescription.MaxLOD = samplerStates.maximumMipLevel;
-                samplerDescription.Filter = gs_aFilters[samplerStates.filterMode];
+                samplerDescription.Filter = d3dFilterList[samplerStates.filterMode];
 
                 Gek::Handle resourceHandle = Gek::InvalidHandle;
 
@@ -1569,7 +1584,9 @@ namespace Gek
             STDMETHODIMP_(Gek::Handle) createRenderTarget(UINT32 width, UINT32 height, UINT8 format)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
-                REQUIRE_RETURN(width > 0 && height > 0, Gek::InvalidHandle);
+                REQUIRE_RETURN(width > 0, Gek::InvalidHandle);
+                REQUIRE_RETURN(height > 0, Gek::InvalidHandle);
+                REQUIRE_RETURN(format < ARRAYSIZE(d3dFormatList), E_INVALIDARG);
 
                 Gek::Handle resourceHandle = Gek::InvalidHandle;
 
@@ -1585,7 +1602,7 @@ namespace Gek
                 textureDescription.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
                 textureDescription.CPUAccessFlags = 0;
                 textureDescription.MiscFlags = 0;
-                textureDescription.Format = gs_aFormats[format];
+                textureDescription.Format = d3dFormatList[format];
 
                 CComPtr<ID3D11Texture2D> texture2D;
                 d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D);
@@ -1662,7 +1679,9 @@ namespace Gek
             STDMETHODIMP_(Gek::Handle) createDepthTarget(UINT32 width, UINT32 height, UINT8 format)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
-                REQUIRE_RETURN(width > 0 && height > 0, Gek::InvalidHandle);
+                REQUIRE_RETURN(width > 0, E_INVALIDARG);
+                REQUIRE_RETURN(height > 0, E_INVALIDARG);
+                REQUIRE_RETURN(format < ARRAYSIZE(d3dFormatList), E_INVALIDARG);
 
                 Gek::Handle resourceHandle = Gek::InvalidHandle;
 
@@ -1678,7 +1697,7 @@ namespace Gek
                 depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
                 depthDescription.CPUAccessFlags = 0;
                 depthDescription.MiscFlags = 0;
-                depthDescription.Format = gs_aFormats[format];
+                depthDescription.Format = d3dFormatList[format];
 
                 CComPtr<ID3D11Texture2D> texture2D;
                 d3dDevice->CreateTexture2D(&depthDescription, nullptr, &texture2D);
@@ -1705,7 +1724,8 @@ namespace Gek
             STDMETHODIMP_(Gek::Handle) createBuffer(UINT32 stride, UINT32 count, UINT32 flags, LPCVOID data)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
-                REQUIRE_RETURN(stride > 0 && count > 0, Gek::InvalidHandle);
+                REQUIRE_RETURN(stride > 0, Gek::InvalidHandle);
+                REQUIRE_RETURN(count > 0, Gek::InvalidHandle);
 
                 D3D11_BUFFER_DESC bufferDescription;
                 bufferDescription.ByteWidth = (stride * count);
@@ -1830,11 +1850,12 @@ namespace Gek
             STDMETHODIMP_(Gek::Handle) createBuffer(UINT8 format, UINT32 count, UINT32 flags, LPCVOID data)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
-                REQUIRE_RETURN(format != Gek::Video3D::Format::UNKNOWN && count > 0, Gek::InvalidHandle);
+                REQUIRE_RETURN(format < ARRAYSIZE(d3dFormatList), Gek::InvalidHandle);
+                REQUIRE_RETURN(count > 0, Gek::InvalidHandle);
 
                 Gek::Handle resourceHandle = Gek::InvalidHandle;
 
-                UINT32 stride = gs_aFormatStrides[format];
+                UINT32 stride = d3dFormatStrideList[format];
 
                 D3D11_BUFFER_DESC bufferDescription;
                 bufferDescription.ByteWidth = (stride * count);
@@ -1911,7 +1932,7 @@ namespace Gek
                     if (flags & Gek::Video3D::BufferFlags::RESOURCE)
                     {
                         D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                        viewDescription.Format = gs_aFormats[format];
+                        viewDescription.Format = d3dFormatList[format];
                         viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
                         viewDescription.Buffer.FirstElement = 0;
                         viewDescription.Buffer.NumElements = count;
@@ -1923,7 +1944,7 @@ namespace Gek
                     if (flags & Gek::Video3D::BufferFlags::UNORDERED_ACCESS)
                     {
                         D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                        viewDescription.Format = gs_aFormats[format];
+                        viewDescription.Format = d3dFormatList[format];
                         viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                         viewDescription.Buffer.FirstElement = 0;
                         viewDescription.Buffer.NumElements = count;
@@ -2026,7 +2047,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    gekLogMessage("Compute Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                    gekLogMessage(L"Compute Error: %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2094,7 +2115,7 @@ namespace Gek
                                 inputElementList[inputElement].InstanceDataStepRate = 0;
                             };
 
-                            inputElementList[inputElement].Format = gs_aFormats[elementLayout[inputElement].format];
+                            inputElementList[inputElement].Format = d3dFormatList[elementLayout[inputElement].format];
                             if (inputElementList[inputElement].Format == DXGI_FORMAT_UNKNOWN)
                             {
                                 inputElementList.clear();
@@ -2120,7 +2141,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    gekLogMessage("Vertex Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                    gekLogMessage(L"Vertex Error: %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2164,7 +2185,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    gekLogMessage("Geometry Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                    gekLogMessage(L"Geometry Error: %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2208,7 +2229,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    gekLogMessage("Pixel Error: %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                    gekLogMessage(L"Pixel Error: %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2314,7 +2335,7 @@ namespace Gek
                     textureDescription.Width = width;
                     textureDescription.Height = height;
                     textureDescription.MipLevels = 1;
-                    textureDescription.Format = gs_aFormats[format];
+                    textureDescription.Format = d3dFormatList[format];
                     textureDescription.ArraySize = 1;
                     textureDescription.SampleDesc.Count = 1;
                     textureDescription.SampleDesc.Quality = 0;
@@ -2337,7 +2358,7 @@ namespace Gek
                     textureDescription.Height = height;
                     textureDescription.Depth = depth;
                     textureDescription.MipLevels = 1;
-                    textureDescription.Format = gs_aFormats[format];
+                    textureDescription.Format = d3dFormatList[format];
                     textureDescription.Usage = D3D11_USAGE_DEFAULT;
                     textureDescription.BindFlags = bindFlags;
                     textureDescription.CPUAccessFlags = 0;
@@ -2363,7 +2384,7 @@ namespace Gek
                     if (flags & Gek::Video3D::TextureFlags::UNORDERED_ACCESS)
                     {
                         D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                        viewDescription.Format = gs_aFormats[format];
+                        viewDescription.Format = d3dFormatList[format];
                         if (depth == 1)
                         {
                             viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
@@ -2584,7 +2605,7 @@ namespace Gek
                 Gek::Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<IDWriteTextFormat> dwTextFormat;
-                dwFactory->CreateTextFormat(face, nullptr, DWRITE_FONT_WEIGHT(weight), gs_aFontStyles[style], DWRITE_FONT_STRETCH_NORMAL, size, L"", &dwTextFormat);
+                dwFactory->CreateTextFormat(face, nullptr, DWRITE_FONT_WEIGHT(weight), d3dFontStyleList[style], DWRITE_FONT_STRETCH_NORMAL, size, L"", &dwTextFormat);
                 if (dwTextFormat)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);

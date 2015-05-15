@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GEK\Math\Vector4.h"
+#include "GEK\Math\Quaternion.h"
 #include <Math.h>
 
 namespace Gek

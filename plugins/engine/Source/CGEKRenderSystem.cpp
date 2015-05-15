@@ -498,7 +498,8 @@ HRESULT CGEKRenderSystem::LoadPass(LPCWSTR pName)
 
 STDMETHODIMP CGEKRenderSystem::LoadResource(LPCWSTR pName, IUnknown **ppResource)
 {
-    REQUIRE_RETURN(pName && ppResource, E_INVALIDARG);
+    REQUIRE_RETURN(pName, E_INVALIDARG);
+    REQUIRE_RETURN(ppResource, E_INVALIDARG);
 
     HRESULT hRetVal = E_FAIL;
     auto pIterator = m_aResources.find(pName);

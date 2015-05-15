@@ -2,9 +2,9 @@
 #include <cguid.h>
 
 #include "GEK\Context\Common.h"
-#include "System\InputInterface.h"
-#include "System\AudioInterface.h"
-#include "System\VideoInterface.h"
+#include "GEK\System\InputInterface.h"
+#include "GEK\System\AudioInterface.h"
+#include "GEK\System\VideoInterface.h"
 
 namespace Gek
 {

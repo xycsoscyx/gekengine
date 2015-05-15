@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GEK\Math\Vector3.h"
 namespace Gek
 {
     namespace Math
