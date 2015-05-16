@@ -12,7 +12,7 @@ namespace Gek
     {
         namespace Transform
         {
-            static const void *Identifier = nullptr;
+            static const Handle identifier = 6;
             struct Data
             {
                 Gek::Math::Float4 position;

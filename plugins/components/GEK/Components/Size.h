@@ -11,7 +11,7 @@ namespace Gek
     {
         namespace Size
         {
-            static const void *Identifier = nullptr;
+            static const Handle identifier = 5;
             struct Data
             {
                 float value;

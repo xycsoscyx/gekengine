@@ -12,7 +12,7 @@ namespace Gek
     {
         namespace Mass
         {
-            static const void *Identifier = nullptr;
+            static const Handle identifier = 12;
             struct Data
             {
                 float value;

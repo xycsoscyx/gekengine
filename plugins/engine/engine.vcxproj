@@ -99,6 +99,7 @@
     <ClInclude Include="GEK\Engine\ActionInterface.h" />
     <ClInclude Include="GEK\Engine\Component.h" />
     <ClInclude Include="GEK\Engine\ComponentInterface.h" />
+    <ClInclude Include="GEK\Engine\ComponentSystemInterface.h" />
     <ClInclude Include="GEK\Engine\PopulationInterface.h" />
     <ClInclude Include="GEK\Engine\RenderInterface.h" />
   </ItemGroup>

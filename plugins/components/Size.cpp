@@ -46,7 +46,7 @@ namespace Gek
 
                 STDMETHODIMP_(Handle) getIdentifier(void) const
                 {
-                    return (Handle)&Identifier;
+                    return identifier;
                 }
             };
 

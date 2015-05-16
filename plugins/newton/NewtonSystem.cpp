@@ -5,9 +5,11 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
+#include "GEK\Engine\ComponentSystemInterface.h"
 #include "GEK\Engine\ActionInterface.h"
 #include "GEK\Engine\PopulationInterface.h"
 #include "GEK\Components\Transform.h"
+#include "GEK\Components\Size.h"
 #include "GEK\Newton\Mass.h"
 #include "GEK\Newton\DynamicBody.h"
 #include "GEK\Newton\Player.h"
@@ -117,7 +119,7 @@ namespace Gek
             void OnBodyTransform(const dFloat* const newtonMatrix, int threadHandle)
             {
                 const Math::Float4x4 &matrix = *reinterpret_cast<const Math::Float4x4 *>(newtonMatrix);
-                auto &transformComponent = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(GetEntityID(), GET_COMPONENT_ID(transform));
+                auto &transformComponent = populationManager->getComponent<Components::Transform::Data>(getEntityHandle(), Components::Transform::identifier);
                 transformComponent.position = matrix.translation;
                 transformComponent.rotation = matrix;
             }
@@ -125,7 +127,7 @@ namespace Gek
             // dNewtonDynamicBody
             void OnForceAndTorque(dFloat frameTime, int threadHandle)
             {
-                auto &massComponent = GetEngineCore()->GetSceneManager()->GetComponent<Components::DynamicBody::Data>(GetEntityID(), GET_COMPONENT_ID(dynamicbody));
+                auto &massComponent = populationManager->getComponent<Components::Mass::Data>(getEntityHandle(), Components::Mass::identifier);
                 AddForce((GetNewtonSystem()->GetGravity() * massComponent).xyz);
             }
         };
@@ -165,7 +167,7 @@ namespace Gek
             void OnBodyTransform(const dFloat* const newtonMatrix, int threadHandle)
             {
                 const Math::Float4x4 &matrix = *reinterpret_cast<const Math::Float4x4 *>(newtonMatrix);
-                auto &transformComponent = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(GetEntityID(), GET_COMPONENT_ID(transform));
+                auto &transformComponent = populationManager->getComponent<Components::Transform::)>(getEntityHandle(), Components::Transform::));
                 transformComponent.position = matrix.t;
                 transformComponent.rotation = matrix;
             }
@@ -192,7 +194,7 @@ namespace Gek
                 singleActionList.clear();
                 checkActions(constantActionList);
 
-                auto &playerComponent = GetEngineCore()->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(player)>(GetEntityID(), GET_COMPONENT_ID(player));
+                auto &playerComponent = populationManager->getComponent<Components::player)>(getEntityHandle(), Components::player));
                 SetPlayerVelocity(moveSpeed, strafeSpeed, jumpSpeed, viewAngle, Math::Float3(0.0f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.xyz, frameTime);
             }
 
@@ -217,6 +219,7 @@ namespace Gek
 
         class System : public ContextUser
                      , public Observable
+                     , public ComponentSystemInterface
                      , public Population::ObserverInterface
                      , public dNewton
         {
@@ -238,6 +241,8 @@ namespace Gek
             };
 
         private:
+            Population::SystemInterface *populationSystem;
+
             dNewtonPlayerManager *playerManager;
 
             Math::Float3 gravity;
@@ -248,13 +253,14 @@ namespace Gek
 
         public:
             System(void)
-                : gravity(0.0f, -9.8331f, 0.0f)
+                : populationSystem(nullptr)
+                , gravity(0.0f, -9.8331f, 0.0f)
             {
             }
 
             ~System(void)
             {
-                Observable::removeObserver(m_pEngine->GetSceneManager(), getClass<Population::ObserverInterface>());
+                Observable::removeObserver(populationSystem, getClass<Population::ObserverInterface>());
 
                 bodyList.clear();
                 collisionList.clear();
@@ -283,9 +289,9 @@ namespace Gek
 
             INT32 getContactMaterial(Handle entityHandle, NewtonBody *newtonBody, NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
             {
-                if (m_pEngine->GetSceneManager()->HasComponent(entityHandle, GET_COMPONENT_ID(dynamicbody)))
+                if (populationSystem->hasComponent(entityHandle, Components::DynamicBody::identifier))
                 {
-                    auto &dynamicBodyComponent = m_pEngine->GetSceneManager()->GetComponent<Components::DynamicBody::Data>(entityHandle, GET_COMPONENT_ID(dynamicbody));
+                    auto &dynamicBodyComponent = populationSystem->getComponent<Components::DynamicBody::Data>(entityHandle, Components::DynamicBody::identifier);
                     if (dynamicBodyComponent.material.IsEmpty())
                     {
                         NewtonCollision *newtonCollision = NewtonMaterialGetBodyCollidingShape(newtonMaterial, newtonBody);
@@ -367,9 +373,9 @@ namespace Gek
             dNewtonCollision *createCollision(Handle entityHandle, const Components::DynamicBody::Data &dynamicBodyComponet)
             {
                 Math::Float3 size(1.0f, 1.0f, 1.0f);
-                if (m_pEngine->GetSceneManager()->HasComponent(entityHandle, GET_COMPONENT_ID(size)))
+                if (populationSystem->hasComponent(entityHandle, Components::Size::identifier))
                 {
-                    size = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(size)>(entityHandle, GET_COMPONENT_ID(size));
+                    size = populationSystem->getComponent<Components::Size::Data)>(entityHandle, Components::Size::identifier));
                 }
 
                 CStringW shape(Gek::String::format(L"%s:%f,%f,%f", dynamicBodyComponet.shape.GetString(), size.x, size.y, size.z));
@@ -558,6 +564,22 @@ namespace Gek
                 return newtonCollision;
             }
 
+            // ComponentSystemInterface
+            STDMETHODIMP initialize(Population::SystemInterface *populationSystem)
+            {
+                REQUIRE_RETURN(populationSystem, E_INVALIDARG);
+
+                this->populationSystem = populationSystem;
+                HRESULT resultValue = Observable::addObserver(populationSystem, getClass<Population::ObserverInterface>());
+                if (SUCCEEDED(resultValue))
+                {
+                    playerManager = new dNewtonPlayerManager(this);
+                    resultValue = (playerManager ? S_OK : E_OUTOFMEMORY);
+                }
+
+                return resultValue;
+            };
+
             // dNewton
             bool OnBodiesAABBOverlap(const dNewtonBody* const newtonBody0, const dNewtonBody* const newtonBody1, int threadHandle) const
             {
@@ -598,21 +620,6 @@ namespace Gek
                 NewtonWorldCriticalSectionUnlock(GetNewton());
             }
 
-            STDMETHODIMP Initialize(IGEKEngineCore *pEngine)
-            {
-                REQUIRE_RETURN(pEngine, E_INVALIDARG);
-
-                m_pEngine = pEngine;
-                HRESULT resultValue = Observable::AddObserver(m_pEngine->GetSceneManager(), GetClass<IGEKSceneObserver>());
-                if (SUCCEEDED(resultValue))
-                {
-                    playerManager = new dNewtonPlayerManager(this);
-                    resultValue = (playerManager ? S_OK : E_OUTOFMEMORY);
-                }
-
-                return resultValue;
-            };
-
             // Population::ObserverInterface
             STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
             {
@@ -633,14 +640,14 @@ namespace Gek
 
             STDMETHODIMP_(void) onEntityCreated(Handle entityHandle)
             {
-                if (m_pEngine->GetSceneManager()->HasComponent(entityHandle, GET_COMPONENT_ID(transform)) &&
-                    m_pEngine->GetSceneManager()->HasComponent(entityHandle, GET_COMPONENT_ID(mass)))
+                if (populationSystem->hasComponent(entityHandle, Components::Transform::)) &&
+                    populationSystem->hasComponent(entityHandle, Components::mass)))
                 {
-                    auto &massComponent = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(mass)>(entityHandle, GET_COMPONENT_ID(mass));
-                    auto &transformComponent = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(transform)>(entityHandle, GET_COMPONENT_ID(transform));
-                    if (m_pEngine->GetSceneManager()->HasComponent(entityHandle, GET_COMPONENT_ID(dynamicbody)))
+                    auto &massComponent = populationSystem->getComponent<Components::mass)>(entityHandle, Components::mass));
+                    auto &transformComponent = populationSystem->getComponent<Components::Transform::)>(entityHandle, Components::Transform::));
+                    if (populationSystem->hasComponent(entityHandle, Components::DynamicBody::)))
                     {
-                        auto &dynamicBodyComponet = m_pEngine->GetSceneManager()->GetComponent<Components::DynamicBody::Data>(entityHandle, GET_COMPONENT_ID(dynamicbody));
+                        auto &dynamicBodyComponet = populationSystem->getComponent<Components::DynamicBody::Data>(entityHandle, Components::DynamicBody::));
                         dNewtonCollision *newtonCollision = loadCollision(entityHandle, dynamicBodyComponet);
                         if (newtonCollision != nullptr)
                         {
@@ -652,9 +659,9 @@ namespace Gek
                             }
                         }
                     }
-                    else if (m_pEngine->GetSceneManager()->HasComponent(entityHandle, GET_COMPONENT_ID(player)))
+                    else if (populationSystem->hasComponent(entityHandle, Components::player)))
                     {
-                        auto &playerComponent = m_pEngine->GetSceneManager()->GetComponent<GET_COMPONENT_DATA(player)>(entityHandle, GET_COMPONENT_ID(player));
+                        auto &playerComponent = populationSystem->getComponent<Components::player)>(entityHandle, Components::player));
                         CComPtr<IUnknown> player = new Player(this, entityHandle, transformComponent, massComponent, playerComponent);
                         if (player)
                         {

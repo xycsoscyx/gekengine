@@ -3,6 +3,7 @@
 
 #include "GEK\Context\Common.h"
 #include "GEK\Engine\ComponentInterface.h"
+#include "GEK\Engine\ComponentSystemInterface.h"
 
 namespace Gek
 {
@@ -16,6 +17,9 @@ namespace Gek
 
         // {EF85AE66-9544-4B7C-A2CF-B2410BDA63BD}
         DEFINE_GUID(PlayerClass, 0xef85ae66, 0x9544, 0x4b7c, 0xa2, 0xcf, 0xb2, 0x41, 0xb, 0xda, 0x63, 0xbd);
+
+        // {EF85AE66-9544-4B7C-A2CF-B2410BDA63BD}
+        DEFINE_GUID(NewtonSystemClass, 0xef85ae66, 0x9544, 0x4b7c, 0xa2, 0xcf, 0xb2, 0x41, 0xb, 0xda, 0x63, 0xbd);
 
         namespace Mass
         {
@@ -31,6 +35,11 @@ namespace Gek
         {
             DECLARE_REGISTERED_CLASS(Component);
         }; // namespace Player
+
+        namespace Newton
+        {
+            DECLARE_REGISTERED_CLASS(System);
+        }; // namespace Player
     }; // namespace Components
 }; // namespace Gek
 
@@ -43,4 +52,7 @@ DECLARE_CONTEXT_SOURCE(Components)
 
     ADD_CONTEXT_CLASS(Gek::Components::PlayerClass, Gek::Components::Player::Component)
         ADD_CLASS_TYPE(Gek::ComponentType)
+
+    ADD_CONTEXT_CLASS(Gek::Components::PlayerClass, Gek::Components::Newton::System)
+        ADD_CLASS_TYPE(Gek::ComponentSystemType)
 END_CONTEXT_SOURCE

@@ -12,7 +12,7 @@ namespace Gek
     {
         namespace Camera
         {
-            static const void *Identifier = nullptr;
+            static const Handle identifier = 1;
             struct Data
             {
                 float fieldOfView;

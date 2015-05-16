@@ -12,7 +12,7 @@ namespace Gek
     {
         namespace DynamicBody
         {
-            static const void *Identifier = nullptr;
+            static const Handle identifier = 11;
             struct Data
             {
                 CStringW shape;
