@@ -17,6 +17,8 @@ namespace Gek
         STDMETHOD_(Handle, addLogListener)  (THIS_ std::function<void(LPCSTR, UINT32, LPCWSTR)> onLogMessage) PURE;
         STDMETHOD_(void, removeLogListener) (THIS_ Handle listenerHandle) PURE;
         STDMETHOD_(void, logMessage)        (THIS_ LPCSTR file, UINT32 line, LPCWSTR format, ...) PURE;
+        STDMETHOD_(void, logEnterScope)     (THIS) PURE;
+        STDMETHOD_(void, logExitScope)      (THIS) PURE;
     };
     HRESULT createContext(ContextInterface **context);
 }; // namespace Gek

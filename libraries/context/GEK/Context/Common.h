@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GEK\Context\ContextInterface.h"
 #include "GEK\Context\ContextUserInterface.h"
 #include <assert.h>
 #include <Windows.h>
@@ -12,7 +13,37 @@
 #define REQUIRE_VOID_RETURN(CHECK)      do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (false)
 #define REQUIRE_RETURN(CHECK, RETURN)   do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (false)
 
-#define gekLogMessage(FORMAT, ...)          getContext()->logMessage(__FILE__, __LINE__, FORMAT, __VA_ARGS__)
+namespace Gek
+{
+    class LoggingScope
+    {
+    private:
+        ContextInterface *context;
+        LPCSTR file;
+        LPCSTR function;
+        UINT32 line;
+
+    public:
+        LoggingScope(ContextInterface *context, LPCSTR file, LPCSTR function, UINT32 line)
+            : context(context)
+            , file(file)
+            , function(function)
+            , line(line)
+        {
+            context->logMessage(file, line, L"> Entering %S...", function);
+            context->logEnterScope();
+        }
+
+        ~LoggingScope(void)
+        {
+            context->logExitScope();
+            context->logMessage(file, line, L"< Leaving %S", function);
+        }
+    };
+};
+
+#define gekLogScope()                   LoggingScope scope(getContext(), __FILE__, __FUNCTION__, __LINE__);
+#define gekLogMessage(FORMAT, ...)      getContext()->logMessage(__FILE__, __LINE__, FORMAT, __VA_ARGS__)
 
 namespace std
 {

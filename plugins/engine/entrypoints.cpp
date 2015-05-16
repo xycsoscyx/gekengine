@@ -3,6 +3,7 @@
 
 #include "GEK\Context\Common.h"
 #include "GEK\Engine\PopulationInterface.h"
+#include "GEK\Engine\ComponentInterface.h"
 
 namespace Gek
 {

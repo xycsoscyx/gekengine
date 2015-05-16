@@ -7,46 +7,49 @@ namespace Gek
 {
     namespace Components
     {
-        Light::Light(void)
+        namespace PointLight
         {
-        }
+            Data::Data(void)
+            {
+            }
 
-        HRESULT Light::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-        {
-            componentParameterList[L"radius"] = String::setFloat(radius);
-            return S_OK;
-        }
+            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+            {
+                componentParameterList[L"radius"] = String::setFloat(radius);
+                return S_OK;
+            }
 
-        HRESULT Light::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-        {
-            setComponentParameter(componentParameterList, L"radius", radius, String::getFloat);
-            return S_OK;
-        }
+            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+            {
+                setComponentParameter(componentParameterList, L"radius", radius, String::getFloat);
+                return S_OK;
+            }
+
+            class Component : public ContextUser
+                            , public BaseComponent<Data>
+            {
+            public:
+                Component(void)
+                {
+                }
+
+                BEGIN_INTERFACE_LIST(Component)
+                    INTERFACE_LIST_ENTRY_COM(ComponentInterface)
+                END_INTERFACE_LIST_UNKNOWN
+
+                // ComponentInterface
+                STDMETHODIMP_(LPCWSTR) getName(void) const
+                {
+                    return L"PointLight";
+                }
+
+                STDMETHODIMP_(Handle) getIdentifier(void) const
+                {
+                    return (Handle)&Identifier;
+                }
+            };
+
+            REGISTER_CLASS(Component)
+        }; // namespace Light
     }; // namespace Components
-
-    class LightComponent : public ContextUser
-                          , public BaseComponent<Gek::Components::Light>
-    {
-    public:
-        LightComponent(void)
-        {
-        }
-
-        BEGIN_INTERFACE_LIST(LightComponent)
-            INTERFACE_LIST_ENTRY_COM(ComponentInterface)
-        END_INTERFACE_LIST_UNKNOWN
-
-        // ComponentInterface
-        STDMETHODIMP_(LPCWSTR) getName(void) const
-        {
-            return L"Light";
-        }
-
-        STDMETHODIMP_(Handle) getID(void) const
-        {
-            return 0;
-        }
-    };
-
-    REGISTER_CLASS(LightComponent)
 }; // namespace Gek

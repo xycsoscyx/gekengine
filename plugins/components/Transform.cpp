@@ -7,48 +7,51 @@ namespace Gek
 {
     namespace Components
     {
-        Transform::Transform(void)
+        namespace Transform
         {
-        }
+            Data::Data(void)
+            {
+            }
 
-        HRESULT Transform::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-        {
-            componentParameterList[L"position"] = String::setFloat3(position);
-            componentParameterList[L"rotation"] = String::setQuaternion(rotation);
-            return S_OK;
-        }
+            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+            {
+                componentParameterList[L"position"] = String::setFloat3(position);
+                componentParameterList[L"rotation"] = String::setQuaternion(rotation);
+                return S_OK;
+            }
 
-        HRESULT Transform::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-        {
-            setComponentParameter(componentParameterList, L"position", position, String::getFloat3);
-            setComponentParameter(componentParameterList, L"rotation", rotation, String::getQuaternion);
-            return S_OK;
-        }
+            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+            {
+                setComponentParameter(componentParameterList, L"position", position, String::getFloat3);
+                setComponentParameter(componentParameterList, L"rotation", rotation, String::getQuaternion);
+                return S_OK;
+            }
+
+            class Component : public ContextUser
+                            , public BaseComponent <Data>
+            {
+            public:
+                Component(void)
+                {
+                }
+
+                BEGIN_INTERFACE_LIST(Component)
+                    INTERFACE_LIST_ENTRY_COM(ComponentInterface)
+                END_INTERFACE_LIST_UNKNOWN
+
+                // ComponentInterface
+                STDMETHODIMP_(LPCWSTR) getName(void) const
+                {
+                    return L"Transform";
+                }
+
+                STDMETHODIMP_(Handle) getIdentifier(void) const
+                {
+                    return (Handle)&Identifier;
+                }
+            };
+
+            REGISTER_CLASS(Component)
+        }; // namespace Transform
     }; // namespace Components
-
-    class TransformComponent : public ContextUser
-        , public BaseComponent < Gek::Components::Transform >
-    {
-    public:
-        TransformComponent(void)
-        {
-        }
-
-        BEGIN_INTERFACE_LIST(TransformComponent)
-            INTERFACE_LIST_ENTRY_COM(ComponentInterface)
-            END_INTERFACE_LIST_UNKNOWN
-
-            // ComponentInterface
-            STDMETHODIMP_(LPCWSTR) getName(void) const
-            {
-                return L"Transform";
-            }
-
-            STDMETHODIMP_(Handle) getID(void) const
-            {
-                return 0;
-            }
-    };
-
-    REGISTER_CLASS(TransformComponent)
 }; // namespace Gek

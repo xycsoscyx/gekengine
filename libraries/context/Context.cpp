@@ -26,11 +26,13 @@ namespace Gek
 
         Handle nextListenerHandle;
         std::unordered_map<Handle, std::function<void(LPCSTR, UINT32, LPCWSTR)>> logMessageListenerList;
+        UINT32 loggingIndent;
 
     public:
         Context(void)
             : referenceCount(0)
             , nextListenerHandle(InvalidHandle)
+            , loggingIndent(0)
         {
         }
 
@@ -92,6 +94,9 @@ namespace Gek
 
         STDMETHODIMP_(void) initialize(void)
         {
+            logMessage(__FILE__, __LINE__, L"> Entering %S...", __FUNCTION__);
+            logEnterScope();
+
             searchPathList.push_back(L"%root%");
             for (auto &searchPath : searchPathList)
             {
@@ -104,7 +109,7 @@ namespace Gek
                         GEKGETMODULECLASSES getModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(module, "GEKGetModuleClasses");
                         if (getModuleClasses)
                         {
-                            logMessage(__FILE__, __LINE__, L"GEK Plugin Found: %s\r\n", fileName);
+                            logMessage(__FILE__, __LINE__, L"GEK Plugin Found: %s", fileName);
 
                             moduleList.push_back(module);
                             std::unordered_map<CLSID, std::function<HRESULT(ContextUserInterface **)>> moduleClassList;
@@ -117,11 +122,11 @@ namespace Gek
                                     if (classList.find(moduleClass.first) == classList.end())
                                     {
                                         classList[moduleClass.first] = moduleClass.second;
-                                        logMessage(__FILE__, __LINE__, L"- Adding class from plugin: %s\r\n", CStringW(CComBSTR(moduleClass.first)).GetString());
+                                        logMessage(__FILE__, __LINE__, L"Adding class from plugin: %s", CStringW(CComBSTR(moduleClass.first)).GetString());
                                     }
                                     else
                                     {
-                                        logMessage(__FILE__, __LINE__, L"! Duplicate class found: %s\r\n", CStringW(CComBSTR(moduleClass.first)).GetString());
+                                        logMessage(__FILE__, __LINE__, L"ERROR: Duplicate class found: %s", CStringW(CComBSTR(moduleClass.first)).GetString());
                                     }
                                 }
 
@@ -132,7 +137,7 @@ namespace Gek
                             }
                             else
                             {
-                                logMessage(__FILE__, __LINE__, L"! Unable to get class list from module");
+                                logMessage(__FILE__, __LINE__, L"ERROR: Unable to get class list from module");
                             }
                         }
                     }
@@ -140,6 +145,9 @@ namespace Gek
                     return S_OK;
                 });
             }
+
+            logExitScope();
+            logMessage(__FILE__, __LINE__, L"< Leaving %S", __FUNCTION__);
         }
 
         STDMETHODIMP createInstance(REFGUID classType, REFIID interfaceType, LPVOID FAR *returnObject)
@@ -213,12 +221,26 @@ namespace Gek
                 message.FormatV(format, variableList);
                 va_end(variableList);
 
-                OutputDebugString(Gek::String::format(L"%S (%d): %s\r\n", file, line, message.GetString()));
+                std::vector<wchar_t> indent(loggingIndent, L' ');
+                indent.push_back(L'\0');
+
+                message = (indent.data() + (L"- " + message));
+                OutputDebugString(Gek::String::format(L"% 30S (%05d): %s\r\n", file, line, message.GetString()));
                 for (auto &logMessageListener : logMessageListenerList)
                 {
                     logMessageListener.second(file, line, message);
                 }
             }
+        }
+
+        STDMETHODIMP_(void) logEnterScope(void)
+        {
+            InterlockedIncrement(&loggingIndent);
+        }
+
+        STDMETHODIMP_(void) logExitScope(void)
+        {
+            InterlockedDecrement(&loggingIndent);
         }
     };
 

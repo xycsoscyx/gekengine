@@ -7,47 +7,50 @@ namespace Gek
 {
     namespace Components
     {
-        Size::Size(void)
-            : value(0.0f)
+        namespace Size
         {
-        }
+            Data::Data(void)
+                : value(0.0f)
+            {
+            }
 
-        HRESULT Size::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-        {
-            componentParameterList[L""] = String::setFloat(value);
-            return S_OK;
-        }
+            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+            {
+                componentParameterList[L""] = String::setFloat(value);
+                return S_OK;
+            }
 
-        HRESULT Size::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-        {
-            setComponentParameter(componentParameterList, L"", value, String::getFloat);
-            return S_OK;
-        }
+            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+            {
+                setComponentParameter(componentParameterList, L"", value, String::getFloat);
+                return S_OK;
+            }
+
+            class Component : public ContextUser
+                            , public BaseComponent<Data>
+            {
+            public:
+                Component(void)
+                {
+                }
+
+                BEGIN_INTERFACE_LIST(Component)
+                    INTERFACE_LIST_ENTRY_COM(ComponentInterface)
+                END_INTERFACE_LIST_UNKNOWN
+
+                // ComponentInterface
+                STDMETHODIMP_(LPCWSTR) getName(void) const
+                {
+                    return L"Size";
+                }
+
+                STDMETHODIMP_(Handle) getIdentifier(void) const
+                {
+                    return (Handle)&Identifier;
+                }
+            };
+
+            REGISTER_CLASS(Component)
+        }; // namespace Size
     }; // namespace Components
-
-    class SizeComponent : public ContextUser
-                          , public BaseComponent<Gek::Components::Size>
-    {
-    public:
-        SizeComponent(void)
-        {
-        }
-
-        BEGIN_INTERFACE_LIST(SizeComponent)
-            INTERFACE_LIST_ENTRY_COM(ComponentInterface)
-        END_INTERFACE_LIST_UNKNOWN
-
-        // ComponentInterface
-        STDMETHODIMP_(LPCWSTR) getName(void) const
-        {
-            return L"Size";
-        }
-
-        STDMETHODIMP_(Handle) getID(void) const
-        {
-            return 0;
-        }
-    };
-
-    REGISTER_CLASS(SizeComponent)
 }; // namespace Gek

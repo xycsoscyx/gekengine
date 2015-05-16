@@ -12,15 +12,19 @@ namespace Gek
 {
     namespace Components
     {
-        struct Follow
+        namespace Follow
         {
-            CStringW target;
-            Gek::Math::Float3 offset;
-            Gek::Math::Quaternion rotation;
+            static const void *Identifier = nullptr;
+            struct Data
+            {
+                CStringW target;
+                Gek::Math::Float3 offset;
+                Gek::Math::Quaternion rotation;
 
-            Follow(void);
-            HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-            HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-        };
+                Data(void);
+                HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+                HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+            };
+        }; // namespace Follow
     }; // namespace Components
 }; // namespace Gek

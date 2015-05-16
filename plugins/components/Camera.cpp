@@ -8,56 +8,59 @@ namespace Gek
 {
     namespace Components
     {
-        Camera::Camera(void)
-            : fieldOfView(Math::convertDegreesToRadians(90.0f))
-            , minimumDistance(0.1f)
-            , maximumDistance(100.0f)
-            , viewPort(0.0f, 0.0f, 1.0f, 1.0f)
+        namespace Camera
         {
-        }
+            Data::Data(void)
+                : fieldOfView(Math::convertDegreesToRadians(90.0f))
+                , minimumDistance(0.1f)
+                , maximumDistance(100.0f)
+                , viewPort(0.0f, 0.0f, 1.0f, 1.0f)
+            {
+            }
 
-        HRESULT Camera::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-        {
-            componentParameterList[L"fieldOfView"] = String::setFloat(fieldOfView);
-            componentParameterList[L"minimumDistance"] = String::setFloat(minimumDistance);
-            componentParameterList[L"maximumDistance"] = String::setFloat(maximumDistance);
-            componentParameterList[L"fieldOfView"] = String::setFloat4(viewPort);
-            return S_OK;
-        }
+            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+            {
+                componentParameterList[L"fieldOfView"] = String::setFloat(fieldOfView);
+                componentParameterList[L"minimumDistance"] = String::setFloat(minimumDistance);
+                componentParameterList[L"maximumDistance"] = String::setFloat(maximumDistance);
+                componentParameterList[L"fieldOfView"] = String::setFloat4(viewPort);
+                return S_OK;
+            }
 
-        HRESULT Camera::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-        {
-            setComponentParameter(componentParameterList, L"fieldOfView", fieldOfView, String::getFloat);
-            setComponentParameter(componentParameterList, L"minimumDistance", minimumDistance, String::getFloat);
-            setComponentParameter(componentParameterList, L"maximumDistance", maximumDistance, String::getFloat);
-            setComponentParameter(componentParameterList, L"viewPort", viewPort, String::getFloat4);
-            return S_OK;
-        }
-    }; // namespace Components
+            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+            {
+                setComponentParameter(componentParameterList, L"fieldOfView", fieldOfView, String::getFloat);
+                setComponentParameter(componentParameterList, L"minimumDistance", minimumDistance, String::getFloat);
+                setComponentParameter(componentParameterList, L"maximumDistance", maximumDistance, String::getFloat);
+                setComponentParameter(componentParameterList, L"viewPort", viewPort, String::getFloat4);
+                return S_OK;
+            }
 
-    class CameraComponent : public ContextUser
-                          , public BaseComponent<Gek::Components::Camera>
-    {
-    public:
-        CameraComponent(void)
-        {
-        }
+            class Component : public ContextUser
+                            , public BaseComponent<Data>
+            {
+            public:
+                Component(void)
+                {
+                }
 
-        BEGIN_INTERFACE_LIST(CameraComponent)
-            INTERFACE_LIST_ENTRY_COM(ComponentInterface)
-        END_INTERFACE_LIST_UNKNOWN
+                BEGIN_INTERFACE_LIST(Component)
+                    INTERFACE_LIST_ENTRY_COM(ComponentInterface)
+                END_INTERFACE_LIST_UNKNOWN
 
-        // ComponentInterface
-        STDMETHODIMP_(LPCWSTR) getName(void) const
-        {
-            return L"Camera";
-        }
+                // ComponentInterface
+                STDMETHODIMP_(LPCWSTR) getName(void) const
+                {
+                    return L"Camera";
+                }
 
-        STDMETHODIMP_(Handle) getID(void) const
-        {
-            return 0;
-        }
-    };
+                STDMETHODIMP_(Handle) getIdentifier(void) const
+                {
+                    return (Handle)&Identifier;
+                }
+            };
 
-    REGISTER_CLASS(CameraComponent)
+            REGISTER_CLASS(Component)
+        }; // namespace Camera
+    } // namespace Components
 }; // namespace Gek

@@ -27,7 +27,7 @@ namespace Gek
     DECLARE_INTERFACE_IID_(ComponentInterface, IUnknown, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E")
     {
         STDMETHOD_(LPCWSTR, getName)                (THIS) const PURE;
-        STDMETHOD_(Handle, getID)                   (THIS) const PURE;
+        STDMETHOD_(Handle, getIdentifier)           (THIS) const PURE;
 
         STDMETHOD_(void, addComponent)              (THIS_ Handle entityHandle) PURE;
         STDMETHOD_(void, removeComponent)           (THIS_ Handle entityHandle) PURE;

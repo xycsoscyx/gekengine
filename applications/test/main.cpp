@@ -214,6 +214,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
         context->createInstance(Gek::PopulationSystem, IID_PPV_ARGS(&population));
         if (population)
         {
+            population->initialize();
             population->load(L"demo");
         }
 

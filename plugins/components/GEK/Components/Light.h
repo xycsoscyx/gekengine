@@ -8,13 +8,17 @@ namespace Gek
 {
     namespace Components
     {
-        struct Light
+        namespace PointLight
         {
-            float radius;
+            static const void *Identifier = nullptr;
+            struct Data
+            {
+                float radius;
 
-            Light(void);
-            HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-            HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-        };
+                Data(void);
+                HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+                HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+            };
+        }; // namespace PointLight
     }; // namespace Components
 }; // namespace Gek

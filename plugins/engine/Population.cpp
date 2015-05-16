@@ -42,35 +42,7 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_COM(Gek::ObservableInterface)
                 INTERFACE_LIST_ENTRY_COM(Population::SystemInterface)
             END_INTERFACE_LIST_UNKNOWN
-/*
-            STDMETHODIMP Initialize(IGEKEngineCore *pEngine)
-            {
-                REQUIRE_RETURN(pEngine, E_INVALIDARG);
 
-                m_pEngine = pEngine;
-                HRESULT resultValue = GetContext()->CreateEachType(CLSID_GEKComponentType, [&](REFCLSID kCLSID, IUnknown *pObject) -> HRESULT
-                {
-                    CComQIPtr<IGEKComponent> scomponent(pObject);
-                    if (scomponent)
-                    {
-                        m_pEngine->ShowMessage(GEKMESSAGE_NORMAL, L"population", L"Component Found : ID(0x % 08X), Name(%s)", scomponent->GetID(), scomponent->GetName());
-                        if (!componentNameList.insert(std::make_pair(scomponent->GetName(), scomponent->GetID())).second)
-                        {
-                            gekLogMessage(L"Component Name Already Used: %s", scomponent->GetName());
-                        }
-
-                        if (!componentList.insert(std::make_pair(scomponent->GetID(), scomponent)).second)
-                        {
-                            gekLogMessage(L"Component ID Already Used: 0x%08X", scomponent->GetID());
-                        }
-                    }
-
-                    return S_OK;
-                });
-
-                return resultValue;
-            }
-*/
             STDMETHODIMP_(void) update(float frameTime)
             {
                 Observable::sendEvent(Event<Population::ObserverInterface>(std::bind(&Population::ObserverInterface::onUpdateBegin, std::placeholders::_1, frameTime)));
@@ -117,6 +89,40 @@ namespace Gek
             }
 
             // Population::SystemInterface
+            STDMETHODIMP initialize(void)
+            {
+                gekLogScope();
+                gekLogMessage(L"Loading Components...");
+                HRESULT resultValue = getContext()->createEachType(ComponentType, [&](REFCLSID classType, IUnknown *object) -> HRESULT
+                {
+                    CComQIPtr<ComponentInterface> component(object);
+                    if (component)
+                    {
+                        CStringW lowerCaseName(component->getName());
+                        lowerCaseName.MakeLower();
+
+                        auto identifierIterator = componentList.insert(std::make_pair(component->getIdentifier(), component));
+                        if(identifierIterator.second)
+                        {
+                            gekLogMessage(L"Component Found : ID(0x % 08X), Name(%s)", component->getIdentifier(), lowerCaseName.GetString());
+                            if (!componentNameList.insert(std::make_pair(lowerCaseName, component->getIdentifier())).second)
+                            {
+                                componentList.erase(identifierIterator.first);
+                                gekLogMessage(L"ERROR: Component Name Already Used: %s", lowerCaseName.GetString());
+                            }
+                        }
+                        else
+                        {
+                            gekLogMessage(L"ERROR: Component ID Already Used: 0x%08X", component->getIdentifier());
+                        }
+                    }
+
+                    return S_OK;
+                });
+
+                return resultValue;
+            }
+
             STDMETHODIMP_(float) getGameTime(void) const
             {
                 return 0.0f;
@@ -126,6 +132,7 @@ namespace Gek
             {
                 REQUIRE_RETURN(fileName, E_INVALIDARG);
 
+                gekLogScope();
                 gekLogMessage(L"Loading Population (%s)...", fileName);
 
                 free();
@@ -172,19 +179,19 @@ namespace Gek
                         }
                         else
                         {
-                            gekLogMessage(L"Unable to locate \"population\" node");
+                            gekLogMessage(L"ERROR: Unable to locate \"population\" node");
                             resultValue = E_UNEXPECTED;
                         }
                     }
                     else
                     {
-                        gekLogMessage(L"Unable to locate \"world\" node");
+                        gekLogMessage(L"ERROR: Unable to locate \"world\" node");
                         resultValue = E_UNEXPECTED;
                     }
                 }
                 else
                 {
-                    gekLogMessage(L"Unable to load population");
+                    gekLogMessage(L"ERROR: Unable to load population");
                 }
 
                 Observable::sendEvent(Event<Population::ObserverInterface>(std::bind(&Population::ObserverInterface::onLoadEnd, std::placeholders::_1, resultValue)));
@@ -229,6 +236,9 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
             {
+                gekLogScope();
+                gekLogMessage(L"Creating Entity...");
+
                 Handle entityHandle = InterlockedIncrement(&nextEntityHandle);
                 if (name != nullptr)
                 {

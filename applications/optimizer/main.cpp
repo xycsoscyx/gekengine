@@ -332,14 +332,14 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         }
         else
         {
-            throw CMyException(__LINE__, L"! Unable to Save Output: %S\r\n", strOutput.GetString());
+            throw CMyException(__LINE__, L"ERROR: Unable to Save Output: %S\r\n", strOutput.GetString());
         }
 
         aiReleaseImport(pScene);
     }
     catch (CMyException kException)
     {
-        printf("! Error (%d): %S", kException.m_nLine, kException.m_strMessage.GetString());
+        printf("ERROR: Error (%d): %S", kException.m_nLine, kException.m_strMessage.GetString());
     }
     catch (...)
     {

@@ -10,14 +10,18 @@ namespace Gek
 {
     namespace Components
     {
-        struct Transform
+        namespace Transform
         {
-            Gek::Math::Float4 position;
-            Gek::Math::Quaternion rotation;
+            static const void *Identifier = nullptr;
+            struct Data
+            {
+                Gek::Math::Float4 position;
+                Gek::Math::Quaternion rotation;
 
-            Transform(void);
-            HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-            HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-        };
+                Data(void);
+                HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+                HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+            };
+        }; // namespace Transform
     }; // namespace Components
 }; // namespace Gek
