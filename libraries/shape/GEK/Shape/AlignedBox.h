@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Math\Utility.h"
+#include "GEK\Math\Common.h"
 #include "GEK\Math\Vector3.h"
 #include "GEK\Shape\Plane.h"
 

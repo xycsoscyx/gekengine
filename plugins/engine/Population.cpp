@@ -143,7 +143,7 @@ namespace Gek
                 if (SUCCEEDED(resultValue))
                 {
                     Gek::Xml::Node &xmlWorldNode = xmlDocument.getRoot();
-                    if (xmlWorldNode.getType().CompareNoCase(L"world") == 0)
+                    if (xmlWorldNode && xmlWorldNode.getType().CompareNoCase(L"world") == 0)
                     {
                         Gek::Xml::Node &xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
                         if (xmlPopulationNode)

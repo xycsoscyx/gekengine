@@ -43,7 +43,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\api;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\api;$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName).debug</TargetName>
     <LibraryPath>$(LibraryPath)</LibraryPath>
@@ -51,7 +51,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\api;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\api;$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(LibraryPath)</LibraryPath>
@@ -106,23 +106,17 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DynamicBody.cpp" />
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentNewton.cpp" />
+    <ClCompile Include="Mass.cpp" />
+    <ClCompile Include="NewtonSystem.cpp" />
+    <ClCompile Include="Player.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\api\GEKAPI.h" />
-    <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
-    <ClInclude Include="..\..\api\IGEKComponent.h" />
-    <ClInclude Include="..\..\api\IGEKEngineCore.h" />
-    <ClInclude Include="..\..\api\IGEKInputManager.h" />
-    <ClInclude Include="..\..\api\IGEKMaterialManager.h" />
-    <ClInclude Include="..\..\api\IGEKProgramManager.h" />
-    <ClInclude Include="..\..\api\IGEKRenderManager.h" />
-    <ClInclude Include="..\..\api\IGEKSceneManager.h" />
-    <ClInclude Include="GEKNewton.h" />
-    <ClInclude Include="GEKNewtonCLSIDs.h" />
-    <ClInclude Include="Include\CGEKComponentNewton.h" />
-    <ClInclude Include="Public\IGEKNewtonSystem.h" />
+    <ClInclude Include="GEK\Newton\DynamicBody.h" />
+    <ClInclude Include="GEK\Newton\Mass.h" />
+    <ClInclude Include="GEK\Newton\NewtonSystem.h" />
+    <ClInclude Include="GEK\Newton\Player.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

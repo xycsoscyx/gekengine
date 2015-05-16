@@ -7,54 +7,34 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{dbbe75fd-d0dc-46a0-9e2b-248a58bd112a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="API Files">
-      <UniqueIdentifier>{ace7e109-320b-4a23-906b-a5346117e745}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Interface Files">
-      <UniqueIdentifier>{c9548873-8af9-4b93-80da-0e1364db0cf9}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\CGEKComponentNewton.cpp">
+    <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="DynamicBody.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NewtonSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\CGEKComponentNewton.h">
+    <ClInclude Include="GEK\Newton\Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\IGEKRenderManager.h">
-      <Filter>API Files</Filter>
+    <ClInclude Include="GEK\Newton\DynamicBody.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\IGEKSceneManager.h">
-      <Filter>API Files</Filter>
+    <ClInclude Include="GEK\Newton\Mass.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\api\GEKAPI.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\GEKAPICLSIDs.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKComponent.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKInputManager.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKMaterialManager.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\api\IGEKProgramManager.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEKNewton.h" />
-    <ClInclude Include="GEKNewtonCLSIDs.h" />
-    <ClInclude Include="..\..\api\IGEKEngineCore.h">
-      <Filter>API Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\IGEKNewtonSystem.h">
-      <Filter>Interface Files</Filter>
+    <ClInclude Include="GEK\Newton\NewtonSystem.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

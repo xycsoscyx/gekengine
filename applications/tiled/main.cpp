@@ -56,7 +56,7 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
         if (SUCCEEDED(hRetVal))
         {
             CLibXMLNode &kMapNode = kDocument.GetRoot();
-            if (kMapNode.GetType().CompareNoCase(L"map") == 0)
+            if (kMapNode && kMapNode.GetType().CompareNoCase(L"map") == 0)
             {
                 UINT32 nXSize = StrToUINT32(kMapNode.GetAttribute(L"width"));
                 UINT32 nYSize = StrToUINT32(kMapNode.GetAttribute(L"height"));
