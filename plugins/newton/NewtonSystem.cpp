@@ -38,19 +38,26 @@ namespace Gek
     {
         class BaseBody : public IUnknown
         {
-        protected:
+        private:
             ULONG referenceCount;
+            Population::SystemInterface *populationSystem;
             Handle entityHandle;
 
         public:
-            BaseBody(Handle entityHandle)
+            BaseBody(Population::SystemInterface *populationSystem, Handle entityHandle)
                 : referenceCount(0)
+                , populationSystem(populationSystem)
                 , entityHandle(entityHandle)
             {
             }
 
             virtual ~BaseBody(void)
             {
+            }
+
+            Population::SystemInterface *getPopulationSystem(void)
+            {
+                return populationSystem;
             }
 
             Handle getEntityHandle(void) const
@@ -98,9 +105,10 @@ namespace Gek
                           , public dNewtonDynamicBody
         {
         public:
-            DynamicBody(dNewton *newton, Handle entityHandle, const Components::Transform::Data &transformComponent, 
-                const Components::Mass::Data &massComponent, const dNewtonCollision* const newtonCollision)
-                : BaseBody(entityHandle)
+            DynamicBody(Population::SystemInterface *populationSystem, dNewton *newton, const dNewtonCollision* const newtonCollision, Handle entityHandle,
+                const Components::Transform::Data &transformComponent,
+                const Components::Mass::Data &massComponent)
+                : BaseBody(populationSystem, entityHandle)
                 , dNewtonDynamicBody(newton, massComponent, newtonCollision, nullptr, Math::Float4x4(transformComponent.rotation, transformComponent.position).data, NULL)
             {
             }
@@ -119,7 +127,7 @@ namespace Gek
             void OnBodyTransform(const dFloat* const newtonMatrix, int threadHandle)
             {
                 const Math::Float4x4 &matrix = *reinterpret_cast<const Math::Float4x4 *>(newtonMatrix);
-                auto &transformComponent = populationManager->getComponent<Components::Transform::Data>(getEntityHandle(), Components::Transform::identifier);
+                auto &transformComponent = getPopulationSystem()->getComponent<Components::Transform::Data>(getEntityHandle(), Components::Transform::identifier);
                 transformComponent.position = matrix.translation;
                 transformComponent.rotation = matrix;
             }
@@ -127,14 +135,14 @@ namespace Gek
             // dNewtonDynamicBody
             void OnForceAndTorque(dFloat frameTime, int threadHandle)
             {
-                auto &massComponent = populationManager->getComponent<Components::Mass::Data>(getEntityHandle(), Components::Mass::identifier);
-                AddForce((GetNewtonSystem()->GetGravity() * massComponent).xyz);
+                auto &massComponent = getPopulationSystem()->getComponent<Components::Mass::Data>(getEntityHandle(), Components::Mass::identifier);
+                //AddForce((GetNewtonSystem()->GetGravity() * massComponent).xyz);
             }
         };
 
         class Player : public BaseBody
                      , public dNewtonPlayerManager::dNewtonPlayer
-                     , public Action::ObserverInterface
+                     //, public Action::ObserverInterface
         {
         private:
             float viewAngle;
@@ -142,10 +150,12 @@ namespace Gek
             concurrency::concurrent_unordered_map<CStringW, float> singleActionList;
 
         public:
-            Player(dNewtonPlayerManager *newtonPlayerManager, Handle entityHandle, const Components::Transform::Data &transformComponent, 
-                const Components::Mass::Data &massComponent, const Components::Player::Data &playerComponent)
-                : BaseBody(entityHandle)
-                , dNewtonPlayer(newtonPlayerManager, nullptr, massComponent, playerComponent.outerRadius, playerComponent.innerRadius,
+            Player(Population::SystemInterface *populationSystem, dNewtonPlayerManager *newtonPlayerManager, Handle entityHandle, 
+                const Components::Transform::Data &transformComponent,
+                const Components::Mass::Data &massComponent, 
+                const Components::Player::Data &playerComponent)
+                : BaseBody(populationSystem, entityHandle)
+                , dNewtonPlayerManager::dNewtonPlayer(newtonPlayerManager, nullptr, massComponent, playerComponent.outerRadius, playerComponent.innerRadius,
                     playerComponent.height, playerComponent.stairStep, Math::Float3(0.0f, 1.0f, 0.0f).xyz, Math::Float3(0.0f, 0.0f, 1.0f).xyz, 1)
                 , viewAngle(0.0f)
             {
@@ -154,7 +164,7 @@ namespace Gek
 
             ~Player(void)
             {
-                Observable::removeObserver(GetEngineCore(), dynamic_cast<Action::ObserverInterface *>(this));
+                //Observable::removeObserver(GetEngineCore(), dynamic_cast<Action::ObserverInterface *>(this));
             }
 
             // BaseBody
@@ -167,8 +177,8 @@ namespace Gek
             void OnBodyTransform(const dFloat* const newtonMatrix, int threadHandle)
             {
                 const Math::Float4x4 &matrix = *reinterpret_cast<const Math::Float4x4 *>(newtonMatrix);
-                auto &transformComponent = populationManager->getComponent<Components::Transform::)>(getEntityHandle(), Components::Transform::));
-                transformComponent.position = matrix.t;
+                auto &transformComponent = getPopulationSystem()->getComponent<Components::Transform::Data>(getEntityHandle(), Components::Transform::identifier);
+                transformComponent.position = matrix.translation;
                 transformComponent.rotation = matrix;
             }
 
@@ -194,7 +204,7 @@ namespace Gek
                 singleActionList.clear();
                 checkActions(constantActionList);
 
-                auto &playerComponent = populationManager->getComponent<Components::player)>(getEntityHandle(), Components::player));
+                auto &playerComponent = getPopulationSystem()->getComponent<Components::Player::Data>(getEntityHandle(), Components::Player::identifier);
                 SetPlayerVelocity(moveSpeed, strafeSpeed, jumpSpeed, viewAngle, Math::Float3(0.0f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.xyz, frameTime);
             }
 
@@ -270,7 +280,7 @@ namespace Gek
             }
 
             BEGIN_INTERFACE_LIST(System)
-                INTERFACE_LIST_ENTRY_COM(Observable)
+                INTERFACE_LIST_ENTRY_COM(ObservableInterface)
                 INTERFACE_LIST_ENTRY_COM(Population::ObserverInterface)
             END_INTERFACE_LIST_UNKNOWN
 
@@ -375,7 +385,7 @@ namespace Gek
                 Math::Float3 size(1.0f, 1.0f, 1.0f);
                 if (populationSystem->hasComponent(entityHandle, Components::Size::identifier))
                 {
-                    size = populationSystem->getComponent<Components::Size::Data)>(entityHandle, Components::Size::identifier));
+                    size = populationSystem->getComponent<Components::Size::Data>(entityHandle, Components::Size::identifier);
                 }
 
                 CStringW shape(Gek::String::format(L"%s:%f,%f,%f", dynamicBodyComponet.shape.GetString(), size.x, size.y, size.z));
@@ -484,13 +494,13 @@ namespace Gek
                                     UINT32 indexCount;
                                 };
 
-                                std::map<CStringW, RenderMaterial> renderMaterialList;
+                                std::map<CStringA, RenderMaterial> renderMaterialList;
                                 for (UINT32 materialIndex = 0; materialIndex < materialCount; ++materialIndex)
                                 {
                                     CStringA renderMaterialName = rawFileData;
                                     rawFileData += (renderMaterialName.GetLength() + 1);
 
-                                    RenderMaterial &renderMaterial = renderMaterialList[CA2W(renderMaterialName, CP_UTF8)];
+                                    RenderMaterial &renderMaterial = renderMaterialList[renderMaterialName];
                                     renderMaterial.firstVertex = *((UINT32 *)rawFileData);
                                     rawFileData += sizeof(UINT32);
 
@@ -533,7 +543,7 @@ namespace Gek
                                         for (auto &renderMaterial : renderMaterialList)
                                         {
                                             RenderMaterial &currentMaterial = renderMaterial.second;
-                                            INT32 materialIndex = loadMaterial(renderMaterial.first);
+                                            INT32 materialIndex = loadMaterial(CA2W(renderMaterial.first, CP_UTF8));
                                             for (UINT32 index = 0; index < currentMaterial.indexCount; index += 3)
                                             {
                                                 Math::Float3 face[3] =
@@ -640,32 +650,32 @@ namespace Gek
 
             STDMETHODIMP_(void) onEntityCreated(Handle entityHandle)
             {
-                if (populationSystem->hasComponent(entityHandle, Components::Transform::)) &&
-                    populationSystem->hasComponent(entityHandle, Components::mass)))
+                if (populationSystem->hasComponent(entityHandle, Components::Transform::identifier) &&
+                    populationSystem->hasComponent(entityHandle, Components::Mass::identifier))
                 {
-                    auto &massComponent = populationSystem->getComponent<Components::mass)>(entityHandle, Components::mass));
-                    auto &transformComponent = populationSystem->getComponent<Components::Transform::)>(entityHandle, Components::Transform::));
-                    if (populationSystem->hasComponent(entityHandle, Components::DynamicBody::)))
+                    auto &massComponent = populationSystem->getComponent<Components::Mass::Data>(entityHandle, Components::Mass::identifier);
+                    auto &transformComponent = populationSystem->getComponent<Components::Transform::Data>(entityHandle, Components::Transform::identifier);
+                    if (populationSystem->hasComponent(entityHandle, Components::DynamicBody::identifier))
                     {
-                        auto &dynamicBodyComponet = populationSystem->getComponent<Components::DynamicBody::Data>(entityHandle, Components::DynamicBody::));
+                        auto &dynamicBodyComponet = populationSystem->getComponent<Components::DynamicBody::Data>(entityHandle, Components::DynamicBody::identifier);
                         dNewtonCollision *newtonCollision = loadCollision(entityHandle, dynamicBodyComponet);
                         if (newtonCollision != nullptr)
                         {
                             Math::Float4x4 matrix(transformComponent.rotation, transformComponent.position);
-                            CComPtr<IUnknown> dynamicBody = new DynamicBody(this, entityHandle, transformComponent, massComponent, newtonCollision, matrix);
+                            CComPtr<IUnknown> dynamicBody = new DynamicBody(populationSystem, this, newtonCollision, entityHandle, transformComponent, massComponent);
                             if (dynamicBody)
                             {
                                 bodyList[entityHandle] = dynamicBody;
                             }
                         }
                     }
-                    else if (populationSystem->hasComponent(entityHandle, Components::player)))
+                    else if (populationSystem->hasComponent(entityHandle, Components::Player::identifier))
                     {
-                        auto &playerComponent = populationSystem->getComponent<Components::player)>(entityHandle, Components::player));
-                        CComPtr<IUnknown> player = new Player(this, entityHandle, transformComponent, massComponent, playerComponent);
+                        auto &playerComponent = populationSystem->getComponent<Components::Player::Data>(entityHandle, Components::Player::identifier);
+                        CComPtr<IUnknown> player = new Player(populationSystem, playerManager, entityHandle, transformComponent, massComponent, playerComponent);
                         if (player)
                         {
-                            Observable::addObserver(m_pEngine, dynamic_cast<Action::ObserverInterface *>((IUnknown *)player));
+                            //Observable::addObserver(m_pEngine, dynamic_cast<Action::ObserverInterface *>((IUnknown *)player));
                             player.QueryInterface(&bodyList[entityHandle]);
                         }
                     }

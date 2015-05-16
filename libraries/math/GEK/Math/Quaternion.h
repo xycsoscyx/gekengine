@@ -98,7 +98,7 @@ namespace Gek
             void setRotation(const BaseMatrix4x4<TYPE> &rotation)
             {
                 TYPE trace(rotation.table[0][0] + rotation.table[1][1] + rotation.table[2][2] + TYPE(1));
-                if (trace > _EPSILON)
+                if (trace > Math::Epsilon)
                 {
                     TYPE denominator(TYPE(0.5) / sqrt(trace));
                     w = (TYPE(0.25) / denominator);
