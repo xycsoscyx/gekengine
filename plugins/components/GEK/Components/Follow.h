@@ -4,6 +4,7 @@
 
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Quaternion.h"
+#include "GEK\Utility\Common.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <unordered_map>

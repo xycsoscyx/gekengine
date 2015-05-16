@@ -5,9 +5,6 @@
 #include <atlstr.h>
 #include <functional>
 
-#pragma warning(disable:4251)
-#pragma warning(disable:4996)
-
 namespace Gek
 {
     typedef UINT32 Handle;

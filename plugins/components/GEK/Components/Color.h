@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEK\Math\Vector4.h"
+#include "GEK\Utility\Common.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <unordered_map>

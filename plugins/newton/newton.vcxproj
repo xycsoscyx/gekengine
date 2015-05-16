@@ -115,7 +115,6 @@
   <ItemGroup>
     <ClInclude Include="GEK\Newton\DynamicBody.h" />
     <ClInclude Include="GEK\Newton\Mass.h" />
-    <ClInclude Include="GEK\Newton\NewtonSystem.h" />
     <ClInclude Include="GEK\Newton\Player.h" />
   </ItemGroup>
   <ItemGroup>
