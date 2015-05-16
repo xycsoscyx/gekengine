@@ -20,6 +20,7 @@
 #include <dNewtonCollision.h>
 #include <dNewtonDynamicBody.h>
 #include <concurrent_unordered_map.h>
+#include <memory>
 #include <map>
 
 #ifdef _DEBUG
