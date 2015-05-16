@@ -34,8 +34,8 @@ namespace Gek
         }; // namespace Player
     }; // namespace Components
 
-    // {EF85AE66-9544-4B7C-A2CF-B2410BDA63BD}
-    DEFINE_GUID(NewtonSystemClass, 0xef85ae66, 0x9544, 0x4b7c, 0xa2, 0xcf, 0xb2, 0x41, 0xb, 0xda, 0x63, 0xbd);
+    // {BCF7CC29-F375-4F29-9DA7-921F6A78E4E3}
+    DEFINE_GUID(NewtonSystemClass, 0xbcf7cc29, 0xf375, 0x4f29, 0x9d, 0xa7, 0x92, 0x1f, 0x6a, 0x78, 0xe4, 0xe3);
 
     namespace Newton
     {
