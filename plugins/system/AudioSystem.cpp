@@ -186,46 +186,39 @@ namespace Gek
             {
                 REQUIRE_RETURN(window, E_INVALIDARG);
 
+                gekLogScope(__FUNCTION__);
+
                 HRESULT resultValue = E_FAIL;
-                if (directSound)
+                if (GEKSUCCEEDED(resultValue = DirectSoundCreate8(nullptr, &directSound, nullptr)))
                 {
-                    resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
-                }
-                else
-                {
-                    resultValue = DirectSoundCreate8(nullptr, &directSound, nullptr);
-                    if (SUCCEEDED(resultValue))
+                    if (GEKSUCCEEDED(resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY)))
                     {
-                        resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
+                        DSBUFFERDESC primaryBufferDescription = { 0 };
+                        primaryBufferDescription.dwSize = sizeof(DSBUFFERDESC);
+                        primaryBufferDescription.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
+                        resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr);
                         if (SUCCEEDED(resultValue))
                         {
-                            DSBUFFERDESC primaryBufferDescription = { 0 };
-                            primaryBufferDescription.dwSize = sizeof(DSBUFFERDESC);
-                            primaryBufferDescription.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
-                            resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr);
+                            WAVEFORMATEX primaryBufferFormat;
+                            ZeroMemory(&primaryBufferFormat, sizeof(WAVEFORMATEX));
+                            primaryBufferFormat.wFormatTag = WAVE_FORMAT_PCM;
+                            primaryBufferFormat.nChannels = 2;
+                            primaryBufferFormat.wBitsPerSample = 8;
+                            primaryBufferFormat.nSamplesPerSec = 48000;
+                            primaryBufferFormat.nBlockAlign = (primaryBufferFormat.wBitsPerSample / 8 * primaryBufferFormat.nChannels);
+                            primaryBufferFormat.nAvgBytesPerSec = (primaryBufferFormat.nSamplesPerSec * primaryBufferFormat.nBlockAlign);
+                            resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat);
                             if (SUCCEEDED(resultValue))
                             {
-                                WAVEFORMATEX primaryBufferFormat;
-                                ZeroMemory(&primaryBufferFormat, sizeof(WAVEFORMATEX));
-                                primaryBufferFormat.wFormatTag = WAVE_FORMAT_PCM;
-                                primaryBufferFormat.nChannels = 2;
-                                primaryBufferFormat.wBitsPerSample = 8;
-                                primaryBufferFormat.nSamplesPerSec = 48000;
-                                primaryBufferFormat.nBlockAlign = (primaryBufferFormat.wBitsPerSample / 8 * primaryBufferFormat.nChannels);
-                                primaryBufferFormat.nAvgBytesPerSec = (primaryBufferFormat.nSamplesPerSec * primaryBufferFormat.nBlockAlign);
-                                resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat);
-                                if (SUCCEEDED(resultValue))
+                                resultValue = E_FAIL;
+                                directSoundListener = primarySoundBuffer;
+                                if (directSoundListener)
                                 {
-                                    resultValue = E_FAIL;
-                                    directSoundListener = primarySoundBuffer;
-                                    if (directSoundListener)
-                                    {
-                                        resultValue = S_OK;
-                                        setMasterVolume(1.0f);
-                                        setDistanceFactor(1.0f);
-                                        setDopplerFactor(0.0f);
-                                        setRollOffFactor(1.0f);
-                                    }
+                                    resultValue = S_OK;
+                                    setMasterVolume(1.0f);
+                                    setDistanceFactor(1.0f);
+                                    setDopplerFactor(0.0f);
+                                    setRollOffFactor(1.0f);
                                 }
                             }
                         }
@@ -245,15 +238,13 @@ namespace Gek
             {
                 REQUIRE_RETURN(primarySoundBuffer, 0);
 
-                float volumePercent = 0.0f;
-
                 long volumeNumber = 0;
-                if (SUCCEEDED(primarySoundBuffer->GetVolume(&volumeNumber)))
+                if (FAILED(primarySoundBuffer->GetVolume(&volumeNumber)))
                 {
-                    volumePercent = (float(volumeNumber - DSBVOLUME_MIN) / float(DSBVOLUME_MAX - DSBVOLUME_MIN));
+                    volumeNumber = 0;
                 }
 
-                return volumePercent;
+                return (float(volumeNumber - DSBVOLUME_MIN) / float(DSBVOLUME_MAX - DSBVOLUME_MIN));
             }
 
             STDMETHODIMP_(void) setListener(const Math::Float4x4 &matrix)

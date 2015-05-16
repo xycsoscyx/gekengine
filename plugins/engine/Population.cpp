@@ -91,7 +91,7 @@ namespace Gek
             // Population::SystemInterface
             STDMETHODIMP initialize(void)
             {
-                gekLogScope();
+                gekLogScope(__FUNCTION__);
                 gekLogMessage(L"Loading Components...");
                 HRESULT resultValue = getContext()->createEachType(ComponentType, [&](REFCLSID classType, IUnknown *object) -> HRESULT
                 {
@@ -132,7 +132,7 @@ namespace Gek
             {
                 REQUIRE_RETURN(fileName, E_INVALIDARG);
 
-                gekLogScope();
+                gekLogScope(__FUNCTION__);
                 gekLogMessage(L"Loading Population (%s)...", fileName);
 
                 free();
@@ -236,7 +236,7 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
             {
-                gekLogScope();
+                gekLogScope(__FUNCTION__);
                 gekLogMessage(L"Creating Entity...");
 
                 Handle entityHandle = InterlockedIncrement(&nextEntityHandle);
