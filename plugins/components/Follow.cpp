@@ -5,55 +5,58 @@
 
 namespace Gek
 {
-    namespace Components
+    namespace Engine
     {
-        namespace Follow
+        namespace Components
         {
-            Data::Data(void)
+            namespace Follow
             {
-            }
-
-            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-            {
-                componentParameterList[L""] = target;
-                componentParameterList[L"offset"] = String::setFloat3(offset);
-                componentParameterList[L"rotation"] = String::setQuaternion(rotation);
-                return S_OK;
-            }
-
-            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-            {
-                setComponentParameter(componentParameterList, L"", target, [](LPCWSTR value) -> LPCWSTR { return value; });
-                setComponentParameter(componentParameterList, L"offset", offset, String::getFloat3);
-                setComponentParameter(componentParameterList, L"rotation", rotation, String::getQuaternion);
-                return S_OK;
-            }
-
-            class Component : public ContextUser
-                            , public BaseComponent<Data>
-            {
-            public:
-                Component(void)
+                Data::Data(void)
                 {
                 }
 
-                BEGIN_INTERFACE_LIST(Component)
-                    INTERFACE_LIST_ENTRY_COM(ComponentInterface)
-                END_INTERFACE_LIST_UNKNOWN
-
-                // ComponentInterface
-                STDMETHODIMP_(LPCWSTR) getName(void) const
+                HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
-                    return L"Follow";
+                    componentParameterList[L""] = target;
+                    componentParameterList[L"offset"] = String::setFloat3(offset);
+                    componentParameterList[L"rotation"] = String::setQuaternion(rotation);
+                    return S_OK;
                 }
 
-                STDMETHODIMP_(Handle) getIdentifier(void) const
+                HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
-                    return identifier;
+                    setParameter(componentParameterList, L"", target, [](LPCWSTR value) -> LPCWSTR { return value; });
+                    setParameter(componentParameterList, L"offset", offset, String::getFloat3);
+                    setParameter(componentParameterList, L"rotation", rotation, String::getQuaternion);
+                    return S_OK;
                 }
-            };
 
-            REGISTER_CLASS(Component)
-        }; // namespace Follow
-    }; // namespace Components
+                class Component : public ContextUser
+                    , public BaseComponent < Data >
+                {
+                public:
+                    Component(void)
+                    {
+                    }
+
+                    BEGIN_INTERFACE_LIST(Component)
+                        INTERFACE_LIST_ENTRY_COM(Component::Interface)
+                    END_INTERFACE_LIST_UNKNOWN
+
+                    // Component::Interface
+                    STDMETHODIMP_(LPCWSTR) getName(void) const
+                    {
+                        return L"Follow";
+                    }
+
+                    STDMETHODIMP_(Handle) getIdentifier(void) const
+                    {
+                        return identifier;
+                    }
+                };
+
+                REGISTER_CLASS(Component)
+            }; // namespace Follow
+        }; // namespace Components
+    }; // namespace Engine
 }; // namespace Gek

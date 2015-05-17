@@ -23,8 +23,8 @@ namespace Gek
 
             HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
-                setComponentParameter(componentParameterList, L"", shape, [](LPCWSTR value) -> LPCWSTR { return value; });
-                setComponentParameter(componentParameterList, L"material", material, [](LPCWSTR value) -> LPCWSTR { return value; });
+                setParameter(componentParameterList, L"", shape, [](LPCWSTR value) -> LPCWSTR { return value; });
+                setParameter(componentParameterList, L"material", material, [](LPCWSTR value) -> LPCWSTR { return value; });
                 return S_OK;
             }
 
@@ -37,10 +37,10 @@ namespace Gek
                 }
 
                 BEGIN_INTERFACE_LIST(Component)
-                    INTERFACE_LIST_ENTRY_COM(ComponentInterface)
+                    INTERFACE_LIST_ENTRY_COM(Component::Interface)
                 END_INTERFACE_LIST_UNKNOWN
 
-                // ComponentInterface
+                // Component::Interface
                 STDMETHODIMP_(LPCWSTR) getName(void) const
                 {
                     return L"DynamicBody";

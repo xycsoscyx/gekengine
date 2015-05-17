@@ -7,11 +7,10 @@
 
 namespace Gek
 {
-    // {525E4F27-8A87-409C-A25F-8740393A4B7B}
-    DEFINE_GUID(AudioSystem, 0x525e4f27, 0x8a87, 0x409c, 0xa2, 0x5f, 0x87, 0x40, 0x39, 0x3a, 0x4b, 0x7b);
-
     namespace Audio
     {
+        DECLARE_INTERFACE_IID(Class, "525E4F27-8A87-409C-A25F-8740393A4B7B");
+
         DECLARE_INTERFACE_IID_(SampleInterface, IUnknown, "35560CF2-6972-44A3-9489-9CA0A5FE95C9")
         {
             STDMETHOD_(LPVOID, getBuffer)       (THIS) PURE;
@@ -31,7 +30,7 @@ namespace Gek
             STDMETHOD_(void, play)              (THIS_ const Gek::Math::Float3 &origin, bool loop) PURE;
         };
 
-        DECLARE_INTERFACE_IID_(SystemInterface, IUnknown, "E760C91D-7AF9-4AAA-B8E5-08F8F9A23CEB")
+        DECLARE_INTERFACE_IID_(Interface, IUnknown, "E760C91D-7AF9-4AAA-B8E5-08F8F9A23CEB")
         {
             STDMETHOD(initialize)               (THIS_ HWND window) PURE;
 

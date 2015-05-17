@@ -979,8 +979,8 @@ namespace Gek
 
         class System : public Context
                      , public ResourceHandlerInterface
-                     , public Video3D::SystemInterface
-                     , public Video2D::SystemInterface
+                     , public Video3D::Interface
+                     , public Video2D::Interface
         {
             struct Resource
             {
@@ -1033,8 +1033,8 @@ namespace Gek
             }
 
             BEGIN_INTERFACE_LIST(System)
-                INTERFACE_LIST_ENTRY_COM(Video2D::SystemInterface)
-                INTERFACE_LIST_ENTRY_COM(Video3D::SystemInterface)
+                INTERFACE_LIST_ENTRY_COM(Video2D::Interface)
+                INTERFACE_LIST_ENTRY_COM(Video3D::Interface)
                 INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Device, d3dDevice)
             END_INTERFACE_LIST_BASE(Context)
 
@@ -1131,7 +1131,7 @@ namespace Gek
                 }
             }
 
-            // Video3D::SystemInterface
+            // Video3D::Interface
             STDMETHODIMP initialize(HWND window, bool windowed, UINT32 width, UINT32 height, UINT8 depthFormat)
             {
                 REQUIRE_RETURN(window, E_INVALIDARG);
@@ -2557,7 +2557,7 @@ namespace Gek
                 dxSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
             }
 
-            // Video2D::SystemInterface
+            // Video2D::Interface
             STDMETHODIMP_(Gek::Handle) createBrush(const Math::Float4 &color)
             {
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);

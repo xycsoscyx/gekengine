@@ -365,7 +365,7 @@ namespace Gek
         };
 
         class System : public ContextUser
-                    , public SystemInterface
+                    , public Interface
         {
         private:
             HWND window;
@@ -415,10 +415,10 @@ namespace Gek
             }
 
             BEGIN_INTERFACE_LIST(System)
-                INTERFACE_LIST_ENTRY_COM(SystemInterface)
+                INTERFACE_LIST_ENTRY_COM(Interface)
             END_INTERFACE_LIST_UNKNOWN
 
-            // SystemInterface
+            // Interface
             STDMETHODIMP initialize(HWND window)
             {
                 this->window = window;

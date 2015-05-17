@@ -5,51 +5,54 @@
 
 namespace Gek
 {
-    namespace Components
+    namespace Engine
     {
-        namespace PointLight
+        namespace Components
         {
-            Data::Data(void)
+            namespace PointLight
             {
-            }
-
-            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-            {
-                componentParameterList[L"radius"] = String::setFloat(radius);
-                return S_OK;
-            }
-
-            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-            {
-                setComponentParameter(componentParameterList, L"radius", radius, String::getFloat);
-                return S_OK;
-            }
-
-            class Component : public ContextUser
-                            , public BaseComponent<Data>
-            {
-            public:
-                Component(void)
+                Data::Data(void)
                 {
                 }
 
-                BEGIN_INTERFACE_LIST(Component)
-                    INTERFACE_LIST_ENTRY_COM(ComponentInterface)
-                END_INTERFACE_LIST_UNKNOWN
-
-                // ComponentInterface
-                STDMETHODIMP_(LPCWSTR) getName(void) const
+                HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
-                    return L"PointLight";
+                    componentParameterList[L"radius"] = String::setFloat(radius);
+                    return S_OK;
                 }
 
-                STDMETHODIMP_(Handle) getIdentifier(void) const
+                HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
-                    return identifier;
+                    setParameter(componentParameterList, L"radius", radius, String::getFloat);
+                    return S_OK;
                 }
-            };
 
-            REGISTER_CLASS(Component)
-        }; // namespace Light
-    }; // namespace Components
+                class Component : public ContextUser
+                    , public BaseComponent < Data >
+                {
+                public:
+                    Component(void)
+                    {
+                    }
+
+                    BEGIN_INTERFACE_LIST(Component)
+                        INTERFACE_LIST_ENTRY_COM(Component::Interface)
+                     END_INTERFACE_LIST_UNKNOWN
+
+                    // Component::Interface
+                    STDMETHODIMP_(LPCWSTR) getName(void) const
+                    {
+                        return L"PointLight";
+                    }
+
+                    STDMETHODIMP_(Handle) getIdentifier(void) const
+                    {
+                        return identifier;
+                    }
+                };
+
+                REGISTER_CLASS(Component)
+            }; // namespace Light
+        }; // namespace Components
+    }; // namespace Engine
 }; // namespace Gek

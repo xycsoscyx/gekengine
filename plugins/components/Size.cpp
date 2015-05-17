@@ -5,52 +5,55 @@
 
 namespace Gek
 {
-    namespace Components
+    namespace Engine
     {
-        namespace Size
+        namespace Components
         {
-            Data::Data(void)
-                : value(0.0f)
+            namespace Size
             {
-            }
-
-            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-            {
-                componentParameterList[L""] = String::setFloat(value);
-                return S_OK;
-            }
-
-            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-            {
-                setComponentParameter(componentParameterList, L"", value, String::getFloat);
-                return S_OK;
-            }
-
-            class Component : public ContextUser
-                            , public BaseComponent<Data>
-            {
-            public:
-                Component(void)
+                Data::Data(void)
+                    : value(0.0f)
                 {
                 }
 
-                BEGIN_INTERFACE_LIST(Component)
-                    INTERFACE_LIST_ENTRY_COM(ComponentInterface)
-                END_INTERFACE_LIST_UNKNOWN
-
-                // ComponentInterface
-                STDMETHODIMP_(LPCWSTR) getName(void) const
+                HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
-                    return L"Size";
+                    componentParameterList[L""] = String::setFloat(value);
+                    return S_OK;
                 }
 
-                STDMETHODIMP_(Handle) getIdentifier(void) const
+                HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
-                    return identifier;
+                    setParameter(componentParameterList, L"", value, String::getFloat);
+                    return S_OK;
                 }
-            };
 
-            REGISTER_CLASS(Component)
-        }; // namespace Size
-    }; // namespace Components
+                class Component : public ContextUser
+                    , public BaseComponent < Data >
+                {
+                public:
+                    Component(void)
+                    {
+                    }
+
+                    BEGIN_INTERFACE_LIST(Component)
+                        INTERFACE_LIST_ENTRY_COM(Component::Interface)
+                    END_INTERFACE_LIST_UNKNOWN
+
+                    // Component::Interface
+                    STDMETHODIMP_(LPCWSTR) getName(void) const
+                    {
+                        return L"Size";
+                    }
+
+                    STDMETHODIMP_(Handle) getIdentifier(void) const
+                    {
+                        return identifier;
+                    }
+                };
+
+                REGISTER_CLASS(Component)
+            }; // namespace Size
+        }; // namespace Components
+    }; // namespace Engine
 }; // namespace Gek

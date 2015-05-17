@@ -215,21 +215,21 @@ HRESULT GEKGetModuleClasses(                                                    
     std::unordered_map<CLSID, std::function<HRESULT (Gek::ContextUserInterface **)>> &classList,\
     std::unordered_map<CLSID, std::vector<CLSID>> &typedClassList)                              \
 {                                                                                               \
-    CLSID lastClassID = GUID_NULL;
+    CLSID lastClassName = GUID_NULL;
 
-#define ADD_CONTEXT_CLASS(CLASSID, CLASS)                                                       \
-    if (classList.find(CLASSID) == classList.end())                                             \
+#define ADD_CONTEXT_CLASS(CLASSNAME, CLASS)                                                     \
+    if (classList.find(__uuidof(CLASSNAME)) == classList.end())                                 \
     {                                                                                           \
-        classList[CLASSID] = CLASS##CreateInstance;                                             \
-        lastClassID = CLASSID;                                                                  \
+        classList[__uuidof(CLASSNAME)] = CLASS##CreateInstance;                                 \
+        lastClassName = __uuidof(CLASSNAME);                                                    \
     }                                                                                           \
     else                                                                                        \
     {                                                                                           \
-        _ASSERTE(!"Duplicate class found in module: " #CLASSID);                                \
+        _ASSERTE(!"Duplicate class found in module: " #CLASSNAME);                              \
     }
 
 #define ADD_CLASS_TYPE(TYPEID)                                                                  \
-    typedClassList[TYPEID].push_back(lastClassID);
+    typedClassList[__uuidof(TYPEID)].push_back(lastClassName);
 
 #define END_CONTEXT_SOURCE                                                                      \
     return S_OK;                                                                                \

@@ -9,22 +9,25 @@
 
 namespace Gek
 {
-    namespace Components
+    namespace Engine
     {
-        namespace Camera
+        namespace Components
         {
-            static const Handle identifier = 1;
-            struct Data
+            namespace Camera
             {
-                float fieldOfView;
-                float minimumDistance;
-                float maximumDistance;
-                Gek::Math::Float4 viewPort;
+                static const Handle identifier = 1;
+                struct Data
+                {
+                    float fieldOfView;
+                    float minimumDistance;
+                    float maximumDistance;
+                    Gek::Math::Float4 viewPort;
 
-                Data(void);
-                HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-            };
-        }; // namespace Camera
-    }; // namespace Components
+                    Data(void);
+                    HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+                    HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+                };
+            }; // namespace Camera
+        }; // namespace Components
+    }; // namespace Engine
 }; // namespace Gek

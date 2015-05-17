@@ -150,12 +150,12 @@ namespace Gek
             logMessage(__FILE__, __LINE__, L"< Leaving %S", __FUNCTION__);
         }
 
-        STDMETHODIMP createInstance(REFGUID classType, REFIID interfaceType, LPVOID FAR *returnObject)
+        STDMETHODIMP createInstance(REFGUID className, REFIID interfaceType, LPVOID FAR *returnObject)
         {
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
-            auto classIterator = classList.find(classType);
+            auto classIterator = classList.find(className);
             if (classIterator != classList.end())
             {
                 CComPtr<ContextUserInterface> classInstance;
@@ -176,13 +176,13 @@ namespace Gek
             auto typedClassIterator = typedClassList.find(typeID);
             if (typedClassIterator != typedClassList.end())
             {
-                for (auto &classType : (*typedClassIterator).second)
+                for (auto &className : (*typedClassIterator).second)
                 {
                     CComPtr<IUnknown> classInstance;
-                    resultValue = createInstance(classType, IID_PPV_ARGS(&classInstance));
+                    resultValue = createInstance(className, IID_PPV_ARGS(&classInstance));
                     if (classInstance)
                     {
-                        resultValue = onCreateInstance(classType, classInstance);
+                        resultValue = onCreateInstance(className, classInstance);
                         if (FAILED(resultValue))
                         {
                             break;

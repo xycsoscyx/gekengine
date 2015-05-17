@@ -11,7 +11,7 @@ namespace Gek
         STDMETHOD_(void, addSearchPath)     (THIS_ LPCWSTR fileName) PURE;
         STDMETHOD_(void, initialize)        (THIS) PURE;
 
-        STDMETHOD(createInstance)           (THIS_ REFCLSID classType, REFIID interfaceType, LPVOID FAR *returnObject) PURE;
+        STDMETHOD(createInstance)           (THIS_ REFCLSID className, REFIID interfaceType, LPVOID FAR *returnObject) PURE;
         STDMETHOD(createEachType)           (THIS_ REFCLSID type, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance) PURE;
 
         STDMETHOD_(Handle, addLogListener)  (THIS_ std::function<void(LPCSTR, UINT32, LPCWSTR)> onLogMessage) PURE;

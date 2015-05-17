@@ -29,10 +29,10 @@ namespace Gek
 
             HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
-                setComponentParameter(componentParameterList, L"outerRadius", outerRadius, String::getFloat);
-                setComponentParameter(componentParameterList, L"innerRadius", innerRadius, String::getFloat);
-                setComponentParameter(componentParameterList, L"height", height, String::getFloat);
-                setComponentParameter(componentParameterList, L"stairStep", stairStep, String::getFloat);
+                setParameter(componentParameterList, L"outerRadius", outerRadius, String::getFloat);
+                setParameter(componentParameterList, L"innerRadius", innerRadius, String::getFloat);
+                setParameter(componentParameterList, L"height", height, String::getFloat);
+                setParameter(componentParameterList, L"stairStep", stairStep, String::getFloat);
                 return S_OK;
             }
 
@@ -45,10 +45,10 @@ namespace Gek
                 }
 
                 BEGIN_INTERFACE_LIST(Component)
-                    INTERFACE_LIST_ENTRY_COM(ComponentInterface)
+                    INTERFACE_LIST_ENTRY_COM(Component::Interface)
                 END_INTERFACE_LIST_UNKNOWN
 
-                // ComponentInterface
+                // Component::Interface
                 STDMETHODIMP_(LPCWSTR) getName(void) const
                 {
                     return L"Player";

@@ -5,11 +5,10 @@
 
 namespace Gek
 {
-    // {3A8EA46C-573A-40E6-8741-71ACCA90BAB4}
-    DEFINE_GUID(InputSystem, 0x3a8ea46c, 0x573a, 0x40e6, 0x87, 0x41, 0x71, 0xac, 0xca, 0x90, 0xba, 0xb4);
-
     namespace Input
     {
+        DECLARE_INTERFACE_IID(Class, "3A8EA46C-573A-40E6-8741-71ACCA90BAB4");
+
         namespace Key
         {
             enum
@@ -203,7 +202,7 @@ namespace Gek
             STDMETHOD_(float, getPointOfView)           (THIS) const PURE;
         };
 
-        DECLARE_INTERFACE_IID_(SystemInterface, IUnknown, "1F96303C-C8CD-4FE8-944F-C2B1B55747F2")
+        DECLARE_INTERFACE_IID_(Interface, IUnknown, "1F96303C-C8CD-4FE8-944F-C2B1B55747F2")
         {
             STDMETHOD(initialize)                       (THIS_ HWND hWindow) PURE;
 

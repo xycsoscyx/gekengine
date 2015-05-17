@@ -29,8 +29,8 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
     case WM_CLOSE:
         if (true)
         {
-            CComPtr<Gek::Video3D::SystemInterface> videoSystem;
-            videoSystem.Attach((Gek::Video3D::SystemInterface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA));
+            CComPtr<Gek::Video3D::Interface> videoSystem;
+            videoSystem.Attach((Gek::Video3D::Interface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA));
             EndDialog(dialogWindow, IDCANCEL);
         }
 
@@ -41,8 +41,8 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
         {
             Gek::ContextInterface *context = (Gek::ContextInterface *)lParam;
 
-            CComPtr<Gek::Video3D::SystemInterface> videoSystem;
-            context->createInstance(Gek::VideoSystem, IID_PPV_ARGS(&videoSystem));
+            CComPtr<Gek::Video3D::Interface> videoSystem;
+            context->createInstance(__uuidof(Gek::Video::Class), IID_PPV_ARGS(&videoSystem));
             if (videoSystem)
             {
                 HWND renderWindow = GetDlgItem(dialogWindow, IDC_VIDEO_WINDOW);
@@ -105,7 +105,7 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
         if (true)
         {
             CComCritSecLock<CComAutoCriticalSection> scopedLock(criticalSection);
-            Gek::Video3D::SystemInterface *videoSystem = (Gek::Video3D::SystemInterface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
+            Gek::Video3D::Interface *videoSystem = (Gek::Video3D::Interface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
 
             RECT dialogClientRect;
             GetClientRect(dialogWindow, &dialogClientRect);
@@ -128,7 +128,7 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
         if (true)
         {
             CComCritSecLock<CComAutoCriticalSection> scopedLock(criticalSection);
-            Gek::Video3D::SystemInterface *videoSystem = (Gek::Video3D::SystemInterface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
+            Gek::Video3D::Interface *videoSystem = (Gek::Video3D::Interface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
             videoSystem->clearDefaultRenderTarget(Gek::Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
 
             CComQIPtr<Gek::Video3D::ContextInterface> videoContext(videoSystem);
@@ -169,7 +169,7 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
                 if (GetOpenFileNameW((LPOPENFILENAMEW)&openFileName))
                 {
                     fileName.ReleaseBuffer();
-                    Gek::Video3D::SystemInterface *videoSystem = (Gek::Video3D::SystemInterface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
+                    Gek::Video3D::Interface *videoSystem = (Gek::Video3D::Interface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
                     videoSystem->freeResource(gs_nTextureID);
                     gs_nTextureID = videoSystem->loadTexture(fileName, 0);
                 }
@@ -180,8 +180,8 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
         case ID_FILE_QUIT:
             if (true)
             {
-                CComPtr<Gek::Video3D::SystemInterface> videoSystem;
-                videoSystem.Attach((Gek::Video3D::SystemInterface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA));
+                CComPtr<Gek::Video3D::Interface> videoSystem;
+                videoSystem.Attach((Gek::Video3D::Interface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA));
                 EndDialog(dialogWindow, IDCANCEL);
             }
 
@@ -210,8 +210,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
 
         context->initialize();
 
-        CComPtr<Gek::Population::SystemInterface> population;
-        context->createInstance(Gek::PopulationSystem, IID_PPV_ARGS(&population));
+        CComPtr<Gek::Engine::Population::Interface> population;
+        context->createInstance(__uuidof(Gek::Engine::Population::Class), IID_PPV_ARGS(&population));
         if (population)
         {
             population->initialize();

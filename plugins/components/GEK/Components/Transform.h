@@ -9,20 +9,23 @@
 
 namespace Gek
 {
-    namespace Components
+    namespace Engine
     {
-        namespace Transform
+        namespace Components
         {
-            static const Handle identifier = 6;
-            struct Data
+            namespace Transform
             {
-                Gek::Math::Float4 position;
-                Gek::Math::Quaternion rotation;
+                static const Handle identifier = 6;
+                struct Data
+                {
+                    Gek::Math::Float4 position;
+                    Gek::Math::Quaternion rotation;
 
-                Data(void);
-                HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-            };
-        }; // namespace Transform
-    }; // namespace Components
+                    Data(void);
+                    HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+                    HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+                };
+            }; // namespace Transform
+        }; // namespace Components
+    }; // namespace Engine
 }; // namespace Gek

@@ -39,7 +39,7 @@ namespace Gek
             STDMETHOD(createWidened)                (THIS_ float width, float tolerance, GeometryInterface **geometry) PURE;
         };
 
-        DECLARE_INTERFACE_IID_(SystemInterface, IUnknown, "D3B65773-4EB1-46F8-A38D-009CA43CE77F")
+        DECLARE_INTERFACE_IID_(Interface, IUnknown, "D3B65773-4EB1-46F8-A38D-009CA43CE77F")
         {
             STDMETHOD_(Handle, createBrush)         (THIS_ const Math::Float4 &color) PURE;
             STDMETHOD_(Handle, createBrush)         (THIS_ const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents) PURE;

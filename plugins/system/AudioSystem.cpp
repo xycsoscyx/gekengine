@@ -169,7 +169,7 @@ namespace Gek
         };
 
         class System : public ContextUser
-                     , public SystemInterface
+                     , public Interface
         {
         private:
             CComQIPtr<IDirectSound8, &IID_IDirectSound8> directSound;
@@ -178,10 +178,10 @@ namespace Gek
 
         public:
             BEGIN_INTERFACE_LIST(System)
-                INTERFACE_LIST_ENTRY_COM(SystemInterface)
+                INTERFACE_LIST_ENTRY_COM(Interface)
             END_INTERFACE_LIST_UNKNOWN
 
-            // SystemInterface
+            // Interface
             STDMETHODIMP initialize(HWND window)
             {
                 REQUIRE_RETURN(window, E_INVALIDARG);

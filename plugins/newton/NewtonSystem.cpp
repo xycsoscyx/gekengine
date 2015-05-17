@@ -41,11 +41,11 @@ namespace Gek
         {
         private:
             ULONG referenceCount;
-            Population::SystemInterface *populationSystem;
+            Population::Interface *populationSystem;
             Handle entityHandle;
 
         public:
-            BaseBody(Population::SystemInterface *populationSystem, Handle entityHandle)
+            BaseBody(Population::Interface *populationSystem, Handle entityHandle)
                 : referenceCount(0)
                 , populationSystem(populationSystem)
                 , entityHandle(entityHandle)
@@ -56,7 +56,7 @@ namespace Gek
             {
             }
 
-            Population::SystemInterface *getPopulationSystem(void)
+            Population::Interface *getPopulationSystem(void)
             {
                 return populationSystem;
             }
@@ -106,7 +106,7 @@ namespace Gek
                           , public dNewtonDynamicBody
         {
         public:
-            DynamicBody(Population::SystemInterface *populationSystem, dNewton *newton, const dNewtonCollision* const newtonCollision, Handle entityHandle,
+            DynamicBody(Population::Interface *populationSystem, dNewton *newton, const dNewtonCollision* const newtonCollision, Handle entityHandle,
                 const Components::Transform::Data &transformComponent,
                 const Components::Mass::Data &massComponent)
                 : BaseBody(populationSystem, entityHandle)
@@ -151,7 +151,7 @@ namespace Gek
             concurrency::concurrent_unordered_map<CStringW, float> singleActionList;
 
         public:
-            Player(Population::SystemInterface *populationSystem, dNewtonPlayerManager *newtonPlayerManager, Handle entityHandle, 
+            Player(Population::Interface *populationSystem, dNewtonPlayerManager *newtonPlayerManager, Handle entityHandle, 
                 const Components::Transform::Data &transformComponent,
                 const Components::Mass::Data &massComponent, 
                 const Components::Player::Data &playerComponent)
@@ -252,7 +252,7 @@ namespace Gek
             };
 
         private:
-            Population::SystemInterface *populationSystem;
+            Population::Interface *populationSystem;
 
             dNewtonPlayerManager *playerManager;
 
@@ -576,7 +576,7 @@ namespace Gek
             }
 
             // ComponentSystemInterface
-            STDMETHODIMP initialize(Population::SystemInterface *populationSystem)
+            STDMETHODIMP initialize(Population::Interface *populationSystem)
             {
                 REQUIRE_RETURN(populationSystem, E_INVALIDARG);
 

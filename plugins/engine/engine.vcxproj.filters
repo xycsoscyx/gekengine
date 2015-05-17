@@ -22,7 +22,10 @@
     <ClInclude Include="GEK\Engine\Component.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\ComponentSystemInterface.h">
+    <ClInclude Include="GEK\Engine\EngineInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\SystemInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,19 +7,22 @@
 
 namespace Gek
 {
-    namespace Components
+    namespace Engine
     {
-        namespace PointLight
+        namespace Components
         {
-            static const Handle  identifier = 4;
-            struct Data
+            namespace PointLight
             {
-                float radius;
+                static const Handle  identifier = 4;
+                struct Data
+                {
+                    float radius;
 
-                Data(void);
-                HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-            };
-        }; // namespace PointLight
-    }; // namespace Components
+                    Data(void);
+                    HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+                    HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+                };
+            }; // namespace PointLight
+        }; // namespace Components
+    }; // namespace Engine
 }; // namespace Gek
