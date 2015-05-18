@@ -214,7 +214,7 @@ namespace Gek
             END_INTERFACE_LIST_UNKNOWN
         };
 
-        DECLARE_INTERFACE_IID_(BufferInterface, IUnknown, "5FFBBB66-158D-469D-8A95-6AD938B5C37D")
+        DECLARE_INTERFACE_IID(BufferInterface, "5FFBBB66-158D-469D-8A95-6AD938B5C37D") : virtual public IUnknown
         {
             STDMETHOD_(UINT32, getStride)               (THIS) PURE;
         };

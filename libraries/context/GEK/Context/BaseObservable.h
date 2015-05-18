@@ -7,7 +7,7 @@
 
 namespace Gek
 {
-    class BaseObservable : public ObservableInterface
+    class BaseObservable : virtual public ObservableInterface
     {
     public:
         template <typename RESULT>

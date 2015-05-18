@@ -5,7 +5,7 @@
 
 namespace Gek
 {
-    class BaseUnknown : public IUnknown
+    class BaseUnknown : virtual public IUnknown
     {
     private:
         ULONG referenceCount;

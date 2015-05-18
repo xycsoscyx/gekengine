@@ -12,9 +12,9 @@ namespace Gek
     {
         namespace Population
         {
-            DECLARE_INTERFACE_IID_(Class, IUnknown, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5") { };
+            DECLARE_INTERFACE_IID(Class, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5");
 
-            DECLARE_INTERFACE_IID_(Interface, IUnknown, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B")
+            DECLARE_INTERFACE_IID(Interface, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B") : virtual public IUnknown
             {
                 STDMETHOD(initialize)                       (THIS)PURE;
 
@@ -41,7 +41,7 @@ namespace Gek
                 }
             };
 
-            DECLARE_INTERFACE_IID_(Observer, Gek::ObserverInterface, "51D6E5E6-2AD3-4D61-A704-8E6515F024F9")
+            DECLARE_INTERFACE_IID(Observer, "51D6E5E6-2AD3-4D61-A704-8E6515F024F9") : virtual public Gek::ObserverInterface
             {
                 STDMETHOD_(void, onLoadBegin)               (THIS) { };
                 STDMETHOD_(void, onLoadEnd)                 (THIS_ HRESULT resultValue) { };

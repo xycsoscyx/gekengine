@@ -37,17 +37,15 @@ namespace Gek
 {
     namespace Newton
     {
-        class BaseBody : public IUnknown
+        class BaseBody : virtual public BaseUnknown
         {
         private:
-            ULONG referenceCount;
             Engine::Population::Interface *population;
             Handle entityHandle;
 
         public:
             BaseBody(Engine::Population::Interface *population, Handle entityHandle)
-                : referenceCount(0)
-                , population(population)
+                : population(population)
                 , entityHandle(entityHandle)
             {
             }
@@ -69,37 +67,8 @@ namespace Gek
             STDMETHOD_(NewtonBody *, getNewtonBody)     (THIS) const PURE;
 
             // IUnknown
-            STDMETHODIMP_(ULONG) AddRef(void)
-            {
-                return InterlockedIncrement(&referenceCount);
-            }
-
-            STDMETHODIMP_(ULONG) Release(void)
-            {
-                LONG currentReferenceCount = InterlockedDecrement(&referenceCount);
-                if (currentReferenceCount == 0)
-                {
-                    delete this;
-                }
-
-                return currentReferenceCount;
-            }
-
-            STDMETHODIMP QueryInterface(REFIID interfaceType, LPVOID FAR *returnObject)
-            {
-                REQUIRE_RETURN(returnObject, E_INVALIDARG);
-
-                HRESULT resultValue = E_INVALIDARG;
-                if (IsEqualIID(IID_IUnknown, interfaceType))
-                {
-                    AddRef();
-                    (*returnObject) = dynamic_cast<IUnknown *>(this);
-                    _ASSERTE(*returnObject);
-                    resultValue = S_OK;
-                }
-
-                return resultValue;
-            }
+            BEGIN_INTERFACE_LIST(BaseBody)
+            END_INTERFACE_LIST_UNKNOWN
         };
 
         class DynamicBody : public BaseBody
@@ -142,8 +111,8 @@ namespace Gek
         };
 
         class Player : public BaseBody
-                     , public dNewtonPlayerManager::dNewtonPlayer
-                     //, public Action::ObserverInterface
+                     , virtual public dNewtonPlayerManager::dNewtonPlayer
+                     , virtual public Engine::Action::Observer
         {
         private:
             float viewAngle;
@@ -165,7 +134,7 @@ namespace Gek
 
             ~Player(void)
             {
-                //Observable::removeObserver(GetEngineCore(), dynamic_cast<Action::ObserverInterface *>(this));
+                //BaseObservable::removeObserver(GetEngineCore(), getClass<Engine::Action::Observer>());
             }
 
             // BaseBody
@@ -678,7 +647,7 @@ namespace Gek
                     else if (population->hasComponent(entityHandle, Components::Player::identifier))
                     {
                         auto &playerComponent = population->getComponent<Newton::Components::Player::Data>(entityHandle, Newton::Components::Player::identifier);
-                        CComPtr<IUnknown> player = new Player(population, newtonPlayerManager, entityHandle, transformComponent, massComponent, playerComponent);
+                        CComPtr<Player> player = new Player(population, newtonPlayerManager, entityHandle, transformComponent, massComponent, playerComponent);
                         if (player)
                         {
                             //Observable::addObserver(m_pEngine, dynamic_cast<Action::ObserverInterface *>((IUnknown *)player));

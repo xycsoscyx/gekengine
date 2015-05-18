@@ -17,7 +17,7 @@ namespace Gek
         {
             DECLARE_INTERFACE_IID(Type, "7B71BEF1-A2B2-4791-A664-2EA631E04392");
 
-            DECLARE_INTERFACE_IID_(Interface, IUnknown, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E")
+            DECLARE_INTERFACE_IID(Interface, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E") : virtual public IUnknown
             {
                 STDMETHOD_(LPCWSTR, getName)                (THIS) const PURE;
                 STDMETHOD_(Handle, getIdentifier)           (THIS) const PURE;

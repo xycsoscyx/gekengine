@@ -25,7 +25,7 @@ namespace Gek
             Math::Float4 color;
         };
 
-        DECLARE_INTERFACE_IID_(GeometryInterface, IUnknown, "4CA2D559-66C1-46F3-ADFF-9B919AAB4575")
+        DECLARE_INTERFACE_IID(GeometryInterface, "4CA2D559-66C1-46F3-ADFF-9B919AAB4575") : virtual public IUnknown
         {
             STDMETHOD(openShape)                    (THIS) PURE;
             STDMETHOD(closeShape)                   (THIS) PURE;
@@ -39,7 +39,7 @@ namespace Gek
             STDMETHOD(createWidened)                (THIS_ float width, float tolerance, GeometryInterface **geometry) PURE;
         };
 
-        DECLARE_INTERFACE_IID_(Interface, IUnknown, "D3B65773-4EB1-46F8-A38D-009CA43CE77F")
+        DECLARE_INTERFACE_IID(Interface, "D3B65773-4EB1-46F8-A38D-009CA43CE77F") : virtual public IUnknown
         {
             STDMETHOD_(Handle, createBrush)         (THIS_ const Math::Float4 &color) PURE;
             STDMETHOD_(Handle, createBrush)         (THIS_ const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents) PURE;

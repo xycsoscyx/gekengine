@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GEK\Utility\Common.h"
 #include "GEK\Context\ObserverInterface.h"
 #include <functional>
 
@@ -8,7 +7,7 @@ namespace Gek
 {
     namespace Context
     {
-        DECLARE_INTERFACE_IID_(Interface, IUnknown, "E1BBAFAB-1DD8-42E4-A031-46E22835EF1E")
+        DECLARE_INTERFACE_IID(Interface, "E1BBAFAB-1DD8-42E4-A031-46E22835EF1E") : virtual public IUnknown
         {
             STDMETHOD_(void, addSearchPath)     (THIS_ LPCWSTR fileName) PURE;
             STDMETHOD_(void, initialize)        (THIS) PURE;
@@ -21,7 +20,7 @@ namespace Gek
             STDMETHOD_(void, logExitScope)      (THIS) PURE;
         };
 
-        DECLARE_INTERFACE_IID_(Observer, ObserverInterface, "4678440B-94FC-4671-9622-0D4030F8CE94")
+        DECLARE_INTERFACE_IID(Observer, "4678440B-94FC-4671-9622-0D4030F8CE94") : virtual public ObserverInterface
         {
             STDMETHOD_(void, onLogMessage)      (THIS_ LPCSTR file, UINT32 line, LPCWSTR message) PURE;
         };

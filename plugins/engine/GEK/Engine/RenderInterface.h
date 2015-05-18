@@ -18,7 +18,7 @@ namespace Gek
                 Normal = 1 << 2,
             };
 
-            DECLARE_INTERFACE_IID_(Observer, Gek::ObserverInterface, "16333226-FE0A-427D-A3EF-205486E1AD4D")
+            DECLARE_INTERFACE_IID(Observer, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Gek::ObserverInterface
             {
                 STDMETHOD_(void, onRenderBegin)             (THIS_ Handle viewerHandle) { };
                 STDMETHOD_(void, onCullScene)               (THIS_ Handle viewerHandle, const Gek::Shape::Frustum &viewFrustum) { };

@@ -190,7 +190,7 @@ namespace Gek
             };
         }; // State
 
-        DECLARE_INTERFACE_IID_(DeviceInterface, IUnknown, "58BF03BB-69A2-45FC-B124-6DA702E949F9")
+        DECLARE_INTERFACE_IID(DeviceInterface, "58BF03BB-69A2-45FC-B124-6DA702E949F9") : virtual public IUnknown
         {
             STDMETHOD(update)                           (THIS) PURE;
 
@@ -202,7 +202,7 @@ namespace Gek
             STDMETHOD_(float, getPointOfView)           (THIS) const PURE;
         };
 
-        DECLARE_INTERFACE_IID_(Interface, IUnknown, "1F96303C-C8CD-4FE8-944F-C2B1B55747F2")
+        DECLARE_INTERFACE_IID(Interface, "1F96303C-C8CD-4FE8-944F-C2B1B55747F2") : virtual public IUnknown
         {
             STDMETHOD(initialize)                       (THIS_ HWND hWindow) PURE;
 

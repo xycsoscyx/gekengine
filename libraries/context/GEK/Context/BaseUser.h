@@ -8,7 +8,7 @@ namespace Gek
 {
     namespace Context
     {
-        class BaseUser : public BaseUnknown
+        class BaseUser : virtual public BaseUnknown
                        , virtual public UserInterface
         {
         private:

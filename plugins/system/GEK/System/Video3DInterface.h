@@ -414,7 +414,7 @@ namespace Gek
             }
         };
 
-        DECLARE_INTERFACE_IID_(ContextInterface, IUnknown, "95262C77-0F56-4447-9337-5819E68B372E")
+        DECLARE_INTERFACE_IID(ContextInterface, "95262C77-0F56-4447-9337-5819E68B372E") : virtual public IUnknown
         {
             DECLARE_INTERFACE(SubSystemInterface)
             {
@@ -458,7 +458,7 @@ namespace Gek
             STDMETHOD_(void, finishCommandList)                 (THIS_ IUnknown **instance) PURE;
         };
 
-        DECLARE_INTERFACE_IID_(Interface, IUnknown, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6")
+        DECLARE_INTERFACE_IID(Interface, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6") : virtual public IUnknown
         {
             STDMETHOD(initialize)                               (THIS_ HWND window, bool windowed, UINT32 width, UINT32 height, UINT8 depthBufferFormat = Format::UNKNOWN) PURE;
             STDMETHOD(resize)                                   (THIS_ bool windowed, UINT32 width, UINT32 height, UINT8 depthBufferFormat = Format::UNKNOWN) PURE;
