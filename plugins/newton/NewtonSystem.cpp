@@ -1,5 +1,5 @@
 #include "GEK\Context\Common.h"
-#include "GEK\Context\ContextUser.h"
+#include "GEK\Context\BaseUser.h"
 #include "GEK\Context\Observable.h"
 #include "GEK\Utility\Common.h"
 #include "GEK\Utility\FileSystem.h"
@@ -228,7 +228,7 @@ namespace Gek
             }
         };
 
-        class System : public ContextUser
+        class System : public Context::BaseUser
                      , public Observable
                      , public ComponentSystemInterface
                      , public Population::ObserverInterface

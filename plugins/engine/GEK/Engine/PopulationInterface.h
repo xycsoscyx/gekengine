@@ -41,7 +41,7 @@ namespace Gek
                 }
             };
 
-            DECLARE_INTERFACE_IID_(ObserverInterface, Gek::ObserverInterface, "51D6E5E6-2AD3-4D61-A704-8E6515F024F9")
+            DECLARE_INTERFACE_IID_(Observer, Gek::ObserverInterface, "51D6E5E6-2AD3-4D61-A704-8E6515F024F9")
             {
                 STDMETHOD_(void, onLoadBegin)               (THIS) { };
                 STDMETHOD_(void, onLoadEnd)                 (THIS_ HRESULT resultValue) { };

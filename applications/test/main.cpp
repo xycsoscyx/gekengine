@@ -4,11 +4,10 @@
 #include "GEK\Math\Matrix4x4.h"
 #include "GEK\Utility\Common.h"
 #include "GEK\Utility\FileSystem.h"
-#include "GEK\Context\ContextInterface.h"
+#include "GEK\Context\Interface.h"
 #include "GEK\System\VideoInterface.h"
-#include "resource.h"
-
 #include "GEK\Engine\PopulationInterface.h"
+#include "resource.h"
 
 Gek::Handle gs_nSampleStatesID = Gek::InvalidHandle;
 Gek::Handle gs_nRenderStatesID = Gek::InvalidHandle;
@@ -39,7 +38,7 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
     case WM_INITDIALOG:
         if (true)
         {
-            Gek::ContextInterface *context = (Gek::ContextInterface *)lParam;
+            Gek::Context::Interface *context = (Gek::Context::Interface *)lParam;
 
             CComPtr<Gek::Video3D::Interface> videoSystem;
             context->createInstance(__uuidof(Gek::Video::Class), IID_PPV_ARGS(&videoSystem));
@@ -131,7 +130,7 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
             Gek::Video3D::Interface *videoSystem = (Gek::Video3D::Interface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
             videoSystem->clearDefaultRenderTarget(Gek::Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
 
-            CComQIPtr<Gek::Video3D::ContextInterface> videoContext(videoSystem);
+            CComQIPtr<Gek::Video3D::DeferredContextInterface> videoContext(videoSystem);
             videoSystem->setDefaultTargets(videoContext);
             videoContext->setRenderStates(gs_nRenderStatesID);
             videoContext->setBlendStates(gs_nBlendStatesID, Gek::Math::Float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
@@ -196,8 +195,8 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
 
 int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ LPWSTR commandLine, _In_ int commandShow)
 {
-    CComPtr<Gek::ContextInterface> context;
-    Gek::createContext(&context);
+    CComPtr<Gek::Context::Interface> context;
+    Gek::Context::create(&context);
     if (context)
     {
 #ifdef _DEBUG
@@ -218,7 +217,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
             population->load(L"demo");
         }
 
-        DialogBoxParam(instance, MAKEINTRESOURCE(IDD_TEST_DIALOG), nullptr, dialogProcedure, LPARAM((Gek::ContextInterface *)context));
+        DialogBoxParam(instance, MAKEINTRESOURCE(IDD_TEST_DIALOG), nullptr, dialogProcedure, LPARAM((Gek::Context::Interface *)context));
     }
 
     return 0;

@@ -1,7 +1,7 @@
 ﻿#include "GEK\Engine\PopulationInterface.h"
 #include "GEK\Engine\ComponentInterface.h"
-#include "GEK\Context\ContextUser.h"
-#include "GEK\Context\Observable.h"
+#include "GEK\Context\BaseUser.h"
+#include "GEK\Context\BaseObservable.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include <set>
@@ -15,8 +15,8 @@ namespace Gek
     {
         namespace Population
         {
-            class System : public ContextUser
-                , public Observable
+            class System : public Context::BaseUser
+                , public BaseObservable
                 , public Population::Interface
             {
             private:
@@ -45,9 +45,9 @@ namespace Gek
 
                     STDMETHODIMP_(void) update(float frameTime)
                     {
-                        Observable::sendEvent(Event<Population::ObserverInterface>(std::bind(&Population::ObserverInterface::onUpdateBegin, std::placeholders::_1, frameTime)));
-                        Observable::sendEvent(Event<Population::ObserverInterface>(std::bind(&Population::ObserverInterface::onUpdate, std::placeholders::_1, frameTime)));
-                        Observable::sendEvent(Event<Population::ObserverInterface>(std::bind(&Population::ObserverInterface::onUpdateEnd, std::placeholders::_1, frameTime)));
+                        BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdateBegin, std::placeholders::_1, frameTime)));
+                        BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdate, std::placeholders::_1, frameTime)));
+                        BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdateEnd, std::placeholders::_1, frameTime)));
                         for (auto killEntityHandle : killEntityList)
                         {
                             auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Handle> &namedEntity) -> bool
@@ -136,7 +136,7 @@ namespace Gek
                         gekLogMessage(L"Loading Population (%s)...", fileName);
 
                         free();
-                        Observable::sendEvent(Event<Population::ObserverInterface>(std::bind(&Population::ObserverInterface::onLoadBegin, std::placeholders::_1)));
+                        BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onLoadBegin, std::placeholders::_1)));
 
                         Gek::Xml::Document xmlDocument;
                         HRESULT resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\worlds\\%s.xml", fileName));
@@ -194,7 +194,7 @@ namespace Gek
                             gekLogMessage(L"ERROR: Unable to load population");
                         }
 
-                        Observable::sendEvent(Event<Population::ObserverInterface>(std::bind(&Population::ObserverInterface::onLoadEnd, std::placeholders::_1, resultValue)));
+                        BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onLoadEnd, std::placeholders::_1, resultValue)));
                         return resultValue;
                     }
 
@@ -231,7 +231,7 @@ namespace Gek
                             component.second->clear();
                         }
 
-                        Observable::sendEvent(Event<Population::ObserverInterface>(std::bind(&Population::ObserverInterface::onFree, std::placeholders::_1)));
+                        BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onFree, std::placeholders::_1)));
                     }
 
                     STDMETHODIMP_(Handle) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
@@ -271,13 +271,13 @@ namespace Gek
                             }
                         }
 
-                        Observable::sendEvent(Event<Population::ObserverInterface>(std::bind(&Population::ObserverInterface::onEntityCreated, std::placeholders::_1, entityHandle)));
+                        BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onEntityCreated, std::placeholders::_1, entityHandle)));
                         return entityHandle;
                     }
 
                     STDMETHODIMP_(void) killEntity(Handle entityHandle)
                     {
-                        Observable::sendEvent(Event<Population::ObserverInterface>(std::bind(&Population::ObserverInterface::onEntityDestroyed, std::placeholders::_1, entityHandle)));
+                        BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onEntityDestroyed, std::placeholders::_1, entityHandle)));
                         killEntityList.push_back(entityHandle);
                     }
 

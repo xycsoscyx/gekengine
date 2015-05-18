@@ -1,4 +1,4 @@
-#include "GEK\Context\ContextUser.h"
+#include "GEK\Context\BaseUser.h"
 #include "GEK\System\InputInterface.h"
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
@@ -35,7 +35,7 @@ namespace Gek
             return DIENUM_CONTINUE;
         }
 
-        class InputDevice : public ContextUser
+        class InputDevice : public Context::BaseUser
             , public DeviceInterface
         {
         protected:
@@ -364,7 +364,7 @@ namespace Gek
             }
         };
 
-        class System : public ContextUser
+        class System : public Context::BaseUser
                     , public Interface
         {
         private:

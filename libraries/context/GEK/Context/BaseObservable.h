@@ -7,7 +7,7 @@
 
 namespace Gek
 {
-    class Observable : public ObservableInterface
+    class BaseObservable : public ObservableInterface
     {
     public:
         template <typename RESULT>
@@ -71,7 +71,7 @@ namespace Gek
         concurrency::concurrent_unordered_set<ObserverInterface *> observerList;
 
     public:
-        virtual ~Observable(void);
+        virtual ~BaseObservable(void);
 
         void sendEvent(const BaseEvent<void> &event);
         HRESULT checkEvent(const BaseEvent<HRESULT> &event);

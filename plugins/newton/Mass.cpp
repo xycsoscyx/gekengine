@@ -1,6 +1,6 @@
 #include "GEK\Newton\Mass.h"
-#include "GEK\Context\ContextUser.h"
-#include "GEK\Engine\Component.h"
+#include "GEK\Context\BaseUser.h"
+#include "GEK\Engine\BaseComponent.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Math\Common.h"
 
@@ -27,7 +27,7 @@ namespace Gek
                 return S_OK;
             }
 
-            class Component : public ContextUser
+            class Component : public Context::BaseUser
                             , public BaseComponent<Data>
             {
             public:

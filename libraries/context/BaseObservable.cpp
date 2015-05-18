@@ -1,12 +1,12 @@
-#include "GEK\Context\Observable.h"
+#include "GEK\Context\BaseObservable.h"
 
 namespace Gek
 {
-    Observable::~Observable(void)
+    BaseObservable::~BaseObservable(void)
     {
     }
 
-    void Observable::sendEvent(const BaseEvent<void> &event)
+    void BaseObservable::sendEvent(const BaseEvent<void> &event)
     {
         for (auto &observer : observerList)
         {
@@ -14,7 +14,7 @@ namespace Gek
         }
     }
 
-    HRESULT Observable::checkEvent(const BaseEvent<HRESULT> &event)
+    HRESULT BaseObservable::checkEvent(const BaseEvent<HRESULT> &event)
     {
         HRESULT resultValue = S_OK;
         for (auto &observer : observerList)
@@ -29,7 +29,7 @@ namespace Gek
         return resultValue;
     }
 
-    HRESULT Observable::addObserver(IUnknown *observableBase, ObserverInterface *observer)
+    HRESULT BaseObservable::addObserver(IUnknown *observableBase, ObserverInterface *observer)
     {
         HRESULT resultValue = E_FAIL;
         ObservableInterface *observable = dynamic_cast<ObservableInterface *>(observableBase);
@@ -41,7 +41,7 @@ namespace Gek
         return resultValue;
     }
 
-    HRESULT Observable::removeObserver(IUnknown *observableBase, ObserverInterface *observer)
+    HRESULT BaseObservable::removeObserver(IUnknown *observableBase, ObserverInterface *observer)
     {
         HRESULT resultValue = E_FAIL;
         ObservableInterface *observable = dynamic_cast<ObservableInterface *>(observableBase);
@@ -54,7 +54,7 @@ namespace Gek
     }
 
     // ObservableInterface
-    STDMETHODIMP Observable::addObserver(ObserverInterface *observer)
+    STDMETHODIMP BaseObservable::addObserver(ObserverInterface *observer)
     {
         HRESULT resultValue = E_FAIL;
         auto observerIterator = observerList.find(observer);
@@ -67,7 +67,7 @@ namespace Gek
         return resultValue;
     }
 
-    STDMETHODIMP Observable::removeObserver(ObserverInterface *observer)
+    STDMETHODIMP BaseObservable::removeObserver(ObserverInterface *observer)
     {
         HRESULT resultValue = E_FAIL;
         auto observerIterator = observerList.find(observer);

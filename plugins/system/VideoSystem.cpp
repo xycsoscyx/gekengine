@@ -1,7 +1,7 @@
 #pragma warning(disable : 4005)
 
 #include "GEK\Context\Common.h"
-#include "GEK\Context\ContextUser.h"
+#include "GEK\Context\BaseUser.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\System\VideoInterface.h"
@@ -194,7 +194,7 @@ namespace Gek
             STDMETHOD_(IUnknown *, getResource)                 (THIS_ Handle resourceHandle) PURE;
         };
 
-        class VertexProgram : public ContextUser
+        class VertexProgram : public Context::BaseUser
         {
         private:
             CComPtr<ID3D11VertexShader> d3dVertexShader;
@@ -218,7 +218,7 @@ namespace Gek
             STDMETHOD_(UINT32, getStride)               (THIS) PURE;
         };
 
-        class Buffer : public ContextUser
+        class Buffer : public Context::BaseUser
                      , public BufferInterface
         {
         private:
@@ -250,7 +250,7 @@ namespace Gek
             }
         };
 
-        class Texture : public ContextUser
+        class Texture : public Context::BaseUser
         {
         protected:
             CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
@@ -286,7 +286,7 @@ namespace Gek
             END_INTERFACE_LIST_BASE(Texture)
         };
 
-        class Geometry : public ContextUser
+        class Geometry : public Context::BaseUser
                        , public GeometryInterface
         {
         private:
@@ -407,7 +407,7 @@ namespace Gek
             }
         };
 
-        class Include : public ContextUser
+        class Include : public Context::BaseUser
                       , public ID3DInclude
         {
         private:
@@ -456,8 +456,8 @@ namespace Gek
             }
         };
 
-        class Context : public ContextUser
-                      , public Video3D::ContextInterface
+        class Context : public Gek::Context::BaseUser
+                      , public Video3D::DeferredContextInterface
         {
             friend class System;
 
@@ -757,11 +757,11 @@ namespace Gek
             }
 
             BEGIN_INTERFACE_LIST(Context)
-                INTERFACE_LIST_ENTRY_COM(ContextInterface)
+                INTERFACE_LIST_ENTRY_COM(DeferredContextInterface)
                 INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DeviceContext, d3dDeviceContext)
             END_INTERFACE_LIST_UNKNOWN
 
-            // ContextInterface
+            // DeferredContextInterface
             STDMETHODIMP_(SubSystemInterface *) getComputeSystem(void)
             {
                 REQUIRE_RETURN(computeSystem, nullptr);
@@ -1309,7 +1309,7 @@ namespace Gek
                 return windowed;
             }
 
-            STDMETHODIMP createDeferredContext(ContextInterface **returnObject)
+            STDMETHODIMP createDeferredContext(DeferredContextInterface **returnObject)
             {
                 REQUIRE_RETURN(d3dDevice, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -2509,7 +2509,7 @@ namespace Gek
                      depth, stencil);
             }
 
-            STDMETHODIMP_(void) setDefaultTargets(ContextInterface *context, Handle depthHandle)
+            STDMETHODIMP_(void) setDefaultTargets(DeferredContextInterface *context, Handle depthHandle)
             {
                 REQUIRE_VOID_RETURN(d3dDeviceContext || d3dDeviceContext);
                 REQUIRE_VOID_RETURN(d3dDefaultRenderTargetView);

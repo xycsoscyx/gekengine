@@ -1,6 +1,6 @@
 #include "GEK\System\AudioInterface.h"
 #include "GEK\Context\Common.h"
-#include "GEK\Context\ContextUser.h"
+#include "GEK\Context\BaseUser.h"
 #include "GEK\Utility\FileSystem.h"
 #include "audiere.h"
 
@@ -16,7 +16,7 @@ namespace Gek
 {
     namespace Audio
     {
-        class Sample : public ContextUser
+        class Sample : public Context::BaseUser
                      , public SampleInterface
         {
         protected:
@@ -168,7 +168,7 @@ namespace Gek
             }
         };
 
-        class System : public ContextUser
+        class System : public Context::BaseUser
                      , public Interface
         {
         private:

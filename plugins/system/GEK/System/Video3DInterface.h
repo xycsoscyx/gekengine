@@ -414,7 +414,7 @@ namespace Gek
             }
         };
 
-        DECLARE_INTERFACE_IID_(ContextInterface, IUnknown, "95262C77-0F56-4447-9337-5819E68B372E")
+        DECLARE_INTERFACE_IID_(DeferredContextInterface, IUnknown, "95262C77-0F56-4447-9337-5819E68B372E")
         {
             DECLARE_INTERFACE(SubSystemInterface)
             {
@@ -467,7 +467,7 @@ namespace Gek
             STDMETHOD_(UINT32, getHeight)                       (THIS) PURE;
             STDMETHOD_(bool, isWindowed)                        (THIS) PURE;
 
-            STDMETHOD(createDeferredContext)                    (THIS_ ContextInterface **instance) PURE;
+            STDMETHOD(createDeferredContext)                    (THIS_ DeferredContextInterface **instance) PURE;
 
             STDMETHOD_(void, freeResource)                      (THIS_ Handle resourceHandle) PURE;
 
@@ -506,7 +506,7 @@ namespace Gek
 
             STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Float4 &color) PURE;
             STDMETHOD_(void, clearDefaultDepthStencilTarget)    (THIS_ UINT32 flags, float depth, UINT32 stencil) PURE;
-            STDMETHOD_(void, setDefaultTargets)                 (THIS_ ContextInterface *context = nullptr, Handle depthHandle = InvalidHandle) PURE;
+            STDMETHOD_(void, setDefaultTargets)                 (THIS_ DeferredContextInterface *context = nullptr, Handle depthHandle = InvalidHandle) PURE;
 
             STDMETHOD_(void, executeCommandList)                (THIS_ IUnknown *commandList) PURE;
 

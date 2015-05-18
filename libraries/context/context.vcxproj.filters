@@ -12,33 +12,33 @@
     <ClCompile Include="Context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Observable.cpp">
+    <ClCompile Include="BaseUser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ContextUser.cpp">
+    <ClCompile Include="BaseObservable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Context\ObserverInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Context\ContextInterface.h">
+    <ClInclude Include="GEK\Context\Interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Context\ObservableInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Context\ContextUserInterface.h">
+    <ClInclude Include="GEK\Context\ObserverInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Context\Observable.h">
+    <ClInclude Include="GEK\Context\UserInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Context\BaseObservable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Context\BaseUser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Context\Common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Context\ContextUser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
