@@ -457,7 +457,7 @@ namespace Gek
         };
 
         class Context : public Gek::Context::BaseUser
-                      , public Video3D::DeferredContextInterface
+                      , public Video3D::ContextInterface
         {
             friend class System;
 
@@ -757,11 +757,11 @@ namespace Gek
             }
 
             BEGIN_INTERFACE_LIST(Context)
-                INTERFACE_LIST_ENTRY_COM(DeferredContextInterface)
+                INTERFACE_LIST_ENTRY_COM(ContextInterface)
                 INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DeviceContext, d3dDeviceContext)
             END_INTERFACE_LIST_UNKNOWN
 
-            // DeferredContextInterface
+            // ContextInterface
             STDMETHODIMP_(SubSystemInterface *) getComputeSystem(void)
             {
                 REQUIRE_RETURN(computeSystem, nullptr);
@@ -1036,7 +1036,7 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_COM(Video2D::Interface)
                 INTERFACE_LIST_ENTRY_COM(Video3D::Interface)
                 INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Device, d3dDevice)
-            END_INTERFACE_LIST_BASE(Context)
+            END_INTERFACE_LIST_UNKNOWN
 
             HRESULT getDefaultTargets(UINT8 depthFormat)
             {
@@ -1309,7 +1309,12 @@ namespace Gek
                 return windowed;
             }
 
-            STDMETHODIMP createDeferredContext(DeferredContextInterface **returnObject)
+            STDMETHODIMP_(ContextInterface *) getDefaultContext(void)
+            {
+                return dynamic_cast<ContextInterface *>(this);
+            }
+
+            STDMETHODIMP createDeferredContext(ContextInterface **returnObject)
             {
                 REQUIRE_RETURN(d3dDevice, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -2509,7 +2514,7 @@ namespace Gek
                      depth, stencil);
             }
 
-            STDMETHODIMP_(void) setDefaultTargets(DeferredContextInterface *context, Handle depthHandle)
+            STDMETHODIMP_(void) setDefaultTargets(ContextInterface *context, Handle depthHandle)
             {
                 REQUIRE_VOID_RETURN(d3dDeviceContext || d3dDeviceContext);
                 REQUIRE_VOID_RETURN(d3dDefaultRenderTargetView);

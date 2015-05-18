@@ -8,36 +8,39 @@
 
 namespace Gek
 {
-    namespace Components
+    namespace Newton
     {
-        namespace Mass
+        namespace Components
         {
-            static const Handle identifier = 12;
-            struct Data
+            namespace Mass
             {
-                float value;
-
-                Data(void);
-                HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-
-                inline operator float&()
+                static const Handle identifier = 12;
+                struct Data
                 {
-                    return value;
-                }
+                    float value;
 
-                inline operator const float&() const
-                {
-                    return value;
-                }
+                    Data(void);
+                    HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+                    HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+
+                    inline operator float&()
+                    {
+                        return value;
+                    }
+
+                    inline operator const float&() const
+                    {
+                        return value;
+                    }
 
 
-                inline float &operator = (float value)
-                {
-                    this->value = value;
-                    return this->value;
-                }
-            };
-        }; // namespace Mass
-    }; // namespace Components
+                    inline float &operator = (float value)
+                    {
+                        this->value = value;
+                        return this->value;
+                    }
+                };
+            }; // namespace Mass
+        }; // namespace Components
+    }; // namespace Newton
 }; // namespace Gek

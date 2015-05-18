@@ -3,7 +3,7 @@
 
 #include "GEK\Context\Common.h"
 #include "GEK\Engine\ComponentInterface.h"
-#include "GEK\Engine\ComponentSystemInterface.h"
+#include "GEK\Engine\SystemInterface.h"
 
 namespace Gek
 {
@@ -30,24 +30,21 @@ namespace Gek
             }; // namespace Player
         }; // namespace Components
 
-        namespace System
-        {
-            DECLARE_REGISTERED_CLASS(System);
-            DECLARE_INTERFACE_IID(Class, "BCF7CC29-F375-4F29-9DA7-921F6A78E4E3");
-        }; // namespace System
+        DECLARE_REGISTERED_CLASS(System);
+        DECLARE_INTERFACE_IID(Class, "BCF7CC29-F375-4F29-9DA7-921F6A78E4E3");
     }; // namespace Newton
 }; // namespace Gek
 
 DECLARE_CONTEXT_SOURCE(Components)
     ADD_CONTEXT_CLASS(Gek::Newton::Components::Mass::Class, Gek::Newton::Components::Mass::Component)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+        ADD_CLASS_TYPE(Gek::Engine::Component::Type)
 
     ADD_CONTEXT_CLASS(Gek::Newton::Components::DynamicBody::Class, Gek::Newton::Components::DynamicBody::Component)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+        ADD_CLASS_TYPE(Gek::Engine::Component::Type)
 
     ADD_CONTEXT_CLASS(Gek::Newton::Components::Player::Class, Gek::Newton::Components::Player::Component)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+        ADD_CLASS_TYPE(Gek::Engine::Component::Type)
 
-    ADD_CONTEXT_CLASS(Gek::Newton::System::Class, Gek::Newton::System::System)
-        ADD_CLASS_TYPE(Gek::ComponentSystemType)
+    ADD_CONTEXT_CLASS(Gek::Newton::Class, Gek::Newton::System)
+        ADD_CLASS_TYPE(Gek::Engine::System::Type)
 END_CONTEXT_SOURCE

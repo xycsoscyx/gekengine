@@ -130,20 +130,19 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
             Gek::Video3D::Interface *videoSystem = (Gek::Video3D::Interface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
             videoSystem->clearDefaultRenderTarget(Gek::Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
 
-            CComQIPtr<Gek::Video3D::DeferredContextInterface> videoContext(videoSystem);
-            videoSystem->setDefaultTargets(videoContext);
-            videoContext->setRenderStates(gs_nRenderStatesID);
-            videoContext->setBlendStates(gs_nBlendStatesID, Gek::Math::Float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
-            videoContext->setDepthStates(gs_nDepthStatesID, 0);
-            videoContext->getVertexSystem()->setProgram(gs_nVertexProgramID);
-            videoContext->getVertexSystem()->setConstantBuffer(gs_nConstantBufferID, 1);
-            videoContext->getPixelSystem()->setProgram(gs_nPixelProgramID);
-            videoContext->getPixelSystem()->setSamplerStates(gs_nSampleStatesID, 0);
-            videoContext->getPixelSystem()->setResource(gs_nTextureID, 0);
-            videoContext->setVertexBuffer(gs_nVertexBufferID, 0, 0);
-            videoContext->setIndexBuffer(gs_nIndexBufferID, 0);
-            videoContext->setPrimitiveType(Gek::Video3D::PrimitiveType::TRIANGLELIST);
-            videoContext->drawIndexedPrimitive(6, 0, 0);
+            videoSystem->setDefaultTargets();
+            videoSystem->getDefaultContext()->setRenderStates(gs_nRenderStatesID);
+            videoSystem->getDefaultContext()->setBlendStates(gs_nBlendStatesID, Gek::Math::Float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+            videoSystem->getDefaultContext()->setDepthStates(gs_nDepthStatesID, 0);
+            videoSystem->getDefaultContext()->getVertexSystem()->setProgram(gs_nVertexProgramID);
+            videoSystem->getDefaultContext()->getVertexSystem()->setConstantBuffer(gs_nConstantBufferID, 1);
+            videoSystem->getDefaultContext()->getPixelSystem()->setProgram(gs_nPixelProgramID);
+            videoSystem->getDefaultContext()->getPixelSystem()->setSamplerStates(gs_nSampleStatesID, 0);
+            videoSystem->getDefaultContext()->getPixelSystem()->setResource(gs_nTextureID, 0);
+            videoSystem->getDefaultContext()->setVertexBuffer(gs_nVertexBufferID, 0, 0);
+            videoSystem->getDefaultContext()->setIndexBuffer(gs_nIndexBufferID, 0);
+            videoSystem->getDefaultContext()->setPrimitiveType(Gek::Video3D::PrimitiveType::TRIANGLELIST);
+            videoSystem->getDefaultContext()->drawIndexedPrimitive(6, 0, 0);
 
             videoSystem->present(false);
             return TRUE;

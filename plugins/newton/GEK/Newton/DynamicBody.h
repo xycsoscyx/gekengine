@@ -8,20 +8,23 @@
 
 namespace Gek
 {
-    namespace Components
+    namespace Newton
     {
-        namespace DynamicBody
+        namespace Components
         {
-            static const Handle identifier = 11;
-            struct Data
+            namespace DynamicBody
             {
-                CStringW shape;
-                CStringW material;
+                static const Handle identifier = 11;
+                struct Data
+                {
+                    CStringW shape;
+                    CStringW material;
 
-                Data(void);
-                HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-            };
-        }; // namespace DynamicBody
-    }; // namespace Components
+                    Data(void);
+                    HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+                    HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+                };
+            }; // namespace DynamicBody
+        }; // namespace Components
+    }; // namespace Newton
 }; // namespace Gek

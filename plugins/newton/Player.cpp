@@ -6,61 +6,64 @@
 
 namespace Gek
 {
-    namespace Components
+    namespace Newton
     {
-        namespace Player
+        namespace Components
         {
-            Data::Data(void)
-                : outerRadius(1.0f)
-                , innerRadius(0.25f)
-                , height(1.9f)
-                , stairStep(0.25f)
+            namespace Player
             {
-            }
-
-            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-            {
-                componentParameterList[L"outerRadius"] = String::setFloat(outerRadius);
-                componentParameterList[L"innerRadius"] = String::setFloat(innerRadius);
-                componentParameterList[L"height"] = String::setFloat(height);
-                componentParameterList[L"stairStep"] = String::setFloat(stairStep);
-                return S_OK;
-            }
-
-            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-            {
-                setParameter(componentParameterList, L"outerRadius", outerRadius, String::getFloat);
-                setParameter(componentParameterList, L"innerRadius", innerRadius, String::getFloat);
-                setParameter(componentParameterList, L"height", height, String::getFloat);
-                setParameter(componentParameterList, L"stairStep", stairStep, String::getFloat);
-                return S_OK;
-            }
-
-            class Component : public Context::BaseUser
-                            , public BaseComponent<Data>
-            {
-            public:
-                Component(void)
+                Data::Data(void)
+                    : outerRadius(1.0f)
+                    , innerRadius(0.25f)
+                    , height(1.9f)
+                    , stairStep(0.25f)
                 {
                 }
 
-                BEGIN_INTERFACE_LIST(Component)
-                    INTERFACE_LIST_ENTRY_COM(Component::Interface)
-                END_INTERFACE_LIST_UNKNOWN
-
-                // Component::Interface
-                STDMETHODIMP_(LPCWSTR) getName(void) const
+                HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
-                    return L"Player";
+                    componentParameterList[L"outerRadius"] = String::setFloat(outerRadius);
+                    componentParameterList[L"innerRadius"] = String::setFloat(innerRadius);
+                    componentParameterList[L"height"] = String::setFloat(height);
+                    componentParameterList[L"stairStep"] = String::setFloat(stairStep);
+                    return S_OK;
                 }
 
-                STDMETHODIMP_(Handle) getIdentifier(void) const
+                HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
-                    return identifier;
+                    Engine::setParameter(componentParameterList, L"outerRadius", outerRadius, String::getFloat);
+                    Engine::setParameter(componentParameterList, L"innerRadius", innerRadius, String::getFloat);
+                    Engine::setParameter(componentParameterList, L"height", height, String::getFloat);
+                    Engine::setParameter(componentParameterList, L"stairStep", stairStep, String::getFloat);
+                    return S_OK;
                 }
-            };
 
-            REGISTER_CLASS(Component)
-        }; // namespace Player
+                class Component : public Context::BaseUser
+                    , public Engine::BaseComponent<Data>
+                {
+                public:
+                    Component(void)
+                    {
+                    }
+
+                    BEGIN_INTERFACE_LIST(Component)
+                        INTERFACE_LIST_ENTRY_COM(Component::Interface)
+                    END_INTERFACE_LIST_UNKNOWN
+
+                    // Component::Interface
+                    STDMETHODIMP_(LPCWSTR) getName(void) const
+                    {
+                        return L"Player";
+                    }
+
+                    STDMETHODIMP_(Handle) getIdentifier(void) const
+                    {
+                        return identifier;
+                    }
+                };
+
+                REGISTER_CLASS(Component)
+            }; // namespace Player
+        }; // namespace Newton
     } // namespace Components
 }; // namespace Gek
