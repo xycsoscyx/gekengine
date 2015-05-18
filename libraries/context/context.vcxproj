@@ -12,11 +12,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseObservable.cpp" />
+    <ClCompile Include="BaseUnkown.cpp" />
     <ClCompile Include="BaseUser.cpp" />
     <ClCompile Include="Context.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEK\Context\BaseObservable.h" />
+    <ClInclude Include="GEK\Context\BaseUnknown.h" />
     <ClInclude Include="GEK\Context\BaseUser.h" />
     <ClInclude Include="GEK\Context\Common.h" />
     <ClInclude Include="GEK\Context\Interface.h" />

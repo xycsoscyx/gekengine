@@ -18,6 +18,9 @@
     <ClCompile Include="BaseObservable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BaseUnkown.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEK\Context\Interface.h">
@@ -39,6 +42,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Context\Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Context\BaseUnknown.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

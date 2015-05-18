@@ -114,12 +114,12 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
 #define BEGIN_INTERFACE_LIST(CLASS)                                                                 \
     STDMETHODIMP_(ULONG) CLASS::AddRef(THIS)                                                        \
     {                                                                                               \
-        return Context::BaseUser::AddRef();                                                                  \
+        return BaseUnknown::AddRef();                                                               \
     }                                                                                               \
                                                                                                     \
     STDMETHODIMP_(ULONG) CLASS::Release(THIS)                                                       \
     {                                                                                               \
-        return Context::BaseUser::Release();                                                                 \
+        return BaseUnknown::Release();                                                              \
     }                                                                                               \
                                                                                                     \
     STDMETHODIMP CLASS::QueryInterface(THIS_ REFIID interfaceType, LPVOID FAR *returnObject)        \
@@ -180,8 +180,12 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
     }
 
 #define END_INTERFACE_LIST_UNKNOWN                                                                  \
-        return Context::BaseUser::QueryInterface(interfaceType, returnObject);                               \
-    }
+        return BaseUnknown::QueryInterface(interfaceType, returnObject);                            \
+        }
+
+#define END_INTERFACE_LIST_USER                                                                     \
+        return BaseUser::QueryInterface(interfaceType, returnObject);                               \
+        }
 
 #define END_INTERFACE_LIST_BASE(BASE_CLASS)                                                         \
         return BASE_CLASS::QueryInterface(interfaceType, returnObject);                             \

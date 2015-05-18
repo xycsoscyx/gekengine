@@ -5,8 +5,7 @@ namespace Gek
     namespace Context
     {
         BaseUser::BaseUser(void)
-            : referenceCount(0)
-            , context(nullptr)
+            : context(nullptr)
         {
         }
 
@@ -15,44 +14,9 @@ namespace Gek
         }
 
         // IUnknown
-        STDMETHODIMP_(ULONG) BaseUser::AddRef(void)
-        {
-            return InterlockedIncrement(&referenceCount);
-        }
-
-        STDMETHODIMP_(ULONG) BaseUser::Release(void)
-        {
-            LONG currentReferenceCount = InterlockedDecrement(&referenceCount);
-            if (currentReferenceCount == 0)
-            {
-                delete this;
-            }
-
-            return currentReferenceCount;
-        }
-
-        STDMETHODIMP BaseUser::QueryInterface(REFIID interfaceType, LPVOID FAR *returnObject)
-        {
-            REQUIRE_RETURN(returnObject, E_INVALIDARG);
-
-            HRESULT resultValue = E_INVALIDARG;
-            if (IsEqualIID(IID_IUnknown, interfaceType))
-            {
-                AddRef();
-                (*returnObject) = dynamic_cast<IUnknown *>(this);
-                _ASSERTE(*returnObject);
-                resultValue = S_OK;
-            }
-            else if (IsEqualIID(__uuidof(UserInterface), interfaceType))
-            {
-                AddRef();
-                (*returnObject) = dynamic_cast<UserInterface *>(this);
-                _ASSERTE(*returnObject);
-                resultValue = S_OK;
-            }
-
-            return resultValue;
-        }
+        BEGIN_INTERFACE_LIST(BaseUser)
+            INTERFACE_LIST_ENTRY_COM(UserInterface)
+        END_INTERFACE_LIST_UNKNOWN
 
         // UserInterface
         STDMETHODIMP_(void) BaseUser::registerContext(Interface *context)
@@ -70,16 +34,6 @@ namespace Gek
         {
             REQUIRE_RETURN(context, nullptr);
             return context;
-        }
-
-        STDMETHODIMP_(IUnknown *) BaseUser::getUnknown(void)
-        {
-            return dynamic_cast<IUnknown *>(this);
-        }
-
-        STDMETHODIMP_(const IUnknown *) BaseUser::getUnknown(void) const
-        {
-            return dynamic_cast<const IUnknown *>(this);
         }
     }; // namespace Context
 }; // namespace Gek

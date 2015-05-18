@@ -48,7 +48,7 @@ namespace Gek
 
                     BEGIN_INTERFACE_LIST(Component)
                         INTERFACE_LIST_ENTRY_COM(Component::Interface)
-                    END_INTERFACE_LIST_UNKNOWN
+                    END_INTERFACE_LIST_USER
 
                     // Component::Interface
                     STDMETHODIMP_(LPCWSTR) getName(void) const

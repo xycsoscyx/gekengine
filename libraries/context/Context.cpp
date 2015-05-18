@@ -1,9 +1,10 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Context\Common.h"
+#include "GEK\Context\BaseUnknown.h"
+#include "GEK\Context\BaseObservable.h"
 #include "GEK\Context\Interface.h"
 #include "GEK\Context\UserInterface.h"
-#include "GEK\Context\BaseObservable.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <atlpath.h>
@@ -14,12 +15,11 @@ namespace Gek
 {
     namespace Context
     {
-        class Context : public BaseObservable
-                      , public Interface
+        class Context : virtual public BaseUnknown
+                      , virtual public BaseObservable
+                      , virtual public Interface
         {
         private:
-            ULONG referenceCount;
-
             std::list<CStringW> searchPathList;
 
             std::list<HMODULE> moduleList;
@@ -30,8 +30,7 @@ namespace Gek
 
         public:
             Context(void)
-                : referenceCount(0)
-                , loggingIndent(0)
+                : loggingIndent(0)
             {
             }
 
@@ -46,51 +45,10 @@ namespace Gek
             }
 
             // IUnknown
-            STDMETHODIMP_(ULONG) AddRef(void)
-            {
-                return InterlockedIncrement(&referenceCount);
-            }
-
-            STDMETHODIMP_(ULONG) Release(void)
-            {
-                LONG newReferenceCount = InterlockedDecrement(&referenceCount);
-                if (newReferenceCount == 0)
-                {
-                    delete this;
-                }
-
-                return newReferenceCount;
-            }
-
-            STDMETHODIMP QueryInterface(REFIID interfaceType, LPVOID FAR *returnObject)
-            {
-                REQUIRE_RETURN(returnObject, E_INVALIDARG);
-
-                HRESULT resultValue = E_INVALIDARG;
-                if (IsEqualIID(IID_IUnknown, interfaceType))
-                {
-                    AddRef();
-                    (*returnObject) = dynamic_cast<IUnknown *>(dynamic_cast<Interface *>(this));
-                    _ASSERTE(*returnObject);
-                    resultValue = S_OK;
-                }
-                else if (IsEqualIID(__uuidof(ObservableInterface), interfaceType))
-                {
-                    AddRef();
-                    (*returnObject) = dynamic_cast<ObservableInterface *>(this);
-                    _ASSERTE(*returnObject);
-                    resultValue = S_OK;
-                }
-                else if (IsEqualIID(__uuidof(Interface), interfaceType))
-                {
-                    AddRef();
-                    (*returnObject) = dynamic_cast<Interface *>(this);
-                    _ASSERTE(*returnObject);
-                    resultValue = S_OK;
-                }
-
-                return resultValue;
-            }
+            BEGIN_INTERFACE_LIST(Context)
+                INTERFACE_LIST_ENTRY_COM(Interface)
+                INTERFACE_LIST_ENTRY_COM(ObservableInterface)
+            END_INTERFACE_LIST_UNKNOWN
 
             // Interface
             STDMETHODIMP_(void) addSearchPath(LPCWSTR fileName)

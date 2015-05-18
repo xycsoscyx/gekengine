@@ -5,6 +5,7 @@
 #include "GEK\Utility\Common.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\Interface.h"
+#include "GEK\Context\BaseUnknown.h"
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Engine\PopulationInterface.h"
 #include "resource.h"
@@ -38,7 +39,7 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
     case WM_INITDIALOG:
         if (true)
         {
-            Gek::Context::Interface *context = (Gek::Context::Interface *)lParam;
+            CComQIPtr<Gek::Context::Interface> context((IUnknown *)lParam);
 
             CComPtr<Gek::Video3D::Interface> videoSystem;
             context->createInstance(__uuidof(Gek::Video::Class), IID_PPV_ARGS(&videoSystem));
@@ -192,31 +193,62 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
     return FALSE;
 }
 
-int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ LPWSTR commandLine, _In_ int commandShow)
+namespace Gek
 {
-    CComPtr<Gek::Context::Interface> context;
-    Gek::Context::create(&context);
-    if (context)
+    class Initializer : public BaseUnknown
     {
-#ifdef _DEBUG
-        SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
-        context->addSearchPath(L"%root%\\Debug\\Plugins");
-#else
-        SetCurrentDirectory(GEKParseFileName(L"%root%\\Release"));
-        context->AddSearchPath(GEKParseFileName(L"%root%\\Release\\Plugins"));
-#endif
-
-        context->initialize();
-
+    private:
+        CComPtr<Gek::Context::Interface> context;
         CComPtr<Gek::Engine::Population::Interface> population;
-        context->createInstance(__uuidof(Gek::Engine::Population::Class), IID_PPV_ARGS(&population));
-        if (population)
+
+    public:
+        Initializer(void)
         {
-            population->initialize();
-            population->load(L"demo");
         }
 
-        DialogBoxParam(instance, MAKEINTRESOURCE(IDD_TEST_DIALOG), nullptr, dialogProcedure, LPARAM((Gek::Context::Interface *)context));
+        virtual ~Initializer(void)
+        {
+        }
+
+        STDMETHODIMP initialize(void)
+        {
+            HRESULT resultValue = Gek::Context::create(&context);
+            if (context)
+            {
+#ifdef _DEBUG
+                SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
+                context->addSearchPath(L"%root%\\Debug\\Plugins");
+#else
+                SetCurrentDirectory(GEKParseFileName(L"%root%\\Release"));
+                context->AddSearchPath(GEKParseFileName(L"%root%\\Release\\Plugins"));
+#endif
+
+                context->initialize();
+                resultValue = context->createInstance(__uuidof(Gek::Engine::Population::Class), IID_PPV_ARGS(&population));
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
+                resultValue = population->initialize();
+            }
+
+            return resultValue;
+        }
+
+        // IUnknown
+        BEGIN_INTERFACE_LIST(Initializer)
+            INTERFACE_LIST_ENTRY_MEMBER_COM(Gek::Context::Interface, context)
+            INTERFACE_LIST_ENTRY_MEMBER_COM(Gek::Engine::Population::Interface, population)
+        END_INTERFACE_LIST_UNKNOWN
+    };
+}; // namespace Gek
+
+int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ LPWSTR commandLine, _In_ int commandShow)
+{
+    CComPtr<Gek::Initializer> initializer(new Gek::Initializer());
+    if (initializer && SUCCEEDED(initializer->initialize()))
+    {
+        DialogBoxParam(instance, MAKEINTRESOURCE(IDD_TEST_DIALOG), nullptr, dialogProcedure, LPARAM(initializer->getUnknown()));
     }
 
     return 0;

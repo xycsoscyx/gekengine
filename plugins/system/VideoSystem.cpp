@@ -1,6 +1,7 @@
 #pragma warning(disable : 4005)
 
 #include "GEK\Context\Common.h"
+#include "GEK\Context\BaseUnknown.h"
 #include "GEK\Context\BaseUser.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
@@ -194,7 +195,7 @@ namespace Gek
             STDMETHOD_(IUnknown *, getResource)                 (THIS_ Handle resourceHandle) PURE;
         };
 
-        class VertexProgram : public Context::BaseUser
+        class VertexProgram : public BaseUnknown
         {
         private:
             CComPtr<ID3D11VertexShader> d3dVertexShader;
@@ -218,7 +219,7 @@ namespace Gek
             STDMETHOD_(UINT32, getStride)               (THIS) PURE;
         };
 
-        class Buffer : public Context::BaseUser
+        class Buffer : public BaseUnknown
                      , public BufferInterface
         {
         private:
@@ -250,7 +251,7 @@ namespace Gek
             }
         };
 
-        class Texture : public Context::BaseUser
+        class Texture : public BaseUnknown
         {
         protected:
             CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
@@ -286,7 +287,7 @@ namespace Gek
             END_INTERFACE_LIST_BASE(Texture)
         };
 
-        class Geometry : public Context::BaseUser
+        class Geometry : public BaseUnknown
                        , public GeometryInterface
         {
         private:
@@ -407,7 +408,7 @@ namespace Gek
             }
         };
 
-        class Include : public Context::BaseUser
+        class Include : public BaseUnknown
                       , public ID3DInclude
         {
         private:
@@ -759,7 +760,7 @@ namespace Gek
             BEGIN_INTERFACE_LIST(Context)
                 INTERFACE_LIST_ENTRY_COM(ContextInterface)
                 INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DeviceContext, d3dDeviceContext)
-            END_INTERFACE_LIST_UNKNOWN
+            END_INTERFACE_LIST_USER
 
             // ContextInterface
             STDMETHODIMP_(SubSystemInterface *) getComputeSystem(void)
@@ -1036,7 +1037,7 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_COM(Video2D::Interface)
                 INTERFACE_LIST_ENTRY_COM(Video3D::Interface)
                 INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Device, d3dDevice)
-            END_INTERFACE_LIST_UNKNOWN
+            END_INTERFACE_LIST_USER
 
             HRESULT getDefaultTargets(UINT8 depthFormat)
             {
