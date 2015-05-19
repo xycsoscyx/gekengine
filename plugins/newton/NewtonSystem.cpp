@@ -214,7 +214,7 @@ namespace Gek
                     : staticFriction(0.9f)
                     , kineticFriction(0.5f)
                     , elasticity(0.4f)
-                    , softness(0.1f)
+                    , softness(1.0f)
                 {
                 }
             };
@@ -606,6 +606,10 @@ namespace Gek
             }
 
             // Population::ObserverInterface
+            STDMETHODIMP_(void) onLoadBegin(void)
+            {
+            }
+
             STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
             {
                 if (FAILED(resultValue))
@@ -650,7 +654,7 @@ namespace Gek
                         CComPtr<Player> player = new Player(population, newtonPlayerManager, entityHandle, transformComponent, massComponent, playerComponent);
                         if (player)
                         {
-                            //Observable::addObserver(m_pEngine, dynamic_cast<Action::ObserverInterface *>((IUnknown *)player));
+                            //BaseObservable::addObserver(m_pEngine, player->getClass<Engine::Action::Observer>());
                             player.QueryInterface(&bodyList[entityHandle]);
                         }
                     }

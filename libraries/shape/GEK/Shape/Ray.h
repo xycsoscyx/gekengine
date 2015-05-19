@@ -40,11 +40,11 @@ namespace Gek
 
             TYPE getDistance(const BaseOrientedBox<TYPE> &orientedBox) const
             {
-                TYPE minimum(TYPE(0));
+                TYPE minimum(0.0f);
                 TYPE maximum(TYPE(Math::Infinity));
                 Math::BaseVector3<TYPE> positionDelta(orientedBox.position - origin);
                 Math::BaseMatrix4x4<TYPE> orientedBoxMatrix(orientedBox.rotation);
-                Math::BaseVector3<TYPE> orientedBoxHalfSize(orientedBox.size * TYPE(0.5));
+                Math::BaseVector3<TYPE> orientedBoxHalfSize(orientedBox.size * 0.5f);
                 for (UINT32 axis = 0; axis < 3; ++axis)
                 {
                     TYPE axisAngle = orientedBoxMatrix.r[axis].xyz.Dot(positionDelta);
@@ -77,8 +77,8 @@ namespace Gek
                     }
                     else
                     {
-                        if ((-axisAngle - orientedBoxHalfSize.xyz[axis]) > TYPE(0) ||
-                            (-axisAngle + orientedBoxHalfSize.xyz[axis]) < TYPE(0))
+                        if ((-axisAngle - orientedBoxHalfSize.xyz[axis]) > 0.0f ||
+                            (-axisAngle + orientedBoxHalfSize.xyz[axis]) < 0.0f)
                         {
                             return TYPE(-1);
                         }

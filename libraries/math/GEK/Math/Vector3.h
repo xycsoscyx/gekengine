@@ -99,7 +99,7 @@ namespace Gek
             BaseVector3 getNormal(void) const
             {
                 TYPE length(getLength());
-                if (length != TYPE(0))
+                if (length != 0.0f)
                 {
                     return ((*this) * (1.0f / length));
                 }
@@ -197,7 +197,7 @@ namespace Gek
             {
                 x = vector.x;
                 y = vector.y;
-                z = TYPE(0);
+                z = 0.0f;
                 return (*this);
             }
 

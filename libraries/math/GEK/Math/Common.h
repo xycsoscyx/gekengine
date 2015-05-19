@@ -32,7 +32,7 @@ namespace Gek
         template <typename DATA, typename TYPE>
         DATA blend(const DATA &x, const DATA &y, TYPE factor)
         {
-            return ((x * (TYPE(1) - factor)) + (y * factor));
+            return ((x * (1.0f - factor)) + (y * factor));
         }
     }; // namespace Math
 }; // namespace Gek

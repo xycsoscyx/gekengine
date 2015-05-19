@@ -45,17 +45,17 @@ namespace Gek
 
             void setZero(void)
             {
-                _11 = _12 = TYPE(0);
-                _21 = _22 = TYPE(0);
-                _31 = _32 = TYPE(0);
+                _11 = _12 = 0.0f;
+                _21 = _22 = 0.0f;
+                _31 = _32 = 0.0f;
             }
 
             void setIdentity(void)
             {
-                _11 = _22 = TYPE(1);
-                _12 = TYPE(0);
-                _21 = TYPE(0);
-                _31 = _32 = TYPE(0);
+                _11 = _22 = 1.0f;
+                _12 = 0.0f;
+                _21 = 0.0f;
+                _31 = _32 = 0.0f;
             }
 
             void setScaling(TYPE scalar)
@@ -72,13 +72,13 @@ namespace Gek
 
             void setRotation(float radians)
             {
-                table[0][0] = cos(radians);
-                table[1][0] = sin(radians);
-                table[2][0] = TYPE(0);
+                table[0][0] = cosf(radians);
+                table[1][0] = sinf(radians);
+                table[2][0] = 0.0f;
 
-                table[0][1] = -sin(radians);
-                table[1][1] = cos(radians);
-                table[2][1] = TYPE(0);
+                table[0][1] = -sinf(radians);
+                table[1][1] = cosf(radians);
+                table[2][1] = 0.0f;
             }
 
             BaseVector2<TYPE> getScaling(void) const

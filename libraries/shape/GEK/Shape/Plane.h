@@ -52,7 +52,7 @@ namespace Gek
 
             void normalize(void)
             {
-                (*this) *= (TYPE(1) / normal.getLength());
+                (*this) *= (1.0f / normal.getLength());
             }
 
             TYPE getDistance(const Math::BaseVector3<TYPE> &point) const

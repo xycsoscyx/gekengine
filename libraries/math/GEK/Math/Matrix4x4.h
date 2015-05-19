@@ -99,11 +99,11 @@ namespace Gek
 
             void setIdentity(void)
             {
-                _11 = _22 = _33 = _44 = TYPE(1);
-                _12 = _13 = _14 = TYPE(0);
-                _21 = _23 = _24 = TYPE(0);
-                _31 = _32 = _34 = TYPE(0);
-                _41 = _42 = _43 = TYPE(0);
+                _11 = _22 = _33 = _44 = 1.0f;
+                _12 = _13 = _14 = 0.0f;
+                _21 = _23 = _24 = 0.0f;
+                _31 = _32 = _34 = 0.0f;
+                _41 = _42 = _43 = 0.0f;
             }
 
             void setScaling(TYPE scalar)
@@ -134,60 +134,60 @@ namespace Gek
 
             void setEuler(TYPE x, TYPE y, TYPE z)
             {
-                TYPE cosX(cos(x));
-                TYPE sinX(sin(x));
-                TYPE cosY(cos(y));
-                TYPE sinY(sin(y));
-                TYPE cosZ(cos(z));
-                TYPE sinZ(sin(z));
+                TYPE cosX(cosf(x));
+                TYPE sinX(sinf(x));
+                TYPE cosY(cosf(y));
+                TYPE sinY(sinf(y));
+                TYPE cosZ(cosf(z));
+                TYPE sinZ(sinf(z));
                 TYPE cosXsinY(cosX * sinY);
                 TYPE sinXsinY(sinX * sinY);
 
                 table[0][0] = ( cosY * cosZ);
                 table[1][0] = (-cosY * sinZ);
                 table[2][0] =  sinY;
-                table[3][0] = TYPE(0);
+                table[3][0] = 0.0f;
 
                 table[0][1] = ( sinXsinY * cosZ + cosX * sinZ);
                 table[1][1] = (-sinXsinY * sinZ + cosX * cosZ);
                 table[2][1] = (-sinX * cosY);
-                table[3][1] = TYPE(0);
+                table[3][1] = 0.0f;
 
                 table[0][2] = (-cosXsinY * cosZ + sinX * sinZ);
                 table[1][2] = ( cosXsinY * sinZ + sinX * cosZ);
                 table[2][2] = ( cosX * cosY);
-                table[3][2] = TYPE(0);
+                table[3][2] = 0.0f;
 
-                table[0][3] = TYPE(0);
-                table[1][3] = TYPE(0);
-                table[2][3] = TYPE(0);
-                table[3][3] = TYPE(1);
+                table[0][3] = 0.0f;
+                table[1][3] = 0.0f;
+                table[2][3] = 0.0f;
+                table[3][3] = 1.0f;
             }
 
             void setRotation(const BaseVector4<TYPE> &axis, TYPE radians)
             {
-                TYPE cosAngle(cos(radians));
-                TYPE sinAngle(sin(radians));
+                TYPE cosAngle(cosf(radians));
+                TYPE sinAngle(sinf(radians));
 
-                table[0][0] = (cosAngle + axis.x * axis.x * (TYPE(1) - cosAngle));
-                table[0][1] = ( axis.z * sinAngle + axis.y * axis.x * (TYPE(1) - cosAngle));
-                table[0][2] = (-axis.y * sinAngle + axis.z * axis.x * (TYPE(1) - cosAngle));
-                table[0][3] = TYPE(0);
+                table[0][0] = (cosAngle + axis.x * axis.x * (1.0f - cosAngle));
+                table[0][1] = ( axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle));
+                table[0][2] = (-axis.y * sinAngle + axis.z * axis.x * (1.0f - cosAngle));
+                table[0][3] = 0.0f;
 
-                table[1][0] = (-axis.z * sinAngle + axis.x * axis.y * (TYPE(1) - cosAngle));
-                table[1][1] = (cosAngle + axis.y * axis.y * (TYPE(1) - cosAngle));
-                table[1][2] = ( axis.x * sinAngle + axis.z * axis.y * (TYPE(1) - cosAngle));
-                table[1][3] = TYPE(0);
+                table[1][0] = (-axis.z * sinAngle + axis.x * axis.y * (1.0f - cosAngle));
+                table[1][1] = (cosAngle + axis.y * axis.y * (1.0f - cosAngle));
+                table[1][2] = ( axis.x * sinAngle + axis.z * axis.y * (1.0f - cosAngle));
+                table[1][3] = 0.0f;
 
-                table[2][0] = ( axis.y * sinAngle + axis.x * axis.z * (TYPE(1) - cosAngle));
-                table[2][1] = (-axis.x * sinAngle + axis.y * axis.z * (TYPE(1) - cosAngle));
-                table[2][2] = (cosAngle + axis.z * axis.z * (TYPE(1) - cosAngle));
-                table[2][3] = TYPE(0);
+                table[2][0] = ( axis.y * sinAngle + axis.x * axis.z * (1.0f - cosAngle));
+                table[2][1] = (-axis.x * sinAngle + axis.y * axis.z * (1.0f - cosAngle));
+                table[2][2] = (cosAngle + axis.z * axis.z * (1.0f - cosAngle));
+                table[2][3] = 0.0f;
 
-                table[3][0] = TYPE(0);
-                table[3][1] = TYPE(0);
-                table[3][2] = TYPE(0);
-                table[3][3] = TYPE(1);
+                table[3][0] = 0.0f;
+                table[3][1] = 0.0f;
+                table[3][2] = 0.0f;
+                table[3][3] = 1.0f;
             }
 
             void setRotation(const BaseQuaternion<TYPE> &rotation)
@@ -202,107 +202,107 @@ namespace Gek
                 TYPE squareY(rotation.y * rotation.y);
                 TYPE squareZ(rotation.z * rotation.z);
                 TYPE squareW(rotation.w * rotation.w);
-                TYPE determinant(TYPE(1) / (squareX + squareY + squareZ + squareW));
+                TYPE determinant(1.0f / (squareX + squareY + squareZ + squareW));
 
                 table[0][0] = (( squareX - squareY - squareZ + squareW) * determinant);
-                table[0][1] = (TYPE(2) * (xy + zw) * determinant);
-                table[0][2] = (TYPE(2) * (xz - yw) * determinant);
-                table[0][3] = TYPE(0);
+                table[0][1] = (2.0f * (xy + zw) * determinant);
+                table[0][2] = (2.0f * (xz - yw) * determinant);
+                table[0][3] = 0.0f;
 
-                table[1][0] = (TYPE(2) * (xy - zw) * determinant);
+                table[1][0] = (2.0f * (xy - zw) * determinant);
                 table[1][1] = ((-squareX + squareY - squareZ + squareW) * determinant);
-                table[1][2] = (TYPE(2) * (yz + xw) * determinant);
-                table[1][3] = TYPE(0);
+                table[1][2] = (2.0f * (yz + xw) * determinant);
+                table[1][3] = 0.0f;
 
-                table[2][0] = (TYPE(2) * (xz + yw) * determinant);
-                table[2][1] = (TYPE(2) * (yz - xw) * determinant);
+                table[2][0] = (2.0f * (xz + yw) * determinant);
+                table[2][1] = (2.0f * (yz - xw) * determinant);
                 table[2][2] = ((-squareX - squareY + squareZ + squareW) * determinant);
-                table[2][3] = TYPE(0);
+                table[2][3] = 0.0f;
 
-                table[3][0] = TYPE(0);
-                table[3][1] = TYPE(0);
-                table[3][2] = TYPE(0);
-                table[3][3] = TYPE(1);
+                table[3][0] = 0.0f;
+                table[3][1] = 0.0f;
+                table[3][2] = 0.0f;
+                table[3][3] = 1.0f;
             }
 
             void setRotationX(TYPE radians)
             {
-                TYPE cosAngle(cos(radians));
-                TYPE sinAngle(sin(radians));
-                table[0][0] = TYPE(1); table[0][1] = TYPE(0);   table[0][2] = TYPE(0);  table[0][3] = TYPE(0);
-                table[1][0] = TYPE(0); table[1][1] = cosAngle;  table[1][2] = sinAngle; table[1][3] = TYPE(0);
-                table[2][0] = TYPE(0); table[2][1] = -sinAngle; table[2][2] = cosAngle; table[2][3] = TYPE(0);
-                table[3][0] = TYPE(0); table[3][1] = TYPE(0);   table[3][2] = TYPE(0);  table[3][3] = TYPE(1);
+                TYPE cosAngle(cosf(radians));
+                TYPE sinAngle(sinf(radians));
+                table[0][0] = 1.0f; table[0][1] = 0.0f;   table[0][2] = 0.0f;  table[0][3] = 0.0f;
+                table[1][0] = 0.0f; table[1][1] = cosAngle;  table[1][2] = sinAngle; table[1][3] = 0.0f;
+                table[2][0] = 0.0f; table[2][1] = -sinAngle; table[2][2] = cosAngle; table[2][3] = 0.0f;
+                table[3][0] = 0.0f; table[3][1] = 0.0f;   table[3][2] = 0.0f;  table[3][3] = 1.0f;
             }
 
             void setRotationY(TYPE radians)
             {
-                TYPE cosAngle(cos(radians));
-                TYPE sinAngle(sin(radians));
-                table[0][0] = cosAngle; table[0][1] = TYPE(0); table[0][2] = -sinAngle; table[0][3] = TYPE(0);
-                table[1][0] = TYPE(0);  table[1][1] = TYPE(1); table[1][2] = TYPE(0);   table[1][3] = TYPE(0);
-                table[2][0] = sinAngle; table[2][1] = TYPE(0); table[2][2] = cosAngle;  table[2][3] = TYPE(0);
-                table[3][0] = TYPE(0);  table[3][1] = TYPE(0); table[3][2] = TYPE(0);   table[3][3] = TYPE(1);
+                TYPE cosAngle(cosf(radians));
+                TYPE sinAngle(sinf(radians));
+                table[0][0] = cosAngle; table[0][1] = 0.0f; table[0][2] = -sinAngle; table[0][3] = 0.0f;
+                table[1][0] = 0.0f;  table[1][1] = 1.0f; table[1][2] = 0.0f;   table[1][3] = 0.0f;
+                table[2][0] = sinAngle; table[2][1] = 0.0f; table[2][2] = cosAngle;  table[2][3] = 0.0f;
+                table[3][0] = 0.0f;  table[3][1] = 0.0f; table[3][2] = 0.0f;   table[3][3] = 1.0f;
             }
 
             void setRotationZ(TYPE radians)
             {
-                TYPE cosAngle(cos(radians));
-                TYPE sinAngle(sin(radians));
-                table[0][0] = cosAngle; table[0][1] = sinAngle; table[0][2] = TYPE(0); table[0][3] = TYPE(0);
-                table[1][0] =-sinAngle; table[1][1] = cosAngle; table[1][2] = TYPE(0); table[1][3] = TYPE(0);
-                table[2][0] = TYPE(0);  table[2][1] = TYPE(0);  table[2][2] = TYPE(1); table[2][3] = TYPE(0);
-                table[3][0] = TYPE(0);  table[3][1] = TYPE(0);  table[3][2] = TYPE(0); table[3][3] = TYPE(1);
+                TYPE cosAngle(cosf(radians));
+                TYPE sinAngle(sinf(radians));
+                table[0][0] = cosAngle; table[0][1] = sinAngle; table[0][2] = 0.0f; table[0][3] = 0.0f;
+                table[1][0] =-sinAngle; table[1][1] = cosAngle; table[1][2] = 0.0f; table[1][3] = 0.0f;
+                table[2][0] = 0.0f;  table[2][1] = 0.0f;  table[2][2] = 1.0f; table[2][3] = 0.0f;
+                table[3][0] = 0.0f;  table[3][1] = 0.0f;  table[3][2] = 0.0f; table[3][3] = 1.0f;
             }
 
             void setOrthographic(TYPE left, TYPE top, TYPE right, TYPE bottom, TYPE nearDepth, TYPE farDepth)
             {
-                table[0][0] = (TYPE(2) / (right - left));
-                table[1][0] = TYPE(0);
-                table[2][0] = TYPE(0);
+                table[0][0] = (2.0f / (right - left));
+                table[1][0] = 0.0f;
+                table[2][0] = 0.0f;
                 table[3][0] = -((right + left) / (right - left));;
 
-                table[0][1] = TYPE(0);
-                table[1][1] = (TYPE(2) / (top - bottom));
-                table[2][1] = TYPE(0);
+                table[0][1] = 0.0f;
+                table[1][1] = (2.0f / (top - bottom));
+                table[2][1] = 0.0f;
                 table[3][1] = -((top + bottom) / (top - bottom));
 
-                table[0][2] = TYPE(0);
-                table[1][2] = TYPE(0);
-                table[2][2] = (-TYPE(2) / (farDepth - nearDepth));
+                table[0][2] = 0.0f;
+                table[1][2] = 0.0f;
+                table[2][2] = (-2.0f / (farDepth - nearDepth));
                 table[3][2] = -((farDepth + nearDepth) / (farDepth - nearDepth));
 
-                table[0][3] = TYPE(0);
-                table[1][3] = TYPE(0);
-                table[2][3] = TYPE(0);
-                table[3][3] = TYPE(1);
+                table[0][3] = 0.0f;
+                table[1][3] = 0.0f;
+                table[2][3] = 0.0f;
+                table[3][3] = 1.0f;
             }
 
             void setPerspective(TYPE fieldOfView, TYPE aspectRatio, TYPE nearDepth, TYPE farDepth)
             {
-                TYPE x(TYPE(1) / tan(fieldOfView * TYPE(0.5)));
+                TYPE x(1.0f / tanf(fieldOfView * 0.5f));
                 TYPE y(x * aspectRatio);
                 TYPE distance(farDepth - nearDepth);
 
                 table[0][0] = x;
-                table[0][1] = TYPE(0);
-                table[0][2] = TYPE(0);
-                table[0][3] = TYPE(0);
+                table[0][1] = 0.0f;
+                table[0][2] = 0.0f;
+                table[0][3] = 0.0f;
 
-                table[1][0] = TYPE(0);
+                table[1][0] = 0.0f;
                 table[1][1] = y;
-                table[1][2] = TYPE(0);
-                table[1][3] = TYPE(0);
+                table[1][2] = 0.0f;
+                table[1][3] = 0.0f;
 
-                table[2][0] = TYPE(0);
-                table[2][1] = TYPE(0);
+                table[2][0] = 0.0f;
+                table[2][1] = 0.0f;
                 table[2][2] = ((farDepth + nearDepth) / distance);
-                table[2][3] = TYPE(1);
+                table[2][3] = 1.0f;
 
-                table[3][0] = TYPE(0);
-                table[3][1] = TYPE(0);
-                table[3][2] = -((TYPE(2) * farDepth * nearDepth) / distance);
-                table[3][3] = TYPE(0);
+                table[3][0] = 0.0f;
+                table[3][1] = 0.0f;
+                table[3][2] = -((2.0f * farDepth * nearDepth) / distance);
+                table[3][3] = 0.0f;
             }
 
             void setLookAt(const BaseVector4<TYPE> &source, const BaseVector4<TYPE> &target, const BaseVector4<TYPE> &worldUpVector)
@@ -311,10 +311,10 @@ namespace Gek
                 rx = (worldUpVector.Cross(rz).getNormal());
                 ry = (rz.Cross(rx).getNormal());
 
-                table[0][3] = TYPE(0);
-                table[1][3] = TYPE(0);
-                table[2][3] = TYPE(0);
-                table[3][3] = TYPE(1);
+                table[0][3] = 0.0f;
+                table[1][3] = 0.0f;
+                table[2][3] = 0.0f;
+                table[3][3] = 1.0f;
 
                 invert();
             }
@@ -325,10 +325,10 @@ namespace Gek
                 rx = (worldUpVector.Cross(rz).getNormal());
                 ry = (rz.Cross(rx).getNormal());
 
-                table[0][3] = TYPE(0);
-                table[1][3] = TYPE(0);
-                table[2][3] = TYPE(0);
-                table[3][3] = TYPE(1);
+                table[0][3] = 0.0f;
+                table[1][3] = 0.0f;
+                table[2][3] = 0.0f;
+                table[3][3] = 1.0f;
             }
 
             BaseVector3<TYPE> getEuler(void) const
@@ -336,7 +336,7 @@ namespace Gek
                 BaseVector3 euler;
                 euler.y = asin(_31);
 
-                TYPE cosAngle = cos(euler.y);
+                TYPE cosAngle = cosf(euler.y);
                 if (abs(cosAngle) > 0.005)
                 {
                     euler.x = atan2(-(_32 / cosAngle), (_33 / cosAngle));
@@ -344,23 +344,23 @@ namespace Gek
                 }
                 else
                 {
-                    euler.x = TYPE(0);
+                    euler.x = 0.0f;
                     euler.y = atan2(_12, _22);
                 }
 
-                if (euler.x < TYPE(0))
+                if (euler.x < 0.0f)
                 {
-                    euler.x += (Pi * TYPE(2));
+                    euler.x += (Pi * 2.0f);
                 }
 
-                if (euler.y < TYPE(0))
+                if (euler.y < 0.0f)
                 {
-                    euler.y += (Pi * TYPE(2));
+                    euler.y += (Pi * 2.0f);
                 }
 
-                if (euler.z < TYPE(0))
+                if (euler.z < 0.0f)
                 {
-                    euler.z += (Pi * TYPE(2));
+                    euler.z += (Pi * 2.0f);
                 }
 
                 return euler;
@@ -404,7 +404,7 @@ namespace Gek
                 }
                 else
                 {
-                    determinant = (TYPE(1) / determinant);
+                    determinant = (1.0f / determinant);
 
                     BaseMatrix4x4 matrix;
                     matrix.table[0][0] = (determinant * (table[1][1] * (table[2][2] * table[3][3] - table[3][2] * table[2][3]) + table[2][1] * (table[3][2] * table[1][3] - table[1][2] * table[3][3]) + table[3][1] * (table[1][2] * table[2][3] - table[2][2] * table[1][3])));

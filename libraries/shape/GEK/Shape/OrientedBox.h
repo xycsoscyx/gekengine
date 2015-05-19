@@ -33,14 +33,14 @@ namespace Gek
             {
                 rotation = rotation;
                 position = (translation + box.getCenter());
-                halfsize = (box.getSize() * TYPE(0.5));
+                halfsize = (box.getSize() * 0.5f);
             }
 
             BaseOrientedBox(const BaseAlignedBox<TYPE> &box, const Math::BaseMatrix4x4<TYPE> &matrix)
             {
                 rotation = matrix;
                 position = (matrix.translation + box.getCenter());
-                halfsize = (box.getSize() * TYPE(0.5));
+                halfsize = (box.getSize() * 0.5f);
             }
 
             BaseOrientedBox operator = (const BaseOrientedBox<TYPE> &box)

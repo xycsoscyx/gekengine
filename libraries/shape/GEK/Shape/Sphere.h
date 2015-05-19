@@ -16,7 +16,7 @@ namespace Gek
 
         public:
             BaseSphere(void)
-                : radius(TYPE(0))
+                : radius(0.0f)
             {
             }
 

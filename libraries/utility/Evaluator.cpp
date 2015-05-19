@@ -55,8 +55,8 @@ namespace Gek
 
         public:
             EquationEvaluator(void)
-                : signedRandomFunction(TYPE(-1), TYPE(1))
-                , unsignedRandomFunction(TYPE(0), TYPE(1))
+                : signedRandomFunction(TYPE(-1), 1.0f)
+                , unsignedRandomFunction(0.0f, 1.0f)
             {
                 symbolTable.add_function("rand", signedRandomFunction);
                 symbolTable.add_function("arand", unsignedRandomFunction);

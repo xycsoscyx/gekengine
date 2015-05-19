@@ -91,9 +91,9 @@ namespace Gek
             BaseVector2 getNormal(void) const
             {
                 TYPE length = getLength();
-                if (length != TYPE(0))
+                if (length != 0.0f)
                 {
-                    return ((*this) * (TYPE(1) / length));
+                    return ((*this) * (1.0f / length));
                 }
 
                 return (*this);

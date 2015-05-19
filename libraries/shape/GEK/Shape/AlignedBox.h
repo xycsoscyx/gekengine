@@ -29,8 +29,8 @@ namespace Gek
             }
 
             BaseAlignedBox(TYPE size)
-                : minimum(-(size * TYPE(0.5)))
-                , maximum( (size * TYPE(0.5)))
+                : minimum(-(size * 0.5f))
+                , maximum( (size * 0.5f))
             {
             }
 
@@ -65,21 +65,21 @@ namespace Gek
 
             Math::BaseVector3<TYPE> getCenter(void) const
             {
-                return (minimum + (getSize() * TYPE(0.5)));
+                return (minimum + (getSize() * 0.5f));
             }
 
             int getPosition(const BasePlane<TYPE> &plane) const
             {
-                if (plane.Distance(Math::BaseVector3<TYPE>((plane.normal.x > TYPE(0) ? maximum.x : minimum.x),
-                                                           (plane.normal.y > TYPE(0) ? maximum.y : minimum.y),
-                                                           (plane.normal.z > TYPE(0) ? maximum.z : minimum.z))) < TYPE(0))
+                if (plane.Distance(Math::BaseVector3<TYPE>((plane.normal.x > 0.0f ? maximum.x : minimum.x),
+                                                           (plane.normal.y > 0.0f ? maximum.y : minimum.y),
+                                                           (plane.normal.z > 0.0f ? maximum.z : minimum.z))) < 0.0f)
                 {
                     return -1;
                 }
 
-                if (plane.Distance(Math::BaseVector3<TYPE>((plane.normal.x < TYPE(0) ? maximum.x : minimum.x),
-                                                           (plane.normal.y < TYPE(0) ? maximum.y : minimum.y),
-                                                           (plane.normal.z < TYPE(0) ? maximum.z : minimum.z))) < TYPE(0))
+                if (plane.Distance(Math::BaseVector3<TYPE>((plane.normal.x < 0.0f ? maximum.x : minimum.x),
+                                                           (plane.normal.y < 0.0f ? maximum.y : minimum.y),
+                                                           (plane.normal.z < 0.0f ? maximum.z : minimum.z))) < 0.0f)
                 {
                     return 0;
                 }

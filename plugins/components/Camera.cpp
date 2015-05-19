@@ -14,7 +14,7 @@ namespace Gek
             {
                 Data::Data(void)
                     : fieldOfView(Math::convertDegreesToRadians(90.0f))
-                    , minimumDistance(0.1f)
+                    , minimumDistance(1.0f)
                     , maximumDistance(100.0f)
                     , viewPort(0.0f, 0.0f, 1.0f, 1.0f)
                 {

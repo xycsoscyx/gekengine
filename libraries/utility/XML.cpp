@@ -18,8 +18,7 @@ namespace Gek
         {
             HRESULT resultValue = E_FAIL;
 
-            CStringA strTypeUTF8 = CW2A(type, CP_UTF8);
-            xmlNodePtr pNewNode = xmlNewNode(nullptr, BAD_CAST strTypeUTF8.GetString());
+            xmlNodePtr pNewNode = xmlNewNode(nullptr, BAD_CAST LPCSTR(CW2A(type, CP_UTF8)));
             if (pNewNode != nullptr)
             {
                 node = pNewNode;
@@ -33,8 +32,7 @@ namespace Gek
         {
             if (node != nullptr)
             {
-                CStringA strTypeUTF8 = CW2A(type, CP_UTF8);
-                xmlNodeSetName(node, BAD_CAST strTypeUTF8.GetString());
+                xmlNodeSetName(node, BAD_CAST LPCSTR(CW2A(type, CP_UTF8)));
             }
         }
 
@@ -149,10 +147,10 @@ namespace Gek
             bool hasSiblingElement = false;
             if (node != nullptr)
             {
-                CStringA typeUtf8(CW2A(type, CP_UTF8));
+                CW2A typeUtf8(type, CP_UTF8);
                 for (xmlNode *checkingNode = node->next; checkingNode; checkingNode = checkingNode->next)
                 {
-                    if (checkingNode->type == XML_ELEMENT_NODE && (!type || typeUtf8 == checkingNode->name))
+                    if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
                     {
                         hasSiblingElement = true;
                         break;
@@ -168,10 +166,10 @@ namespace Gek
             Node nextNode(nullptr);
             if (node != nullptr)
             {
-                CStringA typeUtf8(CW2A(type, CP_UTF8));
+                CW2A typeUtf8(type, CP_UTF8);
                 for (xmlNode *checkingNode = node->next; checkingNode; checkingNode = checkingNode->next)
                 {
-                    if (checkingNode->type == XML_ELEMENT_NODE && (!type || typeUtf8 == checkingNode->name))
+                    if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
                     {
                         nextNode = Node(checkingNode);
                         break;
@@ -187,10 +185,10 @@ namespace Gek
             bool hasChildElement = false;
             if (node != nullptr)
             {
-                CStringA typeUtf8(CW2A(type, CP_UTF8));
+                CW2A typeUtf8(type, CP_UTF8);
                 for (xmlNode *checkingNode = node->children; checkingNode; checkingNode = checkingNode->next)
                 {
-                    if (checkingNode->type == XML_ELEMENT_NODE && (!type || typeUtf8 == checkingNode->name))
+                    if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
                     {
                         hasChildElement = true;
                         break;
@@ -206,10 +204,10 @@ namespace Gek
             Node childNode(nullptr);
             if (node != nullptr)
             {
-                CStringA typeUtf8(CW2A(type, CP_UTF8));
+                CW2A typeUtf8(type, CP_UTF8);
                 for (xmlNode *checkingNode = node->children; checkingNode; checkingNode = checkingNode->next)
                 {
-                    if (checkingNode->type == XML_ELEMENT_NODE && (!type || typeUtf8 == checkingNode->name))
+                    if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
                     {
                         childNode = Node(checkingNode);
                         break;
