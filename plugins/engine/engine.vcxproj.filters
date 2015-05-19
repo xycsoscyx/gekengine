@@ -25,6 +25,7 @@
     <ClInclude Include="GEK\Engine\SystemInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
@@ -37,8 +38,5 @@
     <Filter Include="Header Files">
       <UniqueIdentifier>{66ba92d7-0828-4fe9-9d81-e6f572757744}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="pointer.ani" />
   </ItemGroup>
 </Project>

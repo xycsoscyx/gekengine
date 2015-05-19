@@ -102,6 +102,7 @@
     <ClInclude Include="GEK\Engine\PopulationInterface.h" />
     <ClInclude Include="GEK\Engine\RenderInterface.h" />
     <ClInclude Include="GEK\Engine\SystemInterface.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
@@ -118,9 +119,6 @@
     <ProjectReference Include="..\..\libraries\utility\utility.vcxproj">
       <Project>{be4f1e7f-e045-4d30-aed6-02a60c83bd97}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="pointer.ani" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

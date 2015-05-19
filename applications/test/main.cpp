@@ -227,9 +227,15 @@ namespace Gek
                 resultValue = context->createInstance(__uuidof(Gek::Engine::Population::Class), IID_PPV_ARGS(&population));
             }
 
+
             if (SUCCEEDED(resultValue))
             {
                 resultValue = population->initialize();
+                if (SUCCEEDED(resultValue))
+                {
+                    resultValue = population->load(L"demo");
+                    resultValue = population->save(L"save");
+                }
             }
 
             return resultValue;

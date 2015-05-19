@@ -200,24 +200,45 @@ namespace Gek
 
                 STDMETHODIMP save(LPCWSTR fileName)
                 {
+                    Gek::Xml::Document xmlDocument;
+                    xmlDocument.create(L"world");
+                    Gek::Xml::Node xmlWorldNode = xmlDocument.getRoot();
+                    Gek::Xml::Node xmlPopulationNode = xmlWorldNode.createChildElement(L"population");
                     for (auto &entityHandle : entityList)
                     {
+                        Gek::Xml::Node xmlEntityNode = xmlPopulationNode.createChildElement(L"entity");
                         auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Handle> &namedEntity) -> bool
                         {
                             return (namedEntity.second == entityHandle);
                         });
 
-                        std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> entityParameterList;
+                        if (namedEntityIterator != namedEntityList.end())
+                        {
+                            xmlEntityNode.setAttribute(L"name", (*namedEntityIterator).first);
+                        }
+
                         for (auto &component : componentList)
                         {
                             std::unordered_map<CStringW, CStringW> componentParameterList;
                             if (SUCCEEDED(component.second->getData(entityHandle, componentParameterList)))
                             {
-                                entityParameterList.insert(std::make_pair(component.second->getName(), componentParameterList));
+                                Gek::Xml::Node xmlParameterNode = xmlEntityNode.createChildElement(component.second->getName());
+                                for (auto &componentParameter : componentParameterList)
+                                {
+                                    if (componentParameter.first.IsEmpty())
+                                    {
+                                        xmlParameterNode.setText(componentParameter.second);
+                                    }
+                                    else
+                                    {
+                                        xmlParameterNode.setAttribute(componentParameter.first, componentParameter.second);
+                                    }
+                                }
                             }
                         }
                     }
 
+                    xmlDocument.save(Gek::String::format(L"%%root%%\\data\\saves\\%s.xml", fileName));
                     return S_OK;
                 }
 
