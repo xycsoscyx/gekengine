@@ -1,3 +1,7 @@
+#ifndef IDC_STATIC
+#define IDC_STATIC                      -1
+#endif
+
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by resources.rc

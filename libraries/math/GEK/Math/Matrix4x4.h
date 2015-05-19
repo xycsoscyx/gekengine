@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cmath>
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Quaternion.h"
-#include <Math.h>
 
 namespace Gek
 {
@@ -134,12 +134,12 @@ namespace Gek
 
             void setEuler(TYPE x, TYPE y, TYPE z)
             {
-                TYPE cosX(cosf(x));
-                TYPE sinX(sinf(x));
-                TYPE cosY(cosf(y));
-                TYPE sinY(sinf(y));
-                TYPE cosZ(cosf(z));
-                TYPE sinZ(sinf(z));
+                TYPE cosX(std::cos(x));
+                TYPE sinX(std::sin(x));
+                TYPE cosY(std::cos(y));
+                TYPE sinY(std::sin(y));
+                TYPE cosZ(std::cos(z));
+                TYPE sinZ(std::sin(z));
                 TYPE cosXsinY(cosX * sinY);
                 TYPE sinXsinY(sinX * sinY);
 
@@ -166,8 +166,8 @@ namespace Gek
 
             void setRotation(const BaseVector4<TYPE> &axis, TYPE radians)
             {
-                TYPE cosAngle(cosf(radians));
-                TYPE sinAngle(sinf(radians));
+                TYPE cosAngle(std::cos(radians));
+                TYPE sinAngle(std::sin(radians));
 
                 table[0][0] = (cosAngle + axis.x * axis.x * (1.0f - cosAngle));
                 table[0][1] = ( axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle));
@@ -227,8 +227,8 @@ namespace Gek
 
             void setRotationX(TYPE radians)
             {
-                TYPE cosAngle(cosf(radians));
-                TYPE sinAngle(sinf(radians));
+                TYPE cosAngle(std::cos(radians));
+                TYPE sinAngle(std::sin(radians));
                 table[0][0] = 1.0f; table[0][1] = 0.0f;   table[0][2] = 0.0f;  table[0][3] = 0.0f;
                 table[1][0] = 0.0f; table[1][1] = cosAngle;  table[1][2] = sinAngle; table[1][3] = 0.0f;
                 table[2][0] = 0.0f; table[2][1] = -sinAngle; table[2][2] = cosAngle; table[2][3] = 0.0f;
@@ -237,8 +237,8 @@ namespace Gek
 
             void setRotationY(TYPE radians)
             {
-                TYPE cosAngle(cosf(radians));
-                TYPE sinAngle(sinf(radians));
+                TYPE cosAngle(std::cos(radians));
+                TYPE sinAngle(std::sin(radians));
                 table[0][0] = cosAngle; table[0][1] = 0.0f; table[0][2] = -sinAngle; table[0][3] = 0.0f;
                 table[1][0] = 0.0f;  table[1][1] = 1.0f; table[1][2] = 0.0f;   table[1][3] = 0.0f;
                 table[2][0] = sinAngle; table[2][1] = 0.0f; table[2][2] = cosAngle;  table[2][3] = 0.0f;
@@ -247,8 +247,8 @@ namespace Gek
 
             void setRotationZ(TYPE radians)
             {
-                TYPE cosAngle(cosf(radians));
-                TYPE sinAngle(sinf(radians));
+                TYPE cosAngle(std::cos(radians));
+                TYPE sinAngle(std::sin(radians));
                 table[0][0] = cosAngle; table[0][1] = sinAngle; table[0][2] = 0.0f; table[0][3] = 0.0f;
                 table[1][0] =-sinAngle; table[1][1] = cosAngle; table[1][2] = 0.0f; table[1][3] = 0.0f;
                 table[2][0] = 0.0f;  table[2][1] = 0.0f;  table[2][2] = 1.0f; table[2][3] = 0.0f;
@@ -280,7 +280,7 @@ namespace Gek
 
             void setPerspective(TYPE fieldOfView, TYPE aspectRatio, TYPE nearDepth, TYPE farDepth)
             {
-                TYPE x(1.0f / tanf(fieldOfView * 0.5f));
+                TYPE x(1.0f / std::tan(fieldOfView * 0.5f));
                 TYPE y(x * aspectRatio);
                 TYPE distance(farDepth - nearDepth);
 
@@ -334,18 +334,18 @@ namespace Gek
             BaseVector3<TYPE> getEuler(void) const
             {
                 BaseVector3 euler;
-                euler.y = asin(_31);
+                euler.y = std::asin(_31);
 
-                TYPE cosAngle = cosf(euler.y);
+                TYPE cosAngle = std::cos(euler.y);
                 if (abs(cosAngle) > 0.005)
                 {
-                    euler.x = atan2(-(_32 / cosAngle), (_33 / cosAngle));
-                    euler.z = atan2(-(_21 / cosAngle), (_11 / cosAngle));
+                    euler.x = std::atan2(-(_32 / cosAngle), (_33 / cosAngle));
+                    euler.z = std::atan2(-(_21 / cosAngle), (_11 / cosAngle));
                 }
                 else
                 {
                     euler.x = 0.0f;
-                    euler.y = atan2(_12, _22);
+                    euler.y = std::atan2(_12, _22);
                 }
 
                 if (euler.x < 0.0f)

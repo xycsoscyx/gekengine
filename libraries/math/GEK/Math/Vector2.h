@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 namespace Gek
 {
     namespace Math
@@ -75,12 +77,12 @@ namespace Gek
 
             TYPE getLength(void) const
             {
-                return sqrt(getLengthSquared());
+                return std::sqrt(getLengthSquared());
             }
 
             TYPE getMax(void) const
             {
-                return max(x, y);
+                return std::max(x, y);
             }
 
             TYPE getDistance(const BaseVector2<TYPE> &vector) const

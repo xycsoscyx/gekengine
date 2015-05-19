@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cmath>
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Vector4.h"
-#include <Math.h>
 
 namespace Gek
 {
@@ -73,12 +73,12 @@ namespace Gek
 
             void setEuler(TYPE x, TYPE y, TYPE z)
             {
-                TYPE sinX(sinf(x * 0.5f));
-                TYPE sinY(sinf(y * 0.5f));
-                TYPE sinZ(sinf(z * 0.5f));
-                TYPE cosX(cosf(x * 0.5f));
-                TYPE cosY(cosf(y * 0.5f));
-                TYPE cosZ(cosf(z * 0.5f));
+                TYPE sinX(std::sin(x * 0.5f));
+                TYPE sinY(std::sin(y * 0.5f));
+                TYPE sinZ(std::sin(z * 0.5f));
+                TYPE cosX(std::cos(x * 0.5f));
+                TYPE cosY(std::cos(y * 0.5f));
+                TYPE cosZ(std::cos(z * 0.5f));
                 this->x = ((sinX * cosY * cosZ) - (cosX * sinY * sinZ));
                 this->y = ((sinX * cosY * sinZ) + (cosX * sinY * cosZ));
                 this->z = ((cosX * cosY * sinZ) - (sinX * sinY * cosZ));
@@ -88,11 +88,11 @@ namespace Gek
             void setRotation(const BaseVector3<TYPE> &axis, TYPE radians)
             {
                 BaseVector3<TYPE> normal(axis.getNormal());
-                TYPE sinAngle(sinf(radians * 0.5f));
+                TYPE sinAngle(std::sin(radians * 0.5f));
                 x = (normal.x * sinAngle);
                 y = (normal.y * sinAngle);
                 z = (normal.z * sinAngle);
-                w = cosf(radians * 0.5f);
+                w = std::cos(radians * 0.5f);
             }
 
             void setRotation(const BaseMatrix4x4<TYPE> &rotation)
@@ -100,7 +100,7 @@ namespace Gek
                 TYPE trace(rotation.table[0][0] + rotation.table[1][1] + rotation.table[2][2] + 1.0f);
                 if (trace > Math::Epsilon)
                 {
-                    TYPE denominator(0.5f / sqrt(trace));
+                    TYPE denominator(0.5f / std::sqrt(trace));
                     w = (0.25f / denominator);
                     x = ((rotation.table[1][2] - rotation.table[2][1]) * denominator);
                     y = ((rotation.table[2][0] - rotation.table[0][2]) * denominator);
@@ -110,7 +110,7 @@ namespace Gek
                 {
                     if ((rotation.table[0][0] > rotation.table[1][1]) && (rotation.table[0][0] > rotation.table[2][2]))
                     {
-                        TYPE denominator(2.0f * sqrt(1.0f + rotation.table[0][0] - rotation.table[1][1] - rotation.table[2][2]));
+                        TYPE denominator(2.0f * std::sqrt(1.0f + rotation.table[0][0] - rotation.table[1][1] - rotation.table[2][2]));
                         x = (0.25f * denominator);
                         y = ((rotation.table[1][0] + rotation.table[0][1]) / denominator);
                         z = ((rotation.table[2][0] + rotation.table[0][2]) / denominator);
@@ -118,7 +118,7 @@ namespace Gek
                     }
                     else if (rotation.table[1][1] > rotation.table[2][2])
                     {
-                        TYPE denominator(2.0f * (sqrt(1.0f + rotation.table[1][1] - rotation.table[0][0] - rotation.table[2][2])));
+                        TYPE denominator(2.0f * (std::sqrt(1.0f + rotation.table[1][1] - rotation.table[0][0] - rotation.table[2][2])));
                         x = ((rotation.table[1][0] + rotation.table[0][1]) / denominator);
                         y = (0.25f * denominator);
                         z = ((rotation.table[2][1] + rotation.table[1][2]) / denominator);
@@ -126,7 +126,7 @@ namespace Gek
                     }
                     else
                     {
-                        TYPE denominator(2.0f * (sqrt(1.0f + rotation.table[2][2] - rotation.table[0][0] - rotation.table[1][1])));
+                        TYPE denominator(2.0f * (std::sqrt(1.0f + rotation.table[2][2] - rotation.table[0][0] - rotation.table[1][1])));
                         x = ((rotation.table[2][0] + rotation.table[0][2]) / denominator);
                         y = ((rotation.table[2][1] + rotation.table[1][2]) / denominator);
                         z = (0.25f * denominator);
@@ -143,9 +143,9 @@ namespace Gek
                 TYPE squareY(y * y);
                 TYPE squareZ(z * z);
                 TYPE squareW(w * w);
-                return BaseVector3<TYPE>(atan2(2.0f * ((y * z) + (x * w)), (-squareX - squareY + squareZ + squareW)),
-                                         asin(-2.0f * ((x * z) - (y * w))),
-                                         atan2(2.0f * ((x * y) + (z * w)), (squareX - squareY - squareZ + squareW)));
+                return BaseVector3<TYPE>(std::atan2(2.0f * ((y * z) + (x * w)), (-squareX - squareY + squareZ + squareW)),
+                                         std::asin(-2.0f * ((x * z) - (y * w))),
+                                         std::atan2(2.0f * ((x * y) + (z * w)), (squareX - squareY - squareZ + squareW)));
             }
 
             BaseMatrix4x4<TYPE> getMatrix(void) const
@@ -200,10 +200,10 @@ namespace Gek
                 }
                 else
                 {
-                    TYPE omega(acos(cosAngle));
-                    TYPE sinOmega(sinf(omega));
-                    TYPE factorA = (sinf((1.0f - factor) * omega) / sinOmega);
-                    TYPE factorB = (sinf(factor * omega) / sinOmega);
+                    TYPE omega(std::acos(cosAngle));
+                    TYPE sinOmega(std::sin(omega));
+                    TYPE factorA = (std::sin((1.0f - factor) * omega) / sinOmega);
+                    TYPE factorB = (std::sin(factor * omega) / sinOmega);
                     return BaseQuaternion<TYPE>(((factorA * x) + (factorB * adjustedRotation.x)),
                                                 ((factorA * y) + (factorB * adjustedRotation.y)),
                                                 ((factorA * z) + (factorB * adjustedRotation.z)),

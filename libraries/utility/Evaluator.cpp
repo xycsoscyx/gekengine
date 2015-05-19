@@ -1,10 +1,7 @@
+#include "exprtk.hpp"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 #include <random>
-
-#undef min
-#undef max
-#include "exprtk.hpp"
 
 namespace Gek
 {

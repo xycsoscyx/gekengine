@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Engine\EngineInterface.h"
+#include <Windows.h>
 
 namespace Gek
 {
@@ -12,7 +12,7 @@ namespace Gek
 
             DECLARE_INTERFACE_IID(Interface, "EF25BBFD-7125-45DC-8B08-588B9A4C2278") : virtual public IUnknown
             {
-                STDMETHOD(initialize)                       (THIS_ Engine::Initializer *engine) PURE;
+                STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
             };
         };
     };

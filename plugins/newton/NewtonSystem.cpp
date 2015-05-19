@@ -544,12 +544,12 @@ namespace Gek
             }
 
             // System::Interface
-            STDMETHODIMP initialize(Engine::Initializer *engine)
+            STDMETHODIMP initialize(IUnknown *initializerContext)
             {
-                REQUIRE_RETURN(population, E_INVALIDARG);
+                REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
                 HRESULT resultValue = E_FAIL;
-                CComQIPtr<Engine::Population::Interface> population(engine);
+                CComQIPtr<Engine::Population::Interface> population(initializerContext);
                 if (population)
                 {
                     this->population = population;

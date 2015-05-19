@@ -1,17 +1,14 @@
-#include <Windows.h>
-#include <Commctrl.h>
 #include <initguid.h>
 #include <cguid.h>
 
+#include "GEK\Utility\Common.h"
+#include "GEK\Utility\Display.h"
+#include "GEK\Utility\FileSystem.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\XML.h"
+#include "GEK\Context\Interface.h"
+#include <CommCtrl.h>
 #include "resource.h"
-
-#include "GEKMath.h"
-#include "GEKUtility.h"
-#include "GEKContext.h"
-#include "GEKEngine.h"
-#include "GEKAPI.h"
-
-#include "GEKEngineCLSIDs.h"
 
 INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM lParam)
 {
@@ -23,74 +20,72 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
 
     case WM_INITDIALOG:
         {
-            UINT32 nXSize = 800;
-            UINT32 nYSize = 600;
-            bool bWindowed = true;
+            UINT32 width = 800;
+            UINT32 height = 600;
+            bool windowed = true;
 
-            CLibXMLDoc kDocument;
-            if (SUCCEEDED(kDocument.Load(L"%root%\\config.xml")))
+            Gek::Xml::Document xmlDocument;
+            if (SUCCEEDED(xmlDocument.load(L"%root%\\config.xml")))
             {
-                CLibXMLNode kRoot = kDocument.GetRoot();
-                if (kRoot && kRoot.GetType().CompareNoCase(L"config") == 0 && kRoot.HasChildElement(L"display"))
+                Gek::Xml::Node xmlConfigNode = xmlDocument.getRoot();
+                if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
                 {
-                    CLibXMLNode kDisplay = kRoot.FirstChildElement(L"display");
-                    if (kDisplay)
+                    Gek::Xml::Node xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
+                    if (xmlDisplayNode)
                     {
-                        if (kDisplay.HasAttribute(L"xsize"))
+                        if (xmlDisplayNode.hasAttribute(L"xsize"))
                         {
-                            nXSize = StrToUINT32(kDisplay.GetAttribute(L"xsize"));
+                            width = Gek::String::getUINT32(xmlDisplayNode.getAttribute(L"xsize"));
                         }
                         
-                        if (kDisplay.HasAttribute(L"ysize"))
+                        if (xmlDisplayNode.hasAttribute(L"ysize"))
                         {
-                            nYSize = StrToUINT32(kDisplay.GetAttribute(L"ysize"));
+                            height = Gek::String::getUINT32(xmlDisplayNode.getAttribute(L"ysize"));
                         }
                         
-                        if (kDisplay.HasAttribute(L"windowed"))
+                        if (xmlDisplayNode.hasAttribute(L"windowed"))
                         {
-                            bWindowed = StrToBoolean(kDisplay.GetAttribute(L"windowed"));
+                            windowed = Gek::String::getBoolean(xmlDisplayNode.getAttribute(L"windowed"));
                         }
                     }
                 }
             }
 
-            UINT32 nSelectID = 0;
+            UINT32 selectIndex = 0;
             SendDlgItemMessage(hDialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
-            std::vector<GEKMODE> akModes = GEKGetDisplayModes()[32];
-            for(UINT32 nMode = 0; nMode < akModes.size(); ++nMode)
+            std::vector<Gek::Display::Mode> modeList = Gek::Display::getModes()[32];
+            for(auto &mode : modeList)
             {
-                GEKMODE &kMode = akModes[nMode];
-
                 CStringW strAspect(L"");
-                switch (kMode.GetAspect())
+                switch (mode.aspectRatio)
                 {
-                case _ASPECT_4x3:
+                case Gek::Display::AspectRatio::_4x3:
                     strAspect = L", (4x3)";
                     break;
 
-                case _ASPECT_16x9:
+                case Gek::Display::AspectRatio::_16x9:
                     strAspect = L", (16x9)";
                     break;
 
-                case _ASPECT_16x10:
+                case Gek::Display::AspectRatio::_16x10:
                     strAspect = L", (16x10)";
                     break;
                 };
 
-                CStringW strMode;
-                strMode.Format(L"%dx%d%s", kMode.xsize, kMode.ysize, strAspect.GetString());
-                int nID = SendDlgItemMessage(hDialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)strMode.GetString());
-                if (kMode.xsize == nXSize && kMode.ysize == nYSize)
+                CStringW modeString;
+                modeString.Format(L"%dx%d%s", mode.width, mode.height, strAspect.GetString());
+                int modeIndex = SendDlgItemMessage(hDialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)modeString.GetString());
+                if (mode.width == width && mode.height == height)
                 {
-                    nSelectID = nID;
+                    selectIndex = modeIndex;
                 }
             }
 
-            SendDlgItemMessage(hDialog, IDC_FULLSCREEN, BM_SETCHECK, bWindowed ? BST_UNCHECKED : BST_CHECKED, 0);
+            SendDlgItemMessage(hDialog, IDC_FULLSCREEN, BM_SETCHECK, windowed ? BST_UNCHECKED : BST_CHECKED, 0);
 
             SendDlgItemMessage(hDialog, IDC_MODES, CB_SETMINVISIBLE, 5, 0);
             SendDlgItemMessage(hDialog, IDC_MODES, CB_SETEXTENDEDUI, TRUE, 0);
-            SendDlgItemMessage(hDialog, IDC_MODES, CB_SETCURSEL, nSelectID, 0);
+            SendDlgItemMessage(hDialog, IDC_MODES, CB_SETCURSEL, selectIndex, 0);
             return TRUE;
         }
 
@@ -99,29 +94,29 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT nMessage, WPARAM wParam, LPARAM l
         {
         case IDOK:
             {
-                std::vector<GEKMODE> akModes = GEKGetDisplayModes()[32];
-                UINT32 nMode = SendDlgItemMessage(hDialog, IDC_MODES, CB_GETCURSEL, 0, 0);
-                GEKMODE &kMode = akModes[nMode];
+                std::vector<Gek::Display::Mode> modeList = Gek::Display::getModes()[32];
+                UINT32 selectIndex = SendDlgItemMessage(hDialog, IDC_MODES, CB_GETCURSEL, 0, 0);
+                auto &mode = modeList[selectIndex];
 
-                CLibXMLDoc kDocument;
-                kDocument.Load(L"%root%\\config.xml");
-                CLibXMLNode kRoot = kDocument.GetRoot();
-                if (!kRoot || kRoot.GetType().CompareNoCase(L"config") != 0)
+                Gek::Xml::Document xmlDocument;
+                xmlDocument.load(L"%root%\\config.xml");
+                Gek::Xml::Node xmlConfigNode = xmlDocument.getRoot();
+                if (!xmlConfigNode || xmlConfigNode.getType().CompareNoCase(L"config") != 0)
                 {
-                    kDocument.Create(L"config");
-                    kRoot = kDocument.GetRoot();
+                    xmlDocument.create(L"config");
+                    xmlConfigNode = xmlDocument.getRoot();
                 }
 
-                CLibXMLNode kDisplay = kRoot.FirstChildElement(L"display");
-                if (!kDisplay)
+                Gek::Xml::Node xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
+                if (!xmlDisplayNode)
                 {
-                    kDisplay = kRoot.CreateChildElement(L"display");
+                    xmlDisplayNode = xmlConfigNode.createChildElement(L"display");
                 }
 
-                kDisplay.SetAttribute(L"xsize", L"%d", kMode.xsize);
-                kDisplay.SetAttribute(L"ysize", L"%d", kMode.ysize);
-                kDisplay.SetAttribute(L"windowed", L"%s", (SendDlgItemMessage(hDialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_UNCHECKED ? L"true" : L"false"));
-                kDocument.Save(L"%root%\\config.xml");
+                xmlDisplayNode.setAttribute(L"width", L"%d", mode.width);
+                xmlDisplayNode.setAttribute(L"height", L"%d", mode.height);
+                xmlDisplayNode.setAttribute(L"windowed", L"%s", (SendDlgItemMessage(hDialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_UNCHECKED ? L"true" : L"false"));
+                xmlDocument.save(L"%root%\\config.xml");
 
                 EndDialog(hDialog, IDOK);
                 return TRUE;
@@ -142,27 +137,27 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 {
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
-        CComPtr<IGEKContext> spContext;
-        GEKCreateContext(&spContext);
-        if (spContext)
+        CComPtr<Gek::Context::Interface> context;
+        Gek::Context::create(&context);
+        if (context)
         {
 #ifdef _DEBUG
-            SetCurrentDirectory(GEKParseFileName(L"%root%\\Debug"));
-            spContext->AddSearchPath(GEKParseFileName(L"%root%\\Debug\\Plugins"));
+            SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
+            context->addSearchPath(L"%root%\\Debug\\Plugins");
 #else
             SetCurrentDirectory(GEKParseFileName(L"%root%\\Release"));
-            spContext->AddSearchPath(GEKParseFileName(L"%root%\\Release\\Plugins"));
+            context->AddSearchPath(GEKParseFileName(L"%root%\\Release\\Plugins"));
 #endif
 
-            if (SUCCEEDED(spContext->Initialize()))
+            context->initialize();
+/*
+            CComPtr<IGEKGameApplication> spGame;
+            context->CreateInstance(CLSID_GEKEngine, IID_PPV_ARGS(&spGame));
+            if (spGame)
             {
-                CComPtr<IGEKGameApplication> spGame;
-                spContext->CreateInstance(CLSID_GEKEngine, IID_PPV_ARGS(&spGame));
-                if (spGame)
-                {
-                    spGame->Run();
-                }
+                spGame->Run();
             }
+*/
         }
 
         return 0;

@@ -49,13 +49,13 @@ namespace Gek
 
             void Extend(Math::BaseVector3<TYPE> &point)
             {
-                minimum.x = min(point.x, minimum.x);
-                minimum.y = min(point.y, minimum.y);
-                minimum.z = min(point.z, minimum.z);
+                minimum.x = std::min(point.x, minimum.x);
+                minimum.y = std::min(point.y, minimum.y);
+                minimum.z = std::min(point.z, minimum.z);
 
-                maximum.x = max(point.x, maximum.x);
-                maximum.y = max(point.y, maximum.y);
-                maximum.z = max(point.z, maximum.z);
+                maximum.x = std::max(point.x, maximum.x);
+                maximum.y = std::max(point.y, maximum.y);
+                maximum.z = std::max(point.z, maximum.z);
             }
 
             Math::BaseVector3<TYPE> getSize(void) const

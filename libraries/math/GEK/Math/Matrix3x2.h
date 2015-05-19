@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Math.h>
+#include <cmath>
 
 namespace Gek
 {
@@ -72,12 +72,12 @@ namespace Gek
 
             void setRotation(float radians)
             {
-                table[0][0] = cosf(radians);
-                table[1][0] = sinf(radians);
+                table[0][0] = std::cos(radians);
+                table[1][0] = std::sin(radians);
                 table[2][0] = 0.0f;
 
-                table[0][1] = -sinf(radians);
-                table[1][1] = cosf(radians);
+                table[0][1] = -std::sin(radians);
+                table[1][1] = std::cos(radians);
                 table[2][1] = 0.0f;
             }
 

@@ -262,7 +262,7 @@ STDMETHODIMP_(void) CGEKComponentSystemModel::OnDrawScene(const GEKENTITYID &nVi
             INSTANCE *pInstances = nullptr;
             if (SUCCEEDED(m_spInstanceBuffer->Map((LPVOID *)&pInstances)))
             {
-                UINT32 nNumInstances = min(NUM_INSTANCES, (kModel.second.size() - nPass));
+                UINT32 nNumInstances = std::min(NUM_INSTANCES, (kModel.second.size() - nPass));
                 memcpy(pInstances, kModel.second.data(), (sizeof(INSTANCE) * nNumInstances));
                 m_spInstanceBuffer->UnMap();
 

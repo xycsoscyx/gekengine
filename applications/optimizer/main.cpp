@@ -1,8 +1,13 @@
-#include "GEKMath.h"
-#include "GEKShape.h"
-#include "GEKUtility.h"
+#include "GEK\Math\Common.h"
+#include "GEK\Math\Vector3.h"
+#include "GEK\Math\Matrix4x4.h"
+#include "GEK\Shape\AlignedBox.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Context\Common.h"
 #include <atlpath.h>
 #include <algorithm>
+#include <vector>
+#include <unordered_map>
 #include <map>
 
 #include <assimp/config.h>
@@ -11,205 +16,199 @@
 #include <assimp/postprocess.h>
 #pragma comment(lib, "assimp.lib")
 
-struct MODEL
+struct Model
 {
-    std::vector<UINT16> m_aIndices;
-    std::vector<Math::Float3> m_aVertices;
-    std::vector<Math::Float2> m_aTexCoords;
-    std::vector<Math::Float3> m_aNormals;
+    std::vector<UINT16> indexList;
+    std::vector<Gek::Math::Float3> positionList;
+    std::vector<Gek::Math::Float2> texCoordList;
+    std::vector<Gek::Math::Float3> normalList;
 };
 
-class CMyException
+class OptimizerException
 {
 public:
-    CStringW m_strMessage;
-    int m_nLine;
+    CStringW message;
+    int line;
 
 public:
-    CMyException(int nLine, LPCWSTR pFormat, ...)
-        : m_nLine(nLine)
+    OptimizerException(int line, LPCWSTR format, ...)
+        : line(line)
     {
         va_list variableList;
-        va_start(variableList, pFormat);
-        m_strMessage.FormatV(pFormat, variableList);
+        va_start(variableList, format);
+        message.FormatV(format, variableList);
         va_end(variableList);
     }
 };
 
-void GetMeshes(const aiScene *pScene, const aiNode *pNode, const Math::Float4x4 &nParentTransform, bool bFlip, std::multimap<CStringA, MODEL> &aModels, aabb &nAABB)
+void GetMeshes(const aiScene *scene, const aiNode *node, const Gek::Math::Float4x4 &parentTransformation, bool flipAxis, std::multimap<CStringA, Model> &modelList, Gek::Shape::AlignedBox &alignedBox)
 {
-    if (pNode == nullptr)
+    if (node == nullptr)
     {
-        throw CMyException(__LINE__, L"Invalid node encountered");
+        throw OptimizerException(__LINE__, L"Invalid node encountered");
     }
 
-    Math::Float4x4 nLocalTransform(*(Math::Float4x4 *)&pNode->mTransformation);
-    nLocalTransform.Transpose();
+    Gek::Math::Float4x4 localTransformation(*(Gek::Math::Float4x4 *)&node->mTransformation);
+    localTransformation.transpose();
 
-    Math::Float4x4 nTransform(nLocalTransform * nParentTransform);
-    Math::Float4x4 nRotation(Math::Quaternion(nTransform).GetInverse());
-    Math::Float4x4 nInverseTransform(nTransform.GetInverse());
-    if (pNode->mNumMeshes > 0)
+    Gek::Math::Float4x4 transformation(localTransformation * parentTransformation);
+    Gek::Math::Float4x4 inverseRotation(Gek::Math::Quaternion(transformation).getInverse());
+    if (node->mNumMeshes > 0)
     {
-        if (pNode->mMeshes == nullptr)
+        if (node->mMeshes == nullptr)
         {
-            throw CMyException(__LINE__, L"Invalid node mesh data");
+            throw OptimizerException(__LINE__, L"Invalid node mesh data");
         }
 
-        for (UINT32 nMesh = 0; nMesh < pNode->mNumMeshes; ++nMesh)
+        for (UINT32 meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
         {
-            UINT32 nMeshIndex = pNode->mMeshes[nMesh];
-            if (nMeshIndex >= pScene->mNumMeshes)
+            UINT32 nodeMeshIndex = node->mMeshes[meshIndex];
+            if (nodeMeshIndex >= scene->mNumMeshes)
             {
-                throw CMyException(__LINE__, L"Invalid mesh index encountered: %d (of %d)", nMeshIndex, pScene->mNumMeshes);
+                throw OptimizerException(__LINE__, L"Invalid mesh index encountered: %d (of %d)", nodeMeshIndex, scene->mNumMeshes);
             }
 
-            const aiMesh *pMesh = pScene->mMeshes[nMeshIndex];
-            if (pMesh->mNumFaces > 0)
+            const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
+            if (mesh->mNumFaces > 0)
             {
-                if (pMesh->mFaces == nullptr)
+                if (mesh->mFaces == nullptr)
                 {
-                    throw CMyException(__LINE__, L"Mesh missing face information");
+                    throw OptimizerException(__LINE__, L"Mesh missing face information");
                 }
 
-                if (pMesh->mVertices == nullptr)
+                if (mesh->mVertices == nullptr)
                 {
-                    throw CMyException(__LINE__, L"Mesh missing vertex information");
+                    throw OptimizerException(__LINE__, L"Mesh missing vertex information");
                 }
 
-                if (pMesh->mTextureCoords == nullptr || pMesh->mTextureCoords[0] == nullptr)
+                if (mesh->mTextureCoords == nullptr || mesh->mTextureCoords[0] == nullptr)
                 {
-                    throw CMyException(__LINE__, L"Mesh missing texcoord0 information");
+                    throw OptimizerException(__LINE__, L"Mesh missing texcoord0 information");
                 }
 
-                if (pMesh->mNormals == nullptr)
+                if (mesh->mNormals == nullptr)
                 {
-                    throw CMyException(__LINE__, L"Mesh missing normal information");
+                    throw OptimizerException(__LINE__, L"Mesh missing normal information");
                 }
 
-                CStringA strMaterial;
-                if (pScene->mMaterials != nullptr)
+                CStringA material;
+                if (scene->mMaterials != nullptr)
                 {
-                    const aiMaterial *pMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
-                    if (pMaterial != nullptr)
+                    const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
+                    if (sceneMaterial != nullptr)
                     {
-                        aiString strName;
-                        pMaterial->Get(AI_MATKEY_NAME, strName);
-                        CStringA strNameString = strName.C_Str();
-                        strNameString.MakeLower();
-
-                        aiString strDiffuse;
-                        pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &strDiffuse);
-                        CStringA strDiffuseString = strDiffuse.C_Str();
-                        if (!strDiffuseString.IsEmpty())
+                        aiString sceneDiffuseMaterial;
+                        sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
+                        CStringA diffuseMaterial = sceneDiffuseMaterial.C_Str();
+                        if (!diffuseMaterial.IsEmpty())
                         {
-                            strMaterial = strDiffuseString;
+                            material = diffuseMaterial;
                         }
                     }
                 }
 
-                MODEL kModel;
-                for (UINT32 nFace = 0; nFace < pMesh->mNumFaces; ++nFace)
+                Model model;
+                for (UINT32 faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex)
                 {
-                    const aiFace &kFace = pMesh->mFaces[nFace];
-                    if (kFace.mNumIndices == 3)
+                    const aiFace &face = mesh->mFaces[faceIndex];
+                    if (face.mNumIndices == 3)
                     {
-                        kModel.m_aIndices.push_back(kFace.mIndices[0]);
-                        kModel.m_aIndices.push_back(kFace.mIndices[1]);
-                        kModel.m_aIndices.push_back(kFace.mIndices[2]);
+                        model.indexList.push_back(face.mIndices[0]);
+                        model.indexList.push_back(face.mIndices[1]);
+                        model.indexList.push_back(face.mIndices[2]);
                     }
                 }
 
-                for (UINT32 nVertex = 0; nVertex < pMesh->mNumVertices; ++nVertex)
+                for (UINT32 vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
                 {
-                    Math::Float3 nPosition(pMesh->mVertices[nVertex].x,
-                                     pMesh->mVertices[nVertex].y,
-                                     pMesh->mVertices[nVertex].z);
-                    nPosition = (nTransform * Math::Float4(nPosition, 1.0f));
-                    if (bFlip)
+                    Gek::Math::Float3 position(mesh->mVertices[vertexIndex].x,
+                                     mesh->mVertices[vertexIndex].y,
+                                     mesh->mVertices[vertexIndex].z);
+                    position = (transformation * Gek::Math::Float4(position, 1.0f));
+                    if (flipAxis)
                     {
-                        nPosition *= Math::Float3(-1.0f, 1.0f, -1.0f);
+                        position *= Gek::Math::Float3(-1.0f, 1.0f, -1.0f);
                     }
 
-                    kModel.m_aVertices.push_back(nPosition);
-                    nAABB.Extend(nPosition);
+                    model.positionList.push_back(position);
+                    alignedBox.Extend(position);
 
-                    Math::Float2 nTexCoord;
-                    nTexCoord.x = pMesh->mTextureCoords[0][nVertex].x;
-                    nTexCoord.y = pMesh->mTextureCoords[0][nVertex].y;
-                    kModel.m_aTexCoords.push_back(nTexCoord);
+                    Gek::Math::Float2 texCoord;
+                    texCoord.x = mesh->mTextureCoords[0][vertexIndex].x;
+                    texCoord.y = mesh->mTextureCoords[0][vertexIndex].y;
+                    model.texCoordList.push_back(texCoord);
 
-                    Math::Float3 nNormal;
-                    nNormal.x = pMesh->mNormals[nVertex].x;
-                    nNormal.y = pMesh->mNormals[nVertex].y;
-                    nNormal.z = pMesh->mNormals[nVertex].z;
-                    nNormal = (nRotation * nNormal);
-                    if (bFlip)
+                    Gek::Math::Float3 normal;
+                    normal.x = mesh->mNormals[vertexIndex].x;
+                    normal.y = mesh->mNormals[vertexIndex].y;
+                    normal.z = mesh->mNormals[vertexIndex].z;
+                    normal = (inverseRotation * normal);
+                    if (flipAxis)
                     {
-                        nNormal *= Math::Float3(-1.0f, 1.0f, -1.0f);
+                        normal *= Gek::Math::Float3(-1.0f, 1.0f, -1.0f);
                     }
 
-                    kModel.m_aNormals.push_back(nNormal.GetNormal());
+                    model.normalList.push_back(normal.getNormal());
                 }
 
-                if (!strMaterial.IsEmpty())
+                if (!material.IsEmpty())
                 {
-                    aModels.insert(std::make_pair(strMaterial, kModel));
+                    modelList.insert(std::make_pair(material, model));
                 }
             }
         }
     }
 
-    if (pNode->mNumChildren > 0)
+    if (node->mNumChildren > 0)
     {
-        if (pNode->mChildren == nullptr)
+        if (node->mChildren == nullptr)
         {
-            throw CMyException(__LINE__, L"Invalid node children data");
+            throw OptimizerException(__LINE__, L"Invalid node children data");
         }
 
-        for (UINT32 nChild = 0; nChild < pNode->mNumChildren; ++nChild)
+        for (UINT32 childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            GetMeshes(pScene, pNode->mChildren[nChild], nTransform, bFlip, aModels, nAABB);
+            GetMeshes(scene, node->mChildren[childIndex], transformation, flipAxis, modelList, alignedBox);
         }
     }
 }
 
-int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentVariables)
+int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariableList)
 {
     printf("GEK Mesh Optimizer\r\n");
 
-    CStringW strInput;
-    CStringW strOutput;
-    bool bFlip = false;
-    bool bSmooth = false;
-    float nSmoothAngle = 80.0f;
-    for (int nArgument = 1; nArgument < nNumArguments; nArgument++)
+    CStringW fileNameInput;
+    CStringW fileNameOutput;
+    bool flipAxis = false;
+    bool enableSmoothing = false;
+    float smoothingAngle = 80.0f;
+    for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
     {
-        if (_wcsicmp(astrArguments[nArgument], L"-input") == 0 && ++nArgument < nNumArguments)
+        if (_wcsicmp(argumentList[argumentIndex], L"-input") == 0 && ++argumentIndex < argumentCount)
         {
-            strInput = astrArguments[nArgument];
+            fileNameInput = argumentList[argumentIndex];
         }
-        else if (_wcsicmp(astrArguments[nArgument], L"-output") == 0 && ++nArgument < nNumArguments)
+        else if (_wcsicmp(argumentList[argumentIndex], L"-output") == 0 && ++argumentIndex < argumentCount)
         {
-            strOutput = astrArguments[nArgument];
+            fileNameOutput = argumentList[argumentIndex];
         }
-        else if (_wcsicmp(astrArguments[nArgument], L"-flip") == 0)
+        else if (_wcsicmp(argumentList[argumentIndex], L"-flip") == 0)
         {
-            bFlip = true;
+            flipAxis = true;
         }
-        else if (_wcsicmp(astrArguments[nArgument], L"-smooth") == 0)
+        else if (_wcsicmp(argumentList[argumentIndex], L"-smooth") == 0)
         {
-            bSmooth = true;
-            if (++nArgument < nNumArguments)
+            enableSmoothing = true;
+            if (++argumentIndex < argumentCount)
             {
-                nSmoothAngle = StrToFloat(astrArguments[nArgument]);
+                smoothingAngle = Gek::String::getFloat(argumentList[argumentIndex]);
             }
         }
     }
 
-    if (bSmooth)
+    if (enableSmoothing)
     {
-        printf(" Smoothing Angle: %f\r\n", nSmoothAngle);
+        printf(" Smoothing Angle: %f\r\n", smoothingAngle);
     }
     else
     {
@@ -218,128 +217,128 @@ int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentV
 
     try
     {
-        aiPropertyStore *pPropertyStore = aiCreatePropertyStore();
-        aiSetImportPropertyInteger(pPropertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_TANGENTS_AND_BITANGENTS | (bSmooth ? aiComponent_NORMALS : 0));
-        if (bSmooth)
+        aiPropertyStore *propertyStore = aiCreatePropertyStore();
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_TANGENTS_AND_BITANGENTS | (enableSmoothing ? aiComponent_NORMALS : 0));
+        if (enableSmoothing)
         {
-            aiSetImportPropertyFloat(pPropertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, nSmoothAngle);
+            aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
         }
 
-        const aiScene *pScene = aiImportFileExWithProperties(CW2A(strInput, CP_UTF8), aiProcess_RemoveComponent | aiProcess_FlipUVs | aiProcess_TransformUVCoords, nullptr, pPropertyStore);
-        if (pScene == nullptr)
+        const aiScene *scene = aiImportFileExWithProperties(CW2A(fileNameInput, CP_UTF8), aiProcess_RemoveComponent | aiProcess_FlipUVs | aiProcess_TransformUVCoords, nullptr, propertyStore);
+        if (scene == nullptr)
         {
-            throw CMyException(__LINE__, L"Unable to Load Input: %s", strInput.GetString());
+            throw OptimizerException(__LINE__, L"Unable to Load Input: %s", fileNameInput.GetString());
         }
 
-        if (pScene->mMeshes == nullptr)
+        if (scene->mMeshes == nullptr)
         {
-            throw CMyException(__LINE__, L"No meshes found in scene: %s", strInput.GetString());
+            throw OptimizerException(__LINE__, L"No meshes found in scene: %s", fileNameInput.GetString());
         }
 
-        aiApplyPostProcessing(pScene, aiProcess_FindInvalidData | aiProcess_Triangulate | aiProcess_RemoveRedundantMaterials);
-        aiApplyPostProcessing(pScene, bSmooth ? aiProcess_GenSmoothNormals : aiProcess_GenNormals);
-        aiApplyPostProcessing(pScene, aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices);
-        aiReleasePropertyStore(pPropertyStore);
+        aiApplyPostProcessing(scene, aiProcess_FindInvalidData | aiProcess_Triangulate | aiProcess_RemoveRedundantMaterials);
+        aiApplyPostProcessing(scene, enableSmoothing ? aiProcess_GenSmoothNormals : aiProcess_GenNormals);
+        aiApplyPostProcessing(scene, aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices);
+        aiReleasePropertyStore(propertyStore);
 
-        aabb nAABB;
-        std::multimap<CStringA, MODEL> aScene;
-        GetMeshes(pScene, pScene->mRootNode, Math::Float4x4(), bFlip, aScene, nAABB);
-        printf("< Num. Materials: %d\r\n", aScene.size());
+        Gek::Shape::AlignedBox alignedBox;
+        std::multimap<CStringA, Model> modelList;
+        GetMeshes(scene, scene->mRootNode, Gek::Math::Float4x4(), flipAxis, modelList, alignedBox);
+        printf("< Num. Materials: %d\r\n", modelList.size());
 
-        std::unordered_map<CStringA, MODEL> aMaterials;
-        for (auto &kPair : aScene)
+        std::unordered_map<CStringA, Model> materialModelList;
+        for (auto &model : modelList)
         {
-            MODEL *pModel = &aMaterials[kPair.first];
-            for (auto &nIndex : kPair.second.m_aIndices)
+            Model &materialModel = materialModelList[model.first];
+            for (auto &nIndex : model.second.indexList)
             {
-                pModel->m_aIndices.push_back(nIndex + pModel->m_aVertices.size());
+                materialModel.indexList.push_back(UINT16(nIndex + materialModel.positionList.size()));
             }
 
-            pModel->m_aVertices.insert(pModel->m_aVertices.end(), kPair.second.m_aVertices.begin(), kPair.second.m_aVertices.end());
-            pModel->m_aTexCoords.insert(pModel->m_aTexCoords.end(), kPair.second.m_aTexCoords.begin(), kPair.second.m_aTexCoords.end());
-            pModel->m_aNormals.insert(pModel->m_aNormals.end(), kPair.second.m_aNormals.begin(), kPair.second.m_aNormals.end());
+            materialModel.positionList.insert(materialModel.positionList.end(), model.second.positionList.begin(), model.second.positionList.end());
+            materialModel.texCoordList.insert(materialModel.texCoordList.end(), model.second.texCoordList.begin(), model.second.texCoordList.end());
+            materialModel.normalList.insert(materialModel.normalList.end(), model.second.normalList.begin(), model.second.normalList.end());
         }
 
-        FILE *pFile = nullptr;
-        _wfopen_s(&pFile, strOutput, L"wb");
-        if (pFile != nullptr)
+        FILE *file = nullptr;
+        _wfopen_s(&file, fileNameOutput, L"wb");
+        if (file != nullptr)
         {
             UINT32 nGEKX = *(UINT32 *)"GEKX";
             UINT16 nType = 0;
             UINT16 nVersion = 2;
-            UINT32 nNumMaterials = aMaterials.size();
-            fwrite(&nGEKX, sizeof(UINT32), 1, pFile);
-            fwrite(&nType, sizeof(UINT16), 1, pFile);
-            fwrite(&nVersion, sizeof(UINT16), 1, pFile);
-            fwrite(&nAABB, sizeof(aabb), 1, pFile);
-            fwrite(&nNumMaterials, sizeof(UINT32), 1, pFile);
+            UINT32 materialCount = materialModelList.size();
+            fwrite(&nGEKX, sizeof(UINT32), 1, file);
+            fwrite(&nType, sizeof(UINT16), 1, file);
+            fwrite(&nVersion, sizeof(UINT16), 1, file);
+            fwrite(&alignedBox, sizeof(Gek::Shape::AlignedBox), 1, file);
+            fwrite(&materialCount, sizeof(UINT32), 1, file);
 
-            MODEL kFinal;
-            for (auto &kPair : aMaterials)
+            Model finalModelData;
+            for (auto &materialModel : materialModelList)
             {
-                CStringA strMaterial = (kPair.first);
-                strMaterial.Replace("/", "\\");
+                CStringA material = (materialModel.first);
+                material.Replace("/", "\\");
 
-                CPathA kPath = strMaterial;
+                CPathA kPath(material);
                 kPath.RemoveExtension();
-                strMaterial = kPath.m_strPath;
+                material = LPCSTR(kPath);
 
-                int nTexturesRoot = strMaterial.Find("\\textures\\");
-                if (nTexturesRoot >= 0)
+                int texturesPathIndex = material.Find("\\textures\\");
+                if (texturesPathIndex >= 0)
                 {
-                    strMaterial = strMaterial.Mid(nTexturesRoot + 10);
+                    material = material.Mid(texturesPathIndex + 10);
                 }
                 
-                if (strMaterial.Right(9).CompareNoCase(".colormap") == 0)
+                if (material.Right(9).CompareNoCase(".colormap") == 0)
                 {
-                    strMaterial = strMaterial.Left(strMaterial.GetLength() - 9);
+                    material = material.Left(material.GetLength() - 9);
                 }
 
-                fwrite(strMaterial.GetString(), (strMaterial.GetLength() + 1), 1, pFile);
+                fwrite(material.GetString(), (material.GetLength() + 1), 1, file);
 
-                printf("-< Material: %s\r\n", strMaterial.GetString());
-                printf("--< Num. Vertices: %d\r\n", kPair.second.m_aVertices.size());
-                printf("--< Num. Indices: %d\r\n", kPair.second.m_aIndices.size());
+                printf("-< Material: %s\r\n", material.GetString());
+                printf("--< Num. Vertices: %d\r\n", materialModel.second.positionList.size());
+                printf("--< Num. Indices: %d\r\n", materialModel.second.indexList.size());
 
-                UINT32 nFirstVertex = kFinal.m_aVertices.size();
-                UINT32 nFirstIndex = kFinal.m_aIndices.size();
-                UINT32 nNumIndices = kPair.second.m_aIndices.size();
-                fwrite(&nFirstVertex, sizeof(UINT32), 1, pFile);
-                fwrite(&nFirstIndex, sizeof(UINT32), 1, pFile);
-                fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
+                UINT32 firstVertex = finalModelData.positionList.size();
+                UINT32 firstIndex = finalModelData.indexList.size();
+                UINT32 indexCount = materialModel.second.indexList.size();
+                fwrite(&firstVertex, sizeof(UINT32), 1, file);
+                fwrite(&firstIndex, sizeof(UINT32), 1, file);
+                fwrite(&indexCount, sizeof(UINT32), 1, file);
 
-                kFinal.m_aVertices.insert(kFinal.m_aVertices.end(), kPair.second.m_aVertices.begin(), kPair.second.m_aVertices.end());
-                kFinal.m_aTexCoords.insert(kFinal.m_aTexCoords.end(), kPair.second.m_aTexCoords.begin(), kPair.second.m_aTexCoords.end());
-                kFinal.m_aNormals.insert(kFinal.m_aNormals.end(), kPair.second.m_aNormals.begin(), kPair.second.m_aNormals.end());
-                kFinal.m_aIndices.insert(kFinal.m_aIndices.end(), kPair.second.m_aIndices.begin(), kPair.second.m_aIndices.end());
+                finalModelData.positionList.insert(finalModelData.positionList.end(), materialModel.second.positionList.begin(), materialModel.second.positionList.end());
+                finalModelData.texCoordList.insert(finalModelData.texCoordList.end(), materialModel.second.texCoordList.begin(), materialModel.second.texCoordList.end());
+                finalModelData.normalList.insert(finalModelData.normalList.end(), materialModel.second.normalList.begin(), materialModel.second.normalList.end());
+                finalModelData.indexList.insert(finalModelData.indexList.end(), materialModel.second.indexList.begin(), materialModel.second.indexList.end());
             }
 
-            UINT32 nNumVertices = kFinal.m_aVertices.size();
-            fwrite(&nNumVertices, sizeof(UINT32), 1, pFile);
-            printf("-< Num. Total Vertices: %d\r\n", kFinal.m_aVertices.size());
-            fwrite(kFinal.m_aVertices.data(), sizeof(Math::Float3), kFinal.m_aVertices.size(), pFile);
-            fwrite(kFinal.m_aTexCoords.data(), sizeof(Math::Float2), kFinal.m_aTexCoords.size(), pFile);
-            fwrite(kFinal.m_aNormals.data(), sizeof(Math::Float3), kFinal.m_aNormals.size(), pFile);
+            UINT32 vertexCount = finalModelData.positionList.size();
+            fwrite(&vertexCount, sizeof(UINT32), 1, file);
+            printf("-< Num. Total Vertices: %d\r\n", finalModelData.positionList.size());
+            fwrite(finalModelData.positionList.data(), sizeof(Gek::Math::Float3), finalModelData.positionList.size(), file);
+            fwrite(finalModelData.texCoordList.data(), sizeof(Gek::Math::Float2), finalModelData.texCoordList.size(), file);
+            fwrite(finalModelData.normalList.data(), sizeof(Gek::Math::Float3), finalModelData.normalList.size(), file);
 
-            UINT32 nNumIndices = kFinal.m_aIndices.size();
-            fwrite(&nNumIndices, sizeof(UINT32), 1, pFile);
-            printf("-< Num. Total Indices: %d\r\n", kFinal.m_aIndices.size());
-            fwrite(kFinal.m_aIndices.data(), sizeof(UINT16), kFinal.m_aIndices.size(), pFile);
+            UINT32 indexCount = finalModelData.indexList.size();
+            fwrite(&indexCount, sizeof(UINT32), 1, file);
+            printf("-< Num. Total Indices: %d\r\n", finalModelData.indexList.size());
+            fwrite(finalModelData.indexList.data(), sizeof(UINT16), finalModelData.indexList.size(), file);
 
-            fclose(pFile);
-            pFile = nullptr;
-            printf("< Output Model Saved: %S\r\n", strOutput.GetString());
+            fclose(file);
+            file = nullptr;
+            printf("< Output Model Saved: %S\r\n", fileNameOutput.GetString());
         }
         else
         {
-            throw CMyException(__LINE__, L"ERROR: Unable to Save Output: %S\r\n", strOutput.GetString());
+            throw OptimizerException(__LINE__, L"ERROR: Unable to Save Output: %S\r\n", fileNameOutput.GetString());
         }
 
-        aiReleaseImport(pScene);
+        aiReleaseImport(scene);
     }
-    catch (CMyException kException)
+    catch (OptimizerException exception)
     {
-        printf("ERROR: Error (%d): %S", kException.m_nLine, kException.m_strMessage.GetString());
+        printf("ERROR: Error (%d): %S", exception.line, exception.message.GetString());
     }
     catch (...)
     {

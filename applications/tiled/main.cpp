@@ -1,165 +1,168 @@
-#include "GEKMath.h"
-#include "GEKShape.h"
-#include "GEKUtility.h"
+#include "GEK\Math\Vector3.h"
+#include "GEK\Math\Matrix4x4.h"
+#include "GEK\Shape\AlignedBox.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\XML.h"
+#include "GEK\Context\Common.h"
 #include <atlpath.h>
 #include <algorithm>
 #include <map>
 
-int wmain(int nNumArguments, wchar_t *astrArguments[], wchar_t *astrEnvironmentVariables)
+int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariableList)
 {
     printf("GEK Tiled Map Converter\r\n");
 
-    CStringW strInput;
-    CStringW strOutput;
-    CStringW strTileSet;
-    for (int nArgument = 1; nArgument < nNumArguments; nArgument++)
+    CStringW fileNameInput;
+    CStringW fileNameOutput;
+    CStringW tileSet;
+    for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
     {
-        if (_wcsicmp(astrArguments[nArgument], L"-input") == 0 && ++nArgument < nNumArguments)
+        if (_wcsicmp(argumentList[argumentIndex], L"-input") == 0 && ++argumentIndex < argumentCount)
         {
-            strInput = astrArguments[nArgument];
+            fileNameInput = argumentList[argumentIndex];
         }
-        else if (_wcsicmp(astrArguments[nArgument], L"-output") == 0 && ++nArgument < nNumArguments)
+        else if (_wcsicmp(argumentList[argumentIndex], L"-output") == 0 && ++argumentIndex < argumentCount)
         {
-            strOutput = astrArguments[nArgument];
+            fileNameOutput = argumentList[argumentIndex];
         }
-        else if (_wcsicmp(astrArguments[nArgument], L"-tileset") == 0 && ++nArgument < nNumArguments)
+        else if (_wcsicmp(argumentList[argumentIndex], L"-tileset") == 0 && ++argumentIndex < argumentCount)
         {
-            strTileSet = astrArguments[nArgument];
+            tileSet = argumentList[argumentIndex];
         }
     }
 
-    if (strInput.IsEmpty() || strOutput.IsEmpty())
+    if (fileNameInput.IsEmpty() || fileNameOutput.IsEmpty())
     {
-        CPathW strFile(astrArguments[0]);
+        CPathW strFile(argumentList[0]);
         strFile.StripPath();
         printf("%S -input <file> -output <file> -tileset <set, optional>\r\n", strFile.m_strPath.GetString());
         return 0;
     }
 
-    if (!strTileSet.IsEmpty())
+    if (!tileSet.IsEmpty())
     {
-        CPathW kTileSet(strTileSet);
+        CPathW kTileSet(tileSet);
         kTileSet.AddBackslash();
-        strTileSet = kTileSet.m_strPath;
+        tileSet = kTileSet.m_strPath;
     }
 
-    FILE *pFile = nullptr;
-    _wfopen_s(&pFile, strOutput, L"w+b");
-    if (pFile)
+    FILE *file = nullptr;
+    _wfopen_s(&file, fileNameOutput, L"w+b");
+    if (file)
     {
-        fprintf(pFile, "<?xml version=\"1.0\"?>\r\n");
-        fprintf(pFile, "<world name=\"Demo\">\r\n");
-        fprintf(pFile, "\t<population>\r\n");
+        fprintf(file, "<?xml version=\"1.0\"?>\r\n");
+        fprintf(file, "<world name=\"Demo\">\r\n");
+        fprintf(file, "\t<population>\r\n");
 
-        CLibXMLDoc kDocument;
-        HRESULT hRetVal = kDocument.Load(strInput);
+        Gek::Xml::Document xmlDocument;
+        HRESULT hRetVal = xmlDocument.load(fileNameInput);
         if (SUCCEEDED(hRetVal))
         {
-            CLibXMLNode &kMapNode = kDocument.GetRoot();
-            if (kMapNode && kMapNode.GetType().CompareNoCase(L"map") == 0)
+            Gek::Xml::Node &xmpMapNode = xmlDocument.getRoot();
+            if (xmpMapNode && xmpMapNode.getType().CompareNoCase(L"map") == 0)
             {
-                UINT32 nXSize = StrToUINT32(kMapNode.GetAttribute(L"width"));
-                UINT32 nYSize = StrToUINT32(kMapNode.GetAttribute(L"height"));
-                float nTileXSize = StrToFloat(kMapNode.GetAttribute(L"tilewidth"));
-                float nTileYSize = StrToFloat(kMapNode.GetAttribute(L"tileheight"));
-                CLibXMLNode &kObjectGroupNode = kMapNode.FirstChildElement(L"objectgroup");
-                while (kObjectGroupNode)
+                UINT32 mapWidth = Gek::String::getUINT32(xmpMapNode.getAttribute(L"width"));
+                UINT32 mapHeight = Gek::String::getUINT32(xmpMapNode.getAttribute(L"height"));
+                float tileWidth = Gek::String::getFloat(xmpMapNode.getAttribute(L"tilewidth"));
+                float tileHeight = Gek::String::getFloat(xmpMapNode.getAttribute(L"tileheight"));
+                Gek::Xml::Node &xmlObjectGroupNode = xmpMapNode.firstChildElement(L"objectgroup");
+                while (xmlObjectGroupNode)
                 {
-                    float nZPosition = StrToFloat(kObjectGroupNode.GetAttribute(L"name"));
+                    Gek::Math::Float3 tilePosition;
+                    tilePosition.z = Gek::String::getFloat(xmlObjectGroupNode.getAttribute(L"name"));
 
-                    UINT32 nTileIndex = 0;
-                    CLibXMLNode &kObjectNode = kObjectGroupNode.FirstChildElement(L"object");
-                    while (kObjectNode)
+                    Gek::Xml::Node &xmlObjectNode = xmlObjectGroupNode.firstChildElement(L"object");
+                    while (xmlObjectNode)
                     {
-                        UINT32 nID = StrToUINT32(kObjectNode.GetAttribute(L"id"));
-                        CStringW strType(kObjectNode.GetAttribute(L"type"));
-                        float nXPosition = (StrToFloat(kObjectNode.GetAttribute(L"x")) / nTileXSize);
-                        float nYPosition = (StrToFloat(kObjectNode.GetAttribute(L"y")) / nTileYSize);
-                        if (kObjectNode.HasAttribute(L"name"))
+                        CStringW tileType(xmlObjectNode.getAttribute(L"type"));
+                        tilePosition.x = (Gek::String::getFloat(xmlObjectNode.getAttribute(L"x")) / tileWidth);
+                        tilePosition.y = (Gek::String::getFloat(xmlObjectNode.getAttribute(L"y")) / tileHeight);
+                        if (xmlObjectNode.hasAttribute(L"name"))
                         {
-                            CStringW strName = kObjectNode.GetAttribute(L"name");
-                            printf("Entity %d (%S): Type(%S), (%f,%f,%f)\r\n", nID, strName.GetString(), strType.GetString(), nXPosition, nYPosition, nZPosition);
-                            fprintf(pFile, "\t\t<entity name=\"%S\">\r\n", strName.GetString());
+                            CStringW tileName = xmlObjectNode.getAttribute(L"name");
+                            printf("Entity (%S): Type(%S), (%s)\r\n", tileName.GetString(), tileType.GetString(), Gek::String::setFloat3(tilePosition).GetString());
+                            fprintf(file, "\t\t<entity name=\"%S\">\r\n", tileName.GetString());
                         }
                         else
                         {
-                            printf("Entity %d: Type(%S), (%f,%f,%f)\r\n", nID, strType.GetString(), nXPosition, nYPosition, nZPosition);
-                            fprintf(pFile, "\t\t<entity>\r\n");
+                            printf("Entity: Type(%S), (%s)\r\n", tileType.GetString(), Gek::String::setFloat3(tilePosition).GetString());
+                            fprintf(file, "\t\t<entity>\r\n");
                         }
 
 
-                        fprintf(pFile, "\t\t\t<transform position=\"%f,%f,%f\" />\r\n", nXPosition, nYPosition, nZPosition);
-                        if (strType.CompareNoCase(L"player") == 0)
+                        fprintf(file, "\t\t\t<transform position=\"%s\" />\r\n", Gek::String::setFloat3(tilePosition).GetString());
+                        if (tileType.CompareNoCase(L"player") == 0)
                         {
-                            fprintf(pFile, "\t\t\t<player outer_radius=\"1\" inner_radius=\".25\" height=\"1.9\" stair_step=\".25\"/>\r\n");
-                            fprintf(pFile, "\t\t\t<mass value=\"250\" />\r\n");
+                            fprintf(file, "\t\t\t<player outer_radius=\"1\" inner_radius=\".25\" height=\"1.9\" stair_step=\".25\"/>\r\n");
+                            fprintf(file, "\t\t\t<mass value=\"250\" />\r\n");
                         }
-                        else if (strType.CompareNoCase(L"light") == 0)
+                        else if (tileType.CompareNoCase(L"light") == 0)
                         {
-                            fprintf(pFile, "\t\t\t<pointlight radius=\"lerp(15, 30, arand(1))\" />\r\n");
-                            fprintf(pFile, "\t\t\t<color value=\"lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1\" />\r\n");
+                            fprintf(file, "\t\t\t<pointlight radius=\"lerp(15, 30, arand(1))\" />\r\n");
+                            fprintf(file, "\t\t\t<color value=\"lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1\" />\r\n");
                         }
-                        if (strType.CompareNoCase(L"boulder") == 0)
+                        if (tileType.CompareNoCase(L"boulder") == 0)
                         {
-                            fprintf(pFile, "\t\t\t<dynamicbody shape=\"*sphere\" material=\"rock\" />\r\n");
-                            fprintf(pFile, "\t\t\t<mass value=\"lerp(25,50,arand(1))\" />\r\n");
-                            fprintf(pFile, "\t\t\t<size value=\"lerp(1,3,arand(1))\" />\r\n");
-                            fprintf(pFile, "\t\t\t<size value=\"lerp(1,3,arand(1))\" />\r\n");
-                            fprintf(pFile, "\t\t\t<model source=\"boulder\" />\r\n");
-                        }
-
-                        fprintf(pFile, "\t\t</entity>\r\n");
-                        if (strType.CompareNoCase(L"player") == 0 && kObjectNode.HasAttribute(L"name"))
-                        {
-                            fprintf(pFile, "\t\t<entity>\r\n");
-                            fprintf(pFile, "\t\t\t<transform />\r\n");
-                            fprintf(pFile, "\t\t\t<viewer type=\"perspective\" field_of_view=\"90\" minimum_distance=\"0.5\" maximum_distance=\"200\" pass=\"toon\"/>\r\n");
-                            fprintf(pFile, "\t\t\t<follow target=\"%S\" offset=\"25,0,0\" />\r\n", kObjectNode.GetAttribute(L"name").GetString());
-                            fprintf(pFile, "\t\t</entity>\r\n");
+                            fprintf(file, "\t\t\t<dynamicbody shape=\"*sphere\" material=\"rock\" />\r\n");
+                            fprintf(file, "\t\t\t<mass value=\"lerp(25,50,arand(1))\" />\r\n");
+                            fprintf(file, "\t\t\t<size value=\"lerp(1,3,arand(1))\" />\r\n");
+                            fprintf(file, "\t\t\t<size value=\"lerp(1,3,arand(1))\" />\r\n");
+                            fprintf(file, "\t\t\t<model source=\"boulder\" />\r\n");
                         }
 
-                        kObjectNode = kObjectNode.NextSiblingElement(L"object");
+                        fprintf(file, "\t\t</entity>\r\n");
+                        if (tileType.CompareNoCase(L"player") == 0 && xmlObjectNode.hasAttribute(L"name"))
+                        {
+                            fprintf(file, "\t\t<entity>\r\n");
+                            fprintf(file, "\t\t\t<transform />\r\n");
+                            fprintf(file, "\t\t\t<viewer type=\"perspective\" field_of_view=\"90\" minimum_distance=\"0.5\" maximum_distance=\"200\" pass=\"toon\"/>\r\n");
+                            fprintf(file, "\t\t\t<follow target=\"%S\" offset=\"25,0,0\" />\r\n", xmlObjectNode.getAttribute(L"name").GetString());
+                            fprintf(file, "\t\t</entity>\r\n");
+                        }
+
+                        xmlObjectNode = xmlObjectNode.nextSiblingElement(L"object");
                     };
 
-                    kObjectGroupNode = kObjectGroupNode.NextSiblingElement(L"objectgroup");
+                    xmlObjectGroupNode = xmlObjectGroupNode.nextSiblingElement(L"objectgroup");
                 };
 
-                CLibXMLNode &kLayerNode = kMapNode.FirstChildElement(L"layer");
-                while (kLayerNode)
+                Gek::Xml::Node &xmlLayerNode = xmpMapNode.firstChildElement(L"layer");
+                while (xmlLayerNode)
                 {
-                    float nZPosition = StrToFloat(kLayerNode.GetAttribute(L"name"));
-                    CLibXMLNode &kTileNode = kLayerNode.FirstChildElement(L"data").FirstChildElement(L"tile");
-                    for (UINT32 nYIndex = 0; nYIndex < nYSize; nYIndex++)
+                    Gek::Math::Float3 tilePosition;
+                    tilePosition.z = Gek::String::getFloat(xmlLayerNode.getAttribute(L"name"));
+                    Gek::Xml::Node &xmlTileNode = xmlLayerNode.firstChildElement(L"data").firstChildElement(L"tile");
+                    for (UINT32 tileY = 0; tileY < mapHeight; tileY++)
                     {
-                        for (UINT32 nXIndex = 0; nXIndex < nXSize; nXIndex++)
+                        for (UINT32 tileX = 0; tileX < mapWidth; tileX++)
                         {
-                            UINT32 nGID = StrToUINT32(kTileNode.GetAttribute(L"gid"));
-                            if (nGID > 0)
+                            UINT32 tileID = Gek::String::getUINT32(xmlTileNode.getAttribute(L"gid"));
+                            if (tileID > 0)
                             {
-                                float nXPosition = float(nXIndex);
-                                float nYPosition = float(nYSize - 1 - nYIndex);
-                                printf("Tile %S%d: (%f,%f,%f)\r\n", strTileSet.GetString(), nGID, nXPosition, nYPosition, nZPosition);
+                                tilePosition.x = float(tileX);
+                                tilePosition.y = float(mapHeight - 1 - tileY);
+                                printf("Tile %S%d: (%s)\r\n", tileSet.GetString(), tileID, Gek::String::setFloat3(tilePosition).GetString());
 
-                                fprintf(pFile, "\t\t<entity>\r\n");
-                                fprintf(pFile, "\t\t\t<transform position=\"%f,%f,%f\" />\r\n", nXPosition, nYPosition, nZPosition);
-                                fprintf(pFile, "\t\t\t<model source=\"%S%d\" />\r\n", strTileSet.GetString(), nGID);
-                                fprintf(pFile, "\t\t\t<dynamicbody shape=\"%S%d\" />\r\n", strTileSet.GetString(), nGID);
-                                fprintf(pFile, "\t\t\t<mass value=\"0\" />\r\n");
-                                fprintf(pFile, "\t\t</entity>\r\n");
+                                fprintf(file, "\t\t<entity>\r\n");
+                                fprintf(file, "\t\t\t<transform position=\"%s\" />\r\n", Gek::String::setFloat3(tilePosition).GetString());
+                                fprintf(file, "\t\t\t<model source=\"%S%d\" />\r\n", tileSet.GetString(), tileID);
+                                fprintf(file, "\t\t\t<dynamicbody shape=\"%S%d\" />\r\n", tileSet.GetString(), tileID);
+                                fprintf(file, "\t\t\t<mass value=\"0\" />\r\n");
+                                fprintf(file, "\t\t</entity>\r\n");
                             }
 
-                            kTileNode = kTileNode.NextSiblingElement(L"tile");
+                            xmlTileNode = xmlTileNode.nextSiblingElement(L"tile");
                         }
                     }
 
-                    kLayerNode = kLayerNode.NextSiblingElement(L"layer");
+                    xmlLayerNode = xmlLayerNode.nextSiblingElement(L"layer");
                 };
             }
         }
         
-        fprintf(pFile, "\t</population>\r\n");
-        fprintf(pFile, "</world>\r\n");
-        fclose(pFile);
+        fprintf(file, "\t</population>\r\n");
+        fprintf(file, "</world>\r\n");
+        fclose(file);
     }
 
     printf("\r\n");
