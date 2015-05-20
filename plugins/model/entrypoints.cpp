@@ -14,14 +14,14 @@ namespace Gek
             namespace Model
             {
                 DECLARE_REGISTERED_CLASS(Component);
-                DECLARE_INTERFACE_IID(Class, "06FD2921-89A3-490C-BBF6-9C909D921E96");
+                DECLARE_INTERFACE_IID(Class, "9D68F36F-34C3-4E94-85F7-2420171BC5A9");
             }; // namespace Model
         }; // namespace Components
         
         namespace Model
         {
             DECLARE_REGISTERED_CLASS(System);
-            DECLARE_INTERFACE_IID(Class, "BCF7CC29-F375-4F29-9DA7-921F6A78E4E3");
+            DECLARE_INTERFACE_IID(Class, "975839FD-6605-4BDB-AB29-ADE09CA0BC91");
         }; // namespace Model
     }; // namespace Engine
 }; // namespace Gek
