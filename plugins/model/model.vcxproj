@@ -43,14 +43,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\api;$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName).debug</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\api;$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
@@ -95,7 +95,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Source\CGEKComponentModel.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="ModelSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
@@ -109,17 +110,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\api\GEKAPI.h" />
-    <ClInclude Include="..\..\api\GEKAPICLSIDs.h" />
-    <ClInclude Include="..\..\api\IGEKComponent.h" />
-    <ClInclude Include="..\..\api\IGEKEngineCore.h" />
-    <ClInclude Include="..\..\api\IGEKInputManager.h" />
-    <ClInclude Include="..\..\api\IGEKMaterialManager.h" />
-    <ClInclude Include="..\..\api\IGEKProgramManager.h" />
-    <ClInclude Include="..\..\api\IGEKRenderManager.h" />
-    <ClInclude Include="..\..\api\IGEKSceneManager.h" />
-    <ClInclude Include="GEKModel.h" />
-    <ClInclude Include="Include\CGEKComponentModel.h" />
+    <ClInclude Include="GEK\Engine\Model.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

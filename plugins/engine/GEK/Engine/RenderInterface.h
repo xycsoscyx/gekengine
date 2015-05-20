@@ -18,6 +18,15 @@ namespace Gek
                 Normal = 1 << 2,
             };
 
+            DECLARE_INTERFACE_IID(Interface, "C851EC91-8B07-4793-B9F5-B15C54E92014") : virtual public IUnknown
+            {
+                STDMETHOD_(Handle, loadProgram)             (THIS_ LPCWSTR fileName) PURE;
+                STDMETHOD_(void, enableProgram)             (THIS_ Handle programHandle) PURE;
+
+                STDMETHOD_(Handle, loadMaterial)            (THIS_ LPCWSTR fileName) PURE;
+                STDMETHOD_(void, enableMaterial)            (THIS_ Handle materialHandle) PURE;
+            };
+
             DECLARE_INTERFACE_IID(Observer, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Gek::ObserverInterface
             {
                 STDMETHOD_(void, onRenderBegin)             (THIS_ Handle viewerHandle) { };
