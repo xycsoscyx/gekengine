@@ -43,7 +43,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(SolutionDir)..\plugins\system;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName).debug</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>

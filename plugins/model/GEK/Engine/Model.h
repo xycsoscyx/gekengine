@@ -23,18 +23,12 @@ namespace Gek
                     HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
                     HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
 
-                    inline operator CStringW&()
+                    inline operator LPCWSTR () const
                     {
-                        return value;
+                        return value.GetString();
                     }
 
-                    inline operator const CStringW&() const
-                    {
-                        return value;
-                    }
-
-
-                    inline CStringW &operator = (CStringW value)
+                    inline CStringW &operator = (LPCWSTR value)
                     {
                         this->value = value;
                         return this->value;

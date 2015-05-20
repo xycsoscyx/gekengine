@@ -57,7 +57,7 @@ namespace Gek
 
             TYPE getDistance(const Math::BaseVector3<TYPE> &point) const
             {
-                return (normal.Dot(point) + distance);
+                return (normal.dot(point) + distance);
             }
         };
 

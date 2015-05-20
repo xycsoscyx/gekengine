@@ -354,7 +354,7 @@ namespace Gek
                 euler.y = std::asin(_31);
 
                 TYPE cosAngle = std::cos(euler.y);
-                if (abs(cosAngle) > 0.005)
+                if (std::abs(cosAngle) > 0.005)
                 {
                     euler.x = std::atan2(-(_32 / cosAngle), (_33 / cosAngle));
                     euler.z = std::atan2(-(_21 / cosAngle), (_11 / cosAngle));
@@ -415,7 +415,7 @@ namespace Gek
             BaseMatrix4x4 getInverse(void) const
             {
                 TYPE determinant(getDeterminant());
-                if (abs(determinant) < _EPSILON)
+                if (std::abs(determinant) < Epsilon)
                 {
                     return BaseMatrix4x4();
                 }

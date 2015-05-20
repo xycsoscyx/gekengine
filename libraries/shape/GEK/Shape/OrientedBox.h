@@ -30,17 +30,17 @@ namespace Gek
             }
 
             BaseOrientedBox(const BaseAlignedBox<TYPE> &box, const Math::BaseQuaternion<TYPE> &rotation, const Math::BaseVector3<TYPE> &translation)
+                : rotation(rotation)
+                , position(translation + box.getCenter())
+                , halfsize(box.getSize() * 0.5f)
             {
-                rotation = rotation;
-                position = (translation + box.getCenter());
-                halfsize = (box.getSize() * 0.5f);
             }
 
             BaseOrientedBox(const BaseAlignedBox<TYPE> &box, const Math::BaseMatrix4x4<TYPE> &matrix)
+                : rotation(matrix)
+                , position(matrix.translation + box.getCenter())
+                , halfsize(box.getSize() * 0.5f)
             {
-                rotation = matrix;
-                position = (matrix.translation + box.getCenter());
-                halfsize = (box.getSize() * 0.5f);
             }
 
             BaseOrientedBox operator = (const BaseOrientedBox<TYPE> &box)
@@ -54,9 +54,9 @@ namespace Gek
             int getPosition(const BasePlane<TYPE> &plane) const
             {
                 TYPE distance = plane.getDistance(position);
-                TYPE radiusX = fabs(rotation.rx.xyz.Dot(plane.normal) * halfsize.x);
-                TYPE radiusY = fabs(rotation.ry.xyz.Dot(plane.normal) * halfsize.y);
-                TYPE radiusZ = fabs(rotation.rz.xyz.Dot(plane.normal) * halfsize.z);
+                TYPE radiusX = std::abs(rotation.rx.xyz.dot(plane.normal) * halfsize.x);
+                TYPE radiusY = std::abs(rotation.ry.xyz.dot(plane.normal) * halfsize.y);
+                TYPE radiusZ = std::abs(rotation.rz.xyz.dot(plane.normal) * halfsize.z);
                 TYPE radius = (radiusX + radiusY + radiusZ);
                 if (distance < -radius)
                 {

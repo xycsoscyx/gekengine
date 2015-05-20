@@ -205,7 +205,7 @@ namespace Gek
                     adjustedRotation.w = -adjustedRotation.w;
                 }
 
-                if (abs(1.0f - cosAngle) < Epsilon)
+                if (std::abs(1.0f - cosAngle) < Epsilon)
                 {
                     return blend((*this), adjustedRotation, factor);
                 }
