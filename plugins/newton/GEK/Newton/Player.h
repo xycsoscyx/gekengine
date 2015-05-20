@@ -10,23 +10,20 @@ namespace Gek
 {
     namespace Newton
     {
-        namespace Components
+        namespace Player
         {
-            namespace Player
+            static const Handle identifier = 13;
+            struct Data
             {
-                static const Handle identifier = 13;
-                struct Data
-                {
-                    float outerRadius;
-                    float innerRadius;
-                    float height;
-                    float stairStep;
+                float outerRadius;
+                float innerRadius;
+                float height;
+                float stairStep;
 
-                    Data(void);
-                    HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                    HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-                };
-            }; // namespace Player
-        }; // namespace Components
+                Data(void);
+                HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+                HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+            };
+        }; // namespace Player
     }; // namespace Newton
 }; // namespace Gek

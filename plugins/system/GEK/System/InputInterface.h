@@ -159,8 +159,8 @@ namespace Gek
                 MEDIASELECT     = 0xED,    /* Media Select */
 
                 /*
-                 *  Alternate names for keys, to facilitate transition from DOS.
-                 */
+                    *  Alternate names for keys, to facilitate transition from DOS.
+                    */
                 BACKSPACE       = BACK,            /* backspace */
                 NUMPADSTAR      = MULTIPLY,        /* * on numeric keypad */
                 LALT            = LMENU,           /* left Alt */
@@ -188,14 +188,14 @@ namespace Gek
                 DOWN = 1 << 2,
                 PRESSED = 1 << 3,
             };
-        }; // State
+        }; // namespace State
 
         DECLARE_INTERFACE_IID(DeviceInterface, "58BF03BB-69A2-45FC-B124-6DA702E949F9") : virtual public IUnknown
         {
             STDMETHOD(update)                           (THIS) PURE;
 
             STDMETHOD_(UINT32, getButtonCount)          (THIS) const PURE;
-            STDMETHOD_(UINT32, getButtonState)          (THIS_ UINT32 buttonIndex) const PURE;
+            STDMETHOD_(UINT8, getButtonState)           (THIS_ UINT32 buttonIndex) const PURE;
 
             STDMETHOD_(Math::Float3, getAxis)           (THIS) const PURE;
             STDMETHOD_(Math::Float3, getRotation)       (THIS) const PURE;

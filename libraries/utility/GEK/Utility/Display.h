@@ -8,24 +8,21 @@ namespace Gek
 {
     namespace Display
     {
-        namespace AspectRatio
+        enum class AspectRatio : UINT8
         {
-            enum
-            {
-                Unknown = -1,
-                _4x3 = 0,
-                _16x9 = 1,
-                _16x10 = 2,
-            };
-        }; // namespace AspectRatios
+            None = 0,
+            _4x3,
+            _16x9,
+            _16x10,
+        };
 
         struct Mode
         {
             UINT32 width;
             UINT32 height;
-            UINT8 aspectRatio;
+            AspectRatio aspectRatio;
 
-            Mode(UINT32 width, UINT32 height, UINT8 aspectRatio)
+            Mode(UINT32 width, UINT32 height, AspectRatio aspectRatio)
                 : width(width)
                 , height(height)
                 , aspectRatio(aspectRatio)

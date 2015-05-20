@@ -42,7 +42,7 @@ namespace Gek
             CComPtr<IDirectInputDevice8> device;
             UINT32 buttonCount;
 
-            std::vector<UINT32> buttonStateList;
+            std::vector<UINT8> buttonStateList;
 
             Math::Float3 axisValues;
             Math::Float3 rotationValues;
@@ -68,7 +68,7 @@ namespace Gek
                 return buttonCount;
             }
 
-            STDMETHODIMP_(UINT32) getButtonState(UINT32 buttonIndex) const
+            STDMETHODIMP_(UINT8) getButtonState(UINT32 buttonIndex) const
             {
                 return buttonStateList[buttonIndex];
             }

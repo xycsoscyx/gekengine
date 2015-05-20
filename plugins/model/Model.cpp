@@ -5,54 +5,48 @@
 
 namespace Gek
 {
-    namespace Engine
+    namespace Model
     {
-        namespace Components
+        Data::Data(void)
         {
-            namespace Model
+        }
+
+        HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+        {
+            componentParameterList[L""] = value;
+            return S_OK;
+        }
+
+        HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+        {
+            Engine::setParameter(componentParameterList, L"", value, [](LPCWSTR value) -> LPCWSTR { return value; });
+            return S_OK;
+        }
+
+        class Component : public Context::BaseUser
+            , public Engine::BaseComponent < Data >
+        {
+        public:
+            Component(void)
             {
-                Data::Data(void)
-                {
-                }
+            }
 
-                HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-                {
-                    componentParameterList[L""] = value;
-                    return S_OK;
-                }
+            BEGIN_INTERFACE_LIST(Component)
+                INTERFACE_LIST_ENTRY_COM(Component::Interface)
+            END_INTERFACE_LIST_USER
 
-                HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-                {
-                    setParameter(componentParameterList, L"", value, [](LPCWSTR value) -> LPCWSTR { return value; });
-                    return S_OK;
-                }
+            // Component::Interface
+            STDMETHODIMP_(LPCWSTR) getName(void) const
+            {
+                return L"Model";
+            }
 
-                class Component : public Context::BaseUser
-                    , public BaseComponent < Data >
-                {
-                public:
-                    Component(void)
-                    {
-                    }
+            STDMETHODIMP_(Handle) getIdentifier(void) const
+            {
+                return identifier;
+            }
+        };
 
-                    BEGIN_INTERFACE_LIST(Component)
-                        INTERFACE_LIST_ENTRY_COM(Component::Interface)
-                    END_INTERFACE_LIST_USER
-
-                    // Component::Interface
-                    STDMETHODIMP_(LPCWSTR) getName(void) const
-                    {
-                        return L"Model";
-                    }
-
-                    STDMETHODIMP_(Handle) getIdentifier(void) const
-                    {
-                        return identifier;
-                    }
-                };
-
-                REGISTER_CLASS(Component)
-            }; // namespace Model
-        }; // namespace Components
-    }; // namespace Engine
+        REGISTER_CLASS(Component)
+    }; // namespace Model
 }; // namespace Gek

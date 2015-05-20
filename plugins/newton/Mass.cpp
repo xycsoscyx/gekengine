@@ -8,53 +8,50 @@ namespace Gek
 {
     namespace Newton
     {
-        namespace Components
+        namespace Mass
         {
-            namespace Mass
+            Data::Data(void)
+                : value(0.0f)
             {
-                Data::Data(void)
-                    : value(0.0f)
+            }
+
+            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+            {
+                componentParameterList[L""] = String::setFloat(value);
+                return S_OK;
+            }
+
+            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+            {
+                Engine::setParameter(componentParameterList, L"", value, String::getFloat);
+                return S_OK;
+            }
+
+            class Component : public Context::BaseUser
+                , public Engine::BaseComponent<Data>
+            {
+            public:
+                Component(void)
                 {
                 }
 
-                HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+                BEGIN_INTERFACE_LIST(Component)
+                    INTERFACE_LIST_ENTRY_COM(Component::Interface)
+                END_INTERFACE_LIST_USER
+
+                // Component::Interface
+                STDMETHODIMP_(LPCWSTR) getName(void) const
                 {
-                    componentParameterList[L""] = String::setFloat(value);
-                    return S_OK;
+                    return L"Mass";
                 }
 
-                HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+                STDMETHODIMP_(Handle) getIdentifier(void) const
                 {
-                    Engine::setParameter(componentParameterList, L"", value, String::getFloat);
-                    return S_OK;
+                    return identifier;
                 }
+            };
 
-                class Component : public Context::BaseUser
-                    , public Engine::BaseComponent<Data>
-                {
-                public:
-                    Component(void)
-                    {
-                    }
-
-                    BEGIN_INTERFACE_LIST(Component)
-                        INTERFACE_LIST_ENTRY_COM(Component::Interface)
-                    END_INTERFACE_LIST_USER
-
-                    // Component::Interface
-                    STDMETHODIMP_(LPCWSTR) getName(void) const
-                    {
-                        return L"Mass";
-                    }
-
-                    STDMETHODIMP_(Handle) getIdentifier(void) const
-                    {
-                        return identifier;
-                    }
-                };
-
-                REGISTER_CLASS(Component)
-            }; // namespace Mass
-        } // namespace Components
+            REGISTER_CLASS(Component)
+        }; // namespace Mass
     }; // namespace Newton
 }; // namespace Gek

@@ -10,14 +10,11 @@ namespace Gek
 {
     namespace Video2D
     {
-        namespace FontStyle
+        enum class FontStyle : UINT8
         {
-            enum
-            {
-                Normal = 0,
-                Italic,
-            };
-        }; // namespace FontStyle
+            Normal = 0,
+            Italic,
+        };
 
         struct GradientPoint
         {

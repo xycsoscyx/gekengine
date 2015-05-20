@@ -37,20 +37,20 @@ namespace Gek
 {
     namespace Newton
     {
-        class BaseBody : virtual public BaseUnknown
+        class BaseNewtonBody : virtual public BaseUnknown
         {
         private:
             Engine::Population::Interface *population;
             Handle entityHandle;
 
         public:
-            BaseBody(Engine::Population::Interface *population, Handle entityHandle)
+            BaseNewtonBody(Engine::Population::Interface *population, Handle entityHandle)
                 : population(population)
                 , entityHandle(entityHandle)
             {
             }
 
-            virtual ~BaseBody(void)
+            virtual ~BaseNewtonBody(void)
             {
             }
 
@@ -67,27 +67,27 @@ namespace Gek
             STDMETHOD_(NewtonBody *, getNewtonBody)     (THIS) const PURE;
 
             // IUnknown
-            BEGIN_INTERFACE_LIST(BaseBody)
+            BEGIN_INTERFACE_LIST(BaseNewtonBody)
             END_INTERFACE_LIST_UNKNOWN
         };
 
-        class DynamicBody : public BaseBody
+        class DynamicNewtonBody : public BaseNewtonBody
                           , public dNewtonDynamicBody
         {
         public:
-            DynamicBody(Engine::Population::Interface *population, dNewton *newton, const dNewtonCollision* const newtonCollision, Handle entityHandle,
+            DynamicNewtonBody(Engine::Population::Interface *population, dNewton *newton, const dNewtonCollision* const newtonCollision, Handle entityHandle,
                 const Engine::Components::Transform::Data &transformComponent,
-                const Newton::Components::Mass::Data &massComponent)
-                : BaseBody(population, entityHandle)
+                const Mass::Data &massComponent)
+                : BaseNewtonBody(population, entityHandle)
                 , dNewtonDynamicBody(newton, massComponent, newtonCollision, nullptr, Math::Float4x4(transformComponent.rotation, transformComponent.position).data, NULL)
             {
             }
 
-            ~DynamicBody(void)
+            ~DynamicNewtonBody(void)
             {
             }
 
-            // BaseBody
+            // BaseNewtonBody
             STDMETHODIMP_(NewtonBody *) getNewtonBody(void) const
             {
                 return GetNewtonBody();
@@ -105,12 +105,12 @@ namespace Gek
             // dNewtonDynamicBody
             void OnForceAndTorque(dFloat frameTime, int threadHandle)
             {
-                auto &massComponent = getPopulationSystem()->getComponent<Components::Mass::Data>(getEntityHandle(), Components::Mass::identifier);
+                auto &massComponent = getPopulationSystem()->getComponent<Mass::Data>(getEntityHandle(), Mass::identifier);
                 //AddForce((GetNewtonSystem()->GetGravity() * massComponent).xyz);
             }
         };
 
-        class Player : public BaseBody
+        class PlayerNewtonBody : public BaseNewtonBody
                      , virtual public dNewtonPlayerManager::dNewtonPlayer
                      , virtual public Engine::Action::Observer
         {
@@ -120,11 +120,11 @@ namespace Gek
             concurrency::concurrent_unordered_map<CStringW, float> singleActionList;
 
         public:
-            Player(Engine::Population::Interface *population, dNewtonPlayerManager *newtonPlayerManager, Handle entityHandle,
+            PlayerNewtonBody(Engine::Population::Interface *population, dNewtonPlayerManager *newtonPlayerManager, Handle entityHandle,
                 const Engine::Components::Transform::Data &transformComponent,
-                const Newton::Components::Mass::Data &massComponent, 
-                const Newton::Components::Player::Data &playerComponent)
-                : BaseBody(population, entityHandle)
+                const Mass::Data &massComponent, 
+                const Player::Data &playerComponent)
+                : BaseNewtonBody(population, entityHandle)
                 , dNewtonPlayerManager::dNewtonPlayer(newtonPlayerManager, nullptr, massComponent, playerComponent.outerRadius, playerComponent.innerRadius,
                     playerComponent.height, playerComponent.stairStep, Math::Float3(0.0f, 1.0f, 0.0f).xyz, Math::Float3(0.0f, 0.0f, 1.0f).xyz, 1)
                 , viewAngle(0.0f)
@@ -132,12 +132,12 @@ namespace Gek
                 SetMatrix(Math::Float4x4(transformComponent.rotation, transformComponent.position).data);
             }
 
-            ~Player(void)
+            ~PlayerNewtonBody(void)
             {
                 //BaseObservable::removeObserver(GetEngineCore(), getClass<Engine::Action::Observer>());
             }
 
-            // BaseBody
+            // BaseNewtonBody
             STDMETHODIMP_(NewtonBody *) getNewtonBody(void) const
             {
                 return GetNewtonBody();
@@ -203,14 +203,14 @@ namespace Gek
                      , public dNewton
         {
         public:
-            struct Material
+            struct Surface
             {
                 float staticFriction;
                 float kineticFriction;
                 float elasticity;
                 float softness;
 
-                Material(void)
+                Surface(void)
                     : staticFriction(0.9f)
                     , kineticFriction(0.5f)
                     , elasticity(0.4f)
@@ -219,14 +219,21 @@ namespace Gek
                 }
             };
 
+            struct Material
+            {
+                UINT32 firstVertex;
+                UINT32 firstIndex;
+                UINT32 indexCount;
+            };
+
         private:
             Engine::Population::Interface *population;
 
             dNewtonPlayerManager *newtonPlayerManager;
 
             Math::Float3 gravity;
-            std::vector<Material> materialList;
-            std::map<CStringW, INT32> materialIndexList;
+            std::vector<Surface> surfaceList;
+            std::map<CStringW, INT32> surfaceIndexList;
             concurrency::concurrent_unordered_map<Handle, CComPtr<IUnknown>> bodyList;
             std::unordered_map<CStringW, std::unique_ptr<dNewtonCollision>> collisionList;
 
@@ -243,8 +250,8 @@ namespace Gek
 
                 bodyList.clear();
                 collisionList.clear();
-                materialList.clear();
-                materialIndexList.clear();
+                surfaceList.clear();
+                surfaceIndexList.clear();
                 DestroyAllBodies();
             }
 
@@ -253,25 +260,25 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_COM(Engine::Population::Observer)
             END_INTERFACE_LIST_USER
 
-            const Material &getMaterial(INT32 materialIndex) const
+            const Surface &getSurface(INT32 surfaceIndex) const
             {
-                if (materialIndex >= 0 && materialIndex < int(materialList.size()))
+                if (surfaceIndex >= 0 && surfaceIndex < int(surfaceList.size()))
                 {
-                    return materialList[materialIndex];
+                    return surfaceList[surfaceIndex];
                 }
                 else
                 {
-                    static const Material defaultMaterial;
-                    return defaultMaterial;
+                    static const Surface defaultSurface;
+                    return defaultSurface;
                 }
             }
 
-            INT32 getContactMaterial(Handle entityHandle, NewtonBody *newtonBody, NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
+            INT32 getContactSurface(Handle entityHandle, NewtonBody *newtonBody, NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
             {
-                if (population->hasComponent(entityHandle, Components::DynamicBody::identifier))
+                if (population->hasComponent(entityHandle, DynamicBody::identifier))
                 {
-                    auto &dynamicBodyComponent = population->getComponent<Components::DynamicBody::Data>(entityHandle, Components::DynamicBody::identifier);
-                    if (dynamicBodyComponent.material.IsEmpty())
+                    auto &dynamicBodyComponent = population->getComponent<DynamicBody::Data>(entityHandle, DynamicBody::identifier);
+                    if (dynamicBodyComponent.surface.IsEmpty())
                     {
                         NewtonCollision *newtonCollision = NewtonMaterialGetBodyCollidingShape(newtonMaterial, newtonBody);
                         if (newtonCollision)
@@ -287,69 +294,69 @@ namespace Gek
                     }
                     else
                     {
-                        return loadMaterial(dynamicBodyComponent.material);
+                        return loadSurface(dynamicBodyComponent.surface);
                     }
                 }
 
                 return -1;
             }
 
-            INT32 loadMaterial(LPCWSTR fileName)
+            INT32 loadSurface(LPCWSTR fileName)
             {
                 REQUIRE_RETURN(fileName, -1);
 
-                INT32 materialIndex = -1;
-                auto materialIterator = materialIndexList.find(fileName);
-                if (materialIterator != materialIndexList.end())
+                INT32 surfaceIndex = -1;
+                auto surfaceIterator = surfaceIndexList.find(fileName);
+                if (surfaceIterator != surfaceIndexList.end())
                 {
-                    materialIndex = (*materialIterator).second;
+                    surfaceIndex = (*surfaceIterator).second;
                 }
                 else
                 {
-                    materialIndexList[fileName] = -1;
+                    surfaceIndexList[fileName] = -1;
 
                     Gek::Xml::Document xmlDocument;
                     if (SUCCEEDED(xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName))))
                     {
-                        Material material;
+                        Surface surface;
                         Gek::Xml::Node &xmlMaterialNode = xmlDocument.getRoot();
-                        if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
+                        if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"surface") == 0)
                         {
                             Gek::Xml::Node &xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
                             if (xmlSurfaceNode)
                             {
                                 if (xmlSurfaceNode.hasAttribute(L"staticfriction"))
                                 {
-                                    material.staticFriction = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"staticfriction"));
+                                    surface.staticFriction = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"staticfriction"));
                                 }
 
                                 if (xmlSurfaceNode.hasAttribute(L"kineticfriction"))
                                 {
-                                    material.kineticFriction = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"kineticfriction"));
+                                    surface.kineticFriction = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"kineticfriction"));
                                 }
 
                                 if (xmlSurfaceNode.hasAttribute(L"elasticity"))
                                 {
-                                    material.elasticity = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"elasticity"));
+                                    surface.elasticity = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"elasticity"));
                                 }
 
                                 if (xmlSurfaceNode.hasAttribute(L"softness"))
                                 {
-                                    material.softness = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"softness"));
+                                    surface.softness = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"softness"));
                                 }
 
-                                materialIndex = materialList.size();
-                                materialIndexList[fileName] = materialIndex;
-                                materialList.push_back(material);
+                                surfaceIndex = surfaceList.size();
+                                surfaceIndexList[fileName] = surfaceIndex;
+                                surfaceList.push_back(surface);
                             }
                         }
                     }
                 }
 
-                return materialIndex;
+                return surfaceIndex;
             }
 
-            dNewtonCollision *createCollision(Handle entityHandle, const Components::DynamicBody::Data &dynamicBodyComponet)
+            dNewtonCollision *createCollision(Handle entityHandle, const DynamicBody::Data &dynamicBodyComponet)
             {
                 Math::Float3 size(1.0f, 1.0f, 1.0f);
                 if (population->hasComponent(entityHandle, Engine::Components::Size::identifier))
@@ -413,7 +420,7 @@ namespace Gek
                 return newtonCollision;
             }
 
-            dNewtonCollision *loadCollision(Handle entityHandle, const Components::DynamicBody::Data &dynamicBodyComponet)
+            dNewtonCollision *loadCollision(Handle entityHandle, const DynamicBody::Data &dynamicBodyComponet)
             {
                 dNewtonCollision *newtonCollision = nullptr;
                 if (dynamicBodyComponet.shape.GetAt(0) == L'*')
@@ -438,7 +445,7 @@ namespace Gek
                         HRESULT resultValue = Gek::FileSystem::load(Gek::String::format(L"%%root%%\\data\\models\\%s.gek", dynamicBodyComponet.shape.GetString()), fileData);
                         if (SUCCEEDED(resultValue))
                         {
-                            UINT8 *rawFileData = &fileData[0];
+                            UINT8 *rawFileData = fileData.data();
                             UINT32 gekIdentifier = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
@@ -456,27 +463,20 @@ namespace Gek
                                 UINT32 materialCount = *((UINT32 *)rawFileData);
                                 rawFileData += sizeof(UINT32);
 
-                                struct RenderMaterial
+                                std::map<CStringA, Material> materialList;
+                                for (UINT32 surfaceIndex = 0; surfaceIndex < materialCount; ++surfaceIndex)
                                 {
-                                    UINT32 firstVertex;
-                                    UINT32 firstIndex;
-                                    UINT32 indexCount;
-                                };
+                                    CStringA materialName = rawFileData;
+                                    rawFileData += (materialName.GetLength() + 1);
 
-                                std::map<CStringA, RenderMaterial> renderMaterialList;
-                                for (UINT32 materialIndex = 0; materialIndex < materialCount; ++materialIndex)
-                                {
-                                    CStringA renderMaterialName = rawFileData;
-                                    rawFileData += (renderMaterialName.GetLength() + 1);
-
-                                    RenderMaterial &renderMaterial = renderMaterialList[renderMaterialName];
-                                    renderMaterial.firstVertex = *((UINT32 *)rawFileData);
+                                    Material &material = materialList[materialName];
+                                    material.firstVertex = *((UINT32 *)rawFileData);
                                     rawFileData += sizeof(UINT32);
 
-                                    renderMaterial.firstIndex = *((UINT32 *)rawFileData);
+                                    material.firstIndex = *((UINT32 *)rawFileData);
                                     rawFileData += sizeof(UINT32);
 
-                                    renderMaterial.indexCount = *((UINT32 *)rawFileData);
+                                    material.indexCount = *((UINT32 *)rawFileData);
                                     rawFileData += sizeof(UINT32);
                                 }
 
@@ -493,7 +493,7 @@ namespace Gek
 
                                 UINT16 *indexList = (UINT16 *)rawFileData;
 
-                                if (renderMaterialList.empty())
+                                if (materialList.empty())
                                 {
                                     std::vector<Math::Float3> pointCloudList(indexCount);
                                     for (UINT32 index = 0; index < indexCount; ++index)
@@ -509,20 +509,20 @@ namespace Gek
                                     if (newtonCollisionMesh != nullptr)
                                     {
                                         newtonCollisionMesh->BeginFace();
-                                        for (auto &renderMaterial : renderMaterialList)
+                                        for (auto &materialPair : materialList)
                                         {
-                                            RenderMaterial &currentMaterial = renderMaterial.second;
-                                            INT32 materialIndex = loadMaterial(CA2W(renderMaterial.first, CP_UTF8));
-                                            for (UINT32 index = 0; index < currentMaterial.indexCount; index += 3)
+                                            Material &material = materialPair.second;
+                                            INT32 surfaceIndex = loadSurface(CA2W(materialPair.first, CP_UTF8));
+                                            for (UINT32 index = 0; index < material.indexCount; index += 3)
                                             {
                                                 Math::Float3 face[3] =
                                                 {
-                                                    vertexList[currentMaterial.firstVertex + indexList[currentMaterial.firstIndex + index + 0]],
-                                                    vertexList[currentMaterial.firstVertex + indexList[currentMaterial.firstIndex + index + 1]],
-                                                    vertexList[currentMaterial.firstVertex + indexList[currentMaterial.firstIndex + index + 2]],
+                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 0]],
+                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 1]],
+                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 2]],
                                                 };
 
-                                                newtonCollisionMesh->AddFace(3, face[0].xyz, sizeof(Math::Float3), materialIndex);
+                                                newtonCollisionMesh->AddFace(3, face[0].xyz, sizeof(Math::Float3), surfaceIndex);
                                             }
                                         }
 
@@ -578,8 +578,8 @@ namespace Gek
 
             void OnContactProcess(dNewtonContactMaterial* const newtonContactMaterial, dFloat frameTime, int threadHandle)
             {
-                BaseBody *baseBody0 = dynamic_cast<BaseBody *>(newtonContactMaterial->GetBody0());
-                BaseBody *baseBody1 = dynamic_cast<BaseBody *>(newtonContactMaterial->GetBody1());
+                BaseNewtonBody *baseBody0 = dynamic_cast<BaseNewtonBody *>(newtonContactMaterial->GetBody0());
+                BaseNewtonBody *baseBody1 = dynamic_cast<BaseNewtonBody *>(newtonContactMaterial->GetBody1());
                 if (baseBody0 && baseBody1)
                 {
                     NewtonWorldCriticalSectionLock(GetNewton(), threadHandle);
@@ -590,15 +590,15 @@ namespace Gek
                         Math::Float3 position, normal;
                         NewtonMaterialGetContactPositionAndNormal(newtonMaterial, baseBody0->getNewtonBody(), position.xyz, normal.xyz);
 
-                        INT32 materialIndex0 = getContactMaterial(baseBody0->getEntityHandle(), baseBody0->getNewtonBody(), newtonMaterial, position, normal);
-                        INT32 materialIndex1 = getContactMaterial(baseBody1->getEntityHandle(), baseBody1->getNewtonBody(), newtonMaterial, position, normal);
-                        const Material &material0 = getMaterial(materialIndex0);
-                        const Material &material1 = getMaterial(materialIndex1);
+                        INT32 surfaceIndex0 = getContactSurface(baseBody0->getEntityHandle(), baseBody0->getNewtonBody(), newtonMaterial, position, normal);
+                        INT32 surfaceIndex1 = getContactSurface(baseBody1->getEntityHandle(), baseBody1->getNewtonBody(), newtonMaterial, position, normal);
+                        const Surface &surface0 = getSurface(surfaceIndex0);
+                        const Surface &surface1 = getSurface(surfaceIndex1);
 
-                        NewtonMaterialSetContactSoftness(newtonMaterial, ((material0.softness + material1.softness) * 0.5f));
-                        NewtonMaterialSetContactElasticity(newtonMaterial, ((material0.elasticity + material1.elasticity) * 0.5f));
-                        NewtonMaterialSetContactFrictionCoef(newtonMaterial, material0.staticFriction, material0.kineticFriction, 0);
-                        NewtonMaterialSetContactFrictionCoef(newtonMaterial, material1.staticFriction, material1.kineticFriction, 1);
+                        NewtonMaterialSetContactSoftness(newtonMaterial, ((surface0.softness + surface1.softness) * 0.5f));
+                        NewtonMaterialSetContactElasticity(newtonMaterial, ((surface0.elasticity + surface1.elasticity) * 0.5f));
+                        NewtonMaterialSetContactFrictionCoef(newtonMaterial, surface0.staticFriction, surface0.kineticFriction, 0);
+                        NewtonMaterialSetContactFrictionCoef(newtonMaterial, surface1.staticFriction, surface1.kineticFriction, 1);
                     }
                 }
 
@@ -622,36 +622,36 @@ namespace Gek
             {
                 collisionList.clear();
                 bodyList.clear();
-                materialList.clear();
-                materialIndexList.clear();
+                surfaceList.clear();
+                surfaceIndexList.clear();
                 DestroyAllBodies();
             }
 
             STDMETHODIMP_(void) onEntityCreated(Handle entityHandle)
             {
                 if (population->hasComponent(entityHandle, Engine::Components::Transform::identifier) &&
-                    population->hasComponent(entityHandle, Newton::Components::Mass::identifier))
+                    population->hasComponent(entityHandle, Mass::identifier))
                 {
-                    auto &massComponent = population->getComponent<Newton::Components::Mass::Data>(entityHandle, Newton::Components::Mass::identifier);
+                    auto &massComponent = population->getComponent<Mass::Data>(entityHandle, Mass::identifier);
                     auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(entityHandle, Engine::Components::Transform::identifier);
-                    if (population->hasComponent(entityHandle, Components::DynamicBody::identifier))
+                    if (population->hasComponent(entityHandle, DynamicBody::identifier))
                     {
-                        auto &dynamicBodyComponet = population->getComponent<Newton::Components::DynamicBody::Data>(entityHandle, Newton::Components::DynamicBody::identifier);
+                        auto &dynamicBodyComponet = population->getComponent<DynamicBody::Data>(entityHandle, DynamicBody::identifier);
                         dNewtonCollision *newtonCollision = loadCollision(entityHandle, dynamicBodyComponet);
                         if (newtonCollision != nullptr)
                         {
                             Math::Float4x4 matrix(transformComponent.rotation, transformComponent.position);
-                            CComPtr<IUnknown> dynamicBody = new DynamicBody(population, this, newtonCollision, entityHandle, transformComponent, massComponent);
+                            CComPtr<IUnknown> dynamicBody = new DynamicNewtonBody(population, this, newtonCollision, entityHandle, transformComponent, massComponent);
                             if (dynamicBody)
                             {
                                 bodyList[entityHandle] = dynamicBody;
                             }
                         }
                     }
-                    else if (population->hasComponent(entityHandle, Components::Player::identifier))
+                    else if (population->hasComponent(entityHandle, Player::identifier))
                     {
-                        auto &playerComponent = population->getComponent<Newton::Components::Player::Data>(entityHandle, Newton::Components::Player::identifier);
-                        CComPtr<Player> player = new Player(population, newtonPlayerManager, entityHandle, transformComponent, massComponent, playerComponent);
+                        auto &playerComponent = population->getComponent<Player::Data>(entityHandle, Player::identifier);
+                        CComPtr<PlayerNewtonBody> player = new PlayerNewtonBody(population, newtonPlayerManager, entityHandle, transformComponent, massComponent, playerComponent);
                         if (player)
                         {
                             //BaseObservable::addObserver(m_pEngine, player->getClass<Engine::Action::Observer>());

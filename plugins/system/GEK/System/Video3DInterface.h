@@ -9,146 +9,109 @@ namespace Gek
 {
     namespace Video3D
     {
-        namespace Format
+        enum class Format : UINT8
         {
-            enum
-            {
-                UNKNOWN = 0,
-                R_UINT8,
-                RG_UINT8,
-                RGBA_UINT8,
-                BGRA_UINT8,
-                R_UINT16,
-                RG_UINT16,
-                RGBA_UINT16,
-                R_UINT32,
-                RG_UINT32,
-                RGB_UINT32,
-                RGBA_UINT32,
-                R_FLOAT,
-                RG_FLOAT,
-                RGB_FLOAT,
-                RGBA_FLOAT,
-                R_HALF,
-                RG_HALF,
-                RGBA_HALF,
-                D16,
-                D24_S8,
-                D32,
-                END
-            };
+            UNKNOWN = 0,
+            R_UINT8,
+            RG_UINT8,
+            RGBA_UINT8,
+            BGRA_UINT8,
+            R_UINT16,
+            RG_UINT16,
+            RGBA_UINT16,
+            R_UINT32,
+            RG_UINT32,
+            RGB_UINT32,
+            RGBA_UINT32,
+            R_FLOAT,
+            RG_FLOAT,
+            RGB_FLOAT,
+            RGBA_FLOAT,
+            R_HALF,
+            RG_HALF,
+            RGBA_HALF,
+            D16,
+            D24_S8,
+            D32,
         };
 
-        namespace ElementType
+        enum class ElementType : UINT8
         {
-            enum
-            {
-                UNKNOWN = 0,
-                VERTEX,
-                INSTANCE,
-                END
-            };
+            VERTEX = 0,
+            INSTANCE,
         };
 
-        namespace FillMode
+        enum class FillMode : UINT8
         {
-            enum
-            {
-                WIREFRAME = 0,
-                SOLID,
-                END
-            };
+            WIREFRAME = 0,
+            SOLID,
         };
 
-        namespace CullMode
+        enum class CullMode : UINT8
         {
-            enum
-            {
-                NONE = 0,
-                FRONT,
-                BACK,
-                END
-            };
+            NONE = 0,
+            FRONT,
+            BACK,
         };
 
-        namespace DepthWrite
+        enum class DepthWrite : UINT8
         {
-            enum
-            {
-                ZERO = 0,
-                ALL,
-                END
-            };
+            ZERO = 0,
+            ALL,
         };
 
-        namespace ComparisonFunction
+        enum class ComparisonFunction : UINT8
         {
-            enum
-            {
-                ALWAYS = 0,
-                NEVER,
-                EQUAL,
-                NOT_EQUAL,
-                LESS,
-                LESS_EQUAL,
-                GREATER,
-                GREATER_EQUAL,
-                END
-            };
+            ALWAYS = 0,
+            NEVER,
+            EQUAL,
+            NOT_EQUAL,
+            LESS,
+            LESS_EQUAL,
+            GREATER,
+            GREATER_EQUAL,
         };
 
-        namespace StencilOperation
+        enum class StencilOperation : UINT8
         {
-            enum
-            {
-                ZERO = 0,
-                KEEP,
-                REPLACE,
-                INVERT,
-                INCREASE,
-                INCREASE_SATURATED,
-                DECREASE,
-                DECREASE_SATURATED,
-                END
-            };
+            ZERO = 0,
+            KEEP,
+            REPLACE,
+            INVERT,
+            INCREASE,
+            INCREASE_SATURATED,
+            DECREASE,
+            DECREASE_SATURATED,
         };
 
-        namespace BlendSource
+        enum class BlendSource : UINT8
         {
-            enum
-            {
-                ZERO = 0,
-                ONE,
-                BLENDFACTOR,
-                INVERSE_BLENDFACTOR,
-                SOURCE_COLOR,
-                INVERSE_SOURCE_COLOR,
-                SOURCE_ALPHA,
-                INVERSE_SOURCE_ALPHA,
-                SOURCE_ALPHA_SATURATE,
-                DESTINATION_COLOR,
-                INVERSE_DESTINATION_COLOR,
-                DESTINATION_ALPHA,
-                INVERSE_DESTINATION_ALPHA,
-                SECONRARY_SOURCE_COLOR,
-                INVERSE_SECONRARY_SOURCE_COLOR,
-                SECONRARY_SOURCE_ALPHA,
-                INVERSE_SECONRARY_SOURCE_ALPHA,
-                END
-            };
+            ZERO = 0,
+            ONE,
+            BLENDFACTOR,
+            INVERSE_BLENDFACTOR,
+            SOURCE_COLOR,
+            INVERSE_SOURCE_COLOR,
+            SOURCE_ALPHA,
+            INVERSE_SOURCE_ALPHA,
+            SOURCE_ALPHA_SATURATE,
+            DESTINATION_COLOR,
+            INVERSE_DESTINATION_COLOR,
+            DESTINATION_ALPHA,
+            INVERSE_DESTINATION_ALPHA,
+            SECONRARY_SOURCE_COLOR,
+            INVERSE_SECONRARY_SOURCE_COLOR,
+            SECONRARY_SOURCE_ALPHA,
+            INVERSE_SECONRARY_SOURCE_ALPHA,
         };
 
-        namespace BlendOperation
+        enum class BlendOperation : UINT8
         {
-            enum
-            {
-                ADD = 0,
-                SUBTRACT,
-                REVERSE_SUBTRACT,
-                MINIMUM,
-                MAXIMUM,
-                END
-            };
+            ADD = 0,
+            SUBTRACT,
+            REVERSE_SUBTRACT,
+            MINIMUM,
+            MAXIMUM,
         };
 
         namespace ColorMask
@@ -162,49 +125,37 @@ namespace Gek
                 RGB = (R | G | B),
                 RGBA = (R | G | B | A),
             };
+        }; // namespace ColorMask
+
+        enum class PrimitiveType : UINT8
+        {
+            POINTLIST = 0,
+            LINELIST,
+            LINESTRIP,
+            TRIANGLELIST,
+            TRIANGLESTRIP,
         };
 
-        namespace PrimitiveType
+        enum class FilterMode : UINT8
         {
-            enum
-            {
-                POINTLIST = 0,
-                LINELIST,
-                LINESTRIP,
-                TRIANGLELIST,
-                TRIANGLESTRIP,
-                END
-            };
+            MIN_MAG_MIP_POINT = 0,
+            MIN_MAG_POINT_MIP_LINEAR,
+            MIN_POINT_MAG_LINEAR_MIP_POINT,
+            MIN_POINT_MAG_MIP_LINEAR,
+            MIN_LINEAR_MAG_MIP_POINT,
+            MIN_LINEAR_MAG_POINT_MIP_LINEAR,
+            MIN_MAG_LINEAR_MIP_POINT,
+            MIN_MAG_MIP_LINEAR,
+            ANISOTROPIC,
         };
 
-        namespace FilterMode
+        enum class AddressMode : UINT8
         {
-            enum
-            {
-                MIN_MAG_MIP_POINT = 0,
-                MIN_MAG_POINT_MIP_LINEAR,
-                MIN_POINT_MAG_LINEAR_MIP_POINT,
-                MIN_POINT_MAG_MIP_LINEAR,
-                MIN_LINEAR_MAG_MIP_POINT,
-                MIN_LINEAR_MAG_POINT_MIP_LINEAR,
-                MIN_MAG_LINEAR_MIP_POINT,
-                MIN_MAG_MIP_LINEAR,
-                ANISOTROPIC,
-                END
-            };
-        };
-
-        namespace AddressMode
-        {
-            enum
-            {
-                CLAMP = 0,
-                WRAP,
-                MIRROR,
-                MIRROR_ONCE,
-                BORDER,
-                END
-            };
+            CLAMP = 0,
+            WRAP,
+            MIRROR,
+            MIRROR_ONCE,
+            BORDER,
         };
 
         namespace BufferFlags
@@ -220,7 +171,7 @@ namespace Gek
                 STATIC = 1 << 6,
                 DYNAMIC = 1 << 7,
             };
-        };
+        }; // BufferFlags
 
         namespace TextureFlags
         {
@@ -229,7 +180,7 @@ namespace Gek
                 RESOURCE = 1 << 0,
                 UNORDERED_ACCESS = 1 << 1,
             };
-        };
+        }; // TextureFlags
 
         namespace ClearMask
         {
@@ -238,7 +189,7 @@ namespace Gek
                 DEPTH = 1 << 0,
                 STENCIL = 1 << 1,
             };
-        };
+        }; // ClearMask
 
         struct ViewPort
         {
@@ -250,8 +201,8 @@ namespace Gek
 
         struct RenderStates
         {
-            UINT8 fillMode;
-            UINT8 cullMode;
+            FillMode fillMode;
+            CullMode cullMode;
             bool frontCounterClockwise;
             UINT32 depthBias;
             float depthBiasClamp;
@@ -280,23 +231,23 @@ namespace Gek
         {
             struct StencilStates
             {
-                UINT8 stencilFailOperation;
-                UINT8 stencilDepthFailOperation;
-                UINT8 stencilPassOperation;
-                UINT8 stencilComparison;
+                StencilOperation failOperation;
+                StencilOperation depthFailOperation;
+                StencilOperation passOperation;
+                ComparisonFunction comparisonFunction;
 
                 StencilStates(void)
-                    : stencilFailOperation(StencilOperation::KEEP)
-                    , stencilDepthFailOperation(StencilOperation::KEEP)
-                    , stencilPassOperation(StencilOperation::KEEP)
-                    , stencilComparison(ComparisonFunction::ALWAYS)
+                    : failOperation(StencilOperation::KEEP)
+                    , depthFailOperation(StencilOperation::KEEP)
+                    , passOperation(StencilOperation::KEEP)
+                    , comparisonFunction(ComparisonFunction::ALWAYS)
                 {
                 }
             };
 
-            bool depthEnable;
-            UINT8 depthWriteMask;
-            UINT8 depthComparison;
+            bool enable;
+            DepthWrite writeMask;
+            ComparisonFunction comparisonFunction;
             bool stencilEnable;
             UINT8 stencilReadMask;
             UINT8 stencilWriteMask;
@@ -304,9 +255,9 @@ namespace Gek
             StencilStates stencilBackStates;
 
             DepthStates(void)
-                : depthEnable(false)
-                , depthWriteMask(DepthWrite::ALL)
-                , depthComparison(ComparisonFunction::ALWAYS)
+                : enable(false)
+                , writeMask(DepthWrite::ALL)
+                , comparisonFunction(ComparisonFunction::ALWAYS)
                 , stencilEnable(false)
                 , stencilReadMask(0xFF)
                 , stencilWriteMask(0xFF)
@@ -317,12 +268,12 @@ namespace Gek
         struct TargetBlendStates
         {
             BOOL enable;
-            UINT8 colorSource;
-            UINT8 colorDestination;
-            UINT8 colorOperation;
-            UINT8 alphaSource;
-            UINT8 alphaDestination;
-            UINT8 alphaOperation;
+            BlendSource colorSource;
+            BlendSource colorDestination;
+            BlendOperation colorOperation;
+            BlendSource alphaSource;
+            BlendSource alphaDestination;
+            BlendOperation alphaOperation;
             UINT8 writeMask;
 
             TargetBlendStates(void)
@@ -350,8 +301,8 @@ namespace Gek
 
         struct IndependentBlendStates
         {
-            bool                alphaToCoverage;
-            TargetBlendStates   targetStates[8];
+            bool alphaToCoverage;
+            TargetBlendStates targetStates[8];
 
             IndependentBlendStates(void)
                 : alphaToCoverage(false)
@@ -361,10 +312,10 @@ namespace Gek
 
         struct InputElement
         {
-            UINT8 format;
+            Format format;
             LPCSTR semanticName;
             UINT32 semanticIndex;
-            UINT8 slotClass;
+            ElementType slotClass;
             UINT32 slotIndex;
 
             InputElement(void)
@@ -376,7 +327,7 @@ namespace Gek
             {
             }
 
-            InputElement(UINT8 format, LPCSTR semanticName, UINT32 semanticIndex, UINT8 slotClass = ElementType::VERTEX, UINT32 slotIndex = 0)
+            InputElement(Format format, LPCSTR semanticName, UINT32 semanticIndex, ElementType slotClass = ElementType::VERTEX, UINT32 slotIndex = 0)
                 : format(format)
                 , semanticName(semanticName)
                 , semanticIndex(semanticIndex)
@@ -388,13 +339,13 @@ namespace Gek
 
         struct SamplerStates
         {
-            UINT8 filterMode;
-            UINT8 addressModeU;
-            UINT8 addressModeV;
-            UINT8 addressModeW;
+            FilterMode filterMode;
+            AddressMode addressModeU;
+            AddressMode addressModeV;
+            AddressMode addressModeW;
             float mipLevelBias;
             UINT32 maximumAnisotropy;
-            UINT8 comparisonFunction;
+            ComparisonFunction comparisonFunction;
             Math::Float4 borderColor;
             float minimumMipLevel;
             float maximumMipLevel;
@@ -445,7 +396,7 @@ namespace Gek
 
             STDMETHOD_(void, setVertexBuffer)                   (THIS_ Handle resourceHandle, UINT32 slot, UINT32 offset) PURE;
             STDMETHOD_(void, setIndexBuffer)                    (THIS_ Handle resourceHandle, UINT32 offset) PURE;
-            STDMETHOD_(void, setPrimitiveType)                  (THIS_ UINT8 type) PURE;
+            STDMETHOD_(void, setPrimitiveType)                  (THIS_ PrimitiveType type) PURE;
 
             STDMETHOD_(void, drawPrimitive)                     (THIS_ UINT32 vertexCount, UINT32 firstVertex) PURE;
             STDMETHOD_(void, drawInstancedPrimitive)            (THIS_ UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex) PURE;
@@ -460,8 +411,8 @@ namespace Gek
 
         DECLARE_INTERFACE_IID(Interface, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6") : virtual public IUnknown
         {
-            STDMETHOD(initialize)                               (THIS_ HWND window, bool windowed, UINT32 width, UINT32 height, UINT8 depthBufferFormat = Format::UNKNOWN) PURE;
-            STDMETHOD(resize)                                   (THIS_ bool windowed, UINT32 width, UINT32 height, UINT8 depthBufferFormat = Format::UNKNOWN) PURE;
+            STDMETHOD(initialize)                               (THIS_ HWND window, bool windowed, UINT32 width, UINT32 height, Format depthBufferFormat = Format::UNKNOWN) PURE;
+            STDMETHOD(resize)                                   (THIS_ bool windowed, UINT32 width, UINT32 height, Format depthBufferFormat = Format::UNKNOWN) PURE;
 
             STDMETHOD_(UINT32, getWidth)                        (THIS) PURE;
             STDMETHOD_(UINT32, getHeight)                       (THIS) PURE;
@@ -482,11 +433,11 @@ namespace Gek
             STDMETHOD_(Handle, createBlendStates)               (THIS_ const IndependentBlendStates &kStates) PURE;
             STDMETHOD_(Handle, createSamplerStates)             (THIS_ const SamplerStates &kStates) PURE;
 
-            STDMETHOD_(Handle, createRenderTarget)              (THIS_ UINT32 width, UINT32 height, UINT8 format) PURE;
-            STDMETHOD_(Handle, createDepthTarget)               (THIS_ UINT32 width, UINT32 height, UINT8 format) PURE;
+            STDMETHOD_(Handle, createRenderTarget)              (THIS_ UINT32 width, UINT32 height, Format format) PURE;
+            STDMETHOD_(Handle, createDepthTarget)               (THIS_ UINT32 width, UINT32 height, Format format) PURE;
 
             STDMETHOD_(Handle, createBuffer)                    (THIS_ UINT32 stride, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
-            STDMETHOD_(Handle, createBuffer)                    (THIS_ UINT8 format, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
+            STDMETHOD_(Handle, createBuffer)                    (THIS_ Format format, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
             STDMETHOD_(void, updateBuffer)                      (THIS_ Handle resourceHandle, LPCVOID data) PURE;
             STDMETHOD(mapBuffer)                                (THIS_ Handle resourceHandle, LPVOID *data) PURE;
             STDMETHOD_(void, unmapBuffer)                       (THIS_ Handle resourceHandle) PURE;

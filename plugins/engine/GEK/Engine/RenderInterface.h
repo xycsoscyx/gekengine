@@ -11,12 +11,15 @@ namespace Gek
     {
         namespace Render
         {
-            enum
+            namespace Attribute
             {
-                Position = 1 << 0,
-                TexCoord = 1 << 1,
-                Normal = 1 << 2,
-            };
+                enum
+                {
+                    Position = 1 << 0,
+                    TexCoord = 1 << 1,
+                    Normal = 1 << 2,
+                };
+            }; // namespace Attribute
 
             DECLARE_INTERFACE_IID(Interface, "C851EC91-8B07-4793-B9F5-B15C54E92014") : virtual public IUnknown
             {

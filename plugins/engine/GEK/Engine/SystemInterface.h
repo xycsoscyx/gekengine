@@ -14,6 +14,6 @@ namespace Gek
             {
                 STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
             };
-        };
-    };
+        }; // namespace System
+    }; // namespace Engine
 }; // namespace Gek

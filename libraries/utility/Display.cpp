@@ -5,7 +5,7 @@ namespace Gek
 {
     namespace Display
     {
-        UINT8 getAspectRatio(UINT32 width, UINT32 height)
+        AspectRatio getAspectRatio(UINT32 width, UINT32 height)
         {
             const float AspectRatio4x3 = (float(INT32((4.0f / 3.0f) * 100.0f)) / 100.0f);
             const float AspectRatio16x9 = (float(INT32((16.0f / 9.0f) * 100.0f)) / 100.0f);
@@ -25,7 +25,7 @@ namespace Gek
             }
             else
             {
-                return AspectRatio::Unknown;
+                return AspectRatio::None;
             }
         }
 

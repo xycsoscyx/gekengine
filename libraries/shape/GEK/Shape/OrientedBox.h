@@ -13,8 +13,7 @@ namespace Gek
         struct BaseOrientedBox
         {
         public:
-            Math::BaseVector3<TYPE> position;
-            Math::BaseMatrix4x4<TYPE> rotation;
+            Math::BaseMatrix4x4<TYPE> matrix;
             Math::BaseVector3<TYPE> halfsize;
 
         public:
@@ -23,40 +22,35 @@ namespace Gek
             }
 
             BaseOrientedBox(const BaseOrientedBox<TYPE> &box)
-                : position(box.position)
-                , rotation(box.rotation)
+                : matrix(box.matrix)
                 , halfsize(box.halfsize)
             {
             }
 
             BaseOrientedBox(const BaseAlignedBox<TYPE> &box, const Math::BaseQuaternion<TYPE> &rotation, const Math::BaseVector3<TYPE> &translation)
-                : rotation(rotation)
-                , position(translation + box.getCenter())
+                : matrix(rotation, (translation + box.getCenter()))
                 , halfsize(box.getSize() * 0.5f)
             {
             }
 
             BaseOrientedBox(const BaseAlignedBox<TYPE> &box, const Math::BaseMatrix4x4<TYPE> &matrix)
-                : rotation(matrix)
-                , position(matrix.translation + box.getCenter())
+                : rotation(matrix, (matrix.translation + box.getCenter()))
                 , halfsize(box.getSize() * 0.5f)
             {
             }
 
             BaseOrientedBox operator = (const BaseOrientedBox<TYPE> &box)
             {
-                position = box.position;
-                rotation = box.rotation;
-                halfsize = box.halfsize;
+                matrix = box.matrix;
                 return (*this);
             }
 
             int getPosition(const BasePlane<TYPE> &plane) const
             {
-                TYPE distance = plane.getDistance(position);
-                TYPE radiusX = std::abs(rotation.rx.xyz.dot(plane.normal) * halfsize.x);
-                TYPE radiusY = std::abs(rotation.ry.xyz.dot(plane.normal) * halfsize.y);
-                TYPE radiusZ = std::abs(rotation.rz.xyz.dot(plane.normal) * halfsize.z);
+                TYPE distance = plane.getDistance(matrix.translation);
+                TYPE radiusX = std::abs(matrix.rx.xyz.dot(plane.normal) * halfsize.x);
+                TYPE radiusY = std::abs(matrix.ry.xyz.dot(plane.normal) * halfsize.y);
+                TYPE radiusZ = std::abs(matrix.rz.xyz.dot(plane.normal) * halfsize.z);
                 TYPE radius = (radiusX + radiusY + radiusZ);
                 if (distance < -radius)
                 {

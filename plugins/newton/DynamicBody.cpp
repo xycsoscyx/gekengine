@@ -8,54 +8,51 @@ namespace Gek
 {
     namespace Newton
     {
-        namespace Components
+        namespace DynamicBody
         {
-            namespace DynamicBody
+            Data::Data(void)
             {
-                Data::Data(void)
+            }
+
+            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+            {
+                componentParameterList[L""] = shape;
+                componentParameterList[L"surface"] = surface;
+                return S_OK;
+            }
+
+            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+            {
+                Engine::setParameter(componentParameterList, L"", shape, [](LPCWSTR value) -> LPCWSTR { return value; });
+                Engine::setParameter(componentParameterList, L"surface", surface, [](LPCWSTR value) -> LPCWSTR { return value; });
+                return S_OK;
+            }
+
+            class Component : public Context::BaseUser
+                , public Engine::BaseComponent<Data>
+            {
+            public:
+                Component(void)
                 {
                 }
 
-                HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+                BEGIN_INTERFACE_LIST(Component)
+                    INTERFACE_LIST_ENTRY_COM(Component::Interface)
+                END_INTERFACE_LIST_USER
+
+                // Component::Interface
+                STDMETHODIMP_(LPCWSTR) getName(void) const
                 {
-                    componentParameterList[L""] = shape;
-                    componentParameterList[L"material"] = material;
-                    return S_OK;
+                    return L"DynamicBody";
                 }
 
-                HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+                STDMETHODIMP_(Handle) getIdentifier(void) const
                 {
-                    Engine::setParameter(componentParameterList, L"", shape, [](LPCWSTR value) -> LPCWSTR { return value; });
-                    Engine::setParameter(componentParameterList, L"material", material, [](LPCWSTR value) -> LPCWSTR { return value; });
-                    return S_OK;
+                    return identifier;
                 }
+            };
 
-                class Component : public Context::BaseUser
-                    , public Engine::BaseComponent<Data>
-                {
-                public:
-                    Component(void)
-                    {
-                    }
-
-                    BEGIN_INTERFACE_LIST(Component)
-                        INTERFACE_LIST_ENTRY_COM(Component::Interface)
-                    END_INTERFACE_LIST_USER
-
-                    // Component::Interface
-                    STDMETHODIMP_(LPCWSTR) getName(void) const
-                    {
-                        return L"DynamicBody";
-                    }
-
-                    STDMETHODIMP_(Handle) getIdentifier(void) const
-                    {
-                        return identifier;
-                    }
-                };
-
-                REGISTER_CLASS(Component)
-            }; // namespace DynamicBody
-        }; // namespace Newton
+            REGISTER_CLASS(Component)
+        }; // namespace DynamicBody
     } // namespace Components
 }; // namespace Gek

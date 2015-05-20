@@ -8,33 +8,27 @@
 
 namespace Gek
 {
-    namespace Engine
+    namespace Model
     {
-        namespace Components
+        static const Handle identifier = 7;
+        struct Data
         {
-            namespace Model
+            CStringW value;
+
+            Data(void);
+            HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+            HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+
+            inline operator LPCWSTR () const
             {
-                static const Handle identifier = 7;
-                struct Data
-                {
-                    CStringW value;
+                return value.GetString();
+            }
 
-                    Data(void);
-                    HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                    HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-
-                    inline operator LPCWSTR () const
-                    {
-                        return value.GetString();
-                    }
-
-                    inline CStringW &operator = (LPCWSTR value)
-                    {
-                        this->value = value;
-                        return this->value;
-                    }
-                };
-            }; // namespace Model
-        }; // namespace Components
-    }; // namespace Engine
+            inline CStringW &operator = (LPCWSTR value)
+            {
+                this->value = value;
+                return this->value;
+            }
+        };
+    }; // namespace Model
 }; // namespace Gek
