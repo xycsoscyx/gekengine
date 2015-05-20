@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <initializer_list>
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Quaternion.h"
 
@@ -41,7 +42,18 @@ namespace Gek
                     BaseVector4<TYPE> rx;
                     BaseVector4<TYPE> ry;
                     BaseVector4<TYPE> rz;
-                    BaseVector4<TYPE> translation;
+                    union
+                    {
+                        struct
+                        {
+                            BaseVector4<TYPE> rw;
+                        };
+
+                        struct
+                        {
+                            BaseVector4<TYPE> translation;
+                        };
+                    };
                 };
 
                 struct
@@ -56,14 +68,19 @@ namespace Gek
                 setIdentity();
             }
 
-            BaseMatrix4x4(const TYPE *data)
+            BaseMatrix4x4(const std::initializer_list<float> &list)
             {
-                memcpy(this->data, data, sizeof(this->data));
+                memcpy(this->data, list.begin(), sizeof(this->data));
+            }
+
+            BaseMatrix4x4(const TYPE vector[])
+            {
+                memcpy(this->data, vector, sizeof(this->data));
             }
 
             BaseMatrix4x4(const BaseMatrix4x4 &matrix)
             {
-                memcpy(data, matrix.data, sizeof(data));
+                memcpy(this->data, matrix.data, sizeof(this->data));
             }
 
             BaseMatrix4x4(const BaseVector4<TYPE> &euler)
@@ -439,16 +456,16 @@ namespace Gek
 
             void operator *= (const BaseMatrix4x4 &matrix)
             {
-                (*this) = ((*this) * matrix);
+                memcpy(data, ((*this) * matrix).data, sizeof(data));
             }
 
             BaseMatrix4x4 operator * (const BaseMatrix4x4 &matrix) const
             {
                 BaseMatrix4x4 transpose(matrix.getTranspose());
-                return BaseMatrix4x4(rx.Dot(transpose.rx), rx.Dot(transpose.ry), rx.Dot(transpose.rz), rx.Dot(transpose.rw),
-                                     ry.Dot(transpose.rx), ry.Dot(transpose.ry), ry.Dot(transpose.rz), ry.Dot(transpose.rw),
-                                     rz.Dot(transpose.rx), rz.Dot(transpose.ry), rz.Dot(transpose.rz), rz.Dot(transpose.rw),
-                                     rw.Dot(transpose.rx), rw.Dot(transpose.ry), rw.Dot(transpose.rz), rw.Dot(transpose.rw));
+                return BaseMatrix4x4( { rx.dot(transpose.rx), rx.dot(transpose.ry), rx.dot(transpose.rz), rx.dot(transpose.rw),
+                                        ry.dot(transpose.rx), ry.dot(transpose.ry), ry.dot(transpose.rz), ry.dot(transpose.rw),
+                                        rz.dot(transpose.rx), rz.dot(transpose.ry), rz.dot(transpose.rz), rz.dot(transpose.rw),
+                                        rw.dot(transpose.rx), rw.dot(transpose.ry), rw.dot(transpose.rz), rw.dot(transpose.rw) } );
             }
 
             BaseMatrix4x4 operator = (const BaseMatrix4x4 &matrix)
@@ -465,17 +482,17 @@ namespace Gek
 
             BaseVector3<TYPE> operator * (const BaseVector3<TYPE> &vector) const
             {
-                return BaseVector3(((vector.x * _11) + (vector.y * _21) + (vector.z * _31)),
-                                   ((vector.x * _12) + (vector.y * _22) + (vector.z * _32)),
-                                   ((vector.x * _13) + (vector.y * _23) + (vector.z * _33)));
+                return BaseVector3<TYPE>(((vector.x * _11) + (vector.y * _21) + (vector.z * _31)),
+                                         ((vector.x * _12) + (vector.y * _22) + (vector.z * _32)),
+                                         ((vector.x * _13) + (vector.y * _23) + (vector.z * _33)));
             }
 
             BaseVector4<TYPE> operator * (const BaseVector4<TYPE> &vector) const
             {
-                return BaseVector4(((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + (vector.w * _41)),
-                                   ((vector.x * _12) + (vector.y * _22) + (vector.z * _32) + (vector.w * _42)),
-                                   ((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + (vector.w * _43)),
-                                   ((vector.x * _14) + (vector.y * _24) + (vector.z * _34) + (vector.w * _44)));
+                return BaseVector4<TYPE>(((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + (vector.w * _41)),
+                                         ((vector.x * _12) + (vector.y * _22) + (vector.z * _32) + (vector.w * _42)),
+                                         ((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + (vector.w * _43)),
+                                         ((vector.x * _14) + (vector.y * _24) + (vector.z * _34) + (vector.w * _44)));
             }
 
             BaseMatrix4x4 operator * (TYPE nScalar) const

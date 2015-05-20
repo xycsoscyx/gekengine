@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <initializer_list>
 
 namespace Gek
 {
@@ -38,9 +39,19 @@ namespace Gek
                 setIdentity();
             }
 
+            BaseMatrix3x2(const std::initializer_list<float> &list)
+            {
+                memcpy(this->data, list.begin(), sizeof(this->data));
+            }
+
+            BaseMatrix3x2(const TYPE vector[])
+            {
+                memcpy(this->data, vector, sizeof(this->data));
+            }
+
             BaseMatrix3x2(const BaseMatrix3x2<TYPE> &matrix)
             {
-                memcpy(data, matrix.data, sizeof(data));
+                memcpy(this->data, matrix.data, sizeof(this->data));
             }
 
             void setZero(void)

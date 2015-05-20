@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <initializer_list>
 
 namespace Gek
 {
@@ -19,6 +20,7 @@ namespace Gek
                 struct { TYPE u, v; };
                 struct { TYPE xy[2]; };
                 struct { TYPE uv[2]; };
+                struct { TYPE data[2]; };
             };
 
         public:
@@ -26,6 +28,16 @@ namespace Gek
                 : x(0)
                 , y(0)
             {
+            }
+
+            BaseVector2(const std::initializer_list<float> &list)
+            {
+                memcpy(this->data, list.begin(), sizeof(this->data));
+            }
+
+            BaseVector2(const TYPE vector[])
+            {
+                memcpy(this->data, vector, sizeof(this->data));
             }
 
             BaseVector2(TYPE scalar)

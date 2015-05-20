@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <initializer_list>
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Vector4.h"
 
@@ -21,6 +22,16 @@ namespace Gek
             {
             }
 
+            BaseQuaternion(const std::initializer_list<float> &list)
+            {
+                memcpy(this->data, list->begin(), sizeof(this->data));
+            }
+
+            BaseQuaternion(const TYPE vector[])
+                : BaseVector4(vector)
+            {
+            }
+
             BaseQuaternion(const BaseVector4<TYPE> &vector)
                 : BaseVector4(vector)
             {
@@ -33,7 +44,7 @@ namespace Gek
 
             BaseQuaternion(const BaseMatrix4x4<TYPE> &rotation)
             {
-                SeBaseMatrix(rotation);
+                setRotation(rotation);
             }
 
             BaseQuaternion(const BaseVector3<TYPE> &axis, TYPE radians)

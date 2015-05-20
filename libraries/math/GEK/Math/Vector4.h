@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <initializer_list>
 #include "GEK\Math\Vector3.h"
 
 namespace Gek
@@ -23,6 +24,7 @@ namespace Gek
                 struct { TYPE rgba[4]; };
                 struct { BaseVector3<TYPE> xyz; TYPE w; };
                 struct { BaseVector3<TYPE> normal; TYPE distance; };
+                struct { TYPE data[4]; };
             };
 
         public:
@@ -42,12 +44,14 @@ namespace Gek
             {
             }
 
-            BaseVector4(const TYPE *values)
-                : x(values[0])
-                , y(values[1])
-                , z(values[2])
-                , w(values[3])
+            BaseVector4(const std::initializer_list<float> &list)
             {
+                memcpy(this->data, list.begin(), sizeof(this->data));
+            }
+
+            BaseVector4(const TYPE vector[])
+            {
+                memcpy(this->data, vector, sizeof(this->data));
             }
 
             BaseVector4(const BaseVector2<TYPE> &vector)
