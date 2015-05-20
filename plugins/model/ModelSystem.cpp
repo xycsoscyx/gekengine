@@ -17,14 +17,21 @@
 #include "GEK\Components\Color.h"
 #include "GEK\Engine\Model.h"
 #include <concurrent_unordered_map.h>
+#include <concurrent_vector.h>
 #include <memory>
 #include <map>
 #include <set>
+
+#undef min
 
 namespace Gek
 {
     namespace Model
     {
+        static const UINT32 MaxInstanceCount = 500;
+
+        static const Handle ResourcePool = 0x00001000;
+
         class System : public Context::BaseUser
             , public BaseObservable
             , public Engine::Population::Observer
@@ -65,8 +72,8 @@ namespace Gek
             };
 
         private:
-            Engine::Render::Interface *render;
             Video3D::Interface *video;
+            Engine::Render::Interface *render;
             Engine::Population::Interface *population;
 
             Handle programHandle;
@@ -76,7 +83,7 @@ namespace Gek
             concurrency::concurrent_unordered_map<Handle, Data> dataList;
             concurrency::concurrent_unordered_map<CStringW, Handle> dataNameList;
             concurrency::concurrent_unordered_map<Handle, Handle> entityList;
-            concurrency::concurrent_unordered_map<Handle, Instance> visibleList;
+            concurrency::concurrent_unordered_map<Handle, std::vector<Instance>> visibleList;
 
         public:
             System(void)
@@ -154,19 +161,19 @@ namespace Gek
 
                             if (SUCCEEDED(resultValue))
                             {
-                                data.positionHandle = video->createBuffer(sizeof(Math::Float3), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                                data.positionHandle = video->createBuffer(ResourcePool, sizeof(Math::Float3), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
                                 rawFileData += (sizeof(Math::Float3) * vertexCount);
                             }
 
                             if (SUCCEEDED(resultValue))
                             {
-                                data.texCoordHandle = video->createBuffer(sizeof(Math::Float2), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                                data.texCoordHandle = video->createBuffer(ResourcePool, sizeof(Math::Float2), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
                                 rawFileData += (sizeof(Math::Float2) * vertexCount);
                             }
 
                             if (SUCCEEDED(resultValue))
                             {
-                                data.normalHandle = video->createBuffer(sizeof(Math::Float3), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                                data.normalHandle = video->createBuffer(ResourcePool, sizeof(Math::Float3), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
                                 rawFileData += (sizeof(Math::Float3) * vertexCount);
                             }
 
@@ -175,7 +182,7 @@ namespace Gek
                                 UINT32 indexCount = *((UINT32 *)rawFileData);
                                 rawFileData += sizeof(UINT32);
 
-                                data.indexHandle = video->createBuffer(sizeof(UINT16), indexCount, Video3D::BufferFlags::INDEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                                data.indexHandle = video->createBuffer(ResourcePool, sizeof(UINT16), indexCount, Video3D::BufferFlags::INDEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
                                 rawFileData += (sizeof(UINT16) * indexCount);
                             }
                         }
@@ -208,13 +215,13 @@ namespace Gek
                 REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
                 HRESULT resultValue = E_FAIL;
+                CComQIPtr<Video3D::Interface> video(initializerContext);
                 CComQIPtr<Engine::Render::Interface> render(initializerContext);
-                CComQIPtr<Video3D::Interface> video(render);
                 CComQIPtr<Engine::Population::Interface> population(initializerContext);
                 if (render && video && population)
                 {
-                    this->render = render;
                     this->video = video;
+                    this->render = render;
                     this->population = population;
                     resultValue = BaseObservable::addObserver(population, getClass<Engine::Population::Observer>());
                 }
@@ -242,6 +249,9 @@ namespace Gek
 
             STDMETHODIMP_(void) onFree(void)
             {
+                REQUIRE_VOID_RETURN(video);
+
+                video->freeResourcePool(ResourcePool);
                 dataList.clear();
                 dataNameList.clear();
                 entityList.clear();
@@ -249,6 +259,8 @@ namespace Gek
 
             STDMETHODIMP_(void) onEntityCreated(Handle entityHandle)
             {
+                REQUIRE_VOID_RETURN(population);
+
                 if (population->hasComponent(entityHandle, Model::identifier) &&
                     population->hasComponent(entityHandle, Engine::Components::Transform::identifier))
                 {
@@ -278,6 +290,8 @@ namespace Gek
 
             STDMETHODIMP_(void) onCullScene(Handle viewerHandle, const Gek::Shape::Frustum &viewFrustum)
             {
+                REQUIRE_VOID_RETURN(population);
+
                 visibleList.clear();
                 for (auto entity : entityList)
                 {
@@ -304,7 +318,7 @@ namespace Gek
                                 color = population->getComponent<Engine::Components::Color::Data>(entity.first, Engine::Components::Color::identifier);
                             }
 
-                            visibleList.insert(std::make_pair(entity.first, Instance(orientedBox.matrix, size, color, viewFrustum.origin.getDistance(orientedBox.matrix.translation))));
+                            visibleList[entity.second].push_back(Instance(orientedBox.matrix, size, color, viewFrustum.origin.getDistance(orientedBox.matrix.translation)));
                         }
                     }
                 }
@@ -312,8 +326,56 @@ namespace Gek
 
             STDMETHODIMP_(void) onDrawScene(Handle viewerHandle, Gek::Video3D::ContextInterface *videoContext, UINT32 vertexAttributes)
             {
+                REQUIRE_VOID_RETURN(video);
+                REQUIRE_VOID_RETURN(videoContext);
+
+                if (!(vertexAttributes & Engine::Render::Attribute::Position) &&
+                    !(vertexAttributes & Engine::Render::Attribute::TexCoord) &&
+                    !(vertexAttributes & Engine::Render::Attribute::Normal))
+                {
+                    return;
+                }
+
+                render->enableProgram(programHandle);
+                videoContext->getVertexSystem()->setResource(instanceHandle, 0);
+                videoContext->setPrimitiveType(Video3D::PrimitiveType::TRIANGLELIST);
                 for (auto instance : visibleList)
                 {
+                    Data &data = dataList[instance.first];
+                    auto &instanceList = instance.second;
+
+                    if (vertexAttributes & Engine::Render::Attribute::Position)
+                    {
+                        videoContext->setVertexBuffer(data.positionHandle, 0, 0);
+                    }
+
+                    if (vertexAttributes & Engine::Render::Attribute::TexCoord)
+                    {
+                        videoContext->setVertexBuffer(data.texCoordHandle, 1, 0);
+                    }
+
+                    if (vertexAttributes & Engine::Render::Attribute::Normal)
+                    {
+                        videoContext->setVertexBuffer(data.normalHandle, 2, 0);
+                    }
+
+                    videoContext->setIndexBuffer(data.indexHandle, 0);
+                    for (UINT32 firstInstance = 0; firstInstance < instanceList.size(); firstInstance += MaxInstanceCount)
+                    {
+                        Instance *instanceBufferList = nullptr;
+                        if (SUCCEEDED(video->mapBuffer(instanceHandle, (LPVOID *)&instanceBufferList)))
+                        {
+                            UINT32 instanceCount = std::min(MaxInstanceCount, (instanceList.size() - firstInstance));
+                            memcpy(instanceBufferList, instanceList.data(), (sizeof(Instance) * instanceCount));
+                            video->unmapBuffer(instanceHandle);
+
+                            for(auto &material : data.materialList)
+                            {
+                                render->enableMaterial(material.first);
+                                videoContext->drawInstancedIndexedPrimitive(material.second.indexCount, instanceCount, material.second.firstIndex, material.second.firstVertex, 0);
+                            }
+                        }
+                    }
                 }
             }
 

@@ -56,6 +56,7 @@ namespace Gek
 
             Engine::Population::Interface *getPopulationSystem(void)
             {
+                REQUIRE_RETURN(population, nullptr);
                 return population;
             }
 
@@ -275,6 +276,8 @@ namespace Gek
 
             INT32 getContactSurface(Handle entityHandle, NewtonBody *newtonBody, NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
             {
+                REQUIRE_RETURN(population, -1);
+
                 if (population->hasComponent(entityHandle, DynamicBody::identifier))
                 {
                     auto &dynamicBodyComponent = population->getComponent<DynamicBody::Data>(entityHandle, DynamicBody::identifier);
@@ -358,6 +361,8 @@ namespace Gek
 
             dNewtonCollision *createCollision(Handle entityHandle, const DynamicBody::Data &dynamicBodyComponet)
             {
+                REQUIRE_RETURN(population, nullptr);
+
                 Math::Float3 size(1.0f, 1.0f, 1.0f);
                 if (population->hasComponent(entityHandle, Engine::Components::Size::identifier))
                 {
@@ -629,6 +634,8 @@ namespace Gek
 
             STDMETHODIMP_(void) onEntityCreated(Handle entityHandle)
             {
+                REQUIRE_VOID_RETURN(population);
+
                 if (population->hasComponent(entityHandle, Engine::Components::Transform::identifier) &&
                     population->hasComponent(entityHandle, Mass::identifier))
                 {

@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <memory>
 #include <concurrent_unordered_map.h>
+#include <concurrent_vector.h>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -843,7 +844,7 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(void) setRenderTargets(const std::vector<Gek::Handle> &targetHandleList, Handle depthHandle)
+            STDMETHODIMP_(void) setRenderTargets(const std::vector<Handle> &targetHandleList, Handle depthHandle)
             {
                 REQUIRE_VOID_RETURN(d3dDeviceContext && resourceHandler);
                 std::vector<ID3D11RenderTargetView *> d3dRenderTargetViewList;
@@ -1013,8 +1014,9 @@ namespace Gek
             CComPtr<ID2D1DeviceContext> d2dDeviceContext;
             CComPtr<IDWriteFactory> dwFactory;
 
-            Gek::Handle nextResourceHandle;
-            concurrency::concurrent_unordered_map<Gek::Handle, Resource> resourceList;
+            Handle nextResourceHandle;
+            concurrency::concurrent_unordered_map<Handle, Resource> resourceList;
+            concurrency::concurrent_unordered_map<Handle, concurrency::concurrent_vector<Handle>> resourcePoolList;
 
         public:
             System(void)
@@ -1030,7 +1032,7 @@ namespace Gek
 
             ~System(void)
             {
-                resourceList.clear();
+                freeAllResources();
             }
 
             BEGIN_INTERFACE_LIST(System)
@@ -1331,20 +1333,35 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP_(void) freeResource(Handle resourceHandle)
+            STDMETHODIMP_(void) freeResourcePool(Handle resourcePoolHandle)
             {
-                auto resourceIterator = resourceList.find(resourceHandle);
-                if (resourceIterator != resourceList.end())
+                auto resourcePoolIterator = resourcePoolList.find(resourcePoolHandle);
+                if (resourcePoolIterator != resourcePoolList.end())
                 {
-                    resourceList.unsafe_erase(resourceIterator);
+                    for (auto resourceHandle : (*resourcePoolIterator).second)
+                    {
+                        auto resourceIterator = resourceList.find(resourceHandle);
+                        if (resourceIterator != resourceList.end())
+                        {
+                            resourceList.unsafe_erase(resourceIterator);
+                        }
+                    }
+
+                    resourcePoolList.unsafe_erase(resourcePoolIterator);
                 }
             }
 
-            STDMETHODIMP_(Gek::Handle) createEvent(void)
+            STDMETHODIMP_(void) freeAllResources(void)
+            {
+                resourceList.clear();
+                resourcePoolList.clear();
+            }
+
+            STDMETHODIMP_(Handle) createEvent(Handle resourcePoolHandle)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 D3D11_QUERY_DESC description;
                 description.Query = D3D11_QUERY_EVENT;
@@ -1356,6 +1373,7 @@ namespace Gek
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList.insert(std::make_pair(resourceHandle, Resource(d3dQuery)));
+                    resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                 }
 
                 return resourceHandle;
@@ -1388,7 +1406,7 @@ namespace Gek
                 return (isEventSet == 1);
             }
 
-            STDMETHODIMP_(Gek::Handle) createRenderStates(const Gek::Video3D::RenderStates &renderStates)
+            STDMETHODIMP_(Handle) createRenderStates(Handle resourcePoolHandle, const Gek::Video3D::RenderStates &renderStates)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
@@ -1404,7 +1422,7 @@ namespace Gek
                 rasterizerDescription.FillMode = d3dFillModeList[static_cast<UINT8>(renderStates.fillMode)];
                 rasterizerDescription.CullMode = d3dCullModeList[static_cast<UINT8>(renderStates.cullMode)];
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID3D11RasterizerState> states;
                 d3dDevice->CreateRasterizerState(&rasterizerDescription, &states);
@@ -1412,12 +1430,13 @@ namespace Gek
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList.insert(std::make_pair(resourceHandle, Resource(states)));
+                    resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createDepthStates(const Gek::Video3D::DepthStates &depthStates)
+            STDMETHODIMP_(Handle) createDepthStates(Handle resourcePoolHandle, const Gek::Video3D::DepthStates &depthStates)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
@@ -1437,7 +1456,7 @@ namespace Gek
                 depthStencilDescription.BackFace.StencilFunc = d3dComparisonFunctionList[static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction)];
                 depthStencilDescription.DepthWriteMask = d3dDepthWriteMaskList[static_cast<UINT8>(depthStates.writeMask)];
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID3D11DepthStencilState> states;
                 d3dDevice->CreateDepthStencilState(&depthStencilDescription, &states);
@@ -1445,12 +1464,13 @@ namespace Gek
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList.insert(std::make_pair(resourceHandle, Resource(states)));
+                    resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createBlendStates(const Gek::Video3D::UnifiedBlendStates &blendStates)
+            STDMETHODIMP_(Handle) createBlendStates(Handle resourcePoolHandle, const Gek::Video3D::UnifiedBlendStates &blendStates)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
@@ -1485,7 +1505,7 @@ namespace Gek
                     blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
                 }
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID3D11BlendState> states;
                 d3dDevice->CreateBlendState(&blendDescription, &states);
@@ -1493,12 +1513,13 @@ namespace Gek
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList.insert(std::make_pair(resourceHandle, Resource(states)));
+                    resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createBlendStates(const Gek::Video3D::IndependentBlendStates &blendStates)
+            STDMETHODIMP_(Handle) createBlendStates(Handle resourcePoolHandle, const Gek::Video3D::IndependentBlendStates &blendStates)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
@@ -1536,7 +1557,7 @@ namespace Gek
                     }
                 }
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID3D11BlendState> states;
                 d3dDevice->CreateBlendState(&blendDescription, &states);
@@ -1544,12 +1565,13 @@ namespace Gek
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList.insert(std::make_pair(resourceHandle, Resource(states)));
+                    resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createSamplerStates(const Gek::Video3D::SamplerStates &samplerStates)
+            STDMETHODIMP_(Handle) createSamplerStates(Handle resourcePoolHandle, const Gek::Video3D::SamplerStates &samplerStates)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
@@ -1568,7 +1590,7 @@ namespace Gek
                 samplerDescription.MaxLOD = samplerStates.maximumMipLevel;
                 samplerDescription.Filter = d3dFilterList[static_cast<UINT8>(samplerStates.filterMode)];
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID3D11SamplerState> states;
                 d3dDevice->CreateSamplerState(&samplerDescription, &states);
@@ -1576,18 +1598,19 @@ namespace Gek
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList.insert(std::make_pair(resourceHandle, Resource(states)));
+                    resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createRenderTarget(UINT32 width, UINT32 height, Format format)
+            STDMETHODIMP_(Handle) createRenderTarget(Handle resourcePoolHandle, UINT32 width, UINT32 height, Format format)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(width > 0, Gek::InvalidHandle);
                 REQUIRE_RETURN(height > 0, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 D3D11_TEXTURE2D_DESC textureDescription;
                 textureDescription.Format = DXGI_FORMAT_UNKNOWN;
@@ -1667,6 +1690,7 @@ namespace Gek
                                         }
                                     }
                                 }, std::placeholders::_1, textureDescription))));
+                                resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                             }
                         }
                     }
@@ -1675,13 +1699,13 @@ namespace Gek
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createDepthTarget(UINT32 width, UINT32 height, Format format)
+            STDMETHODIMP_(Handle) createDepthTarget(Handle resourcePoolHandle, UINT32 width, UINT32 height, Format format)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(width > 0, E_INVALIDARG);
                 REQUIRE_RETURN(height > 0, E_INVALIDARG);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 D3D11_TEXTURE2D_DESC depthDescription;
                 depthDescription.Format = DXGI_FORMAT_UNKNOWN;
@@ -1712,14 +1736,51 @@ namespace Gek
                     if (depthStencilView)
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
-                        resourceList.insert(std::make_pair(resourceHandle, Resource(depthStencilView)));
+                        resourceList.insert(std::make_pair(resourceHandle, Resource(depthStencilView, [](CComPtr<IUnknown> &depthResource) -> void
+                        {
+                            depthResource.Release();
+                        }, std::bind([&](CComPtr<IUnknown> &depthResource, D3D11_TEXTURE2D_DESC restoreDescription) -> void
+                        {
+                            D3D11_TEXTURE2D_DESC depthDescription;
+                            depthDescription.Format = DXGI_FORMAT_UNKNOWN;
+                            depthDescription.Width = width;
+                            depthDescription.Height = height;
+                            depthDescription.MipLevels = 1;
+                            depthDescription.ArraySize = 1;
+                            depthDescription.SampleDesc.Count = 1;
+                            depthDescription.SampleDesc.Quality = 0;
+                            depthDescription.Usage = D3D11_USAGE_DEFAULT;
+                            depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+                            depthDescription.CPUAccessFlags = 0;
+                            depthDescription.MiscFlags = 0;
+                            depthDescription.Format = d3dFormatList[static_cast<UINT8>(format)];
+
+                            CComPtr<ID3D11Texture2D> texture2D;
+                            d3dDevice->CreateTexture2D(&depthDescription, nullptr, &texture2D);
+                            if (texture2D)
+                            {
+                                D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
+                                depthStencilDescription.Format = depthDescription.Format;
+                                depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+                                depthStencilDescription.Flags = 0;
+                                depthStencilDescription.Texture2D.MipSlice = 0;
+
+                                CComPtr<ID3D11DepthStencilView> depthStencilView;
+                                d3dDevice->CreateDepthStencilView(texture2D, &depthStencilDescription, &depthStencilView);
+                                if (depthStencilView)
+                                {
+                                    depthResource = depthStencilView;
+                                }
+                            }
+                        }, std::placeholders::_1, depthDescription))));
+                        resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                     }
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createBuffer(UINT32 stride, UINT32 count, UINT32 flags, LPCVOID data)
+            STDMETHODIMP_(Handle) createBuffer(Handle resourcePoolHandle, UINT32 stride, UINT32 count, UINT32 flags, LPCVOID data)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(stride > 0, Gek::InvalidHandle);
@@ -1806,7 +1867,7 @@ namespace Gek
                     d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
                 }
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
                 if (d3dBuffer)
                 {
                     CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
@@ -1839,18 +1900,19 @@ namespace Gek
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
                         resourceList.insert(std::make_pair(resourceHandle, Resource(buffer->getUnknown())));
+                        resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                     }
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createBuffer(Format format, UINT32 count, UINT32 flags, LPCVOID data)
+            STDMETHODIMP_(Handle) createBuffer(Handle resourcePoolHandle, Format format, UINT32 count, UINT32 flags, LPCVOID data)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(count > 0, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 UINT32 stride = d3dFormatStrideList[static_cast<UINT8>(format)];
 
@@ -1955,6 +2017,7 @@ namespace Gek
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
                         resourceList.insert(std::make_pair(resourceHandle, Resource(buffer->getUnknown())));
+                        resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                     }
                 }
 
@@ -2006,11 +2069,11 @@ namespace Gek
                 }
             }
 
-            Gek::Handle compileComputeProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
+            Handle compileComputeProgram(Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2040,6 +2103,7 @@ namespace Gek
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
                         resourceList.insert(std::make_pair(resourceHandle, Resource(d3dShader)));
+                        resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                     }
                 }
                 else if (d3dCompilerErrors)
@@ -2050,11 +2114,11 @@ namespace Gek
                 return resourceHandle;
             }
 
-            Gek::Handle compileVertexProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
+            Handle compileVertexProgram(Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2131,6 +2195,7 @@ namespace Gek
                                 {
                                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                                     resourceList.insert(std::make_pair(resourceHandle, Resource(program)));
+                                    resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                                 }
                             }
                         }
@@ -2144,11 +2209,11 @@ namespace Gek
                 return resourceHandle;
             }
 
-            Gek::Handle compileGeometryProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
+            Handle compileGeometryProgram(Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2178,6 +2243,7 @@ namespace Gek
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
                         resourceList.insert(std::make_pair(resourceHandle, Resource(d3dShader)));
+                        resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                     }
                 }
                 else if (d3dCompilerErrors)
@@ -2188,11 +2254,11 @@ namespace Gek
                 return resourceHandle;
             }
 
-            Gek::Handle compilePixelProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
+            Handle compilePixelProgram(Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2222,6 +2288,7 @@ namespace Gek
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
                         resourceList.insert(std::make_pair(resourceHandle, Resource(d3dShader)));
+                        resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                     }
                 }
                 else if (d3dCompilerErrors)
@@ -2232,87 +2299,87 @@ namespace Gek
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) compileComputeProgram(LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) compileComputeProgram(Handle resourcePoolHandle, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
             {
-                return compileComputeProgram(nullptr, programScript, entryFunction, defineList, nullptr);
+                return compileComputeProgram(resourcePoolHandle, nullptr, programScript, entryFunction, defineList, nullptr);
             }
 
-            STDMETHODIMP_(Gek::Handle) compileVertexProgram(LPCSTR programScript, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) compileVertexProgram(Handle resourcePoolHandle, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList)
             {
-                return compileVertexProgram(nullptr, programScript, entryFunction, elementLayout, defineList, nullptr);
+                return compileVertexProgram(resourcePoolHandle, nullptr, programScript, entryFunction, elementLayout, defineList, nullptr);
             }
 
-            STDMETHODIMP_(Gek::Handle) compileGeometryProgram(LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) compileGeometryProgram(Handle resourcePoolHandle, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
             {
-                return compileGeometryProgram(nullptr, programScript, entryFunction, defineList, nullptr);
+                return compileGeometryProgram(resourcePoolHandle, nullptr, programScript, entryFunction, defineList, nullptr);
             }
 
-            STDMETHODIMP_(Gek::Handle) compilePixelProgram(LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) compilePixelProgram(Handle resourcePoolHandle, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
             {
-                return compilePixelProgram(nullptr, programScript, entryFunction, defineList, nullptr);
+                return compilePixelProgram(resourcePoolHandle, nullptr, programScript, entryFunction, defineList, nullptr);
             }
 
-            STDMETHODIMP_(Gek::Handle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) loadComputeProgram(Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
             {
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CStringA progamScript;
                 if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
                 {
                     CComPtr<Include> spInclude(new Include(fileName));
-                    resourceHandle = compileComputeProgram(fileName, progamScript, entryFunction, defineList, spInclude);
+                    resourceHandle = compileComputeProgram(resourcePoolHandle, fileName, progamScript, entryFunction, defineList, spInclude);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) loadVertexProgram(LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) loadVertexProgram(Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList)
             {
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CStringA progamScript;
                 if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
                 {
                     CComPtr<Include> spInclude(new Include(fileName));
-                    resourceHandle = compileVertexProgram(fileName, progamScript, entryFunction, elementLayout, defineList, spInclude);
+                    resourceHandle = compileVertexProgram(resourcePoolHandle, fileName, progamScript, entryFunction, elementLayout, defineList, spInclude);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) loadGeometryProgram(LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) loadGeometryProgram(Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
             {
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CStringA progamScript;
                 if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
                 {
                     CComPtr<Include> spInclude(new Include(fileName));
-                    resourceHandle = compileGeometryProgram(fileName, progamScript, entryFunction, defineList, spInclude);
+                    resourceHandle = compileGeometryProgram(resourcePoolHandle, fileName, progamScript, entryFunction, defineList, spInclude);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) loadPixelProgram(Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
             {
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CStringA progamScript;
                 if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
                 {
                     CComPtr<Include> spInclude(new Include(fileName));
-                    resourceHandle = compilePixelProgram(fileName, progamScript, entryFunction, defineList, spInclude);
+                    resourceHandle = compilePixelProgram(resourcePoolHandle, fileName, progamScript, entryFunction, defineList, spInclude);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createTexture(UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags)
+            STDMETHODIMP_(Handle) createTexture(Handle resourcePoolHandle, UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 UINT32 bindFlags = 0;
                 if (flags & Gek::Video3D::TextureFlags::RESOURCE)
@@ -2403,18 +2470,19 @@ namespace Gek
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
                         resourceList.insert(std::make_pair(resourceHandle, Resource(texture)));
+                        resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                     }
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) loadTexture(LPCWSTR fileName, UINT32 flags)
+            STDMETHODIMP_(Handle) loadTexture(Handle resourcePoolHandle, LPCWSTR fileName, UINT32 flags)
             {
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(fileName, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 std::vector<UINT8> fileData;
                 if (SUCCEEDED(Gek::FileSystem::load(fileName, fileData)))
@@ -2451,6 +2519,7 @@ namespace Gek
                         {
                             resourceHandle = InterlockedIncrement(&nextResourceHandle);
                             resourceList.insert(std::make_pair(resourceHandle, Resource(texture2D)));
+                            resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                         }
                     }
                 }
@@ -2555,11 +2624,11 @@ namespace Gek
             }
 
             // Video2D::Interface
-            STDMETHODIMP_(Gek::Handle) createBrush(const Math::Float4 &color)
+            STDMETHODIMP_(Handle) createBrush(const Math::Float4 &color)
             {
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID2D1SolidColorBrush> d2dSolidBrush;
                 d2dDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&color, &d2dSolidBrush);
@@ -2572,11 +2641,11 @@ namespace Gek
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createBrush(const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents)
+            STDMETHODIMP_(Handle) createBrush(const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents)
             {
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID2D1GradientStopCollection> spStops;
                 d2dDeviceContext->CreateGradientStopCollection((D2D1_GRADIENT_STOP *)stopPoints.data(), stopPoints.size(), &spStops);
@@ -2594,12 +2663,12 @@ namespace Gek
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Gek::Handle) createFont(LPCWSTR face, UINT32 weight, UINT8 style, float size)
+            STDMETHODIMP_(Handle) createFont(LPCWSTR face, UINT32 weight, UINT8 style, float size)
             {
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);
                 REQUIRE_RETURN(face, Gek::InvalidHandle);
 
-                Gek::Handle resourceHandle = Gek::InvalidHandle;
+                Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<IDWriteTextFormat> dwTextFormat;
                 dwFactory->CreateTextFormat(face, nullptr, DWRITE_FONT_WEIGHT(weight), d3dFontStyleList[style], DWRITE_FONT_STRETCH_NORMAL, size, L"", &dwTextFormat);

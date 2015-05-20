@@ -10,7 +10,7 @@ namespace Gek
 {
     namespace Model
     {
-        static const Handle identifier = 7;
+        static const Handle identifier = 0x00000010;
         struct Data
         {
             CStringW value;

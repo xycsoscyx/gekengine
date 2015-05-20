@@ -9,6 +9,8 @@ namespace Gek
 {
     namespace Video3D
     {
+        static const Handle DefaultResourcePool = -1;
+
         enum class Format : UINT8
         {
             UNKNOWN = 0,
@@ -421,39 +423,40 @@ namespace Gek
             STDMETHOD_(ContextInterface *, getDefaultContext)   (THIS) PURE;
             STDMETHOD(createDeferredContext)                    (THIS_ ContextInterface **instance) PURE;
 
-            STDMETHOD_(void, freeResource)                      (THIS_ Handle resourceHandle) PURE;
+            STDMETHOD_(void, freeResourcePool)                  (THIS_ Handle resourcePoolHandle) PURE;
+            STDMETHOD_(void, freeAllResources)                  (THIS) PURE;
 
-            STDMETHOD_(Handle, createEvent)                     (THIS) PURE;
+            STDMETHOD_(Handle, createEvent)                     (THIS_ Handle resourcePoolHandle) PURE;
             STDMETHOD_(void, setEvent)                          (THIS_ Handle resourceHandle) PURE;
             STDMETHOD_(bool, isEventSet)                        (THIS_ Handle resourceHandle) PURE;
 
-            STDMETHOD_(Handle, createRenderStates)              (THIS_ const RenderStates &kStates) PURE;
-            STDMETHOD_(Handle, createDepthStates)               (THIS_ const DepthStates &kStates) PURE;
-            STDMETHOD_(Handle, createBlendStates)               (THIS_ const UnifiedBlendStates &kStates) PURE;
-            STDMETHOD_(Handle, createBlendStates)               (THIS_ const IndependentBlendStates &kStates) PURE;
-            STDMETHOD_(Handle, createSamplerStates)             (THIS_ const SamplerStates &kStates) PURE;
+            STDMETHOD_(Handle, createRenderStates)              (THIS_ Handle resourcePoolHandle, const RenderStates &kStates) PURE;
+            STDMETHOD_(Handle, createDepthStates)               (THIS_ Handle resourcePoolHandle, const DepthStates &kStates) PURE;
+            STDMETHOD_(Handle, createBlendStates)               (THIS_ Handle resourcePoolHandle, const UnifiedBlendStates &kStates) PURE;
+            STDMETHOD_(Handle, createBlendStates)               (THIS_ Handle resourcePoolHandle, const IndependentBlendStates &kStates) PURE;
+            STDMETHOD_(Handle, createSamplerStates)             (THIS_ Handle resourcePoolHandle, const SamplerStates &kStates) PURE;
 
-            STDMETHOD_(Handle, createRenderTarget)              (THIS_ UINT32 width, UINT32 height, Format format) PURE;
-            STDMETHOD_(Handle, createDepthTarget)               (THIS_ UINT32 width, UINT32 height, Format format) PURE;
+            STDMETHOD_(Handle, createRenderTarget)              (THIS_ Handle resourcePoolHandle, UINT32 width, UINT32 height, Format format) PURE;
+            STDMETHOD_(Handle, createDepthTarget)               (THIS_ Handle resourcePoolHandle, UINT32 width, UINT32 height, Format format) PURE;
 
-            STDMETHOD_(Handle, createBuffer)                    (THIS_ UINT32 stride, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
-            STDMETHOD_(Handle, createBuffer)                    (THIS_ Format format, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
+            STDMETHOD_(Handle, createBuffer)                    (THIS_ Handle resourcePoolHandle, UINT32 stride, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
+            STDMETHOD_(Handle, createBuffer)                    (THIS_ Handle resourcePoolHandle, Format format, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
             STDMETHOD_(void, updateBuffer)                      (THIS_ Handle resourceHandle, LPCVOID data) PURE;
             STDMETHOD(mapBuffer)                                (THIS_ Handle resourceHandle, LPVOID *data) PURE;
             STDMETHOD_(void, unmapBuffer)                       (THIS_ Handle resourceHandle) PURE;
 
-            STDMETHOD_(Handle, compileComputeProgram)           (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, compileVertexProgram)            (THIS_ LPCSTR programScript, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, compileGeometryProgram)          (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, compilePixelProgram)             (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, compileComputeProgram)           (THIS_ Handle resourcePoolHandle, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, compileVertexProgram)            (THIS_ Handle resourcePoolHandle, LPCSTR programScript, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, compileGeometryProgram)          (THIS_ Handle resourcePoolHandle, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, compilePixelProgram)             (THIS_ Handle resourcePoolHandle, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-            STDMETHOD_(Handle, loadComputeProgram)              (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, loadVertexProgram)               (THIS_ LPCWSTR fileName, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, loadGeometryProgram)             (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, loadPixelProgram)                (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadComputeProgram)              (THIS_ Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadVertexProgram)               (THIS_ Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadGeometryProgram)             (THIS_ Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadPixelProgram)                (THIS_ Handle resourcePoolHandle, LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-            STDMETHOD_(Handle, createTexture)                   (THIS_ UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags) PURE;
-            STDMETHOD_(Handle, loadTexture)                     (THIS_ LPCWSTR fileName, UINT32 flags) PURE;
+            STDMETHOD_(Handle, createTexture)                   (THIS_ Handle resourcePoolHandle, UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags) PURE;
+            STDMETHOD_(Handle, loadTexture)                     (THIS_ Handle resourcePoolHandle, LPCWSTR fileName, UINT32 flags) PURE;
             STDMETHOD_(void, updateTexture)                     (THIS_ Handle resourceHandle, LPCVOID data, UINT32 pitch, Rectangle<UINT32> *rectangle = nullptr) PURE;
 
             STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Float4 &color) PURE;

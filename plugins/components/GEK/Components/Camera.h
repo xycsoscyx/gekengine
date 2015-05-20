@@ -15,7 +15,7 @@ namespace Gek
         {
             namespace Camera
             {
-                static const Handle identifier = 1;
+                static const Handle identifier = 0x00000001;
                 struct Data
                 {
                     float fieldOfView;

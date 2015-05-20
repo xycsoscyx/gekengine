@@ -10,16 +10,19 @@
 #include "GEK\Engine\PopulationInterface.h"
 #include "resource.h"
 
-Gek::Handle gs_nSampleStatesID = Gek::InvalidHandle;
-Gek::Handle gs_nRenderStatesID = Gek::InvalidHandle;
-Gek::Handle gs_nBlendStatesID = Gek::InvalidHandle;
-Gek::Handle gs_nDepthStatesID = Gek::InvalidHandle;
-Gek::Handle gs_nVertexProgramID = Gek::InvalidHandle;
-Gek::Handle gs_nPixelProgramID = Gek::InvalidHandle;
-Gek::Handle gs_nConstantBufferID = Gek::InvalidHandle;
-Gek::Handle gs_nVertexBufferID = Gek::InvalidHandle;
-Gek::Handle gs_nIndexBufferID = Gek::InvalidHandle;
-Gek::Handle gs_nTextureID = Gek::InvalidHandle;
+static const Gek::Handle TextureResourcePool = 0x00001001;
+
+Gek::Handle sampleStatesHandle = Gek::InvalidHandle;
+Gek::Handle renderStatesHandle = Gek::InvalidHandle;
+Gek::Handle blendStatesHandle = Gek::InvalidHandle;
+Gek::Handle depthStatesHandle = Gek::InvalidHandle;
+Gek::Handle vertexProgramHandle = Gek::InvalidHandle;
+Gek::Handle pixelProgramHandle = Gek::InvalidHandle;
+Gek::Handle overlayConstantBufferHandle = Gek::InvalidHandle;
+Gek::Handle vertexBufferHandle = Gek::InvalidHandle;
+Gek::Handle indexBufferHandle = Gek::InvalidHandle;
+Gek::Handle textureHandle = Gek::InvalidHandle;
+
 CComAutoCriticalSection criticalSection;
 
 INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam, LPARAM lParam)
@@ -66,34 +69,36 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
                 };
 
                 Gek::Video3D::SamplerStates samplerStates;
-                gs_nSampleStatesID = videoSystem->createSamplerStates(samplerStates);
+                sampleStatesHandle = videoSystem->createSamplerStates(Gek::Video3D::DefaultResourcePool, samplerStates);
 
                 Gek::Video3D::RenderStates renderStates;
-                gs_nRenderStatesID = videoSystem->createRenderStates(renderStates);
+                renderStatesHandle = videoSystem->createRenderStates(Gek::Video3D::DefaultResourcePool, renderStates);
 
                 Gek::Video3D::UnifiedBlendStates blendStates;
-                gs_nBlendStatesID = videoSystem->createBlendStates(blendStates);
+                blendStatesHandle = videoSystem->createBlendStates(Gek::Video3D::DefaultResourcePool, blendStates);
 
                 Gek::Video3D::DepthStates depthStates;
-                gs_nDepthStatesID = videoSystem->createDepthStates(depthStates);
+                depthStatesHandle = videoSystem->createDepthStates(Gek::Video3D::DefaultResourcePool, depthStates);
 
-                gs_nVertexBufferID = videoSystem->createBuffer(sizeof(Gek::Math::Float2), 4, Gek::Video3D::BufferFlags::VERTEX_BUFFER | Gek::Video3D::BufferFlags::STATIC, aVertices);
+                vertexBufferHandle = videoSystem->createBuffer(Gek::Video3D::DefaultResourcePool, sizeof(Gek::Math::Float2), 4, Gek::Video3D::BufferFlags::VERTEX_BUFFER | Gek::Video3D::BufferFlags::STATIC, aVertices);
 
-                gs_nIndexBufferID = videoSystem->createBuffer(sizeof(UINT16), 6, Gek::Video3D::BufferFlags::INDEX_BUFFER | Gek::Video3D::BufferFlags::STATIC, aIndices);
+                indexBufferHandle = videoSystem->createBuffer(Gek::Video3D::DefaultResourcePool, sizeof(UINT16), 6, Gek::Video3D::BufferFlags::INDEX_BUFFER | Gek::Video3D::BufferFlags::STATIC, aIndices);
 
-                gs_nTextureID = videoSystem->loadTexture(L"%root%\\data\\textures\\flames.NormalMap.dds", 0);
+                textureHandle = videoSystem->loadTexture(TextureResourcePool, L"%root%\\data\\textures\\flames.NormalMap.dds", 0);
 
                 std::vector<Gek::Video3D::InputElement> overlayVertexLayout;
                 overlayVertexLayout.push_back(Gek::Video3D::InputElement(Gek::Video3D::Format::RG_FLOAT, "POSITION", 0));
-                gs_nVertexProgramID = videoSystem->loadVertexProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainVertexProgram", overlayVertexLayout);
+                vertexProgramHandle = videoSystem->loadVertexProgram(Gek::Video3D::DefaultResourcePool, L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainVertexProgram", overlayVertexLayout);
 
-                gs_nPixelProgramID = videoSystem->loadPixelProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainPixelProgram");
+                pixelProgramHandle = videoSystem->loadPixelProgram(Gek::Video3D::DefaultResourcePool, L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainPixelProgram");
 
-                gs_nConstantBufferID = videoSystem->createBuffer(sizeof(Gek::Math::Float4x4), 1, Gek::Video3D::BufferFlags::CONSTANT_BUFFER);
+                overlayConstantBufferHandle = videoSystem->createBuffer(Gek::Video3D::DefaultResourcePool, sizeof(Gek::Math::Float4x4), 1, Gek::Video3D::BufferFlags::CONSTANT_BUFFER);
+
+                videoSystem->createRenderTarget(Gek::Video3D::DefaultResourcePool, 100, 100, Gek::Video3D::Format::RGBA_FLOAT);
 
                 Gek::Math::Float4x4 orthoMatrix;
                 orthoMatrix.setOrthographic(0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f);
-                videoSystem->updateBuffer(gs_nConstantBufferID, LPCVOID(&orthoMatrix));
+                videoSystem->updateBuffer(overlayConstantBufferHandle, LPCVOID(&orthoMatrix));
 
                 SetWindowLongPtr(dialogWindow, GWLP_USERDATA, LONG(videoSystem.Detach()));
             }
@@ -132,16 +137,16 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
             videoSystem->clearDefaultRenderTarget(Gek::Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
 
             videoSystem->setDefaultTargets();
-            videoSystem->getDefaultContext()->setRenderStates(gs_nRenderStatesID);
-            videoSystem->getDefaultContext()->setBlendStates(gs_nBlendStatesID, Gek::Math::Float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
-            videoSystem->getDefaultContext()->setDepthStates(gs_nDepthStatesID, 0);
-            videoSystem->getDefaultContext()->getVertexSystem()->setProgram(gs_nVertexProgramID);
-            videoSystem->getDefaultContext()->getVertexSystem()->setConstantBuffer(gs_nConstantBufferID, 1);
-            videoSystem->getDefaultContext()->getPixelSystem()->setProgram(gs_nPixelProgramID);
-            videoSystem->getDefaultContext()->getPixelSystem()->setSamplerStates(gs_nSampleStatesID, 0);
-            videoSystem->getDefaultContext()->getPixelSystem()->setResource(gs_nTextureID, 0);
-            videoSystem->getDefaultContext()->setVertexBuffer(gs_nVertexBufferID, 0, 0);
-            videoSystem->getDefaultContext()->setIndexBuffer(gs_nIndexBufferID, 0);
+            videoSystem->getDefaultContext()->setRenderStates(renderStatesHandle);
+            videoSystem->getDefaultContext()->setBlendStates(blendStatesHandle, Gek::Math::Float4(1.0f, 1.0f, 1.0f, 1.0f), 0xFFFFFFFF);
+            videoSystem->getDefaultContext()->setDepthStates(depthStatesHandle, 0);
+            videoSystem->getDefaultContext()->getVertexSystem()->setProgram(vertexProgramHandle);
+            videoSystem->getDefaultContext()->getVertexSystem()->setConstantBuffer(overlayConstantBufferHandle, 1);
+            videoSystem->getDefaultContext()->getPixelSystem()->setProgram(pixelProgramHandle);
+            videoSystem->getDefaultContext()->getPixelSystem()->setSamplerStates(sampleStatesHandle, 0);
+            videoSystem->getDefaultContext()->getPixelSystem()->setResource(textureHandle, 0);
+            videoSystem->getDefaultContext()->setVertexBuffer(vertexBufferHandle, 0, 0);
+            videoSystem->getDefaultContext()->setIndexBuffer(indexBufferHandle, 0);
             videoSystem->getDefaultContext()->setPrimitiveType(Gek::Video3D::PrimitiveType::TRIANGLELIST);
             videoSystem->getDefaultContext()->drawIndexedPrimitive(6, 0, 0);
 
@@ -169,8 +174,8 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
                 {
                     fileName.ReleaseBuffer();
                     Gek::Video3D::Interface *videoSystem = (Gek::Video3D::Interface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
-                    videoSystem->freeResource(gs_nTextureID);
-                    gs_nTextureID = videoSystem->loadTexture(fileName, 0);
+                    videoSystem->freeResourcePool(TextureResourcePool);
+                    textureHandle = videoSystem->loadTexture(TextureResourcePool, fileName, 0);
                 }
             }
 

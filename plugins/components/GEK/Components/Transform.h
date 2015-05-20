@@ -15,7 +15,7 @@ namespace Gek
         {
             namespace Transform
             {
-                static const Handle identifier = 6;
+                static const Handle identifier = 0x00000006;
                 struct Data
                 {
                     Gek::Math::Float4 position;

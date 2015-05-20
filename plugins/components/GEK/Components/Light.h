@@ -13,7 +13,7 @@ namespace Gek
         {
             namespace PointLight
             {
-                static const Handle  identifier = 4;
+                static const Handle  identifier = 0x00000004;
                 struct Data
                 {
                     float radius;

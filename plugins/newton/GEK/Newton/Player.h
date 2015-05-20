@@ -12,7 +12,7 @@ namespace Gek
     {
         namespace Player
         {
-            static const Handle identifier = 13;
+            static const Handle identifier = 0x00000103;
             struct Data
             {
                 float outerRadius;

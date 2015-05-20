@@ -17,7 +17,7 @@ namespace Gek
         {
             namespace Follow
             {
-                static const Handle identifier = 3;
+                static const Handle identifier = 0x00000003;
                 struct Data
                 {
                     CStringW target;

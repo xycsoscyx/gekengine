@@ -14,7 +14,7 @@ namespace Gek
         {
             namespace Color
             {
-                static const Handle identifier = 2;
+                static const Handle identifier = 0x00000002;
                 struct Data
                 {
                     Gek::Math::Float4 value;
