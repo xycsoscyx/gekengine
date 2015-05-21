@@ -44,7 +44,7 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
             CComQIPtr<Gek::Context::Interface> context((IUnknown *)lParam);
 
             CComPtr<Gek::Video3D::Interface> videoSystem;
-            context->createInstance(__uuidof(Gek::Video::Class), IID_PPV_ARGS(&videoSystem));
+            context->createInstance(CLSID_IID_PPV_ARGS(Gek::Video::Class, &videoSystem));
             if (videoSystem)
             {
                 HWND renderWindow = GetDlgItem(dialogWindow, IDC_VIDEO_WINDOW);

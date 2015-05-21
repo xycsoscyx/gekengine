@@ -10,9 +10,6 @@
 #include <algorithm>
 #include <functional>
 
-#define REQUIRE_VOID_RETURN(CHECK)      do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (false)
-#define REQUIRE_RETURN(CHECK, RETURN)   do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (false)
-
 namespace Gek
 {
     class LoggingScope

@@ -1033,6 +1033,15 @@ namespace Gek
             ~System(void)
             {
                 freeAllResources();
+
+                dwFactory.Release();
+                d2dDeviceContext.Release();
+                d2dFactory.Release();
+
+                d3dDefaultDepthStencilView.Release();
+                d3dDefaultRenderTargetView.Release();
+                dxSwapChain.Release();
+                d3dDevice.Release();
             }
 
             BEGIN_INTERFACE_LIST(System)
