@@ -40,7 +40,7 @@ namespace Gek
 
                 BEGIN_INTERFACE_LIST(System)
                     INTERFACE_LIST_ENTRY_COM(Gek::ObservableInterface)
-                    INTERFACE_LIST_ENTRY_COM(Population::Interface)
+                    INTERFACE_LIST_ENTRY_COM(Interface)
                 END_INTERFACE_LIST_USER
 
                 STDMETHODIMP_(void) update(float frameTime)
@@ -89,8 +89,10 @@ namespace Gek
                 }
 
                 // Population::Interface
-                STDMETHODIMP initialize(void)
+                STDMETHODIMP initialize(IUnknown *initializerContext)
                 {
+                    REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+
                     gekLogScope(__FUNCTION__);
                     gekLogMessage(L"Loading Components...");
                     HRESULT resultValue = getContext()->createEachType(__uuidof(Component::Type), [&](REFCLSID className, IUnknown *object) -> HRESULT
@@ -395,5 +397,5 @@ namespace Gek
 
             REGISTER_CLASS(System)
         }; // namespace Population
-    };
+    }; // namespace Engine
 }; // namespace Gek

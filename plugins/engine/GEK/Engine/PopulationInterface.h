@@ -16,13 +16,13 @@ namespace Gek
 
             DECLARE_INTERFACE_IID(Interface, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B") : virtual public IUnknown
             {
-                STDMETHOD(initialize)                       (THIS)PURE;
+                STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
 
                 STDMETHOD_(float, getGameTime)              (THIS) const PURE;
 
                 STDMETHOD(load)                             (THIS_ LPCWSTR fileName) PURE;
                 STDMETHOD(save)                             (THIS_ LPCWSTR fileName) PURE;
-                STDMETHOD_(void, free)                      (THIS)PURE;
+                STDMETHOD_(void, free)                      (THIS) PURE;
 
                 STDMETHOD_(Handle, createEntity)            (THIS_ const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name = nullptr) PURE;
                 STDMETHOD_(void, killEntity)                (THIS_ Handle entityHandle) PURE;

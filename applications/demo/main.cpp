@@ -7,6 +7,7 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\Interface.h"
+#include "GEK\Engine\CoreInterface.h"
 #include <CommCtrl.h>
 #include "resource.h"
 
@@ -150,14 +151,11 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 #endif
 
             context->initialize();
-/*
-            CComPtr<IGEKGameApplication> spGame;
-            context->CreateInstance(CLSID_GEKEngine, IID_PPV_ARGS(&spGame));
-            if (spGame)
+            CComPtr<Gek::Engine::Core::Interface> engineCore;
+            context->createInstance(__uuidof(Gek::Engine::Core::Class), IID_PPV_ARGS(&engineCore));
+            if (engineCore)
             {
-                spGame->Run();
             }
-*/
         }
 
         return 0;

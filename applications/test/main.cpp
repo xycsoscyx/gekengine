@@ -7,7 +7,6 @@
 #include "GEK\Context\Interface.h"
 #include "GEK\Context\BaseUnknown.h"
 #include "GEK\System\VideoInterface.h"
-#include "GEK\Engine\PopulationInterface.h"
 #include "resource.h"
 
 static const Gek::Handle TextureResourcePool = 0x00001001;
@@ -93,8 +92,6 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
                 pixelProgramHandle = videoSystem->loadPixelProgram(Gek::Video3D::DefaultResourcePool, L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainPixelProgram");
 
                 overlayConstantBufferHandle = videoSystem->createBuffer(Gek::Video3D::DefaultResourcePool, sizeof(Gek::Math::Float4x4), 1, Gek::Video3D::BufferFlags::CONSTANT_BUFFER);
-
-                videoSystem->createRenderTarget(Gek::Video3D::DefaultResourcePool, 100, 100, Gek::Video3D::Format::RGBA_FLOAT);
 
                 Gek::Math::Float4x4 orthoMatrix;
                 orthoMatrix.setOrthographic(0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f);
@@ -204,7 +201,6 @@ namespace Gek
     {
     private:
         CComPtr<Gek::Context::Interface> context;
-        CComPtr<Gek::Engine::Population::Interface> population;
 
     public:
         Initializer(void)
@@ -229,19 +225,8 @@ namespace Gek
 #endif
 
                 context->initialize();
-                resultValue = context->createInstance(__uuidof(Gek::Engine::Population::Class), IID_PPV_ARGS(&population));
             }
 
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = population->initialize();
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = population->load(L"demo");
-                    resultValue = population->save(L"save");
-                }
-            }
 
             return resultValue;
         }
@@ -249,7 +234,6 @@ namespace Gek
         // IUnknown
         BEGIN_INTERFACE_LIST(Initializer)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Gek::Context::Interface, context)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(Gek::Engine::Population::Interface, population)
         END_INTERFACE_LIST_UNKNOWN
     };
 }; // namespace Gek

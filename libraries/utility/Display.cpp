@@ -46,8 +46,8 @@ namespace Gek
 
                 if (findIterator == currentModeList.end())
                 {
-                    currentModeList.emplace_back(displayModeData.dmPanningWidth, displayModeData.dmPanningHeight,
-                        getAspectRatio(displayModeData.dmPanningWidth, displayModeData.dmPanningHeight));
+                    currentModeList.emplace_back(displayModeData.dmPelsWidth, displayModeData.dmPelsHeight,
+                        getAspectRatio(displayModeData.dmPelsWidth, displayModeData.dmPelsHeight));
                 }
             };
 

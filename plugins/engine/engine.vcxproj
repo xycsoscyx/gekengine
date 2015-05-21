@@ -104,14 +104,17 @@
   <ItemGroup>
     <ClInclude Include="GEK\Engine\ActionInterface.h" />
     <ClInclude Include="GEK\Engine\ComponentInterface.h" />
+    <ClInclude Include="GEK\Engine\CoreInterface.h" />
     <ClInclude Include="GEK\Engine\PopulationInterface.h" />
     <ClInclude Include="GEK\Engine\RenderInterface.h" />
     <ClInclude Include="GEK\Engine\SystemInterface.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Engine.cpp" />
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Population.cpp" />
+    <ClCompile Include="Render.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

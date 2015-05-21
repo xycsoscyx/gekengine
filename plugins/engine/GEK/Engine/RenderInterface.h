@@ -11,6 +11,8 @@ namespace Gek
     {
         namespace Render
         {
+            DECLARE_INTERFACE_IID(Class, "97A6A7BC-B739-49D3-808F-3911AE3B8A77");
+
             namespace Attribute
             {
                 enum
@@ -23,6 +25,8 @@ namespace Gek
 
             DECLARE_INTERFACE_IID(Interface, "C851EC91-8B07-4793-B9F5-B15C54E92014") : virtual public IUnknown
             {
+                STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
+            
                 STDMETHOD_(Handle, loadProgram)             (THIS_ LPCWSTR fileName) PURE;
                 STDMETHOD_(void, enableProgram)             (THIS_ Handle programHandle) PURE;
 

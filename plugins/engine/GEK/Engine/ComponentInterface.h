@@ -26,7 +26,7 @@ namespace Gek
                 STDMETHOD_(void, removeComponent)           (THIS_ Handle entityHandle) PURE;
                 STDMETHOD_(bool, hasComponent)              (THIS_ Handle entityHandle) const PURE;
                 STDMETHOD_(LPVOID, getComponent)            (THIS_ Handle entityHandle) PURE;
-                STDMETHOD_(void, clear)                     (THIS)PURE;
+                STDMETHOD_(void, clear)                     (THIS) PURE;
 
                 STDMETHOD_(void, getIntersectingSet)        (THIS_ std::set<Handle> &entityList) PURE;
 
