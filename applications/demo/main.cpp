@@ -134,9 +134,10 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
     return FALSE;
 }
 
-CStringW userInput;
 LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM lParam)
 {
+    LRESULT resultValue = 0;
+    Gek::Engine::Core::Interface *engineCore = (Gek::Engine::Core::Interface *)GetWindowLongPtr(window, GWLP_USERDATA);
     switch (message)
     {
     case WM_CLOSE:
@@ -147,117 +148,21 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
         PostQuitMessage(0);
         break;
 
-    case WM_SETCURSOR:
-        return 1;
-
-    case WM_ACTIVATE:
-        if (HIWORD(wParam))
+    default:
+        if (engineCore)
         {
-            //m_bWindowActive = false;
-        }
-        else
-        {
-            switch (LOWORD(wParam))
-            {
-            case WA_ACTIVE:
-            case WA_CLICKACTIVE:
-                //m_bWindowActive = true;
-                break;
-
-            case WA_INACTIVE:
-                //m_bWindowActive = false;
-                break;
-            };
-        }
-
-        return 1;
-
-    case WM_CHAR:
-        if (true)
-        {
-            switch (wParam)
-            {
-            case 0x08: // backspace
-                if (userInput.GetLength() > 0)
-                {
-                    userInput = userInput.Mid(0, userInput.GetLength() - 1);
-                }
-
-                break;
-
-            case 0x0A: // linefeed
-            case 0x0D: // carriage return
-                if (true)
-                {
-                    int position = 0;
-                    CStringW command = userInput.Tokenize(L" ", position);
-
-                    std::vector<CStringW> parameterList;
-                    while (position >= 0 && position < userInput.GetLength())
-                    {
-                        parameterList.push_back(userInput.Tokenize(L" ", position));
-                    };
-
-                    //RunCommand(strCommand, aParams);
-                }
-
-                userInput.Empty();
-                break;
-
-            case 0x1B: // escape
-                userInput.Empty();
-                break;
-
-            case 0x09: // tab
-                break;
-
-            default:
-                if (wParam != '`')
-                {
-                    userInput += (WCHAR)wParam;
-                }
-
-                break;
-            };
-        }
-
-        break;
-
-    case WM_KEYDOWN:
-        return 1;
-
-    case WM_KEYUP:
-        return 1;
-
-    case WM_LBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-    case WM_MBUTTONDOWN:
-        return 1;
-
-    case WM_LBUTTONUP:
-    case WM_RBUTTONUP:
-    case WM_MBUTTONUP:
-        return 1;
-
-    case WM_MOUSEWHEEL:
-        if (true)
-        {
-            INT32 mouseWhellDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-        }
-
-        return 1;
-
-    case WM_SYSCOMMAND:
-        if (SC_KEYMENU == (wParam & 0xFFF0))
-        {
-            //m_spVideoSystem->Resize(m_spVideoSystem->Getwidth(), m_spVideoSystem->Getheight(), !m_spVideoSystem->IsWindowed());
-            return 1;
+            resultValue = engineCore->windowEvent(message, wParam, lParam);
         }
 
         break;
     };
 
-    return DefWindowProc(window, message, wParam, lParam);
+    if (resultValue == 0)
+    {
+        resultValue = DefWindowProc(window, message, wParam, lParam);
+    }
+    
+    return resultValue;
 }
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
@@ -338,6 +243,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                     HWND window = CreateWindow(L"GEKvX_Engine_314159", L"GEKvX Engine", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
                     if (SUCCEEDED(engineCore->initialize(window)))
                     {
+                        SetWindowLongPtr(window, GWLP_USERDATA, LONG((Gek::Engine::Core::Interface *)engineCore));
                         ShowWindow(window, SW_SHOW);
                         UpdateWindow(window);
                         

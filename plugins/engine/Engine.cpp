@@ -25,6 +25,7 @@ namespace Gek
                 CComPtr<Population::Interface> population;
                 CComPtr<Render::Interface> render;
                 std::list<CComPtr<Engine::System::Interface>> systemList;
+                CStringW userMessage;
 
             public:
                 System(void)
@@ -98,6 +99,123 @@ namespace Gek
                     }
 
                     return resultValue;
+                }
+
+                STDMETHODIMP_(LRESULT) windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam)
+                {
+                    switch (message)
+                    {
+                    case WM_SETCURSOR:
+                        return 1;
+
+                    case WM_ACTIVATE:
+                        if (HIWORD(wParam))
+                        {
+                            //m_bWindowActive = false;
+                        }
+                        else
+                        {
+                            switch (LOWORD(wParam))
+                            {
+                            case WA_ACTIVE:
+                            case WA_CLICKACTIVE:
+                                //m_bWindowActive = true;
+                                break;
+
+                            case WA_INACTIVE:
+                                //m_bWindowActive = false;
+                                break;
+                            };
+                        }
+
+                        return 1;
+
+                    case WM_CHAR:
+                        if (true)
+                        {
+                            switch (wParam)
+                            {
+                            case 0x08: // backspace
+                                if (userMessage.GetLength() > 0)
+                                {
+                                    userMessage = userMessage.Mid(0, userMessage.GetLength() - 1);
+                                }
+
+                                break;
+
+                            case 0x0A: // linefeed
+                            case 0x0D: // carriage return
+                                if (true)
+                                {
+                                    int position = 0;
+                                    CStringW command = userMessage.Tokenize(L" ", position);
+
+                                    std::vector<CStringW> parameterList;
+                                    while (position >= 0 && position < userMessage.GetLength())
+                                    {
+                                        parameterList.push_back(userMessage.Tokenize(L" ", position));
+                                    };
+
+                                    //RunCommand(strCommand, aParams);
+                                }
+
+                                userMessage.Empty();
+                                break;
+
+                            case 0x1B: // escape
+                                userMessage.Empty();
+                                break;
+
+                            case 0x09: // tab
+                                break;
+
+                            default:
+                                if (wParam != '`')
+                                {
+                                    userMessage += (WCHAR)wParam;
+                                }
+
+                                break;
+                            };
+                        }
+
+                        break;
+
+                    case WM_KEYDOWN:
+                        return 1;
+
+                    case WM_KEYUP:
+                        return 1;
+
+                    case WM_LBUTTONDOWN:
+                    case WM_RBUTTONDOWN:
+                    case WM_MBUTTONDOWN:
+                        return 1;
+
+                    case WM_LBUTTONUP:
+                    case WM_RBUTTONUP:
+                    case WM_MBUTTONUP:
+                        return 1;
+
+                    case WM_MOUSEWHEEL:
+                        if (true)
+                        {
+                            INT32 mouseWhellDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+                        }
+
+                        return 1;
+
+                    case WM_SYSCOMMAND:
+                        if (SC_KEYMENU == (wParam & 0xFFF0))
+                        {
+                            //m_spVideoSystem->Resize(m_spVideoSystem->Getwidth(), m_spVideoSystem->Getheight(), !m_spVideoSystem->IsWindowed());
+                            return 1;
+                        }
+
+                        break;
+                    };
+
+                    return 0;
                 }
             };
 
