@@ -15,6 +15,8 @@ namespace Gek
                 STDMETHOD(initialize)               (THIS_ HWND window) PURE;
 
                 STDMETHOD_(LRESULT, windowEvent)    (THIS_ UINT32 message, WPARAM wParam, LPARAM lParam) PURE;
+
+                STDMETHOD_(bool, update)            (THIS) PURE;
             };
         }; // namespace Core
     }; // namespace Engine

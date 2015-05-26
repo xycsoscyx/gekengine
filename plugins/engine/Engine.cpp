@@ -5,6 +5,7 @@
 #include "GEK\Context\BaseUser.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
+#include "GEK\Utility\Timer.h"
 #include <set>
 #include <concurrent_vector.h>
 #include <concurrent_unordered_map.h>
@@ -21,15 +22,26 @@ namespace Gek
             {
             private:
                 HWND window;
+                bool windowActive;
+                bool engineRunning;
+
+                Gek::Timer timer;
+                double updateAccumulator;
                 CComPtr<Video3D::Interface> video;
                 CComPtr<Population::Interface> population;
                 CComPtr<Render::Interface> render;
                 std::list<CComPtr<Engine::System::Interface>> systemList;
+
+                bool consoleActive;
                 CStringW userMessage;
 
             public:
                 System(void)
                     : window(nullptr)
+                    , windowActive(false)
+                    , engineRunning(true)
+                    , updateAccumulator(0.0)
+                    , consoleActive(false)
                 {
                 }
 
@@ -98,6 +110,11 @@ namespace Gek
                         });
                     }
 
+                    if (SUCCEEDED(resultValue))
+                    {
+                        windowActive = true;
+                    }
+
                     return resultValue;
                 }
 
@@ -111,7 +128,7 @@ namespace Gek
                     case WM_ACTIVATE:
                         if (HIWORD(wParam))
                         {
-                            //m_bWindowActive = false;
+                            windowActive = false;
                         }
                         else
                         {
@@ -119,19 +136,20 @@ namespace Gek
                             {
                             case WA_ACTIVE:
                             case WA_CLICKACTIVE:
-                                //m_bWindowActive = true;
+                                windowActive = true;
                                 break;
 
                             case WA_INACTIVE:
-                                //m_bWindowActive = false;
+                                windowActive = false;
                                 break;
                             };
                         }
 
+                        timer.pause(!windowActive);
                         return 1;
 
                     case WM_CHAR:
-                        if (true)
+                        if (windowActive)
                         {
                             switch (wParam)
                             {
@@ -155,6 +173,11 @@ namespace Gek
                                     {
                                         parameterList.push_back(userMessage.Tokenize(L" ", position));
                                     };
+
+                                    if (command.CompareNoCase(L"quit") == 0)
+                                    {
+                                        engineRunning = false;
+                                    }
 
                                     //RunCommand(strCommand, aParams);
                                 }
@@ -216,6 +239,62 @@ namespace Gek
                     };
 
                     return 0;
+                }
+
+                STDMETHODIMP_(bool) update(void)
+                {
+                    if (windowActive)
+                    {
+                        timer.update();
+                        double updateTime = timer.getUpdateTime();
+                        if (consoleActive)
+                        {
+                        }
+                        else
+                        {
+                            POINT cursorPosition;
+                            GetCursorPos(&cursorPosition);
+
+                            RECT clientRectangle;
+                            GetWindowRect(window, &clientRectangle);
+                            INT32 clientCenterX = (clientRectangle.left + ((clientRectangle.right - clientRectangle.left) / 2));
+                            INT32 clientCenterY = (clientRectangle.top + ((clientRectangle.bottom - clientRectangle.top) / 2));
+                            SetCursorPos(clientCenterX, clientCenterY);
+
+                            INT32 cursorMovementX = ((cursorPosition.x - clientCenterX) / 2);
+                            INT32 cursorMovementY = ((cursorPosition.y - clientCenterY) / 2);
+                            if (cursorMovementX != 0 || cursorMovementY != 0)
+                            {
+                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, L"turn", float(cursorMovementX))));
+                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, L"tilt", float(cursorMovementY))));
+                            }
+
+                            UINT32 frameCount = 3;
+                            updateAccumulator += updateTime;
+                            while (updateAccumulator > (1.0 / 30.0))
+                            {
+                                population->update(1.0 / 30.0);
+                                if (--frameCount == 0)
+                                {
+                                    updateAccumulator = 0.0;
+                                }
+                                else
+                                {
+                                    updateAccumulator -= (1.0 / 30.0);
+                                }
+                            };
+                        }
+
+                        video->clearDefaultRenderTarget(Math::Float4(0.0f, 1.0f, 0.0f, 1.0f));
+                        video->present(true);
+                    }
+                    else
+                    {
+                        video->clearDefaultRenderTarget(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                        video->present(true);
+                    }
+
+                    return engineRunning;
                 }
             };
 

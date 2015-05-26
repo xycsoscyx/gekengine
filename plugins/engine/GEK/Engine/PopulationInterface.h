@@ -17,8 +17,8 @@ namespace Gek
             DECLARE_INTERFACE_IID(Interface, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B") : virtual public IUnknown
             {
                 STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
-
-                STDMETHOD_(float, getGameTime)              (THIS) const PURE;
+                
+                STDMETHOD_(void, update)                    (THIS_ float frameTime) PURE;
 
                 STDMETHOD(load)                             (THIS_ LPCWSTR fileName) PURE;
                 STDMETHOD(save)                             (THIS_ LPCWSTR fileName) PURE;

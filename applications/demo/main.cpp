@@ -255,8 +255,15 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                                 TranslateMessage(&message);
                                 DispatchMessage(&message);
                             };
+
+                            if (!engineCore->update())
+                            {
+                                break;
+                            }
                         };
-                            
+
+                        SetWindowLongPtr(window, GWLP_USERDATA, 0);
+                        engineCore.Release();
                         DestroyWindow(window);
                     }
                 }

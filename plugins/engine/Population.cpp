@@ -43,6 +43,43 @@ namespace Gek
                     INTERFACE_LIST_ENTRY_COM(Interface)
                 END_INTERFACE_LIST_USER
 
+                // Population::Interface
+                STDMETHODIMP initialize(IUnknown *initializerContext)
+                {
+                    REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+
+                    gekLogScope(__FUNCTION__);
+                    gekLogMessage(L"Loading Components...");
+                    HRESULT resultValue = getContext()->createEachType(__uuidof(Component::Type), [&](REFCLSID className, IUnknown *object) -> HRESULT
+                    {
+                        CComQIPtr<Component::Interface> component(object);
+                        if (component)
+                        {
+                            CStringW lowerCaseName(component->getName());
+                            lowerCaseName.MakeLower();
+
+                            auto identifierIterator = componentList.insert(std::make_pair(component->getIdentifier(), component));
+                            if (identifierIterator.second)
+                            {
+                                gekLogMessage(L"Component Found : ID(0x % 08X), Name(%s)", component->getIdentifier(), lowerCaseName.GetString());
+                                if (!componentNameList.insert(std::make_pair(lowerCaseName, component->getIdentifier())).second)
+                                {
+                                    componentList.erase(identifierIterator.first);
+                                    gekLogMessage(L"ERROR: Component Name Already Used: %s", lowerCaseName.GetString());
+                                }
+                            }
+                            else
+                            {
+                                gekLogMessage(L"ERROR: Component ID Already Used: 0x%08X", component->getIdentifier());
+                            }
+                        }
+
+                        return S_OK;
+                    });
+
+                    return resultValue;
+                }
+
                 STDMETHODIMP_(void) update(float frameTime)
                 {
                     BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdateBegin, std::placeholders::_1, frameTime)));
@@ -86,48 +123,6 @@ namespace Gek
                     }
 
                     killEntityList.clear();
-                }
-
-                // Population::Interface
-                STDMETHODIMP initialize(IUnknown *initializerContext)
-                {
-                    REQUIRE_RETURN(initializerContext, E_INVALIDARG);
-
-                    gekLogScope(__FUNCTION__);
-                    gekLogMessage(L"Loading Components...");
-                    HRESULT resultValue = getContext()->createEachType(__uuidof(Component::Type), [&](REFCLSID className, IUnknown *object) -> HRESULT
-                    {
-                        CComQIPtr<Component::Interface> component(object);
-                        if (component)
-                        {
-                            CStringW lowerCaseName(component->getName());
-                            lowerCaseName.MakeLower();
-
-                            auto identifierIterator = componentList.insert(std::make_pair(component->getIdentifier(), component));
-                            if (identifierIterator.second)
-                            {
-                                gekLogMessage(L"Component Found : ID(0x % 08X), Name(%s)", component->getIdentifier(), lowerCaseName.GetString());
-                                if (!componentNameList.insert(std::make_pair(lowerCaseName, component->getIdentifier())).second)
-                                {
-                                    componentList.erase(identifierIterator.first);
-                                    gekLogMessage(L"ERROR: Component Name Already Used: %s", lowerCaseName.GetString());
-                                }
-                            }
-                            else
-                            {
-                                gekLogMessage(L"ERROR: Component ID Already Used: 0x%08X", component->getIdentifier());
-                            }
-                        }
-
-                        return S_OK;
-                    });
-
-                    return resultValue;
-                }
-
-                STDMETHODIMP_(float) getGameTime(void) const
-                {
-                    return 0.0f;
                 }
 
                 STDMETHODIMP load(LPCWSTR fileName)

@@ -1078,47 +1078,48 @@ namespace Gek
                     }
                 }
 
-                if (SUCCEEDED(resultValue) && depthFormat != Gek::Video3D::Format::UNKNOWN)
+                if (SUCCEEDED(resultValue))
                 {
                     CComPtr<ID3D11Texture2D> d3dRenderTarget;
                     resultValue = dxSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
                     if (d3dRenderTarget)
                     {
                         resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dDefaultRenderTargetView);
-                        if (d3dDefaultRenderTargetView)
+                    }
+                }
+
+                if (SUCCEEDED(resultValue) && depthFormat != Gek::Video3D::Format::UNKNOWN)
+                {
+                    D3D11_TEXTURE2D_DESC depthDescription;
+                    depthDescription.Format = DXGI_FORMAT_UNKNOWN;
+                    depthDescription.Width = width;
+                    depthDescription.Height = height;
+                    depthDescription.MipLevels = 1;
+                    depthDescription.ArraySize = 1;
+                    depthDescription.SampleDesc.Count = 1;
+                    depthDescription.SampleDesc.Quality = 0;
+                    depthDescription.Usage = D3D11_USAGE_DEFAULT;
+                    depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+                    depthDescription.CPUAccessFlags = 0;
+                    depthDescription.MiscFlags = 0;
+                    depthDescription.Format = d3dFormatList[static_cast<UINT8>(depthFormat)];
+                    if (depthDescription.Format != DXGI_FORMAT_UNKNOWN)
+                    {
+                        CComPtr<ID3D11Texture2D> d3dDepthTarget;
+                        resultValue = d3dDevice->CreateTexture2D(&depthDescription, nullptr, &d3dDepthTarget);
+                        if (d3dDepthTarget)
                         {
-                            D3D11_TEXTURE2D_DESC depthDescription;
-                            depthDescription.Format = DXGI_FORMAT_UNKNOWN;
-                            depthDescription.Width = width;
-                            depthDescription.Height = height;
-                            depthDescription.MipLevels = 1;
-                            depthDescription.ArraySize = 1;
-                            depthDescription.SampleDesc.Count = 1;
-                            depthDescription.SampleDesc.Quality = 0;
-                            depthDescription.Usage = D3D11_USAGE_DEFAULT;
-                            depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-                            depthDescription.CPUAccessFlags = 0;
-                            depthDescription.MiscFlags = 0;
-                            depthDescription.Format = d3dFormatList[static_cast<UINT8>(depthFormat)];
-                            if (depthDescription.Format != DXGI_FORMAT_UNKNOWN)
+                            D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
+                            depthStencilDescription.Format = depthDescription.Format;
+                            depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+                            depthStencilDescription.Flags = 0;
+                            depthStencilDescription.Texture2D.MipSlice = 0;
+                            resultValue = d3dDevice->CreateDepthStencilView(d3dDepthTarget, &depthStencilDescription, &d3dDefaultDepthStencilView);
+                            if (d3dDefaultDepthStencilView)
                             {
-                                CComPtr<ID3D11Texture2D> d3dDepthTarget;
-                                resultValue = d3dDevice->CreateTexture2D(&depthDescription, nullptr, &d3dDepthTarget);
-                                if (d3dDepthTarget)
-                                {
-                                    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
-                                    depthStencilDescription.Format = depthDescription.Format;
-                                    depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-                                    depthStencilDescription.Flags = 0;
-                                    depthStencilDescription.Texture2D.MipSlice = 0;
-                                    resultValue = d3dDevice->CreateDepthStencilView(d3dDepthTarget, &depthStencilDescription, &d3dDefaultDepthStencilView);
-                                    if (d3dDefaultDepthStencilView)
-                                    {
-                                        this->depthFormat = depthDescription.Format;
-                                        ID3D11RenderTargetView *d3dRenderTargetViewList[1] = { d3dDefaultRenderTargetView };
-                                        d3dDeviceContext->OMSetRenderTargets(1, d3dRenderTargetViewList, d3dDefaultDepthStencilView);
-                                    }
-                                }
+                                this->depthFormat = depthDescription.Format;
+                                ID3D11RenderTargetView *d3dRenderTargetViewList[1] = { d3dDefaultRenderTargetView };
+                                d3dDeviceContext->OMSetRenderTargets(1, d3dRenderTargetViewList, d3dDefaultDepthStencilView);
                             }
                         }
                     }
@@ -2571,13 +2572,15 @@ namespace Gek
 
             STDMETHODIMP_(void) clearDefaultRenderTarget(const Math::Float4 &color)
             {
-                REQUIRE_VOID_RETURN(d3dDeviceContext && d3dDefaultRenderTargetView);
+                REQUIRE_VOID_RETURN(d3dDeviceContext);
+                REQUIRE_VOID_RETURN(d3dDefaultRenderTargetView);
                 d3dDeviceContext->ClearRenderTargetView(d3dDefaultRenderTargetView, color.rgba);
             }
 
             STDMETHODIMP_(void) clearDefaultDepthStencilTarget(UINT32 flags, float depth, UINT32 stencil)
             {
-                REQUIRE_VOID_RETURN(d3dDeviceContext && d3dDefaultDepthStencilView);
+                REQUIRE_VOID_RETURN(d3dDeviceContext);
+                REQUIRE_VOID_RETURN(d3dDefaultDepthStencilView);
                 d3dDeviceContext->ClearDepthStencilView(d3dDefaultDepthStencilView,
                     ((flags & Gek::Video3D::ClearMask::DEPTH ? D3D11_CLEAR_DEPTH : 0) |
                     (flags & Gek::Video3D::ClearMask::STENCIL ? D3D11_CLEAR_STENCIL : 0)),
@@ -2586,7 +2589,7 @@ namespace Gek
 
             STDMETHODIMP_(void) setDefaultTargets(ContextInterface *context, Handle depthHandle)
             {
-                REQUIRE_VOID_RETURN(d3dDeviceContext || d3dDeviceContext);
+                REQUIRE_VOID_RETURN(d3dDeviceContext || context);
                 REQUIRE_VOID_RETURN(d3dDefaultRenderTargetView);
                 REQUIRE_VOID_RETURN(d3dDefaultDepthStencilView);
 
