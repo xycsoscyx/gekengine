@@ -16,6 +16,16 @@ namespace Gek
             Italic,
         };
 
+        enum class InterpolationMode : UINT8
+        {
+            NEAREST_NEIGHBOR = 0,
+            LINEAR,
+            CUBIC,
+            MULTI_SAMPLE_LINEAR,
+            ANISOTROPIC,
+            HIGH_QUALITY_CUBIC
+        };
+
         struct GradientPoint
         {
             float position;
@@ -38,10 +48,12 @@ namespace Gek
 
         DECLARE_INTERFACE_IID(Interface, "D3B65773-4EB1-46F8-A38D-009CA43CE77F") : virtual public IUnknown
         {
-            STDMETHOD_(Handle, createBrush)         (THIS_ const Math::Float4 &color) PURE;
-            STDMETHOD_(Handle, createBrush)         (THIS_ const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents) PURE;
+            STDMETHOD_(Handle, createBrush)         (THIS_ Handle resourcePoolHandle, const Math::Float4 &color) PURE;
+            STDMETHOD_(Handle, createBrush)         (THIS_ Handle resourcePoolHandle, const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents) PURE;
 
-            STDMETHOD_(Handle, createFont)          (THIS_ LPCWSTR face, UINT32 weight, FontStyle style, float size) PURE;
+            STDMETHOD_(Handle, createFont)          (THIS_ Handle resourcePoolHandle, LPCWSTR face, UINT32 weight, FontStyle style, float size) PURE;
+
+            STDMETHOD_(Handle, loadBitmap)          (THIS_ Handle resourcePoolHandle, LPCWSTR fileName) PURE;
 
             STDMETHOD(createGeometry)               (THIS_ GeometryInterface **returnObject) PURE;
 
@@ -51,6 +63,9 @@ namespace Gek
 
             STDMETHOD_(void, drawRectangle)         (THIS_ const Rectangle<float> &extents, Handle brushHandle, bool fillShape) PURE;
             STDMETHOD_(void, drawRectangle)         (THIS_ const Rectangle<float> &extents, const Math::Float2 &cornerRadius, Handle brushHandle, bool fillShape) PURE;
+
+            STDMETHOD_(void, drawBitmap)            (THIS_ Handle bitmapHandlef, const Rectangle<float> &destinationExtents, InterpolationMode interpolationMode = InterpolationMode::NEAREST_NEIGHBOR, float opacity = 1.0) PURE;
+            STDMETHOD_(void, drawBitmap)            (THIS_ Handle bitmapHandlef, const Rectangle<float> &destinationExtents, const Rectangle<float> &sourceExtents, InterpolationMode interpolationMode = InterpolationMode::NEAREST_NEIGHBOR, float opacity = 1.0) PURE;
 
             STDMETHOD_(void, drawGeometry)          (THIS_ GeometryInterface *geometry, Handle brushHandle, bool fillShape) PURE;
 

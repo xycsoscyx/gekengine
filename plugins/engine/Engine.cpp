@@ -358,13 +358,15 @@ namespace Gek
                         float height = float(video->getHeight());
                         float consoleHeight = (height * 0.5f);
 
-                        Handle backgroundBrushHandle = video->getVideo2D()->createBrush({ { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                        Handle backgroundBrushHandle = video->getVideo2D()->createBrush(-1, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
 
-                        Handle foregroundBrushHandle = video->getVideo2D()->createBrush({ { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                        Handle foregroundBrushHandle = video->getVideo2D()->createBrush(-1, { { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
 
-                        Handle textBrushHandle = video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+                        Handle textBrushHandle = video->getVideo2D()->createBrush(-1, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
 
-                        Handle fontHandle = video->getVideo2D()->createFont(L"Tahoma", 400, Video2D::FontStyle::Normal, 15.0f);
+                        Handle fontHandle = video->getVideo2D()->createFont(-1, L"Tahoma", 400, Video2D::FontStyle::Normal, 15.0f);
+
+                        Handle bitmapHandle = video->getVideo2D()->loadBitmap(-1, L"%root%\\data\\console.bmp");
 
                         video->getVideo2D()->setTransform(Math::Float3x2());
 
@@ -375,16 +377,17 @@ namespace Gek
                         video->getVideo2D()->setTransform(transformMatrix);
 
                         video->getVideo2D()->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrushHandle, true);
+                        video->getVideo2D()->drawBitmap(bitmapHandle, { 0.0f, 0.0f, width, consoleHeight }, Video2D::InterpolationMode::LINEAR, 1.0f);
                         video->getVideo2D()->drawRectangle({ 10.0f, 10.0f, (width - 10.0f), (consoleHeight - 40.0f) }, foregroundBrushHandle, true);
                         video->getVideo2D()->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrushHandle, true);
                         video->getVideo2D()->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, fontHandle, textBrushHandle, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
 
                         Handle logTypeBrushHandles[4] =
                         {
-                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 1.0f, 1.0f)),
-                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 0.0f, 1.0f)),
-                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f)),
-                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(-1, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(-1, Math::Float4(1.0f, 1.0f, 0.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(-1, Math::Float4(1.0f, 0.0f, 0.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(-1, Math::Float4(1.0f, 0.0f, 0.0f, 1.0f)),
                         };
 
                         float nPosition = (consoleHeight - 40.0f);

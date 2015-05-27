@@ -17,6 +17,7 @@
 #include <memory>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
+#include <wincodec.h>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -185,10 +186,20 @@ namespace Gek
             D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP,
         };
 
-        static const DWRITE_FONT_STYLE d3dFontStyleList[] =
+        static const DWRITE_FONT_STYLE d2dFontStyleList[] =
         {
             DWRITE_FONT_STYLE_NORMAL,
             DWRITE_FONT_STYLE_ITALIC,
+        };
+
+        static const D2D1_INTERPOLATION_MODE d2dInterpolationMode[] =
+        {
+            D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR,
+            D2D1_INTERPOLATION_MODE_LINEAR,
+            D2D1_INTERPOLATION_MODE_CUBIC,
+            D2D1_INTERPOLATION_MODE_MULTI_SAMPLE_LINEAR,
+            D2D1_INTERPOLATION_MODE_ANISOTROPIC,
+            D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC,
         };
 
         DECLARE_INTERFACE(ResourceHandlerInterface)
@@ -2641,7 +2652,7 @@ namespace Gek
             }
 
             // Video2D::Interface
-            STDMETHODIMP_(Handle) createBrush(const Math::Float4 &color)
+            STDMETHODIMP_(Handle) createBrush(Handle resourcePoolHandle, const Math::Float4 &color)
             {
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);
 
@@ -2653,13 +2664,13 @@ namespace Gek
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList.insert(std::make_pair(resourceHandle, Resource(d2dSolidBrush)));
-                    resourcePoolList[-1].push_back(resourceHandle);
+                    resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Handle) createBrush(const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents)
+            STDMETHODIMP_(Handle) createBrush(Handle resourcePoolHandle, const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents)
             {
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);
 
@@ -2675,14 +2686,14 @@ namespace Gek
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
                         resourceList.insert(std::make_pair(resourceHandle, Resource(d2dGradientBrush)));
-                        resourcePoolList[-1].push_back(resourceHandle);
+                        resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
                     }
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Handle) createFont(LPCWSTR face, UINT32 weight, FontStyle style, float size)
+            STDMETHODIMP_(Handle) createFont(Handle resourcePoolHandle, LPCWSTR face, UINT32 weight, FontStyle style, float size)
             {
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);
                 REQUIRE_RETURN(face, Gek::InvalidHandle);
@@ -2690,12 +2701,51 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<IDWriteTextFormat> dwTextFormat;
-                dwFactory->CreateTextFormat(face, nullptr, DWRITE_FONT_WEIGHT(weight), d3dFontStyleList[static_cast<UINT8>(style)], DWRITE_FONT_STRETCH_NORMAL, size, L"", &dwTextFormat);
+                dwFactory->CreateTextFormat(face, nullptr, DWRITE_FONT_WEIGHT(weight), d2dFontStyleList[static_cast<UINT8>(style)], DWRITE_FONT_STRETCH_NORMAL, size, L"", &dwTextFormat);
                 if (dwTextFormat)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList.insert(std::make_pair(resourceHandle, Resource(dwTextFormat)));
-                    resourcePoolList[-1].push_back(resourceHandle);
+                    resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
+                }
+
+                return resourceHandle;
+            }
+
+            STDMETHODIMP_(Handle) loadBitmap(Handle resourcePoolHandle, LPCWSTR fileName)
+            {
+                Handle resourceHandle = Gek::InvalidHandle;
+
+                CComPtr<IWICImagingFactory> imagingFactory;
+                imagingFactory.CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER);
+                if (imagingFactory)
+                {
+                    CComPtr<IWICBitmapDecoder> bitmapDecoder;
+                    imagingFactory->CreateDecoderFromFilename(Gek::FileSystem::expandPath(fileName), NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &bitmapDecoder);
+                    if (bitmapDecoder)
+                    {
+                        CComPtr<IWICBitmapFrameDecode> firstSourceFrame;
+                        bitmapDecoder->GetFrame(0, &firstSourceFrame);
+                        if (firstSourceFrame)
+                        {
+                            CComPtr<IWICFormatConverter> formatConverter;
+                            imagingFactory->CreateFormatConverter(&formatConverter);
+                            if (formatConverter)
+                            {
+                                if (SUCCEEDED(formatConverter->Initialize(firstSourceFrame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.f, WICBitmapPaletteTypeMedianCut)))
+                                {
+                                    CComPtr<ID2D1Bitmap1> bitmap;
+                                    d2dDeviceContext->CreateBitmapFromWicBitmap(formatConverter, NULL, &bitmap);
+                                    if (bitmap)
+                                    {
+                                        resourceHandle = InterlockedIncrement(&nextResourceHandle);
+                                        resourceList.insert(std::make_pair(resourceHandle, Resource(bitmap)));
+                                        resourcePoolList[resourcePoolHandle].push_back(resourceHandle);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 return resourceHandle;
@@ -2782,6 +2832,28 @@ namespace Gek
                     {
                         d2dDeviceContext->DrawRoundedRectangle({ *(D2D1_RECT_F *)&extents, cornerRadius.x, cornerRadius.y }, d2dBrush);
                     }
+                }
+            }
+
+            STDMETHODIMP_(void) drawBitmap(Handle bitmapHandle, const Rectangle<float> &destinationExtents, InterpolationMode interpolationMode, float opacity)
+            {
+                REQUIRE_VOID_RETURN(d2dDeviceContext);
+
+                CComQIPtr<ID2D1Bitmap1> d2dBitmap(getResource(bitmapHandle));
+                if (d2dBitmap)
+                {
+                    d2dDeviceContext->DrawBitmap(d2dBitmap, (const D2D1_RECT_F *)&destinationExtents, opacity, d2dInterpolationMode[static_cast<UINT8>(interpolationMode)]);
+                }
+            }
+
+            STDMETHODIMP_(void) drawBitmap(Handle bitmapHandle, const Rectangle<float> &destinationExtents, const Rectangle<float> &sourceExtents, InterpolationMode interpolationMode, float opacity)
+            {
+                REQUIRE_VOID_RETURN(d2dDeviceContext);
+
+                CComQIPtr<ID2D1Bitmap1> d2dBitmap(getResource(bitmapHandle));
+                if (d2dBitmap)
+                {
+                    d2dDeviceContext->DrawBitmap(d2dBitmap, (const D2D1_RECT_F *)&destinationExtents, opacity, d2dInterpolationMode[static_cast<UINT8>(interpolationMode)], (const D2D1_RECT_F *)&sourceExtents);
                 }
             }
 
