@@ -279,10 +279,6 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(void) onUpdate(float frameTime)
-            {
-            }
-
             // Engine::Population::Observer
             STDMETHODIMP_(void) onRenderBegin(Handle viewerHandle)
             {

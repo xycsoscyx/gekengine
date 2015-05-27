@@ -1318,6 +1318,11 @@ namespace Gek
                 return windowed;
             }
 
+            STDMETHODIMP_(Video2D::Interface *) getVideo2D(void)
+            {
+                return dynamic_cast<Video2D::Interface *>(this);
+            }
+
             STDMETHODIMP_(ContextInterface *) getDefaultContext(void)
             {
                 return dynamic_cast<ContextInterface *>(this);
@@ -2648,6 +2653,7 @@ namespace Gek
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList.insert(std::make_pair(resourceHandle, Resource(d2dSolidBrush)));
+                    resourcePoolList[-1].push_back(resourceHandle);
                 }
 
                 return resourceHandle;
@@ -2669,13 +2675,14 @@ namespace Gek
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
                         resourceList.insert(std::make_pair(resourceHandle, Resource(d2dGradientBrush)));
+                        resourcePoolList[-1].push_back(resourceHandle);
                     }
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Handle) createFont(LPCWSTR face, UINT32 weight, UINT8 style, float size)
+            STDMETHODIMP_(Handle) createFont(LPCWSTR face, UINT32 weight, FontStyle style, float size)
             {
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);
                 REQUIRE_RETURN(face, Gek::InvalidHandle);
@@ -2683,11 +2690,12 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<IDWriteTextFormat> dwTextFormat;
-                dwFactory->CreateTextFormat(face, nullptr, DWRITE_FONT_WEIGHT(weight), d3dFontStyleList[style], DWRITE_FONT_STRETCH_NORMAL, size, L"", &dwTextFormat);
+                dwFactory->CreateTextFormat(face, nullptr, DWRITE_FONT_WEIGHT(weight), d3dFontStyleList[static_cast<UINT8>(style)], DWRITE_FONT_STRETCH_NORMAL, size, L"", &dwTextFormat);
                 if (dwTextFormat)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList.insert(std::make_pair(resourceHandle, Resource(dwTextFormat)));
+                    resourcePoolList[-1].push_back(resourceHandle);
                 }
 
                 return resourceHandle;

@@ -3,6 +3,7 @@
 #include "GEK\Engine\RenderInterface.h"
 #include "GEK\Engine\SystemInterface.h"
 #include "GEK\Context\BaseUser.h"
+#include "GEK\Context\BaseObservable.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Timer.h"
@@ -19,6 +20,7 @@ namespace Gek
         {
             class System : public Context::BaseUser
                 , public Interface
+                , public Render::Observer
             {
             private:
                 HWND window;
@@ -33,6 +35,7 @@ namespace Gek
                 std::list<CComPtr<Engine::System::Interface>> systemList;
 
                 bool consoleActive;
+                float consolePosition;
                 CStringW userMessage;
 
             public:
@@ -42,12 +45,14 @@ namespace Gek
                     , engineRunning(true)
                     , updateAccumulator(0.0)
                     , consoleActive(false)
+                    , consolePosition(0.0f)
                 {
                 }
 
                 ~System(void)
                 {
                     systemList.clear();
+                    BaseObservable::removeObserver(render, getClass<Render::Observer>());
                     render.Release();
                     population.Release();
                     video.Release();
@@ -55,6 +60,7 @@ namespace Gek
 
                 BEGIN_INTERFACE_LIST(System)
                     INTERFACE_LIST_ENTRY_COM(Interface)
+                    INTERFACE_LIST_ENTRY_COM(Render::Observer)
                     INTERFACE_LIST_ENTRY_MEMBER_COM(Video2D::Interface, video)
                     INTERFACE_LIST_ENTRY_MEMBER_COM(Video3D::Interface, video)
                     INTERFACE_LIST_ENTRY_MEMBER_COM(Population::Interface, population)
@@ -70,7 +76,9 @@ namespace Gek
                     HRESULT resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Video::Class, &video));
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->initialize(window, true, 100, 100);
+                        RECT clientRectangle;
+                        GetClientRect(window, &clientRectangle);
+                        resultValue = video->initialize(window, true, (clientRectangle.right - clientRectangle.left), (clientRectangle.bottom - clientRectangle.top), Video3D::Format::D32);
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -88,6 +96,10 @@ namespace Gek
                         if (SUCCEEDED(resultValue))
                         {
                             resultValue = render->initialize(this);
+                            if (SUCCEEDED(resultValue))
+                            {
+                                resultValue = BaseObservable::addObserver(render, getClass<Render::Observer>());
+                            }
                         }
                     }
 
@@ -149,7 +161,7 @@ namespace Gek
                         return 1;
 
                     case WM_CHAR:
-                        if (windowActive)
+                        if (windowActive && consoleActive)
                         {
                             switch (wParam)
                             {
@@ -208,6 +220,44 @@ namespace Gek
                         return 1;
 
                     case WM_KEYUP:
+                        if (wParam == 0xC0)
+                        {
+                            consoleActive = !consoleActive;
+                        }
+                        else if (!consoleActive)
+                        {
+                            switch (wParam)
+                            {
+                            case 'W':
+                            case VK_UP:
+                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"forward", bState)));
+                                break;
+
+                            case 'S':
+                            case VK_DOWN:
+                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"backward", bState)));
+                                break;
+
+                            case 'A':
+                            case VK_LEFT:
+                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"strafe_left", bState)));
+                                break;
+
+                            case 'D':
+                            case VK_RIGHT:
+                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"strafe_right", bState)));
+                                break;
+
+                            case 'Q':
+                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"rise", bState)));
+                                break;
+
+                            case 'Z':
+                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"fall", bState)));
+                                break;
+                            };
+                        }
+
                         return 1;
 
                     case WM_LBUTTONDOWN:
@@ -249,9 +299,13 @@ namespace Gek
                         double updateTime = timer.getUpdateTime();
                         if (consoleActive)
                         {
+                            consolePosition = min(1.0f, (consolePosition + float(updateTime * 4.0)));
+                            population->update();
                         }
                         else
                         {
+                            consolePosition = max(0.0f, (consolePosition - float(updateTime * 4.0)));
+
                             POINT cursorPosition;
                             GetCursorPos(&cursorPosition);
 
@@ -273,7 +327,7 @@ namespace Gek
                             updateAccumulator += updateTime;
                             while (updateAccumulator > (1.0 / 30.0))
                             {
-                                population->update(1.0 / 30.0);
+                                population->update(1.0f / 30.0f);
                                 if (--frameCount == 0)
                                 {
                                     updateAccumulator = 0.0;
@@ -284,17 +338,66 @@ namespace Gek
                                 }
                             };
                         }
-
-                        video->clearDefaultRenderTarget(Math::Float4(0.0f, 1.0f, 0.0f, 1.0f));
-                        video->present(true);
                     }
                     else
                     {
-                        video->clearDefaultRenderTarget(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
-                        video->present(true);
+                        population->update();
                     }
 
                     return engineRunning;
+                }
+                
+                // Render::Observer
+                STDMETHODIMP_(void) onRenderOverlay(void)
+                {
+                    if (consolePosition > 0.0f)
+                    {
+                        video->getVideo2D()->beginDraw();
+
+                        float width = float(video->getWidth());
+                        float height = float(video->getHeight());
+                        float consoleHeight = (height * 0.5f);
+
+                        Handle backgroundBrushHandle = video->getVideo2D()->createBrush({ { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+
+                        Handle foregroundBrushHandle = video->getVideo2D()->createBrush({ { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+
+                        Handle textBrushHandle = video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+
+                        Handle fontHandle = video->getVideo2D()->createFont(L"Tahoma", 400, Video2D::FontStyle::Normal, 15.0f);
+
+                        video->getVideo2D()->setTransform(Math::Float3x2());
+
+                        float nTop = -((1.0f - consolePosition) * consoleHeight);
+
+                        Math::Float3x2 transformMatrix;
+                        transformMatrix.translation = Math::Float2(0.0f, nTop);
+                        video->getVideo2D()->setTransform(transformMatrix);
+
+                        video->getVideo2D()->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrushHandle, true);
+                        video->getVideo2D()->drawRectangle({ 10.0f, 10.0f, (width - 10.0f), (consoleHeight - 40.0f) }, foregroundBrushHandle, true);
+                        video->getVideo2D()->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrushHandle, true);
+                        video->getVideo2D()->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, fontHandle, textBrushHandle, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
+
+                        Handle logTypeBrushHandles[4] =
+                        {
+                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 1.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 0.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f)),
+                        };
+
+                        float nPosition = (consoleHeight - 40.0f);
+                        /*
+                        for (auto &kMessage : m_aConsoleLog)
+                        {
+                        video->getVideo2D()->drawText({ 15.0f, (nPosition - 20.0f), (width - 15.0f), nPosition }, fontHandle, logTypeBrushHandles[kMessage.first], kMessage.second);
+                        nPosition -= 20.0f;
+                        }
+                        */
+                        video->getVideo2D()->endDraw();
+                        video->freeResourcePool(-1);
+                    }
                 }
             };
 

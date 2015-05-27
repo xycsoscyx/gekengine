@@ -18,7 +18,7 @@ namespace Gek
             {
                 STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
                 
-                STDMETHOD_(void, update)                    (THIS_ float frameTime) PURE;
+                STDMETHOD_(void, update)                    (THIS_ float frameTime = 0.0f) PURE;
 
                 STDMETHOD(load)                             (THIS_ LPCWSTR fileName) PURE;
                 STDMETHOD(save)                             (THIS_ LPCWSTR fileName) PURE;

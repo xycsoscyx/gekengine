@@ -679,7 +679,10 @@ namespace Gek
 
             STDMETHODIMP_(void) onUpdate(float frameTime)
             {
-                UpdateOffLine(frameTime);
+                if (frameTime > 0.0f)
+                {
+                    UpdateOffLine(frameTime);
+                }
             }
         };
 

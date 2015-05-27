@@ -41,7 +41,7 @@ namespace Gek
             STDMETHOD_(Handle, createBrush)         (THIS_ const Math::Float4 &color) PURE;
             STDMETHOD_(Handle, createBrush)         (THIS_ const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents) PURE;
 
-            STDMETHOD_(Handle, createFont)          (THIS_ LPCWSTR face, UINT32 weight, UINT8 style, float size) PURE;
+            STDMETHOD_(Handle, createFont)          (THIS_ LPCWSTR face, UINT32 weight, FontStyle style, float size) PURE;
 
             STDMETHOD(createGeometry)               (THIS_ GeometryInterface **returnObject) PURE;
 

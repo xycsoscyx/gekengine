@@ -420,6 +420,7 @@ namespace Gek
             STDMETHOD_(UINT32, getHeight)                       (THIS) PURE;
             STDMETHOD_(bool, isWindowed)                        (THIS) PURE;
 
+            STDMETHOD_(Video2D::Interface *, getVideo2D)        (THIS) PURE;
             STDMETHOD_(ContextInterface *, getDefaultContext)   (THIS) PURE;
             STDMETHOD(createDeferredContext)                    (THIS_ ContextInterface **instance) PURE;
 

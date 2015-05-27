@@ -22,16 +22,22 @@ namespace Gek
                 , public Render::Interface
             {
             private:
+                Video3D::Interface *video;
+                Population::Interface *population;
+
                 Handle nextResourceHandle;
 
             public:
                 System(void)
-                    : nextResourceHandle(InvalidHandle)
+                    : video(nullptr)
+                    , population(nullptr)
+                    , nextResourceHandle(InvalidHandle)
                 {
                 }
 
                 ~System(void)
                 {
+                    BaseObservable::removeObserver(population, getClass<Engine::Population::Observer>());
                 }
 
                 BEGIN_INTERFACE_LIST(System)
@@ -43,7 +49,19 @@ namespace Gek
                 // Render::Interface
                 STDMETHODIMP initialize(IUnknown *initializerContext)
                 {
-                    return S_OK;
+                    REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+
+                    HRESULT resultValue = E_FAIL;
+                    CComQIPtr<Video3D::Interface> video(initializerContext);
+                    CComQIPtr<Population::Interface> population(initializerContext);
+                    if (video && population)
+                    {
+                        this->video = video;
+                        this->population = population;
+                        resultValue = BaseObservable::addObserver(population, getClass<Engine::Population::Observer>());
+                    }
+
+                    return resultValue;
                 }
 
                 STDMETHODIMP_(Handle) loadProgram(LPCWSTR fileName)
@@ -81,10 +99,21 @@ namespace Gek
 
                 STDMETHODIMP_(void) onUpdateEnd(float frameTime)
                 {
-                    Handle viewerHandle = InvalidHandle;
-                    BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderBegin, std::placeholders::_1, viewerHandle)));
-                    BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderEnd, std::placeholders::_1, viewerHandle)));
+                    if (frameTime > 0.0f)
+                    {
+                        video->clearDefaultRenderTarget(Math::Float4(0.0f, 1.0f, 0.0f, 1.0f));
+                    }
+                    else
+                    {
+                        video->clearDefaultRenderTarget(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                    }
+
+                    //BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderBegin, std::placeholders::_1, viewerHandle)));
+                    //BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderEnd, std::placeholders::_1, viewerHandle)));
+
                     BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderOverlay, std::placeholders::_1)));
+
+                    video->present(true);
                 }
             };
 
