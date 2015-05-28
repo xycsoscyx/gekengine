@@ -26,6 +26,7 @@ namespace Gek
                 Population::Interface *population;
 
                 Handle nextResourceHandle;
+                concurrency::concurrent_unordered_map<Handle, CComPtr<IUnknown>> resourceList;
 
             public:
                 System(void)
@@ -67,21 +68,33 @@ namespace Gek
                 STDMETHODIMP_(Handle) loadProgram(LPCWSTR fileName)
                 {
                     Handle resourceHandle = InterlockedIncrement(&nextResourceHandle);
+                    resourceList[resourceHandle] = nullptr;
                     return resourceHandle;
                 }
 
                 STDMETHODIMP_(void) enableProgram(Handle programHandle)
                 {
+                    auto resourceIterator = resourceList.find(programHandle);
+                    if (resourceIterator != resourceList.end())
+                    {
+                        IUnknown *resource = (*resourceIterator).second;
+                    }
                 }
 
                 STDMETHODIMP_(Handle) loadMaterial(LPCWSTR fileName)
                 {
                     Handle resourceHandle = InterlockedIncrement(&nextResourceHandle);
+                    resourceList[resourceHandle] = nullptr;
                     return resourceHandle;
                 }
 
                 STDMETHODIMP_(void) enableMaterial(Handle materialHandle)
                 {
+                    auto resourceIterator = resourceList.find(materialHandle);
+                    if (resourceIterator != resourceList.end())
+                    {
+                        IUnknown *resource = (*resourceIterator).second;
+                    }
                 }
 
                 // Population::Observer
@@ -91,10 +104,15 @@ namespace Gek
 
                 STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
                 {
+                    if (FAILED(resultValue))
+                    {
+                        onFree();
+                    }
                 }
 
                 STDMETHODIMP_(void) onFree(void)
                 {
+                    resourceList.clear();
                 }
 
                 STDMETHODIMP_(void) onUpdateEnd(float frameTime)

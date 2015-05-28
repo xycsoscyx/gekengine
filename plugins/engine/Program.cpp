@@ -13,45 +13,24 @@ namespace Gek
     {
         namespace Render
         {
-            class Shader : public Context::BaseUser
+            class Program : public Context::BaseUser
             {
             public:
-                struct Map
-                {
-                    CStringW name;
-                };
-
-                enum class PropertyType : UINT8
-                {
-                    Float = 0,
-                    Float2,
-                    Float3,
-                    Float4,
-                };
-
-                struct Property
-                {
-                    CStringW name;
-                    PropertyType propertyType;
-                };
 
             private:
                 Video3D::Interface *video;
-                std::vector<Map> mapList;
-                std::vector<Property> propertyList;
-                std::vector<CComPtr<IUnknown>> PassList;
 
             public:
-                Shader(void)
+                Program(void)
                     : video(nullptr)
                 {
                 }
 
-                ~Shader(void)
+                ~Program(void)
                 {
                 }
 
-                BEGIN_INTERFACE_LIST(Shader)
+                BEGIN_INTERFACE_LIST(Program)
                 END_INTERFACE_LIST_USER
 
                 // Interface
@@ -71,7 +50,7 @@ namespace Gek
                 }
             };
 
-            REGISTER_CLASS(Shader)
+            REGISTER_CLASS(Program)
         }; // namespace Render
     }; // namespace Engine
 }; // namespace Gek
