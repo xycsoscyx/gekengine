@@ -118,6 +118,6 @@ namespace Gek
             };
 
             REGISTER_CLASS(System)
-        }; // namespace Population
+        }; // namespace Render
     }; // namespace Engine
 }; // namespace Gek

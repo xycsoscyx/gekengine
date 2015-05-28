@@ -269,7 +269,7 @@ namespace Gek
 
         struct TargetBlendStates
         {
-            BOOL enable;
+            bool enable;
             BlendSource colorSource;
             BlendSource colorDestination;
             BlendOperation colorOperation;

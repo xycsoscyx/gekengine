@@ -113,8 +113,10 @@
   <ItemGroup>
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="Population.cpp" />
     <ClCompile Include="Render.cpp" />
+    <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
