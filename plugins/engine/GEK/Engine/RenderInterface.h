@@ -27,8 +27,8 @@ namespace Gek
             {
                 STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
             
-                STDMETHOD_(Handle, loadProgram)             (THIS_ LPCWSTR fileName) PURE;
-                STDMETHOD_(void, enableProgram)             (THIS_ Handle programHandle) PURE;
+                STDMETHOD_(Handle, loadPlugin)              (THIS_ LPCWSTR fileName) PURE;
+                STDMETHOD_(void, enablePlugin)              (THIS_ Handle pluginHandle) PURE;
 
                 STDMETHOD_(Handle, loadMaterial)            (THIS_ LPCWSTR fileName) PURE;
                 STDMETHOD_(void, enableMaterial)            (THIS_ Handle materialHandle) PURE;

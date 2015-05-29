@@ -30,8 +30,6 @@ namespace Gek
     {
         static const UINT32 MaxInstanceCount = 500;
 
-        static const Handle ResourcePool = 0x00001000;
-
         class System : public Context::BaseUser
             , public BaseObservable
             , public Engine::Population::Observer
@@ -76,7 +74,7 @@ namespace Gek
             Engine::Render::Interface *render;
             Engine::Population::Interface *population;
 
-            Handle programHandle;
+            Handle pluginHandle;
             Handle instanceHandle;
 
             Handle nextModelHandle;
@@ -90,7 +88,7 @@ namespace Gek
                 : render(nullptr)
                 , video(nullptr)
                 , population(nullptr)
-                , programHandle(InvalidHandle)
+                , pluginHandle(InvalidHandle)
                 , instanceHandle(InvalidHandle)
                 , nextModelHandle(InvalidHandle)
             {
@@ -161,19 +159,19 @@ namespace Gek
 
                             if (SUCCEEDED(resultValue))
                             {
-                                data.positionHandle = video->createBuffer(ResourcePool, sizeof(Math::Float3), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                                data.positionHandle = video->createBuffer(sizeof(Math::Float3), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
                                 rawFileData += (sizeof(Math::Float3) * vertexCount);
                             }
 
                             if (SUCCEEDED(resultValue))
                             {
-                                data.texCoordHandle = video->createBuffer(ResourcePool, sizeof(Math::Float2), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                                data.texCoordHandle = video->createBuffer(sizeof(Math::Float2), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
                                 rawFileData += (sizeof(Math::Float2) * vertexCount);
                             }
 
                             if (SUCCEEDED(resultValue))
                             {
-                                data.normalHandle = video->createBuffer(ResourcePool, sizeof(Math::Float3), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                                data.normalHandle = video->createBuffer(sizeof(Math::Float3), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
                                 rawFileData += (sizeof(Math::Float3) * vertexCount);
                             }
 
@@ -182,7 +180,7 @@ namespace Gek
                                 UINT32 indexCount = *((UINT32 *)rawFileData);
                                 rawFileData += sizeof(UINT32);
 
-                                data.indexHandle = video->createBuffer(ResourcePool, sizeof(UINT16), indexCount, Video3D::BufferFlags::INDEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                                data.indexHandle = video->createBuffer(sizeof(UINT16), indexCount, Video3D::BufferFlags::INDEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
                                 rawFileData += (sizeof(UINT16) * indexCount);
                             }
                         }
@@ -228,7 +226,7 @@ namespace Gek
 
                 if (SUCCEEDED(resultValue))
                 {
-                    programHandle = render->loadProgram(L"model");
+                    pluginHandle = render->loadPlugin(L"model");
                 }
 
                 return resultValue;
@@ -251,7 +249,14 @@ namespace Gek
             {
                 REQUIRE_VOID_RETURN(video);
 
-                video->freeResourcePool(ResourcePool);
+                for (auto &data : dataList)
+                {
+                    video->freeResource(data.second.positionHandle);
+                    video->freeResource(data.second.texCoordHandle);
+                    video->freeResource(data.second.normalHandle);
+                    video->freeResource(data.second.indexHandle);
+                }
+
                 dataList.clear();
                 dataNameList.clear();
                 entityList.clear();
@@ -332,7 +337,7 @@ namespace Gek
                     return;
                 }
 
-                render->enableProgram(programHandle);
+                render->enablePlugin(pluginHandle);
                 videoContext->getVertexSystem()->setResource(instanceHandle, 0);
                 videoContext->setPrimitiveType(Video3D::PrimitiveType::TRIANGLELIST);
                 for (auto instance : visibleList)

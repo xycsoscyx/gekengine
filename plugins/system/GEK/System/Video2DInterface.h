@@ -48,12 +48,12 @@ namespace Gek
 
         DECLARE_INTERFACE_IID(Interface, "D3B65773-4EB1-46F8-A38D-009CA43CE77F") : virtual public IUnknown
         {
-            STDMETHOD_(Handle, createBrush)         (THIS_ Handle resourcePoolHandle, const Math::Float4 &color) PURE;
-            STDMETHOD_(Handle, createBrush)         (THIS_ Handle resourcePoolHandle, const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents) PURE;
+            STDMETHOD_(Handle, createBrush)         (THIS_ const Math::Float4 &color) PURE;
+            STDMETHOD_(Handle, createBrush)         (THIS_ const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents) PURE;
 
-            STDMETHOD_(Handle, createFont)          (THIS_ Handle resourcePoolHandle, LPCWSTR face, UINT32 weight, FontStyle style, float size) PURE;
+            STDMETHOD_(Handle, createFont)          (THIS_ LPCWSTR face, UINT32 weight, FontStyle style, float size) PURE;
 
-            STDMETHOD_(Handle, loadBitmap)          (THIS_ Handle resourcePoolHandle, LPCWSTR fileName) PURE;
+            STDMETHOD_(Handle, loadBitmap)          (THIS_ LPCWSTR fileName) PURE;
 
             STDMETHOD(createGeometry)               (THIS_ GeometryInterface **returnObject) PURE;
 

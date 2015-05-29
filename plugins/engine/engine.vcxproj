@@ -105,6 +105,7 @@
     <ClInclude Include="GEK\Engine\ActionInterface.h" />
     <ClInclude Include="GEK\Engine\ComponentInterface.h" />
     <ClInclude Include="GEK\Engine\CoreInterface.h" />
+    <ClInclude Include="GEK\Engine\PluginInterface.h" />
     <ClInclude Include="GEK\Engine\PopulationInterface.h" />
     <ClInclude Include="GEK\Engine\RenderInterface.h" />
     <ClInclude Include="GEK\Engine\SystemInterface.h" />
@@ -115,8 +116,8 @@
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Pass.cpp" />
+    <ClCompile Include="Plugin.cpp" />
     <ClCompile Include="Population.cpp" />
-    <ClCompile Include="Program.cpp" />
     <ClCompile Include="Render.cpp" />
     <ClCompile Include="Shader.cpp" />
   </ItemGroup>

@@ -358,15 +358,15 @@ namespace Gek
                         float height = float(video->getHeight());
                         float consoleHeight = (height * 0.5f);
 
-                        Handle backgroundBrushHandle = video->getVideo2D()->createBrush(-1, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                        Handle backgroundBrushHandle = video->getVideo2D()->createBrush({ { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
 
-                        Handle foregroundBrushHandle = video->getVideo2D()->createBrush(-1, { { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                        Handle foregroundBrushHandle = video->getVideo2D()->createBrush({ { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
 
-                        Handle textBrushHandle = video->getVideo2D()->createBrush(-1, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+                        Handle textBrushHandle = video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
 
-                        Handle fontHandle = video->getVideo2D()->createFont(-1, L"Tahoma", 400, Video2D::FontStyle::Normal, 15.0f);
+                        Handle fontHandle = video->getVideo2D()->createFont(L"Tahoma", 400, Video2D::FontStyle::Normal, 15.0f);
 
-                        Handle bitmapHandle = video->getVideo2D()->loadBitmap(-1, L"%root%\\data\\console.bmp");
+                        Handle bitmapHandle = video->getVideo2D()->loadBitmap(L"%root%\\data\\console.bmp");
 
                         video->getVideo2D()->setTransform(Math::Float3x2());
 
@@ -384,10 +384,10 @@ namespace Gek
 
                         Handle logTypeBrushHandles[4] =
                         {
-                            video->getVideo2D()->createBrush(-1, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f)),
-                            video->getVideo2D()->createBrush(-1, Math::Float4(1.0f, 1.0f, 0.0f, 1.0f)),
-                            video->getVideo2D()->createBrush(-1, Math::Float4(1.0f, 0.0f, 0.0f, 1.0f)),
-                            video->getVideo2D()->createBrush(-1, Math::Float4(1.0f, 0.0f, 0.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 1.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 0.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f)),
+                            video->getVideo2D()->createBrush(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f)),
                         };
 
                         float nPosition = (consoleHeight - 40.0f);
@@ -399,7 +399,16 @@ namespace Gek
                         }
                         */
                         video->getVideo2D()->endDraw();
-                        video->freeResourcePool(-1);
+
+                        video->freeResource(backgroundBrushHandle);
+                        video->freeResource(foregroundBrushHandle);
+                        video->freeResource(textBrushHandle);
+                        video->freeResource(fontHandle);
+                        video->freeResource(bitmapHandle);
+                        video->freeResource(logTypeBrushHandles[0]);
+                        video->freeResource(logTypeBrushHandles[1]);
+                        video->freeResource(logTypeBrushHandles[2]);
+                        video->freeResource(logTypeBrushHandles[3]);
                     }
                 }
             };

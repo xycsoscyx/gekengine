@@ -65,16 +65,16 @@ namespace Gek
                     return resultValue;
                 }
 
-                STDMETHODIMP_(Handle) loadProgram(LPCWSTR fileName)
+                STDMETHODIMP_(Handle) loadPlugin(LPCWSTR fileName)
                 {
                     Handle resourceHandle = InterlockedIncrement(&nextResourceHandle);
                     resourceList[resourceHandle] = nullptr;
                     return resourceHandle;
                 }
 
-                STDMETHODIMP_(void) enableProgram(Handle programHandle)
+                STDMETHODIMP_(void) enablePlugin(Handle pluginHandle)
                 {
-                    auto resourceIterator = resourceList.find(programHandle);
+                    auto resourceIterator = resourceList.find(pluginHandle);
                     if (resourceIterator != resourceList.end())
                     {
                         IUnknown *resource = (*resourceIterator).second;

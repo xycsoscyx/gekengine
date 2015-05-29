@@ -9,8 +9,6 @@
 #include "GEK\System\VideoInterface.h"
 #include "resource.h"
 
-static const Gek::Handle TextureResourcePool = 0x00001001;
-
 Gek::Handle sampleStatesHandle = Gek::InvalidHandle;
 Gek::Handle renderStatesHandle = Gek::InvalidHandle;
 Gek::Handle blendStatesHandle = Gek::InvalidHandle;
@@ -68,30 +66,30 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
                 };
 
                 Gek::Video3D::SamplerStates samplerStates;
-                sampleStatesHandle = videoSystem->createSamplerStates(Gek::Video3D::DefaultResourcePool, samplerStates);
+                sampleStatesHandle = videoSystem->createSamplerStates(samplerStates);
 
                 Gek::Video3D::RenderStates renderStates;
-                renderStatesHandle = videoSystem->createRenderStates(Gek::Video3D::DefaultResourcePool, renderStates);
+                renderStatesHandle = videoSystem->createRenderStates(renderStates);
 
                 Gek::Video3D::UnifiedBlendStates blendStates;
-                blendStatesHandle = videoSystem->createBlendStates(Gek::Video3D::DefaultResourcePool, blendStates);
+                blendStatesHandle = videoSystem->createBlendStates(blendStates);
 
                 Gek::Video3D::DepthStates depthStates;
-                depthStatesHandle = videoSystem->createDepthStates(Gek::Video3D::DefaultResourcePool, depthStates);
+                depthStatesHandle = videoSystem->createDepthStates(depthStates);
 
-                vertexBufferHandle = videoSystem->createBuffer(Gek::Video3D::DefaultResourcePool, sizeof(Gek::Math::Float2), 4, Gek::Video3D::BufferFlags::VERTEX_BUFFER | Gek::Video3D::BufferFlags::STATIC, aVertices);
+                vertexBufferHandle = videoSystem->createBuffer(sizeof(Gek::Math::Float2), 4, Gek::Video3D::BufferFlags::VERTEX_BUFFER | Gek::Video3D::BufferFlags::STATIC, aVertices);
 
-                indexBufferHandle = videoSystem->createBuffer(Gek::Video3D::DefaultResourcePool, sizeof(UINT16), 6, Gek::Video3D::BufferFlags::INDEX_BUFFER | Gek::Video3D::BufferFlags::STATIC, aIndices);
+                indexBufferHandle = videoSystem->createBuffer(sizeof(UINT16), 6, Gek::Video3D::BufferFlags::INDEX_BUFFER | Gek::Video3D::BufferFlags::STATIC, aIndices);
 
-                textureHandle = videoSystem->loadTexture(TextureResourcePool, L"%root%\\data\\textures\\flames.NormalMap.dds", 0);
+                textureHandle = videoSystem->loadTexture(L"%root%\\data\\textures\\flames.NormalMap.dds", 0);
 
                 std::vector<Gek::Video3D::InputElement> overlayVertexLayout;
                 overlayVertexLayout.push_back(Gek::Video3D::InputElement(Gek::Video3D::Format::RG_FLOAT, "POSITION", 0));
-                vertexProgramHandle = videoSystem->loadVertexProgram(Gek::Video3D::DefaultResourcePool, L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainVertexProgram", overlayVertexLayout);
+                vertexProgramHandle = videoSystem->loadVertexProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainVertexProgram", overlayVertexLayout);
 
-                pixelProgramHandle = videoSystem->loadPixelProgram(Gek::Video3D::DefaultResourcePool, L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainPixelProgram");
+                pixelProgramHandle = videoSystem->loadPixelProgram(L"%root%\\data\\programs\\core\\gekoverlay.hlsl", "MainPixelProgram");
 
-                overlayConstantBufferHandle = videoSystem->createBuffer(Gek::Video3D::DefaultResourcePool, sizeof(Gek::Math::Float4x4), 1, Gek::Video3D::BufferFlags::CONSTANT_BUFFER);
+                overlayConstantBufferHandle = videoSystem->createBuffer(sizeof(Gek::Math::Float4x4), 1, Gek::Video3D::BufferFlags::CONSTANT_BUFFER);
 
                 Gek::Math::Float4x4 orthoMatrix;
                 orthoMatrix.setOrthographic(0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f);
@@ -171,8 +169,8 @@ INT_PTR CALLBACK dialogProcedure(HWND dialogWindow, UINT message, WPARAM wParam,
                 {
                     fileName.ReleaseBuffer();
                     Gek::Video3D::Interface *videoSystem = (Gek::Video3D::Interface *)GetWindowLongPtr(dialogWindow, GWLP_USERDATA);
-                    videoSystem->freeResourcePool(TextureResourcePool);
-                    textureHandle = videoSystem->loadTexture(TextureResourcePool, fileName, 0);
+                    videoSystem->freeResource(textureHandle);
+                    textureHandle = videoSystem->loadTexture(fileName, 0);
                 }
             }
 

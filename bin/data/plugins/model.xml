@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
-<program>
+<plugin>
     <layout>
-		<element type="rgb_float" name="POSITION" index="0" class="vertex" slot="0" />
-		<element type="rg_float" name="TEXCOORD" index="0" class="vertex" slot="1" />
-		<element type="rgb_float" name="NORMAL" index="0" class="vertex" slot="2" />
+		<element format="rgb_float" name="POSITION" index="0" slotclass="vertex" slotindex="0" />
+		<element format="rg_float" name="TEXCOORD" index="0" slotclass="vertex" slotindex="1" />
+		<element format="rgb_float" name="NORMAL" index="0" slotclass="vertex" slotindex="2" />
     </layout>
     <vertex>
-        <shader source="model" entry="MainVertexProgram" />
+        <program source="model" entry="MainVertexProgram" />
     </vertex>
-</program>
+</plugin>

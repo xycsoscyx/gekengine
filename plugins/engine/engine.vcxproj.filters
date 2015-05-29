@@ -20,7 +20,7 @@
     <ClCompile Include="Pass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Program.cpp">
+    <ClCompile Include="Plugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -42,6 +42,9 @@
     </ClInclude>
     <ClInclude Include="resource.h" />
     <ClInclude Include="GEK\Engine\CoreInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\PluginInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
