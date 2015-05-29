@@ -120,10 +120,12 @@ namespace Gek
 
                             return S_OK;
                         });
+
                     }
 
                     if (SUCCEEDED(resultValue))
                     {
+                        population->load(L"demo");
                         windowActive = true;
                     }
 

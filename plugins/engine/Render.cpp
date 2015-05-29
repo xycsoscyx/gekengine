@@ -1,4 +1,5 @@
 ﻿#include "GEK\Engine\RenderInterface.h"
+#include "GEK\Engine\PluginInterface.h"
 #include "GEK\Engine\PopulationInterface.h"
 #include "GEK\Engine\ComponentInterface.h"
 #include "GEK\Context\BaseUser.h"
@@ -22,15 +23,18 @@ namespace Gek
                 , public Render::Interface
             {
             private:
+                IUnknown *initializerContext;
                 Video3D::Interface *video;
                 Population::Interface *population;
 
                 Handle nextResourceHandle;
+                concurrency::concurrent_unordered_map<std::size_t, Handle> resourceHashList;
                 concurrency::concurrent_unordered_map<Handle, CComPtr<IUnknown>> resourceList;
 
             public:
                 System(void)
-                    : video(nullptr)
+                    : initializerContext(nullptr)
+                    , video(nullptr)
                     , population(nullptr)
                     , nextResourceHandle(InvalidHandle)
                 {
@@ -59,6 +63,7 @@ namespace Gek
                     {
                         this->video = video;
                         this->population = population;
+                        this->initializerContext = initializerContext;
                         resultValue = BaseObservable::addObserver(population, getClass<Engine::Population::Observer>());
                     }
 
@@ -67,8 +72,30 @@ namespace Gek
 
                 STDMETHODIMP_(Handle) loadPlugin(LPCWSTR fileName)
                 {
-                    Handle resourceHandle = InterlockedIncrement(&nextResourceHandle);
-                    resourceList[resourceHandle] = nullptr;
+                    REQUIRE_RETURN(initializerContext, E_FAIL);
+
+                    Handle resourceHandle = InvalidHandle;
+
+                    std::size_t hash = std::hash<LPCWSTR>()(fileName);
+                    auto resourceHashIterator = resourceHashList.find(hash);
+                    if (resourceHashIterator != resourceHashList.end())
+                    {
+                        resourceHandle = (*resourceHashIterator).second;
+                    }
+                    else
+                    {
+                        resourceHashList[hash] = InvalidHandle;
+
+                        CComPtr<Plugin::Interface> plugin;
+                        getContext()->createInstance(CLSID_IID_PPV_ARGS(Plugin::Class, &plugin));
+                        if (plugin && SUCCEEDED(plugin->initialize(initializerContext, fileName)))
+                        {
+                            resourceHandle = InterlockedIncrement(&nextResourceHandle);
+                            resourceList[resourceHandle] = plugin;
+                            resourceHashList[hash] = resourceHandle;
+                        }
+                    }
+
                     return resourceHandle;
                 }
 
@@ -112,6 +139,7 @@ namespace Gek
 
                 STDMETHODIMP_(void) onFree(void)
                 {
+                    resourceHashList.clear();
                     resourceList.clear();
                 }
 

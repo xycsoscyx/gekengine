@@ -17,9 +17,7 @@ namespace Gek
 
                 DECLARE_INTERFACE_IID(Interface, "F025D5AE-BE84-4DF7-90C0-0E241EABB56B") : virtual public IUnknown
                 {
-                    STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
-            
-                    STDMETHOD(load)                             (THIS_ LPCWSTR fileName) PURE;
+                    STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
                 };
             }; // namespace Plugin
         }; // namespace Render

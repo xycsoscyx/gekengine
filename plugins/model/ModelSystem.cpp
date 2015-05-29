@@ -103,6 +103,7 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_COM(ObservableInterface)
                 INTERFACE_LIST_ENTRY_COM(Engine::Population::Observer)
                 INTERFACE_LIST_ENTRY_COM(Engine::Render::Observer)
+                INTERFACE_LIST_ENTRY_COM(Engine::System::Interface)
             END_INTERFACE_LIST_USER
 
             HRESULT loadData(LPCWSTR fileName, Data &data)

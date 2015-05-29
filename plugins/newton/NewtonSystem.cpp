@@ -259,6 +259,7 @@ namespace Gek
             BEGIN_INTERFACE_LIST(System)
                 INTERFACE_LIST_ENTRY_COM(ObservableInterface)
                 INTERFACE_LIST_ENTRY_COM(Engine::Population::Observer)
+                INTERFACE_LIST_ENTRY_COM(Engine::System::Interface)
             END_INTERFACE_LIST_USER
 
             const Surface &getSurface(INT32 surfaceIndex) const
