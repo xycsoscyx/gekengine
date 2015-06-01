@@ -43,7 +43,7 @@ namespace Gek
                 // Component::Interface
                 STDMETHODIMP_(LPCWSTR) getName(void) const
                 {
-                    return L"DynamicBody";
+                    return L"dynamic_body";
                 }
 
                 STDMETHODIMP_(Handle) getIdentifier(void) const

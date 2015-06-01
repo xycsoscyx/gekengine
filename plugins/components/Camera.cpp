@@ -22,19 +22,19 @@ namespace Gek
 
                 HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
-                    componentParameterList[L"fieldOfView"] = String::setFloat(fieldOfView);
-                    componentParameterList[L"minimumDistance"] = String::setFloat(minimumDistance);
-                    componentParameterList[L"maximumDistance"] = String::setFloat(maximumDistance);
-                    componentParameterList[L"fieldOfView"] = String::setFloat4(viewPort);
+                    componentParameterList[L"field_of_view"] = String::setFloat(fieldOfView);
+                    componentParameterList[L"minimum_distance"] = String::setFloat(minimumDistance);
+                    componentParameterList[L"maximum_distance"] = String::setFloat(maximumDistance);
+                    componentParameterList[L"viewport"] = String::setFloat4(viewPort);
                     return S_OK;
                 }
 
                 HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
-                    setParameter(componentParameterList, L"fieldOfView", fieldOfView, String::getFloat);
-                    setParameter(componentParameterList, L"minimumDistance", minimumDistance, String::getFloat);
-                    setParameter(componentParameterList, L"maximumDistance", maximumDistance, String::getFloat);
-                    setParameter(componentParameterList, L"viewPort", viewPort, String::getFloat4);
+                    setParameter(componentParameterList, L"field_of_view", fieldOfView, String::getFloat);
+                    setParameter(componentParameterList, L"minimum_distance", minimumDistance, String::getFloat);
+                    setParameter(componentParameterList, L"maximum_distance", maximumDistance, String::getFloat);
+                    setParameter(componentParameterList, L"viewport", viewPort, String::getFloat4);
                     return S_OK;
                 }
 
@@ -53,7 +53,7 @@ namespace Gek
                     // Component::Interface
                     STDMETHODIMP_(LPCWSTR) getName(void) const
                     {
-                        return L"Camera";
+                        return L"camera";
                     }
 
                     STDMETHODIMP_(Handle) getIdentifier(void) const

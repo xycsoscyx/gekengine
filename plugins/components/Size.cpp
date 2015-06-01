@@ -43,7 +43,7 @@ namespace Gek
                     // Component::Interface
                     STDMETHODIMP_(LPCWSTR) getName(void) const
                     {
-                        return L"Size";
+                        return L"size";
                     }
 
                     STDMETHODIMP_(Handle) getIdentifier(void) const

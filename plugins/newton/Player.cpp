@@ -20,19 +20,19 @@ namespace Gek
 
             HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
             {
-                componentParameterList[L"outerRadius"] = String::setFloat(outerRadius);
-                componentParameterList[L"innerRadius"] = String::setFloat(innerRadius);
+                componentParameterList[L"outer_radius"] = String::setFloat(outerRadius);
+                componentParameterList[L"inner_radius"] = String::setFloat(innerRadius);
                 componentParameterList[L"height"] = String::setFloat(height);
-                componentParameterList[L"stairStep"] = String::setFloat(stairStep);
+                componentParameterList[L"stair_step"] = String::setFloat(stairStep);
                 return S_OK;
             }
 
             HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
-                Engine::setParameter(componentParameterList, L"outerRadius", outerRadius, String::getFloat);
-                Engine::setParameter(componentParameterList, L"innerRadius", innerRadius, String::getFloat);
+                Engine::setParameter(componentParameterList, L"outer_radius", outerRadius, String::getFloat);
+                Engine::setParameter(componentParameterList, L"inner_radius", innerRadius, String::getFloat);
                 Engine::setParameter(componentParameterList, L"height", height, String::getFloat);
-                Engine::setParameter(componentParameterList, L"stairStep", stairStep, String::getFloat);
+                Engine::setParameter(componentParameterList, L"stair_step", stairStep, String::getFloat);
                 return S_OK;
             }
 
@@ -51,7 +51,7 @@ namespace Gek
                 // Component::Interface
                 STDMETHODIMP_(LPCWSTR) getName(void) const
                 {
-                    return L"Player";
+                    return L"player_body";
                 }
 
                 STDMETHODIMP_(Handle) getIdentifier(void) const
