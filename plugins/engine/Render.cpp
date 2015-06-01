@@ -1,5 +1,6 @@
 ﻿#include "GEK\Engine\RenderInterface.h"
 #include "GEK\Engine\PluginInterface.h"
+#include "GEK\Engine\ShaderInterface.h"
 #include "GEK\Engine\PopulationInterface.h"
 #include "GEK\Engine\ComponentInterface.h"
 #include "GEK\Context\BaseUser.h"
@@ -102,6 +103,44 @@ namespace Gek
                 STDMETHODIMP_(void) enablePlugin(Handle pluginHandle)
                 {
                     auto resourceIterator = resourceList.find(pluginHandle);
+                    if (resourceIterator != resourceList.end())
+                    {
+                        IUnknown *resource = (*resourceIterator).second;
+                    }
+                }
+
+                STDMETHODIMP_(Handle) loadShader(LPCWSTR fileName)
+                {
+                    REQUIRE_RETURN(initializerContext, E_FAIL);
+
+                    Handle resourceHandle = InvalidHandle;
+
+                    std::size_t hash = std::hash<LPCWSTR>()(fileName);
+                    auto resourceHashIterator = resourceHashList.find(hash);
+                    if (resourceHashIterator != resourceHashList.end())
+                    {
+                        resourceHandle = (*resourceHashIterator).second;
+                    }
+                    else
+                    {
+                        resourceHashList[hash] = InvalidHandle;
+
+                        CComPtr<Shader::Interface> plugin;
+                        getContext()->createInstance(CLSID_IID_PPV_ARGS(Shader::Class, &plugin));
+                        if (plugin && SUCCEEDED(plugin->initialize(initializerContext, fileName)))
+                        {
+                            resourceHandle = InterlockedIncrement(&nextResourceHandle);
+                            resourceList[resourceHandle] = plugin;
+                            resourceHashList[hash] = resourceHandle;
+                        }
+                    }
+
+                    return resourceHandle;
+                }
+
+                STDMETHODIMP_(void) enableShader(Handle shaderHandle)
+                {
+                    auto resourceIterator = resourceList.find(shaderHandle);
                     if (resourceIterator != resourceList.end())
                     {
                         IUnknown *resource = (*resourceIterator).second;

@@ -1,4 +1,6 @@
-﻿#include "GEK\Context\BaseUser.h"
+﻿#include "GEK\Engine\MaterialInterface.h"
+#include "GEK\Engine\ShaderInterface.h"
+#include "GEK\Context\BaseUser.h"
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
@@ -13,44 +15,48 @@ namespace Gek
     {
         namespace Render
         {
-            class Material : public Context::BaseUser
+            namespace Material
             {
-            private:
-                Video3D::Interface *video;
-                std::vector<Handle> mapList;
-                std::vector<float> propertyList;
-
-            public:
-                Material(void)
-                    : video(nullptr)
+                class System : public Context::BaseUser
                 {
-                }
+                private:
+                    Video3D::Interface *video;
+                    std::vector<Handle> mapList;
+                    std::vector<float> propertyList;
 
-                ~Material(void)
-                {
-                }
-
-                BEGIN_INTERFACE_LIST(Material)
-                END_INTERFACE_LIST_USER
-
-                // Interface
-                STDMETHODIMP initialize(IUnknown *initializerContext)
-                {
-                    REQUIRE_RETURN(initializerContext, E_INVALIDARG);
-
-                    HRESULT resultValue = E_FAIL;
-                    CComQIPtr<Video3D::Interface> video(initializerContext);
-                    if (video)
+                public:
+                    System(void)
+                        : video(nullptr)
                     {
-                        this->video = video;
-                        resultValue = S_OK;
                     }
 
-                    return resultValue;
-                }
-            };
+                    ~System(void)
+                    {
+                    }
 
-            REGISTER_CLASS(Material)
+                    BEGIN_INTERFACE_LIST(System)
+                    END_INTERFACE_LIST_USER
+
+                    // Interface
+                    STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
+                    {
+                        REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+                        REQUIRE_RETURN(fileName, E_INVALIDARG);
+
+                        HRESULT resultValue = E_FAIL;
+                        CComQIPtr<Video3D::Interface> video(initializerContext);
+                        if (video)
+                        {
+                            this->video = video;
+                            resultValue = S_OK;
+                        }
+
+                        return resultValue;
+                    }
+                };
+
+                REGISTER_CLASS(System)
+            }; // namespace Material
         }; // namespace Rdnder
     }; // namespace Engine
 }; // namespace Gek

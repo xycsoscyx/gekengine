@@ -30,6 +30,9 @@ namespace Gek
                 STDMETHOD_(Handle, loadPlugin)              (THIS_ LPCWSTR fileName) PURE;
                 STDMETHOD_(void, enablePlugin)              (THIS_ Handle pluginHandle) PURE;
 
+                STDMETHOD_(Handle, loadShader)              (THIS_ LPCWSTR fileName) PURE;
+                STDMETHOD_(void, enableShader)              (THIS_ Handle shaderHandle) PURE;
+
                 STDMETHOD_(Handle, loadMaterial)            (THIS_ LPCWSTR fileName) PURE;
                 STDMETHOD_(void, enableMaterial)            (THIS_ Handle materialHandle) PURE;
             };
