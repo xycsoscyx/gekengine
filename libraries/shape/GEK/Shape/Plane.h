@@ -12,10 +12,7 @@ namespace Gek
         {
         public:
             BasePlane(void)
-                : x(0)
-                , y(0)
-                , z(0)
-                , w(0)
+                : BaseVector4(0, 0, 0, 0)
             {
             }
 

@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <filter mode="lighting">
+    <dependency>opaque/deferred</dependency>
+    
     <defines>
         <define name="gs_nLightTileSize" value="32" />
         <define name="gs_nMaxLights" value="500" />

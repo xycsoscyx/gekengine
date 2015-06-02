@@ -46,11 +46,17 @@ namespace Gek
 
             struct Data : public Shape::AlignedBox
             {
+                bool loaded;
                 Handle positionHandle;
                 Handle texCoordHandle;
                 Handle normalHandle;
                 Handle indexHandle;
                 std::unordered_map<Handle, Material> materialList;
+
+                Data(void)
+                    : loaded(false)
+                {
+                }
             };
 
             struct Instance
@@ -96,6 +102,7 @@ namespace Gek
 
             ~System(void)
             {
+                BaseObservable::removeObserver(render, getClass<Engine::Render::Observer>());
                 BaseObservable::removeObserver(population, getClass<Engine::Population::Observer>());
             }
 
@@ -188,6 +195,11 @@ namespace Gek
                     }
                 }
 
+                if (SUCCEEDED(resultValue))
+                {
+                    data.loaded = true;
+                }
+
                 return resultValue;
             }
 
@@ -203,6 +215,7 @@ namespace Gek
                 {
                     modelHandle = InterlockedIncrement(&nextModelHandle);
                     dataNameList[fileName] = modelHandle;
+                    loadData(fileName, dataList[modelHandle]);
                 }
 
                 return modelHandle;
@@ -227,13 +240,18 @@ namespace Gek
 
                 if (SUCCEEDED(resultValue))
                 {
+                    resultValue = BaseObservable::addObserver(render, getClass<Engine::Render::Observer>());
+                }
+
+                if (SUCCEEDED(resultValue))
+                {
                     pluginHandle = render->loadPlugin(L"model");
                 }
 
                 return resultValue;
             };
 
-            // Population::ObserverInterface
+            // Population::Observer
             STDMETHODIMP_(void) onLoadBegin(void)
             {
             }
@@ -285,12 +303,12 @@ namespace Gek
                 }
             }
 
-            // Engine::Population::Observer
-            STDMETHODIMP_(void) onRenderBegin(Handle viewerHandle)
+            // Render::Observer
+            STDMETHODIMP_(void) onRenderBegin(Handle cameraHandle)
             {
             }
 
-            STDMETHODIMP_(void) onCullScene(Handle viewerHandle, const Gek::Shape::Frustum &viewFrustum)
+            STDMETHODIMP_(void) onCullScene(Handle cameraHandle, const Gek::Shape::Frustum &viewFrustum)
             {
                 REQUIRE_VOID_RETURN(population);
 
@@ -326,7 +344,7 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(void) onDrawScene(Handle viewerHandle, Gek::Video3D::ContextInterface *videoContext, UINT32 vertexAttributes)
+            STDMETHODIMP_(void) onDrawScene(Handle cameraHandle, Gek::Video3D::ContextInterface *videoContext, UINT32 vertexAttributes)
             {
                 REQUIRE_VOID_RETURN(video);
                 REQUIRE_VOID_RETURN(videoContext);
@@ -381,7 +399,7 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(void) onRenderEnd(Handle viewerHandle)
+            STDMETHODIMP_(void) onRenderEnd(Handle cameraHandle)
             {
             }
 

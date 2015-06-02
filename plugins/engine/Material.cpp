@@ -18,6 +18,7 @@ namespace Gek
             namespace Material
             {
                 class System : public Context::BaseUser
+                    , public Interface
                 {
                 private:
                     Video3D::Interface *video;
@@ -35,6 +36,7 @@ namespace Gek
                     }
 
                     BEGIN_INTERFACE_LIST(System)
+                        INTERFACE_LIST_ENTRY_COM(Interface)
                     END_INTERFACE_LIST_USER
 
                     // Interface
@@ -49,6 +51,20 @@ namespace Gek
                         {
                             this->video = video;
                             resultValue = S_OK;
+                        }
+
+                        if (SUCCEEDED(resultValue))
+                        {
+                            Gek::Xml::Document xmlDocument;
+                            resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName));
+                            if (SUCCEEDED(resultValue))
+                            {
+                                resultValue = E_INVALIDARG;
+                                Gek::Xml::Node xmlMaterialNode = xmlDocument.getRoot();
+                                if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
+                                {
+                                }
+                            }
                         }
 
                         return resultValue;

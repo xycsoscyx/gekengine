@@ -1,8 +1,11 @@
 ﻿#include "GEK\Engine\RenderInterface.h"
 #include "GEK\Engine\PluginInterface.h"
 #include "GEK\Engine\ShaderInterface.h"
+#include "GEK\Engine\MaterialInterface.h"
 #include "GEK\Engine\PopulationInterface.h"
 #include "GEK\Engine\ComponentInterface.h"
+#include "GEK\Components\Transform.h"
+#include "GEK\Components\Camera.h"
 #include "GEK\Context\BaseUser.h"
 #include "GEK\Context\BaseObservable.h"
 #include "GEK\Utility\String.h"
@@ -52,6 +55,36 @@ namespace Gek
                     INTERFACE_LIST_ENTRY_COM(Interface)
                 END_INTERFACE_LIST_USER
 
+                template <typename CLASS>
+                Handle loadResource(LPCWSTR fileName, REFCLSID className)
+                {
+                    REQUIRE_RETURN(initializerContext, E_FAIL);
+
+                    Handle resourceHandle = InvalidHandle;
+
+                    std::size_t hash = std::hash<LPCWSTR>()(fileName);
+                    auto resourceHashIterator = resourceHashList.find(hash);
+                    if (resourceHashIterator != resourceHashList.end())
+                    {
+                        resourceHandle = (*resourceHashIterator).second;
+                    }
+                    else
+                    {
+                        resourceHashList[hash] = InvalidHandle;
+
+                        CComPtr<CLASS> resource;
+                        getContext()->createInstance(className, IID_PPV_ARGS(&resource));
+                        if (resource && SUCCEEDED(resource->initialize(initializerContext, fileName)))
+                        {
+                            resourceHandle = InterlockedIncrement(&nextResourceHandle);
+                            resourceList[resourceHandle] = resource;
+                            resourceHashList[hash] = resourceHandle;
+                        }
+                    }
+
+                    return resourceHandle;
+                }
+
                 // Render::Interface
                 STDMETHODIMP initialize(IUnknown *initializerContext)
                 {
@@ -73,31 +106,7 @@ namespace Gek
 
                 STDMETHODIMP_(Handle) loadPlugin(LPCWSTR fileName)
                 {
-                    REQUIRE_RETURN(initializerContext, E_FAIL);
-
-                    Handle resourceHandle = InvalidHandle;
-
-                    std::size_t hash = std::hash<LPCWSTR>()(fileName);
-                    auto resourceHashIterator = resourceHashList.find(hash);
-                    if (resourceHashIterator != resourceHashList.end())
-                    {
-                        resourceHandle = (*resourceHashIterator).second;
-                    }
-                    else
-                    {
-                        resourceHashList[hash] = InvalidHandle;
-
-                        CComPtr<Plugin::Interface> plugin;
-                        getContext()->createInstance(CLSID_IID_PPV_ARGS(Plugin::Class, &plugin));
-                        if (plugin && SUCCEEDED(plugin->initialize(initializerContext, fileName)))
-                        {
-                            resourceHandle = InterlockedIncrement(&nextResourceHandle);
-                            resourceList[resourceHandle] = plugin;
-                            resourceHashList[hash] = resourceHandle;
-                        }
-                    }
-
-                    return resourceHandle;
+                    return loadResource<Plugin::Interface>(fileName, __uuidof(Plugin::Class));
                 }
 
                 STDMETHODIMP_(void) enablePlugin(Handle pluginHandle)
@@ -111,31 +120,7 @@ namespace Gek
 
                 STDMETHODIMP_(Handle) loadShader(LPCWSTR fileName)
                 {
-                    REQUIRE_RETURN(initializerContext, E_FAIL);
-
-                    Handle resourceHandle = InvalidHandle;
-
-                    std::size_t hash = std::hash<LPCWSTR>()(fileName);
-                    auto resourceHashIterator = resourceHashList.find(hash);
-                    if (resourceHashIterator != resourceHashList.end())
-                    {
-                        resourceHandle = (*resourceHashIterator).second;
-                    }
-                    else
-                    {
-                        resourceHashList[hash] = InvalidHandle;
-
-                        CComPtr<Shader::Interface> plugin;
-                        getContext()->createInstance(CLSID_IID_PPV_ARGS(Shader::Class, &plugin));
-                        if (plugin && SUCCEEDED(plugin->initialize(initializerContext, fileName)))
-                        {
-                            resourceHandle = InterlockedIncrement(&nextResourceHandle);
-                            resourceList[resourceHandle] = plugin;
-                            resourceHashList[hash] = resourceHandle;
-                        }
-                    }
-
-                    return resourceHandle;
+                    return loadResource<Shader::Interface>(fileName, __uuidof(Shader::Class));
                 }
 
                 STDMETHODIMP_(void) enableShader(Handle shaderHandle)
@@ -149,9 +134,7 @@ namespace Gek
 
                 STDMETHODIMP_(Handle) loadMaterial(LPCWSTR fileName)
                 {
-                    Handle resourceHandle = InterlockedIncrement(&nextResourceHandle);
-                    resourceList[resourceHandle] = nullptr;
-                    return resourceHandle;
+                    return loadResource<Material::Interface>(fileName, __uuidof(Material::Class));
                 }
 
                 STDMETHODIMP_(void) enableMaterial(Handle materialHandle)
@@ -193,8 +176,17 @@ namespace Gek
                         video->clearDefaultRenderTarget(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
                     }
 
-                    //BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderBegin, std::placeholders::_1, viewerHandle)));
-                    //BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderEnd, std::placeholders::_1, viewerHandle)));
+                    population->listEntities({ Components::Transform::identifier, Components::Camera::identifier }, [&](Handle cameraHandle) -> void
+                    {
+                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderBegin, std::placeholders::_1, cameraHandle)));
+
+                        Shape::Frustum viewFrustum;
+                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onCullScene, std::placeholders::_1, cameraHandle, viewFrustum)));
+
+                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onDrawScene, std::placeholders::_1, cameraHandle, video->getDefaultContext(), 0xFFFFFFFF)));
+
+                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderEnd, std::placeholders::_1, cameraHandle)));
+                    });
 
                     BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderOverlay, std::placeholders::_1)));
 

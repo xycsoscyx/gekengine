@@ -58,6 +58,7 @@ namespace Gek
                     }
 
                     BEGIN_INTERFACE_LIST(System)
+                        INTERFACE_LIST_ENTRY_COM(Interface)
                     END_INTERFACE_LIST_USER
 
                     // Shader::Interface

@@ -39,10 +39,10 @@ namespace Gek
 
             DECLARE_INTERFACE_IID(Observer, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Gek::ObserverInterface
             {
-                STDMETHOD_(void, onRenderBegin)             (THIS_ Handle viewerHandle) { };
-                STDMETHOD_(void, onCullScene)               (THIS_ Handle viewerHandle, const Gek::Shape::Frustum &viewFrustum) { };
-                STDMETHOD_(void, onDrawScene)               (THIS_ Handle viewerHandle, Gek::Video3D::ContextInterface *videoContext, UINT32 vertexAttributes) { };
-                STDMETHOD_(void, onRenderEnd)               (THIS_ Handle viewerHandle) { };
+                STDMETHOD_(void, onRenderBegin)             (THIS_ Handle cameraHandle) { };
+                STDMETHOD_(void, onCullScene)               (THIS_ Handle cameraHandle, const Gek::Shape::Frustum &viewFrustum) { };
+                STDMETHOD_(void, onDrawScene)               (THIS_ Handle cameraHandle, Gek::Video3D::ContextInterface *videoContext, UINT32 vertexAttributes) { };
+                STDMETHOD_(void, onRenderEnd)               (THIS_ Handle cameraHandle) { };
                 STDMETHOD_(void, onRenderOverlay)           (THIS) { };
             };
         }; // namespace Render
