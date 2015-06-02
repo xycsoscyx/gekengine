@@ -9,25 +9,15 @@ namespace Gek
     namespace Shape
     {
         template <typename TYPE>
-        struct BaseFrustum
+        struct BaseFrustum : public Math::BaseVector3<TYPE>
         {
         public:
-            Math::BaseVector3<TYPE> origin;
             BasePlane<TYPE> planes[6];
 
         public:
-            BaseFrustum(void)
+            BaseFrustum(const Math::BaseMatrix4x4<TYPE> &transform, const Math::BaseVector3<TYPE> &origin)
+                : BaseVector3(origin)
             {
-            }
-
-            void create(const Math::BaseMatrix4x4<TYPE> &matrix, const Math::BaseMatrix4x4<TYPE> &projection)
-            {
-                // Extract the origin;
-                origin = matrix.translation;
-
-                Math::BaseMatrix4x4<TYPE> view = matrix.getInverse();
-                Math::BaseMatrix4x4<TYPE> transform = (view * projection);
-
                 // Calculate near plane of frustum.
                 planes[0].normal.x = transform._14 + transform._13;
                 planes[0].normal.y = transform._24 + transform._23;

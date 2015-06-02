@@ -26,6 +26,18 @@ namespace Gek
                 , public Population::Observer
                 , public Render::Interface
             {
+            public:
+                struct GlobalConstantBuffer
+                {
+                    Math::Float2 fieldOfView;
+                    float minimumDistance;
+                    float maximumDistance;
+                    Math::Float4x4 viewMatrix;
+                    Math::Float4x4 projectionMatrix;
+                    Math::Float4x4 inverseProjectionMatrix;
+                    Math::Float4x4 transformMatrix;
+                };
+
             private:
                 IUnknown *initializerContext;
                 Video3D::Interface *video;
@@ -178,9 +190,25 @@ namespace Gek
 
                     population->listEntities({ Components::Transform::identifier, Components::Camera::identifier }, [&](Handle cameraHandle) -> void
                     {
+                        auto &transformComponent = population->getComponent<Components::Transform::Data>(cameraHandle, Components::Transform::identifier);
+                        auto &cameraComponent = population->getComponent<Components::Camera::Data>(cameraHandle, Components::Camera::identifier);
+                        Math::Float4x4 cameraMatrix(transformComponent.rotation, transformComponent.position);
+
+                        GlobalConstantBuffer globalConstantBuffer;
+                        float displayAspectRatio = 1.0f;
+                        float fieldOfView = Math::convertDegreesToRadians(cameraComponent.fieldOfView);
+                        globalConstantBuffer.fieldOfView.x = tan(fieldOfView * 0.5f);
+                        globalConstantBuffer.fieldOfView.y = (globalConstantBuffer.fieldOfView.x / displayAspectRatio);
+                        globalConstantBuffer.minimumDistance = cameraComponent.minimumDistance;
+                        globalConstantBuffer.maximumDistance = cameraComponent.maximumDistance;
+                        globalConstantBuffer.viewMatrix = cameraMatrix.getInverse();
+                        globalConstantBuffer.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraComponent.minimumDistance, cameraComponent.maximumDistance);
+                        globalConstantBuffer.inverseProjectionMatrix = globalConstantBuffer.projectionMatrix.getInverse();
+                        globalConstantBuffer.transformMatrix = (globalConstantBuffer.viewMatrix * globalConstantBuffer.projectionMatrix);
+
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderBegin, std::placeholders::_1, cameraHandle)));
 
-                        Shape::Frustum viewFrustum;
+                        Shape::Frustum viewFrustum(globalConstantBuffer.transformMatrix, transformComponent.position);
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onCullScene, std::placeholders::_1, cameraHandle, viewFrustum)));
 
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onDrawScene, std::placeholders::_1, cameraHandle, video->getDefaultContext(), 0xFFFFFFFF)));
