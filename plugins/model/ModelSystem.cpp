@@ -21,6 +21,7 @@
 #include <memory>
 #include <map>
 #include <set>
+#include <ppl.h>
 
 #undef min
 
@@ -44,9 +45,12 @@ namespace Gek
                 UINT32 indexCount;
             };
 
-            struct Data : public Shape::AlignedBox
+            struct Data
             {
                 bool loaded;
+                bool ready;
+                CStringW fileName;
+                Shape::AlignedBox alignedBox;
                 Handle positionHandle;
                 Handle texCoordHandle;
                 Handle normalHandle;
@@ -55,6 +59,7 @@ namespace Gek
 
                 Data(void)
                     : loaded(false)
+                    , ready(false)
                 {
                 }
             };
@@ -86,7 +91,7 @@ namespace Gek
             Handle nextModelHandle;
             concurrency::concurrent_unordered_map<Handle, Data> dataList;
             concurrency::concurrent_unordered_map<CStringW, Handle> dataNameList;
-            concurrency::concurrent_unordered_map<Handle, Handle> entityList;
+            concurrency::concurrent_unordered_map<Handle, Handle> dataEntityList;
             concurrency::concurrent_unordered_map<Handle, std::vector<Instance>> visibleList;
 
         public:
@@ -113,10 +118,13 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_COM(Engine::System::Interface)
             END_INTERFACE_LIST_USER
 
-            HRESULT loadData(LPCWSTR fileName, Data &data)
+            HRESULT preLoadData(LPCWSTR fileName, Data &data)
             {
+                static const UINT32 nPreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shape::AlignedBox));
+
                 std::vector<UINT8> fileData;
-                HRESULT resultValue = Gek::FileSystem::load(Gek::String::format(L"%%root%%\\data\\models\\%s.gek", fileName), fileData);
+                data.fileName.Format(L"%%root%%\\data\\models\\%s.gek", fileName);
+                HRESULT resultValue = Gek::FileSystem::load(data.fileName, fileData, nPreReadSize);
                 if (SUCCEEDED(resultValue))
                 {
                     UINT8 *rawFileData = fileData.data();
@@ -132,7 +140,41 @@ namespace Gek
                     resultValue = E_INVALIDARG;
                     if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 2)
                     {
-                        Gek::Shape::AlignedBox alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
+                        data.fileName = fileName;
+                        data.alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
+                        resultValue = S_OK;
+                    }
+                }
+
+                return resultValue;
+            }
+
+            HRESULT loadData(Data &data)
+            {
+                if (data.loaded)
+                {
+                    return S_OK;
+                }
+
+                data.loaded = true;
+                std::vector<UINT8> fileData;
+                HRESULT resultValue = Gek::FileSystem::load(data.fileName, fileData);
+                if (SUCCEEDED(resultValue))
+                {
+                    UINT8 *rawFileData = fileData.data();
+                    UINT32 gekIdentifier = *((UINT32 *)rawFileData);
+                    rawFileData += sizeof(UINT32);
+
+                    UINT16 gekModelType = *((UINT16 *)rawFileData);
+                    rawFileData += sizeof(UINT16);
+
+                    UINT16 gekModelVersion = *((UINT16 *)rawFileData);
+                    rawFileData += sizeof(UINT16);
+
+                    resultValue = E_INVALIDARG;
+                    if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 2)
+                    {
+                        data.alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
                         rawFileData += sizeof(Gek::Shape::AlignedBox);
 
                         UINT32 materialCount = *((UINT32 *)rawFileData);
@@ -197,7 +239,7 @@ namespace Gek
 
                 if (SUCCEEDED(resultValue))
                 {
-                    data.loaded = true;
+                    data.ready = true;
                 }
 
                 return resultValue;
@@ -206,16 +248,16 @@ namespace Gek
             Handle getModelHandle(LPCWSTR fileName)
             {
                 Handle modelHandle = InvalidHandle;
-                auto modelNameIterator = dataNameList.find(fileName);
-                if (modelNameIterator != dataNameList.end())
+                auto dataNameIterator = dataNameList.find(fileName);
+                if (dataNameIterator != dataNameList.end())
                 {
-                    modelHandle = (*modelNameIterator).second;
+                    modelHandle = (*dataNameIterator).second;
                 }
                 else
                 {
                     modelHandle = InterlockedIncrement(&nextModelHandle);
                     dataNameList[fileName] = modelHandle;
-                    loadData(fileName, dataList[modelHandle]);
+                    preLoadData(fileName, dataList[modelHandle]);
                 }
 
                 return modelHandle;
@@ -278,7 +320,7 @@ namespace Gek
 
                 dataList.clear();
                 dataNameList.clear();
-                entityList.clear();
+                dataEntityList.clear();
             }
 
             STDMETHODIMP_(void) onEntityCreated(Handle entityHandle)
@@ -290,16 +332,16 @@ namespace Gek
                 {
                     auto &modelComponent = population->getComponent<Model::Data>(entityHandle, Model::identifier);
                     auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(entityHandle, Engine::Components::Transform::identifier);
-                    entityList[entityHandle] = getModelHandle(modelComponent);
+                    dataEntityList[entityHandle] = getModelHandle(modelComponent);
                 }
             }
 
             STDMETHODIMP_(void) onEntityDestroyed(Handle entityHandle)
             {
-                auto entityModelIterator = entityList.find(entityHandle);
-                if (entityModelIterator != entityList.end())
+                auto dataEntityIterator = dataEntityList.find(entityHandle);
+                if (dataEntityIterator != dataEntityList.end())
                 {
-                    entityList.unsafe_erase(entityModelIterator);
+                    dataEntityList.unsafe_erase(dataEntityIterator);
                 }
             }
 
@@ -313,33 +355,50 @@ namespace Gek
                 REQUIRE_VOID_RETURN(population);
 
                 visibleList.clear();
-                for (auto entity : entityList)
+                for (auto dataEntity : dataEntityList)
                 {
-                    auto modelIterator = dataList.find(entity.second);
-                    if (modelIterator != dataList.end())
+                    auto dataIterator = dataList.find(dataEntity.second);
+                    if (dataIterator != dataList.end())
                     {
                         Gek::Math::Float3 size(1.0f, 1.0f, 1.0f);
-                        if (population->hasComponent(entity.first, Engine::Components::Size::identifier))
+                        if (population->hasComponent(dataEntity.first, Engine::Components::Size::identifier))
                         {
-                            size = population->getComponent<Engine::Components::Size::Data>(entity.first, Engine::Components::Size::identifier);
+                            size = population->getComponent<Engine::Components::Size::Data>(dataEntity.first, Engine::Components::Size::identifier);
                         }
 
-                        Gek::Shape::AlignedBox alignedBox((*modelIterator).second);
+                        Gek::Shape::AlignedBox alignedBox((*dataIterator).second.alignedBox);
                         alignedBox.minimum *= size;
                         alignedBox.maximum *= size;
 
-                        auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(entity.first, Engine::Components::Transform::identifier);
+                        auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(dataEntity.first, Engine::Components::Transform::identifier);
                         Shape::OrientedBox orientedBox(alignedBox, transformComponent.rotation, transformComponent.position);
                         if (viewFrustum.isVisible(orientedBox))
                         {
                             Gek::Math::Float4 color(1.0f, 1.0f, 1.0f, 1.0f);
-                            if (population->hasComponent(entity.first, Engine::Components::Color::identifier))
+                            if (population->hasComponent(dataEntity.first, Engine::Components::Color::identifier))
                             {
-                                color = population->getComponent<Engine::Components::Color::Data>(entity.first, Engine::Components::Color::identifier);
+                                color = population->getComponent<Engine::Components::Color::Data>(dataEntity.first, Engine::Components::Color::identifier);
                             }
 
-                            visibleList[entity.second].push_back(Instance(orientedBox.matrix, size, color, viewFrustum.getDistance(orientedBox.matrix.translation)));
+                            visibleList[dataEntity.second].push_back(Instance(orientedBox.matrix, size, color, viewFrustum.getDistance(orientedBox.matrix.translation)));
                         }
+                    }
+                }
+
+                for (auto instancePair : visibleList)
+                {
+                    Data &data = dataList[instancePair.first];
+                    if (SUCCEEDED(loadData(data)) && data.ready)
+                    {
+                        auto &instanceList = instancePair.second;
+                        concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [&](const Instance &leftInstance, const Instance &rightInstance) -> bool
+                        {
+                            return (leftInstance.distance < rightInstance.distance);
+                        });
+                    }
+                    else
+                    {
+                        instancePair.second.clear();
                     }
                 }
             }
@@ -359,10 +418,10 @@ namespace Gek
                 render->enablePlugin(pluginHandle);
                 videoContext->getVertexSystem()->setResource(instanceHandle, 0);
                 videoContext->setPrimitiveType(Video3D::PrimitiveType::TRIANGLELIST);
-                for (auto instance : visibleList)
+                for (auto instancePair : visibleList)
                 {
-                    Data &data = dataList[instance.first];
-                    auto &instanceList = instance.second;
+                    Data &data = dataList[instancePair.first];
+                    auto &instanceList = instancePair.second;
 
                     if (vertexAttributes & Engine::Render::Attribute::Position)
                     {

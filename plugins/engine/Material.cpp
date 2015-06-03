@@ -1,5 +1,6 @@
 ﻿#include "GEK\Engine\MaterialInterface.h"
 #include "GEK\Engine\ShaderInterface.h"
+#include "GEK\Engine\RenderInterface.h"
 #include "GEK\Context\BaseUser.h"
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Utility\String.h"
@@ -22,12 +23,14 @@ namespace Gek
                 {
                 private:
                     Video3D::Interface *video;
+                    Render::Interface *render;
                     std::vector<Handle> mapList;
                     std::vector<float> propertyList;
 
                 public:
                     System(void)
                         : video(nullptr)
+                        , render(nullptr)
                     {
                     }
 
@@ -47,9 +50,11 @@ namespace Gek
 
                         HRESULT resultValue = E_FAIL;
                         CComQIPtr<Video3D::Interface> video(initializerContext);
-                        if (video)
+                        CComQIPtr<Render::Interface> render(initializerContext);
+                        if (video && render)
                         {
                             this->video = video;
+                            this->render = render;
                             resultValue = S_OK;
                         }
 
@@ -63,6 +68,15 @@ namespace Gek
                                 Gek::Xml::Node xmlMaterialNode = xmlDocument.getRoot();
                                 if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
                                 {
+                                    Gek::Xml::Node xmlShaderNode = xmlMaterialNode.firstChildElement(L"shader");
+                                    if (xmlShaderNode)
+                                    {
+                                        CStringW shaderFileName = xmlShaderNode.getText();
+                                        if (render->loadShader(shaderFileName) != InvalidHandle)
+                                        {
+                                            resultValue = S_OK;
+                                        }
+                                    }
                                 }
                             }
                         }

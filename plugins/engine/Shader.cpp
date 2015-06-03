@@ -20,14 +20,11 @@ namespace Gek
                     , public Interface
                 {
                 public:
-                    struct Map
-                    {
-                        CStringW name;
-                    };
-
                     enum class PropertyType : UINT8
                     {
-                        Float = 0,
+                        Map = 0,
+                        Target,
+                        Float,
                         Float2,
                         Float3,
                         Float4,
@@ -43,9 +40,7 @@ namespace Gek
 
                 private:
                     Video3D::Interface *video;
-                    std::vector<Map> mapList;
                     std::vector<Property> propertyList;
-                    std::vector<CComPtr<IUnknown>> PassList;
 
                 public:
                     System(void)

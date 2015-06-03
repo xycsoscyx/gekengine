@@ -1,11 +1,9 @@
 <?xml version="1.0"?>
 <material>
     <shader>standard</shader>
-    <maps>
-        <albedo>%material%.ColorMap.dds</albedo>
-        <normal>%material%.NormalMap.dds</normal>
-    </maps>
     <properties>
-        <color>0.5,0,0,1</color>
+        <albedo type="map">%material%.ColorMap.dds</albedo>
+        <normal type="map">%material%.NormalMap.dds</normal>
+        <color type="float4">0.5,0,0,1</color>
     </properties>
 </material>
