@@ -15,6 +15,6 @@
             <resource stage="3" source="output" />
         </resources>
 
-        <program source="Opaque\BlurSSAO" entry="MainPixelProgram" />
+        <program source="Opaque\BlurSSAO" entry="mainPixelProgram" />
     </pixel>
 </filter>

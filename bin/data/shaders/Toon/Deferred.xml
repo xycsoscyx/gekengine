@@ -10,6 +10,6 @@
     </targets>
     
     <pixel>
-        <program source="Toon\Deferred" entry="MainPixelProgram" />
+        <program source="Toon\Deferred" entry="mainPixelProgram" />
     </pixel>
 </filter>

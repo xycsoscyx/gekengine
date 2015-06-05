@@ -22,7 +22,7 @@
         </targets>
 
         <pixel>
-            <program source="Standard\Deferred" entry="MainPixelProgram" />
+            <program source="Standard\Deferred" entry="mainPixelProgram" />
         </pixel>
     </pass>
     <pass mode="lighting">
@@ -46,7 +46,7 @@
                 <resource stage="1" source="Opaque.Depth" />
             </resources>
 
-            <program source="Standard\Lighting" entry="MainComputeProgram" />
+            <program source="Standard\Lighting" entry="mainComputeProgram" />
         </compute>
 
         <pixel>
@@ -58,7 +58,7 @@
                 <resource stage="5" source="Opaque.TileIndices" />
             </resources>
 
-            <program source="Standard\Lighting" entry="MainPixelProgram"/>
+            <program source="Standard\Lighting" entry="mainPixelProgram"/>
         </pixel>
     </pass>
 </shader>

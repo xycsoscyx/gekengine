@@ -7,6 +7,6 @@
     </targets>
     
     <pixel>
-        <program source="Opaque\Transparent" entry="MainPixelProgram" />
+        <program source="Opaque\Transparent" entry="mainPixelProgram" />
     </pixel>
 </filter>
