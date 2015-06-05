@@ -323,10 +323,10 @@ namespace Gek
                     if (SUCCEEDED(xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName))))
                     {
                         Surface surface;
-                        Gek::Xml::Node &xmlMaterialNode = xmlDocument.getRoot();
+                        Gek::Xml::Node xmlMaterialNode = xmlDocument.getRoot();
                         if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"surface") == 0)
                         {
-                            Gek::Xml::Node &xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
+                            Gek::Xml::Node xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
                             if (xmlSurfaceNode)
                             {
                                 if (xmlSurfaceNode.hasAttribute(L"staticfriction"))

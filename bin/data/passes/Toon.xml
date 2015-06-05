@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<pass>
-    <filters>
-        <filter source="Toon/Deferred" material="solid" />
-        <filter source="Toon/Edge" material="solid" />
-    </filters>
-</pass>

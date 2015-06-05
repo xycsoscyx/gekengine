@@ -1,16 +1,10 @@
 <?xml version="1.0"?>
 <material>
-    <render>
-        <transparent fullbright="1">
-            <blend>
-                <color source="source_alpha" destination="inverse_source_alpha" operation="add" />
-                <alpha source="one" destination="zero" operation="add" />
-            </blend>
-            <data>
-                <stage source="%material%.ColorMap.dds" />
-                <stage source="%material%.NormalMap.dds" />
-                <stage source="*color:0.5,0,0,0" />
-            </data>
-        </transparent>
-    </render>
+    <shader>transparent</shader>
+    <maps>
+        <albedo>%material%.ColorMap.dds</albedo>
+    </maps>
+    <properties>
+        <color>0.5,0,0,1</color>
+    </properties>
 </material>

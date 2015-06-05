@@ -22,9 +22,7 @@ namespace Gek
                 public:
                     enum class PropertyType : UINT8
                     {
-                        Map = 0,
-                        Target,
-                        Float,
+                        Float = 0,
                         Float2,
                         Float3,
                         Float4,
@@ -36,11 +34,32 @@ namespace Gek
                     {
                         CStringW name;
                         PropertyType propertyType;
+
+                        Property(LPCWSTR name, PropertyType propertyType)
+                            : name(name)
+                            , propertyType(propertyType)
+                        {
+                        }
                     };
 
                 private:
                     Video3D::Interface *video;
+                    std::vector<CStringW> mapList;
                     std::vector<Property> propertyList;
+                    std::list<Handle> passList;
+
+                private:
+                    static PropertyType getPropertyType(LPCWSTR propertyString)
+                    {
+                        if (_wcsicmp(propertyString, L"Float") == 0) return PropertyType::Float;
+                        else if (_wcsicmp(propertyString, L"Float2") == 0) return PropertyType::Float2;
+                        else if (_wcsicmp(propertyString, L"Float3") == 0) return PropertyType::Float3;
+                        else if (_wcsicmp(propertyString, L"Float4") == 0) return PropertyType::Float4;
+                        else if (_wcsicmp(propertyString, L"UINT32") == 0) return PropertyType::UINT32;
+                        else if (_wcsicmp(propertyString, L"Boolean") == 0) return PropertyType::Boolean;
+                        return PropertyType::Float;
+                    }
+
 
                 public:
                     System(void)
@@ -80,6 +99,37 @@ namespace Gek
                                 Gek::Xml::Node xmlShaderNode = xmlDocument.getRoot();
                                 if (xmlShaderNode && xmlShaderNode.getType().CompareNoCase(L"shader") == 0)
                                 {
+                                    Gek::Xml::Node xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
+                                    if (xmlMaterialNode)
+                                    {
+                                        Gek::Xml::Node xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
+                                        if (xmlMapsNode)
+                                        {
+                                            Gek::Xml::Node xmlMapNode = xmlMapsNode.firstChildElement();
+                                            while (xmlMapNode)
+                                            {
+                                                mapList.push_back(xmlMapNode.getType());
+                                                xmlMapNode = xmlMapNode.nextSiblingElement();
+                                            };
+                                        }
+
+                                        Gek::Xml::Node xmlPropertiesNode = xmlMaterialNode.firstChildElement(L"properties");
+                                        if (xmlPropertiesNode)
+                                        {
+                                            Gek::Xml::Node xmlProperty = xmlPropertiesNode.firstChildElement();
+                                            while (xmlProperty)
+                                            {
+                                                propertyList.push_back(Property(xmlProperty.getType(), getPropertyType(xmlProperty.getText())));
+                                                xmlProperty = xmlProperty.nextSiblingElement();
+                                            };
+                                        }
+                                    }
+
+                                    Gek::Xml::Node xmlPassNode = xmlShaderNode.firstChildElement(L"pass");
+                                    while (xmlPassNode)
+                                    {
+                                        xmlPassNode = xmlPassNode.nextSiblingElement();
+                                    };
                                 }
                             }
                         }

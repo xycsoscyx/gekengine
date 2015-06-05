@@ -1,12 +1,9 @@
 <?xml version="1.0"?>
 <material>
-    <render>
-        <solid>
-            <data>
-                <stage source="%material%.ColorMap.dds" />
-                <stage source="%directory%\curtain.NormalMap.dds" />
-                <stage source="%directory%\curtain.InfoMap.dds" />
-            </data>
-        </solid>
-    </render>
+    <shader>standard</shader>
+    <maps>
+        <albedo>%material%.ColorMap.dds</albedo>
+        <normal>%directory%\curtain.NormalMap.dds</normal>
+        <info>%directory%\curtain.InfoMap.dds</info>
+    </maps>
 </material>

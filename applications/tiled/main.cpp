@@ -58,20 +58,20 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         HRESULT hRetVal = xmlDocument.load(fileNameInput);
         if (SUCCEEDED(hRetVal))
         {
-            Gek::Xml::Node &xmpMapNode = xmlDocument.getRoot();
+            Gek::Xml::Node xmpMapNode = xmlDocument.getRoot();
             if (xmpMapNode && xmpMapNode.getType().CompareNoCase(L"map") == 0)
             {
                 UINT32 mapWidth = Gek::String::getUINT32(xmpMapNode.getAttribute(L"width"));
                 UINT32 mapHeight = Gek::String::getUINT32(xmpMapNode.getAttribute(L"height"));
                 float tileWidth = Gek::String::getFloat(xmpMapNode.getAttribute(L"tilewidth"));
                 float tileHeight = Gek::String::getFloat(xmpMapNode.getAttribute(L"tileheight"));
-                Gek::Xml::Node &xmlObjectGroupNode = xmpMapNode.firstChildElement(L"objectgroup");
+                Gek::Xml::Node xmlObjectGroupNode = xmpMapNode.firstChildElement(L"objectgroup");
                 while (xmlObjectGroupNode)
                 {
                     Gek::Math::Float3 tilePosition;
                     tilePosition.z = Gek::String::getFloat(xmlObjectGroupNode.getAttribute(L"name"));
 
-                    Gek::Xml::Node &xmlObjectNode = xmlObjectGroupNode.firstChildElement(L"object");
+                    Gek::Xml::Node xmlObjectNode = xmlObjectGroupNode.firstChildElement(L"object");
                     while (xmlObjectNode)
                     {
                         CStringW tileType(xmlObjectNode.getAttribute(L"type"));
@@ -126,12 +126,12 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                     xmlObjectGroupNode = xmlObjectGroupNode.nextSiblingElement(L"objectgroup");
                 };
 
-                Gek::Xml::Node &xmlLayerNode = xmpMapNode.firstChildElement(L"layer");
+                Gek::Xml::Node xmlLayerNode = xmpMapNode.firstChildElement(L"layer");
                 while (xmlLayerNode)
                 {
                     Gek::Math::Float3 tilePosition;
                     tilePosition.z = Gek::String::getFloat(xmlLayerNode.getAttribute(L"name"));
-                    Gek::Xml::Node &xmlTileNode = xmlLayerNode.firstChildElement(L"data").firstChildElement(L"tile");
+                    Gek::Xml::Node xmlTileNode = xmlLayerNode.firstChildElement(L"data").firstChildElement(L"tile");
                     for (UINT32 tileY = 0; tileY < mapHeight; tileY++)
                     {
                         for (UINT32 tileX = 0; tileX < mapWidth; tileX++)

@@ -139,17 +139,17 @@ namespace Gek
                     HRESULT resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\worlds\\%s.xml", fileName));
                     if (SUCCEEDED(resultValue))
                     {
-                        Gek::Xml::Node &xmlWorldNode = xmlDocument.getRoot();
+                        Gek::Xml::Node xmlWorldNode = xmlDocument.getRoot();
                         if (xmlWorldNode && xmlWorldNode.getType().CompareNoCase(L"world") == 0)
                         {
-                            Gek::Xml::Node &xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
+                            Gek::Xml::Node xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
                             if (xmlPopulationNode)
                             {
-                                Gek::Xml::Node &xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
+                                Gek::Xml::Node xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
                                 while (xmlEntityNode)
                                 {
                                     std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> entityParameterList;
-                                    Gek::Xml::Node &xmlComponentNode = xmlEntityNode.firstChildElement();
+                                    Gek::Xml::Node xmlComponentNode = xmlEntityNode.firstChildElement();
                                     while (xmlComponentNode)
                                     {
                                         std::unordered_map<CStringW, CStringW> &componentParameterList = entityParameterList[xmlComponentNode.getType()];

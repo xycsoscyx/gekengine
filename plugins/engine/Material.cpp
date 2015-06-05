@@ -26,11 +26,13 @@ namespace Gek
                     Render::Interface *render;
                     std::vector<Handle> mapList;
                     std::vector<float> propertyList;
+                    Handle shaderHandle;
 
                 public:
                     System(void)
                         : video(nullptr)
                         , render(nullptr)
+                        , shaderHandle(InvalidHandle)
                     {
                     }
 
@@ -74,6 +76,7 @@ namespace Gek
                                         CStringW shaderFileName = xmlShaderNode.getText();
                                         if (render->loadShader(shaderFileName) != InvalidHandle)
                                         {
+                                            shaderHandle = render->loadShader(shaderFileName);
                                             resultValue = S_OK;
                                         }
                                     }

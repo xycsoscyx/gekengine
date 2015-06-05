@@ -1,14 +1,9 @@
 <?xml version="1.0"?>
 <material>
-    <render>
-        <solid>
-            <states cullmode="none" />
-            <data>
-                <stage source="%material%.ColorMap.dds" />
-                <stage source="%material%.NormalMap.dds" />
-                <!--info source="%material%.InfoMap.dds" /-->
-                <stage source="*color:0.5,0,0,0" />
-            </data>
-        </solid>
-    </render>
+    <shader>standard</shader>
+    <maps>
+        <albedo>%material%.ColorMap.dds</albedo>
+        <normal>%directory%\fabric.NormalMap.dds</normal>
+        <info>*color:0.5,0,0.0,0</info>
+    </maps>
 </material>

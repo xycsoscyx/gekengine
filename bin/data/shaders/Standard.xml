@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<shader>
+    <material>
+        <maps>
+            <albedo/>
+            <normal/>
+            <info/>
+        </maps>
+        <properties>
+            <color>float4</color>
+        </properties>
+    </material>
+    <pass mode="forward">
+        <states cullmode="back" />
+
+        <targets>
+            <target name="Opaque.Albedo" format="RGBA_UINT8"/>
+            <target name="Opaque.Normal" format="RG_HALF"/>
+            <target name="Opaque.Depth" format="R_FLOAT"/>
+            <target name="Opaque.Info" format="RGBA_UINT8"/>
+            <depth name="Opaque.DepthBuffer" format="D24S8" comparison="lessequal" writemask="all" clear="1" />
+        </targets>
+
+        <pixel>
+            <program source="Standard\Deferred" entry="MainPixelProgram" />
+        </pixel>
+    </pass>
+    <pass mode="lighting">
+        <defines>
+            <define name="gs_nLightTileSize" value="32" />
+            <define name="gs_nMaxLights" value="500" />
+        </defines>
+
+        <blend>
+            <color source="one" destination="one" operation="add" />
+            <alpha source="one" destination="one" operation="add" />
+        </blend>
+
+        <buffers>
+            <buffer name="Opaque.TileIndices" format="R_UINT8" count="ceil(%xsize%/gs_nLightTileSize)*ceil(%ysize%/gs_nLightTileSize)*gs_nMaxLights" />
+        </buffers>
+
+        <compute dispatch="ceil(%xsize%/gs_nLightTileSize),ceil(%ysize%/gs_nLightTileSize),1">
+            <resources>
+                <resource stage="0" source="Opaque.TileIndices" unorderedaccess="true" />
+                <resource stage="1" source="Opaque.Depth" />
+            </resources>
+
+            <program source="Standard\Lighting" entry="MainComputeProgram" />
+        </compute>
+
+        <pixel>
+            <resources>
+                <resource stage="1" source="Opaque.Depth" />
+                <resource stage="2" source="Opaque.Albedo" />
+                <resource stage="3" source="Opaque.Normal" />
+                <resource stage="4" source="Opaque.Info" />
+                <resource stage="5" source="Opaque.TileIndices" />
+            </resources>
+
+            <program source="Standard\Lighting" entry="MainPixelProgram"/>
+        </pixel>
+    </pass>
+</shader>
