@@ -16,6 +16,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{AC11844F-2CAD-41FC-81EB-A4E330694748}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine", "..\plugins\engine\engine.vcxproj", "{481AE6AD-79B2-44D3-B737-FB7E3494FE5A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8A1E9F91-5131-4B97-93F2-FAA6B1EA9220} = {8A1E9F91-5131-4B97-93F2-FAA6B1EA9220}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "system", "..\plugins\system\system.vcxproj", "{8A1E9F91-5131-4B97-93F2-FAA6B1EA9220}"
 EndProject

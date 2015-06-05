@@ -14,19 +14,6 @@ namespace Gek
     {
         namespace Render
         {
-            static Video3D::Format getElementFormat(LPCWSTR formatString)
-            {
-                if (_wcsicmp(formatString, L"R_FLOAT") == 0) return Video3D::Format::R_FLOAT;
-                else if (_wcsicmp(formatString, L"RG_FLOAT") == 0) return Video3D::Format::RG_FLOAT;
-                else if (_wcsicmp(formatString, L"RGB_FLOAT") == 0) return Video3D::Format::RGB_FLOAT;
-                else if (_wcsicmp(formatString, L"RGBA_FLOAT") == 0) return Video3D::Format::RGBA_FLOAT;
-                else if (_wcsicmp(formatString, L"R_UINT32") == 0) return Video3D::Format::R_UINT32;
-                else if (_wcsicmp(formatString, L"RG_UINT32") == 0) return Video3D::Format::RG_UINT32;
-                else if (_wcsicmp(formatString, L"RGB_UINT32") == 0) return Video3D::Format::RGB_UINT32;
-                else if (_wcsicmp(formatString, L"RGBA_UINT32") == 0) return Video3D::Format::RGBA_UINT32;
-                return Video3D::Format::UNKNOWN;
-            }
-
             static Video3D::ElementType getElementType(LPCWSTR elementClassString)
             {
                 if (_wcsicmp(elementClassString, L"instance") == 0) return Video3D::ElementType::INSTANCE;
@@ -116,7 +103,7 @@ namespace Gek
                                                     xmlElementNode.hasAttribute(L"index"))
                                                 {
                                                     Video3D::InputElement element;
-                                                    element.format = getElementFormat(xmlElementNode.getAttribute(L"format"));
+                                                    element.format = Video3D::getFormat(xmlElementNode.getAttribute(L"format"));
                                                     elementNameList.push_back((LPCSTR)CW2A(xmlElementNode.getAttribute(L"name")));
                                                     element.semanticName = elementNameList.back().GetString();
                                                     element.semanticIndex = Gek::String::getINT32(xmlElementNode.getAttribute(L"index"));

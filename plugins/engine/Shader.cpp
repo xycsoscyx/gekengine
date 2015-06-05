@@ -44,6 +44,10 @@ namespace Gek
 
                 private:
                     Video3D::Interface *video;
+                    std::unordered_map<CStringW, CStringW> defineList;
+                    std::unordered_map<CStringW, Handle> targetList;
+                    Handle depthHandle;
+                    std::unordered_map<CStringW, Handle> bufferList;
                     std::vector<CStringW> mapList;
                     std::vector<Property> propertyList;
                     std::list<Handle> passList;
@@ -60,10 +64,10 @@ namespace Gek
                         return PropertyType::Float;
                     }
 
-
                 public:
                     System(void)
                         : video(nullptr)
+                        , depthHandle(InvalidHandle)
                     {
                     }
 
@@ -99,6 +103,85 @@ namespace Gek
                                 Gek::Xml::Node xmlShaderNode = xmlDocument.getRoot();
                                 if (xmlShaderNode && xmlShaderNode.getType().CompareNoCase(L"shader") == 0)
                                 {
+                                    Gek::Xml::Node xmlDefinesNode = xmlShaderNode.firstChildElement(L"defines");
+                                    if (xmlDefinesNode)
+                                    {
+                                        Gek::Xml::Node xmlDefineNode = xmlDefinesNode.firstChildElement();
+                                        while (xmlDefineNode)
+                                        {
+                                            defineList[xmlDefineNode.getType()] = xmlDefineNode.getText();
+                                            xmlDefineNode = xmlDefineNode.nextSiblingElement();
+                                        };
+                                    }
+
+                                    Gek::Xml::Node xmlTargetsNode = xmlShaderNode.firstChildElement(L"targets");
+                                    if (xmlTargetsNode)
+                                    {
+                                        Gek::Xml::Node xmlTargetNode = xmlTargetsNode.firstChildElement();
+                                        while (xmlTargetNode)
+                                        {
+                                            UINT32 width = video->getWidth();
+                                            if (xmlTargetNode.hasAttribute(L"width"))
+                                            {
+                                                width = String::getUINT32(xmlTargetNode.getAttribute(L"width"));
+                                            }
+
+                                            UINT32 height = video->getHeight();
+                                            if (xmlTargetNode.hasAttribute(L"height"))
+                                            {
+                                                height = String::getUINT32(xmlTargetNode.getAttribute(L"height"));
+                                            }
+
+                                            Video3D::Format format = Video3D::getFormat(xmlTargetNode.getText());
+                                            targetList[xmlTargetNode.getType()] = video->createRenderTarget(width, height, format);
+                                            xmlTargetNode = xmlTargetNode.nextSiblingElement();
+                                        };
+                                    }
+
+                                    Gek::Xml::Node xmlDepthNode = xmlShaderNode.firstChildElement(L"depth");
+                                    if (xmlDepthNode && xmlDepthNode.hasAttribute(L"format"))
+                                    {
+                                        UINT32 width = video->getWidth();
+                                        if (xmlDepthNode.hasAttribute(L"width"))
+                                        {
+                                            width = String::getUINT32(xmlDepthNode.getAttribute(L"width"));
+                                        }
+
+                                        UINT32 height = video->getHeight();
+                                        if (xmlDepthNode.hasAttribute(L"height"))
+                                        {
+                                            height = String::getUINT32(xmlDepthNode.getAttribute(L"height"));
+                                        }
+
+                                        Video3D::Format format = Video3D::getFormat(xmlDepthNode.getAttribute(L"format"));
+                                        if (xmlDepthNode.hasAttribute(L"comparison"))
+                                        {
+                                            CStringW comparison = xmlDepthNode.getAttribute(L"comparison");
+                                        }
+
+                                        if (xmlDepthNode.hasAttribute(L"writemask"))
+                                        {
+                                            CStringW writeMask = xmlDepthNode.getAttribute(L"writemask");
+                                        }
+
+                                        if (xmlDepthNode.hasAttribute(L"clear"))
+                                        {
+                                            float clear = String::getFloat(xmlDepthNode.getAttribute(L"clear"));
+                                        }
+
+                                        depthHandle = video->createDepthTarget(width, height, format);
+                                    }
+
+                                    Gek::Xml::Node xmlBuffersNode = xmlShaderNode.firstChildElement(L"buffers");
+                                    if (xmlBuffersNode)
+                                    {
+                                        Gek::Xml::Node xmlBufferNode = xmlBuffersNode.firstChildElement();
+                                        while (xmlBufferNode)
+                                        {
+                                            xmlBufferNode = xmlBufferNode.nextSiblingElement();
+                                        };
+                                    }
+
                                     Gek::Xml::Node xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
                                     if (xmlMaterialNode)
                                     {

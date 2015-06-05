@@ -28,13 +28,8 @@ namespace Gek
                 STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
             
                 STDMETHOD_(Handle, loadPlugin)              (THIS_ LPCWSTR fileName) PURE;
-                STDMETHOD_(void, enablePlugin)              (THIS_ Handle pluginHandle) PURE;
-
                 STDMETHOD_(Handle, loadShader)              (THIS_ LPCWSTR fileName) PURE;
-                STDMETHOD_(void, enableShader)              (THIS_ Handle shaderHandle) PURE;
-
                 STDMETHOD_(Handle, loadMaterial)            (THIS_ LPCWSTR fileName) PURE;
-                STDMETHOD_(void, enableMaterial)            (THIS_ Handle materialHandle) PURE;
             };
 
             DECLARE_INTERFACE_IID(Observer, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Gek::ObserverInterface

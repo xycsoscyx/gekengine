@@ -1,5 +1,22 @@
 <?xml version="1.0"?>
 <shader>
+    <defines>
+        <lightTileSize>32</lightTileSize>
+    </defines>
+
+    <depth format="D32" comparison="lessequal" writemask="all" clear="1"/>
+
+    <targets>
+        <albedo>RGBA_UINT8</albedo>
+        <normal>RG_HALF</normal>
+        <depth>R_FLOAT</depth> 
+        <info>RGBA_UINT8</info>
+    </targets>
+
+    <buffers>
+        <tileIndices size="ceil(%viewWidth%/%lightTileSize%)*ceil(%viewWidth%/%lightTileSize%)*%lightBatchSize%">R_UINT8</tileIndices>
+    </buffers>
+
     <material>
         <maps>
             <albedo/>
@@ -10,40 +27,36 @@
             <color>float4</color>
         </properties>
     </material>
+
     <pass mode="forward">
         <states cullmode="back" />
 
         <targets>
-            <target name="Opaque.Albedo" format="RGBA_UINT8"/>
-            <target name="Opaque.Normal" format="RG_HALF"/>
-            <target name="Opaque.Depth" format="R_FLOAT"/>
-            <target name="Opaque.Info" format="RGBA_UINT8"/>
-            <depth name="Opaque.DepthBuffer" format="D24S8" comparison="lessequal" writemask="all" clear="1" />
+            <albedo/>
+            <normal/>
+            <depth/>
+            <info/>
         </targets>
 
         <pixel>
             <program source="Standard\Deferred" entry="mainPixelProgram" />
         </pixel>
     </pass>
-    <pass mode="lighting">
-        <defines>
-            <define name="gs_nLightTileSize" value="32" />
-            <define name="gs_nMaxLights" value="500" />
-        </defines>
 
+    <pass mode="lighting">
         <blend>
             <color source="one" destination="one" operation="add" />
             <alpha source="one" destination="one" operation="add" />
         </blend>
 
         <buffers>
-            <buffer name="Opaque.TileIndices" format="R_UINT8" count="ceil(%xsize%/gs_nLightTileSize)*ceil(%ysize%/gs_nLightTileSize)*gs_nMaxLights" />
+            <tileIndices/>
         </buffers>
 
-        <compute dispatch="ceil(%xsize%/gs_nLightTileSize),ceil(%ysize%/gs_nLightTileSize),1">
+        <compute dispatch="ceil(%viewWidth%/%lightTileSize%),ceil(%viewWidth%/%lightTileSize%),1">
             <resources>
-                <resource stage="0" source="Opaque.TileIndices" unorderedaccess="true" />
-                <resource stage="1" source="Opaque.Depth" />
+                <resource stage="0" source="tileIndices" unorderedaccess="true" />
+                <resource stage="1" source="depth" />
             </resources>
 
             <program source="Standard\Lighting" entry="mainComputeProgram" />
@@ -51,11 +64,11 @@
 
         <pixel>
             <resources>
-                <resource stage="1" source="Opaque.Depth" />
-                <resource stage="2" source="Opaque.Albedo" />
-                <resource stage="3" source="Opaque.Normal" />
-                <resource stage="4" source="Opaque.Info" />
-                <resource stage="5" source="Opaque.TileIndices" />
+                <resource stage="1" source="depth" />
+                <resource stage="2" source="albedo" />
+                <resource stage="3" source="normal" />
+                <resource stage="4" source="info" />
+                <resource stage="5" source="tileIndices" />
             </resources>
 
             <program source="Standard\Lighting" entry="mainPixelProgram"/>

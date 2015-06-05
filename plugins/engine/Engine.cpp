@@ -78,7 +78,7 @@ namespace Gek
                     {
                         RECT clientRectangle;
                         GetClientRect(window, &clientRectangle);
-                        resultValue = video->initialize(window, true, (clientRectangle.right - clientRectangle.left), (clientRectangle.bottom - clientRectangle.top), Video3D::Format::D32);
+                        resultValue = video->initialize(window, true, (clientRectangle.right - clientRectangle.left), (clientRectangle.bottom - clientRectangle.top));
                     }
 
                     if (SUCCEEDED(resultValue))

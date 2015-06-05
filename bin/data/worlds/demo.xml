@@ -18,13 +18,13 @@
 
         <entity>
 			<transform />
-            <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" pass="opaque"/>
+            <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200"/>
             <follower offset="0,2,-10">player</follower>
 		</entity>
 
         <entity>
 			<transform />
-            <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" viewport="0.6,0,0.4,0.4" pass="toon"/>
+            <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" viewport="0.6,0,0.4,0.4"/>
             <follower offset="0,5,20">player</follower>
 		</entity>
 

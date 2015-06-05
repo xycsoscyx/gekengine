@@ -121,41 +121,14 @@ namespace Gek
                     return loadResource<Plugin::Interface>(fileName, __uuidof(Plugin::Class));
                 }
 
-                STDMETHODIMP_(void) enablePlugin(Handle pluginHandle)
-                {
-                    auto resourceIterator = resourceList.find(pluginHandle);
-                    if (resourceIterator != resourceList.end())
-                    {
-                        IUnknown *resource = (*resourceIterator).second;
-                    }
-                }
-
                 STDMETHODIMP_(Handle) loadShader(LPCWSTR fileName)
                 {
                     return loadResource<Shader::Interface>(fileName, __uuidof(Shader::Class));
                 }
 
-                STDMETHODIMP_(void) enableShader(Handle shaderHandle)
-                {
-                    auto resourceIterator = resourceList.find(shaderHandle);
-                    if (resourceIterator != resourceList.end())
-                    {
-                        IUnknown *resource = (*resourceIterator).second;
-                    }
-                }
-
                 STDMETHODIMP_(Handle) loadMaterial(LPCWSTR fileName)
                 {
                     return loadResource<Material::Interface>(fileName, __uuidof(Material::Class));
-                }
-
-                STDMETHODIMP_(void) enableMaterial(Handle materialHandle)
-                {
-                    auto resourceIterator = resourceList.find(materialHandle);
-                    if (resourceIterator != resourceList.end())
-                    {
-                        IUnknown *resource = (*resourceIterator).second;
-                    }
                 }
 
                 // Population::Observer

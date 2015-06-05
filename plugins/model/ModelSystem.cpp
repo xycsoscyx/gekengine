@@ -401,7 +401,7 @@ namespace Gek
                     }
                 }
             }
-
+            /*
             STDMETHODIMP_(void) onDrawScene(Handle cameraHandle, Gek::Video3D::ContextInterface *videoContext, UINT32 vertexAttributes)
             {
                 REQUIRE_VOID_RETURN(video);
@@ -456,7 +456,7 @@ namespace Gek
                     }
                 }
             }
-
+            */
             STDMETHODIMP_(void) onRenderEnd(Handle cameraHandle)
             {
             }

@@ -365,6 +365,8 @@ namespace Gek
             }
         };
 
+        Format getFormat(LPCWSTR formatString);
+
         DECLARE_INTERFACE_IID(ContextInterface, "95262C77-0F56-4447-9337-5819E68B372E") : virtual public IUnknown
         {
             DECLARE_INTERFACE(SubSystemInterface)
