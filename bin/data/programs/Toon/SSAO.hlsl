@@ -21,7 +21,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 
 	int2 nPixelCoord = kInput.position.xy;
 	float nRandomAngle = (3 * nPixelCoord.x ^ nPixelCoord.y + nPixelCoord.x * nPixelCoord.y) * 10;
-    float nSampleRadius = gs_nRadius / (2 * (nCenterDepth * gs_nCameraMaxDistance) * gs_nCameraFieldOfView.x);
+    float nSampleRadius = gs_nRadius / (2 * (nCenterDepth * Camera::maximumDistance) * Camera::fieldOfView.x);
 
     float nAmbientOcclusion = 0;
 

@@ -21,15 +21,15 @@ struct SOURCEVERTEX
 WORLDVERTEX GetWorldVertex(in SOURCEVERTEX kSource)
 {
     INSTANCE kInstance = gs_aInstances[kSource.instance];
-	float3 kXOffSet = mul(float3(kInstance.m_nHalfSize, 0.0, 0.0f), (float3x3)gs_nViewMatrix);
-	float3 kYOffSet = mul(float3(0.0,-kInstance.m_nHalfSize, 0.0f), (float3x3)gs_nViewMatrix);
+	float3 kXOffSet = mul(float3(kInstance.m_nHalfSize, 0.0, 0.0f), (float3x3)Camera::viewMatrix);
+	float3 kYOffSet = mul(float3(0.0,-kInstance.m_nHalfSize, 0.0f), (float3x3)Camera::viewMatrix);
 
 	WORLDVERTEX kVertex;
 	kVertex.position      = float4(kInstance.m_nPosition, 1.0f);
 	kVertex.position.xyz += (kXOffSet * kSource.position.x);
 	kVertex.position.xyz += (kYOffSet * kSource.position.y);
 	kVertex.texcoord      = kSource.texcoord;
-    kVertex.normal        = mul(float3(0,0,-1), (float3x3)gs_nViewMatrix);
+    kVertex.normal        = mul(float3(0,0,-1), (float3x3)Camera::viewMatrix);
     kVertex.color         = kInstance.m_nColor;
 	return kVertex;
 }

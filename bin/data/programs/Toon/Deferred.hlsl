@@ -38,6 +38,6 @@ OUTPUT MainPixelProgram(in INPUT kInput)
     kOutput.albedo.xyz = nAlbedo.xyz;
     kOutput.albedo.a   = 0;//gs_bMaterialFullBright;
     kOutput.normal     = EncodeNormal(nNormal);
-    kOutput.depth      = (kInput.viewposition.z / gs_nCameraMaxDistance);
+    kOutput.depth      = (kInput.viewposition.z / Camera::maximumDistance);
     return kOutput;
 }

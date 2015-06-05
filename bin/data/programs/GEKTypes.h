@@ -1,5 +1,5 @@
 #ifdef _MODE_FORWARD
-    struct INPUT
+    struct InputPixel
     {
         float4 position                     : SV_POSITION;
         float4 viewposition                 : TEXCOORD0;
@@ -9,7 +9,7 @@
         bool   frontface                    : SV_ISFRONTFACE;
     };
 #else
-    struct INPUT
+    struct InputPixel
     {
         float4 position                     : SV_POSITION;
         float2 texcoord                     : TEXCOORD0;

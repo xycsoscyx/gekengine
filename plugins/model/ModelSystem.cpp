@@ -140,7 +140,6 @@ namespace Gek
                     resultValue = E_INVALIDARG;
                     if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 2)
                     {
-                        data.fileName = fileName;
                         data.alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
                         resultValue = S_OK;
                     }

@@ -41,7 +41,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             while (nStep < gs_nNumSteps)
             {
                 nRayPosition += (nReflection.xyz * gs_nStepSize);
-                nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
+                nTexCoord = mul(Camera::projectionMatrix, float4(nRayPosition, 1));
                 nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
                 nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
                 nSamplePosition = GetViewPosition(nTexCoord.xy, nSampleDepth);
@@ -63,7 +63,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
                 while (nStep < gs_nNumStepsBack)
                 {
                     nRayPosition -= (nReflection.xyz * gs_nStepSize / gs_nNumStepsBack);
-                    nTexCoord = mul(gs_nProjectionMatrix, float4(nRayPosition, 1));
+                    nTexCoord = mul(Camera::projectionMatrix, float4(nRayPosition, 1));
                     nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
                     nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
                     nSamplePosition = GetViewPosition(nTexCoord.xy, nSampleDepth);

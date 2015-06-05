@@ -27,7 +27,7 @@ void MainComputeProgram(uint3 nScreenPixel : SV_DispatchThreadID, uint3 nTileID 
         g_nTileMaxDepth = 0;
     }
 
-    float nViewDepth = gs_pDepthBuffer[nScreenPixel.xy] * gs_nCameraMaxDistance;
+    float nViewDepth = gs_pDepthBuffer[nScreenPixel.xy] * Camera::maximumDistance;
     uint nViewDepthInt = asuint(nViewDepth);
 
     GroupMemoryBarrierWithGroupSync();
@@ -48,8 +48,8 @@ void MainComputeProgram(uint3 nScreenPixel : SV_DispatchThreadID, uint3 nTileID 
         float2 nTileScale = nSize * rcp(float(2 * gs_nLightTileSize));
         float2 nTileBias = nTileScale - float2(nTileID.xy);
 
-        float3 nXPlane = float3(gs_nProjectionMatrix[0][0] * nTileScale.x, 0.0f, nTileBias.x);
-        float3 nYPlane = float3(0.0f, -gs_nProjectionMatrix[1][1] * nTileScale.y, nTileBias.y);
+        float3 nXPlane = float3(Camera::projectionMatrix[0][0] * nTileScale.x, 0.0f, nTileBias.x);
+        float3 nYPlane = float3(0.0f, -Camera::projectionMatrix[1][1] * nTileScale.y, nTileBias.y);
         float3 nZPlane = float3(0.0f, 0.0f, 1.0f);
 
         g_aTileFrustum[0] = float4(normalize(nZPlane - nXPlane), 0.0f),
