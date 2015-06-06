@@ -16,6 +16,32 @@ namespace Gek
 {
     namespace Engine
     {
+        Video3D::Format getFormat(LPCWSTR formatString)
+        {
+            if (_wcsicmp(formatString, L"R_UINT8") == 0) return Video3D::Format::R_UINT8;
+            else if (_wcsicmp(formatString, L"RG_UINT8") == 0) return Video3D::Format::RG_UINT8;
+            else if (_wcsicmp(formatString, L"RGBA_UINT8") == 0) return Video3D::Format::RGBA_UINT8;
+            else if (_wcsicmp(formatString, L"BGRA_UINT8") == 0) return Video3D::Format::BGRA_UINT8;
+            else if (_wcsicmp(formatString, L"R_UINT16") == 0) return Video3D::Format::R_UINT16;
+            else if (_wcsicmp(formatString, L"RG_UINT16") == 0) return Video3D::Format::RG_UINT16;
+            else if (_wcsicmp(formatString, L"RGBA_UINT16") == 0) return Video3D::Format::RGBA_UINT16;
+            else if (_wcsicmp(formatString, L"R_UINT32") == 0) return Video3D::Format::R_UINT32;
+            else if (_wcsicmp(formatString, L"RG_UINT32") == 0) return Video3D::Format::RG_UINT32;
+            else if (_wcsicmp(formatString, L"RGB_UINT32") == 0) return Video3D::Format::RGB_UINT32;
+            else if (_wcsicmp(formatString, L"RGBA_UINT32") == 0) return Video3D::Format::RGBA_UINT32;
+            else if (_wcsicmp(formatString, L"R_FLOAT") == 0) return Video3D::Format::R_FLOAT;
+            else if (_wcsicmp(formatString, L"RG_FLOAT") == 0) return Video3D::Format::RG_FLOAT;
+            else if (_wcsicmp(formatString, L"RGB_FLOAT") == 0) return Video3D::Format::RGB_FLOAT;
+            else if (_wcsicmp(formatString, L"RGBA_FLOAT") == 0) return Video3D::Format::RGBA_FLOAT;
+            else if (_wcsicmp(formatString, L"R_HALF") == 0) return Video3D::Format::R_HALF;
+            else if (_wcsicmp(formatString, L"RG_HALF") == 0) return Video3D::Format::RG_HALF;
+            else if (_wcsicmp(formatString, L"RGBA_HALF") == 0) return Video3D::Format::RGBA_HALF;
+            else if (_wcsicmp(formatString, L"D16") == 0) return Video3D::Format::D16;
+            else if (_wcsicmp(formatString, L"D24_S8") == 0) return Video3D::Format::D24_S8;
+            else if (_wcsicmp(formatString, L"D32") == 0) return Video3D::Format::D32;
+            return Video3D::Format::UNKNOWN;
+        }
+
         namespace Core
         {
             class System : public Context::BaseUser

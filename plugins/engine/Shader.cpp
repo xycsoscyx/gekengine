@@ -12,6 +12,8 @@ namespace Gek
 {
     namespace Engine
     {
+        extern Video3D::Format getFormat(LPCWSTR formatString);
+
         namespace Render
         {
             namespace Shader
@@ -132,7 +134,7 @@ namespace Gek
                                                 height = String::getUINT32(xmlTargetNode.getAttribute(L"height"));
                                             }
 
-                                            Video3D::Format format = Video3D::getFormat(xmlTargetNode.getText());
+                                            Video3D::Format format = getFormat(xmlTargetNode.getText());
                                             targetList[xmlTargetNode.getType()] = video->createRenderTarget(width, height, format);
                                             xmlTargetNode = xmlTargetNode.nextSiblingElement();
                                         };
@@ -153,7 +155,7 @@ namespace Gek
                                             height = String::getUINT32(xmlDepthNode.getAttribute(L"height"));
                                         }
 
-                                        Video3D::Format format = Video3D::getFormat(xmlDepthNode.getAttribute(L"format"));
+                                        Video3D::Format format = getFormat(xmlDepthNode.getAttribute(L"format"));
                                         if (xmlDepthNode.hasAttribute(L"comparison"))
                                         {
                                             CStringW comparison = xmlDepthNode.getAttribute(L"comparison");

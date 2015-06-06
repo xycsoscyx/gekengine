@@ -12,6 +12,8 @@ namespace Gek
 {
     namespace Engine
     {
+        extern Video3D::Format getFormat(LPCWSTR formatString);
+
         namespace Render
         {
             static Video3D::ElementType getElementType(LPCWSTR elementClassString)
@@ -103,7 +105,7 @@ namespace Gek
                                                     xmlElementNode.hasAttribute(L"index"))
                                                 {
                                                     Video3D::InputElement element;
-                                                    element.format = Video3D::getFormat(xmlElementNode.getAttribute(L"format"));
+                                                    element.format = getFormat(xmlElementNode.getAttribute(L"format"));
                                                     elementNameList.push_back((LPCSTR)CW2A(xmlElementNode.getAttribute(L"name")));
                                                     element.semanticName = elementNameList.back().GetString();
                                                     element.semanticIndex = Gek::String::getINT32(xmlElementNode.getAttribute(L"index"));

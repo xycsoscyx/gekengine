@@ -90,6 +90,6 @@ namespace Gek
 
                 REGISTER_CLASS(System)
             }; // namespace Material
-        }; // namespace Rdnder
+        }; // namespace Render
     }; // namespace Engine
 }; // namespace Gek
