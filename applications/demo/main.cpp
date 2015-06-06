@@ -141,9 +141,6 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
     switch (message)
     {
     case WM_CLOSE:
-        DestroyWindow(window);
-        return 0;
-
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
