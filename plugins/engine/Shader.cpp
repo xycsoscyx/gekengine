@@ -44,15 +44,23 @@ namespace Gek
                         }
                     };
 
+                    enum class PassMode : UINT8
+                    {
+                        Standard = 0,
+                        Forward,
+                        Lighting,
+                    };
+
                 private:
                     Video3D::Interface *video;
+                    UINT32 shaderWidth;
+                    UINT32 shaderHeight;
                     std::unordered_map<CStringW, CStringW> defineList;
-                    std::unordered_map<CStringW, Handle> targetList;
                     Handle depthHandle;
+                    std::unordered_map<CStringW, Handle> targetList;
                     std::unordered_map<CStringW, Handle> bufferList;
                     std::vector<CStringW> mapList;
                     std::vector<Property> propertyList;
-                    std::list<Handle> passList;
 
                 private:
                     static PropertyType getPropertyType(LPCWSTR propertyString)
@@ -69,6 +77,8 @@ namespace Gek
                 public:
                     System(void)
                         : video(nullptr)
+                        , shaderWidth(0)
+                        , shaderHeight(0)
                         , depthHandle(InvalidHandle)
                     {
                     }
@@ -81,6 +91,23 @@ namespace Gek
                         INTERFACE_LIST_ENTRY_COM(Interface)
                     END_INTERFACE_LIST_USER
 
+                    float parseValue(LPCWSTR equation)
+                    {
+                        CStringW fullEquation(equation);
+                        for (auto &definePair : defineList)
+                        {
+                            fullEquation.Replace(String::format(L"%%%s%%", definePair.first.GetString()), definePair.second);
+                        }
+
+                        fullEquation.Replace(L"%displayWidth%", String::format(L"%d", video->getWidth()));
+                        fullEquation.Replace(L"%displayHeight%", String::format(L"%d", video->getHeight()));
+
+                        fullEquation.Replace(L"%shaderWidth%", String::format(L"%d", shaderWidth));
+                        fullEquation.Replace(L"%shaderHeight%", String::format(L"%d", shaderHeight));
+
+                        return String::getFloat(fullEquation);
+                    }
+
                     // Shader::Interface
                     STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
                     {
@@ -92,6 +119,8 @@ namespace Gek
                         if (video)
                         {
                             this->video = video;
+                            shaderWidth = video->getWidth();
+                            shaderHeight = video->getHeight();
                             resultValue = S_OK;
                         }
 
@@ -105,6 +134,16 @@ namespace Gek
                                 Gek::Xml::Node xmlShaderNode = xmlDocument.getRoot();
                                 if (xmlShaderNode && xmlShaderNode.getType().CompareNoCase(L"shader") == 0)
                                 {
+                                    if (xmlShaderNode.hasAttribute(L"width"))
+                                    {
+                                        shaderWidth = String::getUINT32(xmlShaderNode.getAttribute(L"width"));
+                                    }
+
+                                    if (xmlShaderNode.hasAttribute(L"height"))
+                                    {
+                                        shaderHeight = String::getUINT32(xmlShaderNode.getAttribute(L"height"));
+                                    }
+
                                     Gek::Xml::Node xmlDefinesNode = xmlShaderNode.firstChildElement(L"defines");
                                     if (xmlDefinesNode)
                                     {
@@ -122,64 +161,28 @@ namespace Gek
                                         Gek::Xml::Node xmlTargetNode = xmlTargetsNode.firstChildElement();
                                         while (xmlTargetNode)
                                         {
-                                            UINT32 width = video->getWidth();
-                                            if (xmlTargetNode.hasAttribute(L"width"))
-                                            {
-                                                width = String::getUINT32(xmlTargetNode.getAttribute(L"width"));
-                                            }
-
-                                            UINT32 height = video->getHeight();
-                                            if (xmlTargetNode.hasAttribute(L"height"))
-                                            {
-                                                height = String::getUINT32(xmlTargetNode.getAttribute(L"height"));
-                                            }
-
                                             Video3D::Format format = getFormat(xmlTargetNode.getText());
-                                            targetList[xmlTargetNode.getType()] = video->createRenderTarget(width, height, format);
+                                            targetList[xmlTargetNode.getType()] = video->createRenderTarget(shaderWidth, shaderHeight, format);
                                             xmlTargetNode = xmlTargetNode.nextSiblingElement();
                                         };
                                     }
 
                                     Gek::Xml::Node xmlDepthNode = xmlShaderNode.firstChildElement(L"depth");
-                                    if (xmlDepthNode && xmlDepthNode.hasAttribute(L"format"))
+                                    if (xmlDepthNode)
                                     {
-                                        UINT32 width = video->getWidth();
-                                        if (xmlDepthNode.hasAttribute(L"width"))
-                                        {
-                                            width = String::getUINT32(xmlDepthNode.getAttribute(L"width"));
-                                        }
-
-                                        UINT32 height = video->getHeight();
-                                        if (xmlDepthNode.hasAttribute(L"height"))
-                                        {
-                                            height = String::getUINT32(xmlDepthNode.getAttribute(L"height"));
-                                        }
-
-                                        Video3D::Format format = getFormat(xmlDepthNode.getAttribute(L"format"));
-                                        if (xmlDepthNode.hasAttribute(L"comparison"))
-                                        {
-                                            CStringW comparison = xmlDepthNode.getAttribute(L"comparison");
-                                        }
-
-                                        if (xmlDepthNode.hasAttribute(L"writemask"))
-                                        {
-                                            CStringW writeMask = xmlDepthNode.getAttribute(L"writemask");
-                                        }
-
-                                        if (xmlDepthNode.hasAttribute(L"clear"))
-                                        {
-                                            float clear = String::getFloat(xmlDepthNode.getAttribute(L"clear"));
-                                        }
-
-                                        depthHandle = video->createDepthTarget(width, height, format);
+                                        Video3D::Format format = getFormat(xmlDepthNode.getText());
+                                        depthHandle = video->createDepthTarget(shaderWidth, shaderHeight, format);
                                     }
 
                                     Gek::Xml::Node xmlBuffersNode = xmlShaderNode.firstChildElement(L"buffers");
                                     if (xmlBuffersNode)
                                     {
                                         Gek::Xml::Node xmlBufferNode = xmlBuffersNode.firstChildElement();
-                                        while (xmlBufferNode)
+                                        while (xmlBufferNode && xmlBufferNode.hasAttribute(L"size"))
                                         {
+                                            UINT32 size = parseValue(xmlBufferNode.getAttribute(L"size"));
+                                            Video3D::Format format = getFormat(xmlBufferNode.getText());
+                                            bufferList[xmlBufferNode.getType()] = video->createBuffer(format, size, Video3D::BufferFlags::UNORDERED_ACCESS | Video3D::BufferFlags::RESOURCE);
                                             xmlBufferNode = xmlBufferNode.nextSiblingElement();
                                         };
                                     }
@@ -210,9 +213,24 @@ namespace Gek
                                         }
                                     }
 
+                                    resultValue = S_OK;
                                     Gek::Xml::Node xmlPassNode = xmlShaderNode.firstChildElement(L"pass");
                                     while (xmlPassNode)
                                     {
+                                        PassMode mode = PassMode::Standard;
+                                        if (xmlPassNode.hasAttribute(L"mode"))
+                                        {
+                                            CStringW modeString = xmlPassNode.getAttribute(L"mode");
+                                            if (modeString.CompareNoCase(L"forward") == 0)
+                                            {
+                                                mode = PassMode::Forward;
+                                            }
+                                            else if (modeString.CompareNoCase(L"lighting") == 0)
+                                            {
+                                                mode = PassMode::Lighting;
+                                            }
+                                        }
+
                                         xmlPassNode = xmlPassNode.nextSiblingElement();
                                     };
                                 }

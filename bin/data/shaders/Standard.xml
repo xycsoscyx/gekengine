@@ -2,9 +2,10 @@
 <shader>
     <defines>
         <lightTileSize>32</lightTileSize>
+		<lightListSize>256</lightListSize>
     </defines>
 
-    <depth format="D32" comparison="lessequal" writemask="all" clear="1"/>
+    <depth>D32</depth>
 
     <targets>
         <albedo>RGBA_UINT8</albedo>
@@ -14,14 +15,15 @@
     </targets>
 
     <buffers>
-        <tileIndices size="ceil(%viewWidth%/%lightTileSize%)*ceil(%viewWidth%/%lightTileSize%)*%lightBatchSize%">R_UINT8</tileIndices>
+        <tileIndices size="ceil(%shaderWidth% / %lightTileSize%) * ceil(%shaderWidth% / %lightTileSize%) * %lightListSize%">R_UINT8</tileIndices>
+        <lightList size="%lightListSize%">LIGHT</lightList>
     </buffers>
 
     <material>
         <maps>
-            <albedo/>
-            <normal/>
-            <info/>
+            <albedo />
+            <normal />
+            <info />
         </maps>
         <properties>
             <color>float4</color>
@@ -29,13 +31,21 @@
     </material>
 
     <pass mode="forward">
-        <states cullmode="back" />
+		<depthstates>
+			<comparison>lessequal</comparison>
+			<writemask>all</writemask>
+			<clear>1</clear>
+		</depthstates>
+
+        <renderstates>
+			<cullmode>back</cullmode>
+		</renderstates>
 
         <targets>
-            <albedo/>
-            <normal/>
-            <depth/>
-            <info/>
+            <albedo />
+            <normal />
+            <depth />
+            <info />
         </targets>
 
         <pixel>
@@ -44,34 +54,37 @@
     </pass>
 
     <pass mode="lighting">
-        <blend>
-            <color source="one" destination="one" operation="add" />
-            <alpha source="one" destination="one" operation="add" />
-        </blend>
+        <blendstates>
+			<target>
+				<color source="one" destination="one" operation="add" />
+				<alpha source="one" destination="one" operation="add" />
+			</target>
+        </blendstates>
 
-        <buffers>
-            <tileIndices/>
-        </buffers>
-
-        <compute dispatch="ceil(%viewWidth%/%lightTileSize%),ceil(%viewWidth%/%lightTileSize%),1">
+        <compute dispatch="ceil(%viewWidth% / %lightTileSize%), ceil(%viewWidth% / %lightTileSize%), 1">
             <resources>
-                <resource stage="0" source="tileIndices" unorderedaccess="true" />
-                <resource stage="1" source="depth" />
+                <lightList />
+                <depth />
             </resources>
+
+            <unorderedaccess>
+                <tileIndices />
+            </unorderedaccess>
 
             <program source="Standard\Lighting" entry="mainComputeProgram" />
         </compute>
 
         <pixel>
             <resources>
-                <resource stage="1" source="depth" />
-                <resource stage="2" source="albedo" />
-                <resource stage="3" source="normal" />
-                <resource stage="4" source="info" />
-                <resource stage="5" source="tileIndices" />
+                <lightList />
+                <tileIndices />
+                <albedo />
+                <normal />
+                <depth />
+                <info />
             </resources>
 
-            <program source="Standard\Lighting" entry="mainPixelProgram"/>
+            <program source="Standard\Lighting" entry="mainPixelProgram" />
         </pixel>
     </pass>
 </shader>

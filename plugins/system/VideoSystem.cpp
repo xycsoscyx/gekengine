@@ -886,27 +886,27 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(void) setDepthStates(Handle resourceHandle, UINT32 nStencilReference)
+            STDMETHODIMP_(void) setDepthStates(Handle resourceHandle, UINT32 stencilReference)
             {
                 REQUIRE_VOID_RETURN(d3dDeviceContext && resourceHandler);
                 CComQIPtr<ID3D11DepthStencilState> d3dDepthStencilState(resourceHandler->getResource(resourceHandle));
                 if (d3dDepthStencilState)
                 {
-                    d3dDeviceContext->OMSetDepthStencilState(d3dDepthStencilState, nStencilReference);
+                    d3dDeviceContext->OMSetDepthStencilState(d3dDepthStencilState, stencilReference);
                 }
             }
 
-            STDMETHODIMP_(void) setBlendStates(Handle resourceHandle, const Math::Float4 &nBlendFactor, UINT32 nMask)
+            STDMETHODIMP_(void) setBlendStates(Handle resourceHandle, const Math::Float4 &blendFactor, UINT32 mask)
             {
                 REQUIRE_VOID_RETURN(d3dDeviceContext && resourceHandler);
                 CComQIPtr<ID3D11BlendState> d3dBlendState(resourceHandler->getResource(resourceHandle));
                 if (d3dBlendState)
                 {
-                    d3dDeviceContext->OMSetBlendState(d3dBlendState, nBlendFactor.rgba, nMask);
+                    d3dDeviceContext->OMSetBlendState(d3dBlendState, blendFactor.rgba, mask);
                 }
             }
 
-            STDMETHODIMP_(void) setVertexBuffer(Handle resourceHandle, UINT32 nSlot, UINT32 offset)
+            STDMETHODIMP_(void) setVertexBuffer(Handle resourceHandle, UINT32 slot, UINT32 offset)
             {
                 REQUIRE_VOID_RETURN(d3dDeviceContext && resourceHandler);
                 IUnknown *resource = resourceHandler->getResource(resourceHandle);
@@ -916,7 +916,7 @@ namespace Gek
                 {
                     UINT32 stride = buffer->getStride();
                     ID3D11Buffer *d3dBufferList[1] = { d3dBuffer };
-                    d3dDeviceContext->IASetVertexBuffers(nSlot, 1, d3dBufferList, &stride, &offset);
+                    d3dDeviceContext->IASetVertexBuffers(slot, 1, d3dBufferList, &stride, &offset);
                 }
             }
 

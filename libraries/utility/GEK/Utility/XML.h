@@ -41,6 +41,11 @@ namespace Gek
 
             bool hasSiblingElement(LPCWSTR type = nullptr) const;
             Node nextSiblingElement(LPCWSTR type = nullptr) const;
+
+            void getChildTextValue(LPCWSTR type, std::function<void(LPCWSTR)> getValue)
+            {
+                getValue(firstChildElement(type).getText());
+            }
         };
 
         class Document
