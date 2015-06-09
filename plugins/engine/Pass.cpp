@@ -1,3 +1,4 @@
+#include "GEK\Engine\PassInterface.h"
 #include "GEK\Context\BaseUser.h"
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Utility\String.h"
@@ -93,312 +94,333 @@ namespace Gek
                 else return Video3D::BlendOperation::ADD;
             }
 
-            class Pass : public Context::BaseUser
+            namespace Pass
             {
-            public:
-                struct ProgramData
+                class System : public Context::BaseUser
+                    , public Interface
                 {
-                    std::vector<CStringW> resourceList;
-                    std::vector<CStringW> unorderedAccessList;
-                    Handle programHandle;
+                public:
+                    struct ProgramData
+                    {
+                        std::vector<CStringW> resourceList;
+                        std::vector<CStringW> unorderedAccessList;
+                        Handle programHandle;
 
-                    ProgramData(void)
-                        : programHandle(InvalidHandle)
+                        ProgramData(void)
+                            : programHandle(InvalidHandle)
+                        {
+                        }
+                    };
+
+                private:
+                    Video3D::Interface *video;
+                    bool clearDepthBuffer;
+                    float depthClearValue;
+                    UINT32 stencilClearValue;
+                    Handle depthStatesHandle;
+                    Handle renderStatesHandle;
+                    Math::Float4 blendFactor;
+                    Handle blendStatesHandle;
+                    std::vector<CStringW> targetList;
+                    ProgramData computeProgram;
+                    ProgramData pixelProgram;
+
+                public:
+                    System(void)
+                        : video(nullptr)
+                        , clearDepthBuffer(false)
+                        , depthClearValue(1.0f)
+                        , stencilClearValue(0)
+                        , depthStatesHandle(InvalidHandle)
+                        , renderStatesHandle(InvalidHandle)
+                        , blendFactor(1.0f)
+                        , blendStatesHandle(InvalidHandle)
                     {
                     }
-                };
 
-            private:
-                Video3D::Interface *video;
-                bool clearDepthBuffer;
-                float depthClearValue;
-                UINT32 stencilClearValue;
-                Handle depthStatesHandle;
-                Handle renderStatesHandle;
-                Math::Float4 blendFactor;
-                Handle blendStatesHandle;
-                std::vector<CStringW> targetList;
-                ProgramData computeProgram;
-                ProgramData pixelProgram;
-
-            public:
-                Pass(void)
-                    : video(nullptr)
-                    , clearDepthBuffer(false)
-                    , depthClearValue(1.0f)
-                    , stencilClearValue(0)
-                    , depthStatesHandle(InvalidHandle)
-                    , renderStatesHandle(InvalidHandle)
-                    , blendFactor(1.0f)
-                    , blendStatesHandle(InvalidHandle)
-                {
-                }
-
-                ~Pass(void)
-                {
-                }
-
-                BEGIN_INTERFACE_LIST(Pass)
-                END_INTERFACE_LIST_USER
-
-                void loadStencilStates(Gek::Xml::Node &xmlStencilNode, Video3D::DepthStates::StencilStates &stencilStates)
-                {
-                    xmlStencilNode.getChildTextValue(L"pass", [&](LPCWSTR pass) -> void
+                    ~System(void)
                     {
-                        stencilStates.passOperation = getStencilOperation(pass);
-                    });
-
-                    xmlStencilNode.getChildTextValue(L"fail", [&](LPCWSTR fail) -> void
-                    {
-                        stencilStates.failOperation = getStencilOperation(fail);
-                    });
-
-                    xmlStencilNode.getChildTextValue(L"depthfail", [&](LPCWSTR depthfail) -> void
-                    {
-                        stencilStates.depthFailOperation = getStencilOperation(depthfail);
-                    });
-
-                    xmlStencilNode.getChildTextValue(L"comparison", [&](LPCWSTR comparison) -> void
-                    {
-                        stencilStates.comparisonFunction = getComparisonFunction(comparison);
-                    });
-                }
-
-                void loadBlendStates(Gek::Xml::Node &xmlTargetNode, Video3D::TargetBlendStates &blendStates)
-                {
-                    xmlTargetNode.getChildTextValue(L"writemask", [&](LPCWSTR writeMask) -> void
-                    {
-                        blendStates.writeMask = 0;
-                        if (wcsstr(writeMask, L"r")) blendStates.writeMask |= Video3D::ColorMask::R;
-                        if (wcsstr(writeMask, L"g")) blendStates.writeMask |= Video3D::ColorMask::G;
-                        if (wcsstr(writeMask, L"b")) blendStates.writeMask |= Video3D::ColorMask::B;
-                        if (wcsstr(writeMask, L"a")) blendStates.writeMask |= Video3D::ColorMask::A;
-                    });
-
-                    if (xmlTargetNode.hasChildElement(L"color"))
-                    {
-                        Gek::Xml::Node &xmlColorNode = xmlTargetNode.firstChildElement(L"color");
-                        blendStates.colorSource = getBlendSource(xmlColorNode.getAttribute(L"source"));
-                        blendStates.colorDestination = getBlendSource(xmlColorNode.getAttribute(L"destination"));
-                        blendStates.colorOperation = getBlendOperation(xmlColorNode.getAttribute(L"operation"));
                     }
 
-                    if (xmlTargetNode.hasChildElement(L"alpha"))
+                    BEGIN_INTERFACE_LIST(System)
+                        INTERFACE_LIST_ENTRY_COM(Interface)
+                    END_INTERFACE_LIST_USER
+
+                    void loadStencilStates(Gek::Xml::Node &xmlStencilNode, Video3D::DepthStates::StencilStates &stencilStates)
                     {
-                        Gek::Xml::Node &xmlAlphaNode = xmlTargetNode.firstChildElement(L"alpha");
-                        blendStates.alphaSource = getBlendSource(xmlAlphaNode.getAttribute(L"source"));
-                        blendStates.alphaDestination = getBlendSource(xmlAlphaNode.getAttribute(L"destination"));
-                        blendStates.alphaOperation = getBlendOperation(xmlAlphaNode.getAttribute(L"operation"));
+                        xmlStencilNode.getChildTextValue(L"pass", [&](LPCWSTR pass) -> void
+                        {
+                            stencilStates.passOperation = getStencilOperation(pass);
+                        });
+
+                        xmlStencilNode.getChildTextValue(L"fail", [&](LPCWSTR fail) -> void
+                        {
+                            stencilStates.failOperation = getStencilOperation(fail);
+                        });
+
+                        xmlStencilNode.getChildTextValue(L"depthfail", [&](LPCWSTR depthfail) -> void
+                        {
+                            stencilStates.depthFailOperation = getStencilOperation(depthfail);
+                        });
+
+                        xmlStencilNode.getChildTextValue(L"comparison", [&](LPCWSTR comparison) -> void
+                        {
+                            stencilStates.comparisonFunction = getComparisonFunction(comparison);
+                        });
                     }
-                }
 
-                HRESULT loadDepthStates(Gek::Xml::Node &xmlDepthStatesNode)
-                {
-                    Video3D::DepthStates depthStates;
-                    depthStates.enable = true;
-
-                    xmlDepthStatesNode.getChildTextValue(L"clear", [&](LPCWSTR clear) -> void
+                    void loadBlendStates(Gek::Xml::Node &xmlTargetNode, Video3D::TargetBlendStates &blendStates)
                     {
-                        clearDepthBuffer = true;
-                        depthClearValue = String::getFloat(clear);
-                    });
+                        xmlTargetNode.getChildTextValue(L"writemask", [&](LPCWSTR writeMask) -> void
+                        {
+                            blendStates.writeMask = 0;
+                            if (wcsstr(writeMask, L"r")) blendStates.writeMask |= Video3D::ColorMask::R;
+                            if (wcsstr(writeMask, L"g")) blendStates.writeMask |= Video3D::ColorMask::G;
+                            if (wcsstr(writeMask, L"b")) blendStates.writeMask |= Video3D::ColorMask::B;
+                            if (wcsstr(writeMask, L"a")) blendStates.writeMask |= Video3D::ColorMask::A;
+                        });
 
-                    xmlDepthStatesNode.getChildTextValue(L"comparison", [&](LPCWSTR comparison) -> void
+                        if (xmlTargetNode.hasChildElement(L"color"))
+                        {
+                            Gek::Xml::Node &xmlColorNode = xmlTargetNode.firstChildElement(L"color");
+                            blendStates.colorSource = getBlendSource(xmlColorNode.getAttribute(L"source"));
+                            blendStates.colorDestination = getBlendSource(xmlColorNode.getAttribute(L"destination"));
+                            blendStates.colorOperation = getBlendOperation(xmlColorNode.getAttribute(L"operation"));
+                        }
+
+                        if (xmlTargetNode.hasChildElement(L"alpha"))
+                        {
+                            Gek::Xml::Node &xmlAlphaNode = xmlTargetNode.firstChildElement(L"alpha");
+                            blendStates.alphaSource = getBlendSource(xmlAlphaNode.getAttribute(L"source"));
+                            blendStates.alphaDestination = getBlendSource(xmlAlphaNode.getAttribute(L"destination"));
+                            blendStates.alphaOperation = getBlendOperation(xmlAlphaNode.getAttribute(L"operation"));
+                        }
+                    }
+
+                    HRESULT loadDepthStates(Gek::Xml::Node &xmlDepthStatesNode)
                     {
-                        depthStates.comparisonFunction = getComparisonFunction(comparison);
-                    });
+                        Video3D::DepthStates depthStates;
+                        depthStates.enable = true;
 
-                    xmlDepthStatesNode.getChildTextValue(L"writemask", [&](LPCWSTR writemask) -> void
-                    {
-                        depthStates.writeMask = getDepthWriteMask(writemask);
-                    });
-
-                    if (xmlDepthStatesNode.hasChildElement(L"stencil"))
-                    {
-                        Gek::Xml::Node xmlStencilNode = xmlDepthStatesNode.firstChildElement(L"stencil");
-                        depthStates.stencilEnable = true;
-
-                        xmlStencilNode.getChildTextValue(L"clear", [&](LPCWSTR clear) -> void
+                        xmlDepthStatesNode.getChildTextValue(L"clear", [&](LPCWSTR clear) -> void
                         {
                             clearDepthBuffer = true;
-                            stencilClearValue = String::getUINT32(clear);
+                            depthClearValue = String::getFloat(clear);
                         });
 
-                        if (xmlStencilNode.hasChildElement(L"front"))
+                        xmlDepthStatesNode.getChildTextValue(L"comparison", [&](LPCWSTR comparison) -> void
                         {
-                            Gek::Xml::Node xmlFrontNode = xmlStencilNode.firstChildElement(L"front");
-                            loadStencilStates(xmlFrontNode, depthStates.stencilFrontStates);
+                            depthStates.comparisonFunction = getComparisonFunction(comparison);
+                        });
+
+                        xmlDepthStatesNode.getChildTextValue(L"writemask", [&](LPCWSTR writemask) -> void
+                        {
+                            depthStates.writeMask = getDepthWriteMask(writemask);
+                        });
+
+                        if (xmlDepthStatesNode.hasChildElement(L"stencil"))
+                        {
+                            Gek::Xml::Node xmlStencilNode = xmlDepthStatesNode.firstChildElement(L"stencil");
+                            depthStates.stencilEnable = true;
+
+                            xmlStencilNode.getChildTextValue(L"clear", [&](LPCWSTR clear) -> void
+                            {
+                                clearDepthBuffer = true;
+                                stencilClearValue = String::getUINT32(clear);
+                            });
+
+                            if (xmlStencilNode.hasChildElement(L"front"))
+                            {
+                                Gek::Xml::Node xmlFrontNode = xmlStencilNode.firstChildElement(L"front");
+                                loadStencilStates(xmlFrontNode, depthStates.stencilFrontStates);
+                            }
+
+                            if (xmlStencilNode.hasChildElement(L"back"))
+                            {
+                                Gek::Xml::Node xmlBackNode = xmlStencilNode.firstChildElement(L"back");
+                                loadStencilStates(xmlBackNode, depthStates.stencilBackStates);
+                            }
                         }
 
-                        if (xmlStencilNode.hasChildElement(L"back"))
-                        {
-                            Gek::Xml::Node xmlBackNode = xmlStencilNode.firstChildElement(L"back");
-                            loadStencilStates(xmlBackNode, depthStates.stencilBackStates);
-                        }
+                        depthStatesHandle = video->createDepthStates(depthStates);
+                        return (depthStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
                     }
 
-                    depthStatesHandle = video->createDepthStates(depthStates);
-                    return (depthStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
-                }
-
-                HRESULT loadRenderStates(Gek::Xml::Node &xmlRenderStatesNode)
-                {
-                    Video3D::RenderStates renderStates;
-                    xmlRenderStatesNode.getChildTextValue(L"fillmode", [&](LPCWSTR fillmode) -> void
+                    HRESULT loadRenderStates(Gek::Xml::Node &xmlRenderStatesNode)
                     {
-                        renderStates.fillMode = getFillMode(fillmode);
-                    });
-
-                    xmlRenderStatesNode.getChildTextValue(L"comparison", [&](LPCWSTR comparison) -> void
-                    {
-                        renderStates.cullMode = getCullMode(comparison);
-                    });
-
-                    xmlRenderStatesNode.getChildTextValue(L"frontcounterclockwise", [&](LPCWSTR frontcounterclockwise) -> void
-                    {
-                        renderStates.frontCounterClockwise = String::getBoolean(frontcounterclockwise);
-                    });
-
-                    xmlRenderStatesNode.getChildTextValue(L"depthbias", [&](LPCWSTR depthbias) -> void
-                    {
-                        renderStates.depthBias = String::getUINT32(depthbias);
-                    });
-
-                    xmlRenderStatesNode.getChildTextValue(L"depthbiasclamp", [&](LPCWSTR depthbiasclamp) -> void
-                    {
-                        renderStates.depthBiasClamp = String::getFloat(depthbiasclamp);
-                    });
-
-                    xmlRenderStatesNode.getChildTextValue(L"slopescaleddepthbias", [&](LPCWSTR slopescaleddepthbias) -> void
-                    {
-                        renderStates.slopeScaledDepthBias = String::getFloat(slopescaleddepthbias);
-                    });
-
-                    xmlRenderStatesNode.getChildTextValue(L"depthclip", [&](LPCWSTR depthclip) -> void
-                    {
-                        renderStates.depthClipEnable = String::getBoolean(depthclip);
-                    });
-
-                    xmlRenderStatesNode.getChildTextValue(L"multisample", [&](LPCWSTR multisample) -> void
-                    {
-                        renderStates.multisampleEnable = String::getBoolean(multisample);
-                    });
-
-                    renderStatesHandle = video->createRenderStates(renderStates);
-                    return (renderStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
-                }
-
-                HRESULT loadBlendStates(Gek::Xml::Node &xmlBlendStatesNode)
-                {
-                    if (xmlBlendStatesNode.hasChildElement(L"target"))
-                    {
-                        bool alphaToCoverage = false;
-                        xmlBlendStatesNode.getChildTextValue(L"alphatocoverage", [&](LPCWSTR alphatocoverage) -> void
+                        Video3D::RenderStates renderStates;
+                        xmlRenderStatesNode.getChildTextValue(L"fillmode", [&](LPCWSTR fillmode) -> void
                         {
-                            alphaToCoverage = String::getBoolean(alphatocoverage);
+                            renderStates.fillMode = getFillMode(fillmode);
                         });
 
-                        Gek::Xml::Node xmlTargetNode = xmlBlendStatesNode.firstChildElement(L"target");
-                        if (xmlTargetNode.hasSiblingElement(L"target"))
+                        xmlRenderStatesNode.getChildTextValue(L"comparison", [&](LPCWSTR comparison) -> void
                         {
-                            UINT32 targetIndex = 0;
-                            Video3D::IndependentBlendStates blendStates;
-                            blendStates.alphaToCoverage = alphaToCoverage;
-                            while (xmlTargetNode)
+                            renderStates.cullMode = getCullMode(comparison);
+                        });
+
+                        xmlRenderStatesNode.getChildTextValue(L"frontcounterclockwise", [&](LPCWSTR frontcounterclockwise) -> void
+                        {
+                            renderStates.frontCounterClockwise = String::getBoolean(frontcounterclockwise);
+                        });
+
+                        xmlRenderStatesNode.getChildTextValue(L"depthbias", [&](LPCWSTR depthbias) -> void
+                        {
+                            renderStates.depthBias = String::getUINT32(depthbias);
+                        });
+
+                        xmlRenderStatesNode.getChildTextValue(L"depthbiasclamp", [&](LPCWSTR depthbiasclamp) -> void
+                        {
+                            renderStates.depthBiasClamp = String::getFloat(depthbiasclamp);
+                        });
+
+                        xmlRenderStatesNode.getChildTextValue(L"slopescaleddepthbias", [&](LPCWSTR slopescaleddepthbias) -> void
+                        {
+                            renderStates.slopeScaledDepthBias = String::getFloat(slopescaleddepthbias);
+                        });
+
+                        xmlRenderStatesNode.getChildTextValue(L"depthclip", [&](LPCWSTR depthclip) -> void
+                        {
+                            renderStates.depthClipEnable = String::getBoolean(depthclip);
+                        });
+
+                        xmlRenderStatesNode.getChildTextValue(L"multisample", [&](LPCWSTR multisample) -> void
+                        {
+                            renderStates.multisampleEnable = String::getBoolean(multisample);
+                        });
+
+                        renderStatesHandle = video->createRenderStates(renderStates);
+                        return (renderStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
+                    }
+
+                    HRESULT loadBlendStates(Gek::Xml::Node &xmlBlendStatesNode)
+                    {
+                        if (xmlBlendStatesNode.hasChildElement(L"target"))
+                        {
+                            bool alphaToCoverage = false;
+                            xmlBlendStatesNode.getChildTextValue(L"alphatocoverage", [&](LPCWSTR alphatocoverage) -> void
                             {
-                                blendStates.targetStates[targetIndex++].enable = true;
-                                loadBlendStates(xmlTargetNode, blendStates.targetStates[targetIndex++]);
-                                xmlTargetNode = xmlTargetNode.nextSiblingElement(L"target");
+                                alphaToCoverage = String::getBoolean(alphatocoverage);
+                            });
+
+                            Gek::Xml::Node xmlTargetNode = xmlBlendStatesNode.firstChildElement(L"target");
+                            if (xmlTargetNode.hasSiblingElement(L"target"))
+                            {
+                                UINT32 targetIndex = 0;
+                                Video3D::IndependentBlendStates blendStates;
+                                blendStates.alphaToCoverage = alphaToCoverage;
+                                while (xmlTargetNode)
+                                {
+                                    blendStates.targetStates[targetIndex++].enable = true;
+                                    loadBlendStates(xmlTargetNode, blendStates.targetStates[targetIndex++]);
+                                    xmlTargetNode = xmlTargetNode.nextSiblingElement(L"target");
+                                };
+
+                                blendStatesHandle = video->createBlendStates(blendStates);
+                            }
+                            else
+                            {
+                                Video3D::UnifiedBlendStates blendStates;
+                                blendStates.enable = true;
+                                blendStates.alphaToCoverage = alphaToCoverage;
+                                loadBlendStates(xmlTargetNode, blendStates);
+                                blendStatesHandle = video->createBlendStates(blendStates);
+                            }
+                        }
+
+                        return (blendStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
+                    }
+
+                    std::vector<CStringW> loadChildList(Gek::Xml::Node &xmlProgramNode, LPCWSTR name)
+                    {
+                        std::vector<CStringW> childList;
+                        if (xmlProgramNode.hasChildElement(name))
+                        {
+                            Gek::Xml::Node xmlResourcesNode = xmlProgramNode.firstChildElement(name);
+                            Gek::Xml::Node xmlResourceNode = xmlResourcesNode.firstChildElement();
+                            while (xmlResourceNode)
+                            {
+                                childList.push_back(xmlResourceNode.getType());
+                                xmlResourceNode = xmlResourceNode.nextSiblingElement();
                             };
-
-                            blendStatesHandle = video->createBlendStates(blendStates);
                         }
-                        else
+
+                        return childList;
+                    }
+
+                    // Pass::Interface
+                    STDMETHODIMP initialize(IUnknown *initializerContext, Gek::Xml::Node &xmlPassNode)
+                    {
+                        REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+
+                        HRESULT resultValue = E_FAIL;
+                        CComQIPtr<Video3D::Interface> video(initializerContext);
+                        if (video)
                         {
-                            Video3D::UnifiedBlendStates blendStates;
-                            blendStates.enable = true;
-                            blendStates.alphaToCoverage = alphaToCoverage;
-                            loadBlendStates(xmlTargetNode, blendStates);
-                            blendStatesHandle = video->createBlendStates(blendStates);
+                            this->video = video;
+                            resultValue = S_OK;
                         }
-                    }
 
-                    return (blendStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
-                }
-
-                std::vector<CStringW> loadChildList(Gek::Xml::Node &xmlProgramNode, LPCWSTR name)
-                {
-                    std::vector<CStringW> childList;
-                    if (xmlProgramNode.hasChildElement(name))
-                    {
-                        Gek::Xml::Node xmlResourcesNode = xmlProgramNode.firstChildElement(name);
-                        Gek::Xml::Node xmlResourceNode = xmlResourcesNode.firstChildElement();
-                        while (xmlResourceNode)
+                        targetList = loadChildList(xmlPassNode, L"targets");
+                        if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"depthstates"))
                         {
-                            childList.push_back(xmlResourceNode.getType());
-                            xmlResourceNode = xmlResourceNode.nextSiblingElement();
-                        };
-                    }
+                            resultValue = loadDepthStates(xmlPassNode.firstChildElement(L"depthstates"));
+                        }
 
-                    return childList;
-                }
-
-                // Pass::Interface
-                STDMETHODIMP initialize(IUnknown *initializerContext, Gek::Xml::Node &xmlPassNode)
-                {
-                    REQUIRE_RETURN(initializerContext, E_INVALIDARG);
-
-                    HRESULT resultValue = E_FAIL;
-                    CComQIPtr<Video3D::Interface> video(initializerContext);
-                    if (video)
-                    {
-                        this->video = video;
-                        resultValue = S_OK;
-                    }
-
-                    if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"depthstates"))
-                    {
-                        resultValue = loadDepthStates(xmlPassNode.firstChildElement(L"depthstates"));
-                    }
-
-                    if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"renderstates"))
-                    {
-                        resultValue = loadRenderStates(xmlPassNode.firstChildElement(L"renderstates"));
-                    }
-
-                    if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"blendstates"))
-                    {
-                        resultValue = loadBlendStates(xmlPassNode.firstChildElement(L"blendstates"));
-                    }
-
-                    if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"targets"))
-                    {
-                        Gek::Xml::Node xmlTargetsNode = xmlPassNode.firstChildElement(L"targets");
-                        Gek::Xml::Node xmlTargetNode = xmlTargetsNode.firstChildElement();
-                        while (xmlTargetNode)
+                        if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"renderstates"))
                         {
-                            targetList.push_back(xmlTargetNode.getType());
-                            xmlTargetNode = xmlTargetNode.nextSiblingElement();
-                        };
-                    }
+                            resultValue = loadRenderStates(xmlPassNode.firstChildElement(L"renderstates"));
+                        }
 
-                    if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"compute"))
-                    {
-                        Gek::Xml::Node xmlComputeNode = xmlPassNode.firstChildElement(L"compute");
-                        if (xmlComputeNode.hasAttribute(L"dispatch"))
+                        if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"blendstates"))
                         {
-                            Math::Float3 dispatchSize = String::getFloat3(xmlComputeNode.getAttribute(L"dispatch"));
-                            computeProgram.resourceList = loadChildList(xmlComputeNode, L"resources");
-                            computeProgram.unorderedAccessList = loadChildList(xmlComputeNode, L"unorderedaccess");
-                            if (xmlComputeNode.hasChildElement(L"program"))
+                            resultValue = loadBlendStates(xmlPassNode.firstChildElement(L"blendstates"));
+                        }
+
+                        if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"compute"))
+                        {
+                            Gek::Xml::Node xmlComputeNode = xmlPassNode.firstChildElement(L"compute");
+                            if (xmlComputeNode.hasAttribute(L"dispatch"))
                             {
-                                Gek::Xml::Node xmlProgramNode = xmlComputeNode.firstChildElement(L"program");
+                                Math::Float3 dispatchSize = String::getFloat3(xmlComputeNode.getAttribute(L"dispatch"));
+                                computeProgram.resourceList = loadChildList(xmlComputeNode, L"resources");
+                                computeProgram.unorderedAccessList = loadChildList(xmlComputeNode, L"unorderedaccess");
+                                if (xmlComputeNode.hasChildElement(L"program"))
+                                {
+                                    Gek::Xml::Node xmlProgramNode = xmlComputeNode.firstChildElement(L"program");
+                                    if (xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
+                                    {
+                                        CStringW programFileName = xmlProgramNode.getAttribute(L"source");
+                                        CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
+                                        computeProgram.programHandle = video->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint);
+                                        resultValue = (computeProgram.programHandle == InvalidHandle ? E_FAIL : S_OK);
+                                    }
+                                    else
+                                    {
+                                        resultValue = E_INVALIDARG;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                resultValue = E_INVALIDARG;
+                            }
+                        }
+
+                        if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"pixel"))
+                        {
+                            Gek::Xml::Node xmlPixelNode = xmlPassNode.firstChildElement(L"pixel");
+                            pixelProgram.resourceList = loadChildList(xmlPixelNode, L"resources");
+                            pixelProgram.unorderedAccessList = loadChildList(xmlPixelNode, L"unorderedaccess");
+                            if (xmlPixelNode.hasChildElement(L"program"))
+                            {
+                                Gek::Xml::Node xmlProgramNode = xmlPixelNode.firstChildElement(L"program");
                                 if (xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
                                 {
                                     CStringW programFileName = xmlProgramNode.getAttribute(L"source");
                                     CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
-                                    computeProgram.programHandle = video->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint);
-                                    resultValue = (computeProgram.programHandle == InvalidHandle ? E_FAIL : S_OK);
+                                    pixelProgram.programHandle = video->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint);
+                                    resultValue = (pixelProgram.programHandle == InvalidHandle ? E_FAIL : S_OK);
                                 }
                                 else
                                 {
@@ -406,39 +428,13 @@ namespace Gek
                                 }
                             }
                         }
-                        else
-                        {
-                            resultValue = E_INVALIDARG;
-                        }
+
+                        return resultValue;
                     }
+                };
 
-                    if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"pixel"))
-                    {
-                        Gek::Xml::Node xmlPixelNode = xmlPassNode.firstChildElement(L"pixel");
-                        pixelProgram.resourceList = loadChildList(xmlPixelNode, L"resources");
-                        pixelProgram.unorderedAccessList = loadChildList(xmlPixelNode, L"unorderedaccess");
-                        if (xmlPixelNode.hasChildElement(L"program"))
-                        {
-                            Gek::Xml::Node xmlProgramNode = xmlPixelNode.firstChildElement(L"program");
-                            if (xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
-                            {
-                                CStringW programFileName = xmlProgramNode.getAttribute(L"source");
-                                CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
-                                pixelProgram.programHandle = video->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint);
-                                resultValue = (pixelProgram.programHandle == InvalidHandle ? E_FAIL : S_OK);
-                            }
-                            else
-                            {
-                                resultValue = E_INVALIDARG;
-                            }
-                        }
-                    }
-
-                    return resultValue;
-                }
-            };
-
-            REGISTER_CLASS(Pass)
+                REGISTER_CLASS(System)
+            }; // namespace Pass
         }; // namespace Render
     }; // namespace Engine
 }; // namespace Gek

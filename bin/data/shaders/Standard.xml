@@ -1,5 +1,16 @@
 <?xml version="1.0"?>
 <shader>
+    <material>
+        <maps>
+            <albedo>texture2D</albedo>
+            <normal>texture2D</normal>
+            <info>texture2D</info>
+        </maps>
+        <properties>
+            <color>float4</color>
+        </properties>
+    </material>
+
     <defines>
         <lightTileSize>32</lightTileSize>
 		<lightListSize>256</lightListSize>
@@ -8,27 +19,16 @@
     <depth>D32</depth>
 
     <targets>
-        <albedo>RGBA_UINT8</albedo>
-        <normal>RG_HALF</normal>
-        <depth>R_FLOAT</depth> 
-        <info>RGBA_UINT8</info>
+        <materialAlbedo>RGBA_UINT8</materialAlbedo>
+        <materialNormal>RG_HALF</materialNormal>
+        <materialDepth>R_FLOAT</materialDepth> 
+        <materialInfo>RGBA_UINT8</materialInfo>
     </targets>
 
     <buffers>
-        <tileIndices size="ceil(%shaderWidth% / %lightTileSize%) * ceil(%shaderWidth% / %lightTileSize%) * %lightListSize%">R_UINT8</tileIndices>
+        <tileIndexList size="ceil(%shaderWidth% / %lightTileSize%) * ceil(%shaderWidth% / %lightTileSize%) * %lightListSize%">R_UINT8</tileIndexList>
         <lightList size="%lightListSize%">LIGHT</lightList>
     </buffers>
-
-    <material>
-        <maps>
-            <albedo />
-            <normal />
-            <info />
-        </maps>
-        <properties>
-            <color>float4</color>
-        </properties>
-    </material>
 
     <pass mode="forward">
 		<depthstates>
@@ -42,13 +42,20 @@
 		</renderstates>
 
         <targets>
-            <albedo />
-            <normal />
-            <depth />
-            <info />
+            <albedoBuffer />
+            <normalBuffer />
+            <depthBuffer />
+            <infoBuffer />
         </targets>
 
         <pixel>
+            <resources>
+				<materialAlbedo />
+				<materialNormal />
+				<materialDepth />
+				<materialInfo />
+            </resources>
+
             <program source="Standard\Deferred" entry="mainPixelProgram" />
         </pixel>
     </pass>
@@ -64,11 +71,11 @@
         <compute dispatch="ceil(%viewWidth% / %lightTileSize%), ceil(%viewWidth% / %lightTileSize%), 1">
             <resources>
                 <lightList />
-                <depth />
+                <depthBuffer />
             </resources>
 
             <unorderedaccess>
-                <tileIndices />
+                <tileIndexList />
             </unorderedaccess>
 
             <program source="Standard\Lighting" entry="mainComputeProgram" />
@@ -77,11 +84,11 @@
         <pixel>
             <resources>
                 <lightList />
-                <tileIndices />
-                <albedo />
-                <normal />
-                <depth />
-                <info />
+                <tileIndexList />
+                <albedoBuffer />
+                <normalBuffer />
+                <depthBuffer />
+                <infoBuffer />
             </resources>
 
             <program source="Standard\Lighting" entry="mainPixelProgram" />

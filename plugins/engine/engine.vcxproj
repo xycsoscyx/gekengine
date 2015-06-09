@@ -106,6 +106,7 @@
     <ClInclude Include="GEK\Engine\ComponentInterface.h" />
     <ClInclude Include="GEK\Engine\CoreInterface.h" />
     <ClInclude Include="GEK\Engine\MaterialInterface.h" />
+    <ClInclude Include="GEK\Engine\PassInterface.h" />
     <ClInclude Include="GEK\Engine\PluginInterface.h" />
     <ClInclude Include="GEK\Engine\PopulationInterface.h" />
     <ClInclude Include="GEK\Engine\RenderInterface.h" />
