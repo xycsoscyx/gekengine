@@ -12,6 +12,9 @@
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "audiere.lib")
 
+extern HRESULT gekCheckResult(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
+#define gekCheckResult(function) gekCheckResult(getContext(), __FILE__, __LINE__, #function, function)
+
 namespace Gek
 {
     namespace Audio
@@ -186,18 +189,15 @@ namespace Gek
             {
                 REQUIRE_RETURN(window, E_INVALIDARG);
 
-                gekLogScope(__FUNCTION__);
-
                 HRESULT resultValue = E_FAIL;
-                if (GEKSUCCEEDED(resultValue = DirectSoundCreate8(nullptr, &directSound, nullptr)))
+                if (SUCCEEDED(gekCheckResult(resultValue = DirectSoundCreate8(nullptr, &directSound, nullptr))))
                 {
-                    if (GEKSUCCEEDED(resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY)))
+                    if (SUCCEEDED(gekCheckResult(resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY))))
                     {
                         DSBUFFERDESC primaryBufferDescription = { 0 };
                         primaryBufferDescription.dwSize = sizeof(DSBUFFERDESC);
                         primaryBufferDescription.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
-                        resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr);
-                        if (SUCCEEDED(resultValue))
+                        if (SUCCEEDED(gekCheckResult(resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr))))
                         {
                             WAVEFORMATEX primaryBufferFormat;
                             ZeroMemory(&primaryBufferFormat, sizeof(WAVEFORMATEX));
@@ -207,8 +207,7 @@ namespace Gek
                             primaryBufferFormat.nSamplesPerSec = 48000;
                             primaryBufferFormat.nBlockAlign = (primaryBufferFormat.wBitsPerSample / 8 * primaryBufferFormat.nChannels);
                             primaryBufferFormat.nAvgBytesPerSec = (primaryBufferFormat.nSamplesPerSec * primaryBufferFormat.nBlockAlign);
-                            resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat);
-                            if (SUCCEEDED(resultValue))
+                            if (SUCCEEDED(gekCheckResult(resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat))))
                             {
                                 resultValue = E_FAIL;
                                 directSoundListener = primarySoundBuffer;

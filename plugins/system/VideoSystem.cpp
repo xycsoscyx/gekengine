@@ -24,14 +24,7 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 
-void gekCheckResult(Gek::Context::Interface *context, LPCSTR file, UINT line, LPCSTR function, HRESULT resultValue)
-{
-    if (FAILED(resultValue))
-    {
-        context->logMessage(file, line, L"Call Failed (0x%08X): %S", resultValue, function);
-    }
-}
-
+extern HRESULT gekCheckResult(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
 #define gekCheckResult(function) gekCheckResult(getContext(), __FILE__, __LINE__, #function, function)
 
 namespace Gek
@@ -1296,7 +1289,7 @@ namespace Gek
                 HRESULT resultValue = S_OK;
                 if (!isChildWindow)
                 {
-                    resultValue = dxSwapChain->SetFullscreenState(!windowed, nullptr);
+                    gekCheckResult(resultValue = dxSwapChain->SetFullscreenState(!windowed, nullptr));
                 }
 
                 if (SUCCEEDED(resultValue))
@@ -1309,11 +1302,9 @@ namespace Gek
                     description.RefreshRate.Denominator = 1;
                     description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
                     description.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-                    gekCheckResult(resultValue = dxSwapChain->ResizeTarget(&description));
-                    if (SUCCEEDED(resultValue))
+                    if (SUCCEEDED(gekCheckResult(resultValue = dxSwapChain->ResizeTarget(&description))))
                     {
-                        gekCheckResult(resultValue = dxSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0));
-                        if (SUCCEEDED(resultValue))
+                        if (SUCCEEDED(gekCheckResult(resultValue = dxSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0))))
                         {
                             resultValue = getDefaultTargets(depthFormat);
                             if (SUCCEEDED(resultValue))

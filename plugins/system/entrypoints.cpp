@@ -6,6 +6,16 @@
 #include "GEK\System\AudioInterface.h"
 #include "GEK\System\VideoInterface.h"
 
+HRESULT gekCheckResult(Gek::Context::Interface *context, LPCSTR file, UINT line, LPCSTR function, HRESULT resultValue)
+{
+    if (FAILED(resultValue))
+    {
+        context->logMessage(file, line, L"Call Failed (0x%08X): %S", resultValue, function);
+    }
+
+    return resultValue;
+}
+
 namespace Gek
 {
     namespace Input

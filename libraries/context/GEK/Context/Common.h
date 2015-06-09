@@ -37,23 +37,10 @@ namespace Gek
             context->logMessage(file, line, L"< Leaving %S", function);
         }
     };
-
-    template <typename TYPE>
-    TYPE checkResult(Context::Interface *context, TYPE resultValue, LPCSTR file, UINT32 line, LPCSTR call)
-    {
-        context->logMessage(file, line, L"Calling (%S): 0x%08X", call, resultValue);
-        return resultValue;
-    }
 };
 
 #define gekLogScope(FUNCTION)                   Gek::LoggingScope scope##FUNCTION##(getContext(), __FILE__, FUNCTION, __LINE__);
 #define gekLogMessage(FORMAT, ...)              getContext()->logMessage(__FILE__, __LINE__, FORMAT, __VA_ARGS__)
-
-#ifdef _DEBUG
-    #define GEKSUCCEEDED(CALL)                  SUCCEEDED(checkResult(getContext(), (CALL), __FILE__, __LINE__, #CALL))
-#else
-    #define GEKSUCCEEDED(CALL)                  SUCCEEDED(CALL)
-#endif
 
 namespace std
 {

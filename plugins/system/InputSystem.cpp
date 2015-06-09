@@ -7,6 +7,9 @@
 #pragma comment(lib, "dinput8.lib")
 #pragma comment(lib, "dxguid.lib")
 
+extern HRESULT gekCheckResult(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
+#define gekCheckResult(function) gekCheckResult(getContext(), __FILE__, __LINE__, #function, function)
+
 namespace Gek
 {
     namespace Input
@@ -391,7 +394,7 @@ namespace Gek
                 CComPtr<JoystickDevice> joystick = new JoystickDevice();
                 if (joystick != nullptr)
                 {
-                    if (SUCCEEDED(joystick->initialize(directInput, window, deviceObjectInstance->guidInstance)))
+                    if (SUCCEEDED(gekCheckResult(joystick->initialize(directInput, window, deviceObjectInstance->guidInstance))))
                     {
                         CComPtr<DeviceInterface> joystickDevice;
                         joystick->QueryInterface(IID_PPV_ARGS(&joystickDevice));
@@ -422,15 +425,15 @@ namespace Gek
             STDMETHODIMP initialize(HWND window)
             {
                 this->window = window;
-                HRESULT resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr);
+                HRESULT resultValue = E_FAIL;
+                gekCheckResult(resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr));
                 if (directInput != nullptr)
                 {
                     resultValue = E_OUTOFMEMORY;
                     CComPtr<KeyboardDevice> keyboard = new KeyboardDevice();
                     if (keyboard != nullptr)
                     {
-                        resultValue = keyboard->initialize(directInput, window);
-                        if (SUCCEEDED(resultValue))
+                        if (SUCCEEDED(gekCheckResult(resultValue = keyboard->initialize(directInput, window))))
                         {
                             resultValue = keyboard->QueryInterface(IID_PPV_ARGS(&keyboardDevice));
                         }
@@ -442,8 +445,7 @@ namespace Gek
                         CComPtr<MouseDevice> mouse = new MouseDevice();
                         if (mouse != nullptr)
                         {
-                            resultValue = mouse->initialize(directInput, window);
-                            if (SUCCEEDED(resultValue))
+                            if (SUCCEEDED(gekCheckResult(resultValue = mouse->initialize(directInput, window))))
                             {
                                 resultValue = mouse->QueryInterface(IID_PPV_ARGS(&mouseDevice));
                             }
