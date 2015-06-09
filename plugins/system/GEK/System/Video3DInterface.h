@@ -449,10 +449,10 @@ namespace Gek
             STDMETHOD_(Handle, compileGeometryProgram)          (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
             STDMETHOD_(Handle, compilePixelProgram)             (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-            STDMETHOD_(Handle, loadComputeProgram)              (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, loadVertexProgram)               (THIS_ LPCWSTR fileName, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, loadGeometryProgram)             (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, loadPixelProgram)                (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadComputeProgram)              (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadVertexProgram)               (THIS_ LPCWSTR fileName, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadGeometryProgram)             (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD_(Handle, loadPixelProgram)                (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
             STDMETHOD_(Handle, createTexture)                   (THIS_ UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags) PURE;
             STDMETHOD_(Handle, loadTexture)                     (THIS_ LPCWSTR fileName, UINT32 flags) PURE;

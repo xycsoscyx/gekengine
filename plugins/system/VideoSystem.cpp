@@ -24,6 +24,16 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 
+void gekCheckResult(Gek::Context::Interface *context, LPCSTR file, UINT line, LPCSTR function, HRESULT resultValue)
+{
+    if (FAILED(resultValue))
+    {
+        context->logMessage(file, line, L"Call Failed (0x%08X): %S", resultValue, function);
+    }
+}
+
+#define gekCheckResult(function) gekCheckResult(getContext(), __FILE__, __LINE__, #function, function)
+
 namespace Gek
 {
     using namespace Video2D;
@@ -425,11 +435,13 @@ namespace Gek
         {
         private:
             CPathW shaderFilePath;
+            std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude;
             std::vector<UINT8> includeBuffer;
 
         public:
-            Include(const CStringW &shaderFileName)
+            Include(const CStringW &shaderFileName, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude)
                 : shaderFilePath(shaderFileName)
+                , onInclude(onInclude)
             {
                 shaderFilePath.RemoveFileSpec();
             }
@@ -454,6 +466,11 @@ namespace Gek
                     resultValue = Gek::FileSystem::load(shaderPath, includeBuffer);
                 }
 
+                if (FAILED(resultValue))
+                {
+                    resultValue = onInclude(fileName, includeBuffer);
+                }
+
                 if (SUCCEEDED(resultValue))
                 {
                     (*data) = includeBuffer.data();
@@ -465,7 +482,7 @@ namespace Gek
 
             STDMETHODIMP Close(LPCVOID data)
             {
-                return (data == includeBuffer.data() ? S_OK : E_FAIL);
+                return S_OK;
             }
         };
 
@@ -1064,8 +1081,9 @@ namespace Gek
             {
                 this->depthFormat = DXGI_FORMAT_UNKNOWN;
 
+                HRESULT resultValue = E_FAIL;
                 CComPtr<IDXGISurface> dxSurface;
-                HRESULT resultValue = dxSwapChain->GetBuffer(0, IID_PPV_ARGS(&dxSurface));
+                gekCheckResult(resultValue = dxSwapChain->GetBuffer(0, IID_PPV_ARGS(&dxSurface)));
                 if (dxSurface)
                 {
                     FLOAT desktopHorizontalDPI = 0.0f;
@@ -1081,7 +1099,7 @@ namespace Gek
                     desktopProperties.colorContext = nullptr;
 
                     CComPtr<ID2D1Bitmap1> d2dBitmap;
-                    resultValue = d2dDeviceContext->CreateBitmapFromDxgiSurface(dxSurface, &desktopProperties, &d2dBitmap);
+                    gekCheckResult(resultValue = d2dDeviceContext->CreateBitmapFromDxgiSurface(dxSurface, &desktopProperties, &d2dBitmap));
                     if (d2dBitmap)
                     {
                         d2dDeviceContext->SetTarget(d2dBitmap);
@@ -1091,10 +1109,10 @@ namespace Gek
                 if (SUCCEEDED(resultValue))
                 {
                     CComPtr<ID3D11Texture2D> d3dRenderTarget;
-                    resultValue = dxSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
+                    gekCheckResult(resultValue = dxSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget)));
                     if (d3dRenderTarget)
                     {
-                        resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dDefaultRenderTargetView);
+                        gekCheckResult(resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dDefaultRenderTargetView));
                     }
                 }
 
@@ -1116,7 +1134,7 @@ namespace Gek
                     if (depthDescription.Format != DXGI_FORMAT_UNKNOWN)
                     {
                         CComPtr<ID3D11Texture2D> d3dDepthTarget;
-                        resultValue = d3dDevice->CreateTexture2D(&depthDescription, nullptr, &d3dDepthTarget);
+                        gekCheckResult(resultValue = d3dDevice->CreateTexture2D(&depthDescription, nullptr, &d3dDepthTarget));
                         if (d3dDepthTarget)
                         {
                             D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
@@ -1124,7 +1142,7 @@ namespace Gek
                             depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
                             depthStencilDescription.Flags = 0;
                             depthStencilDescription.Texture2D.MipSlice = 0;
-                            resultValue = d3dDevice->CreateDepthStencilView(d3dDepthTarget, &depthStencilDescription, &d3dDefaultDepthStencilView);
+                            gekCheckResult(resultValue = d3dDevice->CreateDepthStencilView(d3dDepthTarget, &depthStencilDescription, &d3dDefaultDepthStencilView));
                             if (d3dDefaultDepthStencilView)
                             {
                                 this->depthFormat = depthDescription.Format;
@@ -1159,6 +1177,8 @@ namespace Gek
                 REQUIRE_RETURN(width > 0, E_INVALIDARG);
                 REQUIRE_RETURN(height > 0, E_INVALIDARG);
 
+                HRESULT resultValue = E_FAIL;
+
                 this->width = width;
                 this->height = height;
                 this->windowed = windowed;
@@ -1191,10 +1211,10 @@ namespace Gek
                 };
 
                 D3D_FEATURE_LEVEL featureLevel;
-                HRESULT resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext);
+                gekCheckResult(resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext));
                 if (d3dDevice && d3dDeviceContext && dxSwapChain)
                 {
-                    resultValue = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&d2dFactory));
+                    gekCheckResult(resultValue = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&d2dFactory)));
                     if (d2dFactory)
                     {
                         resultValue = E_FAIL;
@@ -1216,17 +1236,17 @@ namespace Gek
                             dxDevice->SetMaximumFrameLatency(1);
 
                             CComPtr<ID2D1Device> d2dDevice;
-                            resultValue = d2dFactory->CreateDevice(dxDevice, &d2dDevice);
+                            gekCheckResult(resultValue = d2dFactory->CreateDevice(dxDevice, &d2dDevice));
                             if (d2dDevice)
                             {
-                                resultValue = d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2dDeviceContext);
+                                gekCheckResult(resultValue = d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2dDeviceContext));
                             }
                         }
                     }
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&dwFactory));
+                        gekCheckResult(resultValue = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&dwFactory)));
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -1289,10 +1309,10 @@ namespace Gek
                     description.RefreshRate.Denominator = 1;
                     description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
                     description.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-                    resultValue = dxSwapChain->ResizeTarget(&description);
+                    gekCheckResult(resultValue = dxSwapChain->ResizeTarget(&description));
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = dxSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
+                        gekCheckResult(resultValue = dxSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0));
                         if (SUCCEEDED(resultValue))
                         {
                             resultValue = getDefaultTargets(depthFormat);
@@ -1343,8 +1363,9 @@ namespace Gek
                 REQUIRE_RETURN(d3dDevice, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
+                HRESULT resultValue = E_FAIL;
                 CComPtr<ID3D11DeviceContext> d3dDeferredDeviceContext;
-                HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredDeviceContext);
+                gekCheckResult(resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredDeviceContext));
                 if (d3dDeferredDeviceContext)
                 {
                     resultValue = E_OUTOFMEMORY;
@@ -1383,7 +1404,7 @@ namespace Gek
                 description.MiscFlags = 0;
 
                 CComPtr<ID3D11Query> d3dQuery;
-                d3dDevice->CreateQuery(&description, &d3dQuery);
+                gekCheckResult(d3dDevice->CreateQuery(&description, &d3dQuery));
                 if (d3dQuery)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -1450,7 +1471,7 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID3D11RasterizerState> states;
-                d3dDevice->CreateRasterizerState(&rasterizerDescription, &states);
+                gekCheckResult(d3dDevice->CreateRasterizerState(&rasterizerDescription, &states));
                 if (states)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -1498,7 +1519,7 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID3D11DepthStencilState> states;
-                d3dDevice->CreateDepthStencilState(&depthStencilDescription, &states);
+                gekCheckResult(d3dDevice->CreateDepthStencilState(&depthStencilDescription, &states));
                 if (states)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -1555,7 +1576,7 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID3D11BlendState> states;
-                d3dDevice->CreateBlendState(&blendDescription, &states);
+                gekCheckResult(d3dDevice->CreateBlendState(&blendDescription, &states));
                 if (states)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -1617,7 +1638,7 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID3D11BlendState> states;
-                d3dDevice->CreateBlendState(&blendDescription, &states);
+                gekCheckResult(d3dDevice->CreateBlendState(&blendDescription, &states));
                 if (states)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -1663,7 +1684,7 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID3D11SamplerState> states;
-                d3dDevice->CreateSamplerState(&samplerDescription, &states);
+                gekCheckResult(d3dDevice->CreateSamplerState(&samplerDescription, &states));
                 if (states)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -1696,7 +1717,7 @@ namespace Gek
                 textureDescription.Format = d3dFormatList[static_cast<UINT8>(format)];
 
                 CComPtr<ID3D11Texture2D> texture2D;
-                d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D);
+                gekCheckResult(d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D));
                 if (texture2D)
                 {
                     D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
@@ -1705,7 +1726,7 @@ namespace Gek
                     renderViewDescription.Texture2D.MipSlice = 0;
 
                     CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-                    d3dDevice->CreateRenderTargetView(texture2D, &renderViewDescription, &d3dRenderTargetView);
+                    gekCheckResult(d3dDevice->CreateRenderTargetView(texture2D, &renderViewDescription, &d3dRenderTargetView));
                     if (d3dRenderTargetView)
                     {
                         D3D11_SHADER_RESOURCE_VIEW_DESC shaderViewDescription;
@@ -1715,7 +1736,7 @@ namespace Gek
                         shaderViewDescription.Texture2D.MipLevels = 1;
 
                         CComPtr<ID3D11ShaderResourceView> shaderView;
-                        d3dDevice->CreateShaderResourceView(texture2D, &shaderViewDescription, &shaderView);
+                        gekCheckResult(d3dDevice->CreateShaderResourceView(texture2D, &shaderViewDescription, &shaderView));
                         if (shaderView)
                         {
                             CComPtr<RenderTarget> textureResource(new RenderTarget(shaderView, nullptr, d3dRenderTargetView));
@@ -1790,7 +1811,7 @@ namespace Gek
                 depthDescription.Format = d3dFormatList[static_cast<UINT8>(format)];
 
                 CComPtr<ID3D11Texture2D> texture2D;
-                d3dDevice->CreateTexture2D(&depthDescription, nullptr, &texture2D);
+                gekCheckResult(d3dDevice->CreateTexture2D(&depthDescription, nullptr, &texture2D));
                 if (texture2D)
                 {
                     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
@@ -1800,7 +1821,7 @@ namespace Gek
                     depthStencilDescription.Texture2D.MipSlice = 0;
 
                     CComPtr<ID3D11DepthStencilView> depthStencilView;
-                    d3dDevice->CreateDepthStencilView(texture2D, &depthStencilDescription, &depthStencilView);
+                    gekCheckResult(d3dDevice->CreateDepthStencilView(texture2D, &depthStencilDescription, &depthStencilView));
                     if (depthStencilView)
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -1923,7 +1944,7 @@ namespace Gek
                 CComPtr<ID3D11Buffer> d3dBuffer;
                 if (data == nullptr)
                 {
-                    d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
+                    gekCheckResult(d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer));
                 }
                 else
                 {
@@ -1931,7 +1952,7 @@ namespace Gek
                     resourceData.pSysMem = data;
                     resourceData.SysMemPitch = 0;
                     resourceData.SysMemSlicePitch = 0;
-                    d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
+                    gekCheckResult(d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer));
                 }
 
                 Handle resourceHandle = Gek::InvalidHandle;
@@ -1946,7 +1967,7 @@ namespace Gek
                         viewDescription.Buffer.FirstElement = 0;
                         viewDescription.Buffer.NumElements = count;
 
-                        d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
+                        gekCheckResult(d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView));
                     }
 
                     CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
@@ -1959,7 +1980,7 @@ namespace Gek
                         viewDescription.Buffer.NumElements = count;
                         viewDescription.Buffer.Flags = 0;
 
-                        d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
+                        gekCheckResult(d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView));
                     }
 
                     CComPtr<Buffer> buffer(new Buffer(d3dBuffer, stride, d3dShaderResourceView, d3dUnorderedAccessView));
@@ -2040,7 +2061,7 @@ namespace Gek
                 CComPtr<ID3D11Buffer> d3dBuffer;
                 if (data == nullptr)
                 {
-                    d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
+                    gekCheckResult(d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer));
                 }
                 else
                 {
@@ -2048,7 +2069,7 @@ namespace Gek
                     resourceData.pSysMem = data;
                     resourceData.SysMemPitch = 0;
                     resourceData.SysMemSlicePitch = 0;
-                    d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
+                    gekCheckResult(d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer));
                 }
 
                 if (d3dBuffer)
@@ -2062,7 +2083,7 @@ namespace Gek
                         viewDescription.Buffer.FirstElement = 0;
                         viewDescription.Buffer.NumElements = count;
 
-                        d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
+                        gekCheckResult(d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView));
                     }
 
                     CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
@@ -2075,7 +2096,7 @@ namespace Gek
                         viewDescription.Buffer.NumElements = count;
                         viewDescription.Buffer.Flags = 0;
 
-                        d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
+                        gekCheckResult(d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView));
                     }
 
                     CComPtr<Buffer> buffer(new Buffer(d3dBuffer, stride, d3dShaderResourceView, d3dUnorderedAccessView));
@@ -2168,11 +2189,11 @@ namespace Gek
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "cs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                gekCheckResult(D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "cs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors));
                 if (d3dShaderBlob)
                 {
                     CComPtr<ID3D11ComputeShader> d3dShader;
-                    d3dDevice->CreateComputeShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
+                    gekCheckResult(d3dDevice->CreateComputeShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader));
                     if (d3dShader)
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -2221,11 +2242,11 @@ namespace Gek
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "vs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                gekCheckResult(D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "vs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors));
                 if (d3dShaderBlob)
                 {
                     CComPtr<ID3D11VertexShader> d3dShader;
-                    d3dDevice->CreateVertexShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
+                    gekCheckResult(d3dDevice->CreateVertexShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader));
                     if (d3dShader)
                     {
                         ElementType lastElementType = Gek::Video3D::ElementType::VERTEX;
@@ -2269,7 +2290,7 @@ namespace Gek
                         if (!inputElementList.empty())
                         {
                             CComPtr<ID3D11InputLayout> d3dInputLayout;
-                            d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), &d3dInputLayout);
+                            gekCheckResult(d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), &d3dInputLayout));
                             if (d3dInputLayout)
                             {
                                 CComPtr<VertexProgram> shader(new VertexProgram(d3dShader, d3dInputLayout));
@@ -2324,11 +2345,11 @@ namespace Gek
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "gs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                gekCheckResult(D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "gs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors));
                 if (d3dShaderBlob)
                 {
                     CComPtr<ID3D11GeometryShader> d3dShader;
-                    d3dDevice->CreateGeometryShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
+                    gekCheckResult(d3dDevice->CreateGeometryShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader));
                     if (d3dShader)
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -2377,11 +2398,11 @@ namespace Gek
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "ps_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                gekCheckResult(D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "ps_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors));
                 if (d3dShaderBlob)
                 {
                     CComPtr<ID3D11PixelShader> d3dShader;
-                    d3dDevice->CreatePixelShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
+                    gekCheckResult(d3dDevice->CreatePixelShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader));
                     if (d3dShader)
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -2416,56 +2437,56 @@ namespace Gek
                 return compilePixelProgram(nullptr, programScript, entryFunction, defineList, nullptr);
             }
 
-            STDMETHODIMP_(Handle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CStringA progamScript;
                 if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
                 {
-                    CComPtr<Include> spInclude(new Include(fileName));
+                    CComPtr<Include> spInclude(new Include(fileName, onInclude));
                     resourceHandle = compileComputeProgram(fileName, progamScript, entryFunction, defineList, spInclude);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Handle) loadVertexProgram(LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) loadVertexProgram(LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CStringA progamScript;
                 if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
                 {
-                    CComPtr<Include> spInclude(new Include(fileName));
+                    CComPtr<Include> spInclude(new Include(fileName, onInclude));
                     resourceHandle = compileVertexProgram(fileName, progamScript, entryFunction, elementLayout, defineList, spInclude);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Handle) loadGeometryProgram(LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) loadGeometryProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CStringA progamScript;
                 if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
                 {
-                    CComPtr<Include> spInclude(new Include(fileName));
+                    CComPtr<Include> spInclude(new Include(fileName, onInclude));
                     resourceHandle = compileGeometryProgram(fileName, progamScript, entryFunction, defineList, spInclude);
                 }
 
                 return resourceHandle;
             }
 
-            STDMETHODIMP_(Handle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP_(Handle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CStringA progamScript;
                 if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
                 {
-                    CComPtr<Include> spInclude(new Include(fileName));
+                    CComPtr<Include> spInclude(new Include(fileName, onInclude));
                     resourceHandle = compilePixelProgram(fileName, progamScript, entryFunction, defineList, spInclude);
                 }
 
@@ -2506,7 +2527,7 @@ namespace Gek
                     textureDescription.MiscFlags = 0;
 
                     CComPtr<ID3D11Texture2D> texture2D;
-                    d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D);
+                    gekCheckResult(d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D));
                     if (texture2D)
                     {
                         d3dResource = texture2D;
@@ -2526,7 +2547,7 @@ namespace Gek
                     textureDescription.MiscFlags = 0;
 
                     CComPtr<ID3D11Texture3D> texture2D;
-                    d3dDevice->CreateTexture3D(&textureDescription, nullptr, &texture2D);
+                    gekCheckResult(d3dDevice->CreateTexture3D(&textureDescription, nullptr, &texture2D));
                     if (texture2D)
                     {
                         d3dResource = texture2D;
@@ -2538,7 +2559,7 @@ namespace Gek
                     CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
                     if (flags & Gek::Video3D::TextureFlags::RESOURCE)
                     {
-                        d3dDevice->CreateShaderResourceView(d3dResource, nullptr, &d3dShaderResourceView);
+                        gekCheckResult(d3dDevice->CreateShaderResourceView(d3dResource, nullptr, &d3dShaderResourceView));
                     }
 
                     CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
@@ -2559,7 +2580,7 @@ namespace Gek
                             viewDescription.Texture3D.WSize = depth;
                         }
 
-                        d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
+                        gekCheckResult(d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView));
                     }
 
                     CComPtr<Texture> texture(new Texture(d3dShaderResourceView, d3dUnorderedAccessView));
@@ -2609,7 +2630,7 @@ namespace Gek
                     }
 
                     CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                    DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), textureMetaData, &d3dShaderResourceView);
+                    gekCheckResult(DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), textureMetaData, &d3dShaderResourceView));
                     if (d3dShaderResourceView)
                     {
                         CComPtr<Texture> texture2D(new Texture(d3dShaderResourceView, nullptr));
@@ -2730,7 +2751,7 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID2D1SolidColorBrush> d2dSolidBrush;
-                d2dDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&color, &d2dSolidBrush);
+                gekCheckResult(d2dDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&color, &d2dSolidBrush));
                 if (d2dSolidBrush)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -2747,11 +2768,11 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<ID2D1GradientStopCollection> spStops;
-                d2dDeviceContext->CreateGradientStopCollection((D2D1_GRADIENT_STOP *)stopPoints.data(), stopPoints.size(), &spStops);
+                gekCheckResult(d2dDeviceContext->CreateGradientStopCollection((D2D1_GRADIENT_STOP *)stopPoints.data(), stopPoints.size(), &spStops));
                 if (spStops)
                 {
                     CComPtr<ID2D1LinearGradientBrush> d2dGradientBrush;
-                    d2dDeviceContext->CreateLinearGradientBrush(*(D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES *)&extents, spStops, &d2dGradientBrush);
+                    gekCheckResult(d2dDeviceContext->CreateLinearGradientBrush(*(D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES *)&extents, spStops, &d2dGradientBrush));
                     if (d2dGradientBrush)
                     {
                         resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -2770,7 +2791,7 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<IDWriteTextFormat> dwTextFormat;
-                dwFactory->CreateTextFormat(face, nullptr, DWRITE_FONT_WEIGHT(weight), d2dFontStyleList[static_cast<UINT8>(style)], DWRITE_FONT_STRETCH_NORMAL, size, L"", &dwTextFormat);
+                gekCheckResult(dwFactory->CreateTextFormat(face, nullptr, DWRITE_FONT_WEIGHT(weight), d2dFontStyleList[static_cast<UINT8>(style)], DWRITE_FONT_STRETCH_NORMAL, size, L"", &dwTextFormat));
                 if (dwTextFormat)
                 {
                     resourceHandle = InterlockedIncrement(&nextResourceHandle);
@@ -2785,25 +2806,25 @@ namespace Gek
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<IWICImagingFactory> imagingFactory;
-                imagingFactory.CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER);
+                gekCheckResult(imagingFactory.CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER));
                 if (imagingFactory)
                 {
                     CComPtr<IWICBitmapDecoder> bitmapDecoder;
-                    imagingFactory->CreateDecoderFromFilename(Gek::FileSystem::expandPath(fileName), NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &bitmapDecoder);
+                    gekCheckResult(imagingFactory->CreateDecoderFromFilename(Gek::FileSystem::expandPath(fileName), NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &bitmapDecoder));
                     if (bitmapDecoder)
                     {
                         CComPtr<IWICBitmapFrameDecode> firstSourceFrame;
-                        bitmapDecoder->GetFrame(0, &firstSourceFrame);
+                        gekCheckResult(bitmapDecoder->GetFrame(0, &firstSourceFrame));
                         if (firstSourceFrame)
                         {
                             CComPtr<IWICFormatConverter> formatConverter;
-                            imagingFactory->CreateFormatConverter(&formatConverter);
+                            gekCheckResult(imagingFactory->CreateFormatConverter(&formatConverter));
                             if (formatConverter)
                             {
                                 if (SUCCEEDED(formatConverter->Initialize(firstSourceFrame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.f, WICBitmapPaletteTypeMedianCut)))
                                 {
                                     CComPtr<ID2D1Bitmap1> bitmap;
-                                    d2dDeviceContext->CreateBitmapFromWicBitmap(formatConverter, NULL, &bitmap);
+                                    gekCheckResult(d2dDeviceContext->CreateBitmapFromWicBitmap(formatConverter, NULL, &bitmap));
                                     if (bitmap)
                                     {
                                         resourceHandle = InterlockedIncrement(&nextResourceHandle);

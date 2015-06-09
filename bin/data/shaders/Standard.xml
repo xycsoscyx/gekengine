@@ -2,12 +2,12 @@
 <shader>
     <material>
         <maps>
-            <materialAlbedo>Texture2D</materialAlbedo>
-            <materialNormal>Texture2D</materialNormal>
-            <materialInfo>Texture2D</materialInfo>
+            <albedo>Texture2D</albedo>
+            <normal>Texture2D</normal>
+            <info>Texture2D</info>
         </maps>
         <properties>
-            <materialColor>float4</materialColor>
+            <color>float4</color>
         </properties>
     </material>
 
@@ -48,9 +48,9 @@
 
         <pixel>
             <resources>
-				<materialAlbedo />
-				<materialNormal />
-				<materialInfo />
+				<albedo />
+				<normal />
+				<info />
             </resources>
 
             <program source="Standard\Deferred" entry="mainPixelProgram" />

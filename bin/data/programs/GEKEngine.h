@@ -28,14 +28,12 @@ namespace Camera
 {
     cbuffer buffer : register(b0)
     {
-        float2   fieldOfView : packoffset(c0);
-        float    minimumDistance : packoffset(c0.z);
-        float    maximumDistance : packoffset(c0.w);
-        float4x4 viewMatrix : packoffset(c1);
-        float4x4 projectionMatrix : packoffset(c5);
+        float2   fieldOfView             : packoffset(c0);
+        float    minimumDistance         : packoffset(c0.z);
+        float    maximumDistance         : packoffset(c0.w);
+        float4x4 viewMatrix              : packoffset(c1);
+        float4x4 projectionMatrix        : packoffset(c5);
         float4x4 inverseProjectionMatrix : packoffset(c9);
-        float4x4 transformMatrix : packoffset(c13);
+        float4x4 transformMatrix         : packoffset(c13);
     };
 };
-
-setGlobalValues

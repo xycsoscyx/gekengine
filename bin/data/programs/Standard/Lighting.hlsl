@@ -1,215 +1,211 @@
-#include "..\gekengine.h"
-#include "..\gektypes.h"
-#include "..\gekutility.h"
-#include "..\geklights.h"
+#include "GEKInputType"
+#include "GEKResources"
+#include "GEKMaterial"
 
-groupshared uint    g_nTileMinDepth;
-groupshared uint    g_nTileMaxDepth;
-groupshared uint    g_nNumTileLights;
-groupshared uint    g_aTileLightList[gs_nMaxLights];
-groupshared float4  g_aTileFrustum[6];
-RWBuffer<uint>      g_pTileOutput           : register(u0);
+#include "..\GEKEngine.h"
+#include "..\GEKLights.h"
+#include "..\GEKUtility.h"
 
-Texture2D<float>    gs_pDepthBuffer         : register(t1);
-Texture2D           gs_pAlbedoBuffer        : register(t2);
-Texture2D<half2>    gs_pNormalBuffer        : register(t3);
-Texture2D           gs_pInfoBuffer          : register(t4);
-Buffer<uint>        gs_pTileIndices         : register(t5);
+groupshared uint    tileMinimumDepth;
+groupshared uint    tileMaximumDepth;
+groupshared uint    tileLightCount;
+groupshared uint    tileLightList[lightListSize];
+groupshared float4  tileFrustum[6];
 
-[numthreads(gs_nLightTileSize, gs_nLightTileSize, 1)]
-void MainComputeProgram(uint3 nScreenPixel : SV_DispatchThreadID, uint3 nTileID : SV_GroupID, uint3 nTilePixelID : SV_GroupThreadID, uint nTilePixelIndex : SV_GroupIndex)
+[numthreads(lightTileSize, lightTileSize, 1)]
+void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePosition : SV_GroupID, uint pixelIndex : SV_GroupIndex)
 {
     [branch]
-    if (nTilePixelIndex == 0)
+    if (pixelIndex == 0)
     {
-        g_nNumTileLights = 0;
-        g_nTileMinDepth = 0x7F7FFFFF;
-        g_nTileMaxDepth = 0;
+        tileLightCount = 0;
+        tileMinimumDepth = 0x7F7FFFFF;
+        tileMaximumDepth = 0;
     }
 
-    float nViewDepth = gs_pDepthBuffer[nScreenPixel.xy] * Camera::maximumDistance;
-    uint nViewDepthInt = asuint(nViewDepth);
+    float viewDepth = Resources::depthBuffer[screenPosition.xy].x * Camera::maximumDistance;
+    uint viewDepthInteger = asuint(viewDepth);
 
     GroupMemoryBarrierWithGroupSync();
 
-    InterlockedMin(g_nTileMinDepth, nViewDepthInt);
-    InterlockedMax(g_nTileMaxDepth, nViewDepthInt);
+    InterlockedMin(tileMinimumDepth, viewDepthInteger);
+    InterlockedMax(tileMaximumDepth, viewDepthInteger);
 
     GroupMemoryBarrierWithGroupSync();
 
-    float nMinTileDepth = asfloat(g_nTileMinDepth);
-    float nMaxTileDepth = asfloat(g_nTileMaxDepth);
+    float minimumDepth = asfloat(tileMinimumDepth);
+    float maximumDepth = asfloat(tileMaximumDepth);
 
     [branch]
-    if (nTilePixelIndex == 0)
+    if (pixelIndex == 0)
     {
-        float2 nSize;
-        gs_pDepthBuffer.GetDimensions(nSize.x, nSize.y);
-        float2 nTileScale = nSize * rcp(float(2 * gs_nLightTileSize));
-        float2 nTileBias = nTileScale - float2(nTileID.xy);
+        float2 depthBufferSize;
+        Resources::depthBuffer.GetDimensions(depthBufferSize.x, depthBufferSize.y);
+        float2 tileScale = depthBufferSize * rcp(float(2 * lightTileSize));
+        float2 tileBias = tileScale - float2(tilePosition.xy);
 
-        float3 nXPlane = float3(Camera::projectionMatrix[0][0] * nTileScale.x, 0.0f, nTileBias.x);
-        float3 nYPlane = float3(0.0f, -Camera::projectionMatrix[1][1] * nTileScale.y, nTileBias.y);
-        float3 nZPlane = float3(0.0f, 0.0f, 1.0f);
+        float3 frustumXPlane = float3(Camera::projectionMatrix[0][0] * tileScale.x, 0.0f, tileBias.x);
+        float3 frustumYPlane = float3(0.0f, -Camera::projectionMatrix[1][1] * tileScale.y, tileBias.y);
+        float3 frustumZPlane = float3(0.0f, 0.0f, 1.0f);
 
-        g_aTileFrustum[0] = float4(normalize(nZPlane - nXPlane), 0.0f),
-        g_aTileFrustum[1] = float4(normalize(nZPlane + nXPlane), 0.0f),
-        g_aTileFrustum[2] = float4(normalize(nZPlane - nYPlane), 0.0f),
-        g_aTileFrustum[3] = float4(normalize(nZPlane + nYPlane), 0.0f),
-        g_aTileFrustum[4] = float4(0.0f, 0.0f, 1.0f, -nMinTileDepth);
-        g_aTileFrustum[5] = float4(0.0f, 0.0f, -1.0f, nMaxTileDepth);
+        tileFrustum[0] = float4(normalize(frustumZPlane - frustumXPlane), 0.0f),
+        tileFrustum[1] = float4(normalize(frustumZPlane + frustumXPlane), 0.0f),
+        tileFrustum[2] = float4(normalize(frustumZPlane - frustumYPlane), 0.0f),
+        tileFrustum[3] = float4(normalize(frustumZPlane + frustumYPlane), 0.0f),
+        tileFrustum[4] = float4(0.0f, 0.0f, 1.0f, -minimumDepth);
+        tileFrustum[5] = float4(0.0f, 0.0f, -1.0f, maximumDepth);
     }
 
     GroupMemoryBarrierWithGroupSync();
 
     [loop]
-    for (uint nLight = nTilePixelIndex; nLight < gs_nNumLights; nLight += (gs_nLightTileSize * gs_nLightTileSize))
+    for (uint lightIndex = pixelIndex; lightIndex < Lighting::lightCount; lightIndex += (lightTileSize * lightTileSize))
     {
-        bool bIsLightInFrustum = true;
+        bool isLightVisible = true;
 
         [unroll]
-        for (uint nIndex = 0; nIndex < 6; ++nIndex)
+        for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
         {
-            float nDistance = dot(g_aTileFrustum[nIndex], float4(gs_aLights[nLight].m_nPosition, 1.0f));
-            bIsLightInFrustum = (bIsLightInFrustum && (nDistance >= -gs_aLights[nLight].m_nRange));
+            float lightDistance = dot(tileFrustum[planeIndex], float4(Resources::lightList[lightIndex].m_nPosition, 1.0f));
+            isLightVisible = (isLightVisible && (lightDistance >= -Resources::lightList[lightIndex].m_nRange));
         }
 
         [branch]
-        if (bIsLightInFrustum)
+        if (isLightVisible)
         {
-            uint nTileIndex;
-            InterlockedAdd(g_nNumTileLights, 1, nTileIndex);
-            g_aTileLightList[nTileIndex] = nLight;
+            uint tileIndex;
+            InterlockedAdd(tileLightCount, 1, tileIndex);
+            tileLightList[tileIndex] = lightIndex;
         }
     }
 
     GroupMemoryBarrierWithGroupSync();
 
     [branch]
-    if (nTilePixelIndex < gs_nMaxLights)
+    if (pixelIndex < gs_nMaxLights)
     {
-        uint nTileIndex = ((nTileID.y * gs_nDispatchXSize) + nTileID.x);
-        uint nBufferIndex = ((nTileIndex * gs_nMaxLights) + nTilePixelIndex);
-        uint nLightIndex = (nTilePixelIndex < g_nNumTileLights ? g_aTileLightList[nTilePixelIndex] : gs_nMaxLights);
-        g_pTileOutput[nBufferIndex] = nLightIndex;
+        uint tileIndex = ((tilePosition.y * gs_nDispatchXSize) + tilePosition.x);
+        uint bufferIndex = ((tileIndex * gs_nMaxLights) + pixelIndex);
+        uint lightIndex = (pixelIndex < tileLightCount ? tileLightList[pixelIndex] : gs_nMaxLights);
+        UnorderedAccess::tileIndexList[bufferIndex] = lightIndex;
     }
 }
 
 // Diffuse & Specular Term
 // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
-bool GetBRDF(in float3 nAlbedo, in float3 nCenterNormal, in float3 nLightNormal, in float3 nViewNormal, in float4 nInfo, out float3 nLightDiffuse, out float3 nLightSpecular)
+bool getBRDF(in float3 albedoTerm, in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal, in float4 pixelInfo, out float3 diffuseContribution, out float3 specularContribution)
 {
-    float nNormalLightAngle = saturate(dot(nCenterNormal, nLightNormal));
+    float angleCenterLight = saturate(dot(pixelNormal, lightNormal));
 
     [branch]
-    if (nNormalLightAngle <= 0.0f)
+    if (angleCenterLight <= 0.0f)
     {
         return false;
     }
 
-    float nRoughness = (nInfo.x * nInfo.x * 4);
-    float nRoughnessSquared = (nRoughness * nRoughness);
-    float nSpecular = nInfo.y;
-    float nMetalness = nInfo.z;
+    float materialRoughness = (pixelInfo.x * pixelInfo.x * 4);
+    float materialRoughnessSquared = (materialRoughness * materialRoughness);
+    float materialSpecular = pixelInfo.y;
+    float materialMetalness = pixelInfo.z;
 
-    float3 nKs = lerp(nSpecular, nAlbedo, nMetalness);
-    float3 nKd = lerp(nAlbedo, 0, nMetalness);
-    float3 nFd = 1.0 - nKs;
+    float3 Ks = lerp(materialSpecular, albedoTerm, materialMetalness);
+    float3 Kd = lerp(albedoTerm, 0, materialMetalness);
+    float3 Fd = 1.0 - Ks;
 
-    float nNormalViewAngle = dot(nCenterNormal, nViewNormal);
-    float nNormalViewAngleSquared = (nNormalViewAngle * nNormalViewAngle);
-    float nInvNormalViewAngleSquared = (1.0 - nNormalViewAngleSquared);
+    float angleCenterView = dot(pixelNormal, viewNormal);
+    float angleCenterViewSquared = (angleCenterView * angleCenterView);
+    float inverseAngleCenterViewSquared = (1.0 - angleCenterViewSquared);
 
-    float3 nHalfVector = normalize(nLightNormal + nViewNormal);
-    float nNormalHalfAngle = saturate(dot(nCenterNormal, nHalfVector));
-    float nLightHalfAngle = saturate(dot(nLightNormal, nHalfVector));
+    float3 halfVector = normalize(lightNormal + viewNormal);
+    float angleCenterHalf = saturate(dot(pixelNormal, halfVector));
+    float angleLightHalf = saturate(dot(lightNormal, halfVector));
 
-    float nNormalLightAngleSquared = (nNormalLightAngle * nNormalLightAngle);
-    float nNormalHalfAngleSquared = (nNormalHalfAngle * nNormalHalfAngle);
-    float nInvNormalLightAngleSquared = (1.0 - nNormalLightAngleSquared);
+    float angleCenterLightSquared = (angleCenterLight * angleCenterLight);
+    float angleCenterHalfSquared = (angleCenterHalf * angleCenterHalf);
+    float inverseAngleCenterLightSquared = (1.0 - angleCenterLightSquared);
 
-    nLightDiffuse = (nKd * nFd * gs_nReciprocalPI * saturate((1 - nRoughness) * 0.5 + 0.5 + nRoughnessSquared * (8 - nRoughness) * 0.023));
+    diffuseContribution = (Kd * Fd * gs_nReciprocalPI * saturate((1 - materialRoughness) * 0.5 + 0.5 + materialRoughnessSquared * (8 - materialRoughness) * 0.023));
 
-    float nCenteredNormalViewAngle = (nNormalViewAngle * 0.5 + 0.5);
-    float nCenteredNormalLightAngle = (nNormalLightAngle * 0.5 + 0.5);
-    nNormalViewAngleSquared = (nCenteredNormalViewAngle * nCenteredNormalViewAngle);
-    nNormalLightAngleSquared = (nCenteredNormalLightAngle * nCenteredNormalLightAngle);
-    nInvNormalViewAngleSquared = (1.0 - nNormalViewAngleSquared);
-    nInvNormalLightAngleSquared = (1.0 - nNormalLightAngleSquared);
+    float centeredAngleCenterView = (angleCenterView * 0.5 + 0.5);
+    float centeredAngleCenterLight = (angleCenterLight * 0.5 + 0.5);
+    angleCenterViewSquared = (centeredAngleCenterView * centeredAngleCenterView);
+    angleCenterLightSquared = (centeredAngleCenterLight * centeredAngleCenterLight);
+    inverseAngleCenterViewSquared = (1.0 - angleCenterViewSquared);
+    inverseAngleCenterLightSquared = (1.0 - angleCenterLightSquared);
 
-    float nDiffuseDelta = lerp((1 / (0.1 + nRoughness)), (-nRoughnessSquared * 2), saturate(nRoughness));
-    float nDiffuseViewAngle = (1 - (pow(1 - nCenteredNormalViewAngle, 4) * nDiffuseDelta));
-    float nDiffuseLightAngle = (1 - (pow(1 - nCenteredNormalLightAngle, 4) * nDiffuseDelta));
-    nLightDiffuse *= (nDiffuseLightAngle * nDiffuseViewAngle * nNormalLightAngle);
+    float diffuseDelta = lerp((1 / (0.1 + materialRoughness)), (-materialRoughnessSquared * 2), saturate(materialRoughness));
+    float diffuseViewAngle = (1 - (pow(1 - centeredAngleCenterView, 4) * diffuseDelta));
+    float diffuseLightAngle = (1 - (pow(1 - centeredAngleCenterLight, 4) * diffuseDelta));
+    diffuseContribution *= (diffuseLightAngle * diffuseViewAngle * angleCenterLight);
 
-    float3 nFs = (nKs + nFd * pow((1 - nLightHalfAngle), 5));
-    float3 nD = (pow(nRoughness / (nNormalHalfAngleSquared * (nRoughnessSquared + (1 - nNormalHalfAngleSquared) / nNormalHalfAngleSquared)), 2) * gs_nReciprocalPI);
-    nLightSpecular = (nFs * nD * nNormalLightAngle);
+    float3 Fs = (Ks + Fd * pow((1 - angleLightHalf), 5));
+    float3 D = (pow(materialRoughness / (angleCenterHalfSquared * (materialRoughnessSquared + (1 - angleCenterHalfSquared) / angleCenterHalfSquared)), 2) * gs_nReciprocalPI);
+    specularContribution = (Fs * D * angleCenterLight);
     return true;
 }
 
-float3 GetLightingContribution(in INPUT kInput, in float3 nAlbedo)
+float3 getLightingContribution(in InputPixel inputPixel, in float3 albedoTerm)
 {
-    float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+    float4 pixelInfo = Resources::infoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
 
-    float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-    float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
-    float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
+    float pixelDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+    float3 pixelPosition = getViewPosition(inputPixel.texcoord, pixelDepth);
+    float3 pixelNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texcoord));
 
-    float3 nViewNormal = -normalize(nCenterPosition);
+    float3 viewNormal = -normalize(pixelPosition);
 
-    const uint2 nTileID = uint2(floor(kInput.position.xy / float(gs_nLightTileSize).xx));
-    const uint nTileIndex = ((nTileID.y * gs_nDispatchXSize) + nTileID.x);
-    const uint nBufferIndex = (nTileIndex * gs_nMaxLights);
+    const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(lightTileSize).xx));
+    const uint tileIndex = ((tilePosition.y * gs_nDispatchXSize) + tilePosition.x);
+    const uint bufferIndex = (tileIndex * gs_nMaxLights);
 
-    float3 nTotalDiffuse = 0.0f;
-    float3 nTotalSpecular = 0.0f;
+    float3 totalDiffuseContribution = 0.0f;
+    float3 totalSpecularContribution = 0.0f;
 
     [loop]
-    for (uint nLightIndex = 0; nLightIndex < gs_nNumLights; nLightIndex++)
+    for (uint lightIndexIndex = 0; lightIndexIndex < Lighting::lightCount; lightIndexIndex++)
     {
-        uint nLight = gs_pTileIndices[nBufferIndex + nLightIndex];
+        uint lightIndex = Resources::tileIndexList[bufferIndex + lightIndexIndex];
 
         [branch]
-        if (nLight == gs_nMaxLights)
+        if (lightIndex == gs_nMaxLights)
         {
             break;
         }
 
-        float3 nLightVector = (gs_aLights[nLight].m_nPosition.xyz - nCenterPosition);
-        float nDistance = length(nLightVector);
-        float3 nLightNormal = normalize(nLightVector);
+        float3 lightVector = (Resources::lightList[lightIndex].position.xyz - pixelPosition);
+        float lightDistance = length(lightVector);
+        float3 lightNormal = normalize(lightVector);
 
-        float nAttenuation = (1.0f - saturate(nDistance * gs_aLights[nLight].m_nInvRange));
+        float attenuation = (1.0f - saturate(lightDistance * Resources::lightList[lightIndex].inverseRange));
 
         [branch]
-        if (nAttenuation > 0.0f)
+        if (attenuation > 0.0f)
         {
-            float3 nLightDiffuse = 0.0f;
-            float3 nLightSpecular = 0.0f;
+            float3 diffuseContribution = 0.0f;
+            float3 specularContribution = 0.0f;
 
             [branch]
-            if (GetBRDF(nAlbedo, nCenterNormal, nLightNormal, nViewNormal, nCenterInfo, nLightDiffuse, nLightSpecular))
+            if (getBRDF(albedoTerm, pixelNormal, lightNormal, viewNormal, pixelInfo, diffuseContribution, specularContribution))
             {
-                nTotalDiffuse += saturate(gs_aLights[nLight].m_nColor * nLightDiffuse * nAttenuation);
-                nTotalSpecular += saturate(gs_aLights[nLight].m_nColor * nLightSpecular * nAttenuation);
+                totalDiffuseContribution += saturate(Resources::lightList[lightIndex].color * diffuseContribution * attenuation);
+                totalSpecularContribution += saturate(Resources::lightList[lightIndex].color * specularContribution * attenuation);
             }
         }
     }
 
-    return (saturate(nTotalDiffuse) + saturate(nTotalSpecular));
+    return (saturate(totalDiffuseContribution) + saturate(totalSpecularContribution));
 }
 
-float4 MainPixelProgram(in INPUT kInput) : SV_TARGET0
+float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-    float3 nLighting = 0.0f;
-    float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+    float3 lightingContribution = 0.0f;
+    float4 albedoTerm = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
 
     [branch]
-    if (nAlbedo.a < 1.0f)
+    if (albedoTerm.a < 1.0f)
     {
-        nLighting = GetLightingContribution(kInput, nAlbedo.xyz);
+        lightingContribution = getLightingContribution(inputPixel, albedoTerm.xyz);
     }
 
-    return float4(nLighting, nAlbedo.a);
+    return float4(lightingContribution, albedoTerm.a);
 }
