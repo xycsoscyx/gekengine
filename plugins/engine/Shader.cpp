@@ -191,10 +191,10 @@ namespace Gek
 
                 private:
                     Video3D::Interface *video;
+                    UINT32 width;
+                    UINT32 height;
                     std::vector<Map> mapList;
                     std::vector<Property> propertyList;
-                    UINT32 shaderWidth;
-                    UINT32 shaderHeight;
                     std::unordered_map<CStringW, CStringW> defineList;
                     Handle depthHandle;
                     std::unordered_map<CStringW, Handle> targetList;
@@ -426,8 +426,8 @@ namespace Gek
                 public:
                     System(void)
                         : video(nullptr)
-                        , shaderWidth(0)
-                        , shaderHeight(0)
+                        , width(0)
+                        , height(0)
                         , depthHandle(InvalidHandle)
                     {
                     }
@@ -451,8 +451,7 @@ namespace Gek
                         fullEquation.Replace(L"%displayWidth%", String::format(L"%d", video->getWidth()));
                         fullEquation.Replace(L"%displayHeight%", String::format(L"%d", video->getHeight()));
 
-                        fullEquation.Replace(L"%shaderWidth%", String::format(L"%d", shaderWidth));
-                        fullEquation.Replace(L"%shaderHeight%", String::format(L"%d", shaderHeight));
+                        fullEquation.Replace(L"%lightListSize%", L"256");
 
                         return String::getFloat(fullEquation);
                     }
@@ -468,8 +467,8 @@ namespace Gek
                         if (video)
                         {
                             this->video = video;
-                            shaderWidth = video->getWidth();
-                            shaderHeight = video->getHeight();
+                            width = video->getWidth();
+                            height = video->getHeight();
                             resultValue = S_OK;
                         }
 
@@ -485,14 +484,15 @@ namespace Gek
                                 {
                                     if (xmlShaderNode.hasAttribute(L"width"))
                                     {
-                                        shaderWidth = String::getUINT32(xmlShaderNode.getAttribute(L"width"));
+                                        width = String::getUINT32(xmlShaderNode.getAttribute(L"width"));
                                     }
 
                                     if (xmlShaderNode.hasAttribute(L"height"))
                                     {
-                                        shaderHeight = String::getUINT32(xmlShaderNode.getAttribute(L"height"));
+                                        height = String::getUINT32(xmlShaderNode.getAttribute(L"height"));
                                     }
 
+                                    std::unordered_map<CStringW, CStringW> resourceTypeList;
                                     Gek::Xml::Node xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
                                     if (xmlMaterialNode)
                                     {
@@ -502,7 +502,11 @@ namespace Gek
                                             Gek::Xml::Node xmlMapNode = xmlMapsNode.firstChildElement();
                                             while (xmlMapNode)
                                             {
-                                                mapList.push_back(Map(xmlMapNode.getType(), getMapType(xmlMapNode.getText())));
+                                                CStringW name(xmlMapNode.getType());
+                                                CStringW type(xmlMapNode.getText());
+                                                mapList.push_back(Map(name, getMapType(type)));
+                                                resourceTypeList[name] = type;
+
                                                 xmlMapNode = xmlMapNode.nextSiblingElement();
                                             };
                                         }
@@ -513,7 +517,9 @@ namespace Gek
                                             Gek::Xml::Node xmlPropertyNode = xmlPropertiesNode.firstChildElement();
                                             while (xmlPropertyNode)
                                             {
-                                                propertyList.push_back(Property(xmlPropertyNode.getType(), getPropertyType(xmlPropertyNode.getText())));
+                                                CStringW name(xmlPropertyNode.getType());
+                                                CStringW type(xmlPropertyNode.getText());
+                                                propertyList.push_back(Property(name, getPropertyType(type)));
                                                 xmlPropertyNode = xmlPropertyNode.nextSiblingElement();
                                             };
                                         }
@@ -534,7 +540,7 @@ namespace Gek
                                     if (xmlDepthNode)
                                     {
                                         Video3D::Format format = getFormat(xmlDepthNode.getText());
-                                        depthHandle = video->createDepthTarget(shaderWidth, shaderHeight, format);
+                                        depthHandle = video->createDepthTarget(width, height, format);
                                     }
 
                                     Gek::Xml::Node xmlTargetsNode = xmlShaderNode.firstChildElement(L"targets");
@@ -543,8 +549,11 @@ namespace Gek
                                         Gek::Xml::Node xmlTargetNode = xmlTargetsNode.firstChildElement();
                                         while (xmlTargetNode)
                                         {
-                                            Video3D::Format format = getFormat(xmlTargetNode.getText());
-                                            targetList[xmlTargetNode.getType()] = video->createRenderTarget(shaderWidth, shaderHeight, format);
+                                            CStringW name(xmlTargetNode.getType());
+                                            CStringW format(xmlTargetNode.getText());
+                                            targetList[name] = video->createRenderTarget(width, height, getFormat(format));
+                                            resourceTypeList[name] = L"Texture2D";
+
                                             xmlTargetNode = xmlTargetNode.nextSiblingElement();
                                         };
                                     }
@@ -555,17 +564,11 @@ namespace Gek
                                         Gek::Xml::Node xmlBufferNode = xmlBuffersNode.firstChildElement();
                                         while (xmlBufferNode && xmlBufferNode.hasAttribute(L"size"))
                                         {
-                                            UINT32 size = UINT32(parseValue(xmlBufferNode.getAttribute(L"size")));
+                                            CStringW name(xmlBufferNode.getType());
                                             CStringW format(xmlBufferNode.getText());
-                                            if (format.CompareNoCase(L"LIGHT") == 0)
-                                            {
-                                                bufferList[xmlBufferNode.getType()] = video->createBuffer(32, size, Video3D::BufferFlags::DYNAMIC | Video3D::BufferFlags::STRUCTURED_BUFFER | Video3D::BufferFlags::RESOURCE);
-                                            }
-                                            else
-                                            {
-                                                Video3D::Format format = getFormat(xmlBufferNode.getText());
-                                                bufferList[xmlBufferNode.getType()] = video->createBuffer(format, size, Video3D::BufferFlags::UNORDERED_ACCESS | Video3D::BufferFlags::RESOURCE);
-                                            }
+                                            UINT32 size = UINT32(parseValue(xmlBufferNode.getAttribute(L"size")));
+                                            bufferList[name] = video->createBuffer(getFormat(format), size, Video3D::BufferFlags::UNORDERED_ACCESS | Video3D::BufferFlags::RESOURCE);
+                                            resourceTypeList[name] = format;
 
                                             xmlBufferNode = xmlBufferNode.nextSiblingElement();
                                         };
@@ -611,8 +614,28 @@ namespace Gek
                                             if (xmlComputeNode.hasAttribute(L"dispatch"))
                                             {
                                                 Math::Float3 dispatchSize = String::getFloat3(xmlComputeNode.getAttribute(L"dispatch"));
+
+                                                CStringA resourceDefines;
                                                 pass.computeProgram.resourceList = loadChildList(xmlComputeNode, L"resources");
+                                                for (auto &resource : pass.computeProgram.resourceList)
+                                                {
+                                                    auto resourceTypeIterator = resourceTypeList.find(resource);
+                                                    if (resourceTypeIterator != resourceTypeList.end())
+                                                    {
+                                                        resourceDefines.AppendFormat("%S %S : register(r%d)\r\n", (*resourceTypeIterator).second.GetString(), resource.GetString(), 0);
+                                                    }
+                                                }
+
                                                 pass.computeProgram.unorderedAccessList = loadChildList(xmlComputeNode, L"unorderedaccess");
+                                                for (auto &unorderedAccess : pass.computeProgram.unorderedAccessList)
+                                                {
+                                                    auto resourceTypeIterator = resourceTypeList.find(unorderedAccess);
+                                                    if (resourceTypeIterator != resourceTypeList.end())
+                                                    {
+                                                        resourceDefines.AppendFormat("%S %S : register(u%d)\r\n", (*resourceTypeIterator).second.GetString(), unorderedAccess.GetString(), 0);
+                                                    }
+                                                }
+
                                                 if (xmlComputeNode.hasChildElement(L"program"))
                                                 {
                                                     Gek::Xml::Node xmlProgramNode = xmlComputeNode.firstChildElement(L"program");
@@ -638,16 +661,41 @@ namespace Gek
                                         if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"pixel"))
                                         {
                                             Gek::Xml::Node xmlPixelNode = xmlPassNode.firstChildElement(L"pixel");
+
+                                            CStringA resourceDefines;
                                             pass.pixelProgram.resourceList = loadChildList(xmlPixelNode, L"resources");
+                                            for (UINT32 index = 0; index < pass.pixelProgram.resourceList.size(); index++)
+                                            {
+                                                CStringW resource(pass.pixelProgram.resourceList[index]);
+                                                auto resourceTypeIterator = resourceTypeList.find(resource);
+                                                if (resourceTypeIterator != resourceTypeList.end())
+                                                {
+                                                    resourceDefines.AppendFormat("%S %S : register(r%d)\r\n", (*resourceTypeIterator).second.GetString(), resource.GetString(), index);
+                                                }
+                                            }
+
                                             pass.pixelProgram.unorderedAccessList = loadChildList(xmlPixelNode, L"unorderedaccess");
+                                            for (UINT32 index = 0; index < pass.pixelProgram.unorderedAccessList.size(); index++)
+                                            {
+                                                CStringW unorderedAccess(pass.pixelProgram.resourceList[index]);
+                                                auto resourceTypeIterator = resourceTypeList.find(unorderedAccess);
+                                                if (resourceTypeIterator != resourceTypeList.end())
+                                                {
+                                                    resourceDefines.AppendFormat("%S %S : register(u%d)\r\n", (*resourceTypeIterator).second.GetString(), unorderedAccess.GetString(), index);
+                                                }
+                                            }
+
                                             if (xmlPixelNode.hasChildElement(L"program"))
                                             {
                                                 Gek::Xml::Node xmlProgramNode = xmlPixelNode.firstChildElement(L"program");
                                                 if (xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
                                                 {
+                                                    std::unordered_map<CStringA, CStringA> defines;
+                                                    defines["setGlobalValues"] = resourceDefines;
+
                                                     CStringW programFileName = xmlProgramNode.getAttribute(L"source");
                                                     CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
-                                                    pass.pixelProgram.programHandle = video->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint);
+                                                    pass.pixelProgram.programHandle = video->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, &defines);
                                                     resultValue = (pass.pixelProgram.programHandle == InvalidHandle ? E_FAIL : S_OK);
                                                 }
                                                 else

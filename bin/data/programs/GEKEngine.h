@@ -37,3 +37,5 @@ namespace Camera
         float4x4 transformMatrix : packoffset(c13);
     };
 };
+
+setGlobalValues

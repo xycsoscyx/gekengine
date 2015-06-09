@@ -2,32 +2,30 @@
 <shader>
     <material>
         <maps>
-            <albedo>texture2D</albedo>
-            <normal>texture2D</normal>
-            <info>texture2D</info>
+            <materialAlbedo>Texture2D</materialAlbedo>
+            <materialNormal>Texture2D</materialNormal>
+            <materialInfo>Texture2D</materialInfo>
         </maps>
         <properties>
-            <color>float4</color>
+            <materialColor>float4</materialColor>
         </properties>
     </material>
 
     <defines>
         <lightTileSize>32</lightTileSize>
-		<lightListSize>256</lightListSize>
     </defines>
 
     <depth>D32</depth>
 
     <targets>
-        <materialAlbedo>RGBA_UINT8</materialAlbedo>
-        <materialNormal>RG_HALF</materialNormal>
-        <materialDepth>R_FLOAT</materialDepth> 
-        <materialInfo>RGBA_UINT8</materialInfo>
+        <albedoBuffer>RGBA_UINT8</albedoBuffer>
+        <normalBuffer>RG_HALF</normalBuffer>
+        <depthBuffer>R_FLOAT</depthBuffer> 
+        <infoBuffer>RGBA_UINT8</infoBuffer>
     </targets>
 
     <buffers>
-        <tileIndexList size="ceil(%shaderWidth% / %lightTileSize%) * ceil(%shaderWidth% / %lightTileSize%) * %lightListSize%">R_UINT8</tileIndexList>
-        <lightList size="%lightListSize%">LIGHT</lightList>
+        <tileIndexList size="ceil(%displayWidth% / %lightTileSize%) * ceil(%displayWidth% / %lightTileSize%) * %lightListSize%">R_UINT8</tileIndexList>
     </buffers>
 
     <pass mode="forward">
@@ -52,7 +50,6 @@
             <resources>
 				<materialAlbedo />
 				<materialNormal />
-				<materialDepth />
 				<materialInfo />
             </resources>
 
