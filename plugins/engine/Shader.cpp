@@ -180,7 +180,7 @@ namespace Gek
                                         Gek::Xml::Node xmlBufferNode = xmlBuffersNode.firstChildElement();
                                         while (xmlBufferNode && xmlBufferNode.hasAttribute(L"size"))
                                         {
-                                            UINT32 size = parseValue(xmlBufferNode.getAttribute(L"size"));
+                                            UINT32 size = UINT32(parseValue(xmlBufferNode.getAttribute(L"size")));
                                             Video3D::Format format = getFormat(xmlBufferNode.getText());
                                             bufferList[xmlBufferNode.getType()] = video->createBuffer(format, size, Video3D::BufferFlags::UNORDERED_ACCESS | Video3D::BufferFlags::RESOURCE);
                                             xmlBufferNode = xmlBufferNode.nextSiblingElement();
