@@ -2,9 +2,9 @@
 <shader>
     <material>
         <maps>
-            <albedo>Texture2D</albedo>
-            <normal>Texture2D</normal>
-            <info>Texture2D</info>
+            <albedo bind="float4">Texture2D</albedo>
+            <normal bind="float2">Texture2D</normal>
+            <info bind="float4">Texture2D</info>
         </maps>
         <properties>
             <color>float4</color>
@@ -18,10 +18,10 @@
     <depth>D32</depth>
 
     <targets>
-        <albedoBuffer>RGBA_UINT8</albedoBuffer>
-        <normalBuffer>RG_HALF</normalBuffer>
-        <depthBuffer>R_FLOAT</depthBuffer> 
-        <infoBuffer>RGBA_UINT8</infoBuffer>
+        <albedoBuffer bind="float4">RGBA_UINT8</albedoBuffer>
+        <normalBuffer bind="half2">RG_HALF</normalBuffer>
+        <depthBuffer bind="float">R_FLOAT</depthBuffer> 
+        <infoBuffer bind="float4">RGBA_UINT8</infoBuffer>
     </targets>
 
     <buffers>
@@ -65,10 +65,9 @@
 			</target>
         </blendstates>
 
-        <compute dispatch="ceil(%viewWidth% / %lightTileSize%), ceil(%viewWidth% / %lightTileSize%), 1">
+        <compute width="ceil(%viewWidth% / %lightTileSize%)" height="ceil(%viewWidth% / %lightTileSize%)">
             <resources>
-                <lightList />
-                <depthBuffer />
+                <depthBuffer>float</depthBuffer>
             </resources>
 
             <unorderedaccess>
@@ -80,7 +79,6 @@
 
         <pixel>
             <resources>
-                <lightList />
                 <tileIndexList />
                 <albedoBuffer />
                 <normalBuffer />

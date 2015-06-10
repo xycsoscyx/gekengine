@@ -2161,7 +2161,7 @@ namespace Gek
 
                 Handle resourceHandle = Gek::InvalidHandle;
 
-                DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS;
+                DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
                 flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -2176,6 +2176,7 @@ namespace Gek
                     }
                 }
 
+                d3dShaderMacroList.push_back({ "_COMPUTE_PROGRAM", "1" });
                 d3dShaderMacroList.push_back({ nullptr, nullptr });
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
@@ -2214,7 +2215,7 @@ namespace Gek
 
                 Handle resourceHandle = Gek::InvalidHandle;
 
-                DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS;
+                DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
                 flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -2229,6 +2230,7 @@ namespace Gek
                     }
                 }
 
+                d3dShaderMacroList.push_back({ "_VERTEX_PROGRAM", "1" });
                 d3dShaderMacroList.push_back({ nullptr, nullptr });
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
@@ -2317,7 +2319,7 @@ namespace Gek
 
                 Handle resourceHandle = Gek::InvalidHandle;
 
-                DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS;
+                DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
                 flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -2332,6 +2334,7 @@ namespace Gek
                     }
                 }
 
+                d3dShaderMacroList.push_back({ "_GEOMETRY_PROGRAM", "1" });
                 d3dShaderMacroList.push_back({ nullptr, nullptr });
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
@@ -2370,7 +2373,7 @@ namespace Gek
 
                 Handle resourceHandle = Gek::InvalidHandle;
 
-                DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS;
+                DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
                 flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -2385,6 +2388,7 @@ namespace Gek
                     }
                 }
 
+                d3dShaderMacroList.push_back({ "_PIXEL_PROGRAM", "1" });
                 d3dShaderMacroList.push_back({ nullptr, nullptr });
 
                 CComPtr<ID3DBlob> d3dShaderBlob;

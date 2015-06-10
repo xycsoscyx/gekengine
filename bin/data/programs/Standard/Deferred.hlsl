@@ -1,17 +1,7 @@
-#include "GEKInputType"
-#include "GEKResources"
-#include "GEKMaterial"
+#include "GEKEngine"
 
 #include "..\GEKEngine.h"
 #include "..\GEKUtility.h"
-
-struct OutputPixel
-{
-    float4 albedoBuffer : SV_TARGET0;
-    float2 normalBuffer : SV_TARGET1;
-    float  depthBuffer  : SV_TARGET2;
-    float4 infoBuffer   : SV_TARGET3;
-};
 
 OutputPixel mainPixelProgram(in InputPixel inputPixel)
 {

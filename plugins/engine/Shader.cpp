@@ -109,19 +109,7 @@ namespace Gek
                         Texture3D,
                     };
 
-                    struct Map
-                    {
-                        CStringW name;
-                        MapType mapType;
-
-                        Map(LPCWSTR name, MapType mapType)
-                            : name(name)
-                            , mapType(mapType)
-                        {
-                        }
-                    };
-
-                    enum class PropertyType : UINT8
+                    enum class BindType : UINT8
                     {
                         Float = 0,
                         Float2,
@@ -131,14 +119,28 @@ namespace Gek
                         Boolean,
                     };
 
+                    struct Map
+                    {
+                        CStringW name;
+                        MapType mapType;
+                        BindType bindType;
+
+                        Map(LPCWSTR name, MapType mapType, BindType bindType)
+                            : name(name)
+                            , mapType(mapType)
+                            , bindType(bindType)
+                        {
+                        }
+                    };
+
                     struct Property
                     {
                         CStringW name;
-                        PropertyType propertyType;
+                        BindType bindType;
 
-                        Property(LPCWSTR name, PropertyType propertyType)
+                        Property(LPCWSTR name, BindType bindType)
                             : name(name)
-                            , propertyType(propertyType)
+                            , bindType(bindType)
                         {
                         }
                     };
@@ -162,6 +164,12 @@ namespace Gek
                         }
                     };
 
+                    struct Target
+                    {
+                        CStringW name;
+                        BindType type;
+                    };
+
                     struct Pass
                     {
                         PassMode mode;
@@ -172,7 +180,10 @@ namespace Gek
                         Handle renderStatesHandle;
                         Math::Float4 blendFactor;
                         Handle blendStatesHandle;
-                        std::vector<CStringW> targetList;
+                        std::vector<Target> targetList;
+                        UINT32 dispatchWidth;
+                        UINT32 dispatchHeight;
+                        UINT32 dispatchDepth;
                         Program computeProgram;
                         Program pixelProgram;
 
@@ -185,6 +196,9 @@ namespace Gek
                             , renderStatesHandle(InvalidHandle)
                             , blendFactor(1.0f)
                             , blendStatesHandle(InvalidHandle)
+                            , dispatchWidth(0)
+                            , dispatchHeight(0)
+                            , dispatchDepth(0)
                         {
                         }
                     };
@@ -210,15 +224,58 @@ namespace Gek
                         return MapType::Texture2D;
                     }
 
-                    static PropertyType getPropertyType(LPCWSTR propertyType)
+                    static LPCWSTR getMapType(MapType mapType)
                     {
-                        if (_wcsicmp(propertyType, L"Float") == 0) return PropertyType::Float;
-                        else if (_wcsicmp(propertyType, L"Float2") == 0) return PropertyType::Float2;
-                        else if (_wcsicmp(propertyType, L"Float3") == 0) return PropertyType::Float3;
-                        else if (_wcsicmp(propertyType, L"Float4") == 0) return PropertyType::Float4;
-                        else if (_wcsicmp(propertyType, L"UINT32") == 0) return PropertyType::UINT32;
-                        else if (_wcsicmp(propertyType, L"Boolean") == 0) return PropertyType::Boolean;
-                        return PropertyType::Float;
+                        switch (mapType)
+                        {
+                        case MapType::Texture1D:
+                            return L"Texture1D";
+
+                        case MapType::Texture2D:
+                            return L"Texture2D";
+
+                        case MapType::Texture3D:
+                            return L"Texture3D";
+                        };
+
+                        return L"Texture2D";
+                    }
+
+                    static BindType getBindType(LPCWSTR bindType)
+                    {
+                        if (_wcsicmp(bindType, L"Float") == 0) return BindType::Float;
+                        else if (_wcsicmp(bindType, L"Float2") == 0) return BindType::Float2;
+                        else if (_wcsicmp(bindType, L"Float3") == 0) return BindType::Float3;
+                        else if (_wcsicmp(bindType, L"Float4") == 0) return BindType::Float4;
+                        else if (_wcsicmp(bindType, L"UINT32") == 0) return BindType::UINT32;
+                        else if (_wcsicmp(bindType, L"Boolean") == 0) return BindType::Boolean;
+                        return BindType::Float4;
+                    }
+
+                    static LPCWSTR getBindType(BindType bindType)
+                    {
+                        switch (bindType)
+                        {
+                        case BindType::Float:
+                            return L"float";
+
+                        case BindType::Float2:
+                            return L"float2";
+
+                        case BindType::Float3:
+                            return L"float3";
+
+                        case BindType::Float4:
+                            return L"float4";
+
+                        case BindType::UINT32:
+                            return L"uint";
+
+                        case BindType::Boolean:
+                            return L"boolean";
+                        };
+
+                        return L"float4";
                     }
 
                     void loadStencilStates(Video3D::DepthStates::StencilStates &stencilStates, Gek::Xml::Node &xmlStencilNode)
@@ -503,9 +560,11 @@ namespace Gek
                                             while (xmlMapNode)
                                             {
                                                 CStringW name(xmlMapNode.getType());
-                                                CStringW type(xmlMapNode.getText());
-                                                mapList.push_back(Map(name, getMapType(type)));
-                                                resourceTypeList[name] = type;
+                                                MapType mapType = getMapType(xmlMapNode.getText());
+                                                BindType bindType = getBindType(xmlMapNode.getAttribute(L"bind"));
+                                                mapList.push_back(Map(name, mapType, bindType));
+
+                                                resourceTypeList[name].Format(L"%s<%s>", getMapType(mapType), getBindType(bindType));
 
                                                 xmlMapNode = xmlMapNode.nextSiblingElement();
                                             };
@@ -518,15 +577,15 @@ namespace Gek
                                             while (xmlPropertyNode)
                                             {
                                                 CStringW name(xmlPropertyNode.getType());
-                                                CStringW type(xmlPropertyNode.getText());
-                                                propertyList.push_back(Property(name, getPropertyType(type)));
+                                                BindType bindType = getBindType(xmlPropertyNode.getText());
+                                                propertyList.push_back(Property(name, bindType));
+
                                                 xmlPropertyNode = xmlPropertyNode.nextSiblingElement();
                                             };
                                         }
                                     }
 
                                     std::unordered_map<CStringA, CStringA> globalDefines;
-                                    globalDefines["lightListSize"] = "256";
 
                                     Gek::Xml::Node xmlDefinesNode = xmlShaderNode.firstChildElement(L"defines");
                                     if (xmlDefinesNode)
@@ -558,8 +617,9 @@ namespace Gek
                                         {
                                             CStringW name(xmlTargetNode.getType());
                                             Video3D::Format format = getFormat(xmlTargetNode.getText());
+                                            BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
                                             targetList[name] = video->createRenderTarget(width, height, format);
-                                            resourceTypeList[name] = L"Texture2D";
+                                            resourceTypeList[name].Format(L"Texture2D<%s>", getBindType(bindType));
 
                                             xmlTargetNode = xmlTargetNode.nextSiblingElement();
                                         };
@@ -646,60 +706,98 @@ namespace Gek
                                             }
                                         }
 
-                                        CStringA types("struct InputPixel\r\n{\r\n");
+                                        CStringA engineData(
+                                            "struct InputPixel                                          \r\n"\
+                                            "{                                                          \r\n");
                                         switch (pass.mode)
                                         {
                                         case PassMode::Simple:
                                         case PassMode::Lighting:
-                                            types += "    float4 position : SV_POSITION;\r\n"\
-                                                     "    float2 texcoord : TEXCOORD0;\r\n";
+                                            engineData +=
+                                                "    float4 position : SV_POSITION;                     \r\n"\
+                                                "    float2 texcoord : TEXCOORD0;                       \r\n";
                                             break;
 
                                         case PassMode::Forward:
-                                            types += "    float4 position     : SV_POSITION;\r\n"\
-                                                     "    float4 viewposition : TEXCOORD0;\r\n"\
-                                                     "    float2 texcoord     : TEXCOORD1;\r\n"\
-                                                     "    float3 viewnormal   : NORMAL0;\r\n"\
-                                                     "    float4 color        : COLOR0;\r\n"\
-                                                     "    bool   frontface    : SV_ISFRONTFACE;\r\n";
+                                            engineData +=
+                                                "    float4 position     : SV_POSITION;                 \r\n"\
+                                                "    float4 viewposition : TEXCOORD0;                   \r\n"\
+                                                "    float2 texcoord     : TEXCOORD1;                   \r\n"\
+                                                "    float3 viewnormal   : NORMAL0;                     \r\n"\
+                                                "    float4 color        : COLOR0;                      \r\n"\
+                                                "    bool   frontface    : SV_ISFRONTFACE;              \r\n";
                                             break;
                                         };
 
-                                        types += "};\r\n";
-
-                                        CStringA material("namespace Material\r\n{\r\n");
+                                        engineData +=
+                                            "};                                                         \r\n"\
+                                            "                                                           \r\n"\
+                                            "namespace Material                                         \r\n"\
+                                            "{                                                          \r\n"\
+                                            "    cbuffer Data : register(b1)                            \r\n"\
+                                            "    {                                                      \r\n";
                                         for (auto &propertyPair : propertyList)
                                         {
-                                            switch (propertyPair.propertyType)
+                                            engineData.AppendFormat("        %S %S;              \r\n", getBindType(propertyPair.bindType), propertyPair.name.GetString());
+                                        }
+
+                                        engineData +=
+                                            "    };                                                     \r\n"\
+                                            "};                                                         \r\n"\
+                                            "                                                           \r\n";
+                                        if (pass.mode == PassMode::Lighting)
+                                        {
+                                            engineData +=
+                                                "namespace Lighting                                     \r\n"\
+                                                "{                                                      \r\n"\
+                                                "    struct Point                                       \r\n"\
+                                                "    {                                                  \r\n"\
+                                                "        float3  position;                              \r\n"\
+                                                "        float   range;                                 \r\n"\
+                                                "        float   inverseRange;                          \r\n"\
+                                                "        float3  color;                                 \r\n"\
+                                                "    };                                                 \r\n"\
+                                                "                                                       \r\n"\
+                                                "    cbuffer Data : register(b2)                        \r\n"\
+                                                "    {                                                  \r\n"\
+                                                "        uint    count   : packoffset(c0);              \r\n"\
+                                                "        uint3   padding : packoffset(c0.y);            \r\n"\
+                                                "    };                                                 \r\n"\
+                                                "                                                       \r\n"\
+                                                "    StructuredBuffer<Point> list : register(t0);       \r\n"\
+                                                "    static const uint listSize = 256;                  \r\n"\
+                                                "};                                                     \r\n"\
+                                                "                                                       \r\n";
+                                        }
+
+                                        engineData +=
+                                            "struct OutputPixel                                         \r\n"\
+                                            "{                                                          \r\n";
+                                        if (xmlPassNode.hasChildElement(L"targets"))
+                                        {
+                                            Gek::Xml::Node xmlTargetsNode = xmlPassNode.firstChildElement(L"targets");
+                                            Gek::Xml::Node xmlTargetNode = xmlTargetsNode.firstChildElement();
+                                            while (xmlTargetNode)
                                             {
-                                            case PropertyType::Float:
-                                                material.AppendFormat("    float %S;\r\n", propertyPair.name.GetString());
-                                                break;
+                                                Target target;
+                                                target.name = xmlTargetNode.getType();
+                                                target.type = getBindType(xmlTargetNode.getText());
+                                                pass.targetList.push_back(target);
 
-                                            case PropertyType::Float2:
-                                                material.AppendFormat("    float2 %S;\r\n", propertyPair.name.GetString());
-                                                break;
+                                                engineData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType(target.type), target.name.GetString(), (pass.targetList.size() - 1));
 
-                                            case PropertyType::Float3:
-                                                material.AppendFormat("    float3 %S;\r\n", propertyPair.name.GetString());
-                                                break;
-
-                                            case PropertyType::Float4:
-                                                material.AppendFormat("    float4 %S;\r\n", propertyPair.name.GetString());
-                                                break;
-
-                                            case PropertyType::UINT32:
-                                                material.AppendFormat("    int %S;\r\n", propertyPair.name.GetString());
-                                                break;
-
-                                            case PropertyType::Boolean:
-                                                material.AppendFormat("    boolean %S;\r\n", propertyPair.name.GetString());
-                                                break;
+                                                xmlTargetNode = xmlTargetNode.nextSiblingElement();
                                             };
                                         }
 
-                                        material += "};\r\n";
-                                        pass.targetList = loadChildList(xmlPassNode, L"targets");
+                                        for (UINT32 index = 0; index < pass.targetList.size(); index++)
+                                        {
+                                            Target &target = pass.targetList[index];
+                                        }
+
+                                        engineData +=
+                                            "};                                                         \r\n"\
+                                            "                                                           \r\n";
                                         if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"depthstates"))
                                         {
                                             resultValue = loadDepthStates(pass, xmlPassNode.firstChildElement(L"depthstates"));
@@ -718,75 +816,72 @@ namespace Gek
                                         if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"compute"))
                                         {
                                             Gek::Xml::Node xmlComputeNode = xmlPassNode.firstChildElement(L"compute");
-                                            if (xmlComputeNode.hasAttribute(L"dispatch"))
+                                            pass.dispatchWidth = std::min(String::getUINT32(xmlComputeNode.getAttribute(L"width")), 1U);
+                                            pass.dispatchHeight = std::min(String::getUINT32(xmlComputeNode.getAttribute(L"height")), 1U);
+                                            pass.dispatchDepth = std::min(String::getUINT32(xmlComputeNode.getAttribute(L"depth")), 1U);
+
+                                            CStringA resourceData(
+                                                "namespace Resources                                    \r\n"\
+                                                "{                                                      \r\n");
+                                            pass.computeProgram.resourceList = loadChildList(xmlComputeNode, L"resources");
+                                            for (UINT32 index = 0; index < pass.computeProgram.resourceList.size(); index++)
                                             {
-                                                Math::Float3 dispatchSize = String::getFloat3(xmlComputeNode.getAttribute(L"dispatch"));
-
-                                                CStringA resources("namespace Resources\r\n{\r\n");
-                                                pass.computeProgram.resourceList = loadChildList(xmlComputeNode, L"resources");
-                                                for (auto &resource : pass.computeProgram.resourceList)
+                                                CStringW resource(pass.computeProgram.resourceList[index]);
+                                                auto resourceTypeIterator = resourceTypeList.find(resource);
+                                                if (resourceTypeIterator != resourceTypeList.end())
                                                 {
-                                                    auto resourceTypeIterator = resourceTypeList.find(resource);
-                                                    if (resourceTypeIterator != resourceTypeList.end())
-                                                    {
-                                                        resources.AppendFormat("    %S %S : register(t%d);\r\n", (*resourceTypeIterator).second.GetString(), resource.GetString(), 0);
-                                                    }
-                                                }
-
-                                                resources += "};\r\nnamespace UnorderedAccess\r\n{\r\n";
-                                                pass.computeProgram.unorderedAccessList = loadChildList(xmlComputeNode, L"unorderedaccess");
-                                                for (auto &unorderedAccess : pass.computeProgram.unorderedAccessList)
-                                                {
-                                                    auto resourceTypeIterator = resourceTypeList.find(unorderedAccess);
-                                                    if (resourceTypeIterator != resourceTypeList.end())
-                                                    {
-                                                        resources.AppendFormat("    RW%S %S : register(u%d);\r\n", (*resourceTypeIterator).second.GetString(), unorderedAccess.GetString(), 0);
-                                                    }
-                                                }
-
-                                                resources += "};\r\n";
-                                                if (xmlComputeNode.hasChildElement(L"program"))
-                                                {
-                                                    Gek::Xml::Node xmlProgramNode = xmlComputeNode.firstChildElement(L"program");
-                                                    if (xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
-                                                    {
-                                                        std::unordered_map<CStringA, CStringA> defines(globalDefines);
-
-                                                        CStringW programFileName = xmlProgramNode.getAttribute(L"source");
-                                                        CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
-                                                        pass.computeProgram.programHandle = video->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
-                                                        {
-                                                            if (_stricmp(fileName, "GEKInputType") == 0)
-                                                            {
-                                                                data.resize(types.GetLength());
-                                                                memcpy(data.data(), types.GetString(), data.size());
-                                                                return S_OK;
-                                                            }
-                                                            else if (_stricmp(fileName, "GEKResources") == 0)
-                                                            {
-                                                                data.resize(resources.GetLength());
-                                                                memcpy(data.data(), resources.GetString(), data.size());
-                                                                return S_OK;
-                                                            }
-                                                            else if (_stricmp(fileName, "GEKMaterial") == 0)
-                                                            {
-                                                                data.resize(material.GetLength());
-                                                                memcpy(data.data(), material.GetString(), data.size());
-                                                                return S_OK;
-                                                            }
-
-                                                            return E_FAIL;
-                                                        }, &defines);
-                                                    }
-                                                    else
-                                                    {
-                                                        resultValue = E_INVALIDARG;
-                                                    }
+                                                    resourceData.AppendFormat("    %S %S : register(t%d);\r\n", (*resourceTypeIterator).second.GetString(), resource.GetString(), (index + (pass.mode == PassMode::Lighting ? 1 : 0)));
                                                 }
                                             }
-                                            else
+
+                                            resourceData +=
+                                                "};                                                     \r\n"\
+                                                "                                                       \r\n"\
+                                                "namespace UnorderedAccess                              \r\n"\
+                                                "{                                                      \r\n";
+                                            pass.computeProgram.unorderedAccessList = loadChildList(xmlComputeNode, L"unorderedaccess");
+                                            for (UINT32 index = 0; index < pass.computeProgram.unorderedAccessList.size(); index++)
                                             {
-                                                resultValue = E_INVALIDARG;
+                                                CStringW unorderedAccess(pass.computeProgram.unorderedAccessList[index]);
+                                                auto resourceTypeIterator = resourceTypeList.find(unorderedAccess);
+                                                if (resourceTypeIterator != resourceTypeList.end())
+                                                {
+                                                    resourceData.AppendFormat("    RW%S %S : register(u%d);\r\n", (*resourceTypeIterator).second.GetString(), unorderedAccess.GetString(), index);
+                                                }
+                                            }
+
+                                            resourceData +=
+                                                "};                                                     \r\n"\
+                                                "                                                       \r\n";
+                                            if (xmlComputeNode.hasChildElement(L"program"))
+                                            {
+                                                Gek::Xml::Node xmlProgramNode = xmlComputeNode.firstChildElement(L"program");
+                                                if (xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
+                                                {
+                                                    std::unordered_map<CStringA, CStringA> defines(globalDefines);
+                                                    defines["dispatchWidth"] = String::setUINT32(pass.dispatchWidth);
+                                                    defines["dispatchHeight"] = String::setUINT32(pass.dispatchHeight);
+                                                    defines["dispatchDepth"] = String::setUINT32(pass.dispatchDepth);
+
+                                                    CStringA programData(engineData + resourceData);
+                                                    CStringW programFileName = xmlProgramNode.getAttribute(L"source");
+                                                    CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
+                                                    pass.computeProgram.programHandle = video->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
+                                                    {
+                                                        if (_stricmp(fileName, "GEKEngine") == 0)
+                                                        {
+                                                            data.resize(programData.GetLength());
+                                                            memcpy(data.data(), programData.GetString(), data.size());
+                                                            return S_OK;
+                                                        }
+
+                                                        return E_FAIL;
+                                                    }, &defines);
+                                                }
+                                                else
+                                                {
+                                                    resultValue = E_INVALIDARG;
+                                                }
                                             }
                                         }
 
@@ -794,7 +889,9 @@ namespace Gek
                                         {
                                             Gek::Xml::Node xmlPixelNode = xmlPassNode.firstChildElement(L"pixel");
 
-                                            CStringA resources("namespace Resources\r\n{\r\n");
+                                            CStringA resourceData(
+                                                "namespace Resources                                    \r\n"\
+                                                "{                                                      \r\n");
                                             pass.pixelProgram.resourceList = loadChildList(xmlPixelNode, L"resources");
                                             for (UINT32 index = 0; index < pass.pixelProgram.resourceList.size(); index++)
                                             {
@@ -802,50 +899,51 @@ namespace Gek
                                                 auto resourceTypeIterator = resourceTypeList.find(resource);
                                                 if (resourceTypeIterator != resourceTypeList.end())
                                                 {
-                                                    resources.AppendFormat("    %S %S : register(t%d);\r\n", (*resourceTypeIterator).second.GetString(), resource.GetString(), index);
+                                                    resourceData.AppendFormat("    %S %S : register(t%d);\r\n", (*resourceTypeIterator).second.GetString(), resource.GetString(), (index + (pass.mode == PassMode::Lighting ? 1 : 0)));
                                                 }
                                             }
 
-                                            resources += "};\r\nnamespace UnorderedAccess\r\n{\r\n";
+                                            resourceData +=
+                                                "};                                                     \r\n"\
+                                                "                                                       \r\n"\
+                                                "namespace UnorderedAccess                              \r\n"\
+                                                "{                                                      \r\n";
                                             pass.pixelProgram.unorderedAccessList = loadChildList(xmlPixelNode, L"unorderedaccess");
                                             for (UINT32 index = 0; index < pass.pixelProgram.unorderedAccessList.size(); index++)
                                             {
-                                                CStringW unorderedAccess(pass.pixelProgram.resourceList[index]);
+                                                CStringW unorderedAccess(pass.pixelProgram.unorderedAccessList[index]);
                                                 auto resourceTypeIterator = resourceTypeList.find(unorderedAccess);
                                                 if (resourceTypeIterator != resourceTypeList.end())
                                                 {
-                                                    resources.AppendFormat("    %S %S : register(u%d);\r\n", (*resourceTypeIterator).second.GetString(), unorderedAccess.GetString(), index);
+                                                    resourceData.AppendFormat("    %S %S : register(u%d);\r\n", (*resourceTypeIterator).second.GetString(), unorderedAccess.GetString(), index);
                                                 }
                                             }
 
-                                            resources += "};\r\n";
+                                            resourceData +=
+                                                "};                                                     \r\n"\
+                                                "                                                       \r\n";
                                             if (xmlPixelNode.hasChildElement(L"program"))
                                             {
                                                 Gek::Xml::Node xmlProgramNode = xmlPixelNode.firstChildElement(L"program");
                                                 if (xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
                                                 {
                                                     std::unordered_map<CStringA, CStringA> defines(globalDefines);
+                                                    if (pass.computeProgram.programHandle != InvalidHandle)
+                                                    {
+                                                        defines["dispatchWidth"] = String::setUINT32(pass.dispatchWidth);
+                                                        defines["dispatchHeight"] = String::setUINT32(pass.dispatchHeight);
+                                                        defines["dispatchDepth"] = String::setUINT32(pass.dispatchDepth);
+                                                    }
 
+                                                    CStringA programData(engineData + resourceData);
                                                     CStringW programFileName = xmlProgramNode.getAttribute(L"source");
                                                     CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
                                                     pass.pixelProgram.programHandle = video->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
                                                     {
-                                                        if (_stricmp(fileName, "GEKInputType") == 0)
+                                                        if (_stricmp(fileName, "GEKEngine") == 0)
                                                         {
-                                                            data.resize(types.GetLength());
-                                                            memcpy(data.data(), types.GetString(), data.size());
-                                                            return S_OK;
-                                                        }
-                                                        else if (_stricmp(fileName, "GEKResources") == 0)
-                                                        {
-                                                            data.resize(resources.GetLength());
-                                                            memcpy(data.data(), resources.GetString(), data.size());
-                                                            return S_OK;
-                                                        }
-                                                        else if (_stricmp(fileName, "GEKMaterial") == 0)
-                                                        {
-                                                            data.resize(material.GetLength());
-                                                            memcpy(data.data(), material.GetString(), data.size());
+                                                            data.resize(programData.GetLength());
+                                                            memcpy(data.data(), programData.GetString(), data.size());
                                                             return S_OK;
                                                         }
 

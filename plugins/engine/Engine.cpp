@@ -327,12 +327,12 @@ namespace Gek
                         double updateTime = timer.getUpdateTime();
                         if (consoleActive)
                         {
-                            consolePosition = min(1.0f, (consolePosition + float(updateTime * 4.0)));
+                            consolePosition = std::min(1.0f, (consolePosition + float(updateTime * 4.0)));
                             population->update();
                         }
                         else
                         {
-                            consolePosition = max(0.0f, (consolePosition - float(updateTime * 4.0)));
+                            consolePosition = std::max(0.0f, (consolePosition - float(updateTime * 4.0)));
 
                             POINT cursorPosition;
                             GetCursorPos(&cursorPosition);

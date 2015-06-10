@@ -1,6 +1,5 @@
 #pragma once
 
-#include <windows.h>
 #include <atlbase.h>
 #include <atlstr.h>
 #include <functional>
