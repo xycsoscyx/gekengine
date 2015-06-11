@@ -107,6 +107,7 @@ namespace Gek
                         Texture1D = 0,
                         Texture2D,
                         Texture3D,
+                        Buffer,
                     };
 
                     enum class BindType : UINT8
@@ -115,7 +116,14 @@ namespace Gek
                         Float2,
                         Float3,
                         Float4,
-                        UINT32,
+                        Half,
+                        Half2,
+                        Half3,
+                        Half4,
+                        UInt,
+                        UInt2,
+                        UInt3,
+                        UInt4,
                         Boolean,
                     };
 
@@ -164,12 +172,6 @@ namespace Gek
                         }
                     };
 
-                    struct Target
-                    {
-                        CStringW name;
-                        BindType type;
-                    };
-
                     struct Pass
                     {
                         PassMode mode;
@@ -180,7 +182,7 @@ namespace Gek
                         Handle renderStatesHandle;
                         Math::Float4 blendFactor;
                         Handle blendStatesHandle;
-                        std::vector<Target> targetList;
+                        std::vector<CStringW> targetList;
                         UINT32 dispatchWidth;
                         UINT32 dispatchHeight;
                         UINT32 dispatchDepth;
@@ -221,6 +223,7 @@ namespace Gek
                         if (_wcsicmp(mapType, L"Texture1D") == 0) return MapType::Texture1D;
                         else if (_wcsicmp(mapType, L"Texture2D") == 0) return MapType::Texture2D;
                         else if (_wcsicmp(mapType, L"Texture3D") == 0) return MapType::Texture3D;
+                        else if (_wcsicmp(mapType, L"Buffer") == 0) return MapType::Buffer;
                         return MapType::Texture2D;
                     }
 
@@ -228,14 +231,10 @@ namespace Gek
                     {
                         switch (mapType)
                         {
-                        case MapType::Texture1D:
-                            return L"Texture1D";
-
-                        case MapType::Texture2D:
-                            return L"Texture2D";
-
-                        case MapType::Texture3D:
-                            return L"Texture3D";
+                        case MapType::Texture1D:    return L"Texture1D";
+                        case MapType::Texture2D:    return L"Texture2D";
+                        case MapType::Texture3D:    return L"Texture3D";
+                        case MapType::Buffer:       return L"Buffer";
                         };
 
                         return L"Texture2D";
@@ -247,7 +246,14 @@ namespace Gek
                         else if (_wcsicmp(bindType, L"Float2") == 0) return BindType::Float2;
                         else if (_wcsicmp(bindType, L"Float3") == 0) return BindType::Float3;
                         else if (_wcsicmp(bindType, L"Float4") == 0) return BindType::Float4;
-                        else if (_wcsicmp(bindType, L"UINT32") == 0) return BindType::UINT32;
+                        else if (_wcsicmp(bindType, L"Half") == 0) return BindType::Half;
+                        else if (_wcsicmp(bindType, L"Half2") == 0) return BindType::Half2;
+                        else if (_wcsicmp(bindType, L"Half3") == 0) return BindType::Half3;
+                        else if (_wcsicmp(bindType, L"Half4") == 0) return BindType::Half4;
+                        else if (_wcsicmp(bindType, L"UInt") == 0) return BindType::UInt;
+                        else if (_wcsicmp(bindType, L"UInt2") == 0) return BindType::UInt2;
+                        else if (_wcsicmp(bindType, L"UInt3") == 0) return BindType::UInt3;
+                        else if (_wcsicmp(bindType, L"UInt4") == 0) return BindType::UInt4;
                         else if (_wcsicmp(bindType, L"Boolean") == 0) return BindType::Boolean;
                         return BindType::Float4;
                     }
@@ -256,23 +262,19 @@ namespace Gek
                     {
                         switch (bindType)
                         {
-                        case BindType::Float:
-                            return L"float";
-
-                        case BindType::Float2:
-                            return L"float2";
-
-                        case BindType::Float3:
-                            return L"float3";
-
-                        case BindType::Float4:
-                            return L"float4";
-
-                        case BindType::UINT32:
-                            return L"uint";
-
-                        case BindType::Boolean:
-                            return L"boolean";
+                        case BindType::Float:       return L"float";
+                        case BindType::Float2:      return L"float2";
+                        case BindType::Float3:      return L"float3";
+                        case BindType::Float4:      return L"float4";
+                        case BindType::Half:        return L"half";
+                        case BindType::Half2:       return L"half2";
+                        case BindType::Half3:       return L"half3";
+                        case BindType::Half4:       return L"half4";
+                        case BindType::UInt:        return L"uint";
+                        case BindType::UInt2:       return L"uint2";
+                        case BindType::UInt3:       return L"uint3";
+                        case BindType::UInt4:       return L"uint4";
+                        case BindType::Boolean:     return L"boolean";
                         };
 
                         return L"float4";
@@ -549,7 +551,7 @@ namespace Gek
                                         height = String::getUINT32(xmlShaderNode.getAttribute(L"height"));
                                     }
 
-                                    std::unordered_map<CStringW, CStringW> resourceTypeList;
+                                    std::unordered_map<CStringW, std::pair<MapType, BindType>> resourceList;
                                     Gek::Xml::Node xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
                                     if (xmlMaterialNode)
                                     {
@@ -564,7 +566,7 @@ namespace Gek
                                                 BindType bindType = getBindType(xmlMapNode.getAttribute(L"bind"));
                                                 mapList.push_back(Map(name, mapType, bindType));
 
-                                                resourceTypeList[name].Format(L"%s<%s>", getMapType(mapType), getBindType(bindType));
+                                                resourceList[name] = std::make_pair(mapType, bindType);
 
                                                 xmlMapNode = xmlMapNode.nextSiblingElement();
                                             };
@@ -619,7 +621,8 @@ namespace Gek
                                             Video3D::Format format = getFormat(xmlTargetNode.getText());
                                             BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
                                             targetList[name] = video->createRenderTarget(width, height, format);
-                                            resourceTypeList[name].Format(L"Texture2D<%s>", getBindType(bindType));
+
+                                            resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
                                             xmlTargetNode = xmlTargetNode.nextSiblingElement();
                                         };
@@ -640,43 +643,43 @@ namespace Gek
                                             case Video3D::Format::R_UINT8:
                                             case Video3D::Format::R_UINT16:
                                             case Video3D::Format::R_UINT32:
-                                                resourceTypeList[name] = "Buffer<uint>";
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt);
                                                 break;
 
                                             case Video3D::Format::RG_UINT8:
                                             case Video3D::Format::RG_UINT16:
                                             case Video3D::Format::RG_UINT32:
-                                                resourceTypeList[name] = "Buffer<uint2>";
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt2);
                                                 break;
 
                                             case Video3D::Format::RGB_UINT32:
-                                                resourceTypeList[name] = "Buffer<uint3>";
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt3);
                                                 break;
 
                                             case Video3D::Format::RGBA_UINT8:
                                             case Video3D::Format::BGRA_UINT8:
                                             case Video3D::Format::RGBA_UINT16:
                                             case Video3D::Format::RGBA_UINT32:
-                                                resourceTypeList[name] = "Buffer<uint4>";
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt4);
                                                 break;
 
                                             case Video3D::Format::R_HALF:
                                             case Video3D::Format::R_FLOAT:
-                                                resourceTypeList[name] = "Buffer<float>";
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float);
                                                 break;
 
                                             case Video3D::Format::RG_HALF:
                                             case Video3D::Format::RG_FLOAT:
-                                                resourceTypeList[name] = "Buffer<float2>";
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
                                                 break;
 
                                             case Video3D::Format::RGB_FLOAT:
-                                                resourceTypeList[name] = "Buffer<float3>";
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
                                                 break;
 
                                             case Video3D::Format::RGBA_HALF:
                                             case Video3D::Format::RGBA_FLOAT:
-                                                resourceTypeList[name] = "Buffer<float4>";
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
                                                 break;
                                             };
 
@@ -773,26 +776,15 @@ namespace Gek
                                         engineData +=
                                             "struct OutputPixel                                         \r\n"\
                                             "{                                                          \r\n";
-                                        if (xmlPassNode.hasChildElement(L"targets"))
-                                        {
-                                            Gek::Xml::Node xmlTargetsNode = xmlPassNode.firstChildElement(L"targets");
-                                            Gek::Xml::Node xmlTargetNode = xmlTargetsNode.firstChildElement();
-                                            while (xmlTargetNode)
-                                            {
-                                                Target target;
-                                                target.name = xmlTargetNode.getType();
-                                                target.type = getBindType(xmlTargetNode.getText());
-                                                pass.targetList.push_back(target);
-
-                                                engineData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType(target.type), target.name.GetString(), (pass.targetList.size() - 1));
-
-                                                xmlTargetNode = xmlTargetNode.nextSiblingElement();
-                                            };
-                                        }
-
+                                        pass.targetList = loadChildList(xmlPassNode, L"targets");
                                         for (UINT32 index = 0; index < pass.targetList.size(); index++)
                                         {
-                                            Target &target = pass.targetList[index];
+                                            CStringW resource(pass.targetList[index]);
+                                            auto resourceIterator = resourceList.find(resource);
+                                            if (resourceIterator != resourceList.end())
+                                            {
+                                                engineData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resource.GetString(), index);
+                                            }
                                         }
 
                                         engineData +=
@@ -827,10 +819,10 @@ namespace Gek
                                             for (UINT32 index = 0; index < pass.computeProgram.resourceList.size(); index++)
                                             {
                                                 CStringW resource(pass.computeProgram.resourceList[index]);
-                                                auto resourceTypeIterator = resourceTypeList.find(resource);
-                                                if (resourceTypeIterator != resourceTypeList.end())
+                                                auto resourceIterator = resourceList.find(resource);
+                                                if (resourceIterator != resourceList.end())
                                                 {
-                                                    resourceData.AppendFormat("    %S %S : register(t%d);\r\n", (*resourceTypeIterator).second.GetString(), resource.GetString(), (index + (pass.mode == PassMode::Lighting ? 1 : 0)));
+                                                    resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resource.GetString(), (index + (pass.mode == PassMode::Lighting ? 1 : 0)));
                                                 }
                                             }
 
@@ -843,10 +835,10 @@ namespace Gek
                                             for (UINT32 index = 0; index < pass.computeProgram.unorderedAccessList.size(); index++)
                                             {
                                                 CStringW unorderedAccess(pass.computeProgram.unorderedAccessList[index]);
-                                                auto resourceTypeIterator = resourceTypeList.find(unorderedAccess);
-                                                if (resourceTypeIterator != resourceTypeList.end())
+                                                auto resourceIterator = resourceList.find(unorderedAccess);
+                                                if (resourceIterator != resourceList.end())
                                                 {
-                                                    resourceData.AppendFormat("    RW%S %S : register(u%d);\r\n", (*resourceTypeIterator).second.GetString(), unorderedAccess.GetString(), index);
+                                                    resourceData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
                                                 }
                                             }
 
@@ -896,10 +888,10 @@ namespace Gek
                                             for (UINT32 index = 0; index < pass.pixelProgram.resourceList.size(); index++)
                                             {
                                                 CStringW resource(pass.pixelProgram.resourceList[index]);
-                                                auto resourceTypeIterator = resourceTypeList.find(resource);
-                                                if (resourceTypeIterator != resourceTypeList.end())
+                                                auto resourceIterator = resourceList.find(resource);
+                                                if (resourceIterator != resourceList.end())
                                                 {
-                                                    resourceData.AppendFormat("    %S %S : register(t%d);\r\n", (*resourceTypeIterator).second.GetString(), resource.GetString(), (index + (pass.mode == PassMode::Lighting ? 1 : 0)));
+                                                    resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resource.GetString(), (index + (pass.mode == PassMode::Lighting ? 1 : 0)));
                                                 }
                                             }
 
@@ -912,10 +904,10 @@ namespace Gek
                                             for (UINT32 index = 0; index < pass.pixelProgram.unorderedAccessList.size(); index++)
                                             {
                                                 CStringW unorderedAccess(pass.pixelProgram.unorderedAccessList[index]);
-                                                auto resourceTypeIterator = resourceTypeList.find(unorderedAccess);
-                                                if (resourceTypeIterator != resourceTypeList.end())
+                                                auto resourceIterator = resourceList.find(unorderedAccess);
+                                                if (resourceIterator != resourceList.end())
                                                 {
-                                                    resourceData.AppendFormat("    %S %S : register(u%d);\r\n", (*resourceTypeIterator).second.GetString(), unorderedAccess.GetString(), index);
+                                                    resourceData.AppendFormat("    %S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
                                                 }
                                             }
 
