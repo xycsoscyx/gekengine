@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GEK\Math\Vector3.h"
-#include "GEK\Utility\Plane.h"
+#include "GEK\Shape\Plane.h"
 
 namespace Gek
 {
@@ -32,21 +32,21 @@ namespace Gek
             {
             }
 
-            BaseSphere operator = (const BaseSphere<TYPE> &nSphere)
+            BaseSphere operator = (const BaseSphere<TYPE> &sphere)
             {
-                position = nBox.position;
-                radius = nBox.radius;
+                position = sphere.position;
+                radius = sphere.radius;
                 return (*this);
             }
 
-            int getPosition(const BasePlane<TYPE> &nPlane) const
+            int getPosition(const BasePlane<TYPE> &plane) const
             {
-                TYPE nDistance = nPlane.Distance(position);
-                if (nDistance < -radius)
+                TYPE distance = plane.getDistance(position);
+                if (distance < -radius)
                 {
                     return -1;
                 }
-                else if (nDistance > radius)
+                else if (distance > radius)
                 {
                     return 1;
                 }

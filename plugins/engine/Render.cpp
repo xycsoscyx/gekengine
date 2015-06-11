@@ -6,10 +6,13 @@
 #include "GEK\Engine\ComponentInterface.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Camera.h"
+#include "GEK\Components\Light.h"
+#include "GEK\Components\Color.h"
 #include "GEK\Context\BaseUser.h"
 #include "GEK\Context\BaseObservable.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
+#include "GEK\Shape\Sphere.h"
 #include <set>
 #include <concurrent_vector.h>
 #include <concurrent_unordered_map.h>
@@ -27,7 +30,7 @@ namespace Gek
                 , public Render::Interface
             {
             public:
-                struct GlobalConstantBuffer
+                struct CameraConstantBuffer
                 {
                     Math::Float2 fieldOfView;
                     float minimumDistance;
@@ -36,6 +39,20 @@ namespace Gek
                     Math::Float4x4 projectionMatrix;
                     Math::Float4x4 inverseProjectionMatrix;
                     Math::Float4x4 transformMatrix;
+                };
+
+                struct LightingConstantBuffer
+                {
+                    UINT32 count;
+                    UINT32 padding[3];
+                };
+
+                struct Light
+                {
+                    Math::Float3 position;
+                    float range;
+                    float inverseRange;
+                    Math::Float3 color;
                 };
 
             private:
@@ -47,12 +64,19 @@ namespace Gek
                 concurrency::concurrent_unordered_map<std::size_t, Handle> resourceHashList;
                 concurrency::concurrent_unordered_map<Handle, CComPtr<IUnknown>> resourceList;
 
+                Handle cameraConstantBufferHandle;
+                Handle lightingConstantBufferHandle;
+                Handle lightingListHandle;
+
             public:
                 System(void)
                     : initializerContext(nullptr)
                     , video(nullptr)
                     , population(nullptr)
                     , nextResourceHandle(InvalidHandle)
+                    , cameraConstantBufferHandle(InvalidHandle)
+                    , lightingConstantBufferHandle(InvalidHandle)
+                    , lightingListHandle(InvalidHandle)
                 {
                 }
 
@@ -113,6 +137,24 @@ namespace Gek
                         resultValue = BaseObservable::addObserver(population, getClass<Engine::Population::Observer>());
                     }
 
+                    if (SUCCEEDED(resultValue))
+                    {
+                        cameraConstantBufferHandle = video->createBuffer(sizeof(CameraConstantBuffer), 1, Video3D::BufferFlags::CONSTANT_BUFFER);
+                        resultValue = (cameraConstantBufferHandle == InvalidHandle ? E_FAIL : S_OK);
+                    }
+
+                    if (SUCCEEDED(resultValue))
+                    {
+                        lightingConstantBufferHandle = video->createBuffer(sizeof(LightingConstantBuffer), 1, Video3D::BufferFlags::CONSTANT_BUFFER);
+                        resultValue = (lightingConstantBufferHandle == InvalidHandle ? E_FAIL : S_OK);
+                    }
+
+                    if (SUCCEEDED(resultValue))
+                    {
+                        lightingListHandle = video->createBuffer(sizeof(Light), 256, Video3D::BufferFlags::DYNAMIC | Video3D::BufferFlags::STRUCTURED_BUFFER | Video3D::BufferFlags::RESOURCE);
+                        resultValue = (lightingListHandle == InvalidHandle ? E_FAIL : S_OK);
+                    }
+
                     return resultValue;
                 }
 
@@ -167,21 +209,38 @@ namespace Gek
                         auto &cameraComponent = population->getComponent<Components::Camera::Data>(cameraHandle, Components::Camera::identifier);
                         Math::Float4x4 cameraMatrix(transformComponent.rotation, transformComponent.position);
 
-                        GlobalConstantBuffer globalConstantBuffer;
+                        CameraConstantBuffer cameraConstantBuffer;
                         float displayAspectRatio = 1.0f;
                         float fieldOfView = Math::convertDegreesToRadians(cameraComponent.fieldOfView);
-                        globalConstantBuffer.fieldOfView.x = tan(fieldOfView * 0.5f);
-                        globalConstantBuffer.fieldOfView.y = (globalConstantBuffer.fieldOfView.x / displayAspectRatio);
-                        globalConstantBuffer.minimumDistance = cameraComponent.minimumDistance;
-                        globalConstantBuffer.maximumDistance = cameraComponent.maximumDistance;
-                        globalConstantBuffer.viewMatrix = cameraMatrix.getInverse();
-                        globalConstantBuffer.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraComponent.minimumDistance, cameraComponent.maximumDistance);
-                        globalConstantBuffer.inverseProjectionMatrix = globalConstantBuffer.projectionMatrix.getInverse();
-                        globalConstantBuffer.transformMatrix = (globalConstantBuffer.viewMatrix * globalConstantBuffer.projectionMatrix);
+                        cameraConstantBuffer.fieldOfView.x = tan(fieldOfView * 0.5f);
+                        cameraConstantBuffer.fieldOfView.y = (cameraConstantBuffer.fieldOfView.x / displayAspectRatio);
+                        cameraConstantBuffer.minimumDistance = cameraComponent.minimumDistance;
+                        cameraConstantBuffer.maximumDistance = cameraComponent.maximumDistance;
+                        cameraConstantBuffer.viewMatrix = cameraMatrix.getInverse();
+                        cameraConstantBuffer.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraComponent.minimumDistance, cameraComponent.maximumDistance);
+                        cameraConstantBuffer.inverseProjectionMatrix = cameraConstantBuffer.projectionMatrix.getInverse();
+                        cameraConstantBuffer.transformMatrix = (cameraConstantBuffer.viewMatrix * cameraConstantBuffer.projectionMatrix);
+                        video->updateBuffer(cameraConstantBufferHandle, &cameraConstantBuffer);
+
+                        Shape::Frustum viewFrustum(cameraConstantBuffer.transformMatrix, transformComponent.position);
+
+                        concurrency::concurrent_vector<Light> pointLightList;
+                        population->listEntities({ Components::Transform::identifier, Components::PointLight::identifier, Components::Color::identifier }, [&](Handle lightHandle) -> void
+                        {
+                            auto &transformComponent = population->getComponent<Components::Transform::Data>(lightHandle, Components::Transform::identifier);
+                            auto &pointLightComponent = population->getComponent<Components::PointLight::Data>(lightHandle, Components::PointLight::identifier);
+                            if (viewFrustum.isVisible(Shape::Sphere(transformComponent.position, pointLightComponent.radius)))
+                            {
+                                auto lightIterator = pointLightList.grow_by(1);
+                                (*lightIterator).position = (cameraConstantBuffer.viewMatrix * Math::Float4(transformComponent.position, 1.0f));
+                                (*lightIterator).range = pointLightComponent.radius;
+                                (*lightIterator).inverseRange = (1.0f / pointLightComponent.radius);
+                                (*lightIterator).color = population->getComponent<Components::Color::Data>(lightHandle, Components::Color::identifier);
+                            }
+                        }, true);
 
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderBegin, std::placeholders::_1, cameraHandle)));
 
-                        Shape::Frustum viewFrustum(globalConstantBuffer.transformMatrix, transformComponent.position);
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onCullScene, std::placeholders::_1, cameraHandle, viewFrustum)));
 
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onDrawScene, std::placeholders::_1, cameraHandle, video->getDefaultContext(), 0xFFFFFFFF)));
