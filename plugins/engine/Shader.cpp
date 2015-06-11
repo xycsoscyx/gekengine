@@ -534,7 +534,7 @@ namespace Gek
                                             CStringW value(xmlDefineNode.getText());
                                             defineList[name] = value;
 
-                                            globalDefines[LPCSTR(CW2A(name))].Format("%d", parseValue(value));
+                                            globalDefines[LPCSTR(CW2A(name))].Format("%f", parseValue(value));
 
                                             xmlDefineNode = xmlDefineNode.nextSiblingElement();
                                         };

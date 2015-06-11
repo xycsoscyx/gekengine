@@ -11,7 +11,7 @@ groupshared uint    tileLightCount;
 groupshared uint    tileLightList[Lighting::listSize];
 groupshared float4  tileFrustum[6];
 
-[numthreads(lightTileSize, lightTileSize, 1)]
+[numthreads(uint(lightTileSize), uint(lightTileSize), 1)]
 void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePosition : SV_GroupID, uint pixelIndex : SV_GroupIndex)
 {
     [branch]
