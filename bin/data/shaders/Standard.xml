@@ -13,6 +13,8 @@
 
     <defines>
         <lightTileSize>32</lightTileSize>
+        <dispatchWidth>ceil(%displayWidth% / %lightTileSize%)</dispatchWidth>
+		<dispatchHeight>ceil(%displayHeight% / %lightTileSize%)</dispatchHeight>
     </defines>
 
     <depth>D32</depth>
@@ -29,15 +31,15 @@
     </buffers>
 
     <pass mode="forward">
-		<depthstates>
-			<comparison>lessequal</comparison>
-			<writemask>all</writemask>
-			<clear>1</clear>
-		</depthstates>
+        <depthstates>
+            <comparison>lessequal</comparison>
+            <writemask>all</writemask>
+            <clear>1</clear>
+        </depthstates>
 
         <renderstates>
-			<cullmode>back</cullmode>
-		</renderstates>
+            <cullmode>back</cullmode>
+        </renderstates>
 
         <targets>
             <albedoBuffer />
@@ -46,47 +48,57 @@
             <infoBuffer />
         </targets>
 
-        <pixel>
-            <resources>
-				<albedo />
-				<normal />
-				<info />
-            </resources>
+        <resources>
+            <albedo />
+            <normal />
+            <info />
+        </resources>
 
-            <program source="Standard\Deferred" entry="mainPixelProgram" />
-        </pixel>
+        <program>
+            <entry>mainPixelProgram</entry>
+            <source>Standard\Deferred</source>
+        </program>
+    </pass>
+
+    <pass mode="lighting">
+        <resources>
+            <depthBuffer />
+        </resources>
+
+        <unorderedaccess>
+            <tileIndexList />
+        </unorderedaccess>
+
+        <program>
+			<compute>
+				<width>%dispatchWidth%</width>
+				<height>%dispatchHeight%</height>
+				<depth>1</depth>
+			</compute>
+            <entry>mainComputeProgram</entry>
+            <source>Standard\Lighting</source>
+        </program>
     </pass>
 
     <pass mode="lighting">
         <blendstates>
-			<target>
-				<color source="one" destination="one" operation="add" />
-				<alpha source="one" destination="one" operation="add" />
-			</target>
+            <target>
+                <color source="one" destination="one" operation="add" />
+                <alpha source="one" destination="one" operation="add" />
+            </target>
         </blendstates>
 
-        <compute width="ceil(%viewWidth% / %lightTileSize%)" height="ceil(%viewWidth% / %lightTileSize%)">
-            <resources>
-                <depthBuffer>float</depthBuffer>
-            </resources>
+        <resources>
+            <tileIndexList />
+            <albedoBuffer />
+            <normalBuffer />
+            <depthBuffer />
+            <infoBuffer />
+        </resources>
 
-            <unorderedaccess>
-                <tileIndexList />
-            </unorderedaccess>
-
-            <program source="Standard\Lighting" entry="mainComputeProgram" />
-        </compute>
-
-        <pixel>
-            <resources>
-                <tileIndexList />
-                <albedoBuffer />
-                <normalBuffer />
-                <depthBuffer />
-                <infoBuffer />
-            </resources>
-
-            <program source="Standard\Lighting" entry="mainPixelProgram" />
-        </pixel>
+        <program>
+            <entry>mainPixelProgram</entry>
+            <source>Standard\Lighting</source>
+        </program>
     </pass>
 </shader>
