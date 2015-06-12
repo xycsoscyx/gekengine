@@ -10,6 +10,11 @@
 #include <algorithm>
 #include <functional>
 
+#define REQUIRE_VOID_RETURN(CHECK)          do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (false)
+#define REQUIRE_RETURN(CHECK, RETURN)       do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (false)
+
+#define CLSID_IID_PPV_ARGS(CLASS, OBJECT)   __uuidof(CLASS), IID_PPV_ARGS(OBJECT)
+
 namespace Gek
 {
     class LoggingScope
@@ -21,26 +26,16 @@ namespace Gek
         UINT32 line;
 
     public:
-        LoggingScope(Context::Interface *context, LPCSTR file, LPCSTR function, UINT32 line)
-            : context(context)
-            , file(file)
-            , function(function)
-            , line(line)
-        {
-            context->logMessage(file, line, L"> Entering %S...", function);
-            context->logEnterScope();
-        }
-
-        ~LoggingScope(void)
-        {
-            context->logExitScope();
-            context->logMessage(file, line, L"< Leaving %S", function);
-        }
+        LoggingScope(Context::Interface *context, LPCSTR file, LPCSTR function, UINT32 line);
+        ~LoggingScope(void);
     };
 };
 
+extern HRESULT gekCheckResultBase(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
 #define gekLogScope(FUNCTION)                   Gek::LoggingScope scope##FUNCTION##(getContext(), __FILE__, FUNCTION, __LINE__);
+#define gekLogParameter(PARAMETER)              getContext()->logMessage(__FILE__, __LINE__, L"[input] %S: %d", #PARAMETER, UINT32(PARAMETER))
 #define gekLogMessage(FORMAT, ...)              getContext()->logMessage(__FILE__, __LINE__, FORMAT, __VA_ARGS__)
+#define gekCheckResult(FUNCTION)                gekCheckResultBase(getContext(), __FILE__, __LINE__, #FUNCTION, FUNCTION)
 
 namespace std
 {

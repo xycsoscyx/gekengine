@@ -7,9 +7,6 @@
 #pragma comment(lib, "dinput8.lib")
 #pragma comment(lib, "dxguid.lib")
 
-extern HRESULT gekCheckResult(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
-#define gekCheckResult(function) gekCheckResult(getContext(), __FILE__, __LINE__, #function, function)
-
 namespace Gek
 {
     namespace Input
@@ -391,6 +388,8 @@ namespace Gek
 
             void addJoystick(LPCDIDEVICEINSTANCE deviceObjectInstance)
             {
+                gekLogScope(__FUNCTION__);
+
                 CComPtr<JoystickDevice> joystick = new JoystickDevice();
                 if (joystick != nullptr)
                 {
@@ -424,6 +423,8 @@ namespace Gek
             // Interface
             STDMETHODIMP initialize(HWND window)
             {
+                gekLogScope(__FUNCTION__);
+
                 this->window = window;
                 HRESULT resultValue = E_FAIL;
                 gekCheckResult(resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr));

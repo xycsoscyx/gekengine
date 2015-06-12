@@ -65,12 +65,12 @@ namespace Gek
                                 if (!componentNameList.insert(std::make_pair(lowerCaseName, component->getIdentifier())).second)
                                 {
                                     componentList.erase(identifierIterator.first);
-                                    gekLogMessage(L"ERROR: Component Name Already Used: %s", lowerCaseName.GetString());
+                                    gekLogMessage(L"[error] Component Name Already Used: %s", lowerCaseName.GetString());
                                 }
                             }
                             else
                             {
-                                gekLogMessage(L"ERROR: Component ID Already Used: 0x%08X", component->getIdentifier());
+                                gekLogMessage(L"[error] Component ID Already Used: 0x%08X", component->getIdentifier());
                             }
                         }
 
@@ -176,19 +176,19 @@ namespace Gek
                             }
                             else
                             {
-                                gekLogMessage(L"ERROR: Unable to locate \"population\" node");
+                                gekLogMessage(L"[error] Unable to locate \"population\" node");
                                 resultValue = E_UNEXPECTED;
                             }
                         }
                         else
                         {
-                            gekLogMessage(L"ERROR: Unable to locate \"world\" node");
+                            gekLogMessage(L"[error] Unable to locate \"world\" node");
                             resultValue = E_UNEXPECTED;
                         }
                     }
                     else
                     {
-                        gekLogMessage(L"ERROR: Unable to load population");
+                        gekLogMessage(L"[error] Unable to load population");
                     }
 
                     BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onLoadEnd, std::placeholders::_1, resultValue)));

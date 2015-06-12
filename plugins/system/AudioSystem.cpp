@@ -12,9 +12,6 @@
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "audiere.lib")
 
-extern HRESULT gekCheckResult(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
-#define gekCheckResult(function) gekCheckResult(getContext(), __FILE__, __LINE__, #function, function)
-
 namespace Gek
 {
     namespace Audio
@@ -187,6 +184,8 @@ namespace Gek
             // Interface
             STDMETHODIMP initialize(HWND window)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(window, E_INVALIDARG);
 
                 HRESULT resultValue = E_FAIL;
@@ -274,6 +273,8 @@ namespace Gek
 
             STDMETHODIMP copyEffect(EffectInterface *source, EffectInterface **returnObject)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(source, E_INVALIDARG);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -305,6 +306,8 @@ namespace Gek
 
             STDMETHODIMP copySound(SoundInterface *source, SoundInterface **returnObject)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(source, E_INVALIDARG);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -340,6 +343,8 @@ namespace Gek
 
             HRESULT loadFromFile(LPCWSTR fileName, DWORD flags, GUID soundAlgorithm, IDirectSoundBuffer **returnObject)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
@@ -401,6 +406,8 @@ namespace Gek
 
             STDMETHODIMP loadEffect(LPCWSTR fileName, EffectInterface **returnObject)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
@@ -425,6 +432,8 @@ namespace Gek
 
             STDMETHODIMP loadSound(LPCWSTR fileName, SoundInterface **returnObject)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 

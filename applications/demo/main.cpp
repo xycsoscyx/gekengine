@@ -6,6 +6,7 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
+#include "GEK\Context\Common.h"
 #include "GEK\Context\Interface.h"
 #include "GEK\Engine\CoreInterface.h"
 #include <CommCtrl.h>
@@ -158,7 +159,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
     {
         resultValue = DefWindowProc(window, message, wParam, lParam);
     }
-    
+
     return resultValue;
 }
 
@@ -238,31 +239,48 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                     int centerPositionX = (windowed ? (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2) : 0);
                     int centerPositionY = (windowed ? (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2) : 0);
                     HWND window = CreateWindow(L"GEKvX_Engine_314159", L"GEKvX Engine", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
-                    if (SUCCEEDED(engineCore->initialize(window)))
+                    if (window)
                     {
-                        SetWindowLongPtr(window, GWLP_USERDATA, LONG((Gek::Engine::Core::Interface *)engineCore));
-                        ShowWindow(window, SW_SHOW);
-                        UpdateWindow(window);
-                        
-                        MSG message = { 0 };
-                        while (message.message != WM_QUIT)
+                        if (SUCCEEDED(engineCore->initialize(window)))
                         {
-                            while (PeekMessage(&message, nullptr, 0U, 0U, PM_REMOVE))
+                            SetWindowLongPtr(window, GWLP_USERDATA, LONG((Gek::Engine::Core::Interface *)engineCore));
+                            ShowWindow(window, SW_SHOW);
+                            UpdateWindow(window);
+
+                            context->logMessage(__FILE__, __LINE__, L"[entering] Game Loop");
+                            context->logEnterScope();
+
+                            MSG message = { 0 };
+                            while (message.message != WM_QUIT)
                             {
-                                TranslateMessage(&message);
-                                DispatchMessage(&message);
+                                while (PeekMessage(&message, nullptr, 0U, 0U, PM_REMOVE))
+                                {
+                                    TranslateMessage(&message);
+                                    DispatchMessage(&message);
+                                };
+
+                                if (!engineCore->update())
+                                {
+                                    break;
+                                }
                             };
 
-                            if (!engineCore->update())
-                            {
-                                break;
-                            }
-                        };
+                            context->logExitScope();
+                            context->logMessage(__FILE__, __LINE__, L"[entering] Game Loop");
 
-                        SetWindowLongPtr(window, GWLP_USERDATA, 0);
-                        engineCore.Release();
-                        DestroyWindow(window);
+                            SetWindowLongPtr(window, GWLP_USERDATA, 0);
+                            engineCore.Release();
+                            DestroyWindow(window);
+                        }
                     }
+                    else
+                    {
+                        context->logMessage(__FILE__, __LINE__, L"Unable to create window: %d", GetLastError());
+                    }
+                }
+                else
+                {
+                    context->logMessage(__FILE__, __LINE__, L"Unable to register window class: %d", GetLastError());
                 }
             }
         }

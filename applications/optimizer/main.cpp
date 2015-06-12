@@ -331,14 +331,14 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         }
         else
         {
-            throw OptimizerException(__LINE__, L"ERROR: Unable to Save Output: %S\r\n", fileNameOutput.GetString());
+            throw OptimizerException(__LINE__, L"[error] Unable to Save Output: %S\r\n", fileNameOutput.GetString());
         }
 
         aiReleaseImport(scene);
     }
     catch (OptimizerException exception)
     {
-        printf("ERROR: Error (%d): %S", exception.line, exception.message.GetString());
+        printf("[error] Error (%d): %S", exception.line, exception.message.GetString());
     }
     catch (...)
     {

@@ -3,11 +3,6 @@
 #include "GEK\Context\ObserverInterface.h"
 #include <functional>
 
-#define REQUIRE_VOID_RETURN(CHECK)          do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (false)
-#define REQUIRE_RETURN(CHECK, RETURN)       do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (false)
-
-#define CLSID_IID_PPV_ARGS(CLASS, OBJECT)   __uuidof(CLASS), IID_PPV_ARGS(OBJECT)
-
 namespace Gek
 {
     namespace Context
@@ -18,7 +13,7 @@ namespace Gek
             STDMETHOD_(void, initialize)        (THIS) PURE;
 
             STDMETHOD(createInstance)           (THIS_ REFCLSID className, REFIID interfaceType, LPVOID FAR *returnObject) PURE;
-            STDMETHOD(createEachType)           (THIS_ REFCLSID type, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance) PURE;
+            STDMETHOD(createEachType)           (THIS_ REFCLSID typeName, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance) PURE;
 
             STDMETHOD_(void, logMessage)        (THIS_ LPCSTR file, UINT32 line, LPCWSTR format, ...) PURE;
             STDMETHOD_(void, logEnterScope)     (THIS) PURE;

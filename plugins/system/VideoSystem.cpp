@@ -24,9 +24,6 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 
-extern HRESULT gekCheckResult(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
-#define gekCheckResult(function) gekCheckResult(getContext(), __FILE__, __LINE__, #function, function)
-
 namespace Gek
 {
     using namespace Video2D;
@@ -1070,8 +1067,11 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Device, d3dDevice)
             END_INTERFACE_LIST_USER
 
-            HRESULT getDefaultTargets(Format depthFormat)
+            HRESULT createDefaultTargets(Format depthFormat)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(depthFormat);
+
                 this->depthFormat = DXGI_FORMAT_UNKNOWN;
 
                 HRESULT resultValue = E_FAIL;
@@ -1166,6 +1166,13 @@ namespace Gek
             // Video3D::Interface
             STDMETHODIMP initialize(HWND window, bool windowed, UINT32 width, UINT32 height, Format depthFormat)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(window);
+                gekLogParameter(windowed);
+                gekLogParameter(width);
+                gekLogParameter(height);
+                gekLogParameter(depthFormat);
+
                 REQUIRE_RETURN(window, E_INVALIDARG);
                 REQUIRE_RETURN(width > 0, E_INVALIDARG);
                 REQUIRE_RETURN(height > 0, E_INVALIDARG);
@@ -1244,7 +1251,7 @@ namespace Gek
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = getDefaultTargets(depthFormat);
+                        resultValue = createDefaultTargets(depthFormat);
                     }
                 }
 
@@ -1266,6 +1273,12 @@ namespace Gek
 
             STDMETHODIMP resize(bool windowed, UINT32 width, UINT32 height, Format depthFormat)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(windowed);
+                gekLogParameter(width);
+                gekLogParameter(height);
+                gekLogParameter(depthFormat);
+
                 REQUIRE_RETURN(d3dDevice, E_FAIL);
                 REQUIRE_RETURN(d3dDeviceContext, E_FAIL);
                 REQUIRE_RETURN(dxSwapChain, E_FAIL);
@@ -1306,7 +1319,7 @@ namespace Gek
                     {
                         if (SUCCEEDED(gekCheckResult(resultValue = dxSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0))))
                         {
-                            resultValue = getDefaultTargets(depthFormat);
+                            resultValue = createDefaultTargets(depthFormat);
                             if (SUCCEEDED(resultValue))
                             {
                                 for (auto resource : resourceList)
@@ -1351,6 +1364,8 @@ namespace Gek
 
             STDMETHODIMP createDeferredContext(ContextInterface **returnObject)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(d3dDevice, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
@@ -1386,6 +1401,8 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createEvent(void)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 Handle resourceHandle = Gek::InvalidHandle;
@@ -1434,6 +1451,18 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createRenderStates(const Gek::Video3D::RenderStates &renderStates)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(renderStates.frontCounterClockwise);
+                gekLogParameter(renderStates.depthBias);
+                gekLogParameter(renderStates.depthBiasClamp);
+                gekLogParameter(renderStates.slopeScaledDepthBias);
+                gekLogParameter(renderStates.depthClipEnable);
+                gekLogParameter(renderStates.scissorEnable);
+                gekLogParameter(renderStates.multisampleEnable);
+                gekLogParameter(renderStates.antialiasedLineEnable);
+                gekLogParameter(renderStates.fillMode);
+                gekLogParameter(renderStates.cullMode);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 std::size_t hash = std::hash<UINT8>()(static_cast<UINT8>(renderStates.fillMode)) ^
@@ -1474,6 +1503,22 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createDepthStates(const Gek::Video3D::DepthStates &depthStates)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(depthStates.enable);
+                gekLogParameter(depthStates.comparisonFunction);
+                gekLogParameter(depthStates.stencilEnable);
+                gekLogParameter(depthStates.stencilReadMask);
+                gekLogParameter(depthStates.stencilWriteMask);
+                gekLogParameter(depthStates.stencilFrontStates.failOperation);
+                gekLogParameter(depthStates.stencilFrontStates.depthFailOperation);
+                gekLogParameter(depthStates.stencilFrontStates.passOperation);
+                gekLogParameter(depthStates.stencilFrontStates.comparisonFunction);
+                gekLogParameter(depthStates.stencilBackStates.failOperation);
+                gekLogParameter(depthStates.stencilBackStates.depthFailOperation);
+                gekLogParameter(depthStates.stencilBackStates.passOperation);
+                gekLogParameter(depthStates.stencilBackStates.comparisonFunction);
+                gekLogParameter(depthStates.writeMask);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 std::size_t hash = std::hash<bool>()(depthStates.enable) ^
@@ -1522,6 +1567,17 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createBlendStates(const Gek::Video3D::UnifiedBlendStates &blendStates)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(blendStates.alphaToCoverage);
+                gekLogParameter(blendStates.enable);
+                gekLogParameter(blendStates.colorSource);
+                gekLogParameter(blendStates.colorDestination);
+                gekLogParameter(blendStates.colorOperation);
+                gekLogParameter(blendStates.alphaSource);
+                gekLogParameter(blendStates.alphaDestination);
+                gekLogParameter(blendStates.alphaOperation);
+                gekLogParameter(blendStates.writeMask);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 std::size_t hash = std::hash<bool>()(blendStates.enable) ^
@@ -1579,6 +1635,8 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createBlendStates(const Gek::Video3D::IndependentBlendStates &blendStates)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 std::size_t hash = 0;
@@ -1641,6 +1699,21 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createSamplerStates(const Gek::Video3D::SamplerStates &samplerStates)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(samplerStates.addressModeU);
+                gekLogParameter(samplerStates.addressModeV);
+                gekLogParameter(samplerStates.addressModeW);
+                gekLogParameter(samplerStates.mipLevelBias);
+                gekLogParameter(samplerStates.maximumAnisotropy);
+                gekLogParameter(samplerStates.comparisonFunction);
+                gekLogParameter(samplerStates.borderColor.r);
+                gekLogParameter(samplerStates.borderColor.g);
+                gekLogParameter(samplerStates.borderColor.b);
+                gekLogParameter(samplerStates.borderColor.a);
+                gekLogParameter(samplerStates.minimumMipLevel);
+                gekLogParameter(samplerStates.maximumMipLevel);
+                gekLogParameter(samplerStates.filterMode);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 std::size_t hash = std::hash<UINT8>()(static_cast<UINT8>(samplerStates.addressModeU)) ^
@@ -1687,6 +1760,11 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createRenderTarget(UINT32 width, UINT32 height, Format format)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(width);
+                gekLogParameter(height);
+                gekLogParameter(format);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(width > 0, Gek::InvalidHandle);
                 REQUIRE_RETURN(height > 0, Gek::InvalidHandle);
@@ -1781,6 +1859,11 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createDepthTarget(UINT32 width, UINT32 height, Format format)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(width);
+                gekLogParameter(height);
+                gekLogParameter(format);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(width > 0, E_INVALIDARG);
                 REQUIRE_RETURN(height > 0, E_INVALIDARG);
@@ -1861,6 +1944,12 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createBuffer(UINT32 stride, UINT32 count, UINT32 flags, LPCVOID data)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(stride);
+                gekLogParameter(count);
+                gekLogParameter(flags);
+                gekLogParameter(data);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(stride > 0, Gek::InvalidHandle);
                 REQUIRE_RETURN(count > 0, Gek::InvalidHandle);
@@ -1987,6 +2076,12 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createBuffer(Format format, UINT32 count, UINT32 flags, LPCVOID data)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(format);
+                gekLogParameter(count);
+                gekLogParameter(flags);
+                gekLogParameter(data);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(count > 0, Gek::InvalidHandle);
 
@@ -2148,6 +2243,8 @@ namespace Gek
 
             Handle compileComputeProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 std::size_t hash = std::hash<LPCSTR>()(programScript) ^ std::hash<LPCSTR>()(entryFunction);
@@ -2194,7 +2291,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    gekLogMessage(L"Compute Error: %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                    gekLogMessage(L"[error] %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2202,6 +2299,8 @@ namespace Gek
 
             Handle compileVertexProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 std::size_t hash = std::hash<LPCSTR>()(programScript) ^ std::hash<LPCSTR>()(entryFunction);
@@ -2298,7 +2397,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    gekLogMessage(L"Vertex Error: %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                    gekLogMessage(L"[error] %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2306,6 +2405,8 @@ namespace Gek
 
             Handle compileGeometryProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 std::size_t hash = std::hash<LPCSTR>()(programScript) ^ std::hash<LPCSTR>()(entryFunction);
@@ -2352,7 +2453,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    gekLogMessage(L"Geometry Error: %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                    gekLogMessage(L"[error] %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2360,6 +2461,8 @@ namespace Gek
 
             Handle compilePixelProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 std::size_t hash = std::hash<LPCSTR>()(programScript) ^ std::hash<LPCSTR>()(entryFunction);
@@ -2406,7 +2509,7 @@ namespace Gek
                 }
                 else if (d3dCompilerErrors)
                 {
-                    gekLogMessage(L"Pixel Error: %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                    gekLogMessage(L"[error] %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
                 }
 
                 return resourceHandle;
@@ -2490,6 +2593,13 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createTexture(UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(width);
+                gekLogParameter(height);
+                gekLogParameter(depth);
+                gekLogParameter(format);
+                gekLogParameter(flags);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
                 Handle resourceHandle = Gek::InvalidHandle;
@@ -2591,6 +2701,9 @@ namespace Gek
 
             STDMETHODIMP_(Handle) loadTexture(LPCWSTR fileName, UINT32 flags)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter(flags);
+
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(fileName, Gek::InvalidHandle);
 
@@ -2741,6 +2854,8 @@ namespace Gek
             // Video2D::Interface
             STDMETHODIMP_(Handle) createBrush(const Math::Float4 &color)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);
 
                 Handle resourceHandle = Gek::InvalidHandle;
@@ -2758,6 +2873,8 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createBrush(const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);
 
                 Handle resourceHandle = Gek::InvalidHandle;
@@ -2780,6 +2897,8 @@ namespace Gek
 
             STDMETHODIMP_(Handle) createFont(LPCWSTR face, UINT32 weight, FontStyle style, float size)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(d2dDeviceContext, Gek::InvalidHandle);
                 REQUIRE_RETURN(face, Gek::InvalidHandle);
 
@@ -2798,6 +2917,8 @@ namespace Gek
 
             STDMETHODIMP_(Handle) loadBitmap(LPCWSTR fileName)
             {
+                gekLogScope(__FUNCTION__);
+
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 CComPtr<IWICImagingFactory> imagingFactory;
@@ -2836,6 +2957,8 @@ namespace Gek
 
             STDMETHODIMP createGeometry(GeometryInterface **returnObject)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(dwFactory, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
