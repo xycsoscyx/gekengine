@@ -50,8 +50,8 @@ namespace Gek
                 struct Light
                 {
                     Math::Float3 position;
+                    float distance;
                     float range;
-                    float inverseRange;
                     Math::Float3 color;
                 };
 
@@ -224,26 +224,45 @@ namespace Gek
 
                         Shape::Frustum viewFrustum(cameraConstantBuffer.transformMatrix, transformComponent.position);
 
-                        concurrency::concurrent_vector<Light> pointLightList;
+                        concurrency::concurrent_vector<Light> concurrentVisibleLightList;
                         population->listEntities({ Components::Transform::identifier, Components::PointLight::identifier, Components::Color::identifier }, [&](Handle lightHandle) -> void
                         {
                             auto &transformComponent = population->getComponent<Components::Transform::Data>(lightHandle, Components::Transform::identifier);
                             auto &pointLightComponent = population->getComponent<Components::PointLight::Data>(lightHandle, Components::PointLight::identifier);
                             if (viewFrustum.isVisible(Shape::Sphere(transformComponent.position, pointLightComponent.radius)))
                             {
-                                auto lightIterator = pointLightList.grow_by(1);
+                                auto lightIterator = concurrentVisibleLightList.grow_by(1);
                                 (*lightIterator).position = (cameraConstantBuffer.viewMatrix * Math::Float4(transformComponent.position, 1.0f));
+                                (*lightIterator).distance = (*lightIterator).position.getLengthSquared();
                                 (*lightIterator).range = pointLightComponent.radius;
-                                (*lightIterator).inverseRange = (1.0f / pointLightComponent.radius);
                                 (*lightIterator).color = population->getComponent<Components::Color::Data>(lightHandle, Components::Color::identifier);
                             }
                         }, true);
+
+                        concurrency::parallel_sort(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end(), [transformComponent](const Light &leftLight, const Light &rightLight) -> bool
+                        {
+                            return (leftLight.distance < rightLight.distance);
+                        });
+
+                        std::vector<Light> visibleLightList(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end());
+                        concurrentVisibleLightList.clear();
 
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderBegin, std::placeholders::_1, cameraHandle)));
 
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onCullScene, std::placeholders::_1, cameraHandle, viewFrustum)));
 
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onDrawScene, std::placeholders::_1, cameraHandle, video->getDefaultContext(), 0xFFFFFFFF)));
+
+                        for (UINT32 index = 0; index < visibleLightList.size(); index += 256)
+                        {
+                            Light *lightingListBuffer = nullptr;
+                            if (SUCCEEDED(video->mapBuffer(lightingListHandle, (LPVOID *)&lightingListBuffer)))
+                            {
+                                UINT32 instanceCount = std::min(256U, (visibleLightList.size() - index));
+                                memcpy(lightingListBuffer, visibleLightList.data(), (sizeof(Light) * instanceCount));
+                                video->unmapBuffer(lightingListHandle);
+                            }
+                        }
 
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderEnd, std::placeholders::_1, cameraHandle)));
                     });

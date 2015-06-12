@@ -179,7 +179,7 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 albedoTerm)
         float lightDistance = length(lightVector);
         float3 lightNormal = normalize(lightVector);
 
-        float attenuation = (1.0f - saturate(lightDistance * Lighting::list[lightIndex].inverseRange));
+        float attenuation = (1.0f - saturate(lightDistance / Lighting::list[lightIndex].range));
 
         [branch]
         if (attenuation > 0.0f)

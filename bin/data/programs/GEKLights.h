@@ -3,8 +3,8 @@ namespace Lighting
     struct Light
     {
         float3  position;
+        float   distance;
         float   range;
-        float   inverseRange;
         float3  color;
     };
 
