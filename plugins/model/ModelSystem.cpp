@@ -38,6 +38,13 @@ namespace Gek
             , public Engine::System::Interface
         {
         public:
+            struct Vertex
+            {
+                Math::Float3 position;
+                Math::Float2 texCoord;
+                Math::Float3 normal;
+            };
+
             struct Material
             {
                 UINT32 firstVertex;
@@ -51,15 +58,15 @@ namespace Gek
                 bool ready;
                 CStringW fileName;
                 Shape::AlignedBox alignedBox;
-                Handle positionHandle;
-                Handle texCoordHandle;
-                Handle normalHandle;
+                Handle vertexHandle;
                 Handle indexHandle;
                 std::unordered_map<Handle, Material> materialList;
 
                 Data(void)
                     : loaded(false)
                     , ready(false)
+                    , vertexHandle(InvalidHandle)
+                    , indexHandle(InvalidHandle)
                 {
                 }
             };
@@ -92,7 +99,6 @@ namespace Gek
             concurrency::concurrent_unordered_map<Handle, Data> dataList;
             concurrency::concurrent_unordered_map<CStringW, Handle> dataNameList;
             concurrency::concurrent_unordered_map<Handle, Handle> dataEntityList;
-            concurrency::concurrent_unordered_map<Handle, std::vector<Instance>> visibleList;
 
         public:
             System(void)
@@ -120,6 +126,8 @@ namespace Gek
 
             HRESULT preLoadData(LPCWSTR fileName, Data &data)
             {
+                gekLogScope(__FUNCTION__);
+
                 static const UINT32 nPreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shape::AlignedBox));
 
                 std::vector<UINT8> fileData;
@@ -155,6 +163,8 @@ namespace Gek
                     return S_OK;
                 }
 
+                gekLogScope(__FUNCTION__);
+
                 data.loaded = true;
                 std::vector<UINT8> fileData;
                 HRESULT resultValue = Gek::FileSystem::load(data.fileName, fileData);
@@ -179,6 +189,7 @@ namespace Gek
                         UINT32 materialCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
+                        resultValue = S_OK;
                         for (UINT32 materialIndex = 0; materialIndex < materialCount; ++materialIndex)
                         {
                             CStringA materialNameUtf8(rawFileData);
@@ -206,32 +217,17 @@ namespace Gek
                             UINT32 vertexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            if (SUCCEEDED(resultValue))
-                            {
-                                data.positionHandle = video->createBuffer(sizeof(Math::Float3), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
-                                rawFileData += (sizeof(Math::Float3) * vertexCount);
-                            }
+                            data.vertexHandle = video->createBuffer(sizeof(Vertex), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                            rawFileData += (sizeof(Vertex) * vertexCount);
+                        }
 
-                            if (SUCCEEDED(resultValue))
-                            {
-                                data.texCoordHandle = video->createBuffer(sizeof(Math::Float2), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
-                                rawFileData += (sizeof(Math::Float2) * vertexCount);
-                            }
+                        if (SUCCEEDED(resultValue))
+                        {
+                            UINT32 indexCount = *((UINT32 *)rawFileData);
+                            rawFileData += sizeof(UINT32);
 
-                            if (SUCCEEDED(resultValue))
-                            {
-                                data.normalHandle = video->createBuffer(sizeof(Math::Float3), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
-                                rawFileData += (sizeof(Math::Float3) * vertexCount);
-                            }
-
-                            if (SUCCEEDED(resultValue))
-                            {
-                                UINT32 indexCount = *((UINT32 *)rawFileData);
-                                rawFileData += sizeof(UINT32);
-
-                                data.indexHandle = video->createBuffer(sizeof(UINT16), indexCount, Video3D::BufferFlags::INDEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
-                                rawFileData += (sizeof(UINT16) * indexCount);
-                            }
+                            data.indexHandle = video->createBuffer(sizeof(UINT16), indexCount, Video3D::BufferFlags::INDEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                            rawFileData += (sizeof(UINT16) * indexCount);
                         }
                     }
                 }
@@ -265,6 +261,8 @@ namespace Gek
             // System::Interface
             STDMETHODIMP initialize(IUnknown *initializerContext)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
                 HRESULT resultValue = E_FAIL;
@@ -311,9 +309,7 @@ namespace Gek
 
                 for (auto &data : dataList)
                 {
-                    video->freeResource(data.second.positionHandle);
-                    video->freeResource(data.second.texCoordHandle);
-                    video->freeResource(data.second.normalHandle);
+                    video->freeResource(data.second.vertexHandle);
                     video->freeResource(data.second.indexHandle);
                 }
 
@@ -353,7 +349,7 @@ namespace Gek
             {
                 REQUIRE_VOID_RETURN(population);
 
-                visibleList.clear();
+                concurrency::concurrent_unordered_map<Handle, std::vector<Instance>> visibleList;
                 for (auto dataEntity : dataEntityList)
                 {
                     auto dataIterator = dataList.find(dataEntity.second);
@@ -394,69 +390,15 @@ namespace Gek
                         {
                             return (leftInstance.distance < rightInstance.distance);
                         });
-                    }
-                    else
-                    {
-                        instancePair.second.clear();
-                    }
-                }
-            }
-            /*
-            STDMETHODIMP_(void) onDrawScene(Handle cameraHandle, Gek::Video3D::ContextInterface *videoContext, UINT32 vertexAttributes)
-            {
-                REQUIRE_VOID_RETURN(video);
-                REQUIRE_VOID_RETURN(videoContext);
 
-                if (!(vertexAttributes & Engine::Render::Attribute::Position) &&
-                    !(vertexAttributes & Engine::Render::Attribute::TexCoord) &&
-                    !(vertexAttributes & Engine::Render::Attribute::Normal))
-                {
-                    return;
-                }
-
-                render->enablePlugin(pluginHandle);
-                videoContext->getVertexSystem()->setResource(instanceHandle, 0);
-                videoContext->setPrimitiveType(Video3D::PrimitiveType::TRIANGLELIST);
-                for (auto instancePair : visibleList)
-                {
-                    Data &data = dataList[instancePair.first];
-                    auto &instanceList = instancePair.second;
-
-                    if (vertexAttributes & Engine::Render::Attribute::Position)
-                    {
-                        videoContext->setVertexBuffer(data.positionHandle, 0, 0);
-                    }
-
-                    if (vertexAttributes & Engine::Render::Attribute::TexCoord)
-                    {
-                        videoContext->setVertexBuffer(data.texCoordHandle, 1, 0);
-                    }
-
-                    if (vertexAttributes & Engine::Render::Attribute::Normal)
-                    {
-                        videoContext->setVertexBuffer(data.normalHandle, 2, 0);
-                    }
-
-                    videoContext->setIndexBuffer(data.indexHandle, 0);
-                    for (UINT32 firstInstance = 0; firstInstance < instanceList.size(); firstInstance += MaxInstanceCount)
-                    {
-                        Instance *instanceBufferList = nullptr;
-                        if (SUCCEEDED(video->mapBuffer(instanceHandle, (LPVOID *)&instanceBufferList)))
+                        for (auto &material : data.materialList)
                         {
-                            UINT32 instanceCount = std::min(MaxInstanceCount, (instanceList.size() - firstInstance));
-                            memcpy(instanceBufferList, instanceList.data(), (sizeof(Instance) * instanceCount));
-                            video->unmapBuffer(instanceHandle);
-
-                            for(auto &material : data.materialList)
-                            {
-                                render->enableMaterial(material.first);
-                                videoContext->drawInstancedIndexedPrimitive(material.second.indexCount, instanceCount, material.second.firstIndex, material.second.firstVertex, 0);
-                            }
+                            render->drawInstancedIndexedPrimitive(pluginHandle, material.first, data.vertexHandle, data.indexHandle, instanceList.data(), sizeof(Instance), instanceList.size(), material.second.indexCount, material.second.firstIndex, material.second.firstVertex);
                         }
                     }
                 }
             }
-            */
+
             STDMETHODIMP_(void) onRenderEnd(Handle cameraHandle)
             {
             }

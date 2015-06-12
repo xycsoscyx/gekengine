@@ -16,12 +16,17 @@
 #include <assimp/postprocess.h>
 #pragma comment(lib, "assimp.lib")
 
+struct Vertex
+{
+    Gek::Math::Float3 position;
+    Gek::Math::Float2 texCoord;
+    Gek::Math::Float3 normal;
+};
+
 struct Model
 {
     std::vector<UINT16> indexList;
-    std::vector<Gek::Math::Float3> positionList;
-    std::vector<Gek::Math::Float2> texCoordList;
-    std::vector<Gek::Math::Float3> normalList;
+    std::vector<Vertex> vertexList;
 };
 
 class OptimizerException
@@ -121,34 +126,32 @@ void GetMeshes(const aiScene *scene, const aiNode *node, const Gek::Math::Float4
 
                 for (UINT32 vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
                 {
+                    Vertex vertex;
                     Gek::Math::Float3 position(mesh->mVertices[vertexIndex].x,
                                      mesh->mVertices[vertexIndex].y,
                                      mesh->mVertices[vertexIndex].z);
-                    position = (transformation * Gek::Math::Float4(position, 1.0f));
+                    vertex.position = (transformation * Gek::Math::Float4(position, 1.0f));
                     if (flipAxis)
                     {
-                        position *= Gek::Math::Float3(-1.0f, 1.0f, -1.0f);
+                        vertex.position *= Gek::Math::Float3(-1.0f, 1.0f, -1.0f);
                     }
 
-                    model.positionList.push_back(position);
-                    alignedBox.Extend(position);
+                    alignedBox.Extend(vertex.position);
 
-                    Gek::Math::Float2 texCoord;
-                    texCoord.x = mesh->mTextureCoords[0][vertexIndex].x;
-                    texCoord.y = mesh->mTextureCoords[0][vertexIndex].y;
-                    model.texCoordList.push_back(texCoord);
+                    vertex.texCoord.x = mesh->mTextureCoords[0][vertexIndex].x;
+                    vertex.texCoord.y = mesh->mTextureCoords[0][vertexIndex].y;
 
                     Gek::Math::Float3 normal;
-                    normal.x = mesh->mNormals[vertexIndex].x;
-                    normal.y = mesh->mNormals[vertexIndex].y;
-                    normal.z = mesh->mNormals[vertexIndex].z;
-                    normal = (inverseRotation * normal);
+                    vertex.normal.x = mesh->mNormals[vertexIndex].x;
+                    vertex.normal.y = mesh->mNormals[vertexIndex].y;
+                    vertex.normal.z = mesh->mNormals[vertexIndex].z;
+                    vertex.normal = (inverseRotation * normal);
                     if (flipAxis)
                     {
-                        normal *= Gek::Math::Float3(-1.0f, 1.0f, -1.0f);
+                        vertex.normal *= Gek::Math::Float3(-1.0f, 1.0f, -1.0f);
                     }
 
-                    model.normalList.push_back(normal.getNormal());
+                    model.vertexList.push_back(vertex);
                 }
 
                 if (!material.IsEmpty())
@@ -251,12 +254,10 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             Model &materialModel = materialModelList[model.first];
             for (auto &nIndex : model.second.indexList)
             {
-                materialModel.indexList.push_back(UINT16(nIndex + materialModel.positionList.size()));
+                materialModel.indexList.push_back(UINT16(nIndex + materialModel.vertexList.size()));
             }
 
-            materialModel.positionList.insert(materialModel.positionList.end(), model.second.positionList.begin(), model.second.positionList.end());
-            materialModel.texCoordList.insert(materialModel.texCoordList.end(), model.second.texCoordList.begin(), model.second.texCoordList.end());
-            materialModel.normalList.insert(materialModel.normalList.end(), model.second.normalList.begin(), model.second.normalList.end());
+            materialModel.vertexList.insert(materialModel.vertexList.end(), model.second.vertexList.begin(), model.second.vertexList.end());
         }
 
         FILE *file = nullptr;
@@ -297,28 +298,24 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                 fwrite(material.GetString(), (material.GetLength() + 1), 1, file);
 
                 printf("-< Material: %s\r\n", material.GetString());
-                printf("--< Num. Vertices: %d\r\n", materialModel.second.positionList.size());
+                printf("--< Num. Vertices: %d\r\n", materialModel.second.vertexList.size());
                 printf("--< Num. Indices: %d\r\n", materialModel.second.indexList.size());
 
-                UINT32 firstVertex = finalModelData.positionList.size();
+                UINT32 firstVertex = finalModelData.vertexList.size();
                 UINT32 firstIndex = finalModelData.indexList.size();
                 UINT32 indexCount = materialModel.second.indexList.size();
                 fwrite(&firstVertex, sizeof(UINT32), 1, file);
                 fwrite(&firstIndex, sizeof(UINT32), 1, file);
                 fwrite(&indexCount, sizeof(UINT32), 1, file);
 
-                finalModelData.positionList.insert(finalModelData.positionList.end(), materialModel.second.positionList.begin(), materialModel.second.positionList.end());
-                finalModelData.texCoordList.insert(finalModelData.texCoordList.end(), materialModel.second.texCoordList.begin(), materialModel.second.texCoordList.end());
-                finalModelData.normalList.insert(finalModelData.normalList.end(), materialModel.second.normalList.begin(), materialModel.second.normalList.end());
+                finalModelData.vertexList.insert(finalModelData.vertexList.end(), materialModel.second.vertexList.begin(), materialModel.second.vertexList.end());
                 finalModelData.indexList.insert(finalModelData.indexList.end(), materialModel.second.indexList.begin(), materialModel.second.indexList.end());
             }
 
-            UINT32 vertexCount = finalModelData.positionList.size();
+            UINT32 vertexCount = finalModelData.vertexList.size();
             fwrite(&vertexCount, sizeof(UINT32), 1, file);
-            printf("-< Num. Total Vertices: %d\r\n", finalModelData.positionList.size());
-            fwrite(finalModelData.positionList.data(), sizeof(Gek::Math::Float3), finalModelData.positionList.size(), file);
-            fwrite(finalModelData.texCoordList.data(), sizeof(Gek::Math::Float2), finalModelData.texCoordList.size(), file);
-            fwrite(finalModelData.normalList.data(), sizeof(Gek::Math::Float3), finalModelData.normalList.size(), file);
+            printf("-< Num. Total Vertices: %d\r\n", finalModelData.vertexList.size());
+            fwrite(finalModelData.vertexList.data(), sizeof(Vertex), finalModelData.vertexList.size(), file);
 
             UINT32 indexCount = finalModelData.indexList.size();
             fwrite(&indexCount, sizeof(UINT32), 1, file);

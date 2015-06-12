@@ -173,6 +173,22 @@ namespace Gek
                     return loadResource<Material::Interface>(fileName, __uuidof(Material::Class));
                 }
 
+                STDMETHODIMP_(void) drawPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, Handle indexHandle, UINT32 vertexCount, UINT32 firstVertex)
+                {
+                }
+
+                STDMETHODIMP_(void) drawIndexedPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, Handle indexHandle, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
+                {
+                }
+
+                STDMETHODIMP_(void) drawInstancedPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, Handle indexHandle, LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, UINT32 vertexCount, UINT32 firstVertex)
+                {
+                }
+
+                STDMETHODIMP_(void) drawInstancedIndexedPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, Handle indexHandle, LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
+                {
+                }
+
                 // Population::Observer
                 STDMETHODIMP_(void) onLoadBegin(void)
                 {
@@ -247,12 +263,6 @@ namespace Gek
                         std::vector<Light> visibleLightList(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end());
                         concurrentVisibleLightList.clear();
 
-                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderBegin, std::placeholders::_1, cameraHandle)));
-
-                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onCullScene, std::placeholders::_1, cameraHandle, viewFrustum)));
-
-                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onDrawScene, std::placeholders::_1, cameraHandle, video->getDefaultContext(), 0xFFFFFFFF)));
-
                         for (UINT32 index = 0; index < visibleLightList.size(); index += 256)
                         {
                             Light *lightingListBuffer = nullptr;
@@ -263,6 +273,10 @@ namespace Gek
                                 video->unmapBuffer(lightingListHandle);
                             }
                         }
+
+                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderBegin, std::placeholders::_1, cameraHandle)));
+
+                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onCullScene, std::placeholders::_1, cameraHandle, viewFrustum)));
 
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderEnd, std::placeholders::_1, cameraHandle)));
                     });

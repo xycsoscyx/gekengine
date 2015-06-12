@@ -220,6 +220,13 @@ namespace Gek
                 }
             };
 
+            struct Vertex
+            {
+                Math::Float3 position;
+                Math::Float2 texCoord;
+                Math::Float3 normal;
+            };
+
             struct Material
             {
                 UINT32 firstVertex;
@@ -317,6 +324,8 @@ namespace Gek
                 }
                 else
                 {
+                    gekLogScope(__FUNCTION__);
+
                     surfaceIndexList[fileName] = -1;
 
                     Gek::Xml::Document xmlDocument;
@@ -383,6 +392,8 @@ namespace Gek
                 }
                 else
                 {
+                    gekLogScope(__FUNCTION__);
+
                     collisionList[shape].reset();
                     if (dynamicBodyComponet.shape.CompareNoCase(L"*cube") == 0)
                     {
@@ -445,6 +456,8 @@ namespace Gek
                     }
                     else
                     {
+                        gekLogScope(__FUNCTION__);
+
                         collisionList[dynamicBodyComponet.shape].reset();
 
                         std::vector<UINT8> fileData;
@@ -489,10 +502,8 @@ namespace Gek
                                 UINT32 vertexCount = *((UINT32 *)rawFileData);
                                 rawFileData += sizeof(UINT32);
 
-                                Math::Float3 *vertexList = (Math::Float3 *)rawFileData;
-                                rawFileData += (sizeof(Math::Float3) * vertexCount);
-                                rawFileData += (sizeof(Math::Float2) * vertexCount);
-                                rawFileData += (sizeof(Math::Float3) * vertexCount);
+                                Vertex *vertexList = (Vertex *)rawFileData;
+                                rawFileData += (sizeof(Vertex) * vertexCount);
 
                                 UINT32 indexCount = *((UINT32 *)rawFileData);
                                 rawFileData += sizeof(UINT32);
@@ -504,7 +515,7 @@ namespace Gek
                                     std::vector<Math::Float3> pointCloudList(indexCount);
                                     for (UINT32 index = 0; index < indexCount; ++index)
                                     {
-                                        pointCloudList[index] = vertexList[indexList[index]];
+                                        pointCloudList[index] = vertexList[indexList[index]].position;
                                     }
 
                                     newtonCollision = new dNewtonCollisionConvexHull(this, pointCloudList.size(), pointCloudList[0].xyz, sizeof(Math::Float3), 0.025f, 1);
@@ -523,9 +534,9 @@ namespace Gek
                                             {
                                                 Math::Float3 face[3] =
                                                 {
-                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 0]],
-                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 1]],
-                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 2]],
+                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 0]].position,
+                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 1]].position,
+                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 2]].position,
                                                 };
 
                                                 newtonCollisionMesh->AddFace(3, face[0].xyz, sizeof(Math::Float3), surfaceIndex);
@@ -552,6 +563,8 @@ namespace Gek
             // System::Interface
             STDMETHODIMP initialize(IUnknown *initializerContext)
             {
+                gekLogScope(__FUNCTION__);
+
                 REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
                 HRESULT resultValue = E_FAIL;
