@@ -173,20 +173,76 @@ namespace Gek
                     return loadResource<Material::Interface>(fileName, __uuidof(Material::Class));
                 }
 
-                STDMETHODIMP_(void) drawPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, Handle indexHandle, UINT32 vertexCount, UINT32 firstVertex)
+                struct DrawCommand
                 {
+                    LPCVOID instanceData;
+                    UINT32 instanceStride;
+                    UINT32 instanceCount;
+                    Handle vertexHandle;
+                    UINT32 vertexCount;
+                    UINT32 firstVertex;
+                    Handle indexHandle;
+                    UINT32 indexCount;
+                    UINT32 firstIndex;
+
+                    DrawCommand(Handle vertexHandle, UINT32 vertexCount, UINT32 firstVertex)
+                        : vertexHandle(vertexHandle)
+                        , vertexCount(vertexCount)
+                        , firstVertex(firstVertex)
+                    {
+                    }
+                    
+                    DrawCommand(Handle vertexHandle, UINT32 firstVertex, Handle indexHandle, UINT32 indexCount, UINT32 firstIndex)
+                        : vertexHandle(vertexHandle)
+                        , firstVertex(firstVertex)
+                        , indexHandle(indexHandle)
+                        , indexCount(indexCount)
+                        , firstIndex(firstIndex)
+                    {
+                    }
+                    
+                    DrawCommand(LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Handle vertexHandle, UINT32 vertexCount, UINT32 firstVertex)
+                        : instanceData(instanceData)
+                        , instanceStride(instanceStride)
+                        , instanceCount(instanceCount)
+                        , vertexHandle(vertexHandle)
+                        , vertexCount(vertexCount)
+                        , firstVertex(firstVertex)
+                    {
+                    }
+                    
+                    DrawCommand(LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Handle vertexHandle, UINT32 firstVertex, Handle indexHandle, UINT32 indexCount, UINT32 firstIndex)
+                        : instanceData(instanceData)
+                        , instanceStride(instanceStride)
+                        , instanceCount(instanceCount)
+                        , vertexHandle(vertexHandle)
+                        , firstVertex(firstVertex)
+                        , indexHandle(indexHandle)
+                        , indexCount(indexCount)
+                        , firstIndex(firstIndex)
+                    {
+                    }
+                };
+
+                concurrency::concurrent_unordered_map<Handle, concurrency::concurrent_unordered_map<Handle, concurrency::concurrent_vector<DrawCommand>>> drawQueue;
+                STDMETHODIMP_(void) drawPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, UINT32 vertexCount, UINT32 firstVertex)
+                {
+                    drawQueue[pluginHandle][materialHandle].push_back(DrawCommand(vertexHandle, vertexCount, firstVertex));
                 }
 
-                STDMETHODIMP_(void) drawIndexedPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, Handle indexHandle, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
+                STDMETHODIMP_(void) drawIndexedPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, UINT32 firstVertex, Handle indexHandle, UINT32 indexCount, UINT32 firstIndex)
                 {
+                    drawQueue[pluginHandle][materialHandle].push_back(DrawCommand(vertexHandle, firstVertex, indexHandle, indexCount, firstIndex));
                 }
 
-                STDMETHODIMP_(void) drawInstancedPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, Handle indexHandle, LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, UINT32 vertexCount, UINT32 firstVertex)
+                STDMETHODIMP_(void) drawInstancedPrimitive(Handle pluginHandle, Handle materialHandle, LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Handle vertexHandle, UINT32 vertexCount, UINT32 firstVertex)
                 {
+                    drawQueue[pluginHandle][materialHandle].push_back(DrawCommand(instanceData, instanceStride, instanceCount, vertexHandle, vertexCount, firstVertex));
                 }
 
-                STDMETHODIMP_(void) drawInstancedIndexedPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, Handle indexHandle, LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
+                STDMETHODIMP_(void) drawInstancedIndexedPrimitive(Handle pluginHandle, Handle materialHandle, LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Handle vertexHandle, UINT32 firstVertex, Handle indexHandle, UINT32 indexCount, UINT32 firstIndex)
                 {
+                    drawQueue[pluginHandle][materialHandle].push_back(DrawCommand(instanceData, instanceStride, instanceCount, vertexHandle, firstVertex, indexHandle, indexCount, firstIndex));
                 }
 
                 // Population::Observer
@@ -263,22 +319,19 @@ namespace Gek
                         std::vector<Light> visibleLightList(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end());
                         concurrentVisibleLightList.clear();
 
-                        for (UINT32 index = 0; index < visibleLightList.size(); index += 256)
+                        drawQueue.clear();
+                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraHandle, viewFrustum)));
+                        for (auto &pluginPair : drawQueue)
                         {
-                            Light *lightingListBuffer = nullptr;
-                            if (SUCCEEDED(video->mapBuffer(lightingListHandle, (LPVOID *)&lightingListBuffer)))
+                            Handle pluginHandle = pluginPair.first;
+                            for (auto &materialPair : pluginPair.second)
                             {
-                                UINT32 instanceCount = std::min(256U, (visibleLightList.size() - index));
-                                memcpy(lightingListBuffer, visibleLightList.data(), (sizeof(Light) * instanceCount));
-                                video->unmapBuffer(lightingListHandle);
+                                Handle materialHandle = materialPair.first;
+                                for (auto &drawCommand : materialPair.second)
+                                {
+                                }
                             }
                         }
-
-                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderBegin, std::placeholders::_1, cameraHandle)));
-
-                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onCullScene, std::placeholders::_1, cameraHandle, viewFrustum)));
-
-                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderEnd, std::placeholders::_1, cameraHandle)));
                     });
 
                     BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderOverlay, std::placeholders::_1)));

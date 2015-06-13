@@ -341,11 +341,7 @@ namespace Gek
             }
 
             // Render::Observer
-            STDMETHODIMP_(void) onRenderBegin(Handle cameraHandle)
-            {
-            }
-
-            STDMETHODIMP_(void) onCullScene(Handle cameraHandle, const Gek::Shape::Frustum &viewFrustum)
+            STDMETHODIMP_(void) OnRenderScene(Handle cameraHandle, const Gek::Shape::Frustum &viewFrustum)
             {
                 REQUIRE_VOID_RETURN(population);
 
@@ -393,14 +389,10 @@ namespace Gek
 
                         for (auto &material : data.materialList)
                         {
-                            render->drawInstancedIndexedPrimitive(pluginHandle, material.first, data.vertexHandle, data.indexHandle, instanceList.data(), sizeof(Instance), instanceList.size(), material.second.indexCount, material.second.firstIndex, material.second.firstVertex);
+                            render->drawInstancedIndexedPrimitive(pluginHandle, material.first, instanceList.data(), sizeof(Instance), instanceList.size(), data.vertexHandle, data.indexHandle, material.second.indexCount, material.second.firstIndex, material.second.firstVertex);
                         }
                     }
                 }
-            }
-
-            STDMETHODIMP_(void) onRenderEnd(Handle cameraHandle)
-            {
             }
 
             STDMETHODIMP_(void) onRenderOverlay(void)
