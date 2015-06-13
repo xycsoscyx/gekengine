@@ -67,6 +67,7 @@ namespace Gek
                 Handle cameraConstantBufferHandle;
                 Handle lightingConstantBufferHandle;
                 Handle lightingListHandle;
+                Handle instanceBufferHandle;
 
             public:
                 System(void)
@@ -77,6 +78,7 @@ namespace Gek
                     , cameraConstantBufferHandle(InvalidHandle)
                     , lightingConstantBufferHandle(InvalidHandle)
                     , lightingListHandle(InvalidHandle)
+                    , instanceBufferHandle(InvalidHandle)
                 {
                 }
 
@@ -153,6 +155,12 @@ namespace Gek
                     {
                         lightingListHandle = video->createBuffer(sizeof(Light), 256, Video3D::BufferFlags::DYNAMIC | Video3D::BufferFlags::STRUCTURED_BUFFER | Video3D::BufferFlags::RESOURCE);
                         resultValue = (lightingListHandle == InvalidHandle ? E_FAIL : S_OK);
+                    }
+
+                    if (SUCCEEDED(resultValue))
+                    {
+                        instanceBufferHandle = video->createBuffer(sizeof(float), 1024, Video3D::BufferFlags::DYNAMIC | Video3D::BufferFlags::STRUCTURED_BUFFER | Video3D::BufferFlags::RESOURCE);
+                        resultValue = (instanceBufferHandle == InvalidHandle ? E_FAIL : S_OK);
                     }
 
                     return resultValue;
@@ -321,6 +329,7 @@ namespace Gek
 
                         drawQueue.clear();
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraHandle, viewFrustum)));
+
                         for (auto &pluginPair : drawQueue)
                         {
                             Handle pluginHandle = pluginPair.first;

@@ -99,6 +99,7 @@ namespace Gek
             concurrency::concurrent_unordered_map<Handle, Data> dataList;
             concurrency::concurrent_unordered_map<CStringW, Handle> dataNameList;
             concurrency::concurrent_unordered_map<Handle, Handle> dataEntityList;
+            concurrency::concurrent_unordered_map<Handle, std::vector<Instance>> visibleList;
 
         public:
             System(void)
@@ -345,7 +346,7 @@ namespace Gek
             {
                 REQUIRE_VOID_RETURN(population);
 
-                concurrency::concurrent_unordered_map<Handle, std::vector<Instance>> visibleList;
+                visibleList.clear();
                 for (auto dataEntity : dataEntityList)
                 {
                     auto dataIterator = dataList.find(dataEntity.second);
