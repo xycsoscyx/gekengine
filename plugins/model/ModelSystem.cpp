@@ -47,6 +47,7 @@ namespace Gek
 
             struct Material
             {
+                Handle materialHandle;
                 UINT32 firstVertex;
                 UINT32 firstIndex;
                 UINT32 indexCount;
@@ -60,7 +61,7 @@ namespace Gek
                 Shape::AlignedBox alignedBox;
                 Handle vertexHandle;
                 Handle indexHandle;
-                std::unordered_map<Handle, Material> materialList;
+                std::vector<Material> materialList;
 
                 Data(void)
                     : loaded(false)
@@ -191,6 +192,7 @@ namespace Gek
                         rawFileData += sizeof(UINT32);
 
                         resultValue = S_OK;
+                        data.materialList.resize(materialCount);
                         for (UINT32 materialIndex = 0; materialIndex < materialCount; ++materialIndex)
                         {
                             CStringA materialNameUtf8(rawFileData);
@@ -202,7 +204,9 @@ namespace Gek
                                 break;
                             }
 
-                            Material &material = data.materialList[materialHandle];
+                            Material &material = data.materialList[materialIndex];
+                            material.materialHandle = materialHandle;
+
                             material.firstVertex = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
@@ -383,14 +387,14 @@ namespace Gek
                     if (SUCCEEDED(loadData(data)) && data.ready)
                     {
                         auto &instanceList = instancePair.second;
-                        concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [&](const Instance &leftInstance, const Instance &rightInstance) -> bool
+                        concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [](const Instance &leftInstance, const Instance &rightInstance) -> bool
                         {
                             return (leftInstance.distance < rightInstance.distance);
                         });
 
                         for (auto &material : data.materialList)
                         {
-                            render->drawInstancedIndexedPrimitive(pluginHandle, material.first, instanceList.data(), sizeof(Instance), instanceList.size(), data.vertexHandle, data.indexHandle, material.second.indexCount, material.second.firstIndex, material.second.firstVertex);
+                            render->drawInstancedIndexedPrimitive(pluginHandle, material.materialHandle, instanceList.data(), sizeof(Instance), instanceList.size(), data.vertexHandle, data.indexHandle, material.indexCount, material.firstIndex, material.firstVertex);
                         }
                     }
                 }

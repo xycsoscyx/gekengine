@@ -69,6 +69,7 @@ namespace Gek
                 Handle lightingListHandle;
                 Handle instanceBufferHandle;
 
+                
             public:
                 System(void)
                     : initializerContext(nullptr)
@@ -179,6 +180,60 @@ namespace Gek
                 STDMETHODIMP_(Handle) loadMaterial(LPCWSTR fileName)
                 {
                     return loadResource<Material::Interface>(fileName, __uuidof(Material::Class));
+                }
+
+                STDMETHODIMP_(Handle) createRenderStates(const Video3D::RenderStates &renderStates)
+                {
+                    REQUIRE_RETURN(video, InvalidHandle);
+                    return video->createRenderStates(renderStates);
+                }
+
+                STDMETHODIMP_(Handle) createDepthStates(const Video3D::DepthStates &depthStates)
+                {
+                    REQUIRE_RETURN(video, InvalidHandle);
+                    return video->createDepthStates(depthStates);
+                }
+
+                STDMETHODIMP_(Handle) createBlendStates(const Video3D::UnifiedBlendStates &blendStates)
+                {
+                    REQUIRE_RETURN(video, InvalidHandle);
+                    return video->createBlendStates(blendStates);
+                }
+
+                STDMETHODIMP_(Handle) createBlendStates(const Video3D::IndependentBlendStates &blendStates)
+                {
+                    REQUIRE_RETURN(video, InvalidHandle);
+                    return video->createBlendStates(blendStates);
+                }
+
+                STDMETHODIMP_(Handle) createRenderTarget(UINT32 width, UINT32 height, Video3D::Format format)
+                {
+                    REQUIRE_RETURN(video, InvalidHandle);
+                    return video->createRenderTarget(width, height, format);
+                }
+
+                STDMETHODIMP_(Handle) createDepthTarget(UINT32 width, UINT32 height, Video3D::Format format)
+                {
+                    REQUIRE_RETURN(video, InvalidHandle);
+                    return video->createDepthTarget(width, height, format);
+                }
+
+                STDMETHODIMP_(Handle) createBuffer(Video3D::Format format, UINT32 count, UINT32 flags, LPCVOID staticData)
+                {
+                    REQUIRE_RETURN(video, InvalidHandle);
+                    return video->createBuffer(format, count, flags, staticData);
+                }
+
+                STDMETHODIMP_(Handle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+                {
+                    REQUIRE_RETURN(video, InvalidHandle);
+                    return video->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
+                }
+
+                STDMETHODIMP_(Handle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+                {
+                    REQUIRE_RETURN(video, InvalidHandle);
+                    return video->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
                 }
 
                 struct DrawCommand
@@ -319,7 +374,7 @@ namespace Gek
                             }
                         }, true);
 
-                        concurrency::parallel_sort(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end(), [transformComponent](const Light &leftLight, const Light &rightLight) -> bool
+                        concurrency::parallel_sort(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end(), [](const Light &leftLight, const Light &rightLight) -> bool
                         {
                             return (leftLight.distance < rightLight.distance);
                         });
@@ -329,7 +384,6 @@ namespace Gek
 
                         drawQueue.clear();
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraHandle, viewFrustum)));
-
                         for (auto &pluginPair : drawQueue)
                         {
                             Handle pluginHandle = pluginPair.first;

@@ -429,11 +429,11 @@ namespace Gek
             STDMETHOD_(void, setEvent)                          (THIS_ Handle resourceHandle) PURE;
             STDMETHOD_(bool, isEventSet)                        (THIS_ Handle resourceHandle) PURE;
 
-            STDMETHOD_(Handle, createRenderStates)              (THIS_ const RenderStates &kStates) PURE;
-            STDMETHOD_(Handle, createDepthStates)               (THIS_ const DepthStates &kStates) PURE;
-            STDMETHOD_(Handle, createBlendStates)               (THIS_ const UnifiedBlendStates &kStates) PURE;
-            STDMETHOD_(Handle, createBlendStates)               (THIS_ const IndependentBlendStates &kStates) PURE;
-            STDMETHOD_(Handle, createSamplerStates)             (THIS_ const SamplerStates &kStates) PURE;
+            STDMETHOD_(Handle, createRenderStates)              (THIS_ const RenderStates &renderStates) PURE;
+            STDMETHOD_(Handle, createDepthStates)               (THIS_ const DepthStates &depthStates) PURE;
+            STDMETHOD_(Handle, createBlendStates)               (THIS_ const UnifiedBlendStates &blendStates) PURE;
+            STDMETHOD_(Handle, createBlendStates)               (THIS_ const IndependentBlendStates &blendStates) PURE;
+            STDMETHOD_(Handle, createSamplerStates)             (THIS_ const SamplerStates &samplerStates) PURE;
 
             STDMETHOD_(Handle, createRenderTarget)              (THIS_ UINT32 width, UINT32 height, Format format) PURE;
             STDMETHOD_(Handle, createDepthTarget)               (THIS_ UINT32 width, UINT32 height, Format format) PURE;

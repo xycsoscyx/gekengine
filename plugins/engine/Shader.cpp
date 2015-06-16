@@ -1,4 +1,5 @@
 #include "GEK\Engine\ShaderInterface.h"
+#include "GEK\Engine\RenderInterface.h"
 #include "GEK\Context\BaseUser.h"
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Utility\String.h"
@@ -197,6 +198,7 @@ namespace Gek
 
                 private:
                     Video3D::Interface *video;
+                    Render::Interface *render;
                     UINT32 width;
                     UINT32 height;
                     std::vector<Map> mapList;
@@ -340,7 +342,7 @@ namespace Gek
                             }
                         }
 
-                        pass.depthStatesHandle = video->createDepthStates(depthStates);
+                        pass.depthStatesHandle = render->createDepthStates(depthStates);
                         return (pass.depthStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
                     }
 
@@ -355,7 +357,7 @@ namespace Gek
                         renderStates.slopeScaledDepthBias = String::getFloat(xmlRenderStatesNode.firstChildElement(L"slopescaleddepthbias").getText());
                         renderStates.depthClipEnable = String::getBoolean(xmlRenderStatesNode.firstChildElement(L"depthclip").getText());
                         renderStates.multisampleEnable = String::getBoolean(xmlRenderStatesNode.firstChildElement(L"multisample").getText());
-                        pass.renderStatesHandle = video->createRenderStates(renderStates);
+                        pass.renderStatesHandle = render->createRenderStates(renderStates);
 
                         return (pass.renderStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
                     }
@@ -379,7 +381,7 @@ namespace Gek
                                     xmlTargetNode = xmlTargetNode.nextSiblingElement(L"target");
                                 };
 
-                                pass.blendStatesHandle = video->createBlendStates(blendStates);
+                                pass.blendStatesHandle = render->createBlendStates(blendStates);
                             }
                             else
                             {
@@ -387,7 +389,7 @@ namespace Gek
                                 blendStates.enable = true;
                                 blendStates.alphaToCoverage = alphaToCoverage;
                                 loadBlendStates(blendStates, xmlTargetNode);
-                                pass.blendStatesHandle = video->createBlendStates(blendStates);
+                                pass.blendStatesHandle = render->createBlendStates(blendStates);
                             }
                         }
 
@@ -436,6 +438,7 @@ namespace Gek
                 public:
                     System(void)
                         : video(nullptr)
+                        , render(nullptr)
                         , width(0)
                         , height(0)
                         , depthHandle(InvalidHandle)
@@ -458,9 +461,11 @@ namespace Gek
 
                         HRESULT resultValue = E_FAIL;
                         CComQIPtr<Video3D::Interface> video(initializerContext);
-                        if (video)
+                        CComQIPtr<Render::Interface> render(initializerContext);
+                        if (video && render)
                         {
                             this->video = video;
+                            this->render = render;
                             width = video->getWidth();
                             height = video->getHeight();
                             resultValue = S_OK;
@@ -544,7 +549,7 @@ namespace Gek
                                     if (xmlDepthNode)
                                     {
                                         Video3D::Format format = getFormat(xmlDepthNode.getText());
-                                        depthHandle = video->createDepthTarget(width, height, format);
+                                        depthHandle = render->createDepthTarget(width, height, format);
                                     }
 
                                     Gek::Xml::Node xmlTargetsNode = xmlShaderNode.firstChildElement(L"targets");
@@ -556,7 +561,7 @@ namespace Gek
                                             CStringW name(xmlTargetNode.getType());
                                             Video3D::Format format = getFormat(xmlTargetNode.getText());
                                             BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
-                                            targetList[name] = video->createRenderTarget(width, height, format);
+                                            targetList[name] = render->createRenderTarget(width, height, format);
 
                                             resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
@@ -573,7 +578,7 @@ namespace Gek
                                             CStringW name(xmlBufferNode.getType());
                                             Video3D::Format format = getFormat(xmlBufferNode.getText());
                                             UINT32 size = UINT32(parseValue(xmlBufferNode.getAttribute(L"size")));
-                                            bufferList[name] = video->createBuffer(format, size, Video3D::BufferFlags::UNORDERED_ACCESS | Video3D::BufferFlags::RESOURCE);
+                                            bufferList[name] = render->createBuffer(format, size, Video3D::BufferFlags::UNORDERED_ACCESS | Video3D::BufferFlags::RESOURCE);
                                             switch (format)
                                             {
                                             case Video3D::Format::R_UINT8:
@@ -810,7 +815,7 @@ namespace Gek
                                                 defines["dispatchWidth"] = String::setUINT32(pass.dispatchWidth);
                                                 defines["dispatchHeight"] = String::setUINT32(pass.dispatchHeight);
                                                 defines["dispatchDepth"] = String::setUINT32(pass.dispatchDepth);
-                                                pass.programHandle = video->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                                pass.programHandle = render->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
                                             }
                                             else
                                             {
@@ -830,7 +835,7 @@ namespace Gek
                                                 engineData +=
                                                     "};                                                     \r\n"\
                                                     "                                                       \r\n";
-                                                pass.programHandle = video->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                                pass.programHandle = render->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
                                             }
                                         }
                                         else
