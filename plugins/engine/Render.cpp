@@ -23,18 +23,18 @@ namespace std
     template <>
     struct hash<LPCSTR>
     {
-        size_t operator()(const LPCSTR & value) const
+        size_t operator()(const CStringA &value) const
         {
-            return hash<string>()(string(value));
+            return hash<string>()(string(value.GetString()));
         }
     };
 
     template <>
     struct hash<LPCWSTR>
     {
-        size_t operator()(const LPCWSTR & value) const
+        size_t operator()(const CStringW &value) const
         {
-            return hash<wstring>()(wstring(value));
+            return hash<wstring>()(wstring(value.GetString()));
         }
     };
 
