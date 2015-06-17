@@ -18,6 +18,50 @@
 #include <concurrent_unordered_map.h>
 #include <ppl.h>
 
+namespace std
+{
+    template <>
+    struct hash<LPCSTR>
+    {
+        size_t operator()(const LPCSTR & value) const
+        {
+            return hash<string>()(string(value));
+        }
+    };
+
+    template <>
+    struct hash<LPCWSTR>
+    {
+        size_t operator()(const LPCWSTR & value) const
+        {
+            return hash<wstring>()(wstring(value));
+        }
+    };
+
+    inline size_t hashCombine(const size_t upper, const size_t lower)
+    {
+        return upper ^ (lower + 0x9e3779b9 + (upper << 6) + (upper >> 2));
+    }
+
+    inline size_t hashCombine(void)
+    {
+        return 0;
+    }
+
+    template <typename T, typename... Ts>
+    size_t hashCombine(const T& t, const Ts&... ts)
+    {
+        size_t seed = hash<T>()(t);
+        if (sizeof...(ts) == 0)
+        {
+            return seed;
+        }
+
+        size_t remainder = hashCombine(ts...);   // not recursion!
+        return hashCombine(seed, remainder);
+    }
+};
+
 namespace Gek
 {
     namespace Engine
@@ -55,21 +99,75 @@ namespace Gek
                     Math::Float3 color;
                 };
 
+                struct DrawCommand
+                {
+                    LPCVOID instanceData;
+                    UINT32 instanceStride;
+                    UINT32 instanceCount;
+                    Handle vertexHandle;
+                    UINT32 vertexCount;
+                    UINT32 firstVertex;
+                    Handle indexHandle;
+                    UINT32 indexCount;
+                    UINT32 firstIndex;
+
+                    DrawCommand(Handle vertexHandle, UINT32 vertexCount, UINT32 firstVertex)
+                        : vertexHandle(vertexHandle)
+                        , vertexCount(vertexCount)
+                        , firstVertex(firstVertex)
+                    {
+                    }
+
+                    DrawCommand(Handle vertexHandle, UINT32 firstVertex, Handle indexHandle, UINT32 indexCount, UINT32 firstIndex)
+                        : vertexHandle(vertexHandle)
+                        , firstVertex(firstVertex)
+                        , indexHandle(indexHandle)
+                        , indexCount(indexCount)
+                        , firstIndex(firstIndex)
+                    {
+                    }
+
+                    DrawCommand(LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Handle vertexHandle, UINT32 vertexCount, UINT32 firstVertex)
+                        : instanceData(instanceData)
+                        , instanceStride(instanceStride)
+                        , instanceCount(instanceCount)
+                        , vertexHandle(vertexHandle)
+                        , vertexCount(vertexCount)
+                        , firstVertex(firstVertex)
+                    {
+                    }
+
+                    DrawCommand(LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Handle vertexHandle, UINT32 firstVertex, Handle indexHandle, UINT32 indexCount, UINT32 firstIndex)
+                        : instanceData(instanceData)
+                        , instanceStride(instanceStride)
+                        , instanceCount(instanceCount)
+                        , vertexHandle(vertexHandle)
+                        , firstVertex(firstVertex)
+                        , indexHandle(indexHandle)
+                        , indexCount(indexCount)
+                        , firstIndex(firstIndex)
+                    {
+                    }
+                };
+
             private:
                 IUnknown *initializerContext;
                 Video3D::Interface *video;
                 Population::Interface *population;
 
                 Handle nextResourceHandle;
-                concurrency::concurrent_unordered_map<std::size_t, Handle> resourceHashList;
+                concurrency::concurrent_unordered_map<std::size_t, Handle> resourceMap;
                 concurrency::concurrent_unordered_map<Handle, CComPtr<IUnknown>> resourceList;
+                concurrency::concurrent_unordered_map<std::size_t, Handle> videoResourceMap;
+                concurrency::concurrent_vector<Handle> videoResourceList;
 
                 Handle cameraConstantBufferHandle;
                 Handle lightingConstantBufferHandle;
                 Handle lightingListHandle;
                 Handle instanceBufferHandle;
 
-                
+                concurrency::concurrent_unordered_map<Handle, concurrency::concurrent_unordered_map<Handle, concurrency::concurrent_vector<DrawCommand>>> drawQueue;
+
             public:
                 System(void)
                     : initializerContext(nullptr)
@@ -102,14 +200,14 @@ namespace Gek
                     Handle resourceHandle = InvalidHandle;
 
                     std::size_t hash = std::hash<LPCWSTR>()(fileName);
-                    auto resourceHashIterator = resourceHashList.find(hash);
-                    if (resourceHashIterator != resourceHashList.end())
+                    auto resourceMapIterator = resourceMap.find(hash);
+                    if (resourceMapIterator != resourceMap.end())
                     {
-                        resourceHandle = (*resourceHashIterator).second;
+                        resourceHandle = (*resourceMapIterator).second;
                     }
                     else
                     {
-                        resourceHashList[hash] = InvalidHandle;
+                        resourceMap[hash] = InvalidHandle;
 
                         CComPtr<CLASS> resource;
                         getContext()->createInstance(className, IID_PPV_ARGS(&resource));
@@ -117,7 +215,7 @@ namespace Gek
                         {
                             resourceHandle = InterlockedIncrement(&nextResourceHandle);
                             resourceList[resourceHandle] = resource;
-                            resourceHashList[hash] = resourceHandle;
+                            resourceMap[hash] = resourceHandle;
                         }
                     }
 
@@ -185,109 +283,204 @@ namespace Gek
                 STDMETHODIMP_(Handle) createRenderStates(const Video3D::RenderStates &renderStates)
                 {
                     REQUIRE_RETURN(video, InvalidHandle);
-                    return video->createRenderStates(renderStates);
+
+                    Handle resourceHandle = InvalidHandle;
+                    std::size_t hash = std::hashCombine(static_cast<UINT8>(renderStates.fillMode),
+                        static_cast<UINT8>(renderStates.cullMode),
+                        renderStates.frontCounterClockwise,
+                        renderStates.depthBias,
+                        renderStates.depthBiasClamp,
+                        renderStates.slopeScaledDepthBias,
+                        renderStates.depthClipEnable,
+                        renderStates.scissorEnable,
+                        renderStates.multisampleEnable,
+                        renderStates.antialiasedLineEnable);
+                    auto videoResourceIterator = videoResourceMap.find(hash);
+                    if (videoResourceIterator != videoResourceMap.end())
+                    {
+                        resourceHandle = (*videoResourceIterator).second;
+                    }
+                    else
+                    {
+                        resourceHandle = video->createRenderStates(renderStates);
+                        videoResourceMap.insert(std::make_pair(hash, resourceHandle));
+                    }
+
+                    return resourceHandle;
                 }
 
                 STDMETHODIMP_(Handle) createDepthStates(const Video3D::DepthStates &depthStates)
                 {
                     REQUIRE_RETURN(video, InvalidHandle);
-                    return video->createDepthStates(depthStates);
+
+                    Handle resourceHandle = InvalidHandle;
+                    std::size_t hash = std::hashCombine(depthStates.enable,
+                        static_cast<UINT8>(depthStates.writeMask),
+                        static_cast<UINT8>(depthStates.comparisonFunction),
+                        depthStates.stencilEnable,
+                        depthStates.stencilReadMask,
+                        depthStates.stencilWriteMask,
+                        static_cast<UINT8>(depthStates.stencilFrontStates.failOperation),
+                        static_cast<UINT8>(depthStates.stencilFrontStates.depthFailOperation),
+                        static_cast<UINT8>(depthStates.stencilFrontStates.passOperation),
+                        static_cast<UINT8>(depthStates.stencilFrontStates.comparisonFunction),
+                        static_cast<UINT8>(depthStates.stencilBackStates.failOperation),
+                        static_cast<UINT8>(depthStates.stencilBackStates.depthFailOperation),
+                        static_cast<UINT8>(depthStates.stencilBackStates.passOperation),
+                        static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction));
+                    auto videoResourceIterator = videoResourceMap.find(hash);
+                    if (videoResourceIterator != videoResourceMap.end())
+                    {
+                        resourceHandle = (*videoResourceIterator).second;
+                    }
+                    else
+                    {
+                        resourceHandle = video->createDepthStates(depthStates);
+                        videoResourceMap.insert(std::make_pair(hash, resourceHandle));
+                    }
+
+                    return resourceHandle;
                 }
 
                 STDMETHODIMP_(Handle) createBlendStates(const Video3D::UnifiedBlendStates &blendStates)
                 {
                     REQUIRE_RETURN(video, InvalidHandle);
-                    return video->createBlendStates(blendStates);
+
+                    Handle resourceHandle = InvalidHandle;
+                    std::size_t hash = std::hashCombine(blendStates.enable,
+                        static_cast<UINT8>(blendStates.colorSource),
+                        static_cast<UINT8>(blendStates.colorDestination),
+                        static_cast<UINT8>(blendStates.colorOperation),
+                        static_cast<UINT8>(blendStates.alphaSource),
+                        static_cast<UINT8>(blendStates.alphaDestination),
+                        static_cast<UINT8>(blendStates.alphaOperation),
+                        blendStates.writeMask);
+                    auto videoResourceIterator = videoResourceMap.find(hash);
+                    if (videoResourceIterator != videoResourceMap.end())
+                    {
+                        resourceHandle = (*videoResourceIterator).second;
+                    }
+                    else
+                    {
+                        resourceHandle = video->createBlendStates(blendStates);
+                        videoResourceMap.insert(std::make_pair(hash, resourceHandle));
+                    }
+
+                    return resourceHandle;
                 }
 
                 STDMETHODIMP_(Handle) createBlendStates(const Video3D::IndependentBlendStates &blendStates)
                 {
                     REQUIRE_RETURN(video, InvalidHandle);
-                    return video->createBlendStates(blendStates);
+
+                    Handle resourceHandle = InvalidHandle;
+                    std::size_t hash = 0;
+                    for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
+                    {
+                        std::hashCombine(hash, std::hashCombine(blendStates.targetStates[renderTarget].enable,
+                            static_cast<UINT8>(blendStates.targetStates[renderTarget].colorSource),
+                            static_cast<UINT8>(blendStates.targetStates[renderTarget].colorDestination),
+                            static_cast<UINT8>(blendStates.targetStates[renderTarget].colorOperation),
+                            static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaSource),
+                            static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaDestination),
+                            static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaOperation),
+                            blendStates.targetStates[renderTarget].writeMask));
+                    }
+
+                    auto videoResourceIterator = videoResourceMap.find(hash);
+                    if (videoResourceIterator != videoResourceMap.end())
+                    {
+                        resourceHandle = (*videoResourceIterator).second;
+                    }
+                    else
+                    {
+                        resourceHandle = video->createBlendStates(blendStates);
+                        videoResourceMap.insert(std::make_pair(hash, resourceHandle));
+                    }
+
+                    return resourceHandle;
                 }
 
                 STDMETHODIMP_(Handle) createRenderTarget(UINT32 width, UINT32 height, Video3D::Format format)
                 {
                     REQUIRE_RETURN(video, InvalidHandle);
-                    return video->createRenderTarget(width, height, format);
+                    Handle resourceHandle = video->createRenderTarget(width, height, format);
+                    videoResourceList.push_back(resourceHandle);
+                    return resourceHandle;
                 }
 
                 STDMETHODIMP_(Handle) createDepthTarget(UINT32 width, UINT32 height, Video3D::Format format)
                 {
                     REQUIRE_RETURN(video, InvalidHandle);
-                    return video->createDepthTarget(width, height, format);
+                    Handle resourceHandle = video->createDepthTarget(width, height, format);
+                    videoResourceList.push_back(resourceHandle);
+                    return resourceHandle;
                 }
 
                 STDMETHODIMP_(Handle) createBuffer(Video3D::Format format, UINT32 count, UINT32 flags, LPCVOID staticData)
                 {
                     REQUIRE_RETURN(video, InvalidHandle);
-                    return video->createBuffer(format, count, flags, staticData);
+                    Handle resourceHandle = video->createBuffer(format, count, flags, staticData);
+                    videoResourceList.push_back(resourceHandle);
+                    return resourceHandle;
                 }
 
                 STDMETHODIMP_(Handle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
                 {
                     REQUIRE_RETURN(video, InvalidHandle);
-                    return video->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
+
+                    Handle resourceHandle = InvalidHandle;
+                    std::size_t hash = std::hashCombine(fileName, entryFunction);
+                    if (defineList)
+                    {
+                        for (auto &define : (*defineList))
+                        {
+                            hash = std::hashCombine(hash, std::hashCombine(define.first, define.second));
+                        }
+                    }
+
+                    auto videoResourceIterator = videoResourceMap.find(hash);
+                    if (videoResourceIterator != videoResourceMap.end())
+                    {
+                        resourceHandle = (*videoResourceIterator).second;
+                    }
+                    else
+                    {
+                        resourceHandle = video->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
+                        videoResourceMap.insert(std::make_pair(hash, resourceHandle));
+                    }
+
+                    return resourceHandle;
                 }
 
                 STDMETHODIMP_(Handle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
                 {
                     REQUIRE_RETURN(video, InvalidHandle);
-                    return video->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
+
+                    Handle resourceHandle = InvalidHandle;
+                    std::size_t hash = std::hashCombine(fileName, entryFunction);
+                    if (defineList)
+                    {
+                        for (auto &define : (*defineList))
+                        {
+                            hash = std::hashCombine(hash, std::hashCombine(define.first, define.second));
+                        }
+                    }
+
+                    auto videoResourceIterator = videoResourceMap.find(hash);
+                    if (videoResourceIterator != videoResourceMap.end())
+                    {
+                        resourceHandle = (*videoResourceIterator).second;
+                    }
+                    else
+                    {
+                        resourceHandle = video->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
+                        videoResourceMap.insert(std::make_pair(hash, resourceHandle));
+                    }
+
+                    return resourceHandle;
                 }
 
-                struct DrawCommand
-                {
-                    LPCVOID instanceData;
-                    UINT32 instanceStride;
-                    UINT32 instanceCount;
-                    Handle vertexHandle;
-                    UINT32 vertexCount;
-                    UINT32 firstVertex;
-                    Handle indexHandle;
-                    UINT32 indexCount;
-                    UINT32 firstIndex;
-
-                    DrawCommand(Handle vertexHandle, UINT32 vertexCount, UINT32 firstVertex)
-                        : vertexHandle(vertexHandle)
-                        , vertexCount(vertexCount)
-                        , firstVertex(firstVertex)
-                    {
-                    }
-                    
-                    DrawCommand(Handle vertexHandle, UINT32 firstVertex, Handle indexHandle, UINT32 indexCount, UINT32 firstIndex)
-                        : vertexHandle(vertexHandle)
-                        , firstVertex(firstVertex)
-                        , indexHandle(indexHandle)
-                        , indexCount(indexCount)
-                        , firstIndex(firstIndex)
-                    {
-                    }
-                    
-                    DrawCommand(LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Handle vertexHandle, UINT32 vertexCount, UINT32 firstVertex)
-                        : instanceData(instanceData)
-                        , instanceStride(instanceStride)
-                        , instanceCount(instanceCount)
-                        , vertexHandle(vertexHandle)
-                        , vertexCount(vertexCount)
-                        , firstVertex(firstVertex)
-                    {
-                    }
-                    
-                    DrawCommand(LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Handle vertexHandle, UINT32 firstVertex, Handle indexHandle, UINT32 indexCount, UINT32 firstIndex)
-                        : instanceData(instanceData)
-                        , instanceStride(instanceStride)
-                        , instanceCount(instanceCount)
-                        , vertexHandle(vertexHandle)
-                        , firstVertex(firstVertex)
-                        , indexHandle(indexHandle)
-                        , indexCount(indexCount)
-                        , firstIndex(firstIndex)
-                    {
-                    }
-                };
-
-                concurrency::concurrent_unordered_map<Handle, concurrency::concurrent_unordered_map<Handle, concurrency::concurrent_vector<DrawCommand>>> drawQueue;
                 STDMETHODIMP_(void) drawPrimitive(Handle pluginHandle, Handle materialHandle, Handle vertexHandle, UINT32 vertexCount, UINT32 firstVertex)
                 {
                     drawQueue[pluginHandle][materialHandle].push_back(DrawCommand(vertexHandle, vertexCount, firstVertex));
@@ -323,8 +516,22 @@ namespace Gek
 
                 STDMETHODIMP_(void) onFree(void)
                 {
-                    resourceHashList.clear();
+                    REQUIRE_VOID_RETURN(video);
+
+                    for (auto &videoResource : videoResourceList)
+                    {
+                        video->freeResource(videoResource);
+                    }
+
+                    for (auto &videoResource : videoResourceMap)
+                    {
+                        video->freeResource(videoResource.second);
+                    }
+
+                    resourceMap.clear();
                     resourceList.clear();
+                    videoResourceMap.clear();
+                    videoResourceList.clear();
                 }
 
                 STDMETHODIMP_(void) onUpdateEnd(float frameTime)

@@ -1465,17 +1465,6 @@ namespace Gek
 
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                std::size_t hash = std::hash<UINT8>()(static_cast<UINT8>(renderStates.fillMode)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(renderStates.cullMode)) ^
-                    std::hash<bool>()(renderStates.frontCounterClockwise) ^
-                    std::hash<UINT32>()(renderStates.depthBias) ^
-                    std::hash<float>()(renderStates.depthBiasClamp) ^
-                    std::hash<float>()(renderStates.slopeScaledDepthBias) ^
-                    std::hash<bool>()(renderStates.depthClipEnable) ^
-                    std::hash<bool>()(renderStates.scissorEnable) ^
-                    std::hash<bool>()(renderStates.multisampleEnable) ^
-                    std::hash<bool>()(renderStates.antialiasedLineEnable);
-
                 D3D11_RASTERIZER_DESC rasterizerDescription;
                 rasterizerDescription.FrontCounterClockwise = renderStates.frontCounterClockwise;
                 rasterizerDescription.DepthBias = renderStates.depthBias;
@@ -1521,21 +1510,6 @@ namespace Gek
 
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                std::size_t hash = std::hash<bool>()(depthStates.enable) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(depthStates.writeMask)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(depthStates.comparisonFunction)) ^
-                    std::hash<bool>()(depthStates.stencilEnable) ^
-                    std::hash<UINT8>()(depthStates.stencilReadMask) ^
-                    std::hash<UINT8>()(depthStates.stencilWriteMask) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(depthStates.stencilFrontStates.failOperation)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(depthStates.stencilFrontStates.depthFailOperation)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(depthStates.stencilFrontStates.passOperation)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(depthStates.stencilFrontStates.comparisonFunction)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(depthStates.stencilBackStates.failOperation)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(depthStates.stencilBackStates.depthFailOperation)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(depthStates.stencilBackStates.passOperation)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction));
-
                 D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
                 depthStencilDescription.DepthEnable = depthStates.enable;
                 depthStencilDescription.DepthFunc = d3dComparisonFunctionList[static_cast<UINT8>(depthStates.comparisonFunction)];
@@ -1579,15 +1553,6 @@ namespace Gek
                 gekLogParameter(blendStates.writeMask);
 
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
-
-                std::size_t hash = std::hash<bool>()(blendStates.enable) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(blendStates.colorSource)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(blendStates.colorDestination)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(blendStates.colorOperation)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(blendStates.alphaSource)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(blendStates.alphaDestination)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(blendStates.alphaOperation)) ^
-                    std::hash<UINT8>()(blendStates.writeMask);
 
                 D3D11_BLEND_DESC blendDescription;
                 blendDescription.AlphaToCoverageEnable = blendStates.alphaToCoverage;
@@ -1639,22 +1604,11 @@ namespace Gek
 
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                std::size_t hash = 0;
-
                 D3D11_BLEND_DESC blendDescription;
                 blendDescription.AlphaToCoverageEnable = blendStates.alphaToCoverage;
                 blendDescription.IndependentBlendEnable = true;
                 for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
                 {
-                    hash ^= std::hash<bool>()(blendStates.targetStates[renderTarget].enable) ^
-                        std::hash<UINT8>()(static_cast<UINT8>(blendStates.targetStates[renderTarget].colorSource)) ^
-                        std::hash<UINT8>()(static_cast<UINT8>(blendStates.targetStates[renderTarget].colorDestination)) ^
-                        std::hash<UINT8>()(static_cast<UINT8>(blendStates.targetStates[renderTarget].colorOperation)) ^
-                        std::hash<UINT8>()(static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaSource)) ^
-                        std::hash<UINT8>()(static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaDestination)) ^
-                        std::hash<UINT8>()(static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaOperation)) ^
-                        std::hash<UINT8>()(blendStates.targetStates[renderTarget].writeMask);
-
                     blendDescription.RenderTarget[renderTarget].BlendEnable = blendStates.targetStates[renderTarget].enable;
                     blendDescription.RenderTarget[renderTarget].SrcBlend = d3dBlendSourceList[static_cast<UINT8>(blendStates.targetStates[renderTarget].colorSource)];
                     blendDescription.RenderTarget[renderTarget].DestBlend = d3dBlendSourceList[static_cast<UINT8>(blendStates.targetStates[renderTarget].colorDestination)];
@@ -2247,15 +2201,6 @@ namespace Gek
 
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                std::size_t hash = std::hash<LPCSTR>()(programScript) ^ std::hash<LPCSTR>()(entryFunction);
-                if (defineList)
-                {
-                    for (auto &define : (*defineList))
-                    {
-                        hash ^= std::hash<LPCSTR>()(define.first + define.second);
-                    }
-                }
-
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
@@ -2302,15 +2247,6 @@ namespace Gek
                 gekLogScope(__FUNCTION__);
 
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
-
-                std::size_t hash = std::hash<LPCSTR>()(programScript) ^ std::hash<LPCSTR>()(entryFunction);
-                if (defineList)
-                {
-                    for (auto &define : (*defineList))
-                    {
-                        hash ^= std::hash<LPCSTR>()(define.first + define.second);
-                    }
-                }
 
                 Handle resourceHandle = Gek::InvalidHandle;
 
@@ -2409,15 +2345,6 @@ namespace Gek
 
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
 
-                std::size_t hash = std::hash<LPCSTR>()(programScript) ^ std::hash<LPCSTR>()(entryFunction);
-                if (defineList)
-                {
-                    for (auto &define : (*defineList))
-                    {
-                        hash ^= std::hash<LPCSTR>()(define.first + define.second);
-                    }
-                }
-
                 Handle resourceHandle = Gek::InvalidHandle;
 
                 DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
@@ -2464,15 +2391,6 @@ namespace Gek
                 gekLogScope(__FUNCTION__);
 
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
-
-                std::size_t hash = std::hash<LPCSTR>()(programScript) ^ std::hash<LPCSTR>()(entryFunction);
-                if (defineList)
-                {
-                    for (auto &define : (*defineList))
-                    {
-                        hash ^= std::hash<LPCSTR>()(define.first + define.second);
-                    }
-                }
 
                 Handle resourceHandle = Gek::InvalidHandle;
 
@@ -2706,8 +2624,6 @@ namespace Gek
 
                 REQUIRE_RETURN(d3dDevice, Gek::InvalidHandle);
                 REQUIRE_RETURN(fileName, Gek::InvalidHandle);
-
-                std::size_t hash = std::hash<LPCWSTR>()(fileName) ^ std::hash<UINT32>()(flags);
 
                 Handle resourceHandle = Gek::InvalidHandle;
 
