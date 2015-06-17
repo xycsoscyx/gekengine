@@ -8,6 +8,7 @@
 #include "GEK\Components\Camera.h"
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
+#include "GEK\Context\Common.h"
 #include "GEK\Context\BaseUser.h"
 #include "GEK\Context\BaseObservable.h"
 #include "GEK\Utility\String.h"
@@ -23,18 +24,18 @@ namespace std
     template <>
     struct hash<LPCSTR>
     {
-        size_t operator()(const CStringA &value) const
+        size_t operator()(const LPCSTR &value) const
         {
-            return hash<string>()(string(value.GetString()));
+            return hash<string>()(string(value));
         }
     };
 
     template <>
     struct hash<LPCWSTR>
     {
-        size_t operator()(const CStringW &value) const
+        size_t operator()(const LPCWSTR &value) const
         {
-            return hash<wstring>()(wstring(value.GetString()));
+            return hash<wstring>()(wstring(value));
         }
     };
 
