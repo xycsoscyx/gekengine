@@ -174,6 +174,7 @@ namespace Gek
                 CComPtr<Video3D::BufferInterface> instanceBuffer;
 
                 concurrency::concurrent_unordered_map<IUnknown *, concurrency::concurrent_unordered_map<IUnknown *, concurrency::concurrent_vector<DrawCommand>>> drawQueue;
+                concurrency::concurrent_unordered_map<std::size_t, CComPtr<IUnknown>> resourceMap;
 
             public:
                 System(void)
@@ -193,6 +194,28 @@ namespace Gek
                     INTERFACE_LIST_ENTRY_COM(Population::Observer)
                     INTERFACE_LIST_ENTRY_COM(Interface)
                 END_INTERFACE_LIST_USER
+
+                HRESULT getResource(IUnknown **returnObject, std::size_t hash, std::function<HRESULT(IUnknown **)> onResourceMissing)
+                {
+                    HRESULT returnValue = E_FAIL;
+                    auto resourceIterator = resourceMap.find(hash);
+                    if (resourceIterator != resourceMap.end())
+                    {
+                        returnValue = (*resourceIterator).second->QueryInterface(IID_PPV_ARGS(returnObject));
+                    }
+                    else
+                    {
+                        CComPtr<IUnknown> &resource = resourceMap[hash];
+                        returnValue = onResourceMissing(&resource);
+
+                        if (SUCCEEDED(returnValue) && resource)
+                        {
+                            returnValue = resource->QueryInterface(IID_PPV_ARGS(returnObject));
+                        }
+                    }
+
+                    return returnValue;
+                }
 
                 // Render::Interface
                 STDMETHODIMP initialize(IUnknown *initializerContext)
@@ -235,13 +258,25 @@ namespace Gek
 
                 STDMETHODIMP loadPlugin(IUnknown **returnObject, LPCWSTR fileName)
                 {
+                    REQUIRE_RETURN(initializerContext, E_FAIL);
+
                     HRESULT returnValue = E_FAIL;
-                    CComPtr<Plugin::Interface> resource;
-                    returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Plugin::Interface, &resource));
-                    if (resource && SUCCEEDED(returnValue = resource->initialize(initializerContext, fileName)))
+                    returnValue = getResource(returnObject, std::hash<LPCWSTR>()(fileName), [&](IUnknown **returnObject) -> HRESULT
                     {
-                        returnValue = resource->QueryInterface(IID_PPV_ARGS(returnObject));
-                    }
+                        HRESULT returnValue = E_FAIL;
+                        CComPtr<Plugin::Interface> plugin;
+                        returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Plugin::Interface, &plugin));
+                        if (plugin)
+                        {
+                            returnValue = plugin->initialize(initializerContext, fileName);
+                            if (SUCCEEDED(returnValue))
+                            {
+                                returnValue = plugin->QueryInterface(returnObject);
+                            }
+                        }
+
+                        return returnValue;
+                    });
 
                     return returnValue;
                 }
@@ -251,25 +286,47 @@ namespace Gek
                     REQUIRE_RETURN(initializerContext, E_FAIL);
 
                     HRESULT returnValue = E_FAIL;
-                    CComPtr<Shader::Interface> resource;
-                    returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Shader::Interface, &resource));
-                    if (resource && SUCCEEDED(returnValue = resource->initialize(initializerContext, fileName)))
+                    returnValue = getResource(returnObject, std::hash<LPCWSTR>()(fileName), [&](IUnknown **returnObject) -> HRESULT
                     {
-                        returnValue = resource->QueryInterface(IID_PPV_ARGS(returnObject));
-                    }
+                        HRESULT returnValue = E_FAIL;
+                        CComPtr<Shader::Interface> shader;
+                        returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Shader::Interface, &shader));
+                        if (shader)
+                        {
+                            returnValue = shader->initialize(initializerContext, fileName);
+                            if (SUCCEEDED(returnValue))
+                            {
+                                returnValue = shader->QueryInterface(returnObject);
+                            }
+                        }
+
+                        return returnValue;
+                    });
 
                     return returnValue;
                 }
 
                 STDMETHODIMP loadMaterial(IUnknown **returnObject, LPCWSTR fileName)
                 {
+                    REQUIRE_RETURN(initializerContext, E_FAIL);
+
                     HRESULT returnValue = E_FAIL;
-                    CComPtr<Material::Interface> resource;
-                    returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Material::Interface, &resource));
-                    if (resource && SUCCEEDED(returnValue = resource->initialize(initializerContext, fileName)))
+                    returnValue = getResource(returnObject, std::hash<LPCWSTR>()(fileName), [&](IUnknown **returnObject) -> HRESULT
                     {
-                        returnValue = resource->QueryInterface(IID_PPV_ARGS(returnObject));
-                    }
+                        HRESULT returnValue = E_FAIL;
+                        CComPtr<Material::Interface> material;
+                        returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Material::Interface, &material));
+                        if (material)
+                        {
+                            returnValue = material->initialize(initializerContext, fileName);
+                            if (SUCCEEDED(returnValue))
+                            {
+                                returnValue = material->QueryInterface(returnObject);
+                            }
+                        }
+
+                        return returnValue;
+                    });
 
                     return returnValue;
                 }
@@ -290,7 +347,13 @@ namespace Gek
                         renderStates.antialiasedLineEnable);
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = video->createRenderStates(returnObject, renderStates);
+                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    {
+                        HRESULT returnValue = E_FAIL;
+                        returnValue = video->createRenderStates(returnObject, renderStates);
+                        return returnValue;
+                    });
+
                     return returnValue;
                 }
 
@@ -312,9 +375,15 @@ namespace Gek
                         static_cast<UINT8>(depthStates.stencilBackStates.depthFailOperation),
                         static_cast<UINT8>(depthStates.stencilBackStates.passOperation),
                         static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction));
-                    
+
                     HRESULT returnValue = E_FAIL;
-                    returnValue = video->createDepthStates(returnObject, depthStates);
+                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    {
+                        HRESULT returnValue = E_FAIL;
+                        returnValue = video->createDepthStates(returnObject, depthStates);
+                        return returnValue;
+                    });
+
                     return returnValue;
                 }
 
@@ -332,7 +401,13 @@ namespace Gek
                         blendStates.writeMask);
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = video->createBlendStates(returnObject, blendStates);
+                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    {
+                        HRESULT returnValue = E_FAIL;
+                        returnValue = video->createBlendStates(returnObject, blendStates);
+                        return returnValue;
+                    });
+
                     return returnValue;
                 }
 
@@ -354,7 +429,13 @@ namespace Gek
                     }
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = video->createBlendStates(returnObject, blendStates);
+                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    {
+                        HRESULT returnValue = E_FAIL;
+                        returnValue = video->createBlendStates(returnObject, blendStates);
+                        return returnValue;
+                    });
+
                     return returnValue;
                 }
 
@@ -399,7 +480,13 @@ namespace Gek
                     }
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
+                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    {
+                        HRESULT returnValue = E_FAIL;
+                        returnValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
+                        return returnValue;
+                    });
+
                     return returnValue;
                 }
 
@@ -417,7 +504,13 @@ namespace Gek
                     }
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = video->loadPixelProgram(returnObject, fileName, entryFunction, onInclude, defineList);
+                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    {
+                        HRESULT returnValue = E_FAIL;
+                        returnValue = video->loadPixelProgram(returnObject, fileName, entryFunction, onInclude, defineList);
+                        return returnValue;
+                    });
+
                     return returnValue;
                 }
 
