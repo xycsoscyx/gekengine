@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GEK\Utility\Common.h"
 #include "GEK\Context\ObserverInterface.h"
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Shape\Frustum.h"

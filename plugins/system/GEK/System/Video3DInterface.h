@@ -2,7 +2,9 @@
 
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Vector4.h"
-#include "GEK\Utility\Common.h"
+#include <atlbase.h>
+#include <atlstr.h>
+#include <functional>
 #include <unordered_map>
 
 namespace Gek
@@ -365,15 +367,29 @@ namespace Gek
             }
         };
 
+        DECLARE_INTERFACE_IID(BufferInterface, "8210EC49-9452-4BA1-A1F2-B17C0416A6B4") : virtual public IUnknown
+        {
+            STDMETHOD_(Format, getFormat)                       (THIS) PURE;
+            STDMETHOD_(UINT32, getStride)                       (THIS) PURE;
+            STDMETHOD_(UINT32, getCount)                        (THIS) PURE;
+        };
+
+        DECLARE_INTERFACE_IID(TextureInterface, "D7793714-FE83-49BA-A68F-149246413867") : virtual public IUnknown
+        {
+            STDMETHOD_(UINT32, getWidth)                        (THIS) PURE;
+            STDMETHOD_(UINT32, getHeight)                       (THIS) PURE;
+            STDMETHOD_(UINT32, getDepth)                        (THIS) PURE;
+        };
+
         DECLARE_INTERFACE_IID(ContextInterface, "95262C77-0F56-4447-9337-5819E68B372E") : virtual public IUnknown
         {
             DECLARE_INTERFACE(SubSystemInterface)
             {
-                STDMETHOD_(void, setProgram)                    (THIS_ Handle resourceHandle) PURE;
-                STDMETHOD_(void, setConstantBuffer)             (THIS_ Handle resourceHandle, UINT32 stage) PURE;
-                STDMETHOD_(void, setSamplerStates)              (THIS_ Handle resourceHandle, UINT32 stage) PURE;
-                STDMETHOD_(void, setResource)                   (THIS_ Handle resourceHandle, UINT32 stage) PURE;
-                STDMETHOD_(void, setUnorderedAccess)            (THIS_ Handle resourceHandle, UINT32 stage) { };
+                STDMETHOD_(void, setProgram)                    (THIS_ IUnknown *program) PURE;
+                STDMETHOD_(void, setConstantBuffer)             (THIS_ BufferInterface *constantBuffer, UINT32 stage) PURE;
+                STDMETHOD_(void, setSamplerStates)              (THIS_ IUnknown *samplerStates, UINT32 stage) PURE;
+                STDMETHOD_(void, setResource)                   (THIS_ IUnknown *resource, UINT32 stage) PURE;
+                STDMETHOD_(void, setUnorderedAccess)            (THIS_ IUnknown *unorderedAccess, UINT32 stage) { };
             };
 
             STDMETHOD_(SubSystemInterface *, getComputeSystem)  (THIS) PURE;
@@ -384,18 +400,18 @@ namespace Gek
             STDMETHOD_(void, clearResources)                    (THIS) PURE;
 
             STDMETHOD_(void, setViewports)                      (THIS_ const std::vector<ViewPort> &viewPortList) PURE;
-            STDMETHOD_(void, setScissorRect)                    (THIS_ const std::vector<Rectangle<UINT32>> &rectangleList) PURE;
+            STDMETHOD_(void, setScissorRect)                    (THIS_ const std::vector<Shape::Rectangle<UINT32>> &rectangleList) PURE;
 
-            STDMETHOD_(void, clearRenderTarget)                 (THIS_ Handle targetHandle, const Math::Float4 &color) PURE;
-            STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ Handle depthHandle, UINT32 flags, float depth, UINT32 stencil) PURE;
-            STDMETHOD_(void, setRenderTargets)                  (THIS_ const std::vector<Handle> &targetHandleList, Handle depthHandle) PURE;
+            STDMETHOD_(void, clearRenderTarget)                 (THIS_ TextureInterface *renderTarget, const Math::Float4 &colorClear) PURE;
+            STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ IUnknown *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear) PURE;
+            STDMETHOD_(void, setRenderTargets)                  (THIS_ const std::vector<TextureInterface *> &renderTargetList, IUnknown *depthBuffer) PURE;
 
-            STDMETHOD_(void, setRenderStates)                   (THIS_ Handle resourceHandle) PURE;
-            STDMETHOD_(void, setDepthStates)                    (THIS_ Handle resourceHandle, UINT32 stencilReference) PURE;
-            STDMETHOD_(void, setBlendStates)                    (THIS_ Handle resourceHandle, const Math::Float4 &blendFactor, UINT32 sampleMask) PURE;
+            STDMETHOD_(void, setRenderStates)                   (THIS_ IUnknown *renderStates) PURE;
+            STDMETHOD_(void, setDepthStates)                    (THIS_ IUnknown *depthStates, UINT32 stencilReference) PURE;
+            STDMETHOD_(void, setBlendStates)                    (THIS_ IUnknown *blendStates, const Math::Float4 &blendFactor, UINT32 sampleMask) PURE;
 
-            STDMETHOD_(void, setVertexBuffer)                   (THIS_ Handle resourceHandle, UINT32 slot, UINT32 offset) PURE;
-            STDMETHOD_(void, setIndexBuffer)                    (THIS_ Handle resourceHandle, UINT32 offset) PURE;
+            STDMETHOD_(void, setVertexBuffer)                   (THIS_ BufferInterface *vertexBuffer, UINT32 slot, UINT32 offset) PURE;
+            STDMETHOD_(void, setIndexBuffer)                    (THIS_ BufferInterface *indexBuffer, UINT32 offset) PURE;
             STDMETHOD_(void, setPrimitiveType)                  (THIS_ PrimitiveType type) PURE;
 
             STDMETHOD_(void, drawPrimitive)                     (THIS_ UINT32 vertexCount, UINT32 firstVertex) PURE;
@@ -406,7 +422,7 @@ namespace Gek
 
             STDMETHOD_(void, dispatch)                          (THIS_ UINT32 threadGroupCountX, UINT32 threadGroupCountY, UINT32 threadGroupCountZ) PURE;
 
-            STDMETHOD_(void, finishCommandList)                 (THIS_ IUnknown **instance) PURE;
+            STDMETHOD_(void, finishCommandList)                 (THIS_ IUnknown **returnObject) PURE;
         };
 
         DECLARE_INTERFACE_IID(Interface, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6") : virtual public IUnknown
@@ -420,47 +436,44 @@ namespace Gek
 
             STDMETHOD_(Video2D::Interface *, getVideo2D)        (THIS) PURE;
             STDMETHOD_(ContextInterface *, getDefaultContext)   (THIS) PURE;
-            STDMETHOD(createDeferredContext)                    (THIS_ ContextInterface **instance) PURE;
+            STDMETHOD(createDeferredContext)                    (THIS_ ContextInterface **returnObject) PURE;
 
-            STDMETHOD_(void, freeResource)                      (THIS_ Handle resourceHandle) PURE;
-            STDMETHOD_(void, freeAllResources)                  (THIS) PURE;
+            STDMETHOD(createEvent)                              (THIS_ IUnknown **returnObject) PURE;
+            STDMETHOD_(void, setEvent)                          (THIS_ IUnknown *event) PURE;
+            STDMETHOD_(bool, isEventSet)                        (THIS_ IUnknown *event) PURE;
 
-            STDMETHOD_(Handle, createEvent)                     (THIS) PURE;
-            STDMETHOD_(void, setEvent)                          (THIS_ Handle resourceHandle) PURE;
-            STDMETHOD_(bool, isEventSet)                        (THIS_ Handle resourceHandle) PURE;
+            STDMETHOD(createRenderStates)                       (THIS_ IUnknown **returnObject, const RenderStates &renderStates) PURE;
+            STDMETHOD(createDepthStates)                        (THIS_ IUnknown **returnObject, const DepthStates &depthStates) PURE;
+            STDMETHOD(createBlendStates)                        (THIS_ IUnknown **returnObject, const UnifiedBlendStates &blendStates) PURE;
+            STDMETHOD(createBlendStates)                        (THIS_ IUnknown **returnObject, const IndependentBlendStates &blendStates) PURE;
+            STDMETHOD(createSamplerStates)                      (THIS_ IUnknown **returnObject, const SamplerStates &samplerStates) PURE;
 
-            STDMETHOD_(Handle, createRenderStates)              (THIS_ const RenderStates &renderStates) PURE;
-            STDMETHOD_(Handle, createDepthStates)               (THIS_ const DepthStates &depthStates) PURE;
-            STDMETHOD_(Handle, createBlendStates)               (THIS_ const UnifiedBlendStates &blendStates) PURE;
-            STDMETHOD_(Handle, createBlendStates)               (THIS_ const IndependentBlendStates &blendStates) PURE;
-            STDMETHOD_(Handle, createSamplerStates)             (THIS_ const SamplerStates &samplerStates) PURE;
+            STDMETHOD(createRenderTarget)                       (THIS_ TextureInterface **returnObject, UINT32 width, UINT32 height, Format format) PURE;
+            STDMETHOD(createDepthTarget)                        (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Format format) PURE;
 
-            STDMETHOD_(Handle, createRenderTarget)              (THIS_ UINT32 width, UINT32 height, Format format) PURE;
-            STDMETHOD_(Handle, createDepthTarget)               (THIS_ UINT32 width, UINT32 height, Format format) PURE;
+            STDMETHOD(createBuffer)                             (THIS_ BufferInterface **returnObject, UINT32 stride, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
+            STDMETHOD(createBuffer)                             (THIS_ BufferInterface **returnObject, Format format, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
+            STDMETHOD_(void, updateBuffer)                      (THIS_ BufferInterface *buffer, LPCVOID data) PURE;
+            STDMETHOD(mapBuffer)                                (THIS_ BufferInterface *buffer, LPVOID *data) PURE;
+            STDMETHOD_(void, unmapBuffer)                       (THIS_ BufferInterface *buffer) PURE;
 
-            STDMETHOD_(Handle, createBuffer)                    (THIS_ UINT32 stride, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
-            STDMETHOD_(Handle, createBuffer)                    (THIS_ Format format, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
-            STDMETHOD_(void, updateBuffer)                      (THIS_ Handle resourceHandle, LPCVOID data) PURE;
-            STDMETHOD(mapBuffer)                                (THIS_ Handle resourceHandle, LPVOID *data) PURE;
-            STDMETHOD_(void, unmapBuffer)                       (THIS_ Handle resourceHandle) PURE;
+            STDMETHOD(compileComputeProgram)                    (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(compileVertexProgram)                     (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(compileGeometryProgram)                   (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(compilePixelProgram)                      (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-            STDMETHOD_(Handle, compileComputeProgram)           (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, compileVertexProgram)            (THIS_ LPCSTR programScript, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, compileGeometryProgram)          (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, compilePixelProgram)             (THIS_ LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(loadComputeProgram)                       (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(loadVertexProgram)                        (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(loadGeometryProgram)                      (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(loadPixelProgram)                         (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-            STDMETHOD_(Handle, loadComputeProgram)              (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, loadVertexProgram)               (THIS_ LPCWSTR fileName, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, loadGeometryProgram)             (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD_(Handle, loadPixelProgram)                (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(createTexture)                            (THIS_ TextureInterface **returnObject, UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags) PURE;
+            STDMETHOD(loadTexture)                              (THIS_ TextureInterface **returnObject, LPCWSTR fileName, UINT32 flags) PURE;
+            STDMETHOD_(void, updateTexture)                     (THIS_ TextureInterface *texture, LPCVOID data, UINT32 pitch, Shape::Rectangle<UINT32> *rectangle = nullptr) PURE;
 
-            STDMETHOD_(Handle, createTexture)                   (THIS_ UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags) PURE;
-            STDMETHOD_(Handle, loadTexture)                     (THIS_ LPCWSTR fileName, UINT32 flags) PURE;
-            STDMETHOD_(void, updateTexture)                     (THIS_ Handle resourceHandle, LPCVOID data, UINT32 pitch, Rectangle<UINT32> *rectangle = nullptr) PURE;
-
-            STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Float4 &color) PURE;
-            STDMETHOD_(void, clearDefaultDepthStencilTarget)    (THIS_ UINT32 flags, float depth, UINT32 stencil) PURE;
-            STDMETHOD_(void, setDefaultTargets)                 (THIS_ ContextInterface *context = nullptr, Handle depthHandle = InvalidHandle) PURE;
+            STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Float4 &colorClear) PURE;
+            STDMETHOD_(void, clearDefaultDepthStencilTarget)    (THIS_ UINT32 flags, float depthClear, UINT32 stencilClear) PURE;
+            STDMETHOD_(void, setDefaultTargets)                 (THIS_ ContextInterface *context = nullptr, IUnknown *depthBuffer = nullptr) PURE;
 
             STDMETHOD_(void, executeCommandList)                (THIS_ IUnknown *commandList) PURE;
 

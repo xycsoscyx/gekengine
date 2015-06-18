@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GEK\Engine\PopulationInterface.h"
 #include "GEK\Engine\ComponentInterface.h"
 
 namespace Gek
@@ -21,7 +22,7 @@ namespace Gek
         {
         private:
             UINT32 emptyIndex;
-            std::unordered_map<Handle, UINT32> entityIndexList;
+            std::unordered_map<Population::Entity, UINT32> entityIndexList;
             std::vector<DATA> dataList;
 
         public:
@@ -35,23 +36,23 @@ namespace Gek
             }
 
             // Component::Interface
-            STDMETHODIMP_(void) addComponent(Handle entityHandle)
+            STDMETHODIMP_(void) addComponent(Population::Entity entity)
             {
                 if (emptyIndex < dataList.size())
                 {
-                    entityIndexList[entityHandle] = emptyIndex;
+                    entityIndexList[entity] = emptyIndex;
                     dataList[emptyIndex] = DATA();
                     emptyIndex++;
                 }
                 else
                 {
-                    entityIndexList[entityHandle] = emptyIndex;
+                    entityIndexList[entity] = emptyIndex;
                     dataList.push_back(DATA());
                     emptyIndex = dataList.size();
                 }
             }
 
-            STDMETHODIMP_(void) removeComponent(Handle entityHandle)
+            STDMETHODIMP_(void) removeComponent(Population::Entity entity)
             {
                 if (entityIndexList.size() == 1)
                 {
@@ -60,11 +61,11 @@ namespace Gek
                 }
                 else
                 {
-                    auto destroyIterator = entityIndexList.find(entityHandle);
+                    auto destroyIterator = entityIndexList.find(entity);
                     if (destroyIterator != entityIndexList.end())
                     {
                         emptyIndex--;
-                        auto moveIterator = std::find_if(entityIndexList.begin(), entityIndexList.end(), [&](std::pair<const Handle, UINT32> &entityIndex) -> bool
+                        auto moveIterator = std::find_if(entityIndexList.begin(), entityIndexList.end(), [&](std::pair<const Population::Entity, UINT32> &entityIndex) -> bool
                         {
                             return (entityIndex.second == emptyIndex);
                         });
@@ -80,14 +81,14 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(bool) hasComponent(Handle entityHandle) const
+            STDMETHODIMP_(bool) hasComponent(Population::Entity entity) const
             {
-                return (entityIndexList.count(entityHandle) > 0);
+                return (entityIndexList.count(entity) > 0);
             }
 
-            STDMETHODIMP_(LPVOID) getComponent(Handle entityHandle)
+            STDMETHODIMP_(LPVOID) getComponent(Population::Entity entity)
             {
-                auto indexIterator = entityIndexList.find(entityHandle);
+                auto indexIterator = entityIndexList.find(entity);
                 if (indexIterator != entityIndexList.end())
                 {
                     return LPVOID(&dataList[(*indexIterator).second]);
@@ -103,7 +104,7 @@ namespace Gek
                 dataList.clear();
             }
 
-            STDMETHODIMP_(void) getIntersectingSet(std::set<Handle> &entityList)
+            STDMETHODIMP_(void) getIntersectingSet(std::set<Population::Entity> &entityList)
             {
                 if (entityList.empty())
                 {
@@ -114,7 +115,7 @@ namespace Gek
                 }
                 else
                 {
-                    std::set<Handle> intersectingList;
+                    std::set<Population::Entity> intersectingList;
                     for (auto &entityIndex : entityIndexList)
                     {
                         if (entityList.count(entityIndex.first) > 0)
@@ -127,10 +128,10 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP getData(Handle entityHandle, std::unordered_map<CStringW, CStringW> &componentParameterList)
+            STDMETHODIMP getData(Population::Entity entity, std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
                 HRESULT resultValue = E_FAIL;
-                auto indexIterator = entityIndexList.find(entityHandle);
+                auto indexIterator = entityIndexList.find(entity);
                 if (indexIterator != entityIndexList.end())
                 {
                     const DATA &data = dataList[(*indexIterator).second];
@@ -140,10 +141,10 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP setData(Handle entityHandle, const std::unordered_map<CStringW, CStringW> &componentParameterList)
+            STDMETHODIMP setData(Population::Entity entity, const std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
                 HRESULT resultValue = E_FAIL;
-                auto indexIterator = entityIndexList.find(entityHandle);
+                auto indexIterator = entityIndexList.find(entity);
                 if (indexIterator != entityIndexList.end())
                 {
                     DATA &data = dataList[(*indexIterator).second];

@@ -64,12 +64,12 @@ namespace Gek
                 float consolePosition;
                 CStringW userMessage;
 
-                Handle backgroundBrushHandle;
-                Handle foregroundBrushHandle;
-                Handle textBrushHandle;
-                Handle fontHandle;
-                Handle bitmapHandle;
-                Handle logTypeBrushHandles[4];
+                CComPtr<IUnknown> backgroundBrush;
+                CComPtr<IUnknown> foregroundBrush;
+                CComPtr<IUnknown> bitmap;
+                CComPtr<IUnknown> font;
+                CComPtr<IUnknown> textBrush;
+                CComPtr<IUnknown> logTypeBrushList[4];
 
             public:
                 System(void)
@@ -79,29 +79,20 @@ namespace Gek
                     , updateAccumulator(0.0)
                     , consoleActive(false)
                     , consolePosition(0.0f)
-                    , backgroundBrushHandle(InvalidHandle)
-                    , foregroundBrushHandle(InvalidHandle)
-                    , textBrushHandle(InvalidHandle)
-                    , fontHandle(InvalidHandle)
-                    , bitmapHandle(InvalidHandle)
-                    , logTypeBrushHandles{ InvalidHandle, InvalidHandle, InvalidHandle, InvalidHandle }
                 {
                 }
 
                 ~System(void)
                 {
-                    if (video)
-                    {
-                        video->freeResource(backgroundBrushHandle);
-                        video->freeResource(foregroundBrushHandle);
-                        video->freeResource(textBrushHandle);
-                        video->freeResource(fontHandle);
-                        video->freeResource(bitmapHandle);
-                        video->freeResource(logTypeBrushHandles[0]);
-                        video->freeResource(logTypeBrushHandles[1]);
-                        video->freeResource(logTypeBrushHandles[2]);
-                        video->freeResource(logTypeBrushHandles[3]);
-                    }
+                    backgroundBrush.Release();
+                    foregroundBrush.Release();
+                    textBrush.Release();
+                    font.Release();
+                    bitmap.Release();
+                    logTypeBrushList[0].Release();
+                    logTypeBrushList[1].Release();
+                    logTypeBrushList[2].Release();
+                    logTypeBrushList[3].Release();
 
                     systemList.clear();
                     BaseObservable::removeObserver(render, getClass<Render::Observer>());
@@ -185,15 +176,46 @@ namespace Gek
                         float height = float(video->getHeight());
                         float consoleHeight = (height * 0.5f);
 
-                        backgroundBrushHandle = video->getVideo2D()->createBrush({ { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 0.5f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 0.5f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
-                        foregroundBrushHandle = video->getVideo2D()->createBrush({ { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 0.75f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 0.75f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
-                        textBrushHandle = video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
-                        fontHandle = video->getVideo2D()->createFont(L"Tahoma", 400, Video2D::FontStyle::Normal, 15.0f);
-                        bitmapHandle = video->getVideo2D()->loadBitmap(L"%root%\\data\\console.bmp");
-                        logTypeBrushHandles[0] = video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
-                        logTypeBrushHandles[1] = video->getVideo2D()->createBrush(Math::Float4(1.0f, 1.0f, 0.0f, 1.0f));
-                        logTypeBrushHandles[2] = video->getVideo2D()->createBrush(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
-                        logTypeBrushHandles[3] = video->getVideo2D()->createBrush(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                        resultValue = video->getVideo2D()->createBrush(&backgroundBrush, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 0.5f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 0.5f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = video->getVideo2D()->createBrush(&foregroundBrush, { { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 0.75f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 0.75f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                        }
+
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = video->getVideo2D()->createBrush(&textBrush, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+                        }
+
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = video->getVideo2D()->createFont(&font, L"Tahoma", 400, Video2D::FontStyle::Normal, 15.0f);
+                        }
+
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = video->getVideo2D()->loadBitmap(&bitmap, L"%root%\\data\\console.bmp");
+                        }
+
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = video->getVideo2D()->createBrush(&logTypeBrushList[0], Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+                        }
+
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = video->getVideo2D()->createBrush(&logTypeBrushList[1], Math::Float4(1.0f, 1.0f, 0.0f, 1.0f));
+                        }
+                        
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = video->getVideo2D()->createBrush(&logTypeBrushList[2], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                        }
+                        
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = video->getVideo2D()->createBrush(&logTypeBrushList[3], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                        }
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -441,17 +463,17 @@ namespace Gek
                         transformMatrix.translation = Math::Float2(0.0f, nTop);
                         video->getVideo2D()->setTransform(transformMatrix);
 
-                        video->getVideo2D()->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrushHandle, true);
-                        video->getVideo2D()->drawBitmap(bitmapHandle, { 0.0f, 0.0f, width, consoleHeight }, Video2D::InterpolationMode::LINEAR, 1.0f);
-                        video->getVideo2D()->drawRectangle({ 10.0f, 10.0f, (width - 10.0f), (consoleHeight - 40.0f) }, foregroundBrushHandle, true);
-                        video->getVideo2D()->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrushHandle, true);
-                        video->getVideo2D()->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, fontHandle, textBrushHandle, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
+                        video->getVideo2D()->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrush, true);
+                        video->getVideo2D()->drawBitmap(bitmap, { 0.0f, 0.0f, width, consoleHeight }, Video2D::InterpolationMode::LINEAR, 1.0f);
+                        video->getVideo2D()->drawRectangle({ 10.0f, 10.0f, (width - 10.0f), (consoleHeight - 40.0f) }, foregroundBrush, true);
+                        video->getVideo2D()->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrush, true);
+                        video->getVideo2D()->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, font, textBrush, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
 
                         float nPosition = (consoleHeight - 40.0f);
                         /*
                         for (auto &kMessage : m_aConsoleLog)
                         {
-                        video->getVideo2D()->drawText({ 15.0f, (nPosition - 20.0f), (width - 15.0f), nPosition }, fontHandle, logTypeBrushHandles[kMessage.first], kMessage.second);
+                        video->getVideo2D()->drawText({ 15.0f, (nPosition - 20.0f), (width - 15.0f), nPosition }, font, logTypeBrushList[kMessage.first], kMessage.second);
                         nPosition -= 20.0f;
                         }
                         */

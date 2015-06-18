@@ -1,10 +1,11 @@
 #pragma once
 
-#include "GEK\Utility\Common.h"
 #include "GEK\Context\ObserverInterface.h"
+#include <atlbase.h>
+#include <atlstr.h>
+#include <functional>
 #include <unordered_map>
 #include <vector>
-#include <functional>
 
 namespace Gek
 {
@@ -12,6 +13,9 @@ namespace Gek
     {
         namespace Population
         {
+            typedef UINT32 Entity;
+            static const Entity InvalidEntity = -1;
+
             DECLARE_INTERFACE_IID(Class, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5");
 
             DECLARE_INTERFACE_IID(Interface, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B") : virtual public IUnknown
@@ -24,20 +28,20 @@ namespace Gek
                 STDMETHOD(save)                             (THIS_ LPCWSTR fileName) PURE;
                 STDMETHOD_(void, free)                      (THIS) PURE;
 
-                STDMETHOD_(Handle, createEntity)            (THIS_ const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name = nullptr) PURE;
-                STDMETHOD_(void, killEntity)                (THIS_ Handle entityHandle) PURE;
-                STDMETHOD_(Handle, getNamedEntity)          (THIS_ LPCWSTR name) PURE;
+                STDMETHOD_(Entity, createEntity)            (THIS_ const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name = nullptr) PURE;
+                STDMETHOD_(void, killEntity)                (THIS_ Entity entity) PURE;
+                STDMETHOD_(Entity, getNamedEntity)          (THIS_ LPCWSTR name) PURE;
 
-                STDMETHOD_(void, listEntities)              (THIS_ std::function<void(Handle)> onEntity, bool runInParallel = false) PURE;
-                STDMETHOD_(void, listEntities)              (THIS_ const std::vector<Handle> &requiredComponentList, std::function<void(Handle)> onEntity, bool runInParallel = false) PURE;
+                STDMETHOD_(void, listEntities)              (THIS_ std::function<void(Entity)> onEntity, bool runInParallel = false) PURE;
+                STDMETHOD_(void, listEntities)              (THIS_ const std::vector<Entity> &requiredComponentList, std::function<void(Entity)> onEntity, bool runInParallel = false) PURE;
 
-                STDMETHOD_(bool, hasComponent)              (THIS_ Handle entityHandle, Handle componentHandle) PURE;
-                STDMETHOD_(LPVOID, getComponent)            (THIS_ Handle entityHandle, Handle componentHandle) PURE;
+                STDMETHOD_(bool, hasComponent)              (THIS_ Entity entity, Entity componentHandle) PURE;
+                STDMETHOD_(LPVOID, getComponent)            (THIS_ Entity entity, Entity componentHandle) PURE;
 
                 template <typename CLASS>
-                CLASS &getComponent(Handle entityHandle, Handle componentHandle)
+                CLASS &getComponent(Entity entity, Entity componentHandle)
                 {
-                    return *(CLASS *)getComponent(entityHandle, componentHandle);
+                    return *(CLASS *)getComponent(entity, componentHandle);
                 }
             };
 
@@ -47,8 +51,8 @@ namespace Gek
                 STDMETHOD_(void, onLoadEnd)                 (THIS_ HRESULT resultValue) { };
                 STDMETHOD_(void, onFree)                    (THIS) { };
 
-                STDMETHOD_(void, onEntityCreated)           (THIS_ Handle entityHandle) { };
-                STDMETHOD_(void, onEntityDestroyed)         (THIS_ Handle entityHandle) { };
+                STDMETHOD_(void, onEntityCreated)           (THIS_ Entity entity) { };
+                STDMETHOD_(void, onEntityDestroyed)         (THIS_ Entity entity) { };
 
                 STDMETHOD_(void, onUpdateBegin)             (THIS_ float frameTime) { };
                 STDMETHOD_(void, onUpdate)                  (THIS_ float frameTime) { };

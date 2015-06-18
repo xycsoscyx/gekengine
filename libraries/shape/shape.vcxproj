@@ -16,6 +16,7 @@
     <ClInclude Include="GEK\Shape\OrientedBox.h" />
     <ClInclude Include="GEK\Shape\Plane.h" />
     <ClInclude Include="GEK\Shape\Ray.h" />
+    <ClInclude Include="GEK\Shape\Rectangle.h" />
     <ClInclude Include="GEK\Shape\Sphere.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

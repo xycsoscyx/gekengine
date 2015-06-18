@@ -1,7 +1,6 @@
 #include <initguid.h>
 #include <cguid.h>
 
-#include "GEK\Utility\Common.h"
 #include "GEK\Utility\Display.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"

@@ -24,15 +24,14 @@ namespace Gek
                 private:
                     Video3D::Interface *video;
                     Render::Interface *render;
-                    std::vector<Handle> mapList;
+                    std::vector<CComPtr<Video3D::TextureInterface>> mapList;
                     std::vector<float> propertyList;
-                    Handle shaderHandle;
+                    CComPtr<IUnknown> shader;
 
                 public:
                     System(void)
                         : video(nullptr)
                         , render(nullptr)
-                        , shaderHandle(InvalidHandle)
                     {
                     }
 
@@ -74,11 +73,7 @@ namespace Gek
                                     if (xmlShaderNode)
                                     {
                                         CStringW shaderFileName = xmlShaderNode.getText();
-                                        if (render->loadShader(shaderFileName) != InvalidHandle)
-                                        {
-                                            shaderHandle = render->loadShader(shaderFileName);
-                                            resultValue = S_OK;
-                                        }
+                                        resultValue = render->loadShader(&shader, shaderFileName);
                                     }
                                 }
                             }

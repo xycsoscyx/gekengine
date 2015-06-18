@@ -20,16 +20,16 @@ namespace Gek
                 , public Population::Interface
             {
             private:
-                Handle nextEntityHandle;
-                std::unordered_map<CStringW, Handle> componentNameList;
-                std::unordered_map<Handle, CComPtr<Component::Interface>> componentList;
-                concurrency::concurrent_vector<Handle> entityList;
-                concurrency::concurrent_unordered_map<CStringW, Handle> namedEntityList;
-                concurrency::concurrent_vector<Handle> killEntityList;
+                Entity nextEntity;
+                std::unordered_map<CStringW, Entity> componentNameList;
+                std::unordered_map<Entity, CComPtr<Component::Interface>> componentList;
+                concurrency::concurrent_vector<Entity> entityList;
+                concurrency::concurrent_unordered_map<CStringW, Entity> namedEntityList;
+                concurrency::concurrent_vector<Entity> killEntityList;
 
             public:
                 System(void)
-                    : nextEntityHandle(InvalidHandle)
+                    : nextEntity(InvalidEntity)
                 {
                 }
 
@@ -87,7 +87,7 @@ namespace Gek
                     BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdateEnd, std::placeholders::_1, frameTime)));
                     for (auto killEntityHandle : killEntityList)
                     {
-                        auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Handle> &namedEntity) -> bool
+                        auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity> &namedEntity) -> bool
                         {
                             return (namedEntity.second == killEntityHandle);
                         });
@@ -104,7 +104,7 @@ namespace Gek
                                 component.second->removeComponent(killEntityHandle);
                             }
 
-                            auto entityIterator = std::find_if(entityList.begin(), entityList.end(), [&](Handle entityHandle) -> bool
+                            auto entityIterator = std::find_if(entityList.begin(), entityList.end(), [&](Entity entityHandle) -> bool
                             {
                                 return (entityHandle == killEntityHandle);
                             });
@@ -204,7 +204,7 @@ namespace Gek
                     for (auto &entityHandle : entityList)
                     {
                         Gek::Xml::Node xmlEntityNode = xmlPopulationNode.createChildElement(L"entity");
-                        auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Handle> &namedEntity) -> bool
+                        auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity> &namedEntity) -> bool
                         {
                             return (namedEntity.second == entityHandle);
                         });
@@ -252,17 +252,17 @@ namespace Gek
                     BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onFree, std::placeholders::_1)));
                 }
 
-                STDMETHODIMP_(Handle) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
+                STDMETHODIMP_(Entity) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
                 {
                     gekLogScope(__FUNCTION__);
                     gekLogMessage(L"Creating Entity...");
 
-                    Handle entityHandle = InterlockedIncrement(&nextEntityHandle);
+                    Entity entityHandle = InterlockedIncrement(&nextEntity);
                     if (name != nullptr)
                     {
                         if (!namedEntityList.insert(std::make_pair(name, entityHandle)).second)
                         {
-                            return InvalidHandle;
+                            return InvalidEntity;
                         }
                     }
 
@@ -293,17 +293,17 @@ namespace Gek
                     return entityHandle;
                 }
 
-                STDMETHODIMP_(void) killEntity(Handle entityHandle)
+                STDMETHODIMP_(void) killEntity(Entity entityHandle)
                 {
                     BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onEntityDestroyed, std::placeholders::_1, entityHandle)));
                     killEntityList.push_back(entityHandle);
                 }
 
-                STDMETHODIMP_(Handle) getNamedEntity(LPCWSTR name)
+                STDMETHODIMP_(Entity) getNamedEntity(LPCWSTR name)
                 {
-                    REQUIRE_RETURN(name, InvalidHandle);
+                    REQUIRE_RETURN(name, InvalidEntity);
 
-                    Handle entityHandle = InvalidHandle;
+                    Entity entityHandle = InvalidEntity;
                     auto pIterator = namedEntityList.find(name);
                     if (pIterator != namedEntityList.end())
                     {
@@ -313,11 +313,11 @@ namespace Gek
                     return entityHandle;
                 }
 
-                STDMETHODIMP_(void) listEntities(std::function<void(Handle)> onEntity, bool runInParallel)
+                STDMETHODIMP_(void) listEntities(std::function<void(Entity)> onEntity, bool runInParallel)
                 {
                     if (runInParallel)
                     {
-                        concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](Handle entityHandle) -> void
+                        concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](Entity entityHandle) -> void
                         {
                             onEntity(entityHandle);
                         });
@@ -331,9 +331,9 @@ namespace Gek
                     }
                 }
 
-                STDMETHODIMP_(void) listEntities(const std::vector<Handle> &requiredComponentList, std::function<void(Handle)> onEntity, bool runInParallel)
+                STDMETHODIMP_(void) listEntities(const std::vector<Entity> &requiredComponentList, std::function<void(Entity)> onEntity, bool runInParallel)
                 {
-                    std::set<Handle> entityList;
+                    std::set<Entity> entityList;
                     for (auto &requiredComponent : requiredComponentList)
                     {
                         auto pIterator = componentList.find(requiredComponent);
@@ -351,7 +351,7 @@ namespace Gek
                     {
                         if (runInParallel)
                         {
-                            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](Handle entityHandle) -> void
+                            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](Entity entityHandle) -> void
                             {
                                 onEntity(entityHandle);
                             });
@@ -366,7 +366,7 @@ namespace Gek
                     }
                 }
 
-                STDMETHODIMP_(bool) hasComponent(Handle entityHandle, Handle componentHandle)
+                STDMETHODIMP_(bool) hasComponent(Entity entityHandle, Entity componentHandle)
                 {
                     bool bReturn = false;
                     auto pIterator = componentList.find(componentHandle);
@@ -378,7 +378,7 @@ namespace Gek
                     return bReturn;
                 }
 
-                STDMETHODIMP_(LPVOID) getComponent(Handle entityHandle, Handle componentHandle)
+                STDMETHODIMP_(LPVOID) getComponent(Entity entityHandle, Entity componentHandle)
                 {
                     auto pIterator = componentList.find(componentHandle);
                     if (pIterator != componentList.end())

@@ -49,7 +49,7 @@ namespace Gek
                         return L"follower";
                     }
 
-                    STDMETHODIMP_(Handle) getIdentifier(void) const
+                    STDMETHODIMP_(UINT32) getIdentifier(void) const
                     {
                         return identifier;
                     }

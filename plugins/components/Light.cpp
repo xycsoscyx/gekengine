@@ -45,7 +45,7 @@ namespace Gek
                         return L"point_light";
                     }
 
-                    STDMETHODIMP_(Handle) getIdentifier(void) const
+                    STDMETHODIMP_(UINT32) getIdentifier(void) const
                     {
                         return identifier;
                     }

@@ -42,11 +42,11 @@ namespace Gek
             STDMETHOD_(void, setDopplerFactor)  (THIS_ float factor) PURE;
             STDMETHOD_(void, setRollOffFactor)  (THIS_ float factor) PURE;
 
-            STDMETHOD(copyEffect)               (THIS_ EffectInterface *source, EffectInterface **returnObject) PURE;
-            STDMETHOD(copySound)                (THIS_ SoundInterface *source, SoundInterface **returnObject) PURE;
+            STDMETHOD(copyEffect)               (THIS_ EffectInterface **returnObject, EffectInterface *source) PURE;
+            STDMETHOD(copySound)                (THIS_ SoundInterface **returnObject, SoundInterface *source) PURE;
 
-            STDMETHOD(loadEffect)               (THIS_ LPCWSTR fileName, EffectInterface **returnObject) PURE;
-            STDMETHOD(loadSound)                (THIS_ LPCWSTR fileName, SoundInterface **returnObject) PURE;
+            STDMETHOD(loadEffect)               (THIS_ EffectInterface **returnObject, LPCWSTR fileName) PURE;
+            STDMETHOD(loadSound)                (THIS_ SoundInterface **returnObject, LPCWSTR fileName) PURE;
         };
     }; // namespace Audio
 }; // namespace Gek

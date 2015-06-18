@@ -167,14 +167,14 @@ namespace Gek
                         bool clearDepthBuffer;
                         float depthClearValue;
                         UINT32 stencilClearValue;
-                        Handle depthStatesHandle;
-                        Handle renderStatesHandle;
+                        CComPtr<IUnknown> depthStates;
+                        CComPtr<IUnknown> renderStates;
                         Math::Float4 blendFactor;
-                        Handle blendStatesHandle;
-                        std::vector<CStringW> targetList;
+                        CComPtr<IUnknown> blendStates;
+                        std::vector<CStringW> renderTargetList;
                         std::vector<CStringW> resourceList;
                         std::vector<CStringW> unorderedAccessList;
-                        Handle programHandle;
+                        CComPtr<IUnknown> program;
                         UINT32 dispatchWidth;
                         UINT32 dispatchHeight;
                         UINT32 dispatchDepth;
@@ -184,11 +184,7 @@ namespace Gek
                             , clearDepthBuffer(false)
                             , depthClearValue(1.0f)
                             , stencilClearValue(0)
-                            , depthStatesHandle(InvalidHandle)
-                            , renderStatesHandle(InvalidHandle)
                             , blendFactor(1.0f)
-                            , blendStatesHandle(InvalidHandle)
-                            , programHandle(InvalidHandle)
                             , dispatchWidth(0)
                             , dispatchHeight(0)
                             , dispatchDepth(0)
@@ -204,9 +200,9 @@ namespace Gek
                     std::vector<Map> mapList;
                     std::vector<Property> propertyList;
                     std::unordered_map<CStringW, CStringW> defineList;
-                    Handle depthHandle;
-                    std::unordered_map<CStringW, Handle> targetList;
-                    std::unordered_map<CStringW, Handle> bufferList;
+                    CComPtr<IUnknown> depthBuffer;
+                    std::unordered_map<CStringW, CComPtr<Video3D::TextureInterface>> renderTargetList;
+                    std::unordered_map<CStringW, CComPtr<Video3D::BufferInterface>> bufferList;
                     std::vector<Pass> passList;
 
                 private:
@@ -342,8 +338,7 @@ namespace Gek
                             }
                         }
 
-                        pass.depthStatesHandle = render->createDepthStates(depthStates);
-                        return (pass.depthStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
+                        return render->createDepthStates(&pass.depthStates, depthStates);
                     }
 
                     HRESULT loadRenderStates(Pass &pass, Gek::Xml::Node &xmlRenderStatesNode)
@@ -357,9 +352,7 @@ namespace Gek
                         renderStates.slopeScaledDepthBias = String::getFloat(xmlRenderStatesNode.firstChildElement(L"slopescaleddepthbias").getText());
                         renderStates.depthClipEnable = String::getBoolean(xmlRenderStatesNode.firstChildElement(L"depthclip").getText());
                         renderStates.multisampleEnable = String::getBoolean(xmlRenderStatesNode.firstChildElement(L"multisample").getText());
-                        pass.renderStatesHandle = render->createRenderStates(renderStates);
-
-                        return (pass.renderStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
+                        return render->createRenderStates(&pass.renderStates, renderStates);
                     }
 
                     HRESULT loadBlendStates(Pass &pass, Gek::Xml::Node &xmlBlendStatesNode)
@@ -381,7 +374,7 @@ namespace Gek
                                     xmlTargetNode = xmlTargetNode.nextSiblingElement(L"target");
                                 };
 
-                                pass.blendStatesHandle = render->createBlendStates(blendStates);
+                                return render->createBlendStates(&pass.blendStates, blendStates);
                             }
                             else
                             {
@@ -389,11 +382,11 @@ namespace Gek
                                 blendStates.enable = true;
                                 blendStates.alphaToCoverage = alphaToCoverage;
                                 loadBlendStates(blendStates, xmlTargetNode);
-                                pass.blendStatesHandle = render->createBlendStates(blendStates);
+                                return render->createBlendStates(&pass.blendStates, blendStates);
                             }
                         }
 
-                        return (pass.blendStatesHandle == InvalidHandle ? E_INVALIDARG : S_OK);
+                        return E_INVALIDARG;
                     }
 
                     std::vector<CStringW> loadChildList(Gek::Xml::Node &xmlProgramNode, LPCWSTR name)
@@ -441,7 +434,6 @@ namespace Gek
                         , render(nullptr)
                         , width(0)
                         , height(0)
-                        , depthHandle(InvalidHandle)
                     {
                     }
 
@@ -549,7 +541,7 @@ namespace Gek
                                     if (xmlDepthNode)
                                     {
                                         Video3D::Format format = getFormat(xmlDepthNode.getText());
-                                        depthHandle = render->createDepthTarget(width, height, format);
+                                        resultValue = render->createDepthTarget(&depthBuffer, width, height, format);
                                     }
 
                                     Gek::Xml::Node xmlTargetsNode = xmlShaderNode.firstChildElement(L"targets");
@@ -561,7 +553,7 @@ namespace Gek
                                             CStringW name(xmlTargetNode.getType());
                                             Video3D::Format format = getFormat(xmlTargetNode.getText());
                                             BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
-                                            targetList[name] = render->createRenderTarget(width, height, format);
+                                            resultValue = render->createRenderTarget(&renderTargetList[name], width, height, format);
 
                                             resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
@@ -578,7 +570,7 @@ namespace Gek
                                             CStringW name(xmlBufferNode.getType());
                                             Video3D::Format format = getFormat(xmlBufferNode.getText());
                                             UINT32 size = UINT32(parseValue(xmlBufferNode.getAttribute(L"size")));
-                                            bufferList[name] = render->createBuffer(format, size, Video3D::BufferFlags::UNORDERED_ACCESS | Video3D::BufferFlags::RESOURCE);
+                                            resultValue = render->createBuffer(&bufferList[name], format, size, Video3D::BufferFlags::UNORDERED_ACCESS | Video3D::BufferFlags::RESOURCE);
                                             switch (format)
                                             {
                                             case Video3D::Format::R_UINT8:
@@ -656,7 +648,7 @@ namespace Gek
                                             }
                                         }
 
-                                        pass.targetList = loadChildList(xmlPassNode, L"targets");
+                                        pass.renderTargetList = loadChildList(xmlPassNode, L"targets");
                                         if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"depthstates"))
                                         {
                                             resultValue = loadDepthStates(pass, xmlPassNode.firstChildElement(L"depthstates"));
@@ -742,9 +734,9 @@ namespace Gek
                                         engineData +=
                                             "struct OutputPixel                                         \r\n"\
                                             "{                                                          \r\n";
-                                        for (UINT32 index = 0; index < pass.targetList.size(); index++)
+                                        for (UINT32 index = 0; index < pass.renderTargetList.size(); index++)
                                         {
-                                            CStringW resource(pass.targetList[index]);
+                                            CStringW resource(pass.renderTargetList[index]);
                                             auto resourceIterator = resourceList.find(resource);
                                             if (resourceIterator != resourceList.end())
                                             {
@@ -815,7 +807,7 @@ namespace Gek
                                                 defines["dispatchWidth"] = String::setUINT32(pass.dispatchWidth);
                                                 defines["dispatchHeight"] = String::setUINT32(pass.dispatchHeight);
                                                 defines["dispatchDepth"] = String::setUINT32(pass.dispatchDepth);
-                                                pass.programHandle = render->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                                resultValue = render->loadComputeProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
                                             }
                                             else
                                             {
@@ -835,7 +827,7 @@ namespace Gek
                                                 engineData +=
                                                     "};                                                     \r\n"\
                                                     "                                                       \r\n";
-                                                pass.programHandle = render->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                                resultValue = render->loadPixelProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
                                             }
                                         }
                                         else

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GEK\Math\Vector3.h"
-#include "GEK\Utility\Common.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <unordered_map>
@@ -14,7 +13,7 @@ namespace Gek
         {
             namespace Size
             {
-                static const Handle identifier = 0x00000005;
+                static const UINT32 identifier = 0x00000005;
                 struct Data
                 {
                     float value;

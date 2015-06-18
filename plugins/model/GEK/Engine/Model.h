@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GEK\Math\Vector4.h"
-#include "GEK\Utility\Common.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <unordered_map>
@@ -10,7 +9,7 @@ namespace Gek
 {
     namespace Model
     {
-        static const Handle identifier = 0x00000010;
+        static const UINT32 identifier = 0x00000010;
         struct Data
         {
             CStringW value;
@@ -22,6 +21,11 @@ namespace Gek
             inline operator LPCWSTR () const
             {
                 return value.GetString();
+            }
+
+            inline operator CStringW () const
+            {
+                return value;
             }
 
             inline CStringW &operator = (LPCWSTR value)

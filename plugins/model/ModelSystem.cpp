@@ -1,7 +1,6 @@
 ﻿#include "GEK\Math\Matrix4x4.h"
 #include "GEK\Shape\AlignedBox.h"
 #include "GEK\Shape\OrientedBox.h"
-#include "GEK\Utility\Common.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
@@ -22,6 +21,7 @@
 #include <map>
 #include <set>
 #include <ppl.h>
+#include <algorithm>
 
 #undef min
 
@@ -45,12 +45,19 @@ namespace Gek
                 Math::Float3 normal;
             };
 
-            struct Material
+            struct MaterialInfo
             {
-                Handle materialHandle;
+                CComPtr<IUnknown> material;
                 UINT32 firstVertex;
                 UINT32 firstIndex;
                 UINT32 indexCount;
+
+                MaterialInfo(void)
+                    : firstVertex(0)
+                    , firstIndex(0)
+                    , indexCount(0)
+                {
+                }
             };
 
             struct Data
@@ -59,15 +66,13 @@ namespace Gek
                 bool ready;
                 CStringW fileName;
                 Shape::AlignedBox alignedBox;
-                Handle vertexHandle;
-                Handle indexHandle;
-                std::vector<Material> materialList;
+                CComPtr<Video3D::BufferInterface> vertexBuffer;
+                CComPtr<Video3D::BufferInterface> indexBuffer;
+                std::vector<MaterialInfo> materialInfoList;
 
                 Data(void)
                     : loaded(false)
                     , ready(false)
-                    , vertexHandle(InvalidHandle)
-                    , indexHandle(InvalidHandle)
                 {
                 }
             };
@@ -93,23 +98,17 @@ namespace Gek
             Engine::Render::Interface *render;
             Engine::Population::Interface *population;
 
-            Handle pluginHandle;
-            Handle instanceHandle;
+            CComPtr<IUnknown> plugin;
 
-            Handle nextModelHandle;
-            concurrency::concurrent_unordered_map<Handle, Data> dataList;
-            concurrency::concurrent_unordered_map<CStringW, Handle> dataNameList;
-            concurrency::concurrent_unordered_map<Handle, Handle> dataEntityList;
-            concurrency::concurrent_unordered_map<Handle, std::vector<Instance>> visibleList;
+            concurrency::concurrent_unordered_map<CStringW, Data> dataMap;
+            concurrency::concurrent_unordered_map<Engine::Population::Entity, Data *> dataEntityList;
+            concurrency::concurrent_unordered_map<Data *, std::vector<Instance>> visibleList;
 
         public:
             System(void)
                 : render(nullptr)
                 , video(nullptr)
                 , population(nullptr)
-                , pluginHandle(InvalidHandle)
-                , instanceHandle(InvalidHandle)
-                , nextModelHandle(InvalidHandle)
             {
             }
 
@@ -126,7 +125,7 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_COM(Engine::System::Interface)
             END_INTERFACE_LIST_USER
 
-            HRESULT preLoadData(LPCWSTR fileName, Data &data)
+            HRESULT loadDataSize(LPCWSTR fileName, Data &data)
             {
                 gekLogScope(__FUNCTION__);
 
@@ -192,28 +191,27 @@ namespace Gek
                         rawFileData += sizeof(UINT32);
 
                         resultValue = S_OK;
-                        data.materialList.resize(materialCount);
+                        data.materialInfoList.resize(materialCount);
                         for (UINT32 materialIndex = 0; materialIndex < materialCount; ++materialIndex)
                         {
                             CStringA materialNameUtf8(rawFileData);
                             rawFileData += (materialNameUtf8.GetLength() + 1);
-                            Handle materialHandle = render->loadMaterial(CA2W(materialNameUtf8, CP_UTF8));
-                            if (materialHandle == InvalidHandle)
+
+                            MaterialInfo &materialInfo = data.materialInfoList[materialIndex];
+                            resultValue = render->loadMaterial(&materialInfo.material, CA2W(materialNameUtf8, CP_UTF8));
+                            if (!materialInfo.material)
                             {
                                 resultValue = E_FAIL;
                                 break;
                             }
 
-                            Material &material = data.materialList[materialIndex];
-                            material.materialHandle = materialHandle;
-
-                            material.firstVertex = *((UINT32 *)rawFileData);
+                            materialInfo.firstVertex = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            material.firstIndex = *((UINT32 *)rawFileData);
+                            materialInfo.firstIndex = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            material.indexCount = *((UINT32 *)rawFileData);
+                            materialInfo.indexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
                         }
 
@@ -222,7 +220,7 @@ namespace Gek
                             UINT32 vertexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            data.vertexHandle = video->createBuffer(sizeof(Vertex), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                            resultValue = video->createBuffer(&data.vertexBuffer, sizeof(Vertex), vertexCount, Video3D::BufferFlags::VERTEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
                             rawFileData += (sizeof(Vertex) * vertexCount);
                         }
 
@@ -231,7 +229,7 @@ namespace Gek
                             UINT32 indexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            data.indexHandle = video->createBuffer(sizeof(UINT16), indexCount, Video3D::BufferFlags::INDEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
+                            resultValue = video->createBuffer(&data.vertexBuffer, sizeof(UINT16), indexCount, Video3D::BufferFlags::INDEX_BUFFER | Video3D::BufferFlags::STATIC, rawFileData);
                             rawFileData += (sizeof(UINT16) * indexCount);
                         }
                     }
@@ -243,24 +241,6 @@ namespace Gek
                 }
 
                 return resultValue;
-            }
-
-            Handle getModelHandle(LPCWSTR fileName)
-            {
-                Handle modelHandle = InvalidHandle;
-                auto dataNameIterator = dataNameList.find(fileName);
-                if (dataNameIterator != dataNameList.end())
-                {
-                    modelHandle = (*dataNameIterator).second;
-                }
-                else
-                {
-                    modelHandle = InterlockedIncrement(&nextModelHandle);
-                    dataNameList[fileName] = modelHandle;
-                    preLoadData(fileName, dataList[modelHandle]);
-                }
-
-                return modelHandle;
             }
 
             // System::Interface
@@ -289,7 +269,7 @@ namespace Gek
 
                 if (SUCCEEDED(resultValue))
                 {
-                    pluginHandle = render->loadPlugin(L"model");
+                    resultValue = render->loadPlugin(&plugin, L"model");
                 }
 
                 return resultValue;
@@ -312,33 +292,36 @@ namespace Gek
             {
                 REQUIRE_VOID_RETURN(video);
 
-                for (auto &data : dataList)
-                {
-                    video->freeResource(data.second.vertexHandle);
-                    video->freeResource(data.second.indexHandle);
-                }
-
-                dataList.clear();
-                dataNameList.clear();
+                dataMap.clear();
                 dataEntityList.clear();
             }
 
-            STDMETHODIMP_(void) onEntityCreated(Handle entityHandle)
+            STDMETHODIMP_(void) onEntityCreated(Engine::Population::Entity entity)
             {
                 REQUIRE_VOID_RETURN(population);
 
-                if (population->hasComponent(entityHandle, Model::identifier) &&
-                    population->hasComponent(entityHandle, Engine::Components::Transform::identifier))
+                if (population->hasComponent(entity, Model::identifier) &&
+                    population->hasComponent(entity, Engine::Components::Transform::identifier))
                 {
-                    auto &modelComponent = population->getComponent<Model::Data>(entityHandle, Model::identifier);
-                    auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(entityHandle, Engine::Components::Transform::identifier);
-                    dataEntityList[entityHandle] = getModelHandle(modelComponent);
+                    auto &modelComponent = population->getComponent<Model::Data>(entity, Model::identifier);
+                    auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(entity, Engine::Components::Transform::identifier);
+                    auto dataNameIterator = dataMap.find(modelComponent);
+                    if (dataNameIterator != dataMap.end())
+                    {
+                        dataEntityList[entity] = &(*dataNameIterator).second;
+                    }
+                    else
+                    {
+                        Data &data = dataMap[modelComponent];
+                        loadDataSize(modelComponent, data);
+                        dataEntityList[entity] = &data;
+                    }
                 }
             }
 
-            STDMETHODIMP_(void) onEntityDestroyed(Handle entityHandle)
+            STDMETHODIMP_(void) onEntityDestroyed(Engine::Population::Entity entity)
             {
-                auto dataEntityIterator = dataEntityList.find(entityHandle);
+                auto dataEntityIterator = dataEntityList.find(entity);
                 if (dataEntityIterator != dataEntityList.end())
                 {
                     dataEntityList.unsafe_erase(dataEntityIterator);
@@ -346,44 +329,41 @@ namespace Gek
             }
 
             // Render::Observer
-            STDMETHODIMP_(void) OnRenderScene(Handle cameraHandle, const Gek::Shape::Frustum &viewFrustum)
+            STDMETHODIMP_(void) OnRenderScene(Engine::Population::Entity cameraEntity, const Gek::Shape::Frustum &viewFrustum)
             {
                 REQUIRE_VOID_RETURN(population);
 
                 visibleList.clear();
                 for (auto dataEntity : dataEntityList)
                 {
-                    auto dataIterator = dataList.find(dataEntity.second);
-                    if (dataIterator != dataList.end())
+                    Data &data = *(dataEntity.second);
+                    Gek::Math::Float3 size(1.0f, 1.0f, 1.0f);
+                    if (population->hasComponent(dataEntity.first, Engine::Components::Size::identifier))
                     {
-                        Gek::Math::Float3 size(1.0f, 1.0f, 1.0f);
-                        if (population->hasComponent(dataEntity.first, Engine::Components::Size::identifier))
+                        size = population->getComponent<Engine::Components::Size::Data>(dataEntity.first, Engine::Components::Size::identifier);
+                    }
+
+                    Gek::Shape::AlignedBox alignedBox(data.alignedBox);
+                    alignedBox.minimum *= size;
+                    alignedBox.maximum *= size;
+
+                    auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(dataEntity.first, Engine::Components::Transform::identifier);
+                    Shape::OrientedBox orientedBox(alignedBox, transformComponent.rotation, transformComponent.position);
+                    if (viewFrustum.isVisible(orientedBox))
+                    {
+                        Gek::Math::Float4 color(1.0f, 1.0f, 1.0f, 1.0f);
+                        if (population->hasComponent(dataEntity.first, Engine::Components::Color::identifier))
                         {
-                            size = population->getComponent<Engine::Components::Size::Data>(dataEntity.first, Engine::Components::Size::identifier);
+                            color = population->getComponent<Engine::Components::Color::Data>(dataEntity.first, Engine::Components::Color::identifier);
                         }
 
-                        Gek::Shape::AlignedBox alignedBox((*dataIterator).second.alignedBox);
-                        alignedBox.minimum *= size;
-                        alignedBox.maximum *= size;
-
-                        auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(dataEntity.first, Engine::Components::Transform::identifier);
-                        Shape::OrientedBox orientedBox(alignedBox, transformComponent.rotation, transformComponent.position);
-                        if (viewFrustum.isVisible(orientedBox))
-                        {
-                            Gek::Math::Float4 color(1.0f, 1.0f, 1.0f, 1.0f);
-                            if (population->hasComponent(dataEntity.first, Engine::Components::Color::identifier))
-                            {
-                                color = population->getComponent<Engine::Components::Color::Data>(dataEntity.first, Engine::Components::Color::identifier);
-                            }
-
-                            visibleList[dataEntity.second].push_back(Instance(orientedBox.matrix, size, color, viewFrustum.getDistance(orientedBox.matrix.translation)));
-                        }
+                        visibleList[dataEntity.second].push_back(Instance(orientedBox.matrix, size, color, viewFrustum.getDistance(orientedBox.matrix.translation)));
                     }
                 }
 
                 for (auto instancePair : visibleList)
                 {
-                    Data &data = dataList[instancePair.first];
+                    Data &data = *(instancePair.first);
                     if (SUCCEEDED(loadData(data)) && data.ready)
                     {
                         auto &instanceList = instancePair.second;
@@ -392,9 +372,9 @@ namespace Gek
                             return (leftInstance.distance < rightInstance.distance);
                         });
 
-                        for (auto &material : data.materialList)
+                        for (auto &materialInfo : data.materialInfoList)
                         {
-                            render->drawInstancedIndexedPrimitive(pluginHandle, material.materialHandle, instanceList.data(), sizeof(Instance), instanceList.size(), data.vertexHandle, data.indexHandle, material.indexCount, material.firstIndex, material.firstVertex);
+                            render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, instanceList.data(), sizeof(Instance), instanceList.size(), data.vertexBuffer, materialInfo.firstVertex, data.indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
                         }
                     }
                 }

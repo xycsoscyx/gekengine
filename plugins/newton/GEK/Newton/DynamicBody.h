@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GEK\Math\Vector4.h"
-#include "GEK\Utility\Common.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <unordered_map>
@@ -12,7 +11,7 @@ namespace Gek
     {
         namespace DynamicBody
         {
-            static const Handle identifier = 0x00000100;
+            static const UINT32 identifier = 0x00000100;
             struct Data
             {
                 CStringW shape;

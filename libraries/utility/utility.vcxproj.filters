@@ -47,8 +47,5 @@
     <ClInclude Include="GEK\Utility\Display.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\Common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

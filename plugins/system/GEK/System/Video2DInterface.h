@@ -3,7 +3,7 @@
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Matrix3x2.h"
-#include "GEK\Utility\Common.h"
+#include "GEK\Shape\Rectangle.h"
 #include <unordered_map>
 
 namespace Gek
@@ -48,26 +48,26 @@ namespace Gek
 
         DECLARE_INTERFACE_IID(Interface, "D3B65773-4EB1-46F8-A38D-009CA43CE77F") : virtual public IUnknown
         {
-            STDMETHOD_(Handle, createBrush)         (THIS_ const Math::Float4 &color) PURE;
-            STDMETHOD_(Handle, createBrush)         (THIS_ const std::vector<GradientPoint> &stopPoints, const Rectangle<float> &extents) PURE;
+            STDMETHOD(createBrush)                  (THIS_ IUnknown **returnObject, const Math::Float4 &color) PURE;
+            STDMETHOD(createBrush)                  (THIS_ IUnknown **returnObject, const std::vector<GradientPoint> &stopPoints, const Shape::Rectangle<float> &extents) PURE;
 
-            STDMETHOD_(Handle, createFont)          (THIS_ LPCWSTR face, UINT32 weight, FontStyle style, float size) PURE;
+            STDMETHOD(createFont)                   (THIS_ IUnknown **returnObject, LPCWSTR face, UINT32 weight, FontStyle style, float size) PURE;
 
-            STDMETHOD_(Handle, loadBitmap)          (THIS_ LPCWSTR fileName) PURE;
+            STDMETHOD(loadBitmap)                   (THIS_ IUnknown **returnObject, LPCWSTR fileName) PURE;
 
             STDMETHOD(createGeometry)               (THIS_ GeometryInterface **returnObject) PURE;
 
             STDMETHOD_(void, setTransform)          (THIS_ const Math::Float3x2 &matrix) PURE;
 
-            STDMETHOD_(void, drawText)              (THIS_ const Rectangle<float> &extents, Handle fontHandle, Handle brushHandle, LPCWSTR format, ...) PURE;
+            STDMETHOD_(void, drawText)              (THIS_ const Shape::Rectangle<float> &extents, IUnknown *font, IUnknown *brush, LPCWSTR format, ...) PURE;
 
-            STDMETHOD_(void, drawRectangle)         (THIS_ const Rectangle<float> &extents, Handle brushHandle, bool fillShape) PURE;
-            STDMETHOD_(void, drawRectangle)         (THIS_ const Rectangle<float> &extents, const Math::Float2 &cornerRadius, Handle brushHandle, bool fillShape) PURE;
+            STDMETHOD_(void, drawRectangle)         (THIS_ const Shape::Rectangle<float> &extents, IUnknown *brush, bool fillShape) PURE;
+            STDMETHOD_(void, drawRectangle)         (THIS_ const Shape::Rectangle<float> &extents, const Math::Float2 &cornerRadius, IUnknown *brush, bool fillShape) PURE;
 
-            STDMETHOD_(void, drawBitmap)            (THIS_ Handle bitmapHandlef, const Rectangle<float> &destinationExtents, InterpolationMode interpolationMode = InterpolationMode::NEAREST_NEIGHBOR, float opacity = 1.0) PURE;
-            STDMETHOD_(void, drawBitmap)            (THIS_ Handle bitmapHandlef, const Rectangle<float> &destinationExtents, const Rectangle<float> &sourceExtents, InterpolationMode interpolationMode = InterpolationMode::NEAREST_NEIGHBOR, float opacity = 1.0) PURE;
+            STDMETHOD_(void, drawBitmap)            (THIS_ IUnknown *bitmap, const Shape::Rectangle<float> &destinationExtents, InterpolationMode interpolationMode = InterpolationMode::NEAREST_NEIGHBOR, float opacity = 1.0) PURE;
+            STDMETHOD_(void, drawBitmap)            (THIS_ IUnknown *bitmap, const Shape::Rectangle<float> &destinationExtents, const Shape::Rectangle<float> &sourceExtents, InterpolationMode interpolationMode = InterpolationMode::NEAREST_NEIGHBOR, float opacity = 1.0) PURE;
 
-            STDMETHOD_(void, drawGeometry)          (THIS_ GeometryInterface *geometry, Handle brushHandle, bool fillShape) PURE;
+            STDMETHOD_(void, drawGeometry)          (THIS_ GeometryInterface *geometry, IUnknown *brush, bool fillShape) PURE;
 
             STDMETHOD_(void, beginDraw)             (THIS) PURE;
             STDMETHOD(endDraw)                      (THIS) PURE;

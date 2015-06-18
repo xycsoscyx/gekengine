@@ -271,7 +271,7 @@ namespace Gek
                 directSoundListener->SetRolloffFactor(factor, DS3D_DEFERRED);
             }
 
-            STDMETHODIMP copyEffect(EffectInterface *source, EffectInterface **returnObject)
+            STDMETHODIMP copyEffect(EffectInterface **returnObject, EffectInterface *source)
             {
                 gekLogScope(__FUNCTION__);
 
@@ -304,7 +304,7 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP copySound(SoundInterface *source, SoundInterface **returnObject)
+            STDMETHODIMP copySound(SoundInterface **returnObject, SoundInterface *source)
             {
                 gekLogScope(__FUNCTION__);
 
@@ -341,7 +341,7 @@ namespace Gek
                 return resultValue;
             }
 
-            HRESULT loadFromFile(LPCWSTR fileName, DWORD flags, GUID soundAlgorithm, IDirectSoundBuffer **returnObject)
+            HRESULT loadFromFile(IDirectSoundBuffer **returnObject, LPCWSTR fileName, DWORD flags, GUID soundAlgorithm)
             {
                 gekLogScope(__FUNCTION__);
 
@@ -404,7 +404,7 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP loadEffect(LPCWSTR fileName, EffectInterface **returnObject)
+            STDMETHODIMP loadEffect(EffectInterface **returnObject, LPCWSTR fileName)
             {
                 gekLogScope(__FUNCTION__);
 
@@ -412,7 +412,7 @@ namespace Gek
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
                 CComPtr<IDirectSoundBuffer> directSoundBuffer;
-                HRESULT resultValue = loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &directSoundBuffer);
+                HRESULT resultValue = loadFromFile(&directSoundBuffer, fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL);
                 if (directSoundBuffer)
                 {
                     resultValue = E_FAIL;
@@ -430,7 +430,7 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP loadSound(LPCWSTR fileName, SoundInterface **returnObject)
+            STDMETHODIMP loadSound(SoundInterface **returnObject, LPCWSTR fileName)
             {
                 gekLogScope(__FUNCTION__);
 
@@ -438,7 +438,7 @@ namespace Gek
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
                 CComPtr<IDirectSoundBuffer> directSoundBuffer;
-                HRESULT resultValue = loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL, &directSoundBuffer);
+                HRESULT resultValue = loadFromFile(&directSoundBuffer, fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL);
                 if (directSoundBuffer)
                 {
                     resultValue = E_FAIL;

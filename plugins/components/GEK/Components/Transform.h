@@ -2,7 +2,6 @@
 
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Quaternion.h"
-#include "GEK\Utility\Common.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <unordered_map>
@@ -15,7 +14,7 @@ namespace Gek
         {
             namespace Transform
             {
-                static const Handle identifier = 0x00000006;
+                static const UINT32 identifier = 0x00000006;
                 struct Data
                 {
                     Gek::Math::Float4 position;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GEK\Math\Vector4.h"
-#include "GEK\Utility\Common.h"
 #include "GEK\Engine\ComponentInterface.h"
 #include <atlbase.h>
 #include <atlstr.h>
@@ -15,7 +14,7 @@ namespace Gek
         {
             namespace Camera
             {
-                static const Handle identifier = 0x00000001;
+                static const UINT32 identifier = 0x00000001;
                 struct Data
                 {
                     float fieldOfView;

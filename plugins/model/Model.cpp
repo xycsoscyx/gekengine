@@ -41,7 +41,7 @@ namespace Gek
                 return L"model";
             }
 
-            STDMETHODIMP_(Handle) getIdentifier(void) const
+            STDMETHODIMP_(UINT32) getIdentifier(void) const
             {
                 return identifier;
             }

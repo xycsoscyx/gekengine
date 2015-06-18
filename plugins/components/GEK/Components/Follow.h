@@ -4,7 +4,6 @@
 
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Quaternion.h"
-#include "GEK\Utility\Common.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <unordered_map>
@@ -17,7 +16,7 @@ namespace Gek
         {
             namespace Follow
             {
-                static const Handle identifier = 0x00000003;
+                static const UINT32 identifier = 0x00000003;
                 struct Data
                 {
                     CStringW target;

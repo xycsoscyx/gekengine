@@ -29,14 +29,12 @@ namespace Gek
                 {
                 private:
                     Video3D::Interface *video;
-                    Handle geometryProgramHandle;
-                    Handle vertexProgramHandle;
+                    CComPtr<IUnknown> geometryProgram;
+                    CComPtr<IUnknown> vertexProgram;
 
                 public:
                     System(void)
                         : video(nullptr)
-                        , geometryProgramHandle(InvalidHandle)
-                        , vertexProgramHandle(InvalidHandle)
                     {
                     }
 
@@ -84,8 +82,7 @@ namespace Gek
                                             {
                                                 CStringW programFileName = xmlProgramNode.getAttribute(L"source");
                                                 CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
-                                                geometryProgramHandle = video->loadGeometryProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint);
-                                                resultValue = (geometryProgramHandle == InvalidHandle ? E_FAIL : S_OK);
+                                                resultValue = video->loadGeometryProgram(&geometryProgram, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint);
                                             }
                                             else
                                             {
@@ -135,7 +132,7 @@ namespace Gek
                                                 {
                                                     CStringW programFileName = xmlProgramNode.getAttribute(L"source");
                                                     CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
-                                                    vertexProgramHandle = video->loadVertexProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, elementList);
+                                                    resultValue = video->loadVertexProgram(&vertexProgram, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, elementList);
                                                     resultValue = S_OK;
                                                 }
                                                 else

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GEK\Utility\Common.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <unordered_map>
@@ -13,7 +12,7 @@ namespace Gek
         {
             namespace PointLight
             {
-                static const Handle  identifier = 0x00000004;
+                static const UINT32 identifier = 0x00000004;
                 struct Data
                 {
                     float radius;
