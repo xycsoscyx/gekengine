@@ -285,7 +285,7 @@ namespace Gek
 
                         if (xmlTargetNode.hasChildElement(L"color"))
                         {
-                            Gek::Xml::Node &xmlColorNode = xmlTargetNode.firstChildElement(L"color");
+                            Gek::Xml::Node&xmlColorNode = xmlTargetNode.firstChildElement(L"color");
                             blendStates.colorSource = getBlendSource(xmlColorNode.getAttribute(L"source"));
                             blendStates.colorDestination = getBlendSource(xmlColorNode.getAttribute(L"destination"));
                             blendStates.colorOperation = getBlendOperation(xmlColorNode.getAttribute(L"operation"));
@@ -293,7 +293,7 @@ namespace Gek
 
                         if (xmlTargetNode.hasChildElement(L"alpha"))
                         {
-                            Gek::Xml::Node &xmlAlphaNode = xmlTargetNode.firstChildElement(L"alpha");
+                            Gek::Xml::Node xmlAlphaNode = xmlTargetNode.firstChildElement(L"alpha");
                             blendStates.alphaSource = getBlendSource(xmlAlphaNode.getAttribute(L"source"));
                             blendStates.alphaDestination = getBlendSource(xmlAlphaNode.getAttribute(L"destination"));
                             blendStates.alphaOperation = getBlendOperation(xmlAlphaNode.getAttribute(L"operation"));
@@ -404,26 +404,26 @@ namespace Gek
                         return childList;
                     }
 
-                    float parseValue(LPCWSTR equation)
+                    CStringW replaceDefines(LPCWSTR value)
                     {
-                        if (wcsstr(equation, L"%") == nullptr)
+                        if (wcsstr(value, L"%") == nullptr)
                         {
-                            return String::getFloat(equation);
+                            return value;
                         }
 
-                        CStringW fullEquation(equation);
+                        CStringW fullValue(value);
                         for (auto &definePair : defineList)
                         {
-                            fullEquation.Replace(String::format(L"%%%s%%", definePair.first.GetString()), definePair.second);
+                            fullValue.Replace(String::format(L"%%%s%%", definePair.first.GetString()), definePair.second);
                         }
 
-                        fullEquation.Replace(L"%displayWidth%", String::format(L"%d", video->getWidth()));
-                        fullEquation.Replace(L"%displayHeight%", String::format(L"%d", video->getHeight()));
+                        fullValue.Replace(L"%displayWidth%", String::format(L"%d", video->getWidth()));
+                        fullValue.Replace(L"%displayHeight%", String::format(L"%d", video->getHeight()));
 
-                        fullEquation.Replace(L"%lightListSize%", L"256");
+                        fullValue.Replace(L"%lightListSize%", L"256");
 
                         // Parse again, defines can have defines, this can become cycling so watch out for stack overflow
-                        return parseValue(fullEquation);
+                        return fullValue;
                     }
 
                 public:
@@ -553,7 +553,7 @@ namespace Gek
                                             CStringW value(xmlDefineNode.getText());
                                             defineList[name] = value;
 
-                                            globalDefines[LPCSTR(CW2A(name))].Format("%f", parseValue(value));
+                                            globalDefines[LPCSTR(CW2A(name))].Format("%f", String::getFloat(replaceDefines(value)));
 
                                             xmlDefineNode = xmlDefineNode.nextSiblingElement();
                                         };
@@ -591,7 +591,7 @@ namespace Gek
                                         {
                                             CStringW name(xmlBufferNode.getType());
                                             Video3D::Format format = getFormat(xmlBufferNode.getText());
-                                            UINT32 size = UINT32(parseValue(xmlBufferNode.getAttribute(L"size")));
+                                            UINT32 size = String::getUINT32(replaceDefines(xmlBufferNode.getAttribute(L"size")));
                                             resultValue = render->createBuffer(&bufferList[name], format, size, Video3D::BufferFlags::UNORDERED_ACCESS | Video3D::BufferFlags::RESOURCE);
                                             switch (format)
                                             {
@@ -823,9 +823,9 @@ namespace Gek
                                                 engineData +=
                                                     "};                                                     \r\n"\
                                                     "                                                       \r\n";
-                                                pass.dispatchWidth = UINT32(std::max(parseValue(xmlComputeNode.firstChildElement(L"width").getText()), 1.0f));
-                                                pass.dispatchHeight = UINT32(std::max(parseValue(xmlComputeNode.firstChildElement(L"height").getText()), 1.0f));
-                                                pass.dispatchDepth = UINT32(std::max(parseValue(xmlComputeNode.firstChildElement(L"depth").getText()), 1.0f));
+                                                pass.dispatchWidth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
+                                                pass.dispatchHeight = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
+                                                pass.dispatchDepth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
                                                 defines["dispatchWidth"] = String::setUINT32(pass.dispatchWidth);
                                                 defines["dispatchHeight"] = String::setUINT32(pass.dispatchHeight);
                                                 defines["dispatchDepth"] = String::setUINT32(pass.dispatchDepth);
@@ -869,6 +869,154 @@ namespace Gek
 
                         gekCheckResult(resultValue);
                         return resultValue;
+                    }
+
+                    STDMETHODIMP getMaterialValues(Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video3D::TextureInterface>> &mapList, std::vector<UINT32> &propertyList)
+                    {
+                        std::unordered_map<CStringW, CStringW> materialMapList;
+                        Gek::Xml::Node xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
+                        if (xmlMapsNode)
+                        {
+                            Gek::Xml::Node xmlMapNode = xmlMapsNode.firstChildElement();
+                            while (xmlMapNode)
+                            {
+                                CStringW name(xmlMapNode.getType());
+                                CStringW source(xmlMapNode.getText());
+                                materialMapList[name] = source;
+
+                                xmlMapNode = xmlMapNode.nextSiblingElement();
+                            };
+                        }
+
+                        for (auto &mapValue : this->mapList)
+                        {
+                            CComPtr<Video3D::TextureInterface> map;
+                            auto materialMapIterator = materialMapList.find(mapValue.name);
+                            if (materialMapIterator != materialMapList.end())
+                            {
+                                render->loadTexture(&map, (*materialMapIterator).second);
+                            }
+
+                            mapList.push_back(map);
+                        }
+
+                        //std::vector<Property> propertyList;
+
+                        std::unordered_map<CStringW, CStringW> materialPropertyList;
+                        Gek::Xml::Node xmlPropertiesNode = xmlMaterialNode.firstChildElement(L"properties");
+                        if (xmlMapsNode)
+                        {
+                            Gek::Xml::Node xmlPropertyNode = xmlMapsNode.firstChildElement();
+                            while (xmlPropertyNode)
+                            {
+                                CStringW name(xmlPropertyNode.getType());
+                                CStringW source(xmlPropertyNode.getText());
+                                materialPropertyList[name] = source;
+
+                                xmlPropertyNode = xmlPropertyNode.nextSiblingElement();
+                            };
+                        }
+                        
+                        for (auto &propertyValue : this->propertyList)
+                        {
+                            CStringW property;
+                            auto materialPropertyIterator = materialPropertyList.find(propertyValue.name);
+                            if (materialPropertyIterator != materialPropertyList.end())
+                            {
+                                property = replaceDefines((*materialPropertyIterator).second);
+                            }
+
+                            switch (propertyValue.bindType)
+                            {
+                            case BindType::Half:
+                            case BindType::Float:
+                                if (true)
+                                {
+                                    float value = String::getFloat(property);
+                                    propertyList.push_back(*(UINT32 *)&value);
+                                }
+
+                                break;
+
+                            case BindType::Half2:
+                            case BindType::Float2:
+                                if (true)
+                                {
+                                    Math::Float2 value = String::getFloat2(property);
+                                    propertyList.push_back(*(UINT32 *)&value.x);
+                                    propertyList.push_back(*(UINT32 *)&value.y);
+                                }
+
+                                break;
+
+                            case BindType::Float3:
+                                if (true)
+                                {
+                                    Math::Float3 value = String::getFloat3(property);
+                                    propertyList.push_back(*(UINT32 *)&value.x);
+                                    propertyList.push_back(*(UINT32 *)&value.y);
+                                    propertyList.push_back(*(UINT32 *)&value.z);
+                                }
+
+                                break;
+
+                            case BindType::Half4:
+                            case BindType::Float4:
+                                if (true)
+                                {
+                                    Math::Float4 value = String::getFloat4(property);
+                                    propertyList.push_back(*(UINT32 *)&value.x);
+                                    propertyList.push_back(*(UINT32 *)&value.y);
+                                    propertyList.push_back(*(UINT32 *)&value.z);
+                                    propertyList.push_back(*(UINT32 *)&value.w);
+                                }
+
+                                break;
+
+                            case BindType::UInt:
+                                propertyList.push_back(String::getUINT32(property));
+                                break;
+
+                            case BindType::UInt2:
+                                if (true)
+                                {
+                                    Math::Float2 value = String::getFloat2(property);
+                                    propertyList.push_back(UINT32(value.x));
+                                    propertyList.push_back(UINT32(value.y));
+                                }
+
+                                break;
+
+                            case BindType::UInt3:
+                                if (true)
+                                {
+                                    Math::Float3 value = String::getFloat3(property);
+                                    propertyList.push_back(UINT32(value.x));
+                                    propertyList.push_back(UINT32(value.y));
+                                    propertyList.push_back(UINT32(value.z));
+                                }
+
+                                break;
+
+                            case BindType::UInt4:
+                                if (true)
+                                {
+                                    Math::Float4 value = String::getFloat4(property);
+                                    propertyList.push_back(UINT32(value.x));
+                                    propertyList.push_back(UINT32(value.y));
+                                    propertyList.push_back(UINT32(value.z));
+                                    propertyList.push_back(UINT32(value.w));
+                                }
+
+                                break;
+
+                            case BindType::Boolean:
+                                propertyList.push_back(String::getBoolean(property));
+                                break;
+                            };
+                        }
+
+                        return E_FAIL;
                     }
                 };
 

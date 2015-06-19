@@ -25,7 +25,7 @@ namespace Gek
                     Video3D::Interface *video;
                     Render::Interface *render;
                     std::vector<CComPtr<Video3D::TextureInterface>> mapList;
-                    std::vector<float> propertyList;
+                    std::vector<UINT32> propertyList;
                     CComPtr<IUnknown> shader;
 
                 public:
@@ -77,6 +77,14 @@ namespace Gek
                                     {
                                         CStringW shaderFileName = xmlShaderNode.getText();
                                         resultValue = render->loadShader(&shader, shaderFileName);
+                                        if (shader)
+                                        {
+                                            CComQIPtr<Shader::Interface> shader(this->shader);
+                                            if (shader)
+                                            {
+                                                resultValue = shader->getMaterialValues(xmlMaterialNode, mapList, propertyList);
+                                            }
+                                        }
                                     }
                                 }
                             }

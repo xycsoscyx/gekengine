@@ -195,7 +195,8 @@ namespace Gek
                     INTERFACE_LIST_ENTRY_COM(Interface)
                 END_INTERFACE_LIST_USER
 
-                HRESULT getResource(IUnknown **returnObject, std::size_t hash, std::function<HRESULT(IUnknown **)> onResourceMissing)
+                template <typename CLASS>
+                HRESULT getResource(CLASS **returnObject, std::size_t hash, std::function<HRESULT(CLASS **)> onResourceMissing)
                 {
                     HRESULT returnValue = E_FAIL;
                     auto resourceIterator = resourceMap.find(hash);
@@ -205,11 +206,17 @@ namespace Gek
                     }
                     else
                     {
-                        CComPtr<IUnknown> &resource = resourceMap[hash];
+                        resourceMap[hash] = nullptr;
+
+                        CComPtr<CLASS> resource;
                         returnValue = onResourceMissing(&resource);
                         if (SUCCEEDED(returnValue) && resource)
                         {
                             returnValue = resource->QueryInterface(IID_PPV_ARGS(returnObject));
+                            if (SUCCEEDED(returnValue))
+                            {
+                                resourceMap[hash] = resource;
+                            }
                         }
                     }
 
@@ -260,7 +267,7 @@ namespace Gek
                     REQUIRE_RETURN(initializerContext, E_FAIL);
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = getResource(returnObject, std::hash<LPCWSTR>()(fileName), [&](IUnknown **returnObject) -> HRESULT
+                    returnValue = getResource<IUnknown>(returnObject, std::hash<LPCWSTR>()(fileName), [&](IUnknown **returnObject) -> HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
                         CComPtr<Plugin::Interface> plugin;
@@ -285,7 +292,7 @@ namespace Gek
                     REQUIRE_RETURN(initializerContext, E_FAIL);
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = getResource(returnObject, std::hash<LPCWSTR>()(fileName), [&](IUnknown **returnObject) -> HRESULT
+                    returnValue = getResource<IUnknown>(returnObject, std::hash<LPCWSTR>()(fileName), [&](IUnknown **returnObject) -> HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
                         CComPtr<Shader::Interface> shader;
@@ -310,7 +317,7 @@ namespace Gek
                     REQUIRE_RETURN(initializerContext, E_FAIL);
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = getResource(returnObject, std::hash<LPCWSTR>()(fileName), [&](IUnknown **returnObject) -> HRESULT
+                    returnValue = getResource<IUnknown>(returnObject, std::hash<LPCWSTR>()(fileName), [&](IUnknown **returnObject) -> HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
                         CComPtr<Material::Interface> material;
@@ -346,7 +353,7 @@ namespace Gek
                         renderStates.antialiasedLineEnable);
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    returnValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
                         returnValue = video->createRenderStates(returnObject, renderStates);
@@ -376,7 +383,7 @@ namespace Gek
                         static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction));
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    returnValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
                         returnValue = video->createDepthStates(returnObject, depthStates);
@@ -400,7 +407,7 @@ namespace Gek
                         blendStates.writeMask);
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    returnValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
                         returnValue = video->createBlendStates(returnObject, blendStates);
@@ -428,7 +435,7 @@ namespace Gek
                     }
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    returnValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
                         returnValue = video->createBlendStates(returnObject, blendStates);
@@ -465,6 +472,21 @@ namespace Gek
                     return returnValue;
                 }
 
+                STDMETHODIMP loadTexture(Video3D::TextureInterface **returnObject, LPCWSTR fileName)
+                {
+                    REQUIRE_RETURN(video, E_FAIL);
+
+                    HRESULT returnValue = E_FAIL;
+                    returnValue = getResource<Video3D::TextureInterface>(returnObject, std::hash<LPCWSTR>()(fileName), [&](Video3D::TextureInterface **returnObject) -> HRESULT
+                    {
+                        HRESULT returnValue = E_FAIL;
+                        returnValue = video->loadTexture(returnObject, fileName, 0);
+                        return returnValue;
+                    });
+
+                    return returnValue;
+                }
+
                 STDMETHODIMP loadComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
                 {
                     REQUIRE_RETURN(video, E_FAIL);
@@ -479,7 +501,7 @@ namespace Gek
                     }
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    returnValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
                         returnValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
@@ -503,7 +525,7 @@ namespace Gek
                     }
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = getResource(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
+                    returnValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
                         returnValue = video->loadPixelProgram(returnObject, fileName, entryFunction, onInclude, defineList);

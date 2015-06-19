@@ -28,6 +28,7 @@ namespace Gek
                 STDMETHOD(createRenderTarget)                   (THIS_ Video3D::TextureInterface **returnObject, UINT32 width, UINT32 height, Video3D::Format format) PURE;
                 STDMETHOD(createDepthTarget)                    (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Video3D::Format format) PURE;
                 STDMETHOD(createBuffer)                         (THIS_ Video3D::BufferInterface **returnObject, Video3D::Format format, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
+                STDMETHOD(loadTexture)                          (THIS_ Video3D::TextureInterface **returnObject, LPCWSTR fileName) PURE;
                 STDMETHOD(loadComputeProgram)                   (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
                 STDMETHOD(loadPixelProgram)                     (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 

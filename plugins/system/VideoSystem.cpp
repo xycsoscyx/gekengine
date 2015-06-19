@@ -2533,7 +2533,8 @@ namespace Gek
                 HRESULT resultValue = E_FAIL;
 
                 std::vector<UINT8> fileData;
-                if (SUCCEEDED(Gek::FileSystem::load(fileName, fileData)))
+                gekCheckResult(resultValue = Gek::FileSystem::load(fileName, fileData));
+                if(SUCCEEDED(resultValue))
                 {
                     DirectX::ScratchImage scratchImage;
                     DirectX::TexMetadata textureMetaData;
