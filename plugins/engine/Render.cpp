@@ -207,7 +207,6 @@ namespace Gek
                     {
                         CComPtr<IUnknown> &resource = resourceMap[hash];
                         returnValue = onResourceMissing(&resource);
-
                         if (SUCCEEDED(returnValue) && resource)
                         {
                             returnValue = resource->QueryInterface(IID_PPV_ARGS(returnObject));
@@ -265,7 +264,7 @@ namespace Gek
                     {
                         HRESULT returnValue = E_FAIL;
                         CComPtr<Plugin::Interface> plugin;
-                        returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Plugin::Interface, &plugin));
+                        returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Plugin::Class, &plugin));
                         if (plugin)
                         {
                             returnValue = plugin->initialize(initializerContext, fileName);
@@ -290,7 +289,7 @@ namespace Gek
                     {
                         HRESULT returnValue = E_FAIL;
                         CComPtr<Shader::Interface> shader;
-                        returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Shader::Interface, &shader));
+                        returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Shader::Class, &shader));
                         if (shader)
                         {
                             returnValue = shader->initialize(initializerContext, fileName);
@@ -315,7 +314,7 @@ namespace Gek
                     {
                         HRESULT returnValue = E_FAIL;
                         CComPtr<Material::Interface> material;
-                        returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Material::Interface, &material));
+                        returnValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Material::Class, &material));
                         if (material)
                         {
                             returnValue = material->initialize(initializerContext, fileName);

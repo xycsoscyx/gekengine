@@ -32,10 +32,11 @@ namespace Gek
 };
 
 extern HRESULT gekCheckResultBase(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
-#define gekLogScope(FUNCTION)                   Gek::LoggingScope scope##FUNCTION##(getContext(), __FILE__, FUNCTION, __LINE__);
-#define gekLogParameter(PARAMETER)              getContext()->logMessage(__FILE__, __LINE__, L"[input] %S: %d", #PARAMETER, UINT32(PARAMETER))
-#define gekLogMessage(FORMAT, ...)              getContext()->logMessage(__FILE__, __LINE__, FORMAT, __VA_ARGS__)
-#define gekCheckResult(FUNCTION)                gekCheckResultBase(getContext(), __FILE__, __LINE__, #FUNCTION, FUNCTION)
+#define gekLogScope(FUNCTION)                           Gek::LoggingScope scope##FUNCTION##(getContext(), __FILE__, FUNCTION, __LINE__);
+#define gekLogParameter(FORMAT, PARAMETER)              getContext()->logMessage(__FILE__, __LINE__, L"[input] %S: " FORMAT, #PARAMETER, PARAMETER)
+#define gekLogTypedParameter(FORMAT, PARAMETER, TYPE)   getContext()->logMessage(__FILE__, __LINE__, L"[input] %S: " FORMAT, #PARAMETER, TYPE(PARAMETER))
+#define gekLogMessage(FORMAT, ...)                      getContext()->logMessage(__FILE__, __LINE__, FORMAT, __VA_ARGS__)
+#define gekCheckResult(FUNCTION)                        gekCheckResultBase(getContext(), __FILE__, __LINE__, #FUNCTION, FUNCTION)
 
 namespace std
 {

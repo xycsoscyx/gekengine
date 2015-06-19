@@ -185,6 +185,7 @@ namespace Gek
             STDMETHODIMP initialize(HWND window)
             {
                 gekLogScope(__FUNCTION__);
+                gekLogParameter("0x%p", window);
 
                 REQUIRE_RETURN(window, E_INVALIDARG);
 
@@ -344,6 +345,8 @@ namespace Gek
             HRESULT loadFromFile(IDirectSoundBuffer **returnObject, LPCWSTR fileName, DWORD flags, GUID soundAlgorithm)
             {
                 gekLogScope(__FUNCTION__);
+                gekLogParameter("%s", fileName);
+                gekLogParameter("%d", flags);
 
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -407,6 +410,7 @@ namespace Gek
             STDMETHODIMP loadEffect(EffectInterface **returnObject, LPCWSTR fileName)
             {
                 gekLogScope(__FUNCTION__);
+                gekLogParameter("%s", fileName);
 
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -433,6 +437,7 @@ namespace Gek
             STDMETHODIMP loadSound(SoundInterface **returnObject, LPCWSTR fileName)
             {
                 gekLogScope(__FUNCTION__);
+                gekLogParameter("%s", fileName);
 
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);

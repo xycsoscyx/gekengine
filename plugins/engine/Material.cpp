@@ -46,6 +46,9 @@ namespace Gek
                     // Interface
                     STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
                     {
+                        gekLogScope(__FUNCTION__);
+                        gekLogParameter("%s", fileName);
+
                         REQUIRE_RETURN(initializerContext, E_INVALIDARG);
                         REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -62,7 +65,7 @@ namespace Gek
                         if (SUCCEEDED(resultValue))
                         {
                             Gek::Xml::Document xmlDocument;
-                            resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName));
+                            gekCheckResult(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName)));
                             if (SUCCEEDED(resultValue))
                             {
                                 resultValue = E_INVALIDARG;
@@ -79,6 +82,7 @@ namespace Gek
                             }
                         }
 
+                        gekCheckResult(resultValue);
                         return resultValue;
                     }
                 };

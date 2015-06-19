@@ -1076,7 +1076,7 @@ namespace Gek
             HRESULT createDefaultTargets(Format depthFormat)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(depthFormat);
+                gekLogTypedParameter("%d", depthFormat, UINT32);
 
                 this->depthFormat = DXGI_FORMAT_UNKNOWN;
 
@@ -1159,11 +1159,11 @@ namespace Gek
             STDMETHODIMP initialize(HWND window, bool windowed, UINT32 width, UINT32 height, Format depthFormat)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(window);
-                gekLogParameter(windowed);
-                gekLogParameter(width);
-                gekLogParameter(height);
-                gekLogParameter(depthFormat);
+                gekLogParameter("0x%p", window);
+                gekLogParameter("%d", windowed);
+                gekLogParameter("%d", width);
+                gekLogParameter("%d", height);
+                gekLogTypedParameter("%d", depthFormat, UINT32);
 
                 REQUIRE_RETURN(window, E_INVALIDARG);
                 REQUIRE_RETURN(width > 0, E_INVALIDARG);
@@ -1266,10 +1266,10 @@ namespace Gek
             STDMETHODIMP resize(bool windowed, UINT32 width, UINT32 height, Format depthFormat)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(windowed);
-                gekLogParameter(width);
-                gekLogParameter(height);
-                gekLogParameter(depthFormat);
+                gekLogParameter("0x%p", windowed);
+                gekLogParameter("%d", width);
+                gekLogParameter("%d", height);
+                gekLogTypedParameter("%d", depthFormat, UINT32);
 
                 REQUIRE_RETURN(d3dDevice, E_FAIL);
                 REQUIRE_RETURN(d3dDeviceContext, E_FAIL);
@@ -1411,16 +1411,16 @@ namespace Gek
             STDMETHODIMP createRenderStates(IUnknown **returnObject, const Gek::Video3D::RenderStates &renderStates)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(renderStates.frontCounterClockwise);
-                gekLogParameter(renderStates.depthBias);
-                gekLogParameter(renderStates.depthBiasClamp);
-                gekLogParameter(renderStates.slopeScaledDepthBias);
-                gekLogParameter(renderStates.depthClipEnable);
-                gekLogParameter(renderStates.scissorEnable);
-                gekLogParameter(renderStates.multisampleEnable);
-                gekLogParameter(renderStates.antialiasedLineEnable);
-                gekLogParameter(renderStates.fillMode);
-                gekLogParameter(renderStates.cullMode);
+                gekLogTypedParameter("%d", renderStates.frontCounterClockwise, UINT32);
+                gekLogParameter("%d", renderStates.depthBias);
+                gekLogParameter("%f", renderStates.depthBiasClamp);
+                gekLogParameter("%f", renderStates.slopeScaledDepthBias);
+                gekLogTypedParameter("%d", renderStates.depthClipEnable, UINT32);
+                gekLogTypedParameter("%d", renderStates.scissorEnable, UINT32);
+                gekLogTypedParameter("%d", renderStates.multisampleEnable, UINT32);
+                gekLogTypedParameter("%d", renderStates.antialiasedLineEnable, UINT32);
+                gekLogTypedParameter("%d", renderStates.fillMode, UINT32);
+                gekLogTypedParameter("%d", renderStates.cullMode, UINT32);
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
 
@@ -1451,20 +1451,20 @@ namespace Gek
             STDMETHODIMP createDepthStates(IUnknown **returnObject, const Gek::Video3D::DepthStates &depthStates)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(depthStates.enable);
-                gekLogParameter(depthStates.comparisonFunction);
-                gekLogParameter(depthStates.stencilEnable);
-                gekLogParameter(depthStates.stencilReadMask);
-                gekLogParameter(depthStates.stencilWriteMask);
-                gekLogParameter(depthStates.stencilFrontStates.failOperation);
-                gekLogParameter(depthStates.stencilFrontStates.depthFailOperation);
-                gekLogParameter(depthStates.stencilFrontStates.passOperation);
-                gekLogParameter(depthStates.stencilFrontStates.comparisonFunction);
-                gekLogParameter(depthStates.stencilBackStates.failOperation);
-                gekLogParameter(depthStates.stencilBackStates.depthFailOperation);
-                gekLogParameter(depthStates.stencilBackStates.passOperation);
-                gekLogParameter(depthStates.stencilBackStates.comparisonFunction);
-                gekLogParameter(depthStates.writeMask);
+                gekLogTypedParameter("%d", depthStates.enable, UINT32);
+                gekLogTypedParameter("%d", depthStates.comparisonFunction, UINT32);
+                gekLogTypedParameter("%d", depthStates.stencilEnable, UINT32);
+                gekLogParameter("%d", depthStates.stencilReadMask);
+                gekLogParameter("%d", depthStates.stencilWriteMask);
+                gekLogTypedParameter("%d", depthStates.stencilFrontStates.failOperation, UINT32);
+                gekLogTypedParameter("%d", depthStates.stencilFrontStates.depthFailOperation, UINT32);
+                gekLogTypedParameter("%d", depthStates.stencilFrontStates.passOperation, UINT32);
+                gekLogTypedParameter("%d", depthStates.stencilFrontStates.comparisonFunction, UINT32);
+                gekLogTypedParameter("%d", depthStates.stencilBackStates.failOperation, UINT32);
+                gekLogTypedParameter("%d", depthStates.stencilBackStates.depthFailOperation, UINT32);
+                gekLogTypedParameter("%d", depthStates.stencilBackStates.passOperation, UINT32);
+                gekLogTypedParameter("%d", depthStates.stencilBackStates.comparisonFunction, UINT32);
+                gekLogParameter("%d", depthStates.writeMask);
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
 
@@ -1499,15 +1499,15 @@ namespace Gek
             STDMETHODIMP createBlendStates(IUnknown **returnObject, const Gek::Video3D::UnifiedBlendStates &blendStates)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(blendStates.alphaToCoverage);
-                gekLogParameter(blendStates.enable);
-                gekLogParameter(blendStates.colorSource);
-                gekLogParameter(blendStates.colorDestination);
-                gekLogParameter(blendStates.colorOperation);
-                gekLogParameter(blendStates.alphaSource);
-                gekLogParameter(blendStates.alphaDestination);
-                gekLogParameter(blendStates.alphaOperation);
-                gekLogParameter(blendStates.writeMask);
+                gekLogTypedParameter("%d", blendStates.alphaToCoverage, UINT32);
+                gekLogTypedParameter("%d", blendStates.enable, UINT32);
+                gekLogTypedParameter("%d", blendStates.colorSource, UINT32);
+                gekLogTypedParameter("%d", blendStates.colorDestination, UINT32);
+                gekLogTypedParameter("%d", blendStates.colorOperation, UINT32);
+                gekLogTypedParameter("%d", blendStates.alphaSource, UINT32);
+                gekLogTypedParameter("%d", blendStates.alphaDestination, UINT32);
+                gekLogTypedParameter("%d", blendStates.alphaOperation, UINT32);
+                gekLogParameter("%d", blendStates.writeMask);
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
 
@@ -1609,19 +1609,19 @@ namespace Gek
             STDMETHODIMP createSamplerStates(IUnknown **returnObject, const Gek::Video3D::SamplerStates &samplerStates)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(samplerStates.addressModeU);
-                gekLogParameter(samplerStates.addressModeV);
-                gekLogParameter(samplerStates.addressModeW);
-                gekLogParameter(samplerStates.mipLevelBias);
-                gekLogParameter(samplerStates.maximumAnisotropy);
-                gekLogParameter(samplerStates.comparisonFunction);
-                gekLogParameter(samplerStates.borderColor.r);
-                gekLogParameter(samplerStates.borderColor.g);
-                gekLogParameter(samplerStates.borderColor.b);
-                gekLogParameter(samplerStates.borderColor.a);
-                gekLogParameter(samplerStates.minimumMipLevel);
-                gekLogParameter(samplerStates.maximumMipLevel);
-                gekLogParameter(samplerStates.filterMode);
+                gekLogTypedParameter("%d", samplerStates.addressModeU, UINT32);
+                gekLogTypedParameter("%d", samplerStates.addressModeV, UINT32);
+                gekLogTypedParameter("%d", samplerStates.addressModeW, UINT32);
+                gekLogParameter("%f", samplerStates.mipLevelBias);
+                gekLogParameter("%d", samplerStates.maximumAnisotropy);
+                gekLogTypedParameter("%d", samplerStates.comparisonFunction, UINT32);
+                gekLogParameter("%f", samplerStates.borderColor.r);
+                gekLogParameter("%f", samplerStates.borderColor.g);
+                gekLogParameter("%f", samplerStates.borderColor.b);
+                gekLogParameter("%f", samplerStates.borderColor.a);
+                gekLogParameter("%f", samplerStates.minimumMipLevel);
+                gekLogParameter("%f", samplerStates.maximumMipLevel);
+                gekLogTypedParameter("%d", samplerStates.filterMode, UINT32);
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
 
@@ -1669,9 +1669,9 @@ namespace Gek
             STDMETHODIMP createRenderTarget(TextureInterface **returnObject, UINT32 width, UINT32 height, Format format)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(width);
-                gekLogParameter(height);
-                gekLogParameter(format);
+                gekLogParameter("%d", width);
+                gekLogParameter("%d", height);
+                gekLogTypedParameter("%d", format, UINT32);
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
                 REQUIRE_RETURN(width > 0, E_INVALIDARG);
@@ -1732,9 +1732,9 @@ namespace Gek
             STDMETHODIMP createDepthTarget(IUnknown **returnObject, UINT32 width, UINT32 height, Format format)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(width);
-                gekLogParameter(height);
-                gekLogParameter(format);
+                gekLogParameter("%d", width);
+                gekLogParameter("%d", height);
+                gekLogTypedParameter("%d", format, UINT32);
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
                 REQUIRE_RETURN(width > 0, E_INVALIDARG);
@@ -1780,10 +1780,10 @@ namespace Gek
             STDMETHODIMP createBuffer(BufferInterface **returnObject, UINT32 stride, UINT32 count, UINT32 flags, LPCVOID data)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(stride);
-                gekLogParameter(count);
-                gekLogParameter(flags);
-                gekLogParameter(data);
+                gekLogParameter("%d", stride);
+                gekLogParameter("%d", count);
+                gekLogParameter("%d", flags);
+                gekLogParameter("0x%p", data);
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
                 REQUIRE_RETURN(stride > 0, E_INVALIDARG);
@@ -1912,10 +1912,10 @@ namespace Gek
             STDMETHODIMP createBuffer(BufferInterface **returnObject, Format format, UINT32 count, UINT32 flags, LPCVOID data)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(format);
-                gekLogParameter(count);
-                gekLogParameter(flags);
-                gekLogParameter(data);
+                gekLogTypedParameter("%d", format, UINT32);
+                gekLogParameter("%d", count);
+                gekLogParameter("%d", flags);
+                gekLogParameter("0x%p", data);
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
                 REQUIRE_RETURN(count > 0, E_INVALIDARG);
@@ -2312,30 +2312,43 @@ namespace Gek
 
             STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter("%S", entryFunction);
                 return compileComputeProgram(returnObject, nullptr, programScript, entryFunction, defineList, nullptr);
             }
 
             STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter("%S", entryFunction);
                 return compileVertexProgram(returnObject, nullptr, programScript, entryFunction, elementLayout, defineList, nullptr);
             }
 
             STDMETHODIMP compileGeometryProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter("%S", entryFunction);
                 return compileGeometryProgram(returnObject, nullptr, programScript, entryFunction, defineList, nullptr);
             }
 
             STDMETHODIMP compilePixelProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter("%S", entryFunction);
                 return compilePixelProgram(returnObject, nullptr, programScript, entryFunction, defineList, nullptr);
             }
 
             STDMETHODIMP loadComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter("%s", fileName);
+                gekLogParameter("%S", entryFunction);
+
                 HRESULT resultValue = E_FAIL;
 
                 CStringA progamScript;
-                if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
+                gekCheckResult(resultValue = Gek::FileSystem::load(fileName, progamScript));
+                if (SUCCEEDED(resultValue))
                 {
                     CComPtr<Include> spInclude(new Include(fileName, onInclude));
                     resultValue = compileComputeProgram(returnObject, fileName, progamScript, entryFunction, defineList, spInclude);
@@ -2346,10 +2359,15 @@ namespace Gek
 
             STDMETHODIMP loadVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter("%s", fileName);
+                gekLogParameter("%S", entryFunction);
+
                 HRESULT resultValue = E_FAIL;
 
                 CStringA progamScript;
-                if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
+                gekCheckResult(resultValue = Gek::FileSystem::load(fileName, progamScript));
+                if (SUCCEEDED(resultValue))
                 {
                     CComPtr<Include> spInclude(new Include(fileName, onInclude));
                     resultValue = compileVertexProgram(returnObject, fileName, progamScript, entryFunction, elementLayout, defineList, spInclude);
@@ -2360,10 +2378,15 @@ namespace Gek
 
             STDMETHODIMP loadGeometryProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter("%s", fileName);
+                gekLogParameter("%S", entryFunction);
+
                 HRESULT resultValue = E_FAIL;
 
                 CStringA progamScript;
-                if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
+                gekCheckResult(resultValue = Gek::FileSystem::load(fileName, progamScript));
+                if (SUCCEEDED(resultValue))
                 {
                     CComPtr<Include> spInclude(new Include(fileName, onInclude));
                     resultValue = compileGeometryProgram(returnObject, fileName, progamScript, entryFunction, defineList, spInclude);
@@ -2374,10 +2397,15 @@ namespace Gek
 
             STDMETHODIMP loadPixelProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
+                gekLogScope(__FUNCTION__);
+                gekLogParameter("%s", fileName);
+                gekLogParameter("%S", entryFunction);
+
                 HRESULT resultValue = E_FAIL;
 
                 CStringA progamScript;
-                if (SUCCEEDED(Gek::FileSystem::load(fileName, progamScript)))
+                gekCheckResult(resultValue = Gek::FileSystem::load(fileName, progamScript));
+                if (SUCCEEDED(resultValue))
                 {
                     CComPtr<Include> spInclude(new Include(fileName, onInclude));
                     resultValue = compilePixelProgram(returnObject, fileName, progamScript, entryFunction, defineList, spInclude);
@@ -2389,11 +2417,11 @@ namespace Gek
             STDMETHODIMP createTexture(TextureInterface **returnObject, UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(width);
-                gekLogParameter(height);
-                gekLogParameter(depth);
-                gekLogParameter(format);
-                gekLogParameter(flags);
+                gekLogParameter("%d", width);
+                gekLogParameter("%d", height);
+                gekLogParameter("%d", depth);
+                gekLogTypedParameter("%d", format, UINT32);
+                gekLogParameter("%d", flags);
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
 
@@ -2496,7 +2524,8 @@ namespace Gek
             STDMETHODIMP loadTexture(TextureInterface **returnObject, LPCWSTR fileName, UINT32 flags)
             {
                 gekLogScope(__FUNCTION__);
-                gekLogParameter(flags);
+                gekLogParameter("%s", fileName);
+                gekLogParameter("%d", flags);
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
                 REQUIRE_RETURN(fileName, E_INVALIDARG);
@@ -2645,6 +2674,10 @@ namespace Gek
             STDMETHODIMP createBrush(IUnknown **returnObject, const Math::Float4 &color)
             {
                 gekLogScope(__FUNCTION__);
+                gekLogParameter("%f", color.r);
+                gekLogParameter("%f", color.g);
+                gekLogParameter("%f", color.b);
+                gekLogParameter("%f", color.a);
 
                 REQUIRE_RETURN(d2dDeviceContext, E_INVALIDARG);
 
@@ -2684,6 +2717,10 @@ namespace Gek
             STDMETHODIMP createFont(IUnknown **returnObject, LPCWSTR face, UINT32 weight, FontStyle style, float size)
             {
                 gekLogScope(__FUNCTION__);
+                gekLogParameter("%s", face);
+                gekLogParameter("%d", weight);
+                gekLogTypedParameter("%d", style, UINT32);
+                gekLogParameter("%f", size);
 
                 REQUIRE_RETURN(d2dDeviceContext, E_INVALIDARG);
                 REQUIRE_RETURN(face, E_INVALIDARG);
@@ -2702,6 +2739,7 @@ namespace Gek
             STDMETHODIMP loadBitmap(IUnknown **returnObject, LPCWSTR fileName)
             {
                 gekLogScope(__FUNCTION__);
+                gekLogParameter("%s", fileName);
 
                 HRESULT resultValue = E_FAIL;
                 CComPtr<IWICImagingFactory> imagingFactory;

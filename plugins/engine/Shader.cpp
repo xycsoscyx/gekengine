@@ -119,7 +119,6 @@ namespace Gek
                         Float4,
                         Half,
                         Half2,
-                        Half3,
                         Half4,
                         UInt,
                         UInt2,
@@ -204,6 +203,7 @@ namespace Gek
                     std::unordered_map<CStringW, CComPtr<Video3D::TextureInterface>> renderTargetList;
                     std::unordered_map<CStringW, CComPtr<Video3D::BufferInterface>> bufferList;
                     std::vector<Pass> passList;
+                    CComPtr<Video3D::BufferInterface> propertyConstantBuffer;
 
                 private:
                     static MapType getMapType(LPCWSTR mapType)
@@ -236,7 +236,6 @@ namespace Gek
                         else if (_wcsicmp(bindType, L"Float4") == 0) return BindType::Float4;
                         else if (_wcsicmp(bindType, L"Half") == 0) return BindType::Half;
                         else if (_wcsicmp(bindType, L"Half2") == 0) return BindType::Half2;
-                        else if (_wcsicmp(bindType, L"Half3") == 0) return BindType::Half3;
                         else if (_wcsicmp(bindType, L"Half4") == 0) return BindType::Half4;
                         else if (_wcsicmp(bindType, L"UInt") == 0) return BindType::UInt;
                         else if (_wcsicmp(bindType, L"UInt2") == 0) return BindType::UInt2;
@@ -256,7 +255,6 @@ namespace Gek
                         case BindType::Float4:      return L"float4";
                         case BindType::Half:        return L"half";
                         case BindType::Half2:       return L"half2";
-                        case BindType::Half3:       return L"half3";
                         case BindType::Half4:       return L"half4";
                         case BindType::UInt:        return L"uint";
                         case BindType::UInt2:       return L"uint2";
@@ -448,6 +446,9 @@ namespace Gek
                     // Shader::Interface
                     STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
                     {
+                        gekLogScope(__FUNCTION__);
+                        gekLogParameter("%s", fileName);
+
                         REQUIRE_RETURN(initializerContext, E_INVALIDARG);
                         REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -466,7 +467,7 @@ namespace Gek
                         if (SUCCEEDED(resultValue))
                         {
                             Gek::Xml::Document xmlDocument;
-                            resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\shaders\\%s.xml", fileName));
+                            gekCheckResult(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\shaders\\%s.xml", fileName)));
                             if (SUCCEEDED(resultValue))
                             {
                                 resultValue = E_INVALIDARG;
@@ -507,15 +508,36 @@ namespace Gek
                                         Gek::Xml::Node xmlPropertiesNode = xmlMaterialNode.firstChildElement(L"properties");
                                         if (xmlPropertiesNode)
                                         {
+                                            UINT32 propertyBufferSize = 0;
                                             Gek::Xml::Node xmlPropertyNode = xmlPropertiesNode.firstChildElement();
                                             while (xmlPropertyNode)
                                             {
                                                 CStringW name(xmlPropertyNode.getType());
                                                 BindType bindType = getBindType(xmlPropertyNode.getText());
                                                 propertyList.push_back(Property(name, bindType));
+                                                switch (bindType)
+                                                {
+                                                case BindType::Float:   propertyBufferSize += sizeof(float);        break;
+                                                case BindType::Float2:  propertyBufferSize += sizeof(float) * 2;    break;
+                                                case BindType::Float3:  propertyBufferSize += sizeof(float) * 3;    break;
+                                                case BindType::Float4:  propertyBufferSize += sizeof(float) * 4;    break;
+                                                case BindType::Half:    propertyBufferSize += sizeof(UINT16);       break;
+                                                case BindType::Half2:   propertyBufferSize += sizeof(UINT16) * 2;   break;
+                                                case BindType::Half4:   propertyBufferSize += sizeof(UINT16) * 4;   break;
+                                                case BindType::UInt:    propertyBufferSize += sizeof(UINT32);       break;
+                                                case BindType::UInt2:   propertyBufferSize += sizeof(UINT32) * 2;   break;
+                                                case BindType::UInt3:   propertyBufferSize += sizeof(UINT32) * 3;   break;
+                                                case BindType::UInt4:   propertyBufferSize += sizeof(UINT32) * 4;   break;
+                                                case BindType::Boolean: propertyBufferSize += sizeof(UINT32);       break;
+                                                };
 
                                                 xmlPropertyNode = xmlPropertyNode.nextSiblingElement();
                                             };
+
+                                            if (propertyBufferSize > 0)
+                                            {
+                                                resultValue = video->createBuffer(&propertyConstantBuffer, propertyBufferSize, 1, Video3D::BufferFlags::CONSTANT_BUFFER);
+                                            }
                                         }
                                     }
 
@@ -845,6 +867,7 @@ namespace Gek
                             }
                         }
 
+                        gekCheckResult(resultValue);
                         return resultValue;
                     }
                 };

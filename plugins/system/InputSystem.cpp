@@ -424,6 +424,7 @@ namespace Gek
             STDMETHODIMP initialize(HWND window)
             {
                 gekLogScope(__FUNCTION__);
+                gekLogParameter("0x%p", window);
 
                 this->window = window;
                 HRESULT resultValue = E_FAIL;
