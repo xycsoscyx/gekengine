@@ -82,7 +82,7 @@ namespace Gek
                                             CComQIPtr<Shader::Interface> shader(this->shader);
                                             if (shader)
                                             {
-                                                resultValue = shader->getMaterialValues(xmlMaterialNode, mapList, propertyList);
+                                                resultValue = shader->getMaterialValues(fileName, xmlMaterialNode, mapList, propertyList);
                                             }
                                         }
                                     }

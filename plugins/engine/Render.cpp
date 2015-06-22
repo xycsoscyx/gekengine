@@ -480,7 +480,7 @@ namespace Gek
                     returnValue = getResource<Video3D::TextureInterface>(returnObject, std::hash<LPCWSTR>()(fileName), [&](Video3D::TextureInterface **returnObject) -> HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
-                        returnValue = video->loadTexture(returnObject, fileName, 0);
+                        returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s", fileName), 0);
                         return returnValue;
                     });
 

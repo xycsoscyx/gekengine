@@ -19,7 +19,7 @@ namespace Gek
                 {
                     STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
 
-                    STDMETHOD(getMaterialValues)                (THIS_ Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video3D::TextureInterface>> &mapList, std::vector<UINT32> &propertyList) PURE;
+                    STDMETHOD(getMaterialValues)                (THIS_ LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, std::vector<UINT32> &materialPropertyList) PURE;
                 };
             }; // namespace Shader
         }; // namespace Render

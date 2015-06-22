@@ -4,6 +4,7 @@
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
+#include <atlpath.h>
 #include <set>
 #include <concurrent_vector.h>
 #include <concurrent_unordered_map.h>
@@ -871,9 +872,9 @@ namespace Gek
                         return resultValue;
                     }
 
-                    STDMETHODIMP getMaterialValues(Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video3D::TextureInterface>> &mapList, std::vector<UINT32> &propertyList)
+                    STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, std::vector<UINT32> &materialPropertyList)
                     {
-                        std::unordered_map<CStringW, CStringW> materialMapList;
+                        std::unordered_map<CStringW, CStringW> materialMapDefineList;
                         Gek::Xml::Node xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
                         if (xmlMapsNode)
                         {
@@ -882,27 +883,36 @@ namespace Gek
                             {
                                 CStringW name(xmlMapNode.getType());
                                 CStringW source(xmlMapNode.getText());
-                                materialMapList[name] = source;
+                                materialMapDefineList[name] = source;
 
                                 xmlMapNode = xmlMapNode.nextSiblingElement();
                             };
                         }
 
-                        for (auto &mapValue : this->mapList)
+                        CPathW filePath(fileName);
+                        filePath.RemoveFileSpec();
+
+                        CPathW fileSpec(fileName);
+                        fileSpec.StripPath();
+                        fileSpec.RemoveExtension();
+
+                        for (auto &mapValue : mapList)
                         {
                             CComPtr<Video3D::TextureInterface> map;
-                            auto materialMapIterator = materialMapList.find(mapValue.name);
-                            if (materialMapIterator != materialMapList.end())
+                            auto materialMapIterator = materialMapDefineList.find(mapValue.name);
+                            if (materialMapIterator != materialMapDefineList.end())
                             {
-                                render->loadTexture(&map, (*materialMapIterator).second);
+                                CStringW materialFileName = (*materialMapIterator).second;
+                                materialFileName.MakeLower();
+                                materialFileName.Replace(L"%directory%", LPCWSTR(filePath));
+                                materialFileName.Replace(L"%material%", fileName);
+                                render->loadTexture(&map, materialFileName);
                             }
 
-                            mapList.push_back(map);
+                            materialMapList.push_back(map);
                         }
 
-                        //std::vector<Property> propertyList;
-
-                        std::unordered_map<CStringW, CStringW> materialPropertyList;
+                        std::unordered_map<CStringW, CStringW> materialPropertyDefineList;
                         Gek::Xml::Node xmlPropertiesNode = xmlMaterialNode.firstChildElement(L"properties");
                         if (xmlMapsNode)
                         {
@@ -911,17 +921,17 @@ namespace Gek
                             {
                                 CStringW name(xmlPropertyNode.getType());
                                 CStringW source(xmlPropertyNode.getText());
-                                materialPropertyList[name] = source;
+                                materialPropertyDefineList[name] = source;
 
                                 xmlPropertyNode = xmlPropertyNode.nextSiblingElement();
                             };
                         }
                         
-                        for (auto &propertyValue : this->propertyList)
+                        for (auto &propertyValue : propertyList)
                         {
                             CStringW property;
-                            auto materialPropertyIterator = materialPropertyList.find(propertyValue.name);
-                            if (materialPropertyIterator != materialPropertyList.end())
+                            auto materialPropertyIterator = materialPropertyDefineList.find(propertyValue.name);
+                            if (materialPropertyIterator != materialPropertyDefineList.end())
                             {
                                 property = replaceDefines((*materialPropertyIterator).second);
                             }
@@ -933,7 +943,7 @@ namespace Gek
                                 if (true)
                                 {
                                     float value = String::getFloat(property);
-                                    propertyList.push_back(*(UINT32 *)&value);
+                                    materialPropertyList.push_back(*(UINT32 *)&value);
                                 }
 
                                 break;
@@ -943,8 +953,8 @@ namespace Gek
                                 if (true)
                                 {
                                     Math::Float2 value = String::getFloat2(property);
-                                    propertyList.push_back(*(UINT32 *)&value.x);
-                                    propertyList.push_back(*(UINT32 *)&value.y);
+                                    materialPropertyList.push_back(*(UINT32 *)&value.x);
+                                    materialPropertyList.push_back(*(UINT32 *)&value.y);
                                 }
 
                                 break;
@@ -953,9 +963,9 @@ namespace Gek
                                 if (true)
                                 {
                                     Math::Float3 value = String::getFloat3(property);
-                                    propertyList.push_back(*(UINT32 *)&value.x);
-                                    propertyList.push_back(*(UINT32 *)&value.y);
-                                    propertyList.push_back(*(UINT32 *)&value.z);
+                                    materialPropertyList.push_back(*(UINT32 *)&value.x);
+                                    materialPropertyList.push_back(*(UINT32 *)&value.y);
+                                    materialPropertyList.push_back(*(UINT32 *)&value.z);
                                 }
 
                                 break;
@@ -965,24 +975,24 @@ namespace Gek
                                 if (true)
                                 {
                                     Math::Float4 value = String::getFloat4(property);
-                                    propertyList.push_back(*(UINT32 *)&value.x);
-                                    propertyList.push_back(*(UINT32 *)&value.y);
-                                    propertyList.push_back(*(UINT32 *)&value.z);
-                                    propertyList.push_back(*(UINT32 *)&value.w);
+                                    materialPropertyList.push_back(*(UINT32 *)&value.x);
+                                    materialPropertyList.push_back(*(UINT32 *)&value.y);
+                                    materialPropertyList.push_back(*(UINT32 *)&value.z);
+                                    materialPropertyList.push_back(*(UINT32 *)&value.w);
                                 }
 
                                 break;
 
                             case BindType::UInt:
-                                propertyList.push_back(String::getUINT32(property));
+                                materialPropertyList.push_back(String::getUINT32(property));
                                 break;
 
                             case BindType::UInt2:
                                 if (true)
                                 {
                                     Math::Float2 value = String::getFloat2(property);
-                                    propertyList.push_back(UINT32(value.x));
-                                    propertyList.push_back(UINT32(value.y));
+                                    materialPropertyList.push_back(UINT32(value.x));
+                                    materialPropertyList.push_back(UINT32(value.y));
                                 }
 
                                 break;
@@ -991,9 +1001,9 @@ namespace Gek
                                 if (true)
                                 {
                                     Math::Float3 value = String::getFloat3(property);
-                                    propertyList.push_back(UINT32(value.x));
-                                    propertyList.push_back(UINT32(value.y));
-                                    propertyList.push_back(UINT32(value.z));
+                                    materialPropertyList.push_back(UINT32(value.x));
+                                    materialPropertyList.push_back(UINT32(value.y));
+                                    materialPropertyList.push_back(UINT32(value.z));
                                 }
 
                                 break;
@@ -1002,16 +1012,16 @@ namespace Gek
                                 if (true)
                                 {
                                     Math::Float4 value = String::getFloat4(property);
-                                    propertyList.push_back(UINT32(value.x));
-                                    propertyList.push_back(UINT32(value.y));
-                                    propertyList.push_back(UINT32(value.z));
-                                    propertyList.push_back(UINT32(value.w));
+                                    materialPropertyList.push_back(UINT32(value.x));
+                                    materialPropertyList.push_back(UINT32(value.y));
+                                    materialPropertyList.push_back(UINT32(value.z));
+                                    materialPropertyList.push_back(UINT32(value.w));
                                 }
 
                                 break;
 
                             case BindType::Boolean:
-                                propertyList.push_back(String::getBoolean(property));
+                                materialPropertyList.push_back(String::getBoolean(property));
                                 break;
                             };
                         }
