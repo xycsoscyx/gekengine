@@ -97,7 +97,7 @@ namespace Gek
                     else if (_wcsicmp(blendOperation, L"reverse_subtract") == 0) return Video3D::BlendOperation::ReverseSubtract;
                     else if (_wcsicmp(blendOperation, L"minimum") == 0) return Video3D::BlendOperation::Minimum;
                     else if (_wcsicmp(blendOperation, L"maximum") == 0) return Video3D::BlendOperation::Maximum;
-                    else return Video3D::BlendOperation::ADD;
+                    else return Video3D::BlendOperation::Add;
                 }
 
                 class System : public Context::BaseUser
