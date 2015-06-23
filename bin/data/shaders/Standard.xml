@@ -48,12 +48,6 @@
             <infoBuffer />
         </targets>
 
-        <resources>
-            <albedo />
-            <normal />
-            <info />
-        </resources>
-
         <program>
             <entry>mainPixelProgram</entry>
             <source>Standard\Deferred</source>

@@ -500,8 +500,6 @@ namespace Gek
                                                 BindType bindType = getBindType(xmlMapNode.getAttribute(L"bind"));
                                                 mapList.push_back(Map(name, mapType, bindType));
 
-                                                resourceList[name] = std::make_pair(mapType, bindType);
-
                                                 xmlMapNode = xmlMapNode.nextSiblingElement();
                                             };
                                         }
@@ -772,13 +770,23 @@ namespace Gek
                                             "                                                           \r\n"\
                                             "namespace Resources                                        \r\n"\
                                             "{                                                          \r\n";
-                                        for (UINT32 index = 0; index < pass.resourceList.size(); index++)
+
+                                        UINT32 resourceStage = (pass.mode == PassMode::Lighting ? 1 : 0);
+                                        if (pass.mode == PassMode::Forward)
                                         {
-                                            CStringW resource(pass.resourceList[index]);
-                                            auto resourceIterator = resourceList.find(resource);
+                                            for (auto &map : mapList)
+                                            {
+                                                engineData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(map.mapType), getBindType(map.bindType), map.name.GetString(), resourceStage++);
+                                            }
+                                        }
+
+                                        for (auto &resourceName : pass.resourceList)
+                                        {
+                                            auto resourceIterator = resourceList.find(resourceName);
                                             if (resourceIterator != resourceList.end())
                                             {
-                                                engineData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resource.GetString(), (index + (pass.mode == PassMode::Lighting ? 1 : 0)));
+                                                auto &resource = (*resourceIterator).second;
+                                                engineData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName.GetString(), resourceStage++);
                                             }
                                         }
 
