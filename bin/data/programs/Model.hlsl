@@ -1,5 +1,6 @@
+#include "GEKGlobal.h"
+
 #include "GEKEngine"
-#include "GEKEngine.h"
 
 struct Instance
 {
@@ -11,7 +12,7 @@ struct Instance
             
 StructuredBuffer<Instance> instanceList : register(t0);
 
-#include "GEKPlugin.h"
+#include "GEKPlugin"
 
 WorldVertex getWorldVertex(in PluginVertex pluginVertex)
 {

@@ -1,4 +1,4 @@
-#include "..\gekengine.h"
+#include "..\GEKGlobal.h"
 #include "..\gektypes.h"
 #include "..\gekutility.h"
 

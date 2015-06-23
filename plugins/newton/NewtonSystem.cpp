@@ -325,6 +325,7 @@ namespace Gek
                 else
                 {
                     gekLogScope(__FUNCTION__);
+                    gekLogParameter("%s", fileName);
 
                     surfaceIndexList[fileName] = -1;
 
@@ -369,7 +370,7 @@ namespace Gek
                 return surfaceIndex;
             }
 
-            dNewtonCollision *createCollision(Engine::Population::Entity entity, const DynamicBody::Data &dynamicBodyComponet)
+            dNewtonCollision *createCollision(Engine::Population::Entity entity, const DynamicBody::Data &dynamicBodyComponent)
             {
                 REQUIRE_RETURN(population, nullptr);
 
@@ -379,7 +380,7 @@ namespace Gek
                     size = population->getComponent<Engine::Components::Size::Data>(entity, Engine::Components::Size::identifier);
                 }
 
-                CStringW shape(Gek::String::format(L"%s:%f,%f,%f", dynamicBodyComponet.shape.GetString(), size.x, size.y, size.z));
+                CStringW shape(Gek::String::format(L"%s:%f,%f,%f", dynamicBodyComponent.shape.GetString(), size.x, size.y, size.z));
 
                 dNewtonCollision *newtonCollision = nullptr;
                 auto collisionIterator = collisionList.find(shape);
@@ -395,35 +396,35 @@ namespace Gek
                     gekLogScope(__FUNCTION__);
 
                     collisionList[shape].reset();
-                    if (dynamicBodyComponet.shape.CompareNoCase(L"*cube") == 0)
+                    if (dynamicBodyComponent.shape.CompareNoCase(L"*cube") == 0)
                     {
                         newtonCollision = new dNewtonCollisionBox(this, size.x, size.y, size.z, 1);
                     }
-                    else if (dynamicBodyComponet.shape.CompareNoCase(L"*sphere") == 0)
+                    else if (dynamicBodyComponent.shape.CompareNoCase(L"*sphere") == 0)
                     {
                         newtonCollision = new dNewtonCollisionSphere(this, size.x, 1);
                     }
-                    else if (dynamicBodyComponet.shape.CompareNoCase(L"*cone") == 0)
+                    else if (dynamicBodyComponent.shape.CompareNoCase(L"*cone") == 0)
                     {
                         newtonCollision = new dNewtonCollisionCone(this, size.x, size.y, 1);
                     }
-                    else if (dynamicBodyComponet.shape.CompareNoCase(L"*capsule") == 0)
+                    else if (dynamicBodyComponent.shape.CompareNoCase(L"*capsule") == 0)
                     {
                         newtonCollision = new dNewtonCollisionCapsule(this, size.x, size.y, 1);
                     }
-                    else if (dynamicBodyComponet.shape.CompareNoCase(L"*cylinder") == 0)
+                    else if (dynamicBodyComponent.shape.CompareNoCase(L"*cylinder") == 0)
                     {
                         newtonCollision = new dNewtonCollisionCylinder(this, size.x, size.y, 1);
                     }
-                    else if (dynamicBodyComponet.shape.CompareNoCase(L"*tapered_capsule") == 0)
+                    else if (dynamicBodyComponent.shape.CompareNoCase(L"*tapered_capsule") == 0)
                     {
                         newtonCollision = new dNewtonCollisionTaperedCapsule(this, size.x, size.y, size.z, 1);
                     }
-                    else if (dynamicBodyComponet.shape.CompareNoCase(L"*tapered_cylinder") == 0)
+                    else if (dynamicBodyComponent.shape.CompareNoCase(L"*tapered_cylinder") == 0)
                     {
                         newtonCollision = new dNewtonCollisionTaperedCylinder(this, size.x, size.y, size.z, 1);
                     }
-                    else if (dynamicBodyComponet.shape.CompareNoCase(L"*chamfer_cylinder") == 0)
+                    else if (dynamicBodyComponent.shape.CompareNoCase(L"*chamfer_cylinder") == 0)
                     {
                         newtonCollision = new dNewtonCollisionChamferedCylinder(this, size.x, size.y, 1);
                     }
@@ -437,16 +438,16 @@ namespace Gek
                 return newtonCollision;
             }
 
-            dNewtonCollision *loadCollision(Engine::Population::Entity entity, const DynamicBody::Data &dynamicBodyComponet)
+            dNewtonCollision *loadCollision(Engine::Population::Entity entity, const DynamicBody::Data &dynamicBodyComponent)
             {
                 dNewtonCollision *newtonCollision = nullptr;
-                if (dynamicBodyComponet.shape.GetAt(0) == L'*')
+                if (dynamicBodyComponent.shape.GetAt(0) == L'*')
                 {
-                    newtonCollision = createCollision(entity, dynamicBodyComponet);
+                    newtonCollision = createCollision(entity, dynamicBodyComponent);
                 }
                 else
                 {
-                    auto collisionIterator = collisionList.find(dynamicBodyComponet.shape);
+                    auto collisionIterator = collisionList.find(dynamicBodyComponent.shape);
                     if (collisionIterator != collisionList.end())
                     {
                         if ((*collisionIterator).second)
@@ -457,11 +458,12 @@ namespace Gek
                     else
                     {
                         gekLogScope(__FUNCTION__);
+                        gekLogParameter("%s", dynamicBodyComponent.shape.GetString());
 
-                        collisionList[dynamicBodyComponet.shape].reset();
+                        collisionList[dynamicBodyComponent.shape].reset();
 
                         std::vector<UINT8> fileData;
-                        HRESULT resultValue = Gek::FileSystem::load(Gek::String::format(L"%%root%%\\data\\models\\%s.gek", dynamicBodyComponet.shape.GetString()), fileData);
+                        HRESULT resultValue = Gek::FileSystem::load(Gek::String::format(L"%%root%%\\data\\models\\%s.gek", dynamicBodyComponent.shape.GetString()), fileData);
                         if (SUCCEEDED(resultValue))
                         {
                             UINT8 *rawFileData = fileData.data();
@@ -552,7 +554,7 @@ namespace Gek
 
                         if (newtonCollision)
                         {
-                            collisionList[dynamicBodyComponet.shape].reset(newtonCollision);
+                            collisionList[dynamicBodyComponent.shape].reset(newtonCollision);
                         }
                     }
                 }
@@ -657,8 +659,8 @@ namespace Gek
                     auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(entity, Engine::Components::Transform::identifier);
                     if (population->hasComponent(entity, DynamicBody::identifier))
                     {
-                        auto &dynamicBodyComponet = population->getComponent<DynamicBody::Data>(entity, DynamicBody::identifier);
-                        dNewtonCollision *newtonCollision = loadCollision(entity, dynamicBodyComponet);
+                        auto &dynamicBodyComponent = population->getComponent<DynamicBody::Data>(entity, DynamicBody::identifier);
+                        dNewtonCollision *newtonCollision = loadCollision(entity, dynamicBodyComponent);
                         if (newtonCollision != nullptr)
                         {
                             Math::Float4x4 matrix(transformComponent.rotation, transformComponent.position);

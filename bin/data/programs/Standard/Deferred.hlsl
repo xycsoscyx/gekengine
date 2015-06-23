@@ -1,6 +1,6 @@
 #include "GEKEngine"
 
-#include "..\GEKEngine.h"
+#include "..\GEKGlobal.h"
 #include "..\GEKUtility.h"
 
 OutputPixel mainPixelProgram(in InputPixel inputPixel)
