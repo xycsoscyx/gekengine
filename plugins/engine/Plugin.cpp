@@ -52,8 +52,8 @@ namespace Gek
 
             static Video3D::ElementType getElementType(LPCWSTR elementClassString)
             {
-                if (_wcsicmp(elementClassString, L"instance") == 0) return Video3D::ElementType::INSTANCE;
-                /*else if (_wcsicmp(elementClassString, L"vertex") == 0) */ return Video3D::ElementType::VERTEX;
+                if (_wcsicmp(elementClassString, L"instance") == 0) return Video3D::ElementType::Instance;
+                /*else if (_wcsicmp(elementClassString, L"vertex") == 0) */ return Video3D::ElementType::Vertex;
             }
 
             Video3D::Format getFormat(LPCWSTR formatString)
@@ -277,6 +277,10 @@ namespace Gek
 
                         gekCheckResult(resultValue);
                         return resultValue;
+                    }
+
+                    STDMETHODIMP_(void) enable(Video3D::ContextInterface *context)
+                    {
                     }
                 };
 

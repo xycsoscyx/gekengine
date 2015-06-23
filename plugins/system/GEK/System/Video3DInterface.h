@@ -39,81 +39,81 @@ namespace Gek
 
         enum class ElementType : UINT8
         {
-            VERTEX = 0,
-            INSTANCE,
+            Vertex = 0,
+            Instance,
         };
 
         enum class FillMode : UINT8
         {
-            WIREFRAME = 0,
-            SOLID,
+            WireFrame = 0,
+            Solid,
         };
 
         enum class CullMode : UINT8
         {
-            NONE = 0,
-            FRONT,
-            BACK,
+            None = 0,
+            Front,
+            Back,
         };
 
         enum class DepthWrite : UINT8
         {
-            ZERO = 0,
-            ALL,
+            Zero = 0,
+            All,
         };
 
         enum class ComparisonFunction : UINT8
         {
-            ALWAYS = 0,
-            NEVER,
-            EQUAL,
-            NOT_EQUAL,
-            LESS,
-            LESS_EQUAL,
-            GREATER,
-            GREATER_EQUAL,
+            Always = 0,
+            Never,
+            Equal,
+            NotEqual,
+            Less,
+            LessEqual,
+            Greater,
+            GreaterEqual,
         };
 
         enum class StencilOperation : UINT8
         {
-            ZERO = 0,
-            KEEP,
-            REPLACE,
-            INVERT,
-            INCREASE,
-            INCREASE_SATURATED,
-            DECREASE,
-            DECREASE_SATURATED,
+            Zero = 0,
+            Keep,
+            Replace,
+            Invert,
+            Increase,
+            IncreaseSaturated,
+            Decrease,
+            DecreaseSaturated,
         };
 
         enum class BlendSource : UINT8
         {
-            ZERO = 0,
-            ONE,
-            BLENDFACTOR,
-            INVERSE_BLENDFACTOR,
-            SOURCE_COLOR,
-            INVERSE_SOURCE_COLOR,
-            SOURCE_ALPHA,
-            INVERSE_SOURCE_ALPHA,
-            SOURCE_ALPHA_SATURATE,
-            DESTINATION_COLOR,
-            INVERSE_DESTINATION_COLOR,
-            DESTINATION_ALPHA,
-            INVERSE_DESTINATION_ALPHA,
-            SECONRARY_SOURCE_COLOR,
-            INVERSE_SECONRARY_SOURCE_COLOR,
-            SECONRARY_SOURCE_ALPHA,
-            INVERSE_SECONRARY_SOURCE_ALPHA,
+            Zero = 0,
+            One,
+            BlendFactor,
+            InverseBlendFactor,
+            SourceColor,
+            InverseSourceColor,
+            SourceAlpha,
+            InverseSourceAlpha,
+            SourceAlphaSaturated,
+            DestinationColor,
+            InverseDestinationColor,
+            DestinationAlpha,
+            InverseDestinationAlpha,
+            SecondarySourceColor,
+            InverseSecondarySourceColor,
+            SecondarySourceAlpha,
+            InverseSecondarySourceAlpha,
         };
 
         enum class BlendOperation : UINT8
         {
-            ADD = 0,
-            SUBTRACT,
-            REVERSE_SUBTRACT,
-            MINIMUM,
-            MAXIMUM,
+            Add = 0,
+            Subtract,
+            ReverseSubtract,
+            Minimum,
+            Maximum,
         };
 
         namespace ColorMask
@@ -131,47 +131,47 @@ namespace Gek
 
         enum class PrimitiveType : UINT8
         {
-            POINTLIST = 0,
-            LINELIST,
-            LINESTRIP,
-            TRIANGLELIST,
-            TRIANGLESTRIP,
+            PointList = 0,
+            LineList,
+            LineStrip,
+            TriangleList,
+            TriangleStrip,
         };
 
         enum class FilterMode : UINT8
         {
-            MIN_MAG_MIP_POINT = 0,
-            MIN_MAG_POINT_MIP_LINEAR,
-            MIN_POINT_MAG_LINEAR_MIP_POINT,
-            MIN_POINT_MAG_MIP_LINEAR,
-            MIN_LINEAR_MAG_MIP_POINT,
-            MIN_LINEAR_MAG_POINT_MIP_LINEAR,
-            MIN_MAG_LINEAR_MIP_POINT,
-            MIN_MAG_MIP_LINEAR,
-            ANISOTROPIC,
+            AllPoint = 0,
+            MinMagPointMipLinear,
+            MinPointMAgLinearMipPoint,
+            MinPointMagMipLinear,
+            MinLinearMagMipPoint,
+            MinLinearMagPointMipLinear,
+            MinMagLinearMipPoint,
+            AllLinear,
+            Anisotropic,
         };
 
         enum class AddressMode : UINT8
         {
-            CLAMP = 0,
-            WRAP,
-            MIRROR,
-            MIRROR_ONCE,
-            BORDER,
+            Clamp = 0,
+            Wrap,
+            Mirror,
+            MirrorOnce,
+            Border,
         };
 
         namespace BufferFlags
         {
             enum
             {
-                VERTEX_BUFFER = 1 << 0,
-                INDEX_BUFFER = 1 << 1,
-                CONSTANT_BUFFER = 1 << 2,
-                STRUCTURED_BUFFER = 1 << 3,
-                RESOURCE = 1 << 4,
-                UNORDERED_ACCESS = 1 << 5,
-                STATIC = 1 << 6,
-                DYNAMIC = 1 << 7,
+                VertexBuffer = 1 << 0,
+                IndexBuffer = 1 << 1,
+                ConstantBuffer = 1 << 2,
+                StructuredBuffer = 1 << 3,
+                Resource = 1 << 4,
+                UnorderedAccess = 1 << 5,
+                Static = 1 << 6,
+                Dynamic = 1 << 7,
             };
         }; // BufferFlags
 
@@ -179,8 +179,8 @@ namespace Gek
         {
             enum
             {
-                RESOURCE = 1 << 0,
-                UNORDERED_ACCESS = 1 << 1,
+                Resource = 1 << 0,
+                UnorderedAccess = 1 << 1,
             };
         }; // TextureFlags
 
@@ -188,8 +188,8 @@ namespace Gek
         {
             enum
             {
-                DEPTH = 1 << 0,
-                STENCIL = 1 << 1,
+                Depth = 1 << 0,
+                Stencil = 1 << 1,
             };
         }; // ClearMask
 
@@ -215,8 +215,8 @@ namespace Gek
             bool antialiasedLineEnable;
 
             RenderStates(void)
-                : fillMode(FillMode::SOLID)
-                , cullMode(CullMode::BACK)
+                : fillMode(FillMode::Solid)
+                , cullMode(CullMode::Back)
                 , frontCounterClockwise(false)
                 , depthBias(0)
                 , depthBiasClamp(0.0f)
@@ -239,10 +239,10 @@ namespace Gek
                 ComparisonFunction comparisonFunction;
 
                 StencilStates(void)
-                    : failOperation(StencilOperation::KEEP)
-                    , depthFailOperation(StencilOperation::KEEP)
-                    , passOperation(StencilOperation::KEEP)
-                    , comparisonFunction(ComparisonFunction::ALWAYS)
+                    : failOperation(StencilOperation::Keep)
+                    , depthFailOperation(StencilOperation::Keep)
+                    , passOperation(StencilOperation::Keep)
+                    , comparisonFunction(ComparisonFunction::Always)
                 {
                 }
             };
@@ -258,8 +258,8 @@ namespace Gek
 
             DepthStates(void)
                 : enable(false)
-                , writeMask(DepthWrite::ALL)
-                , comparisonFunction(ComparisonFunction::ALWAYS)
+                , writeMask(DepthWrite::All)
+                , comparisonFunction(ComparisonFunction::Always)
                 , stencilEnable(false)
                 , stencilReadMask(0xFF)
                 , stencilWriteMask(0xFF)
@@ -280,12 +280,12 @@ namespace Gek
 
             TargetBlendStates(void)
                 : enable(false)
-                , colorSource(BlendSource::ONE)
-                , colorDestination(BlendSource::ZERO)
-                , colorOperation(BlendOperation::ADD)
-                , alphaSource(BlendSource::ONE)
-                , alphaDestination(BlendSource::ZERO)
-                , alphaOperation(BlendOperation::ADD)
+                , colorSource(BlendSource::One)
+                , colorDestination(BlendSource::Zero)
+                , colorOperation(BlendOperation::Add)
+                , alphaSource(BlendSource::One)
+                , alphaDestination(BlendSource::Zero)
+                , alphaOperation(BlendOperation::Add)
                 , writeMask(ColorMask::RGBA)
             {
             }
@@ -324,12 +324,12 @@ namespace Gek
                 : format(Format::UNKNOWN)
                 , semanticName(nullptr)
                 , semanticIndex(0)
-                , slotClass(ElementType::VERTEX)
+                , slotClass(ElementType::Vertex)
                 , slotIndex(0)
             {
             }
 
-            InputElement(Format format, LPCSTR semanticName, UINT32 semanticIndex, ElementType slotClass = ElementType::VERTEX, UINT32 slotIndex = 0)
+            InputElement(Format format, LPCSTR semanticName, UINT32 semanticIndex, ElementType slotClass = ElementType::Vertex, UINT32 slotIndex = 0)
                 : format(format)
                 , semanticName(semanticName)
                 , semanticIndex(semanticIndex)
@@ -353,13 +353,13 @@ namespace Gek
             float maximumMipLevel;
 
             SamplerStates(void)
-                : filterMode(FilterMode::MIN_MAG_MIP_POINT)
-                , addressModeU(AddressMode::CLAMP)
-                , addressModeV(AddressMode::CLAMP)
-                , addressModeW(AddressMode::CLAMP)
+                : filterMode(FilterMode::AllPoint)
+                , addressModeU(AddressMode::Clamp)
+                , addressModeV(AddressMode::Clamp)
+                , addressModeW(AddressMode::Clamp)
                 , mipLevelBias(0.0f)
                 , maximumAnisotropy(1)
-                , comparisonFunction(ComparisonFunction::NEVER)
+                , comparisonFunction(ComparisonFunction::Never)
                 , borderColor(0.0f, 0.0f, 0.0f, 1.0f)
                 , minimumMipLevel(0.0f)
                 , maximumMipLevel(Math::Infinity)

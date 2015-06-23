@@ -888,8 +888,8 @@ namespace Gek
                 if (d3dDepthStencilView)
                 {
                     d3dDeviceContext->ClearDepthStencilView(d3dDepthStencilView,
-                        ((flags & Gek::Video3D::ClearMask::DEPTH ? D3D11_CLEAR_DEPTH : 0) |
-                         (flags & Gek::Video3D::ClearMask::STENCIL ? D3D11_CLEAR_STENCIL : 0)),
+                        ((flags & Gek::Video3D::ClearMask::Depth ? D3D11_CLEAR_DEPTH : 0) |
+                         (flags & Gek::Video3D::ClearMask::Stencil ? D3D11_CLEAR_STENCIL : 0)),
                           depthClear, stencilClear);
                 }
             }
@@ -1791,7 +1791,7 @@ namespace Gek
 
                 D3D11_BUFFER_DESC bufferDescription;
                 bufferDescription.ByteWidth = (stride * count);
-                if (flags & Gek::Video3D::BufferFlags::STATIC)
+                if (flags & Gek::Video3D::BufferFlags::Static)
                 {
                     if (data == nullptr)
                     {
@@ -1800,7 +1800,7 @@ namespace Gek
 
                     bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;
                 }
-                else if (flags & Gek::Video3D::BufferFlags::DYNAMIC)
+                else if (flags & Gek::Video3D::BufferFlags::Dynamic)
                 {
                     bufferDescription.Usage = D3D11_USAGE_DYNAMIC;
                 }
@@ -1809,15 +1809,15 @@ namespace Gek
                     bufferDescription.Usage = D3D11_USAGE_DEFAULT;
                 }
 
-                if (flags & Gek::Video3D::BufferFlags::VERTEX_BUFFER)
+                if (flags & Gek::Video3D::BufferFlags::VertexBuffer)
                 {
                     bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
                 }
-                else if (flags & Gek::Video3D::BufferFlags::INDEX_BUFFER)
+                else if (flags & Gek::Video3D::BufferFlags::IndexBuffer)
                 {
                     bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
                 }
-                else if (flags & Gek::Video3D::BufferFlags::CONSTANT_BUFFER)
+                else if (flags & Gek::Video3D::BufferFlags::ConstantBuffer)
                 {
                     bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
                 }
@@ -1826,17 +1826,17 @@ namespace Gek
                     bufferDescription.BindFlags = 0;
                 }
 
-                if (flags & Gek::Video3D::BufferFlags::RESOURCE)
+                if (flags & Gek::Video3D::BufferFlags::Resource)
                 {
                     bufferDescription.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
                 }
 
-                if (flags & Gek::Video3D::BufferFlags::UNORDERED_ACCESS)
+                if (flags & Gek::Video3D::BufferFlags::UnorderedAccess)
                 {
                     bufferDescription.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
                 }
 
-                if (flags & Gek::Video3D::BufferFlags::DYNAMIC)
+                if (flags & Gek::Video3D::BufferFlags::Dynamic)
                 {
                     bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
                 }
@@ -1845,7 +1845,7 @@ namespace Gek
                     bufferDescription.CPUAccessFlags = 0;
                 }
 
-                if (flags & Gek::Video3D::BufferFlags::STRUCTURED_BUFFER)
+                if (flags & Gek::Video3D::BufferFlags::StructuredBuffer)
                 {
                     bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
                     bufferDescription.StructureByteStride = stride;
@@ -1874,7 +1874,7 @@ namespace Gek
                 if (d3dBuffer)
                 {
                     CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                    if (flags & Gek::Video3D::BufferFlags::RESOURCE)
+                    if (flags & Gek::Video3D::BufferFlags::Resource)
                     {
                         D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
                         viewDescription.Format = DXGI_FORMAT_UNKNOWN;
@@ -1886,7 +1886,7 @@ namespace Gek
                     }
 
                     CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                    if (flags & Gek::Video3D::BufferFlags::UNORDERED_ACCESS)
+                    if (flags & Gek::Video3D::BufferFlags::UnorderedAccess)
                     {
                         D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
                         viewDescription.Format = DXGI_FORMAT_UNKNOWN;
@@ -1924,7 +1924,7 @@ namespace Gek
 
                 D3D11_BUFFER_DESC bufferDescription;
                 bufferDescription.ByteWidth = (stride * count);
-                if (flags & Gek::Video3D::BufferFlags::STATIC)
+                if (flags & Gek::Video3D::BufferFlags::Static)
                 {
                     if (data == nullptr)
                     {
@@ -1938,15 +1938,15 @@ namespace Gek
                     bufferDescription.Usage = D3D11_USAGE_DEFAULT;
                 }
 
-                if (flags & Gek::Video3D::BufferFlags::VERTEX_BUFFER)
+                if (flags & Gek::Video3D::BufferFlags::VertexBuffer)
                 {
                     bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
                 }
-                else if (flags & Gek::Video3D::BufferFlags::INDEX_BUFFER)
+                else if (flags & Gek::Video3D::BufferFlags::IndexBuffer)
                 {
                     bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
                 }
-                else if (flags & Gek::Video3D::BufferFlags::CONSTANT_BUFFER)
+                else if (flags & Gek::Video3D::BufferFlags::ConstantBuffer)
                 {
                     bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
                 }
@@ -1955,18 +1955,18 @@ namespace Gek
                     bufferDescription.BindFlags = 0;
                 }
 
-                if (flags & Gek::Video3D::BufferFlags::RESOURCE)
+                if (flags & Gek::Video3D::BufferFlags::Resource)
                 {
                     bufferDescription.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
                 }
 
-                if (flags & Gek::Video3D::BufferFlags::UNORDERED_ACCESS)
+                if (flags & Gek::Video3D::BufferFlags::UnorderedAccess)
                 {
                     bufferDescription.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
                 }
 
                 bufferDescription.CPUAccessFlags = 0;
-                if (flags & Gek::Video3D::BufferFlags::STRUCTURED_BUFFER)
+                if (flags & Gek::Video3D::BufferFlags::StructuredBuffer)
                 {
                     bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
                     bufferDescription.StructureByteStride = stride;
@@ -1995,7 +1995,7 @@ namespace Gek
                 if (d3dBuffer)
                 {
                     CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                    if (flags & Gek::Video3D::BufferFlags::RESOURCE)
+                    if (flags & Gek::Video3D::BufferFlags::Resource)
                     {
                         D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
                         viewDescription.Format = d3dFormatList[static_cast<UINT8>(format)];
@@ -2007,7 +2007,7 @@ namespace Gek
                     }
 
                     CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                    if (flags & Gek::Video3D::BufferFlags::UNORDERED_ACCESS)
+                    if (flags & Gek::Video3D::BufferFlags::UnorderedAccess)
                     {
                         D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
                         viewDescription.Format = d3dFormatList[static_cast<UINT8>(format)];
@@ -2156,7 +2156,7 @@ namespace Gek
                     gekCheckResult(resultValue = d3dDevice->CreateVertexShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader));
                     if (d3dShader)
                     {
-                        ElementType lastElementType = Gek::Video3D::ElementType::VERTEX;
+                        ElementType lastElementType = Gek::Video3D::ElementType::Vertex;
                         std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList(elementLayout.size());
                         for (UINT32 inputElement = 0; inputElement < elementLayout.size(); ++inputElement)
                         {
@@ -2175,12 +2175,12 @@ namespace Gek
                             inputElementList[inputElement].InputSlot = elementLayout[inputElement].slotIndex;
                             switch (elementLayout[inputElement].slotClass)
                             {
-                            case Gek::Video3D::ElementType::INSTANCE:
+                            case Gek::Video3D::ElementType::Instance:
                                 inputElementList[inputElement].InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
                                 inputElementList[inputElement].InstanceDataStepRate = 1;
                                 break;
 
-                            case Gek::Video3D::ElementType::VERTEX:
+                            case Gek::Video3D::ElementType::Vertex:
                             default:
                                 inputElementList[inputElement].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
                                 inputElementList[inputElement].InstanceDataStepRate = 0;
@@ -2428,12 +2428,12 @@ namespace Gek
                 HRESULT resultValue = E_FAIL;
 
                 UINT32 bindFlags = 0;
-                if (flags & Gek::Video3D::TextureFlags::RESOURCE)
+                if (flags & Gek::Video3D::TextureFlags::Resource)
                 {
                     bindFlags |= D3D11_BIND_SHADER_RESOURCE;
                 }
 
-                if (flags & Gek::Video3D::TextureFlags::UNORDERED_ACCESS)
+                if (flags & Gek::Video3D::TextureFlags::UnorderedAccess)
                 {
                     bindFlags |= D3D11_BIND_UNORDERED_ACCESS;
                 }
@@ -2485,13 +2485,13 @@ namespace Gek
                 if (d3dResource)
                 {
                     CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                    if (flags & Gek::Video3D::TextureFlags::RESOURCE)
+                    if (flags & Gek::Video3D::TextureFlags::Resource)
                     {
                         gekCheckResult(resultValue = d3dDevice->CreateShaderResourceView(d3dResource, nullptr, &d3dShaderResourceView));
                     }
 
                     CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                    if (flags & Gek::Video3D::TextureFlags::UNORDERED_ACCESS)
+                    if (flags & Gek::Video3D::TextureFlags::UnorderedAccess)
                     {
                         D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
                         viewDescription.Format = d3dFormatList[format];
@@ -2619,8 +2619,8 @@ namespace Gek
                 REQUIRE_VOID_RETURN(d3dDeviceContext);
                 REQUIRE_VOID_RETURN(d3dDefaultDepthStencilView);
                 d3dDeviceContext->ClearDepthStencilView(d3dDefaultDepthStencilView,
-                    ((flags & Gek::Video3D::ClearMask::DEPTH ? D3D11_CLEAR_DEPTH : 0) |
-                    (flags & Gek::Video3D::ClearMask::STENCIL ? D3D11_CLEAR_STENCIL : 0)),
+                    ((flags & Gek::Video3D::ClearMask::Depth ? D3D11_CLEAR_DEPTH : 0) |
+                    (flags & Gek::Video3D::ClearMask::Stencil ? D3D11_CLEAR_STENCIL : 0)),
                      depthClear, stencilClear);
             }
 

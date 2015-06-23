@@ -100,8 +100,17 @@ namespace Gek
                     Math::Float3 color;
                 };
 
+                enum class DrawType : UINT8
+                {
+                    DrawPrimitive = 0,
+                    DrawIndexedPrimitive,
+                    DrawInstancedPrimitive,
+                    DrawInstancedIndexedPrimitive,
+                };
+
                 struct DrawCommand
                 {
+                    DrawType drawType;
                     LPCVOID instanceData;
                     UINT32 instanceStride;
                     UINT32 instanceCount;
@@ -113,7 +122,8 @@ namespace Gek
                     UINT32 firstIndex;
 
                     DrawCommand(Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex)
-                        : vertexBuffer(vertexBuffer)
+                        : drawType(DrawType::DrawPrimitive)
+                        , vertexBuffer(vertexBuffer)
                         , vertexCount(vertexCount)
                         , firstVertex(firstVertex)
                         , instanceData(nullptr)
@@ -125,7 +135,8 @@ namespace Gek
                     }
 
                     DrawCommand(Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
-                        : vertexBuffer(vertexBuffer)
+                        : drawType(DrawType::DrawIndexedPrimitive)
+                        , vertexBuffer(vertexBuffer)
                         , firstVertex(firstVertex)
                         , indexBuffer(indexBuffer)
                         , indexCount(indexCount)
@@ -138,7 +149,8 @@ namespace Gek
                     }
 
                     DrawCommand(LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex)
-                        : instanceData(instanceData)
+                        : drawType(DrawType::DrawInstancedPrimitive)
+                        , instanceData(instanceData)
                         , instanceStride(instanceStride)
                         , instanceCount(instanceCount)
                         , vertexBuffer(vertexBuffer)
@@ -150,7 +162,8 @@ namespace Gek
                     }
 
                     DrawCommand(LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
-                        : instanceData(instanceData)
+                        : drawType(DrawType::DrawInstancedIndexedPrimitive)
+                        , instanceData(instanceData)
                         , instanceStride(instanceStride)
                         , instanceCount(instanceCount)
                         , vertexBuffer(vertexBuffer)
@@ -202,7 +215,14 @@ namespace Gek
                     auto resourceIterator = resourceMap.find(hash);
                     if (resourceIterator != resourceMap.end())
                     {
-                        returnValue = (*resourceIterator).second->QueryInterface(IID_PPV_ARGS(returnObject));
+                        if ((*resourceIterator).second)
+                        {
+                            returnValue = (*resourceIterator).second->QueryInterface(IID_PPV_ARGS(returnObject));
+                        }
+                        else
+                        {
+                            returnValue = S_OK;
+                        }
                     }
                     else
                     {
@@ -241,22 +261,22 @@ namespace Gek
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantBuffer), 1, Video3D::BufferFlags::CONSTANT_BUFFER);
+                        resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantBuffer), 1, Video3D::BufferFlags::ConstantBuffer);
                     }
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&lightingConstantBuffer, sizeof(LightingConstantBuffer), 1, Video3D::BufferFlags::CONSTANT_BUFFER);
+                        resultValue = video->createBuffer(&lightingConstantBuffer, sizeof(LightingConstantBuffer), 1, Video3D::BufferFlags::ConstantBuffer);
                     }
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 256, Video3D::BufferFlags::DYNAMIC | Video3D::BufferFlags::STRUCTURED_BUFFER | Video3D::BufferFlags::RESOURCE);
+                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 256, Video3D::BufferFlags::Dynamic | Video3D::BufferFlags::StructuredBuffer | Video3D::BufferFlags::Resource);
                     }
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&instanceBuffer, sizeof(float), 1024, Video3D::BufferFlags::DYNAMIC | Video3D::BufferFlags::STRUCTURED_BUFFER | Video3D::BufferFlags::RESOURCE);
+                        resultValue = video->createBuffer(&instanceBuffer, sizeof(float), 1024, Video3D::BufferFlags::Dynamic | Video3D::BufferFlags::StructuredBuffer | Video3D::BufferFlags::Resource);
                     }
 
                     return resultValue;
@@ -535,24 +555,24 @@ namespace Gek
                     return returnValue;
                 }
 
-                STDMETHODIMP_(void) drawPrimitive(IUnknown *pluginHandle, IUnknown *materialHandle, Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex)
+                STDMETHODIMP_(void) drawPrimitive(IUnknown *plugin, IUnknown *material, Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex)
                 {
-                    drawQueue[pluginHandle][materialHandle].push_back(DrawCommand(vertexBuffer, vertexCount, firstVertex));
+                    drawQueue[plugin][material].push_back(DrawCommand(vertexBuffer, vertexCount, firstVertex));
                 }
 
-                STDMETHODIMP_(void) drawIndexedPrimitive(IUnknown *pluginHandle, IUnknown *materialHandle, Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
+                STDMETHODIMP_(void) drawIndexedPrimitive(IUnknown *plugin, IUnknown *material, Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
-                    drawQueue[pluginHandle][materialHandle].push_back(DrawCommand(vertexBuffer, firstVertex, indexBuffer, indexCount, firstIndex));
+                    drawQueue[plugin][material].push_back(DrawCommand(vertexBuffer, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
-                STDMETHODIMP_(void) drawInstancedPrimitive(IUnknown *pluginHandle, IUnknown *materialHandle, LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex)
+                STDMETHODIMP_(void) drawInstancedPrimitive(IUnknown *plugin, IUnknown *material, LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex)
                 {
-                    drawQueue[pluginHandle][materialHandle].push_back(DrawCommand(instanceData, instanceStride, instanceCount, vertexBuffer, vertexCount, firstVertex));
+                    drawQueue[plugin][material].push_back(DrawCommand(instanceData, instanceStride, instanceCount, vertexBuffer, vertexCount, firstVertex));
                 }
 
-                STDMETHODIMP_(void) drawInstancedIndexedPrimitive(IUnknown *pluginHandle, IUnknown *materialHandle, LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
+                STDMETHODIMP_(void) drawInstancedIndexedPrimitive(IUnknown *plugin, IUnknown *material, LPCVOID instanceData, UINT32 instanceStride, UINT32 instanceCount, Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
-                    drawQueue[pluginHandle][materialHandle].push_back(DrawCommand(instanceData, instanceStride, instanceCount, vertexBuffer, firstVertex, indexBuffer, indexCount, firstIndex));
+                    drawQueue[plugin][material].push_back(DrawCommand(instanceData, instanceStride, instanceCount, vertexBuffer, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
                 // Population::Observer
@@ -630,14 +650,50 @@ namespace Gek
 
                         drawQueue.clear();
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, viewFrustum)));
+
+                        video->getDefaultContext()->setPrimitiveType(Video3D::PrimitiveType::TriangleList);
                         for (auto &pluginPair : drawQueue)
                         {
-                            IUnknown *pluginHandle = pluginPair.first;
+                            CComQIPtr<Plugin::Interface> plugin(pluginPair.first);
+                            plugin->enable(video->getDefaultContext());
+
                             for (auto &materialPair : pluginPair.second)
                             {
-                                IUnknown * materialHandle = materialPair.first;
+                                CComQIPtr<Material::Interface> material(materialPair.first);
+                                material->enable(video->getDefaultContext());
+
                                 for (auto &drawCommand : materialPair.second)
                                 {
+                                    if (drawCommand.instanceCount > 0 && drawCommand.instanceStride > 0 && drawCommand.instanceData)
+                                    {
+                                        LPVOID instanceData = nullptr;
+                                        if (SUCCEEDED(video->mapBuffer(instanceBuffer, &instanceData)))
+                                        {
+                                            memcpy(instanceData, drawCommand.instanceData, (drawCommand.instanceStride * drawCommand.instanceCount));
+                                            video->unmapBuffer(instanceBuffer);
+                                        }
+                                    }
+
+                                    video->getDefaultContext()->setIndexBuffer(drawCommand.indexBuffer, 0);
+                                    video->getDefaultContext()->setVertexBuffer(drawCommand.vertexBuffer, 0, 0);
+                                    switch (drawCommand.drawType)
+                                    {
+                                    case DrawType::DrawPrimitive:
+                                        video->getDefaultContext()->drawPrimitive(drawCommand.vertexCount, drawCommand.firstVertex);
+                                        break;
+
+                                    case DrawType::DrawIndexedPrimitive:
+                                        video->getDefaultContext()->drawIndexedPrimitive(drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                        break;
+
+                                    case DrawType::DrawInstancedPrimitive:
+                                        video->getDefaultContext()->drawInstancedPrimitive(drawCommand.instanceCount, 0, drawCommand.vertexCount, drawCommand.firstVertex);
+                                        break;
+
+                                    case DrawType::DrawInstancedIndexedPrimitive:
+                                        video->getDefaultContext()->drawInstancedIndexedPrimitive(drawCommand.instanceCount, 0, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                        break;
+                                    };
                                 }
                             }
                         }

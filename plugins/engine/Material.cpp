@@ -93,6 +93,10 @@ namespace Gek
                         gekCheckResult(resultValue);
                         return resultValue;
                     }
+
+                    STDMETHODIMP_(void) enable(Video3D::ContextInterface *context)
+                    {
+                    }
                 };
 
                 REGISTER_CLASS(System)

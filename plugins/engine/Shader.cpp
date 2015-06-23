@@ -22,81 +22,81 @@ namespace Gek
             {
                 static Video3D::DepthWrite getDepthWriteMask(LPCWSTR depthWrite)
                 {
-                    if (_wcsicmp(depthWrite, L"zero") == 0) return Video3D::DepthWrite::ZERO;
-                    else if (_wcsicmp(depthWrite, L"all") == 0) return Video3D::DepthWrite::ALL;
-                    else return Video3D::DepthWrite::ZERO;
+                    if (_wcsicmp(depthWrite, L"zero") == 0) return Video3D::DepthWrite::Zero;
+                    else if (_wcsicmp(depthWrite, L"all") == 0) return Video3D::DepthWrite::All;
+                    else return Video3D::DepthWrite::Zero;
                 }
 
                 static Video3D::ComparisonFunction getComparisonFunction(LPCWSTR comparisonFunction)
                 {
-                    if (_wcsicmp(comparisonFunction, L"always") == 0) return Video3D::ComparisonFunction::ALWAYS;
-                    else if (_wcsicmp(comparisonFunction, L"never") == 0) return Video3D::ComparisonFunction::NEVER;
-                    else if (_wcsicmp(comparisonFunction, L"equal") == 0) return Video3D::ComparisonFunction::EQUAL;
-                    else if (_wcsicmp(comparisonFunction, L"notequal") == 0) return Video3D::ComparisonFunction::NOT_EQUAL;
-                    else if (_wcsicmp(comparisonFunction, L"less") == 0) return Video3D::ComparisonFunction::LESS;
-                    else if (_wcsicmp(comparisonFunction, L"lessequal") == 0) return Video3D::ComparisonFunction::LESS_EQUAL;
-                    else if (_wcsicmp(comparisonFunction, L"greater") == 0) return Video3D::ComparisonFunction::GREATER;
-                    else if (_wcsicmp(comparisonFunction, L"greaterequal") == 0) return Video3D::ComparisonFunction::GREATER_EQUAL;
-                    else return Video3D::ComparisonFunction::ALWAYS;
+                    if (_wcsicmp(comparisonFunction, L"always") == 0) return Video3D::ComparisonFunction::Always;
+                    else if (_wcsicmp(comparisonFunction, L"never") == 0) return Video3D::ComparisonFunction::Never;
+                    else if (_wcsicmp(comparisonFunction, L"equal") == 0) return Video3D::ComparisonFunction::Equal;
+                    else if (_wcsicmp(comparisonFunction, L"notequal") == 0) return Video3D::ComparisonFunction::NotEqual;
+                    else if (_wcsicmp(comparisonFunction, L"less") == 0) return Video3D::ComparisonFunction::Less;
+                    else if (_wcsicmp(comparisonFunction, L"lessequal") == 0) return Video3D::ComparisonFunction::LessEqual;
+                    else if (_wcsicmp(comparisonFunction, L"greater") == 0) return Video3D::ComparisonFunction::Greater;
+                    else if (_wcsicmp(comparisonFunction, L"greaterequal") == 0) return Video3D::ComparisonFunction::GreaterEqual;
+                    else return Video3D::ComparisonFunction::Always;
                 }
 
                 static Video3D::StencilOperation getStencilOperation(LPCWSTR stencilOperation)
                 {
-                    if (_wcsicmp(stencilOperation, L"ZERO") == 0) return Video3D::StencilOperation::ZERO;
-                    else if (_wcsicmp(stencilOperation, L"KEEP") == 0) return Video3D::StencilOperation::KEEP;
-                    else if (_wcsicmp(stencilOperation, L"REPLACE") == 0) return Video3D::StencilOperation::REPLACE;
-                    else if (_wcsicmp(stencilOperation, L"INVERT") == 0) return Video3D::StencilOperation::INVERT;
-                    else if (_wcsicmp(stencilOperation, L"INCREASE") == 0) return Video3D::StencilOperation::INCREASE;
-                    else if (_wcsicmp(stencilOperation, L"INCREASE_SATURATED") == 0) return Video3D::StencilOperation::INCREASE_SATURATED;
-                    else if (_wcsicmp(stencilOperation, L"DECREASE") == 0) return Video3D::StencilOperation::DECREASE;
-                    else if (_wcsicmp(stencilOperation, L"DECREASE_SATURATED") == 0) return Video3D::StencilOperation::DECREASE_SATURATED;
-                    else return Video3D::StencilOperation::ZERO;
+                    if (_wcsicmp(stencilOperation, L"Zero") == 0) return Video3D::StencilOperation::Zero;
+                    else if (_wcsicmp(stencilOperation, L"Keep") == 0) return Video3D::StencilOperation::Keep;
+                    else if (_wcsicmp(stencilOperation, L"Replace") == 0) return Video3D::StencilOperation::Replace;
+                    else if (_wcsicmp(stencilOperation, L"Invert") == 0) return Video3D::StencilOperation::Invert;
+                    else if (_wcsicmp(stencilOperation, L"Increase") == 0) return Video3D::StencilOperation::Increase;
+                    else if (_wcsicmp(stencilOperation, L"IncreaseSaturated") == 0) return Video3D::StencilOperation::IncreaseSaturated;
+                    else if (_wcsicmp(stencilOperation, L"Decrease") == 0) return Video3D::StencilOperation::Decrease;
+                    else if (_wcsicmp(stencilOperation, L"DecreaseSaturated") == 0) return Video3D::StencilOperation::DecreaseSaturated;
+                    else return Video3D::StencilOperation::Zero;
                 }
 
                 static Video3D::FillMode getFillMode(LPCWSTR fillMode)
                 {
-                    if (_wcsicmp(fillMode, L"solid") == 0) return Video3D::FillMode::SOLID;
-                    else if (_wcsicmp(fillMode, L"wire") == 0) return Video3D::FillMode::WIREFRAME;
-                    else return Video3D::FillMode::SOLID;
+                    if (_wcsicmp(fillMode, L"solid") == 0) return Video3D::FillMode::Solid;
+                    else if (_wcsicmp(fillMode, L"wire") == 0) return Video3D::FillMode::WireFrame;
+                    else return Video3D::FillMode::Solid;
                 }
 
                 static Video3D::CullMode getCullMode(LPCWSTR cullMode)
                 {
-                    if (_wcsicmp(cullMode, L"none") == 0) return Video3D::CullMode::NONE;
-                    else if (_wcsicmp(cullMode, L"front") == 0) return Video3D::CullMode::FRONT;
-                    else if (_wcsicmp(cullMode, L"back") == 0) return Video3D::CullMode::BACK;
-                    else return Video3D::CullMode::NONE;
+                    if (_wcsicmp(cullMode, L"none") == 0) return Video3D::CullMode::None;
+                    else if (_wcsicmp(cullMode, L"front") == 0) return Video3D::CullMode::Front;
+                    else if (_wcsicmp(cullMode, L"back") == 0) return Video3D::CullMode::Back;
+                    else return Video3D::CullMode::None;
                 }
 
                 static Video3D::BlendSource getBlendSource(LPCWSTR blendSource)
                 {
-                    if (_wcsicmp(blendSource, L"zero") == 0) return Video3D::BlendSource::ZERO;
-                    else if (_wcsicmp(blendSource, L"one") == 0) return Video3D::BlendSource::ONE;
-                    else if (_wcsicmp(blendSource, L"blend_factor") == 0) return Video3D::BlendSource::BLENDFACTOR;
-                    else if (_wcsicmp(blendSource, L"inverse_blend_factor") == 0) return Video3D::BlendSource::INVERSE_BLENDFACTOR;
-                    else if (_wcsicmp(blendSource, L"source_color") == 0) return Video3D::BlendSource::SOURCE_COLOR;
-                    else if (_wcsicmp(blendSource, L"inverse_source_color") == 0) return Video3D::BlendSource::INVERSE_SOURCE_COLOR;
-                    else if (_wcsicmp(blendSource, L"source_alpha") == 0) return Video3D::BlendSource::SOURCE_ALPHA;
-                    else if (_wcsicmp(blendSource, L"inverse_source_alpha") == 0) return Video3D::BlendSource::INVERSE_SOURCE_ALPHA;
-                    else if (_wcsicmp(blendSource, L"source_alpha_saturate") == 0) return Video3D::BlendSource::SOURCE_ALPHA_SATURATE;
-                    else if (_wcsicmp(blendSource, L"destination_color") == 0) return Video3D::BlendSource::DESTINATION_COLOR;
-                    else if (_wcsicmp(blendSource, L"inverse_destination_color") == 0) return Video3D::BlendSource::INVERSE_DESTINATION_COLOR;
-                    else if (_wcsicmp(blendSource, L"destination_alpha") == 0) return Video3D::BlendSource::DESTINATION_ALPHA;
-                    else if (_wcsicmp(blendSource, L"inverse_destination_alpha") == 0) return Video3D::BlendSource::INVERSE_DESTINATION_ALPHA;
-                    else if (_wcsicmp(blendSource, L"secondary_source_color") == 0) return Video3D::BlendSource::SECONRARY_SOURCE_COLOR;
-                    else if (_wcsicmp(blendSource, L"inverse_secondary_source_color") == 0) return Video3D::BlendSource::INVERSE_SECONRARY_SOURCE_COLOR;
-                    else if (_wcsicmp(blendSource, L"secondary_source_alpha") == 0) return Video3D::BlendSource::SECONRARY_SOURCE_ALPHA;
-                    else if (_wcsicmp(blendSource, L"inverse_secondary_source_alpha") == 0) return Video3D::BlendSource::INVERSE_SECONRARY_SOURCE_ALPHA;
-                    else return Video3D::BlendSource::ZERO;
+                    if (_wcsicmp(blendSource, L"zero") == 0) return Video3D::BlendSource::Zero;
+                    else if (_wcsicmp(blendSource, L"one") == 0) return Video3D::BlendSource::One;
+                    else if (_wcsicmp(blendSource, L"blend_factor") == 0) return Video3D::BlendSource::BlendFactor;
+                    else if (_wcsicmp(blendSource, L"inverse_blend_factor") == 0) return Video3D::BlendSource::InverseBlendFactor;
+                    else if (_wcsicmp(blendSource, L"source_color") == 0) return Video3D::BlendSource::SourceColor;
+                    else if (_wcsicmp(blendSource, L"inverse_source_color") == 0) return Video3D::BlendSource::InverseSourceColor;
+                    else if (_wcsicmp(blendSource, L"source_alpha") == 0) return Video3D::BlendSource::SourceAlpha;
+                    else if (_wcsicmp(blendSource, L"inverse_source_alpha") == 0) return Video3D::BlendSource::InverseSourceAlpha;
+                    else if (_wcsicmp(blendSource, L"source_alpha_saturate") == 0) return Video3D::BlendSource::SourceAlphaSaturated;
+                    else if (_wcsicmp(blendSource, L"destination_color") == 0) return Video3D::BlendSource::DestinationColor;
+                    else if (_wcsicmp(blendSource, L"inverse_destination_color") == 0) return Video3D::BlendSource::InverseDestinationColor;
+                    else if (_wcsicmp(blendSource, L"destination_alpha") == 0) return Video3D::BlendSource::DestinationAlpha;
+                    else if (_wcsicmp(blendSource, L"inverse_destination_alpha") == 0) return Video3D::BlendSource::InverseDestinationAlpha;
+                    else if (_wcsicmp(blendSource, L"secondary_source_color") == 0) return Video3D::BlendSource::SecondarySourceColor;
+                    else if (_wcsicmp(blendSource, L"inverse_secondary_source_color") == 0) return Video3D::BlendSource::InverseSecondarySourceColor;
+                    else if (_wcsicmp(blendSource, L"secondary_source_alpha") == 0) return Video3D::BlendSource::SecondarySourceAlpha;
+                    else if (_wcsicmp(blendSource, L"inverse_secondary_source_alpha") == 0) return Video3D::BlendSource::InverseSecondarySourceAlpha;
+                    else return Video3D::BlendSource::Zero;
                 }
 
                 static Video3D::BlendOperation getBlendOperation(LPCWSTR blendOperation)
                 {
-                    if (_wcsicmp(blendOperation, L"add") == 0) return Video3D::BlendOperation::ADD;
-                    else if (_wcsicmp(blendOperation, L"subtract") == 0) return Video3D::BlendOperation::SUBTRACT;
-                    else if (_wcsicmp(blendOperation, L"reverse_subtract") == 0) return Video3D::BlendOperation::REVERSE_SUBTRACT;
-                    else if (_wcsicmp(blendOperation, L"minimum") == 0) return Video3D::BlendOperation::MINIMUM;
-                    else if (_wcsicmp(blendOperation, L"maximum") == 0) return Video3D::BlendOperation::MAXIMUM;
+                    if (_wcsicmp(blendOperation, L"add") == 0) return Video3D::BlendOperation::Add;
+                    else if (_wcsicmp(blendOperation, L"subtract") == 0) return Video3D::BlendOperation::Subtract;
+                    else if (_wcsicmp(blendOperation, L"reverse_subtract") == 0) return Video3D::BlendOperation::ReverseSubtract;
+                    else if (_wcsicmp(blendOperation, L"minimum") == 0) return Video3D::BlendOperation::Minimum;
+                    else if (_wcsicmp(blendOperation, L"maximum") == 0) return Video3D::BlendOperation::Maximum;
                     else return Video3D::BlendOperation::ADD;
                 }
 
@@ -535,7 +535,7 @@ namespace Gek
 
                                             if (propertyBufferSize > 0)
                                             {
-                                                resultValue = video->createBuffer(&propertyConstantBuffer, propertyBufferSize, 1, Video3D::BufferFlags::CONSTANT_BUFFER);
+                                                resultValue = video->createBuffer(&propertyConstantBuffer, propertyBufferSize, 1, Video3D::BufferFlags::ConstantBuffer);
                                             }
                                         }
                                     }
@@ -591,7 +591,7 @@ namespace Gek
                                             CStringW name(xmlBufferNode.getType());
                                             Video3D::Format format = getFormat(xmlBufferNode.getText());
                                             UINT32 size = String::getUINT32(replaceDefines(xmlBufferNode.getAttribute(L"size")));
-                                            resultValue = render->createBuffer(&bufferList[name], format, size, Video3D::BufferFlags::UNORDERED_ACCESS | Video3D::BufferFlags::RESOURCE);
+                                            resultValue = render->createBuffer(&bufferList[name], format, size, Video3D::BufferFlags::UnorderedAccess | Video3D::BufferFlags::Resource);
                                             switch (format)
                                             {
                                             case Video3D::Format::R_UINT8:
@@ -1034,7 +1034,11 @@ namespace Gek
                             };
                         }
 
-                        return E_FAIL;
+                        return S_OK;
+                    }
+
+                    STDMETHODIMP_(void) enable(Video3D::ContextInterface *context)
+                    {
                     }
                 };
 

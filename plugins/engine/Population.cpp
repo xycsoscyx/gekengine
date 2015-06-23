@@ -22,7 +22,7 @@ namespace Gek
             private:
                 Entity nextEntity;
                 std::unordered_map<CStringW, Entity> componentNameList;
-                std::unordered_map<Entity, CComPtr<Component::Interface>> componentList;
+                std::unordered_map<UINT32, CComPtr<Component::Interface>> componentList;
                 concurrency::concurrent_vector<Entity> entityList;
                 concurrency::concurrent_unordered_map<CStringW, Entity> namedEntityList;
                 concurrency::concurrent_vector<Entity> killEntityList;
@@ -85,11 +85,11 @@ namespace Gek
                     BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdateBegin, std::placeholders::_1, frameTime)));
                     BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdate, std::placeholders::_1, frameTime)));
                     BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdateEnd, std::placeholders::_1, frameTime)));
-                    for (auto killEntityHandle : killEntityList)
+                    for (auto killEntity : killEntityList)
                     {
                         auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity> &namedEntity) -> bool
                         {
-                            return (namedEntity.second == killEntityHandle);
+                            return (namedEntity.second == killEntity);
                         });
 
                         if (namedEntityIterator != namedEntityList.end())
@@ -101,12 +101,12 @@ namespace Gek
                         {
                             for (auto component : componentList)
                             {
-                                component.second->removeComponent(killEntityHandle);
+                                component.second->removeComponent(killEntity);
                             }
 
-                            auto entityIterator = std::find_if(entityList.begin(), entityList.end(), [&](Entity entityHandle) -> bool
+                            auto entityIterator = std::find_if(entityList.begin(), entityList.end(), [&](Entity entity) -> bool
                             {
-                                return (entityHandle == killEntityHandle);
+                                return (entity == killEntity);
                             });
 
                             if (entityIterator != entityList.end())
@@ -201,12 +201,12 @@ namespace Gek
                     xmlDocument.create(L"world");
                     Gek::Xml::Node xmlWorldNode = xmlDocument.getRoot();
                     Gek::Xml::Node xmlPopulationNode = xmlWorldNode.createChildElement(L"population");
-                    for (auto &entityHandle : entityList)
+                    for (auto &entity : entityList)
                     {
                         Gek::Xml::Node xmlEntityNode = xmlPopulationNode.createChildElement(L"entity");
                         auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity> &namedEntity) -> bool
                         {
-                            return (namedEntity.second == entityHandle);
+                            return (namedEntity.second == entity);
                         });
 
                         if (namedEntityIterator != namedEntityList.end())
@@ -217,7 +217,7 @@ namespace Gek
                         for (auto &component : componentList)
                         {
                             std::unordered_map<CStringW, CStringW> componentParameterList;
-                            if (SUCCEEDED(component.second->getData(entityHandle, componentParameterList)))
+                            if (SUCCEEDED(component.second->getData(entity, componentParameterList)))
                             {
                                 Gek::Xml::Node xmlParameterNode = xmlEntityNode.createChildElement(component.second->getName());
                                 for (auto &componentParameter : componentParameterList)
@@ -257,16 +257,16 @@ namespace Gek
                     gekLogScope(__FUNCTION__);
                     gekLogMessage(L"Creating Entity...");
 
-                    Entity entityHandle = InterlockedIncrement(&nextEntity);
+                    Entity entity = InterlockedIncrement(&nextEntity);
                     if (name != nullptr)
                     {
-                        if (!namedEntityList.insert(std::make_pair(name, entityHandle)).second)
+                        if (!namedEntityList.insert(std::make_pair(name, entity)).second)
                         {
                             return InvalidEntity;
                         }
                     }
 
-                    entityList.push_back(entityHandle);
+                    entityList.push_back(entity);
                     for (auto componentParameterList : entityParameterList)
                     {
                         auto component = componentNameList.find(componentParameterList.first);
@@ -283,50 +283,50 @@ namespace Gek
                             }
                             else
                             {
-                                (*pIterator).second->addComponent(entityHandle);
-                                (*pIterator).second->setData(entityHandle, componentParameterList.second);
+                                (*pIterator).second->addComponent(entity);
+                                (*pIterator).second->setData(entity, componentParameterList.second);
                             }
                         }
                     }
 
-                    BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onEntityCreated, std::placeholders::_1, entityHandle)));
-                    return entityHandle;
+                    BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onEntityCreated, std::placeholders::_1, entity)));
+                    return entity;
                 }
 
-                STDMETHODIMP_(void) killEntity(Entity entityHandle)
+                STDMETHODIMP_(void) killEntity(Entity entity)
                 {
-                    BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onEntityDestroyed, std::placeholders::_1, entityHandle)));
-                    killEntityList.push_back(entityHandle);
+                    BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onEntityDestroyed, std::placeholders::_1, entity)));
+                    killEntityList.push_back(entity);
                 }
 
                 STDMETHODIMP_(Entity) getNamedEntity(LPCWSTR name)
                 {
                     REQUIRE_RETURN(name, InvalidEntity);
 
-                    Entity entityHandle = InvalidEntity;
+                    Entity entity = InvalidEntity;
                     auto pIterator = namedEntityList.find(name);
                     if (pIterator != namedEntityList.end())
                     {
-                        entityHandle = (*pIterator).second;
+                        entity = (*pIterator).second;
                     }
 
-                    return entityHandle;
+                    return entity;
                 }
 
                 STDMETHODIMP_(void) listEntities(std::function<void(Entity)> onEntity, bool runInParallel)
                 {
                     if (runInParallel)
                     {
-                        concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](Entity entityHandle) -> void
+                        concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](Entity entity) -> void
                         {
-                            onEntity(entityHandle);
+                            onEntity(entity);
                         });
                     }
                     else
                     {
-                        for (auto &entityHandle : entityList)
+                        for (auto &entity : entityList)
                         {
-                            onEntity(entityHandle);
+                            onEntity(entity);
                         }
                     }
                 }
@@ -351,39 +351,39 @@ namespace Gek
                     {
                         if (runInParallel)
                         {
-                            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](Entity entityHandle) -> void
+                            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](Entity entity) -> void
                             {
-                                onEntity(entityHandle);
+                                onEntity(entity);
                             });
                         }
                         else
                         {
-                            for (auto &entityHandle : entityList)
+                            for (auto &entity : entityList)
                             {
-                                onEntity(entityHandle);
+                                onEntity(entity);
                             }
                         }
                     }
                 }
 
-                STDMETHODIMP_(bool) hasComponent(Entity entityHandle, Entity componentHandle)
+                STDMETHODIMP_(bool) hasComponent(Entity entity, UINT32 component)
                 {
                     bool bReturn = false;
-                    auto pIterator = componentList.find(componentHandle);
+                    auto pIterator = componentList.find(component);
                     if (pIterator != componentList.end())
                     {
-                        bReturn = (*pIterator).second->hasComponent(entityHandle);
+                        bReturn = (*pIterator).second->hasComponent(entity);
                     }
 
                     return bReturn;
                 }
 
-                STDMETHODIMP_(LPVOID) getComponent(Entity entityHandle, Entity componentHandle)
+                STDMETHODIMP_(LPVOID) getComponent(Entity entity, UINT32 component)
                 {
-                    auto pIterator = componentList.find(componentHandle);
+                    auto pIterator = componentList.find(component);
                     if (pIterator != componentList.end())
                     {
-                        return (*pIterator).second->getComponent(entityHandle);
+                        return (*pIterator).second->getComponent(entity);
                     }
 
                     return nullptr;

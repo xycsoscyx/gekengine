@@ -35,13 +35,13 @@ namespace Gek
                 STDMETHOD_(void, listEntities)              (THIS_ std::function<void(Entity)> onEntity, bool runInParallel = false) PURE;
                 STDMETHOD_(void, listEntities)              (THIS_ const std::vector<Entity> &requiredComponentList, std::function<void(Entity)> onEntity, bool runInParallel = false) PURE;
 
-                STDMETHOD_(bool, hasComponent)              (THIS_ Entity entity, Entity componentHandle) PURE;
-                STDMETHOD_(LPVOID, getComponent)            (THIS_ Entity entity, Entity componentHandle) PURE;
+                STDMETHOD_(bool, hasComponent)              (THIS_ Entity entity, UINT32 component) PURE;
+                STDMETHOD_(LPVOID, getComponent)            (THIS_ Entity entity, UINT32 component) PURE;
 
                 template <typename CLASS>
-                CLASS &getComponent(Entity entity, Entity componentHandle)
+                CLASS &getComponent(Entity entity, UINT32 component)
                 {
-                    return *(CLASS *)getComponent(entity, componentHandle);
+                    return *(CLASS *)getComponent(entity, component);
                 }
             };
 

@@ -17,6 +17,8 @@ namespace Gek
                 DECLARE_INTERFACE_IID(Interface, "F025D5AE-BE84-4DF7-90C0-0E241EABB56B") : virtual public IUnknown
                 {
                     STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
+
+                    STDMETHOD_(void, enable)                    (THIS_ Video3D::ContextInterface *context) PURE;
                 };
             }; // namespace Plugin
         }; // namespace Render

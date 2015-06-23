@@ -18,12 +18,12 @@ namespace Gek
 
         enum class InterpolationMode : UINT8
         {
-            NEAREST_NEIGHBOR = 0,
-            LINEAR,
-            CUBIC,
-            MULTI_SAMPLE_LINEAR,
-            ANISOTROPIC,
-            HIGH_QUALITY_CUBIC
+            NearestNeighbor = 0,
+            Linear,
+            Cubic,
+            MultiSampleLinear,
+            Anisotropic,
+            HighQualityCubic,
         };
 
         struct GradientPoint
@@ -64,8 +64,8 @@ namespace Gek
             STDMETHOD_(void, drawRectangle)         (THIS_ const Shape::Rectangle<float> &extents, IUnknown *brush, bool fillShape) PURE;
             STDMETHOD_(void, drawRectangle)         (THIS_ const Shape::Rectangle<float> &extents, const Math::Float2 &cornerRadius, IUnknown *brush, bool fillShape) PURE;
 
-            STDMETHOD_(void, drawBitmap)            (THIS_ IUnknown *bitmap, const Shape::Rectangle<float> &destinationExtents, InterpolationMode interpolationMode = InterpolationMode::NEAREST_NEIGHBOR, float opacity = 1.0) PURE;
-            STDMETHOD_(void, drawBitmap)            (THIS_ IUnknown *bitmap, const Shape::Rectangle<float> &destinationExtents, const Shape::Rectangle<float> &sourceExtents, InterpolationMode interpolationMode = InterpolationMode::NEAREST_NEIGHBOR, float opacity = 1.0) PURE;
+            STDMETHOD_(void, drawBitmap)            (THIS_ IUnknown *bitmap, const Shape::Rectangle<float> &destinationExtents, InterpolationMode interpolationMode = InterpolationMode::NearestNeighbor, float opacity = 1.0) PURE;
+            STDMETHOD_(void, drawBitmap)            (THIS_ IUnknown *bitmap, const Shape::Rectangle<float> &destinationExtents, const Shape::Rectangle<float> &sourceExtents, InterpolationMode interpolationMode = InterpolationMode::NearestNeighbor, float opacity = 1.0) PURE;
 
             STDMETHOD_(void, drawGeometry)          (THIS_ GeometryInterface *geometry, IUnknown *brush, bool fillShape) PURE;
 

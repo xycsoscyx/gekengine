@@ -464,7 +464,7 @@ namespace Gek
                         video->getVideo2D()->setTransform(transformMatrix);
 
                         video->getVideo2D()->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrush, true);
-                        video->getVideo2D()->drawBitmap(bitmap, { 0.0f, 0.0f, width, consoleHeight }, Video2D::InterpolationMode::LINEAR, 1.0f);
+                        video->getVideo2D()->drawBitmap(bitmap, { 0.0f, 0.0f, width, consoleHeight }, Video2D::InterpolationMode::Linear, 1.0f);
                         video->getVideo2D()->drawRectangle({ 10.0f, 10.0f, (width - 10.0f), (consoleHeight - 40.0f) }, foregroundBrush, true);
                         video->getVideo2D()->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrush, true);
                         video->getVideo2D()->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, font, textBrush, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
