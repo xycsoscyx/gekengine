@@ -281,6 +281,8 @@ namespace Gek
 
                     STDMETHODIMP_(void) enable(Video3D::ContextInterface *context)
                     {
+                        context->getGeometrySystem()->setProgram(geometryProgram);
+                        context->getVertexSystem()->setProgram(vertexProgram);
                     }
                 };
 

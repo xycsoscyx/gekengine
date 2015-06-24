@@ -157,14 +157,15 @@ namespace Gek
                     enum class PassMode : UINT8
                     {
                         Forward = 0,
-                        Simple,
-                        Lighting,
+                        ForwardLit,
+                        Deferred,
+                        DeferredLit,
                     };
 
                     struct Pass
                     {
                         PassMode mode;
-                        bool clearDepthBuffer;
+                        UINT32 depthClearFlags;
                         float depthClearValue;
                         UINT32 stencilClearValue;
                         CComPtr<IUnknown> depthStates;
@@ -174,6 +175,7 @@ namespace Gek
                         std::vector<CStringW> renderTargetList;
                         std::vector<CStringW> resourceList;
                         std::vector<CStringW> unorderedAccessList;
+                        bool computeProgram;
                         CComPtr<IUnknown> program;
                         UINT32 dispatchWidth;
                         UINT32 dispatchHeight;
@@ -181,10 +183,11 @@ namespace Gek
 
                         Pass(void)
                             : mode(PassMode::Forward)
-                            , clearDepthBuffer(false)
+                            , depthClearFlags(0)
                             , depthClearValue(1.0f)
                             , stencilClearValue(0)
                             , blendFactor(1.0f)
+                            , computeProgram(false)
                             , dispatchWidth(0)
                             , dispatchHeight(0)
                             , dispatchDepth(0)
@@ -201,8 +204,8 @@ namespace Gek
                     std::vector<Property> propertyList;
                     std::unordered_map<CStringW, CStringW> defineList;
                     CComPtr<IUnknown> depthBuffer;
-                    std::unordered_map<CStringW, CComPtr<Video3D::TextureInterface>> renderTargetList;
-                    std::unordered_map<CStringW, CComPtr<Video3D::BufferInterface>> bufferList;
+                    std::unordered_map<CStringW, CComPtr<Video3D::TextureInterface>> renderTargetMap;
+                    std::unordered_map<CStringW, CComPtr<Video3D::BufferInterface>> bufferMap;
                     std::vector<Pass> passList;
                     CComPtr<Video3D::BufferInterface> propertyConstantBuffer;
 
@@ -308,7 +311,7 @@ namespace Gek
 
                         if (xmlDepthStatesNode.hasChildElement(L"clear"))
                         {
-                            pass.clearDepthBuffer = true;
+                            pass.depthClearFlags |= Video3D::ClearMask::Depth;
                             pass.depthClearValue = String::getFloat(xmlDepthStatesNode.firstChildElement(L"clear").getText());
                         }
 
@@ -322,7 +325,7 @@ namespace Gek
 
                             if (xmlStencilNode.hasChildElement(L"clear"))
                             {
-                                pass.clearDepthBuffer = true;
+                                pass.depthClearFlags |= Video3D::ClearMask::Stencil;
                                 pass.stencilClearValue = String::getUINT32(xmlStencilNode.firstChildElement(L"clear").getText());
                             }
 
@@ -574,7 +577,7 @@ namespace Gek
                                             CStringW name(xmlTargetNode.getType());
                                             Video3D::Format format = getFormat(xmlTargetNode.getText());
                                             BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
-                                            resultValue = render->createRenderTarget(&renderTargetList[name], width, height, format);
+                                            resultValue = render->createRenderTarget(&renderTargetMap[name], width, height, format);
 
                                             resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
@@ -591,7 +594,7 @@ namespace Gek
                                             CStringW name(xmlBufferNode.getType());
                                             Video3D::Format format = getFormat(xmlBufferNode.getText());
                                             UINT32 size = String::getUINT32(replaceDefines(xmlBufferNode.getAttribute(L"size")));
-                                            resultValue = render->createBuffer(&bufferList[name], format, size, Video3D::BufferFlags::UnorderedAccess | Video3D::BufferFlags::Resource);
+                                            resultValue = render->createBuffer(&bufferMap[name], format, size, Video3D::BufferFlags::UnorderedAccess | Video3D::BufferFlags::Resource);
                                             switch (format)
                                             {
                                             case Video3D::Format::R_UINT8:
@@ -652,20 +655,31 @@ namespace Gek
                                         }
 
                                         Pass pass;
+                                        bool lighting = false;
                                         if (xmlPassNode.hasAttribute(L"mode"))
                                         {
                                             CStringW modeString = xmlPassNode.getAttribute(L"mode");
-                                            if (modeString.CompareNoCase(L"simple") == 0)
-                                            {
-                                                pass.mode = PassMode::Simple;
-                                            }
-                                            else if (modeString.CompareNoCase(L"forward") == 0)
+                                            if (modeString.CompareNoCase(L"forward") == 0)
                                             {
                                                 pass.mode = PassMode::Forward;
                                             }
-                                            else if (modeString.CompareNoCase(L"lighting") == 0)
+                                            else if (modeString.CompareNoCase(L"forwardlit") == 0)
                                             {
-                                                pass.mode = PassMode::Lighting;
+                                                pass.mode = PassMode::ForwardLit;
+                                                lighting = true;
+                                            }
+                                            else if (modeString.CompareNoCase(L"deferred") == 0)
+                                            {
+                                                pass.mode = PassMode::Deferred;
+                                            }
+                                            else if (modeString.CompareNoCase(L"deferredlit") == 0)
+                                            {
+                                                pass.mode = PassMode::DeferredLit;
+                                                lighting = true;
+                                            }
+                                            else
+                                            {
+                                                resultValue = E_INVALIDARG;
                                             }
                                         }
 
@@ -685,185 +699,195 @@ namespace Gek
                                             resultValue = loadBlendStates(pass, xmlPassNode.firstChildElement(L"blendstates"));
                                         }
 
-                                        pass.resourceList = loadChildList(xmlPassNode, L"resources");
-                                        pass.unorderedAccessList = loadChildList(xmlPassNode, L"unorderedaccess");
-
-                                        CStringA engineData(
-                                            "struct InputPixel                                          \r\n"\
-                                            "{                                                          \r\n");
-                                        switch (pass.mode)
+                                        if (SUCCEEDED(resultValue))
                                         {
-                                        case PassMode::Simple:
-                                        case PassMode::Lighting:
-                                            engineData +=
-                                                "    float4 position : SV_POSITION;                     \r\n"\
-                                                "    float2 texcoord : TEXCOORD0;                       \r\n";
-                                            break;
+                                            pass.resourceList = loadChildList(xmlPassNode, L"resources");
+                                            pass.unorderedAccessList = loadChildList(xmlPassNode, L"unorderedaccess");
 
-                                        case PassMode::Forward:
-                                            engineData +=
-                                                "    float4 position     : SV_POSITION;                 \r\n"\
-                                                "    float4 viewposition : TEXCOORD0;                   \r\n"\
-                                                "    float2 texcoord     : TEXCOORD1;                   \r\n"\
-                                                "    float3 viewnormal   : NORMAL0;                     \r\n"\
-                                                "    float4 color        : COLOR0;                      \r\n"\
-                                                "    bool   frontface    : SV_ISFRONTFACE;              \r\n";
-                                            break;
-                                        };
-
-                                        engineData +=
-                                            "};                                                         \r\n"\
-                                            "                                                           \r\n"\
-                                            "namespace Material                                         \r\n"\
-                                            "{                                                          \r\n"\
-                                            "    cbuffer Data : register(b1)                            \r\n"\
-                                            "    {                                                      \r\n";
-                                        for (auto &propertyPair : propertyList)
-                                        {
-                                            engineData.AppendFormat("        %S %S;              \r\n", getBindType(propertyPair.bindType), propertyPair.name.GetString());
-                                        }
-
-                                        engineData +=
-                                            "    };                                                     \r\n"\
-                                            "};                                                         \r\n"\
-                                            "                                                           \r\n";
-                                        if (pass.mode == PassMode::Lighting)
-                                        {
-                                            engineData +=
-                                                "namespace Lighting                                     \r\n"\
-                                                "{                                                      \r\n"\
-                                                "    struct Point                                       \r\n"\
-                                                "    {                                                  \r\n"\
-                                                "        float3  position;                              \r\n"\
-                                                "        float   range;                                 \r\n"\
-                                                "        float   inverseRange;                          \r\n"\
-                                                "        float3  color;                                 \r\n"\
-                                                "    };                                                 \r\n"\
-                                                "                                                       \r\n"\
-                                                "    cbuffer Data : register(b2)                        \r\n"\
-                                                "    {                                                  \r\n"\
-                                                "        uint    count   : packoffset(c0);              \r\n"\
-                                                "        uint3   padding : packoffset(c0.y);            \r\n"\
-                                                "    };                                                 \r\n"\
-                                                "                                                       \r\n"\
-                                                "    StructuredBuffer<Point> list : register(t0);       \r\n"\
-                                                "    static const uint listSize = 256;                  \r\n"\
-                                                "};                                                     \r\n"\
-                                                "                                                       \r\n";
-                                        }
-
-                                        engineData +=
-                                            "struct OutputPixel                                         \r\n"\
-                                            "{                                                          \r\n";
-                                        for (UINT32 index = 0; index < pass.renderTargetList.size(); index++)
-                                        {
-                                            CStringW resource(pass.renderTargetList[index]);
-                                            auto resourceIterator = resourceList.find(resource);
-                                            if (resourceIterator != resourceList.end())
+                                            CStringA engineData(
+                                                "struct InputPixel                                          \r\n"\
+                                                "{                                                          \r\n");
+                                            switch (pass.mode)
                                             {
-                                                engineData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resource.GetString(), index);
-                                            }
-                                        }
+                                            case PassMode::Deferred:
+                                            case PassMode::DeferredLit:
+                                                engineData +=
+                                                    "    float4 position : SV_POSITION;                     \r\n"\
+                                                    "    float2 texcoord : TEXCOORD0;                       \r\n";
+                                                break;
 
-                                        engineData +=
-                                            "};                                                         \r\n"\
-                                            "                                                           \r\n"\
-                                            "namespace Resources                                        \r\n"\
-                                            "{                                                          \r\n";
+                                            case PassMode::Forward:
+                                            case PassMode::ForwardLit:
+                                                engineData +=
+                                                    "    float4 position     : SV_POSITION;                 \r\n"\
+                                                    "    float4 viewposition : TEXCOORD0;                   \r\n"\
+                                                    "    float2 texcoord     : TEXCOORD1;                   \r\n"\
+                                                    "    float3 viewnormal   : NORMAL0;                     \r\n"\
+                                                    "    float4 color        : COLOR0;                      \r\n"\
+                                                    "    bool   frontface    : SV_ISFRONTFACE;              \r\n";
+                                                break;
 
-                                        UINT32 resourceStage = (pass.mode == PassMode::Lighting ? 1 : 0);
-                                        if (pass.mode == PassMode::Forward)
-                                        {
-                                            for (auto &map : mapList)
-                                            {
-                                                engineData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(map.mapType), getBindType(map.bindType), map.name.GetString(), resourceStage++);
-                                            }
-                                        }
-
-                                        for (auto &resourceName : pass.resourceList)
-                                        {
-                                            auto resourceIterator = resourceList.find(resourceName);
-                                            if (resourceIterator != resourceList.end())
-                                            {
-                                                auto &resource = (*resourceIterator).second;
-                                                engineData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName.GetString(), resourceStage++);
-                                            }
-                                        }
-
-                                        engineData +=
-                                            "};                                                         \r\n"\
-                                            "                                                           \r\n";
-
-                                        Gek::Xml::Node xmlProgramNode = xmlPassNode.firstChildElement(L"program");
-                                        if (xmlProgramNode.hasChildElement(L"source") && xmlProgramNode.hasChildElement(L"entry"))
-                                        {
-                                            std::unordered_map<CStringA, CStringA> defines(globalDefines);
-
-                                            CStringW programFileName = xmlProgramNode.firstChildElement(L"source").getText();
-                                            CW2A programEntryPoint(xmlProgramNode.firstChildElement(L"entry").getText());
-                                            auto getIncludeData = [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
-                                            {
-                                                if (_stricmp(fileName, "GEKEngine") == 0)
-                                                {
-                                                    data.resize(engineData.GetLength());
-                                                    memcpy(data.data(), engineData.GetString(), data.size());
-                                                    return S_OK;
-                                                }
-
-                                                return E_FAIL;
+                                            default:
+                                                resultValue = E_INVALIDARG;
+                                                break;
                                             };
 
-                                            Gek::Xml::Node xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
-                                            if (xmlComputeNode)
+                                            engineData +=
+                                                "};                                                         \r\n"\
+                                                "                                                           \r\n"\
+                                                "namespace Material                                         \r\n"\
+                                                "{                                                          \r\n"\
+                                                "    cbuffer Data : register(b1)                            \r\n"\
+                                                "    {                                                      \r\n";
+                                            for (auto &propertyPair : propertyList)
+                                            {
+                                                engineData.AppendFormat("        %S %S;              \r\n", getBindType(propertyPair.bindType), propertyPair.name.GetString());
+                                            }
+
+                                            engineData +=
+                                                "    };                                                     \r\n"\
+                                                "};                                                         \r\n"\
+                                                "                                                           \r\n";
+                                            if (lighting)
                                             {
                                                 engineData +=
-                                                    "namespace UnorderedAccess                              \r\n"\
-                                                    "{                                                      \r\n";
-                                                for (UINT32 index = 0; index < pass.unorderedAccessList.size(); index++)
-                                                {
-                                                    CStringW unorderedAccess(pass.unorderedAccessList[index]);
-                                                    auto resourceIterator = resourceList.find(unorderedAccess);
-                                                    if (resourceIterator != resourceList.end())
-                                                    {
-                                                        engineData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
-                                                    }
-                                                }
-
-                                                engineData +=
+                                                    "namespace Lighting                                     \r\n"\
+                                                    "{                                                      \r\n"\
+                                                    "    struct Point                                       \r\n"\
+                                                    "    {                                                  \r\n"\
+                                                    "        float3  position;                              \r\n"\
+                                                    "        float   range;                                 \r\n"\
+                                                    "        float   inverseRange;                          \r\n"\
+                                                    "        float3  color;                                 \r\n"\
+                                                    "    };                                                 \r\n"\
+                                                    "                                                       \r\n"\
+                                                    "    cbuffer Data : register(b2)                        \r\n"\
+                                                    "    {                                                  \r\n"\
+                                                    "        uint    count   : packoffset(c0);              \r\n"\
+                                                    "        uint3   padding : packoffset(c0.y);            \r\n"\
+                                                    "    };                                                 \r\n"\
+                                                    "                                                       \r\n"\
+                                                    "    StructuredBuffer<Point> list : register(t0);       \r\n"\
+                                                    "    static const uint listSize = 256;                  \r\n"\
                                                     "};                                                     \r\n"\
                                                     "                                                       \r\n";
-                                                pass.dispatchWidth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
-                                                pass.dispatchHeight = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
-                                                pass.dispatchDepth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
-                                                defines["dispatchWidth"] = String::setUINT32(pass.dispatchWidth);
-                                                defines["dispatchHeight"] = String::setUINT32(pass.dispatchHeight);
-                                                defines["dispatchDepth"] = String::setUINT32(pass.dispatchDepth);
-                                                resultValue = render->loadComputeProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                            }
+
+                                            engineData +=
+                                                "struct OutputPixel                                         \r\n"\
+                                                "{                                                          \r\n";
+                                            for (UINT32 index = 0; index < pass.renderTargetList.size(); index++)
+                                            {
+                                                CStringW resource(pass.renderTargetList[index]);
+                                                auto resourceIterator = resourceList.find(resource);
+                                                if (resourceIterator != resourceList.end())
+                                                {
+                                                    engineData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resource.GetString(), index);
+                                                }
+                                            }
+
+                                            engineData +=
+                                                "};                                                         \r\n"\
+                                                "                                                           \r\n"\
+                                                "namespace Resources                                        \r\n"\
+                                                "{                                                          \r\n";
+
+                                            UINT32 resourceStage = (lighting ? 1 : 0);
+                                            if (pass.mode == PassMode::Forward)
+                                            {
+                                                for (auto &map : mapList)
+                                                {
+                                                    engineData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(map.mapType), getBindType(map.bindType), map.name.GetString(), resourceStage++);
+                                                }
+                                            }
+
+                                            for (auto &resourceName : pass.resourceList)
+                                            {
+                                                auto resourceIterator = resourceList.find(resourceName);
+                                                if (resourceIterator != resourceList.end())
+                                                {
+                                                    auto &resource = (*resourceIterator).second;
+                                                    engineData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName.GetString(), resourceStage++);
+                                                }
+                                            }
+
+                                            engineData +=
+                                                "};                                                         \r\n"\
+                                                "                                                           \r\n";
+
+                                            Gek::Xml::Node xmlProgramNode = xmlPassNode.firstChildElement(L"program");
+                                            if (xmlProgramNode.hasChildElement(L"source") && xmlProgramNode.hasChildElement(L"entry"))
+                                            {
+                                                std::unordered_map<CStringA, CStringA> defines(globalDefines);
+
+                                                CStringW programFileName = xmlProgramNode.firstChildElement(L"source").getText();
+                                                CW2A programEntryPoint(xmlProgramNode.firstChildElement(L"entry").getText());
+                                                auto getIncludeData = [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
+                                                {
+                                                    if (_stricmp(fileName, "GEKEngine") == 0)
+                                                    {
+                                                        data.resize(engineData.GetLength());
+                                                        memcpy(data.data(), engineData.GetString(), data.size());
+                                                        return S_OK;
+                                                    }
+
+                                                    return E_FAIL;
+                                                };
+
+                                                Gek::Xml::Node xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
+                                                if (xmlComputeNode)
+                                                {
+                                                    engineData +=
+                                                        "namespace UnorderedAccess                              \r\n"\
+                                                        "{                                                      \r\n";
+                                                    for (UINT32 index = 0; index < pass.unorderedAccessList.size(); index++)
+                                                    {
+                                                        CStringW unorderedAccess(pass.unorderedAccessList[index]);
+                                                        auto resourceIterator = resourceList.find(unorderedAccess);
+                                                        if (resourceIterator != resourceList.end())
+                                                        {
+                                                            engineData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
+                                                        }
+                                                    }
+
+                                                    engineData +=
+                                                        "};                                                     \r\n"\
+                                                        "                                                       \r\n";
+                                                    pass.dispatchWidth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
+                                                    pass.dispatchHeight = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
+                                                    pass.dispatchDepth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
+                                                    defines["dispatchWidth"] = String::setUINT32(pass.dispatchWidth);
+                                                    defines["dispatchHeight"] = String::setUINT32(pass.dispatchHeight);
+                                                    defines["dispatchDepth"] = String::setUINT32(pass.dispatchDepth);
+                                                    resultValue = render->loadComputeProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                                    pass.computeProgram = true;
+                                                }
+                                                else
+                                                {
+                                                    engineData +=
+                                                        "namespace UnorderedAccess                              \r\n"\
+                                                        "{                                                      \r\n";
+                                                    for (UINT32 index = 0; index < pass.unorderedAccessList.size(); index++)
+                                                    {
+                                                        CStringW unorderedAccess(pass.unorderedAccessList[index]);
+                                                        auto resourceIterator = resourceList.find(unorderedAccess);
+                                                        if (resourceIterator != resourceList.end())
+                                                        {
+                                                            engineData.AppendFormat("    %S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
+                                                        }
+                                                    }
+
+                                                    engineData +=
+                                                        "};                                                     \r\n"\
+                                                        "                                                       \r\n";
+                                                    resultValue = render->loadPixelProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                                    pass.computeProgram = false;
+                                                }
                                             }
                                             else
                                             {
-                                                engineData +=
-                                                    "namespace UnorderedAccess                              \r\n"\
-                                                    "{                                                      \r\n";
-                                                for (UINT32 index = 0; index < pass.unorderedAccessList.size(); index++)
-                                                {
-                                                    CStringW unorderedAccess(pass.unorderedAccessList[index]);
-                                                    auto resourceIterator = resourceList.find(unorderedAccess);
-                                                    if (resourceIterator != resourceList.end())
-                                                    {
-                                                        engineData.AppendFormat("    %S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
-                                                    }
-                                                }
-
-                                                engineData +=
-                                                    "};                                                     \r\n"\
-                                                    "                                                       \r\n";
-                                                resultValue = render->loadPixelProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                                resultValue = E_INVALIDARG;
                                             }
-                                        }
-                                        else
-                                        {
-                                            resultValue = E_INVALIDARG;
                                         }
 
                                         if (SUCCEEDED(resultValue))
@@ -1037,8 +1061,63 @@ namespace Gek
                         return S_OK;
                     }
 
-                    STDMETHODIMP_(void) enable(Video3D::ContextInterface *context)
+                    STDMETHODIMP_(void) draw(Video3D::ContextInterface *context, 
+                        std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, bool lighting)> drawForward, 
+                        std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, bool lighting)> drawDeferred)
                     {
+                        for (auto &pass : passList)
+                        {
+                            context->setDepthStates(pass.depthStates, 0x0);
+                            context->setRenderStates(pass.renderStates);
+                            context->setBlendStates(pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
+
+                            std::vector<Video3D::TextureInterface *> renderTargetList;
+                            for (auto &renderTargetName : pass.renderTargetList)
+                            {
+                                Video3D::TextureInterface *renderTarget = nullptr;
+                                auto renderTargetIterator = renderTargetMap.find(renderTargetName);
+                                if (renderTargetIterator != renderTargetMap.end())
+                                {
+                                    renderTarget = (*renderTargetIterator).second;
+                                }
+
+                                renderTargetList.push_back(renderTarget);
+                            }
+
+                            context->setRenderTargets(renderTargetList, depthBuffer);
+                            if (pass.depthClearFlags > 0)
+                            {
+                                context->clearDepthStencilTarget(depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
+                            }
+
+                            std::vector<IUnknown *> resourceList;
+                            std::vector<IUnknown *> unorderedAccessList;
+
+                            Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.computeProgram ? context->getComputeSystem() : context->getPixelSystem());
+                            for (UINT32 index = 0; index < resourceList.size(); index++)
+                            {
+                                subSystem->setResource(resourceList[index], index);
+                            }
+
+                            for (UINT32 index = 0; index < unorderedAccessList.size(); index++)
+                            {
+                                subSystem->setUnorderedAccess(unorderedAccessList[index], index);
+                            }
+
+                            subSystem->setProgram(pass.program);
+                            switch (pass.mode)
+                            {
+                            case PassMode::Forward:
+                            case PassMode::ForwardLit:
+                                drawForward(subSystem, pass.mode == PassMode::ForwardLit);
+                                break;
+
+                            case PassMode::Deferred:
+                            case PassMode::DeferredLit:
+                                drawDeferred(subSystem, pass.mode == PassMode::DeferredLit);
+                                break;
+                            };
+                        }
                     }
                 };
 

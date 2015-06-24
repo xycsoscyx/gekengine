@@ -4,6 +4,7 @@
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Shape\Frustum.h"
 #include "GEK\Utility\XML.h"
+#include <functional>
 
 namespace Gek
 {
@@ -21,7 +22,7 @@ namespace Gek
 
                     STDMETHOD(getMaterialValues)                (THIS_ LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, std::vector<UINT32> &materialPropertyList) PURE;
 
-                    STDMETHOD_(void, enable)                    (THIS_ Video3D::ContextInterface *context) PURE;
+                    STDMETHOD_(void, draw)                      (THIS_ Video3D::ContextInterface *context, std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, bool lighting)> drawForward, std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, bool lighting)> drawDeferred) PURE;
                 };
             }; // namespace Shader
         }; // namespace Render
