@@ -58,9 +58,27 @@ namespace std
             return seed;
         }
 
-        size_t remainder = hashCombine(ts...);   // not recursion!
+        size_t remainder = hashCombine(ts...);
         return hashCombine(seed, remainder);
     }
+
+    template <typename CLASS>
+    struct hash<CComPtr<CLASS>>
+    {
+        size_t operator()(const CComPtr<CLASS> &value) const
+        {
+            return hash<LPCVOID>()((CLASS *)value);
+        }
+    };
+
+    template <typename CLASS>
+    struct hash<CComQIPtr<CLASS>>
+    {
+        size_t operator()(const CComQIPtr<CLASS> &value) const
+        {
+            return hash<LPCVOID>()((CLASS *)value);
+        }
+    };
 };
 
 namespace Gek
@@ -186,8 +204,10 @@ namespace Gek
                 CComPtr<Video3D::BufferInterface> lightingBuffer;
                 CComPtr<Video3D::BufferInterface> instanceBuffer;
 
-                concurrency::concurrent_unordered_map<IUnknown *, concurrency::concurrent_unordered_map<IUnknown *, concurrency::concurrent_vector<DrawCommand>>> drawQueue;
                 concurrency::concurrent_unordered_map<std::size_t, CComPtr<IUnknown>> resourceMap;
+                concurrency::concurrent_unordered_map<CComQIPtr<Plugin::Interface>, // plugin
+                    concurrency::concurrent_unordered_map<CComQIPtr<Material::Interface>, // material
+                    concurrency::concurrent_vector<DrawCommand>>> drawQueue; // command
 
             public:
                 System(void)
@@ -651,49 +671,66 @@ namespace Gek
                         drawQueue.clear();
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, viewFrustum)));
 
-                        video->getDefaultContext()->setPrimitiveType(Video3D::PrimitiveType::TriangleList);
+                        concurrency::concurrent_unordered_map<CComQIPtr<Shader::Interface>, // shader
+                            concurrency::concurrent_unordered_map<Plugin::Interface *, // plugin
+                            concurrency::concurrent_unordered_map<Material::Interface *, // material
+                            concurrency::concurrent_vector<DrawCommand> *>>> sortedDrawQueue; // command
                         for (auto &pluginPair : drawQueue)
                         {
-                            CComQIPtr<Plugin::Interface> plugin(pluginPair.first);
-                            plugin->enable(video->getDefaultContext());
-
                             for (auto &materialPair : pluginPair.second)
                             {
-                                CComQIPtr<Material::Interface> material(materialPair.first);
-                                material->enable(video->getDefaultContext());
-
-                                for (auto &drawCommand : materialPair.second)
+                                CComPtr<IUnknown> shader;
+                                materialPair.first->getShader(&shader);
+                                if (shader)
                                 {
-                                    if (drawCommand.instanceCount > 0 && drawCommand.instanceStride > 0 && drawCommand.instanceData)
+                                    sortedDrawQueue[(IUnknown *)shader][pluginPair.first][materialPair.first] = &materialPair.second;
+                                }
+                            }
+                        }
+
+                        video->getDefaultContext()->setPrimitiveType(Video3D::PrimitiveType::TriangleList);
+                        for (auto &shaderPair : sortedDrawQueue)
+                        {
+                            shaderPair.first->enable(video->getDefaultContext());
+                            for (auto &pluginPair : shaderPair.second)
+                            {
+                                pluginPair.first->enable(video->getDefaultContext());
+                                for (auto &materialPair : pluginPair.second)
+                                {
+                                    materialPair.first->enable(video->getDefaultContext());
+                                    for (auto &drawCommand : (*materialPair.second))
                                     {
-                                        LPVOID instanceData = nullptr;
-                                        if (SUCCEEDED(video->mapBuffer(instanceBuffer, &instanceData)))
+                                        if (drawCommand.instanceCount > 0 && drawCommand.instanceStride > 0 && drawCommand.instanceData)
                                         {
-                                            memcpy(instanceData, drawCommand.instanceData, (drawCommand.instanceStride * drawCommand.instanceCount));
-                                            video->unmapBuffer(instanceBuffer);
+                                            LPVOID instanceData = nullptr;
+                                            if (SUCCEEDED(video->mapBuffer(instanceBuffer, &instanceData)))
+                                            {
+                                                memcpy(instanceData, drawCommand.instanceData, (drawCommand.instanceStride * drawCommand.instanceCount));
+                                                video->unmapBuffer(instanceBuffer);
+                                            }
                                         }
+
+                                        video->getDefaultContext()->setIndexBuffer(drawCommand.indexBuffer, 0);
+                                        video->getDefaultContext()->setVertexBuffer(drawCommand.vertexBuffer, 0, 0);
+                                        switch (drawCommand.drawType)
+                                        {
+                                        case DrawType::DrawPrimitive:
+                                            video->getDefaultContext()->drawPrimitive(drawCommand.vertexCount, drawCommand.firstVertex);
+                                            break;
+
+                                        case DrawType::DrawIndexedPrimitive:
+                                            video->getDefaultContext()->drawIndexedPrimitive(drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                            break;
+
+                                        case DrawType::DrawInstancedPrimitive:
+                                            video->getDefaultContext()->drawInstancedPrimitive(drawCommand.instanceCount, 0, drawCommand.vertexCount, drawCommand.firstVertex);
+                                            break;
+
+                                        case DrawType::DrawInstancedIndexedPrimitive:
+                                            video->getDefaultContext()->drawInstancedIndexedPrimitive(drawCommand.instanceCount, 0, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                            break;
+                                        };
                                     }
-
-                                    video->getDefaultContext()->setIndexBuffer(drawCommand.indexBuffer, 0);
-                                    video->getDefaultContext()->setVertexBuffer(drawCommand.vertexBuffer, 0, 0);
-                                    switch (drawCommand.drawType)
-                                    {
-                                    case DrawType::DrawPrimitive:
-                                        video->getDefaultContext()->drawPrimitive(drawCommand.vertexCount, drawCommand.firstVertex);
-                                        break;
-
-                                    case DrawType::DrawIndexedPrimitive:
-                                        video->getDefaultContext()->drawIndexedPrimitive(drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
-                                        break;
-
-                                    case DrawType::DrawInstancedPrimitive:
-                                        video->getDefaultContext()->drawInstancedPrimitive(drawCommand.instanceCount, 0, drawCommand.vertexCount, drawCommand.firstVertex);
-                                        break;
-
-                                    case DrawType::DrawInstancedIndexedPrimitive:
-                                        video->getDefaultContext()->drawInstancedIndexedPrimitive(drawCommand.instanceCount, 0, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
-                                        break;
-                                    };
                                 }
                             }
                         }
