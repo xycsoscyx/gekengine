@@ -117,10 +117,13 @@ namespace Gek
                 {
                     REQUIRE_RETURN(window, E_INVALIDARG);
 
-                    CoInitialize(nullptr);
+                    HRESULT resultValue = CoInitialize(nullptr);
+                    if (SUCCEEDED(resultValue))
+                    {
+                        this->window = window;
+                        resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Video::Class, &video));
+                    }
 
-                    this->window = window;
-                    HRESULT resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(Video::Class, &video));
                     if (SUCCEEDED(resultValue))
                     {
                         RECT clientRectangle;

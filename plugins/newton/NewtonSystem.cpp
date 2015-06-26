@@ -678,7 +678,7 @@ namespace Gek
                         if (player)
                         {
                             //BaseObservable::addObserver(m_pEngine, player->getClass<Engine::Action::Observer>());
-                            player.QueryInterface(&bodyList[entity]);
+                            HRESULT resultValue = player.QueryInterface(&bodyList[entity]);
                         }
                     }
                 }

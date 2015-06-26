@@ -80,17 +80,17 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                         if (xmlObjectNode.hasAttribute(L"name"))
                         {
                             CStringW tileName = xmlObjectNode.getAttribute(L"name");
-                            printf("Entity (%S): Type(%S), (%s)\r\n", tileName.GetString(), tileType.GetString(), Gek::String::setFloat3(tilePosition).GetString());
+                            printf("Entity (%S): Type(%S), (%S)\r\n", tileName.GetString(), tileType.GetString(), Gek::String::setFloat3(tilePosition).GetString());
                             fprintf(file, "\t\t<entity name=\"%S\">\r\n", tileName.GetString());
                         }
                         else
                         {
-                            printf("Entity: Type(%S), (%s)\r\n", tileType.GetString(), Gek::String::setFloat3(tilePosition).GetString());
+                            printf("Entity: Type(%S), (%S)\r\n", tileType.GetString(), Gek::String::setFloat3(tilePosition).GetString());
                             fprintf(file, "\t\t<entity>\r\n");
                         }
 
 
-                        fprintf(file, "\t\t\t<transform position=\"%s\" />\r\n", Gek::String::setFloat3(tilePosition).GetString());
+                        fprintf(file, "\t\t\t<transform position=\"%S\" />\r\n", Gek::String::setFloat3(tilePosition).GetString());
                         if (tileType.CompareNoCase(L"player") == 0)
                         {
                             fprintf(file, "\t\t\t<player outer_radius=\"1\" inner_radius=\".25\" height=\"1.9\" stair_step=\".25\"/>\r\n");
@@ -141,10 +141,10 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                             {
                                 tilePosition.x = float(tileX);
                                 tilePosition.y = float(mapHeight - 1 - tileY);
-                                printf("Tile %S%d: (%s)\r\n", tileSet.GetString(), tileID, Gek::String::setFloat3(tilePosition).GetString());
+                                printf("Tile %S%d: (%S)\r\n", tileSet.GetString(), tileID, Gek::String::setFloat3(tilePosition).GetString());
 
                                 fprintf(file, "\t\t<entity>\r\n");
-                                fprintf(file, "\t\t\t<transform position=\"%s\" />\r\n", Gek::String::setFloat3(tilePosition).GetString());
+                                fprintf(file, "\t\t\t<transform position=\"%S\" />\r\n", Gek::String::setFloat3(tilePosition).GetString());
                                 fprintf(file, "\t\t\t<model source=\"%S%d\" />\r\n", tileSet.GetString(), tileID);
                                 fprintf(file, "\t\t\t<dynamicbody shape=\"%S%d\" />\r\n", tileSet.GetString(), tileID);
                                 fprintf(file, "\t\t\t<mass value=\"0\" />\r\n");
