@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <algorithm>
 #include <initializer_list>
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Vector4.h"
@@ -23,8 +24,8 @@ namespace Gek
             }
 
             BaseQuaternion(const std::initializer_list<float> &list)
+                : BaseVector4(list)
             {
-                memcpy(this->data, list->begin(), sizeof(this->data));
             }
 
             BaseQuaternion(const TYPE *vector)

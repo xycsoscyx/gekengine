@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <algorithm>
 #include <initializer_list>
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Quaternion.h"
@@ -19,15 +20,8 @@ namespace Gek
         public:
             union
             {
-                struct
-                {
-                    TYPE data[16];
-                };
-
-                struct
-                {
-                    TYPE table[4][4]; 
-                };
+                struct { TYPE data[16]; };
+                struct { TYPE table[4][4]; };
 
                 struct
                 {
@@ -70,17 +64,17 @@ namespace Gek
 
             BaseMatrix4x4(const std::initializer_list<float> &list)
             {
-                memcpy(this->data, list.begin(), sizeof(this->data));
+                std::copy(list.begin(), list.end(), data);
             }
 
-            BaseMatrix4x4(const TYPE *vector)
+            BaseMatrix3x2(const TYPE *vector)
             {
-                memcpy(this->data, vector, sizeof(this->data));
+                std::copy_n(vector, 16, data);
             }
 
-            BaseMatrix4x4(const BaseMatrix4x4 &matrix)
+            BaseMatrix3x2(const BaseMatrix3x2<TYPE> &matrix)
             {
-                memcpy(this->data, matrix.data, sizeof(this->data));
+                std::copy_n(matrix.data, 16, data);
             }
 
             BaseMatrix4x4(const BaseVector4<TYPE> &euler)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <algorithm>
 #include <initializer_list>
 
 namespace Gek
@@ -15,8 +16,8 @@ namespace Gek
         public:
             union
             {
-                struct { TYPE data[16]; };
-                struct { TYPE table[4][4]; };
+                struct { TYPE data[6]; };
+                struct { TYPE table[3][2]; };
 
                 struct
                 {
@@ -41,17 +42,17 @@ namespace Gek
 
             BaseMatrix3x2(const std::initializer_list<float> &list)
             {
-                memcpy(this->data, list.begin(), sizeof(this->data));
+                std::copy(list.begin(), list.end(), data);
             }
 
             BaseMatrix3x2(const TYPE *vector)
             {
-                memcpy(this->data, vector, sizeof(this->data));
+                std::copy_n(vector, 6, data);
             }
 
             BaseMatrix3x2(const BaseMatrix3x2<TYPE> &matrix)
             {
-                memcpy(this->data, matrix.data, sizeof(this->data));
+                std::copy_n(matrix.data, 6, data);
             }
 
             void setZero(void)

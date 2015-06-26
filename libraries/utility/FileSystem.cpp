@@ -176,7 +176,7 @@ namespace Gek
             std::vector<UINT8> buffer(stringLength);
             if (buffer.size() == stringLength)
             {
-                memcpy(buffer.data(), string, stringLength);
+                std::copy_n(string, stringLength, buffer.begin());
                 resultValue = save(fileName, buffer);
             }
 
@@ -185,7 +185,7 @@ namespace Gek
 
         HRESULT save(LPCWSTR fileName, LPCWSTR string, bool convertUTF8)
         {
-            CStringA writeString = CW2A(string, (convertUTF8 ? CP_UTF8 : CP_ACP));
+            CW2A writeString(string, (convertUTF8 ? CP_UTF8 : CP_ACP));
             return save(fileName, writeString);
         }
     } // namespace FileSystem

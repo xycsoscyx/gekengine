@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <algorithm>
 #include <initializer_list>
 #include "GEK\Math\Vector2.h"
 
@@ -34,12 +35,12 @@ namespace Gek
 
             BaseVector3(const std::initializer_list<float> &list)
             {
-                memcpy(this->data, list.begin(), sizeof(this->data));
+                std::copy(list.begin(), list.end(), data);
             }
 
             BaseVector3(const TYPE *vector)
             {
-                memcpy(this->data, vector, sizeof(this->data));
+                std::copy_n(vector, 3, data);
             }
 
             BaseVector3(TYPE scalar)
