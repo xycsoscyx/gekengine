@@ -67,12 +67,12 @@ namespace Gek
                 std::copy(list.begin(), list.end(), data);
             }
 
-            BaseMatrix3x2(const TYPE *vector)
+            BaseMatrix4x4(const TYPE *vector)
             {
                 std::copy_n(vector, 16, data);
             }
 
-            BaseMatrix3x2(const BaseMatrix3x2<TYPE> &matrix)
+            BaseMatrix4x4(const BaseMatrix4x4<TYPE> &matrix)
             {
                 std::copy_n(matrix.data, 16, data);
             }
