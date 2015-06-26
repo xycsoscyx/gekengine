@@ -17,7 +17,7 @@ namespace Gek
                 static const UINT32 identifier = 0x00000006;
                 struct Data
                 {
-                    Gek::Math::Float4 position;
+                    Gek::Math::Float3 position;
                     Gek::Math::Quaternion rotation;
 
                     Data(void);

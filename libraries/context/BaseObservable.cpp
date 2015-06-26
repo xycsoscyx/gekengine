@@ -6,27 +6,12 @@ namespace Gek
     {
     }
 
-    void BaseObservable::sendEvent(const BaseEvent<void> &event)
+    void BaseObservable::sendEvent(const BaseEvent<void> &event) const
     {
         for (auto &observer : observerList)
         {
             event(observer);
         }
-    }
-
-    HRESULT BaseObservable::checkEvent(const BaseEvent<HRESULT> &event)
-    {
-        HRESULT resultValue = S_OK;
-        for (auto &observer : observerList)
-        {
-            resultValue = event(observer);
-            if (FAILED(resultValue))
-            {
-                break;
-            }
-        }
-
-        return resultValue;
     }
 
     HRESULT BaseObservable::addObserver(IUnknown *observableBase, ObserverInterface *observer)

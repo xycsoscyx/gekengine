@@ -239,10 +239,6 @@ namespace Gek
                         {
                             returnValue = (*resourceIterator).second->QueryInterface(IID_PPV_ARGS(returnObject));
                         }
-                        else
-                        {
-                            returnValue = S_OK;
-                        }
                     }
                     else
                     {
@@ -624,7 +620,7 @@ namespace Gek
                         video->clearDefaultRenderTarget(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
                     }
 
-                    population->listEntities({ Components::Transform::identifier, Components::Camera::identifier }, [&](Population::Entity cameraEntity) -> void
+                    population->listEntities({ Components::Transform::identifier, Components::Camera::identifier }, [&](const Population::Entity &cameraEntity) -> void
                     {
                         auto &transformComponent = population->getComponent<Components::Transform::Data>(cameraEntity, Components::Transform::identifier);
                         auto &cameraComponent = population->getComponent<Components::Camera::Data>(cameraEntity, Components::Camera::identifier);
@@ -647,10 +643,10 @@ namespace Gek
                         video->getDefaultContext()->getPixelSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
                         video->getDefaultContext()->getComputeSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
 
-                        Shape::Frustum viewFrustum(cameraConstantBuffer.transformMatrix, transformComponent.position);
+                        const Shape::Frustum viewFrustum(cameraConstantBuffer.transformMatrix);
 
                         concurrency::concurrent_vector<Light> concurrentVisibleLightList;
-                        population->listEntities({ Components::Transform::identifier, Components::PointLight::identifier, Components::Color::identifier }, [&](Population::Entity lightEntity) -> void
+                        population->listEntities({ Components::Transform::identifier, Components::PointLight::identifier, Components::Color::identifier }, [&](const Population::Entity &lightEntity) -> void
                         {
                             auto &transformComponent = population->getComponent<Components::Transform::Data>(lightEntity, Components::Transform::identifier);
                             auto &pointLightComponent = population->getComponent<Components::PointLight::Data>(lightEntity, Components::PointLight::identifier);

@@ -51,7 +51,7 @@ namespace Gek
 
                         struct
                         {
-                            BaseVector4<TYPE> translation;
+                            union { BaseVector3<TYPE> translation; float w; };
                         };
                     };
                 };
@@ -73,7 +73,7 @@ namespace Gek
                 memcpy(this->data, list.begin(), sizeof(this->data));
             }
 
-            BaseMatrix4x4(const TYPE vector[])
+            BaseMatrix4x4(const TYPE *vector)
             {
                 memcpy(this->data, vector, sizeof(this->data));
             }

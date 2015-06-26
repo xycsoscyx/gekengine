@@ -9,14 +9,13 @@ namespace Gek
     namespace Shape
     {
         template <typename TYPE>
-        struct BaseFrustum : public Math::BaseVector3<TYPE>
+        struct BaseFrustum
         {
         public:
             BasePlane<TYPE> planes[6];
 
         public:
-            BaseFrustum(const Math::BaseMatrix4x4<TYPE> &transform, const Math::BaseVector3<TYPE> &origin)
-                : BaseVector3(origin)
+            BaseFrustum(const Math::BaseMatrix4x4<TYPE> &transform)
             {
                 // Calculate near plane of frustum.
                 planes[0].normal.x = transform._14 + transform._13;

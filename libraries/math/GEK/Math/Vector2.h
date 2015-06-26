@@ -35,7 +35,7 @@ namespace Gek
                 memcpy(this->data, list.begin(), sizeof(this->data));
             }
 
-            BaseVector2(const TYPE vector[])
+            BaseVector2(const TYPE *vector)
             {
                 memcpy(this->data, vector, sizeof(this->data));
             }

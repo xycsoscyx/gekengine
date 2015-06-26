@@ -27,7 +27,7 @@ namespace Gek
                 memcpy(this->data, list->begin(), sizeof(this->data));
             }
 
-            BaseQuaternion(const TYPE vector[])
+            BaseQuaternion(const TYPE *vector)
                 : BaseVector4(vector)
             {
             }
@@ -164,24 +164,9 @@ namespace Gek
                 return BaseMatrix4x4<TYPE>(*this);
             }
 
-            BaseQuaternion<TYPE> getNormal(void) const
-            {
-                TYPE inverseLength(1.0f / getLength());
-                return BaseQuaternion<TYPE>((x * inverseLength), (y * inverseLength), (z * inverseLength), (w * inverseLength));
-            }
-
             BaseQuaternion<TYPE> getInverse(void) const
             {
                 return BaseQuaternion<TYPE>(-x, -y, -z, w);
-            }
-
-            void normalize(void)
-            {
-                TYPE inverseLength(1.0f / getLength());
-                x *= inverseLength;
-                y *= inverseLength;
-                z *= inverseLength;
-                w *= inverseLength;
             }
 
             void invert(void)

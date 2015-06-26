@@ -293,7 +293,7 @@ namespace Gek
                     return entity;
                 }
 
-                STDMETHODIMP_(void) killEntity(Entity entity)
+                STDMETHODIMP_(void) killEntity(const Entity &entity)
                 {
                     BaseObservable::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onEntityDestroyed, std::placeholders::_1, entity)));
                     killEntityList.push_back(entity);
@@ -313,11 +313,11 @@ namespace Gek
                     return entity;
                 }
 
-                STDMETHODIMP_(void) listEntities(std::function<void(Entity)> onEntity, bool runInParallel)
+                STDMETHODIMP_(void) listEntities(std::function<void(const Entity &)> onEntity, bool runInParallel)
                 {
                     if (runInParallel)
                     {
-                        concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](Entity entity) -> void
+                        concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const Entity &entity) -> void
                         {
                             onEntity(entity);
                         });
@@ -331,7 +331,7 @@ namespace Gek
                     }
                 }
 
-                STDMETHODIMP_(void) listEntities(const std::vector<Entity> &requiredComponentList, std::function<void(Entity)> onEntity, bool runInParallel)
+                STDMETHODIMP_(void) listEntities(const std::vector<Entity> &requiredComponentList, std::function<void(const Entity &)> onEntity, bool runInParallel)
                 {
                     std::set<Entity> entityList;
                     for (auto &requiredComponent : requiredComponentList)
@@ -351,7 +351,7 @@ namespace Gek
                     {
                         if (runInParallel)
                         {
-                            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](Entity entity) -> void
+                            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const Entity &entity) -> void
                             {
                                 onEntity(entity);
                             });
@@ -366,7 +366,7 @@ namespace Gek
                     }
                 }
 
-                STDMETHODIMP_(bool) hasComponent(Entity entity, UINT32 component)
+                STDMETHODIMP_(bool) hasComponent(const Entity &entity, UINT32 component)
                 {
                     bool bReturn = false;
                     auto pIterator = componentList.find(component);
@@ -378,7 +378,7 @@ namespace Gek
                     return bReturn;
                 }
 
-                STDMETHODIMP_(LPVOID) getComponent(Entity entity, UINT32 component)
+                STDMETHODIMP_(LPVOID) getComponent(const Entity &entity, UINT32 component)
                 {
                     auto pIterator = componentList.find(component);
                     if (pIterator != componentList.end())
@@ -386,6 +386,7 @@ namespace Gek
                         return (*pIterator).second->getComponent(entity);
                     }
 
+                    _ASSERTE(!"Invalid Entity Component Found");
                     return nullptr;
                 }
             };

@@ -84,7 +84,7 @@ namespace Gek
                 Math::Float4 color;
                 float distance;
 
-                Instance(const Math::Float4x4 matrix, const Math::Float3 &size, const Math::Float4 &color, float distance)
+                Instance(const Math::Float4x4 &matrix, const Math::Float3 &size, const Math::Float4 &color, float distance)
                     : matrix(matrix)
                     , size(size)
                     , color(color)
@@ -296,7 +296,7 @@ namespace Gek
                 dataEntityList.clear();
             }
 
-            STDMETHODIMP_(void) onEntityCreated(Engine::Population::Entity entity)
+            STDMETHODIMP_(void) onEntityCreated(const Engine::Population::Entity &entity)
             {
                 REQUIRE_VOID_RETURN(population);
 
@@ -319,7 +319,7 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(void) onEntityDestroyed(Engine::Population::Entity entity)
+            STDMETHODIMP_(void) onEntityDestroyed(const Engine::Population::Entity &entity)
             {
                 auto dataEntityIterator = dataEntityList.find(entity);
                 if (dataEntityIterator != dataEntityList.end())
@@ -329,9 +329,11 @@ namespace Gek
             }
 
             // Render::Observer
-            STDMETHODIMP_(void) OnRenderScene(Engine::Population::Entity cameraEntity, const Gek::Shape::Frustum &viewFrustum)
+            STDMETHODIMP_(void) OnRenderScene(const Engine::Population::Entity &cameraEntity, const Gek::Shape::Frustum &viewFrustum)
             {
                 REQUIRE_VOID_RETURN(population);
+
+                auto &cameraTransform = population->getComponent<Engine::Components::Transform::Data>(cameraEntity, Engine::Components::Transform::identifier);
 
                 visibleList.clear();
                 for (auto dataEntity : dataEntityList)
@@ -357,7 +359,7 @@ namespace Gek
                             color = population->getComponent<Engine::Components::Color::Data>(dataEntity.first, Engine::Components::Color::identifier);
                         }
 
-                        visibleList[dataEntity.second].push_back(Instance(orientedBox.matrix, size, color, viewFrustum.getDistance(orientedBox.matrix.translation)));
+                        visibleList[dataEntity.second].push_back(Instance(orientedBox.matrix, size, color, cameraTransform.position.getDistance(orientedBox.matrix.translation)));
                     }
                 }
 

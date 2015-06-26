@@ -43,7 +43,7 @@ namespace Gek
             Engine::Population::Entity entity;
 
         public:
-            BaseNewtonBody(Engine::Population::Interface *population, Engine::Population::Entity entity)
+            BaseNewtonBody(Engine::Population::Interface *population, const Engine::Population::Entity &entity)
                 : population(population)
                 , entity(entity)
             {
@@ -63,7 +63,7 @@ namespace Gek
                 return population;
             }
 
-            Engine::Population::Entity getEntityHandle(void) const
+            const Engine::Population::Entity &getEntityHandle(void) const
             {
                 return entity;
             }
@@ -76,7 +76,7 @@ namespace Gek
             , public dNewtonDynamicBody
         {
         public:
-            DynamicNewtonBody(Engine::Population::Interface *population, dNewton *newton, const dNewtonCollision* const newtonCollision, Engine::Population::Entity entity,
+            DynamicNewtonBody(Engine::Population::Interface *population, dNewton *newton, const dNewtonCollision* const newtonCollision, const Engine::Population::Entity &entity,
                 const Engine::Components::Transform::Data &transformComponent,
                 const Mass::Data &massComponent)
                 : BaseNewtonBody(population, entity)
@@ -121,7 +121,7 @@ namespace Gek
             concurrency::concurrent_unordered_map<CStringW, float> singleActionList;
 
         public:
-            PlayerNewtonBody(Engine::Population::Interface *population, dNewtonPlayerManager *newtonPlayerManager, Engine::Population::Entity entity,
+            PlayerNewtonBody(Engine::Population::Interface *population, dNewtonPlayerManager *newtonPlayerManager, const Engine::Population::Entity &entity,
                 const Engine::Components::Transform::Data &transformComponent,
                 const Mass::Data &massComponent,
                 const Player::Data &playerComponent)
@@ -282,7 +282,7 @@ namespace Gek
                 }
             }
 
-            INT32 getContactSurface(Engine::Population::Entity entity, NewtonBody *newtonBody, NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
+            INT32 getContactSurface(const Engine::Population::Entity &entity, NewtonBody *newtonBody, NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
             {
                 REQUIRE_RETURN(population, -1);
 
@@ -370,7 +370,7 @@ namespace Gek
                 return surfaceIndex;
             }
 
-            dNewtonCollision *createCollision(Engine::Population::Entity entity, const DynamicBody::Data &dynamicBodyComponent)
+            dNewtonCollision *createCollision(const Engine::Population::Entity &entity, const DynamicBody::Data &dynamicBodyComponent)
             {
                 REQUIRE_RETURN(population, nullptr);
 
@@ -438,7 +438,7 @@ namespace Gek
                 return newtonCollision;
             }
 
-            dNewtonCollision *loadCollision(Engine::Population::Entity entity, const DynamicBody::Data &dynamicBodyComponent)
+            dNewtonCollision *loadCollision(const Engine::Population::Entity &entity, const DynamicBody::Data &dynamicBodyComponent)
             {
                 dNewtonCollision *newtonCollision = nullptr;
                 if (dynamicBodyComponent.shape.GetAt(0) == L'*')
@@ -648,7 +648,7 @@ namespace Gek
                 DestroyAllBodies();
             }
 
-            STDMETHODIMP_(void) onEntityCreated(Engine::Population::Entity entity)
+            STDMETHODIMP_(void) onEntityCreated(const Engine::Population::Entity &entity)
             {
                 REQUIRE_VOID_RETURN(population);
 
@@ -684,7 +684,7 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(void) onEntityDestroyed(Engine::Population::Entity entity)
+            STDMETHODIMP_(void) onEntityDestroyed(const Engine::Population::Entity &entity)
             {
                 auto bodyIterator = bodyList.find(entity);
                 if (bodyIterator != bodyList.end())

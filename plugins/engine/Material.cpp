@@ -109,6 +109,9 @@ namespace Gek
 
                     STDMETHODIMP_(void) enable(Video3D::ContextInterface *context)
                     {
+                        REQUIRE_VOID_RETURN(shader);
+                        
+                        //shader->enableMaterial(mapList, propertyList);
                     }
                 };
 

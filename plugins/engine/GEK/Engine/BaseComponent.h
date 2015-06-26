@@ -36,7 +36,7 @@ namespace Gek
             }
 
             // Component::Interface
-            STDMETHODIMP_(void) addComponent(Population::Entity entity)
+            STDMETHODIMP_(void) addComponent(const Population::Entity &entity)
             {
                 if (emptyIndex < dataList.size())
                 {
@@ -52,7 +52,7 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(void) removeComponent(Population::Entity entity)
+            STDMETHODIMP_(void) removeComponent(const Population::Entity &entity)
             {
                 if (entityIndexList.size() == 1)
                 {
@@ -81,12 +81,12 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(bool) hasComponent(Population::Entity entity) const
+            STDMETHODIMP_(bool) hasComponent(const Population::Entity &entity) const
             {
                 return (entityIndexList.count(entity) > 0);
             }
 
-            STDMETHODIMP_(LPVOID) getComponent(Population::Entity entity)
+            STDMETHODIMP_(LPVOID) getComponent(const Population::Entity &entity)
             {
                 auto indexIterator = entityIndexList.find(entity);
                 if (indexIterator != entityIndexList.end())
@@ -128,7 +128,7 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP getData(Population::Entity entity, std::unordered_map<CStringW, CStringW> &componentParameterList)
+            STDMETHODIMP getData(const Population::Entity &entity, std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
                 HRESULT resultValue = E_FAIL;
                 auto indexIterator = entityIndexList.find(entity);
@@ -141,7 +141,7 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP setData(Population::Entity entity, const std::unordered_map<CStringW, CStringW> &componentParameterList)
+            STDMETHODIMP setData(const Population::Entity &entity, const std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
                 HRESULT resultValue = E_FAIL;
                 auto indexIterator = entityIndexList.find(entity);

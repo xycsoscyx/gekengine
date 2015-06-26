@@ -25,10 +25,10 @@ namespace Gek
         class Event : public BaseEvent<void>
         {
         private:
-            std::function<void(INTERFACE *)> onEvent;
+            const std::function<void(INTERFACE *)> &onEvent;
 
         public:
-            Event(std::function<void(INTERFACE *)> const &onEvent) :
+            Event(const std::function<void(INTERFACE *)> &onEvent) :
                 onEvent(onEvent)
             {
             }
@@ -43,38 +43,13 @@ namespace Gek
             }
         };
 
-        template <typename INTERFACE>
-        class Check : public BaseEvent<HRESULT>
-        {
-        private:
-            std::function<HRESULT(INTERFACE *)> onEvent;
-
-        public:
-            Check(std::function<HRESULT(INTERFACE *)> const &onEvent) :
-                onEvent(onEvent)
-            {
-            }
-
-            virtual HRESULT operator () (ObserverInterface *observer) const
-            {
-                CComQIPtr<INTERFACE> eventHandler(observer);
-                if (eventHandler)
-                {
-                    return onEvent(eventHandler);
-                }
-
-                return E_FAIL;
-            }
-        };
-
     private:
         concurrency::concurrent_unordered_set<ObserverInterface *> observerList;
 
     public:
         virtual ~BaseObservable(void);
 
-        void sendEvent(const BaseEvent<void> &event);
-        HRESULT checkEvent(const BaseEvent<HRESULT> &event);
+        void sendEvent(const BaseEvent<void> &event) const;
 
         static HRESULT addObserver(IUnknown *observableBase, ObserverInterface *observer);
         static HRESULT removeObserver(IUnknown *observableBase, ObserverInterface *observer);
