@@ -603,6 +603,32 @@ namespace Gek
 
                     d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, d3dUnorderedAccessViewList, nullptr);
                 }
+
+                STDMETHODIMP_(void) setResourceList(const std::vector<IUnknown *> resourceList, UINT32 firstStage)
+                {
+                    REQUIRE_VOID_RETURN(d3dDeviceContext);
+                    std::vector<ID3D11ShaderResourceView *> d3dShaderResourceViewList;
+                    for (auto &resource : resourceList)
+                    {
+                        CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
+                        d3dShaderResourceViewList.push_back(d3dShaderResourceView);
+                    }
+
+                    d3dDeviceContext->CSSetShaderResources(firstStage, d3dShaderResourceViewList.size(), d3dShaderResourceViewList.data());
+                }
+
+                STDMETHODIMP_(void) setUnorderedAccessList(const std::vector<IUnknown *> unorderedAccessList, UINT32 firstStage)
+                {
+                    REQUIRE_VOID_RETURN(d3dDeviceContext);
+                    std::vector<ID3D11UnorderedAccessView *> d3dUnorderedAccessViewList;
+                    for (auto &unorderedAccess : unorderedAccessList)
+                    {
+                        CComQIPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView(unorderedAccess);
+                        d3dUnorderedAccessViewList.push_back(d3dUnorderedAccessView);
+                    }
+
+                    d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, d3dUnorderedAccessViewList.size(), d3dUnorderedAccessViewList.data(), nullptr);
+                }
             };
 
             class VertexSystem : public System
@@ -665,6 +691,19 @@ namespace Gek
 
                     d3dDeviceContext->VSSetShaderResources(stage, 1, d3dShaderResourceViewList);
                 }
+
+                STDMETHODIMP_(void) setResourceList(const std::vector<IUnknown *> resourceList, UINT32 firstStage)
+                {
+                    REQUIRE_VOID_RETURN(d3dDeviceContext);
+                    std::vector<ID3D11ShaderResourceView *> d3dShaderResourceViewList;
+                    for (auto &resource : resourceList)
+                    {
+                        CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
+                        d3dShaderResourceViewList.push_back(d3dShaderResourceView);
+                    }
+
+                    d3dDeviceContext->VSSetShaderResources(firstStage, d3dShaderResourceViewList.size(), d3dShaderResourceViewList.data());
+                }
             };
 
             class GeometrySystem : public System
@@ -725,6 +764,19 @@ namespace Gek
 
                     d3dDeviceContext->GSSetShaderResources(stage, 1, d3dShaderResourceViewList);
                 }
+
+                STDMETHODIMP_(void) setResourceList(const std::vector<IUnknown *> resourceList, UINT32 firstStage)
+                {
+                    REQUIRE_VOID_RETURN(d3dDeviceContext);
+                    std::vector<ID3D11ShaderResourceView *> d3dShaderResourceViewList;
+                    for (auto &resource : resourceList)
+                    {
+                        CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
+                        d3dShaderResourceViewList.push_back(d3dShaderResourceView);
+                    }
+
+                    d3dDeviceContext->GSSetShaderResources(firstStage, d3dShaderResourceViewList.size(), d3dShaderResourceViewList.data());
+                }
             };
 
             class PixelSystem : public System
@@ -784,6 +836,19 @@ namespace Gek
                     }
 
                     d3dDeviceContext->PSSetShaderResources(stage, 1, d3dShaderResourceViewList);
+                }
+
+                STDMETHODIMP_(void) setResourceList(const std::vector<IUnknown *> resourceList, UINT32 firstStage)
+                {
+                    REQUIRE_VOID_RETURN(d3dDeviceContext);
+                    std::vector<ID3D11ShaderResourceView *> d3dShaderResourceViewList;
+                    for (auto &resource : resourceList)
+                    {
+                        CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
+                        d3dShaderResourceViewList.push_back(d3dShaderResourceView);
+                    }
+
+                    d3dDeviceContext->PSSetShaderResources(firstStage, d3dShaderResourceViewList.size(), d3dShaderResourceViewList.data());
                 }
             };
 

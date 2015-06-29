@@ -10,8 +10,6 @@ struct Instance
     float    distance;
 };
             
-StructuredBuffer<Instance> instanceList : register(t0);
-
 #include "GEKPlugin"
 
 WorldVertex getWorldVertex(in PluginVertex pluginVertex)

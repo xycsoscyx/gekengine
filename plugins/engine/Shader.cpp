@@ -1061,7 +1061,26 @@ namespace Gek
                         return S_OK;
                     }
 
-                    STDMETHODIMP_(void) draw(Video3D::ContextInterface *context, 
+                    IUnknown *findResource(LPCWSTR name)
+                    {
+                        auto bufferIterator = bufferMap.find(name);
+                        if (bufferIterator != bufferMap.end())
+                        {
+                            return (*bufferIterator).second;
+                        }
+                        else
+                        {
+                            auto renderTargetIterator = renderTargetMap.find(name);
+                            if (renderTargetIterator != renderTargetMap.end())
+                            {
+                                return (*renderTargetIterator).second;
+                            }
+                        }
+
+                        return nullptr;
+                    }
+
+                    STDMETHODIMP_(void) draw(Video3D::ContextInterface *context,
                         std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, bool lighting)> drawForward, 
                         std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, bool lighting)> drawDeferred)
                     {
@@ -1091,18 +1110,37 @@ namespace Gek
                             }
 
                             std::vector<IUnknown *> resourceList;
+                            for (auto &resourceName : pass.resourceList)
+                            {
+                                CComPtr<Video3D::TextureInterface> texture;
+                                render->loadTexture(&texture, resourceName);
+                                if (texture)
+                                {
+                                    CComPtr<IUnknown> resource(texture);
+                                    resourceList.push_back(resource);
+                                }
+                                else
+                                {
+                                    resourceList.push_back(findResource(resourceName));
+                                }
+                            }
+
                             std::vector<IUnknown *> unorderedAccessList;
+                            for (auto &unorderedAccessName : pass.unorderedAccessList)
+                            {
+                                unorderedAccessList.push_back(findResource(unorderedAccessName));
+                            }
 
                             Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.computeProgram ? context->getComputeSystem() : context->getPixelSystem());
-                            for (UINT32 index = 0; index < resourceList.size(); index++)
+
+                            UINT32 firstStage = mapList.size();
+                            if (pass.mode == PassMode::ForwardLit || pass.mode == PassMode::DeferredLit)
                             {
-                                subSystem->setResource(resourceList[index], index);
+                                firstStage = 1;
                             }
 
-                            for (UINT32 index = 0; index < unorderedAccessList.size(); index++)
-                            {
-                                subSystem->setUnorderedAccess(unorderedAccessList[index], index);
-                            }
+                            subSystem->setResourceList(resourceList, firstStage);
+                            subSystem->setUnorderedAccessList(unorderedAccessList, 0);
 
                             subSystem->setProgram(pass.program);
                             switch (pass.mode)
@@ -1118,6 +1156,29 @@ namespace Gek
                                 break;
                             };
                         }
+                    }
+
+                    STDMETHODIMP_(void) setMaterialValues(const std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, const std::vector<UINT32> &materialPropertyList)
+                    {
+                        std::vector<IUnknown *> resourceList;
+                        for (auto &resource : materialMapList)
+                        {
+                        }
+
+                        std::vector<IUnknown *> unorderedAccessList;
+                        for (auto &unorderedAccessName : pass.unorderedAccessList)
+                        {
+                            unorderedAccessList.push_back(findResource(unorderedAccessName));
+                        }
+
+                        UINT32 firstStage = mapList.size();
+                        if (pass.mode == PassMode::ForwardLit || pass.mode == PassMode::DeferredLit)
+                        {
+                            firstStage = 1;
+                        }
+
+                        Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.computeProgram ? context->getComputeSystem() : context->getPixelSystem());
+                        subSystem->setResourceList(resourceList, firstStage);
                     }
                 };
 

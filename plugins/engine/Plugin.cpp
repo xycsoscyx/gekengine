@@ -188,6 +188,7 @@ namespace Gek
                                                 "struct PluginVertex                                        \r\n"\
                                                 "{                                                          \r\n";
 
+                                            bool instancedData = false;
                                             std::vector<CStringA> elementNameList;
                                             std::vector<Video3D::InputElement> elementList;
                                             Gek::Xml::Node xmlElementNode = xmlLayoutNode.firstChildElement();
@@ -195,6 +196,7 @@ namespace Gek
                                             {
                                                 if (xmlElementNode.getType().CompareNoCase(L"instanceIndex") == 0)
                                                 {
+                                                    instancedData = true;
                                                     engineData.AppendFormat("    uint instanceIndex : SV_InstanceId;\r\n");
                                                 }
                                                 else if (xmlElementNode.getType().CompareNoCase(L"isFrontFace") == 0)
@@ -234,6 +236,14 @@ namespace Gek
                                                 "};                                                         \r\n"\
                                                 "                                                           \r\n";
 
+                                            CStringA pluginData(pluginShaderData);
+                                            if (instancedData)
+                                            {
+                                                pluginData +=
+                                                    "StructuredBuffer<Instance> instanceList : register(t0);\r\n"\
+                                                    "                                                       \r\n";
+                                            }
+
                                             resultValue = E_INVALIDARG;
                                             Gek::Xml::Node xmlVertexNode = xmlPluginNode.firstChildElement(L"vertex");
                                             if (xmlVertexNode)
@@ -251,9 +261,8 @@ namespace Gek
                                                         }
                                                         else if (_stricmp(fileName, "GEKPlugin") == 0)
                                                         {
-                                                            // Don't include the null terminator
-                                                            data.resize(ARRAYSIZE(pluginShaderData) - 1);
-                                                            memcpy(data.data(), pluginShaderData, data.size());
+                                                            data.resize(pluginData.GetLength());
+                                                            memcpy(data.data(), pluginData.GetString(), data.size());
                                                             return S_OK;
                                                         }
 
