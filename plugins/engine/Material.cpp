@@ -26,7 +26,7 @@ namespace Gek
                     Render::Interface *render;
                     std::vector<CComPtr<Video3D::TextureInterface>> mapList;
                     std::vector<UINT32> propertyList;
-                    CComPtr<IUnknown> shader;
+                    CComPtr<Shader::Interface> shader;
 
                 public:
                     System(void)
@@ -76,13 +76,15 @@ namespace Gek
                                     if (xmlShaderNode)
                                     {
                                         CStringW shaderFileName = xmlShaderNode.getText();
+
+                                        CComPtr<IUnknown> shader;
                                         resultValue = render->loadShader(&shader, shaderFileName);
                                         if (shader)
                                         {
-                                            CComQIPtr<Shader::Interface> shader(this->shader);
-                                            if (shader)
+                                            resultValue = shader->QueryInterface(IID_PPV_ARGS(&this->shader));
+                                            if (this->shader)
                                             {
-                                                resultValue = shader->getMaterialValues(fileName, xmlMaterialNode, mapList, propertyList);
+                                                resultValue = this->shader->getMaterialValues(fileName, xmlMaterialNode, mapList, propertyList);
                                             }
                                         }
                                     }
@@ -107,11 +109,10 @@ namespace Gek
                         return resultValue;
                     }
 
-                    STDMETHODIMP_(void) enable(Video3D::ContextInterface *context)
+                    STDMETHODIMP_(void) enable(Video3D::ContextInterface *context, LPCVOID passData)
                     {
                         REQUIRE_VOID_RETURN(shader);
-                        
-                        //shader->enableMaterial(mapList, propertyList);
+                        shader->setMaterialValues(context, passData, mapList, propertyList);
                     }
                 };
 

@@ -4,6 +4,6 @@
     <maps>
         <albedo>%material%.ColorMap.dds</albedo>
         <normal>%material%.NormalMap.dds</normal>
-        <info>%material%.InfoMap.dds</info>
+        <info>*color:0.1,0.3,0.0,0</info>
     </maps>
 </material>

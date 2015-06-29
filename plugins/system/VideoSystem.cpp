@@ -911,6 +911,12 @@ namespace Gek
                     nullptr, nullptr, nullptr, nullptr, nullptr,
                 };
 
+                static ID3D11UnorderedAccessView *const d3dUnorderedAccessViewList[] = 
+                {
+                    nullptr, nullptr, nullptr, nullptr, nullptr,
+                    nullptr, nullptr, nullptr, nullptr, nullptr,
+                };
+
                 static ID3D11RenderTargetView  *const d3dRenderTargetViewList[] =
                 {
                     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
@@ -918,6 +924,7 @@ namespace Gek
 
                 REQUIRE_VOID_RETURN(d3dDeviceContext);
                 d3dDeviceContext->CSSetShaderResources(0, 10, d3dShaderResourceViewList);
+                d3dDeviceContext->CSSetUnorderedAccessViews(0, 7, d3dUnorderedAccessViewList, nullptr);
                 d3dDeviceContext->VSSetShaderResources(0, 10, d3dShaderResourceViewList);
                 d3dDeviceContext->GSSetShaderResources(0, 10, d3dShaderResourceViewList);
                 d3dDeviceContext->PSSetShaderResources(0, 10, d3dShaderResourceViewList);
@@ -2693,7 +2700,6 @@ namespace Gek
             {
                 REQUIRE_VOID_RETURN(d3dDeviceContext || context);
                 REQUIRE_VOID_RETURN(d3dDefaultRenderTargetView);
-                REQUIRE_VOID_RETURN(d3dDefaultDepthStencilView);
 
                 D3D11_VIEWPORT viewPortList[1];
                 viewPortList[0].TopLeftX = 0.0f;

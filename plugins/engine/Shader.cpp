@@ -679,6 +679,7 @@ namespace Gek
                                             }
                                             else
                                             {
+                                                gekLogMessage(L"Invalid pass mode encountered: %s", modeString.GetString());
                                                 resultValue = E_INVALIDARG;
                                             }
                                         }
@@ -1061,6 +1062,28 @@ namespace Gek
                         return S_OK;
                     }
 
+                    STDMETHODIMP_(void) setMaterialValues(Video3D::ContextInterface *context, LPCVOID passData, const std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, const std::vector<UINT32> &materialPropertyList)
+                    {
+                        const Pass &pass = *(const Pass *)passData;
+
+                        std::vector<IUnknown *> resourceList;
+                        for (auto &resource : materialMapList)
+                        {
+                            resourceList.push_back(resource);
+                        }
+
+                        UINT32 firstStage = 0;
+                        if (pass.mode == PassMode::ForwardLit || pass.mode == PassMode::DeferredLit)
+                        {
+                            firstStage = 1;
+                        }
+
+                        Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.computeProgram ? context->getComputeSystem() : context->getPixelSystem());
+                        subSystem->setResourceList(resourceList, firstStage);
+
+                        video->updateBuffer(propertyConstantBuffer, materialPropertyList.data());
+                    }
+
                     IUnknown *findResource(LPCWSTR name)
                     {
                         auto bufferIterator = bufferMap.find(name);
@@ -1081,8 +1104,8 @@ namespace Gek
                     }
 
                     STDMETHODIMP_(void) draw(Video3D::ContextInterface *context,
-                        std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, bool lighting)> drawForward, 
-                        std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, bool lighting)> drawDeferred)
+                        std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting)> drawForward, 
+                        std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting)> drawDeferred)
                     {
                         for (auto &pass : passList)
                         {
@@ -1090,20 +1113,28 @@ namespace Gek
                             context->setRenderStates(pass.renderStates);
                             context->setBlendStates(pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
 
-                            std::vector<Video3D::TextureInterface *> renderTargetList;
-                            for (auto &renderTargetName : pass.renderTargetList)
+                            if (pass.renderTargetList.empty())
                             {
-                                Video3D::TextureInterface *renderTarget = nullptr;
-                                auto renderTargetIterator = renderTargetMap.find(renderTargetName);
-                                if (renderTargetIterator != renderTargetMap.end())
+                                video->setDefaultTargets(context, depthBuffer);
+                            }
+                            else
+                            {
+                                std::vector<Video3D::TextureInterface *> renderTargetList;
+                                for (auto &renderTargetName : pass.renderTargetList)
                                 {
-                                    renderTarget = (*renderTargetIterator).second;
+                                    Video3D::TextureInterface *renderTarget = nullptr;
+                                    auto renderTargetIterator = renderTargetMap.find(renderTargetName);
+                                    if (renderTargetIterator != renderTargetMap.end())
+                                    {
+                                        renderTarget = (*renderTargetIterator).second;
+                                    }
+
+                                    renderTargetList.push_back(renderTarget);
                                 }
 
-                                renderTargetList.push_back(renderTarget);
+                                context->setRenderTargets(renderTargetList, depthBuffer);
                             }
 
-                            context->setRenderTargets(renderTargetList, depthBuffer);
                             if (pass.depthClearFlags > 0)
                             {
                                 context->clearDepthStencilTarget(depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
@@ -1113,16 +1144,7 @@ namespace Gek
                             for (auto &resourceName : pass.resourceList)
                             {
                                 CComPtr<Video3D::TextureInterface> texture;
-                                render->loadTexture(&texture, resourceName);
-                                if (texture)
-                                {
-                                    CComPtr<IUnknown> resource(texture);
-                                    resourceList.push_back(resource);
-                                }
-                                else
-                                {
-                                    resourceList.push_back(findResource(resourceName));
-                                }
+                                resourceList.push_back(findResource(resourceName));
                             }
 
                             std::vector<IUnknown *> unorderedAccessList;
@@ -1143,42 +1165,23 @@ namespace Gek
                             subSystem->setUnorderedAccessList(unorderedAccessList, 0);
 
                             subSystem->setProgram(pass.program);
+
                             switch (pass.mode)
                             {
                             case PassMode::Forward:
                             case PassMode::ForwardLit:
-                                drawForward(subSystem, pass.mode == PassMode::ForwardLit);
+                                subSystem->setConstantBuffer(propertyConstantBuffer, 1);
+                                drawForward(subSystem, &pass, pass.mode == PassMode::ForwardLit);
                                 break;
 
                             case PassMode::Deferred:
                             case PassMode::DeferredLit:
-                                drawDeferred(subSystem, pass.mode == PassMode::DeferredLit);
+                                drawDeferred(subSystem, &pass, pass.mode == PassMode::DeferredLit);
                                 break;
                             };
-                        }
-                    }
 
-                    STDMETHODIMP_(void) setMaterialValues(const std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, const std::vector<UINT32> &materialPropertyList)
-                    {
-                        std::vector<IUnknown *> resourceList;
-                        for (auto &resource : materialMapList)
-                        {
+                            context->clearResources();
                         }
-
-                        std::vector<IUnknown *> unorderedAccessList;
-                        for (auto &unorderedAccessName : pass.unorderedAccessList)
-                        {
-                            unorderedAccessList.push_back(findResource(unorderedAccessName));
-                        }
-
-                        UINT32 firstStage = mapList.size();
-                        if (pass.mode == PassMode::ForwardLit || pass.mode == PassMode::DeferredLit)
-                        {
-                            firstStage = 1;
-                        }
-
-                        Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.computeProgram ? context->getComputeSystem() : context->getPixelSystem());
-                        subSystem->setResourceList(resourceList, firstStage);
                     }
                 };
 

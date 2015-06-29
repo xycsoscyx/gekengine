@@ -54,7 +54,7 @@
         </program>
     </pass>
 
-    <pass mode="lighting">
+    <pass mode="deferredlit">
         <resources>
             <depthBuffer />
         </resources>
@@ -74,7 +74,7 @@
         </program>
     </pass>
 
-    <pass mode="lighting">
+    <pass mode="deferredlit">
         <blendstates>
             <target>
                 <color source="one" destination="one" operation="add" />

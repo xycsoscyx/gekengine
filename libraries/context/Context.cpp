@@ -35,6 +35,7 @@ HRESULT gekCheckResultBase(Gek::Context::Interface *context, LPCSTR file, UINT l
     if (FAILED(resultValue))
     {
         context->logMessage(file, line, L"[failed 0x%08X] %S", resultValue, function);
+        _ASSERTE(!"Check Result Failed");
     }
 
     return resultValue;

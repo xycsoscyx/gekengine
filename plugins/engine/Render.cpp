@@ -93,7 +93,7 @@ namespace Gek
                 , public Render::Interface
             {
             public:
-                struct CameraConstantBuffer
+                struct CameraConstantData
                 {
                     Math::Float2 fieldOfView;
                     float minimumDistance;
@@ -104,7 +104,7 @@ namespace Gek
                     Math::Float4x4 transformMatrix;
                 };
 
-                struct LightingConstantBuffer
+                struct LightingConstantData
                 {
                     UINT32 count;
                     UINT32 padding[3];
@@ -277,17 +277,17 @@ namespace Gek
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantBuffer), 1, Video3D::BufferFlags::ConstantBuffer);
+                        resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantData), 1, Video3D::BufferFlags::ConstantBuffer);
                     }
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&lightingConstantBuffer, sizeof(LightingConstantBuffer), 1, Video3D::BufferFlags::ConstantBuffer);
+                        resultValue = video->createBuffer(&lightingConstantBuffer, sizeof(LightingConstantData), 1, Video3D::BufferFlags::ConstantBuffer);
                     }
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 256, Video3D::BufferFlags::Dynamic | Video3D::BufferFlags::StructuredBuffer | Video3D::BufferFlags::Resource);
+                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 512, Video3D::BufferFlags::Dynamic | Video3D::BufferFlags::StructuredBuffer | Video3D::BufferFlags::Resource);
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -516,7 +516,17 @@ namespace Gek
                     returnValue = getResource<Video3D::TextureInterface>(returnObject, std::hash<LPCWSTR>()(fileName), [&](Video3D::TextureInterface **returnObject) -> HRESULT
                     {
                         HRESULT returnValue = E_FAIL;
-                        returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s", fileName), 0);
+                        if (fileName)
+                        {
+                            if ((*fileName) == L'*')
+                            {
+                            }
+                            else
+                            {
+                                returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s", fileName), 0);
+                            }
+                        }
+
                         return returnValue;
                     });
 
@@ -606,7 +616,7 @@ namespace Gek
 
                 STDMETHODIMP_(void) onFree(void)
                 {
-                    REQUIRE_VOID_RETURN(video);
+                    resourceMap.clear();
                 }
 
                 STDMETHODIMP_(void) onUpdateEnd(float frameTime)
@@ -626,24 +636,25 @@ namespace Gek
                         auto &cameraComponent = population->getComponent<Components::Camera::Data>(cameraEntity, Components::Camera::identifier);
                         Math::Float4x4 cameraMatrix(transformComponent.rotation, transformComponent.position);
 
-                        CameraConstantBuffer cameraConstantBuffer;
+                        CameraConstantData cameraConstantData;
                         float displayAspectRatio = 1.0f;
                         float fieldOfView = Math::convertDegreesToRadians(cameraComponent.fieldOfView);
-                        cameraConstantBuffer.fieldOfView.x = tan(fieldOfView * 0.5f);
-                        cameraConstantBuffer.fieldOfView.y = (cameraConstantBuffer.fieldOfView.x / displayAspectRatio);
-                        cameraConstantBuffer.minimumDistance = cameraComponent.minimumDistance;
-                        cameraConstantBuffer.maximumDistance = cameraComponent.maximumDistance;
-                        cameraConstantBuffer.viewMatrix = cameraMatrix.getInverse();
-                        cameraConstantBuffer.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraComponent.minimumDistance, cameraComponent.maximumDistance);
-                        cameraConstantBuffer.inverseProjectionMatrix = cameraConstantBuffer.projectionMatrix.getInverse();
-                        cameraConstantBuffer.transformMatrix = (cameraConstantBuffer.viewMatrix * cameraConstantBuffer.projectionMatrix);
-                        video->updateBuffer(this->cameraConstantBuffer, &cameraConstantBuffer);
+                        cameraConstantData.fieldOfView.x = tan(fieldOfView * 0.5f);
+                        cameraConstantData.fieldOfView.y = (cameraConstantData.fieldOfView.x / displayAspectRatio);
+                        cameraConstantData.minimumDistance = cameraComponent.minimumDistance;
+                        cameraConstantData.maximumDistance = cameraComponent.maximumDistance;
+                        cameraConstantData.viewMatrix = cameraMatrix.getInverse();
+                        cameraConstantData.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraComponent.minimumDistance, cameraComponent.maximumDistance);
+                        cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
+                        cameraConstantData.transformMatrix = (cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
+                        video->updateBuffer(this->cameraConstantBuffer, &cameraConstantData);
+
                         video->getDefaultContext()->getGeometrySystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
                         video->getDefaultContext()->getVertexSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
                         video->getDefaultContext()->getPixelSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
                         video->getDefaultContext()->getComputeSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
 
-                        const Shape::Frustum viewFrustum(cameraConstantBuffer.transformMatrix);
+                        const Shape::Frustum viewFrustum(cameraConstantData.transformMatrix);
 
                         concurrency::concurrent_vector<Light> concurrentVisibleLightList;
                         population->listEntities({ Components::Transform::identifier, Components::PointLight::identifier, Components::Color::identifier }, [&](const Population::Entity &lightEntity) -> void
@@ -653,7 +664,7 @@ namespace Gek
                             if (viewFrustum.isVisible(Shape::Sphere(transformComponent.position, pointLightComponent.radius)))
                             {
                                 auto lightIterator = concurrentVisibleLightList.grow_by(1);
-                                (*lightIterator).position = (cameraConstantBuffer.viewMatrix * Math::Float4(transformComponent.position, 1.0f));
+                                (*lightIterator).position = (cameraConstantData.viewMatrix * Math::Float4(transformComponent.position, 1.0f));
                                 (*lightIterator).distance = (*lightIterator).position.getLengthSquared();
                                 (*lightIterator).range = pointLightComponent.radius;
                                 (*lightIterator).color = population->getComponent<Components::Color::Data>(lightEntity, Components::Color::identifier);
@@ -667,6 +678,22 @@ namespace Gek
 
                         std::vector<Light> visibleLightList(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end());
                         concurrentVisibleLightList.clear();
+                        
+                        LPVOID lightingData = nullptr;
+                        if (SUCCEEDED(video->mapBuffer(lightingBuffer, &lightingData)))
+                        {
+                            UINT32 lightCount = std::min(visibleLightList.size(), size_t(512));
+                            memcpy(lightingData, visibleLightList.data(), (sizeof(Light) * lightCount));
+                            video->unmapBuffer(lightingBuffer);
+
+                            LightingConstantData lightingConstantData;
+                            lightingConstantData.count = lightCount;
+                            video->updateBuffer(lightingConstantBuffer, &lightingConstantData);
+                        }
+
+                        CComPtr<Video3D::BufferInterface> lightingConstantBuffer;
+                        CComPtr<Video3D::BufferInterface> lightingBuffer;
+                        CComPtr<Video3D::BufferInterface> instanceBuffer;
 
                         drawQueue.clear();
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, viewFrustum)));
@@ -692,14 +719,20 @@ namespace Gek
                         for (auto &shaderPair : sortedDrawQueue)
                         {
                             shaderPair.first->draw(video->getDefaultContext(),
-                                [&](Video3D::ContextInterface::SubSystemInterface *subSystem, bool lighting) -> void // drawForward
+                                [&](Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting) -> void // drawForward
                             {
+                                if (lighting)
+                                {
+                                    subSystem->setConstantBuffer(lightingConstantBuffer, 2);
+                                    subSystem->setResource(lightingBuffer, 0);
+                                }
+
                                 for (auto &pluginPair : shaderPair.second)
                                 {
                                     pluginPair.first->enable(video->getDefaultContext());
                                     for (auto &materialPair : pluginPair.second)
                                     {
-                                        materialPair.first->enable(video->getDefaultContext());
+                                        materialPair.first->enable(video->getDefaultContext(), passData);
                                         for (auto &drawCommand : (*materialPair.second))
                                         {
                                             if (drawCommand.instanceCount > 0 && drawCommand.instanceStride > 0 && drawCommand.instanceData)
@@ -736,7 +769,7 @@ namespace Gek
                                     }
                                 }
                             },
-                                [&](Video3D::ContextInterface::SubSystemInterface *subSystem, bool lighting) -> void // drawDeferred
+                                [&](Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting) -> void // drawDeferred
                             {
                             });
                         }

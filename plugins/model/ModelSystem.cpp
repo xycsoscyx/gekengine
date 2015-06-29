@@ -60,7 +60,7 @@ namespace Gek
                 }
             };
 
-            struct Data
+            struct ModelData
             {
                 bool loaded;
                 bool ready;
@@ -70,21 +70,21 @@ namespace Gek
                 CComPtr<Video3D::BufferInterface> indexBuffer;
                 std::vector<MaterialInfo> materialInfoList;
 
-                Data(void)
+                ModelData(void)
                     : loaded(false)
                     , ready(false)
                 {
                 }
             };
 
-            struct Instance
+            struct InstanceData
             {
                 Math::Float4x4 matrix;
                 Math::Float3 size;
                 Math::Float4 color;
                 float distance;
 
-                Instance(const Math::Float4x4 &matrix, const Math::Float3 &size, const Math::Float4 &color, float distance)
+                InstanceData(const Math::Float4x4 &matrix, const Math::Float3 &size, const Math::Float4 &color, float distance)
                     : matrix(matrix)
                     , size(size)
                     , color(color)
@@ -100,9 +100,9 @@ namespace Gek
 
             CComPtr<IUnknown> plugin;
 
-            concurrency::concurrent_unordered_map<CStringW, Data> dataMap;
-            concurrency::concurrent_unordered_map<Engine::Population::Entity, Data *> dataEntityList;
-            concurrency::concurrent_unordered_map<Data *, std::vector<Instance>> visibleList;
+            concurrency::concurrent_unordered_map<CStringW, ModelData> dataMap;
+            concurrency::concurrent_unordered_map<Engine::Population::Entity, ModelData *> dataEntityList;
+            concurrency::concurrent_unordered_map<ModelData *, std::vector<InstanceData>> visibleList;
 
         public:
             System(void)
@@ -125,7 +125,7 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_COM(Engine::System::Interface)
             END_INTERFACE_LIST_USER
 
-            HRESULT loadDataSize(LPCWSTR fileName, Data &data)
+            HRESULT loadDataSize(LPCWSTR fileName, ModelData &data)
             {
                 gekLogScope(__FUNCTION__);
 
@@ -157,7 +157,7 @@ namespace Gek
                 return resultValue;
             }
 
-            HRESULT loadData(Data &data)
+            HRESULT loadData(ModelData &data)
             {
                 if (data.loaded)
                 {
@@ -229,7 +229,7 @@ namespace Gek
                             UINT32 indexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            resultValue = video->createBuffer(&data.indexBuffer, sizeof(UINT16), indexCount, Video3D::BufferFlags::IndexBuffer | Video3D::BufferFlags::Static, rawFileData);
+                            resultValue = video->createBuffer(&data.indexBuffer, Video3D::Format::R_UINT16, indexCount, Video3D::BufferFlags::IndexBuffer | Video3D::BufferFlags::Static, rawFileData);
                             rawFileData += (sizeof(UINT16) * indexCount);
                         }
                     }
@@ -312,7 +312,7 @@ namespace Gek
                     }
                     else
                     {
-                        Data &data = dataMap[modelComponent];
+                        ModelData &data = dataMap[modelComponent];
                         loadDataSize(modelComponent, data);
                         dataEntityList[entity] = &data;
                     }
@@ -338,7 +338,7 @@ namespace Gek
                 visibleList.clear();
                 for (auto dataEntity : dataEntityList)
                 {
-                    Data &data = *(dataEntity.second);
+                    ModelData &data = *(dataEntity.second);
                     Gek::Math::Float3 size(1.0f, 1.0f, 1.0f);
                     if (population->hasComponent(dataEntity.first, Engine::Components::Size::identifier))
                     {
@@ -359,24 +359,24 @@ namespace Gek
                             color = population->getComponent<Engine::Components::Color::Data>(dataEntity.first, Engine::Components::Color::identifier);
                         }
 
-                        visibleList[dataEntity.second].push_back(Instance(orientedBox.matrix, size, color, cameraTransform.position.getDistance(orientedBox.matrix.translation)));
+                        visibleList[dataEntity.second].push_back(InstanceData(orientedBox.matrix, size, color, cameraTransform.position.getDistance(orientedBox.matrix.translation)));
                     }
                 }
 
                 for (auto instancePair : visibleList)
                 {
-                    Data &data = *(instancePair.first);
+                    ModelData &data = *(instancePair.first);
                     if (SUCCEEDED(loadData(data)) && data.ready)
                     {
                         auto &instanceList = instancePair.second;
-                        concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [](const Instance &leftInstance, const Instance &rightInstance) -> bool
+                        concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [](const InstanceData &leftInstance, const InstanceData &rightInstance) -> bool
                         {
                             return (leftInstance.distance < rightInstance.distance);
                         });
 
                         for (auto &materialInfo : data.materialInfoList)
                         {
-                            render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, instanceList.data(), sizeof(Instance), instanceList.size(), data.vertexBuffer, materialInfo.firstVertex, data.indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
+                            render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, instanceList.data(), sizeof(InstanceData), instanceList.size(), data.vertexBuffer, materialInfo.firstVertex, data.indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
                         }
                     }
                 }
