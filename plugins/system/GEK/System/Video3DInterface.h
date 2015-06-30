@@ -199,6 +199,14 @@ namespace Gek
             Math::Float2 size;
             float nearDepth;
             float farDepth;
+
+            ViewPort(const Math::Float2 &position, const Math::Float2 &size, float nearDepth, float farDepth)
+                : position(position)
+                , size(size)
+                , nearDepth(nearDepth)
+                , farDepth(farDepth)
+            {
+            }
         };
 
         struct RenderStates

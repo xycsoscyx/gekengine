@@ -691,10 +691,6 @@ namespace Gek
                             video->updateBuffer(lightingConstantBuffer, &lightingConstantData);
                         }
 
-                        CComPtr<Video3D::BufferInterface> lightingConstantBuffer;
-                        CComPtr<Video3D::BufferInterface> lightingBuffer;
-                        CComPtr<Video3D::BufferInterface> instanceBuffer;
-
                         drawQueue.clear();
                         BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, viewFrustum)));
 

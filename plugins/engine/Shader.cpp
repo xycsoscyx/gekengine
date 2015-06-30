@@ -430,6 +430,25 @@ namespace Gek
                         return fullValue;
                     }
 
+                    IUnknown *findResource(LPCWSTR name)
+                    {
+                        auto bufferIterator = bufferMap.find(name);
+                        if (bufferIterator != bufferMap.end())
+                        {
+                            return (*bufferIterator).second;
+                        }
+                        else
+                        {
+                            auto renderTargetIterator = renderTargetMap.find(name);
+                            if (renderTargetIterator != renderTargetMap.end())
+                            {
+                                return (*renderTargetIterator).second;
+                            }
+                        }
+
+                        return nullptr;
+                    }
+
                 public:
                     System(void)
                         : video(nullptr)
@@ -544,7 +563,6 @@ namespace Gek
                                     }
 
                                     std::unordered_map<CStringA, CStringA> globalDefines;
-
                                     Gek::Xml::Node xmlDefinesNode = xmlShaderNode.firstChildElement(L"defines");
                                     if (xmlDefinesNode)
                                     {
@@ -1084,25 +1102,6 @@ namespace Gek
                         video->updateBuffer(propertyConstantBuffer, materialPropertyList.data());
                     }
 
-                    IUnknown *findResource(LPCWSTR name)
-                    {
-                        auto bufferIterator = bufferMap.find(name);
-                        if (bufferIterator != bufferMap.end())
-                        {
-                            return (*bufferIterator).second;
-                        }
-                        else
-                        {
-                            auto renderTargetIterator = renderTargetMap.find(name);
-                            if (renderTargetIterator != renderTargetMap.end())
-                            {
-                                return (*renderTargetIterator).second;
-                            }
-                        }
-
-                        return nullptr;
-                    }
-
                     STDMETHODIMP_(void) draw(Video3D::ContextInterface *context,
                         std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting)> drawForward, 
                         std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting)> drawDeferred)
@@ -1119,6 +1118,7 @@ namespace Gek
                             }
                             else
                             {
+                                std::vector<Video3D::ViewPort> viewPortList;
                                 std::vector<Video3D::TextureInterface *> renderTargetList;
                                 for (auto &renderTargetName : pass.renderTargetList)
                                 {
@@ -1127,12 +1127,15 @@ namespace Gek
                                     if (renderTargetIterator != renderTargetMap.end())
                                     {
                                         renderTarget = (*renderTargetIterator).second;
+                                        context->clearRenderTarget(renderTarget, Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
                                     }
 
+                                    viewPortList.emplace_back(Video3D::ViewPort(Math::Float2(0.0f, 0.0f), Math::Float2(renderTarget->getWidth(), renderTarget->getHeight()), 0.0f, 1.0f));
                                     renderTargetList.push_back(renderTarget);
                                 }
 
                                 context->setRenderTargets(renderTargetList, depthBuffer);
+                                context->setViewports(viewPortList);
                             }
 
                             if (pass.depthClearFlags > 0)
