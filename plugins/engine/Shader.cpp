@@ -121,10 +121,10 @@ namespace Gek
                         Half,
                         Half2,
                         Half4,
-                        UInt,
-                        UInt2,
-                        UInt3,
-                        UInt4,
+                        Int,
+                        Int2,
+                        Int3,
+                        Int4,
                         Boolean,
                     };
 
@@ -241,10 +241,10 @@ namespace Gek
                         else if (_wcsicmp(bindType, L"Half") == 0) return BindType::Half;
                         else if (_wcsicmp(bindType, L"Half2") == 0) return BindType::Half2;
                         else if (_wcsicmp(bindType, L"Half4") == 0) return BindType::Half4;
-                        else if (_wcsicmp(bindType, L"UInt") == 0) return BindType::UInt;
-                        else if (_wcsicmp(bindType, L"UInt2") == 0) return BindType::UInt2;
-                        else if (_wcsicmp(bindType, L"UInt3") == 0) return BindType::UInt3;
-                        else if (_wcsicmp(bindType, L"UInt4") == 0) return BindType::UInt4;
+                        else if (_wcsicmp(bindType, L"Int") == 0) return BindType::Int;
+                        else if (_wcsicmp(bindType, L"Int2") == 0) return BindType::Int2;
+                        else if (_wcsicmp(bindType, L"Int3") == 0) return BindType::Int3;
+                        else if (_wcsicmp(bindType, L"Int4") == 0) return BindType::Int4;
                         else if (_wcsicmp(bindType, L"Boolean") == 0) return BindType::Boolean;
                         return BindType::Float4;
                     }
@@ -260,10 +260,10 @@ namespace Gek
                         case BindType::Half:        return L"half";
                         case BindType::Half2:       return L"half2";
                         case BindType::Half4:       return L"half4";
-                        case BindType::UInt:        return L"uint";
-                        case BindType::UInt2:       return L"uint2";
-                        case BindType::UInt3:       return L"uint3";
-                        case BindType::UInt4:       return L"uint4";
+                        case BindType::Int:        return L"int";
+                        case BindType::Int2:       return L"int2";
+                        case BindType::Int3:       return L"int3";
+                        case BindType::Int4:       return L"int4";
                         case BindType::Boolean:     return L"boolean";
                         };
 
@@ -541,13 +541,13 @@ namespace Gek
                                                 case BindType::Float2:  propertyBufferSize += sizeof(float) * 2;    break;
                                                 case BindType::Float3:  propertyBufferSize += sizeof(float) * 3;    break;
                                                 case BindType::Float4:  propertyBufferSize += sizeof(float) * 4;    break;
-                                                case BindType::Half:    propertyBufferSize += sizeof(UINT16);       break;
-                                                case BindType::Half2:   propertyBufferSize += sizeof(UINT16) * 2;   break;
-                                                case BindType::Half4:   propertyBufferSize += sizeof(UINT16) * 4;   break;
-                                                case BindType::UInt:    propertyBufferSize += sizeof(UINT32);       break;
-                                                case BindType::UInt2:   propertyBufferSize += sizeof(UINT32) * 2;   break;
-                                                case BindType::UInt3:   propertyBufferSize += sizeof(UINT32) * 3;   break;
-                                                case BindType::UInt4:   propertyBufferSize += sizeof(UINT32) * 4;   break;
+                                                case BindType::Half:    propertyBufferSize += sizeof(float);        break;
+                                                case BindType::Half2:   propertyBufferSize += sizeof(float) * 2;    break;
+                                                case BindType::Half4:   propertyBufferSize += sizeof(float) * 4;    break;
+                                                case BindType::Int:     propertyBufferSize += sizeof(UINT32);       break;
+                                                case BindType::Int2:    propertyBufferSize += sizeof(UINT32) * 2;   break;
+                                                case BindType::Int3:    propertyBufferSize += sizeof(UINT32) * 3;   break;
+                                                case BindType::Int4:    propertyBufferSize += sizeof(UINT32) * 4;   break;
                                                 case BindType::Boolean: propertyBufferSize += sizeof(UINT32);       break;
                                                 };
 
@@ -614,45 +614,45 @@ namespace Gek
                                             resultValue = render->createBuffer(&bufferMap[name], format, size, Video3D::BufferFlags::UnorderedAccess | Video3D::BufferFlags::Resource);
                                             switch (format)
                                             {
-                                            case Video3D::Format::BYTE:
-                                            case Video3D::Format::SHORT:
-                                            case Video3D::Format::UINT:
-                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt);
+                                            case Video3D::Format::Byte:
+                                            case Video3D::Format::Short:
+                                            case Video3D::Format::Int:
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int);
                                                 break;
 
-                                            case Video3D::Format::BYTE2:
-                                            case Video3D::Format::SHORT2:
-                                            case Video3D::Format::UINT2:
-                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt2);
+                                            case Video3D::Format::Byte2:
+                                            case Video3D::Format::Short2:
+                                            case Video3D::Format::Int2:
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int2);
                                                 break;
 
-                                            case Video3D::Format::UINT3:
-                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt3);
+                                            case Video3D::Format::Int3:
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int3);
                                                 break;
 
                                             case Video3D::Format::BGRA:
-                                            case Video3D::Format::BYTE4:
-                                            case Video3D::Format::SHORT4:
-                                            case Video3D::Format::UINT4:
-                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt4);
+                                            case Video3D::Format::Byte4:
+                                            case Video3D::Format::Short4:
+                                            case Video3D::Format::Int4:
+                                                resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int4);
                                                 break;
 
-                                            case Video3D::Format::HALF:
-                                            case Video3D::Format::FLOAT:
+                                            case Video3D::Format::Half:
+                                            case Video3D::Format::Float:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float);
                                                 break;
 
-                                            case Video3D::Format::HALF2:
-                                            case Video3D::Format::FLOAT2:
+                                            case Video3D::Format::Half2:
+                                            case Video3D::Format::Float2:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
                                                 break;
 
-                                            case Video3D::Format::FLOAT3:
+                                            case Video3D::Format::Float3:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
                                                 break;
 
-                                            case Video3D::Format::HALF4:
-                                            case Video3D::Format::FLOAT4:
+                                            case Video3D::Format::Half4:
+                                            case Video3D::Format::Float4:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
                                                 break;
                                             };
@@ -1033,11 +1033,11 @@ namespace Gek
 
                                 break;
 
-                            case BindType::UInt:
+                            case BindType::Int:
                                 materialPropertyList.push_back(String::getUINT32(property));
                                 break;
 
-                            case BindType::UInt2:
+                            case BindType::Int2:
                                 if (true)
                                 {
                                     Math::Float2 value = String::getFloat2(property);
@@ -1047,7 +1047,7 @@ namespace Gek
 
                                 break;
 
-                            case BindType::UInt3:
+                            case BindType::Int3:
                                 if (true)
                                 {
                                     Math::Float3 value = String::getFloat3(property);
@@ -1058,7 +1058,7 @@ namespace Gek
 
                                 break;
 
-                            case BindType::UInt4:
+                            case BindType::Int4:
                                 if (true)
                                 {
                                     Math::Float4 value = String::getFloat4(property);

@@ -229,7 +229,7 @@ namespace Gek
                             UINT32 indexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            resultValue = video->createBuffer(&data.indexBuffer, Video3D::Format::SHORT, indexCount, Video3D::BufferFlags::IndexBuffer | Video3D::BufferFlags::Static, rawFileData);
+                            resultValue = video->createBuffer(&data.indexBuffer, Video3D::Format::Short, indexCount, Video3D::BufferFlags::IndexBuffer | Video3D::BufferFlags::Static, rawFileData);
                             rawFileData += (sizeof(UINT16) * indexCount);
                         }
                     }

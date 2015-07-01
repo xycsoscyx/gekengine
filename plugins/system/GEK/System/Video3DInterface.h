@@ -13,28 +13,28 @@ namespace Gek
     {
         enum class Format : UINT8
         {
-            UNKNOWN = 0,
-            BYTE,
-            BYTE2,
-            BYTE4,
+            Invalid = 0,
+            Byte,
+            Byte2,
+            Byte4,
             BGRA,
-            SHORT,
-            SHORT2,
-            SHORT4,
-            UINT,
-            UINT2,
-            UINT3,
-            UINT4,
-            HALF,
-            HALF2,
-            HALF4,
-            FLOAT,
-            FLOAT2,
-            FLOAT3,
-            FLOAT4,
-            D16,
-            D24_S8,
-            D32,
+            Short,
+            Short2,
+            Short4,
+            Int,
+            Int2,
+            Int3,
+            Int4,
+            Half,
+            Half2,
+            Half4,
+            Float,
+            Float2,
+            Float3,
+            Float4,
+            Depth16,
+            Depth24Stencil8,
+            Depth32,
         };
 
         enum class ElementType : UINT8
@@ -329,7 +329,7 @@ namespace Gek
             UINT32 slotIndex;
 
             InputElement(void)
-                : format(Format::UNKNOWN)
+                : format(Format::Invalid)
                 , semanticName(nullptr)
                 , semanticIndex(0)
                 , slotClass(ElementType::Vertex)
@@ -437,8 +437,8 @@ namespace Gek
 
         DECLARE_INTERFACE_IID(Interface, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6") : virtual public IUnknown
         {
-            STDMETHOD(initialize)                               (THIS_ HWND window, bool windowed, UINT32 width, UINT32 height, Format depthBufferFormat = Format::UNKNOWN) PURE;
-            STDMETHOD(resize)                                   (THIS_ bool windowed, UINT32 width, UINT32 height, Format depthBufferFormat = Format::UNKNOWN) PURE;
+            STDMETHOD(initialize)                               (THIS_ HWND window, bool windowed, UINT32 width, UINT32 height, Format depthBufferFormat = Format::Invalid) PURE;
+            STDMETHOD(resize)                                   (THIS_ bool windowed, UINT32 width, UINT32 height, Format depthBufferFormat = Format::Invalid) PURE;
 
             STDMETHOD_(UINT32, getWidth)                        (THIS) PURE;
             STDMETHOD_(UINT32, getHeight)                       (THIS) PURE;

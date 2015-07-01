@@ -234,7 +234,7 @@ namespace Gek
 
         public:
             Buffer(UINT32 stride, UINT32 count, ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView = nullptr, ID3D11UnorderedAccessView *d3dUnorderedAccessView = nullptr)
-                : format(Format::UNKNOWN)
+                : format(Format::Invalid)
                 , stride(stride)
                 , count(count)
                 , d3dBuffer(d3dBuffer)
@@ -1037,11 +1037,11 @@ namespace Gek
                 {
                     switch (buffer->getFormat())
                     {
-                    case Format::SHORT:
+                    case Format::Short:
                         d3dDeviceContext->IASetIndexBuffer(d3dBuffer, DXGI_FORMAT_R16_UINT, offset);
                         break;
 
-                    case Format::UINT:
+                    case Format::Int:
                         d3dDeviceContext->IASetIndexBuffer(d3dBuffer, DXGI_FORMAT_R32_UINT, offset);
                         break;
                     };
@@ -1187,7 +1187,7 @@ namespace Gek
                     }
                 }
 
-                if (SUCCEEDED(resultValue) && depthFormat != Gek::Video3D::Format::UNKNOWN)
+                if (SUCCEEDED(resultValue) && depthFormat != Gek::Video3D::Format::Invalid)
                 {
                     D3D11_TEXTURE2D_DESC depthDescription;
                     depthDescription.Format = DXGI_FORMAT_UNKNOWN;
