@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <plugin>
     <layout>
-		<position format="rgb_float" name="POSITION" index="0" slotclass="vertex" slotindex="0" />
-		<texcoord format="rg_float" name="TEXCOORD" index="0" slotclass="vertex" slotindex="1" />
-		<normal format="rgb_float" name="NORMAL" index="0" slotclass="vertex" slotindex="2" />
+		<position format="float3" name="POSITION" index="0" slotclass="vertex" slotindex="0" />
+		<texcoord format="float2" name="TEXCOORD" index="0" slotclass="vertex" slotindex="1" />
+		<normal format="float3" name="NORMAL" index="0" slotclass="vertex" slotindex="2" />
         <instanceIndex />
     </layout>
     <vertex>

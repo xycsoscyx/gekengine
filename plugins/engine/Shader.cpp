@@ -614,45 +614,45 @@ namespace Gek
                                             resultValue = render->createBuffer(&bufferMap[name], format, size, Video3D::BufferFlags::UnorderedAccess | Video3D::BufferFlags::Resource);
                                             switch (format)
                                             {
-                                            case Video3D::Format::R_UINT8:
-                                            case Video3D::Format::R_UINT16:
-                                            case Video3D::Format::R_UINT32:
+                                            case Video3D::Format::BYTE:
+                                            case Video3D::Format::SHORT:
+                                            case Video3D::Format::UINT:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt);
                                                 break;
 
-                                            case Video3D::Format::RG_UINT8:
-                                            case Video3D::Format::RG_UINT16:
-                                            case Video3D::Format::RG_UINT32:
+                                            case Video3D::Format::BYTE2:
+                                            case Video3D::Format::SHORT2:
+                                            case Video3D::Format::UINT2:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt2);
                                                 break;
 
-                                            case Video3D::Format::RGB_UINT32:
+                                            case Video3D::Format::UINT3:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt3);
                                                 break;
 
-                                            case Video3D::Format::RGBA_UINT8:
-                                            case Video3D::Format::BGRA_UINT8:
-                                            case Video3D::Format::RGBA_UINT16:
-                                            case Video3D::Format::RGBA_UINT32:
+                                            case Video3D::Format::BGRA:
+                                            case Video3D::Format::BYTE4:
+                                            case Video3D::Format::SHORT4:
+                                            case Video3D::Format::UINT4:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::UInt4);
                                                 break;
 
-                                            case Video3D::Format::R_HALF:
-                                            case Video3D::Format::R_FLOAT:
+                                            case Video3D::Format::HALF:
+                                            case Video3D::Format::FLOAT:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float);
                                                 break;
 
-                                            case Video3D::Format::RG_HALF:
-                                            case Video3D::Format::RG_FLOAT:
+                                            case Video3D::Format::HALF2:
+                                            case Video3D::Format::FLOAT2:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
                                                 break;
 
-                                            case Video3D::Format::RGB_FLOAT:
+                                            case Video3D::Format::FLOAT3:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
                                                 break;
 
-                                            case Video3D::Format::RGBA_HALF:
-                                            case Video3D::Format::RGBA_FLOAT:
+                                            case Video3D::Format::HALF4:
+                                            case Video3D::Format::FLOAT4:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
                                                 break;
                                             };

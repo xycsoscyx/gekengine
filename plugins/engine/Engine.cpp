@@ -18,24 +18,24 @@ namespace Gek
     {
         Video3D::Format getFormat(LPCWSTR formatString)
         {
-            if (_wcsicmp(formatString, L"R_UINT8") == 0) return Video3D::Format::R_UINT8;
-            else if (_wcsicmp(formatString, L"RG_UINT8") == 0) return Video3D::Format::RG_UINT8;
-            else if (_wcsicmp(formatString, L"RGBA_UINT8") == 0) return Video3D::Format::RGBA_UINT8;
-            else if (_wcsicmp(formatString, L"BGRA_UINT8") == 0) return Video3D::Format::BGRA_UINT8;
-            else if (_wcsicmp(formatString, L"R_UINT16") == 0) return Video3D::Format::R_UINT16;
-            else if (_wcsicmp(formatString, L"RG_UINT16") == 0) return Video3D::Format::RG_UINT16;
-            else if (_wcsicmp(formatString, L"RGBA_UINT16") == 0) return Video3D::Format::RGBA_UINT16;
-            else if (_wcsicmp(formatString, L"R_UINT32") == 0) return Video3D::Format::R_UINT32;
-            else if (_wcsicmp(formatString, L"RG_UINT32") == 0) return Video3D::Format::RG_UINT32;
-            else if (_wcsicmp(formatString, L"RGB_UINT32") == 0) return Video3D::Format::RGB_UINT32;
-            else if (_wcsicmp(formatString, L"RGBA_UINT32") == 0) return Video3D::Format::RGBA_UINT32;
-            else if (_wcsicmp(formatString, L"R_FLOAT") == 0) return Video3D::Format::R_FLOAT;
-            else if (_wcsicmp(formatString, L"RG_FLOAT") == 0) return Video3D::Format::RG_FLOAT;
-            else if (_wcsicmp(formatString, L"RGB_FLOAT") == 0) return Video3D::Format::RGB_FLOAT;
-            else if (_wcsicmp(formatString, L"RGBA_FLOAT") == 0) return Video3D::Format::RGBA_FLOAT;
-            else if (_wcsicmp(formatString, L"R_HALF") == 0) return Video3D::Format::R_HALF;
-            else if (_wcsicmp(formatString, L"RG_HALF") == 0) return Video3D::Format::RG_HALF;
-            else if (_wcsicmp(formatString, L"RGBA_HALF") == 0) return Video3D::Format::RGBA_HALF;
+            if (_wcsicmp(formatString, L"BYTE") == 0) return Video3D::Format::BYTE;
+            else if (_wcsicmp(formatString, L"BYTE2") == 0) return Video3D::Format::BYTE2;
+            else if (_wcsicmp(formatString, L"BYTE4") == 0) return Video3D::Format::BYTE4;
+            else if (_wcsicmp(formatString, L"BGRA") == 0) return Video3D::Format::BGRA;
+            else if (_wcsicmp(formatString, L"SHORT") == 0) return Video3D::Format::SHORT;
+            else if (_wcsicmp(formatString, L"SHORT2") == 0) return Video3D::Format::SHORT2;
+            else if (_wcsicmp(formatString, L"SHORT4") == 0) return Video3D::Format::SHORT4;
+            else if (_wcsicmp(formatString, L"UINT") == 0) return Video3D::Format::UINT;
+            else if (_wcsicmp(formatString, L"UINT2") == 0) return Video3D::Format::UINT2;
+            else if (_wcsicmp(formatString, L"UINT3") == 0) return Video3D::Format::UINT3;
+            else if (_wcsicmp(formatString, L"UINT4") == 0) return Video3D::Format::UINT4;
+            else if (_wcsicmp(formatString, L"HALF") == 0) return Video3D::Format::HALF;
+            else if (_wcsicmp(formatString, L"HALF2") == 0) return Video3D::Format::HALF2;
+            else if (_wcsicmp(formatString, L"HALF4") == 0) return Video3D::Format::HALF4;
+            else if (_wcsicmp(formatString, L"FLOAT") == 0) return Video3D::Format::FLOAT;
+            else if (_wcsicmp(formatString, L"FLOAT2") == 0) return Video3D::Format::FLOAT2;
+            else if (_wcsicmp(formatString, L"FLOAT3") == 0) return Video3D::Format::FLOAT3;
+            else if (_wcsicmp(formatString, L"FLOAT4") == 0) return Video3D::Format::FLOAT4;
             else if (_wcsicmp(formatString, L"D16") == 0) return Video3D::Format::D16;
             else if (_wcsicmp(formatString, L"D24_S8") == 0) return Video3D::Format::D24_S8;
             else if (_wcsicmp(formatString, L"D32") == 0) return Video3D::Format::D32;

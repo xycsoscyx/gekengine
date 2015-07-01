@@ -44,13 +44,13 @@ namespace Gek
             DXGI_FORMAT_R32G32_UINT,
             DXGI_FORMAT_R32G32B32_UINT,
             DXGI_FORMAT_R32G32B32A32_UINT,
+            DXGI_FORMAT_R16_FLOAT,
+            DXGI_FORMAT_R16G16_FLOAT,
+            DXGI_FORMAT_R16G16B16A16_FLOAT,
             DXGI_FORMAT_R32_FLOAT,
             DXGI_FORMAT_R32G32_FLOAT,
             DXGI_FORMAT_R32G32B32_FLOAT,
             DXGI_FORMAT_R32G32B32A32_FLOAT,
-            DXGI_FORMAT_R16_FLOAT,
-            DXGI_FORMAT_R16G16_FLOAT,
-            DXGI_FORMAT_R16G16B16A16_FLOAT,
             DXGI_FORMAT_D16_UNORM,
             DXGI_FORMAT_D24_UNORM_S8_UINT,
             DXGI_FORMAT_D32_FLOAT,
@@ -70,16 +70,16 @@ namespace Gek
             (sizeof(UINT32) * 2),
             (sizeof(UINT32) * 3),
             (sizeof(UINT32) * 4),
+            (sizeof(float) / 2),
+            ((sizeof(float) / 2) * 2),
+            ((sizeof(float) / 2) * 4),
             sizeof(float),
             (sizeof(float) * 2),
             (sizeof(float) * 3),
             (sizeof(float) * 4),
-            (sizeof(float) / 2),
-            sizeof(float),
-            (sizeof(float) * 2),
             sizeof(UINT16),
             sizeof(UINT32),
-            (sizeof(float) * 4),
+            sizeof(UINT32),
         };
 
         static const D3D11_DEPTH_WRITE_MASK d3dDepthWriteMaskList[] =
@@ -1037,11 +1037,11 @@ namespace Gek
                 {
                     switch (buffer->getFormat())
                     {
-                    case Format::R_UINT16:
+                    case Format::SHORT:
                         d3dDeviceContext->IASetIndexBuffer(d3dBuffer, DXGI_FORMAT_R16_UINT, offset);
                         break;
 
-                    case Format::R_UINT32:
+                    case Format::UINT:
                         d3dDeviceContext->IASetIndexBuffer(d3dBuffer, DXGI_FORMAT_R32_UINT, offset);
                         break;
                     };

@@ -20,14 +20,14 @@
     <depth>D32</depth>
 
     <targets>
-        <albedoBuffer bind="float4">RGBA_UINT8</albedoBuffer>
-        <normalBuffer bind="half2">RG_HALF</normalBuffer>
-        <depthBuffer bind="float">R_FLOAT</depthBuffer> 
-        <infoBuffer bind="float4">RGBA_UINT8</infoBuffer>
+        <albedoBuffer bind="float4">byte4</albedoBuffer>
+        <normalBuffer bind="half2">short2</normalBuffer>
+        <depthBuffer bind="float">float</depthBuffer> 
+        <infoBuffer bind="float4">byte4</infoBuffer>
     </targets>
 
     <buffers>
-        <tileIndexList size="ceil(%displayWidth% / %lightTileSize%) * ceil(%displayWidth% / %lightTileSize%) * %lightListSize%">R_UINT8</tileIndexList>
+        <tileIndexList size="ceil(%displayWidth% / %lightTileSize%) * ceil(%displayWidth% / %lightTileSize%) * %lightListSize%">byte</tileIndexList>
     </buffers>
 
     <pass mode="forward">

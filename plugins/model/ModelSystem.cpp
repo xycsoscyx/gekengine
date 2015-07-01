@@ -80,8 +80,8 @@ namespace Gek
             struct InstanceData
             {
                 Math::Float4x4 matrix;
-                Math::Float3 size;
                 Math::Float4 color;
+                Math::Float3 size;
                 float distance;
 
                 InstanceData(const Math::Float4x4 &matrix, const Math::Float3 &size, const Math::Float4 &color, float distance)
@@ -229,7 +229,7 @@ namespace Gek
                             UINT32 indexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            resultValue = video->createBuffer(&data.indexBuffer, Video3D::Format::R_UINT16, indexCount, Video3D::BufferFlags::IndexBuffer | Video3D::BufferFlags::Static, rawFileData);
+                            resultValue = video->createBuffer(&data.indexBuffer, Video3D::Format::SHORT, indexCount, Video3D::BufferFlags::IndexBuffer | Video3D::BufferFlags::Static, rawFileData);
                             rawFileData += (sizeof(UINT16) * indexCount);
                         }
                     }

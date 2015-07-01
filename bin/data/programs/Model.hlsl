@@ -5,8 +5,8 @@
 struct Instance
 {
     float4x4 transform;
-    float3   scale;
     float4   color;
+    float3   scale;
     float    distance;
 };
             
