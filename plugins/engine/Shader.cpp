@@ -426,8 +426,7 @@ namespace Gek
 
                         fullValue.Replace(L"%lightListSize%", L"256");
 
-                        // Parse again, defines can have defines, this can become cycling so watch out for stack overflow
-                        return fullValue;
+                        return replaceDefines(fullValue);
                     }
 
                     IUnknown *findResource(LPCWSTR name)
@@ -1127,7 +1126,6 @@ namespace Gek
                                     if (renderTargetIterator != renderTargetMap.end())
                                     {
                                         renderTarget = (*renderTargetIterator).second;
-                                        context->clearRenderTarget(renderTarget, Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
                                     }
 
                                     viewPortList.emplace_back(Video3D::ViewPort(Math::Float2(0.0f, 0.0f), Math::Float2(renderTarget->getWidth(), renderTarget->getHeight()), 0.0f, 1.0f));
