@@ -129,18 +129,19 @@ namespace Gek
                 struct DrawCommand
                 {
                     DrawType drawType;
-                    CComPtr<Video3D::BufferInterface> instanceBuffer;
+                    std::vector<Video3D::BufferInterface *> vertexBufferList;
+                    std::vector<UINT32> offsetList;
                     UINT32 instanceCount;
-                    CComPtr<Video3D::BufferInterface> vertexBuffer;
                     UINT32 vertexCount;
                     UINT32 firstVertex;
                     CComPtr<Video3D::BufferInterface> indexBuffer;
                     UINT32 indexCount;
                     UINT32 firstIndex;
 
-                    DrawCommand(Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex)
+                    DrawCommand(const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 vertexCount, UINT32 firstVertex)
                         : drawType(DrawType::DrawPrimitive)
-                        , vertexBuffer(vertexBuffer)
+                        , vertexBufferList(vertexBufferList)
+                        , offsetList(vertexBufferList.size(), 0)
                         , vertexCount(vertexCount)
                         , firstVertex(firstVertex)
                         , instanceCount(0)
@@ -149,9 +150,10 @@ namespace Gek
                     {
                     }
 
-                    DrawCommand(Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
+                    DrawCommand(const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                         : drawType(DrawType::DrawIndexedPrimitive)
-                        , vertexBuffer(vertexBuffer)
+                        , vertexBufferList(vertexBufferList)
+                        , offsetList(vertexBufferList.size(), 0)
                         , firstVertex(firstVertex)
                         , indexBuffer(indexBuffer)
                         , indexCount(indexCount)
@@ -161,11 +163,11 @@ namespace Gek
                     {
                     }
 
-                    DrawCommand(UINT32 instanceCount, Video3D::BufferInterface *instanceBuffer, Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex)
+                    DrawCommand(const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 vertexCount, UINT32 firstVertex)
                         : drawType(DrawType::DrawInstancedPrimitive)
-                        , instanceBuffer(instanceBuffer)
+                        , vertexBufferList(vertexBufferList)
+                        , offsetList(vertexBufferList.size(), 0)
                         , instanceCount(instanceCount)
-                        , vertexBuffer(vertexBuffer)
                         , vertexCount(vertexCount)
                         , firstVertex(firstVertex)
                         , indexCount(0)
@@ -173,11 +175,11 @@ namespace Gek
                     {
                     }
 
-                    DrawCommand(UINT32 instanceCount, Video3D::BufferInterface *instanceBuffer, Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
+                    DrawCommand(const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                         : drawType(DrawType::DrawInstancedIndexedPrimitive)
-                        , instanceBuffer(instanceBuffer)
+                        , vertexBufferList(vertexBufferList)
+                        , offsetList(vertexBufferList.size(), 0)
                         , instanceCount(instanceCount)
-                        , vertexBuffer(vertexBuffer)
                         , firstVertex(firstVertex)
                         , indexBuffer(indexBuffer)
                         , indexCount(indexCount)
@@ -568,24 +570,24 @@ namespace Gek
                     return returnValue;
                 }
 
-                STDMETHODIMP_(void) drawPrimitive(IUnknown *plugin, IUnknown *material, Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex)
+                STDMETHODIMP_(void) drawPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 vertexCount, UINT32 firstVertex)
                 {
-                    drawQueue[plugin][material].push_back(DrawCommand(vertexBuffer, vertexCount, firstVertex));
+                    drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, vertexCount, firstVertex));
                 }
 
-                STDMETHODIMP_(void) drawIndexedPrimitive(IUnknown *plugin, IUnknown *material, Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
+                STDMETHODIMP_(void) drawIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
-                    drawQueue[plugin][material].push_back(DrawCommand(vertexBuffer, firstVertex, indexBuffer, indexCount, firstIndex));
+                    drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
-                STDMETHODIMP_(void) drawInstancedPrimitive(IUnknown *plugin, IUnknown *material, Video3D::BufferInterface *instanceBuffer, UINT32 instanceCount, Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex)
+                STDMETHODIMP_(void) drawInstancedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 vertexCount, UINT32 firstVertex)
                 {
-                    drawQueue[plugin][material].push_back(DrawCommand(instanceCount, instanceBuffer, vertexBuffer, vertexCount, firstVertex));
+                    drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, instanceCount, vertexCount, firstVertex));
                 }
 
-                STDMETHODIMP_(void) drawInstancedIndexedPrimitive(IUnknown *plugin, IUnknown *material, Video3D::BufferInterface *instanceBuffer, UINT32 instanceCount, Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
+                STDMETHODIMP_(void) drawInstancedIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount,  UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
-                    drawQueue[plugin][material].push_back(DrawCommand(instanceCount, instanceBuffer, vertexBuffer, firstVertex, indexBuffer, indexCount, firstIndex));
+                    drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, instanceCount, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
                 // Population::Observer
@@ -719,7 +721,7 @@ namespace Gek
                                         for (auto &drawCommand : (*materialPair.second))
                                         {
                                             video->getDefaultContext()->setIndexBuffer(drawCommand.indexBuffer, 0);
-                                            video->getDefaultContext()->setVertexBuffer(drawCommand.vertexBuffer, 0, 0);
+                                            video->getDefaultContext()->setVertexBufferList(0, drawCommand.vertexBufferList, drawCommand.offsetList);
                                             switch (drawCommand.drawType)
                                             {
                                             case DrawType::DrawPrimitive:
@@ -731,12 +733,10 @@ namespace Gek
                                                 break;
 
                                             case DrawType::DrawInstancedPrimitive:
-                                                video->getDefaultContext()->setVertexBuffer(drawCommand.instanceBuffer, 1, 0);
                                                 video->getDefaultContext()->drawInstancedPrimitive(drawCommand.instanceCount, 0, drawCommand.vertexCount, drawCommand.firstVertex);
                                                 break;
 
                                             case DrawType::DrawInstancedIndexedPrimitive:
-                                                video->getDefaultContext()->setVertexBuffer(drawCommand.instanceBuffer, 1, 0);
                                                 video->getDefaultContext()->drawInstancedIndexedPrimitive(drawCommand.instanceCount, 0, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
                                                 break;
                                             };

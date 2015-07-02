@@ -1017,25 +1017,49 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(void) setVertexBuffer(BufferInterface *buffer, UINT32 slot, UINT32 offset)
+            STDMETHODIMP_(void) setVertexBuffer(UINT32 slot, BufferInterface *vertexBuffer, UINT32 offset)
             {
                 REQUIRE_VOID_RETURN(d3dDeviceContext);
-                CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-                if (buffer && d3dBuffer)
+                CComQIPtr<ID3D11Buffer> d3dBuffer(vertexBuffer);
+                if (vertexBuffer && d3dBuffer)
                 {
-                    UINT32 stride = buffer->getStride();
+                    UINT32 stride = vertexBuffer->getStride();
                     ID3D11Buffer *d3dBufferList[1] = { d3dBuffer };
                     d3dDeviceContext->IASetVertexBuffers(slot, 1, d3dBufferList, &stride, &offset);
                 }
             }
 
-            STDMETHODIMP_(void) setIndexBuffer(BufferInterface *buffer, UINT32 offset)
+            STDMETHODIMP_(void) setVertexBufferList(UINT32 firstSlot, const std::vector<BufferInterface *> &vertexBufferList, const std::vector<UINT32> &offsetList)
             {
                 REQUIRE_VOID_RETURN(d3dDeviceContext);
-                CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-                if (buffer && d3dBuffer)
+                REQUIRE_VOID_RETURN(vertexBufferList.size() == offsetList.size());
+
+                std::vector<UINT32> strideList;
+                std::vector<ID3D11Buffer *> d3dBufferList;
+                for (auto vertexBuffer : vertexBufferList)
                 {
-                    switch (buffer->getFormat())
+                    CComQIPtr<ID3D11Buffer> d3dBuffer(vertexBuffer);
+                    d3dBufferList.push_back(d3dBuffer);
+                    if (vertexBuffer)
+                    {
+                        strideList.push_back(vertexBuffer->getStride());
+                    }
+                    else
+                    {
+                        strideList.push_back(0);
+                    }
+                }
+
+                d3dDeviceContext->IASetVertexBuffers(firstSlot, d3dBufferList.size(), d3dBufferList.data(), strideList.data(), offsetList.data());
+            }
+
+            STDMETHODIMP_(void) setIndexBuffer(BufferInterface *indexBuffer, UINT32 offset)
+            {
+                REQUIRE_VOID_RETURN(d3dDeviceContext);
+                CComQIPtr<ID3D11Buffer> d3dBuffer(indexBuffer);
+                if (indexBuffer && d3dBuffer)
+                {
+                    switch (indexBuffer->getFormat())
                     {
                     case Format::Short:
                         d3dDeviceContext->IASetIndexBuffer(d3dBuffer, DXGI_FORMAT_R16_UINT, offset);

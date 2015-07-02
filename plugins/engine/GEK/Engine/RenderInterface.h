@@ -32,11 +32,11 @@ namespace Gek
                 STDMETHOD(loadComputeProgram)                   (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
                 STDMETHOD(loadPixelProgram)                     (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-                STDMETHOD_(void, drawPrimitive)                 (THIS_ IUnknown *plugin, IUnknown *material, Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex) PURE;
-                STDMETHOD_(void, drawIndexedPrimitive)          (THIS_ IUnknown *plugin, IUnknown *material, Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex) PURE;
+                STDMETHOD_(void, drawPrimitive)                 (THIS_ IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 vertexCount, UINT32 firstVertex) PURE;
+                STDMETHOD_(void, drawIndexedPrimitive)          (THIS_ IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex) PURE;
 
-                STDMETHOD_(void, drawInstancedPrimitive)        (THIS_ IUnknown *plugin, IUnknown *material, Video3D::BufferInterface *instanceBuffer, UINT32 instanceCount, Video3D::BufferInterface *vertexBuffer, UINT32 vertexCount, UINT32 firstVertex) PURE;
-                STDMETHOD_(void, drawInstancedIndexedPrimitive) (THIS_ IUnknown *plugin, IUnknown *material, Video3D::BufferInterface *instanceBuffer, UINT32 instanceCount, Video3D::BufferInterface *vertexBuffer, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex) PURE;
+                STDMETHOD_(void, drawInstancedPrimitive)        (THIS_ IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 vertexCount, UINT32 firstVertex) PURE;
+                STDMETHOD_(void, drawInstancedIndexedPrimitive) (THIS_ IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex) PURE;
             };
 
             DECLARE_INTERFACE_IID(Observer, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Gek::ObserverInterface

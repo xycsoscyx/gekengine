@@ -203,7 +203,6 @@ namespace Gek
                                                 "struct PluginVertex                                        \r\n"\
                                                 "{                                                          \r\n";
 
-                                            bool instancedData = false;
                                             std::vector<CStringA> elementNameList;
                                             std::vector<Video3D::InputElement> elementList;
                                             Gek::Xml::Node xmlElementNode = xmlLayoutNode.firstChildElement();
@@ -211,7 +210,6 @@ namespace Gek
                                             {
                                                 if (xmlElementNode.getType().CompareNoCase(L"instanceIndex") == 0)
                                                 {
-                                                    instancedData = true;
                                                     engineData.AppendFormat("    uint instanceIndex : SV_InstanceId;\r\n");
                                                 }
                                                 else if (xmlElementNode.getType().CompareNoCase(L"isFrontFace") == 0)
@@ -224,9 +222,9 @@ namespace Gek
                                                 {
                                                     CW2A semanticName(xmlElementNode.getAttribute(L"name"));
                                                     elementNameList.push_back(LPCSTR(semanticName));
+                                                    CStringW format(xmlElementNode.getAttribute(L"format"));
 
                                                     Video3D::InputElement element;
-                                                    element.format = getFormat(xmlElementNode.getAttribute(L"format"));
                                                     element.semanticName = elementNameList.back().GetString();
                                                     element.semanticIndex = Gek::String::getINT32(xmlElementNode.getAttribute(L"index"));
                                                     if (xmlElementNode.hasAttribute(L"slotclass") &&
@@ -236,8 +234,34 @@ namespace Gek
                                                         element.slotIndex = Gek::String::getINT32(xmlElementNode.getAttribute(L"slotindex"));
                                                     }
 
-                                                    elementList.push_back(element);
-                                                    engineData.AppendFormat("    %s %S : %s%d;\r\n", getFormatType(element.format), xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
+                                                    if (format.CompareNoCase(L"float4x4") == 0)
+                                                    {
+                                                        engineData.AppendFormat("    float4x4 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
+                                                        element.format = Video3D::Format::Float4;
+                                                        elementList.push_back(element);
+                                                        element.semanticIndex++;
+                                                        elementList.push_back(element);
+                                                        element.semanticIndex++;
+                                                        elementList.push_back(element);
+                                                        element.semanticIndex++;
+                                                        elementList.push_back(element);
+                                                    }
+                                                    else if (format.CompareNoCase(L"float4x3") == 0)
+                                                    {
+                                                        engineData.AppendFormat("    float4x3 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
+                                                        element.format = Video3D::Format::Float4;
+                                                        elementList.push_back(element);
+                                                        element.semanticIndex++;
+                                                        elementList.push_back(element);
+                                                        element.semanticIndex++;
+                                                        elementList.push_back(element);
+                                                    }
+                                                    else
+                                                    {
+                                                        element.format = getFormat(format);
+                                                        engineData.AppendFormat("    %s %S : %s%d;\r\n", getFormatType(element.format), xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
+                                                        elementList.push_back(element);
+                                                    }
                                                 }
                                                 else
                                                 {
@@ -252,12 +276,6 @@ namespace Gek
                                                 "                                                           \r\n";
 
                                             CStringA pluginData(pluginShaderData);
-                                            if (instancedData)
-                                            {
-                                                pluginData +=
-                                                    "StructuredBuffer<Instance> instanceList : register(t0);\r\n"\
-                                                    "                                                       \r\n";
-                                            }
 
                                             resultValue = E_INVALIDARG;
                                             Gek::Xml::Node xmlVertexNode = xmlPluginNode.firstChildElement(L"vertex");

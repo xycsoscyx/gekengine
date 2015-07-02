@@ -420,7 +420,8 @@ namespace Gek
             STDMETHOD_(void, setDepthStates)                    (THIS_ IUnknown *depthStates, UINT32 stencilReference) PURE;
             STDMETHOD_(void, setBlendStates)                    (THIS_ IUnknown *blendStates, const Math::Float4 &blendFactor, UINT32 sampleMask) PURE;
 
-            STDMETHOD_(void, setVertexBuffer)                   (THIS_ BufferInterface *vertexBuffer, UINT32 slot, UINT32 offset) PURE;
+            STDMETHOD_(void, setVertexBuffer)                   (THIS_ UINT32 slot, BufferInterface *vertexBuffer, UINT32 offset) PURE;
+            STDMETHOD_(void, setVertexBufferList)               (THIS_ UINT32 firstSlot, const std::vector<BufferInterface *> &vertexBufferList, const std::vector<UINT32> &offsetList) PURE;
             STDMETHOD_(void, setIndexBuffer)                    (THIS_ BufferInterface *indexBuffer, UINT32 offset) PURE;
             STDMETHOD_(void, setPrimitiveType)                  (THIS_ PrimitiveType type) PURE;
 

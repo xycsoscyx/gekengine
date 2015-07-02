@@ -382,7 +382,7 @@ namespace Gek
 
                             for (auto &materialInfo : data.materialInfoList)
                             {
-                                render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, instanceBuffer, instanceList.size(), data.vertexBuffer, materialInfo.firstVertex, data.indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
+                                render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, { data.vertexBuffer, instanceBuffer }, instanceList.size(), materialInfo.firstVertex, data.indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
                             }
                         }
                     }
