@@ -2,8 +2,12 @@
 <plugin>
     <layout>
 		<position format="float3" name="POSITION" index="0" slotclass="vertex" slotindex="0" />
-		<texcoord format="float2" name="TEXCOORD" index="0" slotclass="vertex" slotindex="1" />
-		<normal format="float3" name="NORMAL" index="0" slotclass="vertex" slotindex="2" />
+		<texcoord format="float2" name="TEXCOORD" index="0" slotclass="vertex" slotindex="0" />
+		<normal format="float3" name="NORMAL" index="0" slotclass="vertex" slotindex="0" />
+        <transform format="float4x4" name="TRANSFORM" index="0" slotclass="instance" slotindex="1" />
+        <color format="float4" name="COLOR" index="0" slotclass="instance" slotindex="1" />
+        <scale format="float3" name="SCALE" index="0" slotclass="instance" slotindex="1" />
+        <distance format="float" name="DISTANCE" index="0" slotclass="instance" slotindex="1" />
         <instanceIndex />
     </layout>
     <vertex>

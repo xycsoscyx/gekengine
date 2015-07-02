@@ -82,13 +82,11 @@ namespace Gek
                 Math::Float4x4 matrix;
                 Math::Float4 color;
                 Math::Float3 size;
-                float distance;
 
-                InstanceData(const Math::Float4x4 &matrix, const Math::Float3 &size, const Math::Float4 &color, float distance)
+                InstanceData(const Math::Float4x4 &matrix, const Math::Float4 &color, const Math::Float3 &size)
                     : matrix(matrix)
-                    , size(size)
                     , color(color)
-                    , distance(distance)
+                    , size(size)
                 {
                 }
             };
@@ -103,6 +101,7 @@ namespace Gek
             concurrency::concurrent_unordered_map<CStringW, ModelData> dataMap;
             concurrency::concurrent_unordered_map<Engine::Population::Entity, ModelData *> dataEntityList;
             concurrency::concurrent_unordered_map<ModelData *, std::vector<InstanceData>> visibleList;
+            CComPtr<Video3D::BufferInterface> instanceBuffer;
 
         public:
             System(void)
@@ -272,6 +271,11 @@ namespace Gek
                     resultValue = render->loadPlugin(&plugin, L"model");
                 }
 
+                if (SUCCEEDED(resultValue))
+                {
+                    resultValue = video->createBuffer(&instanceBuffer, sizeof(InstanceData), 512, Video3D::BufferFlags::VertexBuffer | Video3D::BufferFlags::Dynamic);
+                }
+
                 return resultValue;
             };
 
@@ -359,7 +363,7 @@ namespace Gek
                             color = population->getComponent<Engine::Components::Color::Data>(dataEntity.first, Engine::Components::Color::identifier);
                         }
 
-                        visibleList[dataEntity.second].push_back(InstanceData(orientedBox.matrix, size, color, cameraTransform.position.getDistance(orientedBox.matrix.translation)));
+                        visibleList[dataEntity.second].push_back(InstanceData(orientedBox.matrix, color, size));
                     }
                 }
 
@@ -369,14 +373,17 @@ namespace Gek
                     if (SUCCEEDED(loadData(data)) && data.ready)
                     {
                         auto &instanceList = instancePair.second;
-                        concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [](const InstanceData &leftInstance, const InstanceData &rightInstance) -> bool
-                        {
-                            return (leftInstance.distance < rightInstance.distance);
-                        });
 
-                        for (auto &materialInfo : data.materialInfoList)
+                        LPVOID instanceData = nullptr;
+                        if (SUCCEEDED(video->mapBuffer(instanceBuffer, &instanceData)))
                         {
-                            render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, instanceList.data(), sizeof(InstanceData), instanceList.size(), data.vertexBuffer, materialInfo.firstVertex, data.indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
+                            memcpy(instanceData, instanceList.data(), (sizeof(InstanceData) * instanceList.size()));
+                            video->unmapBuffer(instanceBuffer);
+
+                            for (auto &materialInfo : data.materialInfoList)
+                            {
+                                render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, instanceBuffer, instanceList.size(), data.vertexBuffer, materialInfo.firstVertex, data.indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
+                            }
                         }
                     }
                 }
