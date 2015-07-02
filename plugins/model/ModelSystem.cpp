@@ -82,11 +82,13 @@ namespace Gek
                 Math::Float4x4 matrix;
                 Math::Float4 color;
                 Math::Float3 size;
+                float distance;
 
-                InstanceData(const Math::Float4x4 &matrix, const Math::Float4 &color, const Math::Float3 &size)
+                InstanceData(const Math::Float4x4 &matrix, const Math::Float4 &color, const Math::Float3 &size, float distance)
                     : matrix(matrix)
                     , color(color)
                     , size(size)
+                    , distance(distance)
                 {
                 }
             };
@@ -363,7 +365,7 @@ namespace Gek
                             color = population->getComponent<Engine::Components::Color::Data>(dataEntity.first, Engine::Components::Color::identifier);
                         }
 
-                        visibleList[dataEntity.second].push_back(InstanceData(orientedBox.matrix, color, size));
+                        visibleList[dataEntity.second].push_back(InstanceData(orientedBox.matrix, color, size, cameraTransform.position.getDistance(transformComponent.position)));
                     }
                 }
 
@@ -373,6 +375,10 @@ namespace Gek
                     if (SUCCEEDED(loadData(data)) && data.ready)
                     {
                         auto &instanceList = instancePair.second;
+                        concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [&](const InstanceData &leftInstance, const InstanceData &rightInstance) -> bool
+                        {
+                            return (leftInstance.distance < rightInstance.distance);
+                        });
 
                         LPVOID instanceData = nullptr;
                         if (SUCCEEDED(video->mapBuffer(instanceBuffer, &instanceData)))
