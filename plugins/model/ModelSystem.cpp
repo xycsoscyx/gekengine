@@ -102,7 +102,6 @@ namespace Gek
 
             concurrency::concurrent_unordered_map<CStringW, ModelData> dataMap;
             concurrency::concurrent_unordered_map<Engine::Population::Entity, ModelData *> dataEntityList;
-            concurrency::concurrent_unordered_map<ModelData *, std::vector<InstanceData>> visibleList;
             CComPtr<Video3D::BufferInterface> instanceBuffer;
 
         public:
@@ -341,8 +340,8 @@ namespace Gek
 
                 auto &cameraTransform = population->getComponent<Engine::Components::Transform::Data>(cameraEntity, Engine::Components::Transform::identifier);
 
-                visibleList.clear();
-                for (auto dataEntity : dataEntityList)
+                concurrency::concurrent_unordered_map<ModelData *, concurrency::concurrent_vector<InstanceData>> visibleList;
+                concurrency::parallel_for_each(dataEntityList.begin(), dataEntityList.end(), [&](std::pair<const Engine::Population::Entity, ModelData *> &dataEntity) -> void
                 {
                     ModelData &data = *(dataEntity.second);
                     Gek::Math::Float3 size(1.0f, 1.0f, 1.0f);
@@ -367,23 +366,24 @@ namespace Gek
 
                         visibleList[dataEntity.second].push_back(InstanceData(orientedBox.matrix, color, size, cameraTransform.position.getDistance(transformComponent.position)));
                     }
-                }
+                });
 
                 for (auto instancePair : visibleList)
                 {
                     ModelData &data = *(instancePair.first);
                     if (SUCCEEDED(loadData(data)) && data.ready)
                     {
-                        auto &instanceList = instancePair.second;
-                        concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [&](const InstanceData &leftInstance, const InstanceData &rightInstance) -> bool
-                        {
-                            return (leftInstance.distance < rightInstance.distance);
-                        });
-
                         LPVOID instanceData = nullptr;
                         if (SUCCEEDED(video->mapBuffer(instanceBuffer, &instanceData)))
                         {
-                            memcpy(instanceData, instanceList.data(), (sizeof(InstanceData) * instanceList.size()));
+                            auto &instanceList = instancePair.second;
+                            concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [&](const InstanceData &leftInstance, const InstanceData &rightInstance) -> bool
+                            {
+                                return (leftInstance.distance < rightInstance.distance);
+                            });
+
+                            std::vector<InstanceData> instanceArray(instancePair.second.begin(), instancePair.second.end());
+                            memcpy(instanceData, instanceArray.data(), (sizeof(InstanceData) * instanceArray.size()));
                             video->unmapBuffer(instanceBuffer);
 
                             for (auto &materialInfo : data.materialInfoList)

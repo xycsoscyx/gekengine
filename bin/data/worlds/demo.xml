@@ -17,16 +17,16 @@
 		</entity>
 
         <entity>
-			<transform />
+			<transform position="0,10,0" rotation="0,0,0,1" />
             <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200"/>
             <follower offset="0,2,-10">player</follower>
 		</entity>
 
-        <entity>
+        <!--entity>
 			<transform />
             <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" viewport="0.6,0,0.4,0.4"/>
             <follower offset="0,5,20">player</follower>
-		</entity>
+		</entity-->
 
         <!-- 0 -->
         <entity>
