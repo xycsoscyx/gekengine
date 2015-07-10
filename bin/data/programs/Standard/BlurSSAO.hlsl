@@ -1,5 +1,5 @@
-#include "..\GEKGlobal.h"
-#include "..\gektypes.h"
+#include "GEKGlobal.h"
+#include "GEKTypes.h"
 
 Texture2D           gs_pAlbedoBuffer        : register(t1);
 Texture2D<float>    gs_pDepthBuffer         : register(t2);

@@ -2290,7 +2290,7 @@ namespace Gek
                             }
                         }
 
-                        if (!inputElementList.empty())
+                        if (inputElementList.size() == elementLayout.size())
                         {
                             CComPtr<ID3D11InputLayout> d3dInputLayout;
                             gekCheckResult(resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), &d3dInputLayout));
@@ -2406,32 +2406,40 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
                 gekLogScope(__FUNCTION__);
                 gekLogParameter("%S", entryFunction);
-                return compileComputeProgram(returnObject, nullptr, programScript, entryFunction, defineList, nullptr);
+
+                CComPtr<Include> include(new Include(L"", onInclude));
+                return compileComputeProgram(returnObject, nullptr, programScript, entryFunction, defineList, include);
             }
 
-            STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Gek::Video3D::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
                 gekLogScope(__FUNCTION__);
                 gekLogParameter("%S", entryFunction);
-                return compileVertexProgram(returnObject, nullptr, programScript, entryFunction, elementLayout, defineList, nullptr);
+
+                CComPtr<Include> include(new Include(L"", onInclude));
+                return compileVertexProgram(returnObject, nullptr, programScript, entryFunction, elementLayout, defineList, include);
             }
 
-            STDMETHODIMP compileGeometryProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP compileGeometryProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
                 gekLogScope(__FUNCTION__);
                 gekLogParameter("%S", entryFunction);
-                return compileGeometryProgram(returnObject, nullptr, programScript, entryFunction, defineList, nullptr);
+
+                CComPtr<Include> include(new Include(L"", onInclude));
+                return compileGeometryProgram(returnObject, nullptr, programScript, entryFunction, defineList, include);
             }
 
-            STDMETHODIMP compilePixelProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList)
+            STDMETHODIMP compilePixelProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
             {
                 gekLogScope(__FUNCTION__);
                 gekLogParameter("%S", entryFunction);
-                return compilePixelProgram(returnObject, nullptr, programScript, entryFunction, defineList, nullptr);
+
+                CComPtr<Include> include(new Include(L"", onInclude));
+                return compilePixelProgram(returnObject, nullptr, programScript, entryFunction, defineList, include);
             }
 
             STDMETHODIMP loadComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
@@ -2446,8 +2454,8 @@ namespace Gek
                 gekCheckResult(resultValue = Gek::FileSystem::load(fileName, progamScript));
                 if (SUCCEEDED(resultValue))
                 {
-                    CComPtr<Include> spInclude(new Include(fileName, onInclude));
-                    resultValue = compileComputeProgram(returnObject, fileName, progamScript, entryFunction, defineList, spInclude);
+                    CComPtr<Include> include(new Include(fileName, onInclude));
+                    resultValue = compileComputeProgram(returnObject, fileName, progamScript, entryFunction, defineList, include);
                 }
 
                 return resultValue;
@@ -2465,8 +2473,8 @@ namespace Gek
                 gekCheckResult(resultValue = Gek::FileSystem::load(fileName, progamScript));
                 if (SUCCEEDED(resultValue))
                 {
-                    CComPtr<Include> spInclude(new Include(fileName, onInclude));
-                    resultValue = compileVertexProgram(returnObject, fileName, progamScript, entryFunction, elementLayout, defineList, spInclude);
+                    CComPtr<Include> include(new Include(fileName, onInclude));
+                    resultValue = compileVertexProgram(returnObject, fileName, progamScript, entryFunction, elementLayout, defineList, include);
                 }
 
                 return resultValue;
@@ -2484,8 +2492,8 @@ namespace Gek
                 gekCheckResult(resultValue = Gek::FileSystem::load(fileName, progamScript));
                 if (SUCCEEDED(resultValue))
                 {
-                    CComPtr<Include> spInclude(new Include(fileName, onInclude));
-                    resultValue = compileGeometryProgram(returnObject, fileName, progamScript, entryFunction, defineList, spInclude);
+                    CComPtr<Include> include(new Include(fileName, onInclude));
+                    resultValue = compileGeometryProgram(returnObject, fileName, progamScript, entryFunction, defineList, include);
                 }
 
                 return resultValue;
@@ -2503,8 +2511,8 @@ namespace Gek
                 gekCheckResult(resultValue = Gek::FileSystem::load(fileName, progamScript));
                 if (SUCCEEDED(resultValue))
                 {
-                    CComPtr<Include> spInclude(new Include(fileName, onInclude));
-                    resultValue = compilePixelProgram(returnObject, fileName, progamScript, entryFunction, defineList, spInclude);
+                    CComPtr<Include> include(new Include(fileName, onInclude));
+                    resultValue = compilePixelProgram(returnObject, fileName, progamScript, entryFunction, defineList, include);
                 }
 
                 return resultValue;

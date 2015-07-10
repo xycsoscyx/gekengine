@@ -1,4 +1,4 @@
-#include "..\GEKGlobal.h"
+#include "GEKGlobal.h"
 
 cbuffer ORTHOBUFFER                     : register(b1)
 {

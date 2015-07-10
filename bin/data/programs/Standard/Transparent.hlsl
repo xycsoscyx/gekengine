@@ -1,5 +1,5 @@
-#include "..\GEKGlobal.h"
-#include "..\gektypes.h"
+#include "GEKGlobal.h"
+#include "GEKtypes.h"
 
 Texture2D     gs_pAlbedoMap             : register(t0);
 

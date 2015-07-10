@@ -1,6 +1,6 @@
-#include "..\GEKGlobal.h"
-#include "..\gektypes.h"
-#include "..\gekutility.h"
+#include "GEKGlobal.h"
+#include "GEKtypes.h"
+#include "GEKutility.h"
 
 Texture2D           gs_pAlbedoBuffer        : register(t1);
 Texture2D<half2>    gs_pNormalBuffer        : register(t2);

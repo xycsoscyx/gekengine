@@ -4,6 +4,7 @@
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
+#include "GEK\Utility\FileSystem.h"
 #include <atlpath.h>
 #include <set>
 #include <concurrent_vector.h>
@@ -842,14 +843,25 @@ namespace Gek
                                                 CW2A programEntryPoint(xmlProgramNode.firstChildElement(L"entry").getText());
                                                 auto getIncludeData = [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
                                                 {
+                                                    HRESULT resultValue = E_FAIL;
                                                     if (_stricmp(fileName, "GEKEngine") == 0)
                                                     {
                                                         data.resize(engineData.GetLength());
                                                         memcpy(data.data(), engineData.GetString(), data.size());
-                                                        return S_OK;
+                                                        resultValue = S_OK;
+                                                    }
+                                                    else
+                                                    {
+                                                        resultValue = Gek::FileSystem::load(CA2W(fileName), data);
+                                                        if (FAILED(resultValue))
+                                                        {
+                                                            CPathW shaderPath;
+                                                            shaderPath.Combine(L"%root%\\data\\programs", CA2W(fileName));
+                                                            resultValue = Gek::FileSystem::load(shaderPath, data);
+                                                        }
                                                     }
 
-                                                    return E_FAIL;
+                                                    return resultValue;
                                                 };
 
                                                 Gek::Xml::Node xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");

@@ -1,8 +1,5 @@
 #include "GEKGlobal.h"
 
-#include "GEKEngine"
-#include "GEKPlugin"
-
 WorldVertex getWorldVertex(in PluginVertex pluginVertex)
 {
     WorldVertex worldVertex;

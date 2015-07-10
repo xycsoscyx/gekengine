@@ -1,7 +1,7 @@
-#include "..\GEKGlobal.h"
-#include "..\gektypes.h"
-#include "..\gekmaterial.h"
-#include "..\gekutility.h"
+#include "GEKGlobal.h"
+#include "GEKtypes.h"
+#include "GEKmaterial.h"
+#include "GEKutility.h"
 
 Texture2D     gs_pAlbedoMap             : register(t0);
 Texture2D     gs_pNormalMap             : register(t1);

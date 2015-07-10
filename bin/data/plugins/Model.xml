@@ -11,6 +11,6 @@
         <instanceIndex />
     </layout>
     <vertex>
-        <program source="model" entry="mainVertexProgram" />
+        <program>model</program>
     </vertex>
 </plugin>

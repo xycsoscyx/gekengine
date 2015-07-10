@@ -21,7 +21,7 @@
 
     <targets>
         <albedoBuffer bind="float4">byte4</albedoBuffer>
-        <normalBuffer bind="half2">short2</normalBuffer>
+        <normalBuffer bind="half2">half2</normalBuffer>
         <depthBuffer bind="float">float</depthBuffer> 
         <infoBuffer bind="float4">byte4</infoBuffer>
     </targets>

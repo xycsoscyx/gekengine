@@ -34,6 +34,5 @@ namespace Camera
         float4x4 viewMatrix              : packoffset(c1);
         float4x4 projectionMatrix        : packoffset(c5);
         float4x4 inverseProjectionMatrix : packoffset(c9);
-        float4x4 transformMatrix         : packoffset(c13);
     };
 };

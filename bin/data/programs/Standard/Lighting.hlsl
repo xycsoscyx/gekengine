@@ -1,7 +1,7 @@
 #include "GEKEngine"
 
-#include "..\GEKGlobal.h"
-#include "..\GEKUtility.h"
+#include "GEKGlobal.h"
+#include "GEKUtility.h"
 
 #ifdef _COMPUTE_PROGRAM
 

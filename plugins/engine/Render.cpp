@@ -101,7 +101,6 @@ namespace Gek
                     Math::Float4x4 viewMatrix;
                     Math::Float4x4 projectionMatrix;
                     Math::Float4x4 inverseProjectionMatrix;
-                    Math::Float4x4 transformMatrix;
                 };
 
                 struct LightingConstantData
@@ -635,7 +634,6 @@ namespace Gek
                         cameraConstantData.viewMatrix = cameraMatrix.getInverse();
                         cameraConstantData.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraComponent.minimumDistance, cameraComponent.maximumDistance);
                         cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
-                        cameraConstantData.transformMatrix = (cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
                         video->updateBuffer(this->cameraConstantBuffer, &cameraConstantData);
 
                         video->getDefaultContext()->getGeometrySystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
@@ -643,7 +641,7 @@ namespace Gek
                         video->getDefaultContext()->getPixelSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
                         video->getDefaultContext()->getComputeSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
 
-                        const Shape::Frustum viewFrustum(cameraConstantData.transformMatrix);
+                        const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
                         concurrency::concurrent_vector<Light> concurrentVisibleLightList;
                         population->listEntities({ Components::Transform::identifier, Components::PointLight::identifier, Components::Color::identifier }, [&](const Population::Entity &lightEntity) -> void

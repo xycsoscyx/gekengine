@@ -468,10 +468,10 @@ namespace Gek
             STDMETHOD(mapBuffer)                                (THIS_ BufferInterface *buffer, LPVOID *data) PURE;
             STDMETHOD_(void, unmapBuffer)                       (THIS_ BufferInterface *buffer) PURE;
 
-            STDMETHOD(compileComputeProgram)                    (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD(compileVertexProgram)                     (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD(compileGeometryProgram)                   (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-            STDMETHOD(compilePixelProgram)                      (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(compileComputeProgram)                    (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(compileVertexProgram)                     (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(compileGeometryProgram)                   (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
+            STDMETHOD(compilePixelProgram)                      (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
             STDMETHOD(loadComputeProgram)                       (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
             STDMETHOD(loadVertexProgram)                        (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
