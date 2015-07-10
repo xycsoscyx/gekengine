@@ -557,7 +557,7 @@ namespace Gek
 
                                             if (propertyBufferSize > 0)
                                             {
-                                                resultValue = video->createBuffer(&propertyConstantBuffer, propertyBufferSize, 1, Video3D::BufferFlags::ConstantBuffer);
+                                                resultValue = video->createBuffer(&propertyConstantBuffer, propertyBufferSize, 1, Video3D::BufferFlags::ConstantBuffer | Video3D::BufferFlags::Dynamic);
                                             }
                                         }
                                     }
@@ -759,6 +759,7 @@ namespace Gek
                                                 "    cbuffer Data : register(b1)                            \r\n"\
                                                 "    {                                                      \r\n";
                                             for (auto &propertyPair : propertyList)
+
                                             {
                                                 engineData.AppendFormat("        %S %S;              \r\n", getBindType(propertyPair.bindType), propertyPair.name.GetString());
                                             }
@@ -1110,7 +1111,12 @@ namespace Gek
                         Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.computeProgram ? context->getComputeSystem() : context->getPixelSystem());
                         subSystem->setResourceList(resourceList, firstStage);
 
-                        video->updateBuffer(propertyConstantBuffer, materialPropertyList.data());
+                        LPVOID materialData = nullptr;
+                        if (SUCCEEDED(video->mapBuffer(propertyConstantBuffer, &materialData)))
+                        {
+                            memcpy(materialData, materialPropertyList.data(), (sizeof(UINT32) * materialPropertyList.size()));
+                            video->unmapBuffer(propertyConstantBuffer);
+                        }
                     }
 
                     STDMETHODIMP_(void) draw(Video3D::ContextInterface *context,

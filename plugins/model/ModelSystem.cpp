@@ -364,7 +364,7 @@ namespace Gek
                             color = population->getComponent<Engine::Components::Color::Data>(dataEntity.first, Engine::Components::Color::identifier);
                         }
 
-                        visibleList[dataEntity.second].push_back(InstanceData(orientedBox.matrix, color, size, cameraTransform.position.getDistance(transformComponent.position)));
+                        visibleList[dataEntity.second].push_back(InstanceData(Math::Float4x4(transformComponent.rotation, transformComponent.position), color, size, cameraTransform.position.getDistance(transformComponent.position)));
                     }
                 });
 

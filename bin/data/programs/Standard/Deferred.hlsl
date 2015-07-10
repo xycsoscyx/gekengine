@@ -6,12 +6,12 @@
 OutputPixel mainPixelProgram(in InputPixel inputPixel)
 {
     float4 albedo = (Resources::albedo.Sample(Global::linearSampler, inputPixel.texcoord) * inputPixel.color);
-
-    [branch]
+    
+    /*[branch]
     if(albedo.a < 0.5f)
     {
         discard;
-    }
+    }*/
 
     // Viewspace vertex normal
     float3 viewNormal = (normalize(inputPixel.viewnormal) * (inputPixel.frontface ? 1 : -1));
@@ -25,7 +25,7 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
     normal = mul(normal, coTangentFrame);
 
     OutputPixel outputPixel;
-    outputPixel.albedoBuffer = (albedo * Material::color);
+    outputPixel.albedoBuffer = (albedo);// *Material::color);
     outputPixel.normalBuffer = encodeNormal(normal);
     outputPixel.depthBuffer  = (inputPixel.viewposition.z / Camera::maximumDistance);
     outputPixel.infoBuffer   = Resources::info.Sample(Global::linearSampler, inputPixel.texcoord);
