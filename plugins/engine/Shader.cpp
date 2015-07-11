@@ -158,14 +158,14 @@ namespace Gek
                     enum class PassMode : UINT8
                     {
                         Forward = 0,
-                        ForwardLit,
                         Deferred,
-                        DeferredLit,
+                        Compute,
                     };
 
                     struct Pass
                     {
                         PassMode mode;
+                        bool lighting;
                         UINT32 depthClearFlags;
                         float depthClearValue;
                         UINT32 stencilClearValue;
@@ -176,7 +176,6 @@ namespace Gek
                         std::vector<CStringW> renderTargetList;
                         std::vector<CStringW> resourceList;
                         std::vector<CStringW> unorderedAccessList;
-                        bool computeProgram;
                         CComPtr<IUnknown> program;
                         UINT32 dispatchWidth;
                         UINT32 dispatchHeight;
@@ -184,11 +183,11 @@ namespace Gek
 
                         Pass(void)
                             : mode(PassMode::Forward)
+                            , lighting(false)
                             , depthClearFlags(0)
                             , depthClearValue(1.0f)
                             , stencilClearValue(0)
                             , blendFactor(1.0f)
-                            , computeProgram(false)
                             , dispatchWidth(0)
                             , dispatchHeight(0)
                             , dispatchDepth(0)
@@ -673,7 +672,6 @@ namespace Gek
                                         }
 
                                         Pass pass;
-                                        bool lighting = false;
                                         if (xmlPassNode.hasAttribute(L"mode"))
                                         {
                                             CStringW modeString = xmlPassNode.getAttribute(L"mode");
@@ -681,19 +679,13 @@ namespace Gek
                                             {
                                                 pass.mode = PassMode::Forward;
                                             }
-                                            else if (modeString.CompareNoCase(L"forwardlit") == 0)
-                                            {
-                                                pass.mode = PassMode::ForwardLit;
-                                                lighting = true;
-                                            }
                                             else if (modeString.CompareNoCase(L"deferred") == 0)
                                             {
                                                 pass.mode = PassMode::Deferred;
                                             }
-                                            else if (modeString.CompareNoCase(L"deferredlit") == 0)
+                                            else if (modeString.CompareNoCase(L"compute") == 0)
                                             {
-                                                pass.mode = PassMode::DeferredLit;
-                                                lighting = true;
+                                                pass.mode = PassMode::Compute;
                                             }
                                             else
                                             {
@@ -701,6 +693,8 @@ namespace Gek
                                                 resultValue = E_INVALIDARG;
                                             }
                                         }
+
+                                        pass.lighting = String::getBoolean(xmlPassNode.getAttribute(L"lighting"));
 
                                         pass.renderTargetList = loadChildList(xmlPassNode, L"targets");
                                         if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"depthstates"))
@@ -723,37 +717,41 @@ namespace Gek
                                             pass.resourceList = loadChildList(xmlPassNode, L"resources");
                                             pass.unorderedAccessList = loadChildList(xmlPassNode, L"unorderedaccess");
 
-                                            CStringA engineData(
-                                                "struct InputPixel                                          \r\n"\
-                                                "{                                                          \r\n");
-                                            switch (pass.mode)
+                                            CStringA engineData;
+                                            if (pass.mode != PassMode::Compute)
                                             {
-                                            case PassMode::Deferred:
-                                            case PassMode::DeferredLit:
-                                                engineData +=
-                                                    "    float4 position : SV_POSITION;                     \r\n"\
-                                                    "    float2 texcoord : TEXCOORD0;                       \r\n";
-                                                break;
+                                                engineData += 
+                                                    "struct InputPixel                                          \r\n"\
+                                                    "{                                                          \r\n";
+                                                switch (pass.mode)
+                                                {
+                                                case PassMode::Deferred:
+                                                    engineData +=
+                                                        "    float4 position : SV_POSITION;                     \r\n"\
+                                                        "    float2 texcoord : TEXCOORD0;                       \r\n";
+                                                    break;
 
-                                            case PassMode::Forward:
-                                            case PassMode::ForwardLit:
-                                                engineData +=
-                                                    "    float4 position     : SV_POSITION;                 \r\n"\
-                                                    "    float4 viewposition : TEXCOORD0;                   \r\n"\
-                                                    "    float2 texcoord     : TEXCOORD1;                   \r\n"\
-                                                    "    float3 viewnormal   : NORMAL0;                     \r\n"\
-                                                    "    float4 color        : COLOR0;                      \r\n"\
-                                                    "    bool   frontface    : SV_ISFRONTFACE;              \r\n";
-                                                break;
+                                                case PassMode::Forward:
+                                                    engineData +=
+                                                        "    float4 position     : SV_POSITION;                 \r\n"\
+                                                        "    float4 viewposition : TEXCOORD0;                   \r\n"\
+                                                        "    float2 texcoord     : TEXCOORD1;                   \r\n"\
+                                                        "    float3 viewnormal   : NORMAL0;                     \r\n"\
+                                                        "    float4 color        : COLOR0;                      \r\n"\
+                                                        "    bool   frontface    : SV_ISFRONTFACE;              \r\n";
+                                                    break;
 
-                                            default:
-                                                resultValue = E_INVALIDARG;
-                                                break;
-                                            };
+                                                default:
+                                                    resultValue = E_INVALIDARG;
+                                                    break;
+                                                };
+
+                                                engineData +=
+                                                    "};                                                         \r\n"\
+                                                    "                                                           \r\n";
+                                            }
 
                                             engineData +=
-                                                "};                                                         \r\n"\
-                                                "                                                           \r\n"\
                                                 "namespace Material                                         \r\n"\
                                                 "{                                                          \r\n"\
                                                 "    cbuffer Data : register(b1)                            \r\n"\
@@ -768,7 +766,7 @@ namespace Gek
                                                 "    };                                                     \r\n"\
                                                 "};                                                         \r\n"\
                                                 "                                                           \r\n";
-                                            if (lighting)
+                                            if (pass.lighting)
                                             {
                                                 engineData +=
                                                     "namespace Lighting                                     \r\n"\
@@ -812,7 +810,7 @@ namespace Gek
                                                 "namespace Resources                                        \r\n"\
                                                 "{                                                          \r\n";
 
-                                            UINT32 resourceStage = (lighting ? 1 : 0);
+                                            UINT32 resourceStage = (pass.lighting ? 1 : 0);
                                             if (pass.mode == PassMode::Forward)
                                             {
                                                 for (auto &map : mapList)
@@ -868,6 +866,13 @@ namespace Gek
                                                 Gek::Xml::Node xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
                                                 if (xmlComputeNode)
                                                 {
+                                                    pass.dispatchWidth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
+                                                    pass.dispatchHeight = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
+                                                    pass.dispatchDepth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
+                                                }
+
+                                                if (pass.mode == PassMode::Compute)
+                                                {
                                                     engineData +=
                                                         "namespace UnorderedAccess                              \r\n"\
                                                         "{                                                      \r\n";
@@ -884,14 +889,10 @@ namespace Gek
                                                     engineData +=
                                                         "};                                                     \r\n"\
                                                         "                                                       \r\n";
-                                                    pass.dispatchWidth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
-                                                    pass.dispatchHeight = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
-                                                    pass.dispatchDepth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
                                                     defines["dispatchWidth"] = String::setUINT32(pass.dispatchWidth);
                                                     defines["dispatchHeight"] = String::setUINT32(pass.dispatchHeight);
                                                     defines["dispatchDepth"] = String::setUINT32(pass.dispatchDepth);
                                                     resultValue = render->loadComputeProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
-                                                    pass.computeProgram = true;
                                                 }
                                                 else
                                                 {
@@ -912,7 +913,6 @@ namespace Gek
                                                         "};                                                     \r\n"\
                                                         "                                                       \r\n";
                                                     resultValue = render->loadPixelProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
-                                                    pass.computeProgram = false;
                                                 }
                                             }
                                             else
@@ -1103,12 +1103,12 @@ namespace Gek
                         }
 
                         UINT32 firstStage = 0;
-                        if (pass.mode == PassMode::ForwardLit || pass.mode == PassMode::DeferredLit)
+                        if (pass.lighting)
                         {
                             firstStage = 1;
                         }
 
-                        Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.computeProgram ? context->getComputeSystem() : context->getPixelSystem());
+                        Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.mode == PassMode::Compute ? context->getComputeSystem() : context->getPixelSystem());
                         subSystem->setResourceList(resourceList, firstStage);
 
                         LPVOID materialData = nullptr;
@@ -1120,8 +1120,9 @@ namespace Gek
                     }
 
                     STDMETHODIMP_(void) draw(Video3D::ContextInterface *context,
-                        std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting)> drawForward, 
-                        std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting)> drawDeferred)
+                        std::function<void(LPCVOID passData, bool lighting)> drawForward, 
+                        std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
+                        std::function<void(LPCVOID passData, bool lighting)> drawCompute)
                     {
                         for (auto &pass : passList)
                         {
@@ -1172,30 +1173,31 @@ namespace Gek
                                 unorderedAccessList.push_back(findResource(unorderedAccessName));
                             }
 
-                            Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.computeProgram ? context->getComputeSystem() : context->getPixelSystem());
+                            Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.mode == PassMode::Compute ? context->getComputeSystem() : context->getPixelSystem());
 
                             UINT32 firstStage = mapList.size();
-                            if (pass.mode == PassMode::ForwardLit || pass.mode == PassMode::DeferredLit)
+                            if (pass.lighting)
                             {
                                 firstStage = 1;
                             }
 
                             subSystem->setResourceList(resourceList, firstStage);
                             subSystem->setUnorderedAccessList(unorderedAccessList, 0);
-
                             subSystem->setProgram(pass.program);
 
                             switch (pass.mode)
                             {
                             case PassMode::Forward:
-                            case PassMode::ForwardLit:
                                 subSystem->setConstantBuffer(propertyConstantBuffer, 1);
-                                drawForward(subSystem, &pass, pass.mode == PassMode::ForwardLit);
+                                drawForward(&pass, pass.lighting);
                                 break;
 
                             case PassMode::Deferred:
-                            case PassMode::DeferredLit:
-                                drawDeferred(subSystem, &pass, pass.mode == PassMode::DeferredLit);
+                                drawDeferred(&pass, pass.lighting);
+                                break;
+
+                            case PassMode::Compute:
+                                drawCompute(&pass, pass.lighting);
                                 break;
                             };
 

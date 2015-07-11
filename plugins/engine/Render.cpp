@@ -197,6 +197,10 @@ namespace Gek
                 CComPtr<Video3D::BufferInterface> lightingConstantBuffer;
                 CComPtr<Video3D::BufferInterface> lightingBuffer;
 
+                CComPtr<IUnknown> deferredVertexProgram;
+                CComPtr<Video3D::BufferInterface> deferredConstantBuffer;
+                CComPtr<Video3D::BufferInterface> deferredVertexBuffer;
+
                 concurrency::concurrent_unordered_map<std::size_t, CComPtr<IUnknown>> resourceMap;
                 concurrency::concurrent_unordered_map<CComQIPtr<Plugin::Interface>, // plugin
                     concurrency::concurrent_unordered_map<CComQIPtr<Material::Interface>, // material
@@ -281,6 +285,61 @@ namespace Gek
                     if (SUCCEEDED(resultValue))
                     {
                         resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 1024, Video3D::BufferFlags::Dynamic | Video3D::BufferFlags::StructuredBuffer | Video3D::BufferFlags::Resource);
+                    }
+
+                    static const char program[] =
+                    "struct Vertex                                                                      \r\n" \
+                    "{                                                                                  \r\n" \
+                    "    float2 position : POSITION;                                                    \r\n" \
+                    "};                                                                                 \r\n" \
+                    "                                                                                   \r\n" \
+                    "struct Pixel                                                                       \r\n" \
+                    "{                                                                                  \r\n" \
+                    "    float4 position : SV_POSITION;                                                 \r\n" \
+                    "    float2 texcoord : TEXCOORD0;                                                   \r\n" \
+                    "};                                                                                 \r\n" \
+                    "                                                                                   \r\n" \
+                    "namespace Overlay                                                                  \r\n" \
+                    "{                                                                                  \r\n" \
+                    "    cbuffer buffer : register(b1)                                                  \r\n" \
+                    "    {                                                                              \r\n" \
+                    "        float4x4 transform;                                                        \r\n" \
+                    "    };                                                                             \r\n" \
+                    "};                                                                                 \r\n" \
+                    "                                                                                   \r\n" \
+                    "Pixel mainVertexProgram(in Vertex vertex)                                          \r\n" \
+                    "{                                                                                  \r\n" \
+                    "    Pixel pixel;                                                                   \r\n" \
+                    "    pixel.position = mul(Overlay::transform, float4(vertex.position, 0.0f, 1.0f)); \r\n" \
+                    "    pixel.texcoord = vertex.position.xy;                                           \r\n" \
+                    "    return pixel;                                                                  \r\n" \
+                    "}                                                                                  \r\n" \
+                    "                                                                                   \r\n";
+
+                    if (SUCCEEDED(resultValue))
+                    {
+                        static const std::vector<Video3D::InputElement> elementList =
+                        {
+                            Video3D::InputElement(Video3D::Format::Float2, "POSITION", 0),
+                        };
+
+                        resultValue = video->compileVertexProgram(&deferredVertexProgram, program, "mainVertexProgram", elementList);
+                    }
+
+                    if (SUCCEEDED(resultValue))
+                    {
+                        static const Math::Float2 vertexList[] =
+                        {
+                            Math::Float2(0.0f, 0.0f),
+                            Math::Float2(1.0f, 0.0f),
+                            Math::Float2(1.0f, 1.0f),
+
+                            Math::Float2(0.0f, 0.0f),
+                            Math::Float2(1.0f, 1.0f),
+                            Math::Float2(0.0f, 1.0f),
+                        };
+
+                        resultValue = video->createBuffer(&deferredVertexBuffer, sizeof(Math::Float2), 6, Video3D::BufferFlags::VertexBuffer | Video3D::BufferFlags::Static, vertexList);
                     }
 
                     return resultValue;
@@ -702,12 +761,12 @@ namespace Gek
                         for (auto &shaderPair : sortedDrawQueue)
                         {
                             shaderPair.first->draw(video->getDefaultContext(),
-                                [&](Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting) -> void // drawForward
+                                [&](LPCVOID passData, bool lighting) -> void // drawForward
                             {
                                 if (lighting)
                                 {
-                                    subSystem->setConstantBuffer(lightingConstantBuffer, 2);
-                                    subSystem->setResource(lightingBuffer, 0);
+                                    video->getDefaultContext()->getPixelSystem()->setConstantBuffer(lightingConstantBuffer, 2);
+                                    video->getDefaultContext()->getPixelSystem()->setResource(lightingBuffer, 0);
                                 }
 
                                 for (auto &pluginPair : shaderPair.second)
@@ -742,8 +801,30 @@ namespace Gek
                                     }
                                 }
                             },
-                                [&](Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting) -> void // drawDeferred
+                                [&](LPCVOID passData, bool lighting) -> void // drawDeferred
                             {
+                                if (lighting)
+                                {
+                                    video->getDefaultContext()->getPixelSystem()->setConstantBuffer(lightingConstantBuffer, 2);
+                                    video->getDefaultContext()->getPixelSystem()->setResource(lightingBuffer, 0);
+                                }
+
+                                Math::Float4x4 orthoTransform;
+                                orthoTransform.setOrthographic(0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f);
+                                video->updateBuffer(deferredConstantBuffer, &orthoTransform);
+
+                                video->getDefaultContext()->setVertexBuffer(0, deferredVertexBuffer, 0);
+                                video->getDefaultContext()->getVertexSystem()->setProgram(deferredVertexProgram);
+                                video->getDefaultContext()->getVertexSystem()->setConstantBuffer(deferredConstantBuffer, 1);
+                                video->getDefaultContext()->drawPrimitive(6, 0);
+                            },
+                                [&](LPCVOID passData, bool lighting) -> void // drawCompute
+                            {
+                                if (lighting)
+                                {
+                                    video->getDefaultContext()->getComputeSystem()->setConstantBuffer(lightingConstantBuffer, 2);
+                                    video->getDefaultContext()->getComputeSystem()->setResource(lightingBuffer, 0);
+                                }
                             });
                         }
                     });

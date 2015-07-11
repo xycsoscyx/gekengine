@@ -23,7 +23,10 @@ namespace Gek
                     STDMETHOD(getMaterialValues)                (THIS_ LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, std::vector<UINT32> &materialPropertyList) PURE;
                     STDMETHOD_(void, setMaterialValues)         (THIS_ Video3D::ContextInterface *context, LPCVOID passData, const std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, const std::vector<UINT32> &materialPropertyList) PURE;
 
-                    STDMETHOD_(void, draw)                      (THIS_ Video3D::ContextInterface *context, std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting)> drawForward, std::function<void(Video3D::ContextInterface::SubSystemInterface *subSystem, LPCVOID passData, bool lighting)> drawDeferred) PURE;
+                    STDMETHOD_(void, draw)                      (THIS_ Video3D::ContextInterface *context,
+                        std::function<void(LPCVOID passData, bool lighting)> drawForward,
+                        std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
+                        std::function<void(LPCVOID passData, bool lighting)> drawCompute) PURE;
                 };
             }; // namespace Shader
         }; // namespace Render
