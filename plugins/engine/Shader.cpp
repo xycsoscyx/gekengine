@@ -260,10 +260,10 @@ namespace Gek
                         case BindType::Half:        return L"half";
                         case BindType::Half2:       return L"half2";
                         case BindType::Half4:       return L"half4";
-                        case BindType::Int:        return L"int";
-                        case BindType::Int2:       return L"int2";
-                        case BindType::Int3:       return L"int3";
-                        case BindType::Int4:       return L"int4";
+                        case BindType::Int:        return L"uint";
+                        case BindType::Int2:       return L"uint2";
+                        case BindType::Int3:       return L"uint3";
+                        case BindType::Int4:       return L"uint4";
                         case BindType::Boolean:     return L"boolean";
                         };
 
@@ -1163,7 +1163,6 @@ namespace Gek
                             std::vector<IUnknown *> resourceList;
                             for (auto &resourceName : pass.resourceList)
                             {
-                                CComPtr<Video3D::TextureInterface> texture;
                                 resourceList.push_back(findResource(resourceName));
                             }
 
@@ -1198,6 +1197,7 @@ namespace Gek
 
                             case PassMode::Compute:
                                 drawCompute(&pass, pass.lighting);
+                                video->getDefaultContext()->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
                                 break;
                             };
 

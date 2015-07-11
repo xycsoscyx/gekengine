@@ -27,7 +27,7 @@
     </targets>
 
     <buffers>
-        <tileIndexList size="ceil(%displayWidth% / %lightTileSize%) * ceil(%displayWidth% / %lightTileSize%) * %lightListSize%">byte</tileIndexList>
+        <tileIndexList size="ceil(%displayWidth% / %lightTileSize%) * ceil(%displayWidth% / %lightTileSize%) * %lightListSize%">int</tileIndexList>
     </buffers>
 
     <pass mode="forward">
@@ -75,12 +75,12 @@
     </pass>
 
     <pass mode="deferred" lighting="true">
-        <blendstates>
+        <!--blendstates>
             <target>
                 <color source="one" destination="one" operation="add" />
                 <alpha source="one" destination="one" operation="add" />
             </target>
-        </blendstates>
+        </blendstates-->
 
         <resources>
             <tileIndexList />

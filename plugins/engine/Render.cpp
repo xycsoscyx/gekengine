@@ -342,6 +342,11 @@ namespace Gek
                         resultValue = video->createBuffer(&deferredVertexBuffer, sizeof(Math::Float2), 6, Video3D::BufferFlags::VertexBuffer | Video3D::BufferFlags::Static, vertexList);
                     }
 
+                    if (SUCCEEDED(resultValue))
+                    {
+                        resultValue = video->createBuffer(&deferredConstantBuffer, sizeof(Math::Float4x4), 1, Video3D::BufferFlags::ConstantBuffer);
+                    }
+
                     return resultValue;
                 }
 
@@ -668,15 +673,6 @@ namespace Gek
 
                 STDMETHODIMP_(void) onUpdateEnd(float frameTime)
                 {
-                    if (frameTime > 0.0f)
-                    {
-                        video->clearDefaultRenderTarget(Math::Float4(0.0f, 1.0f, 0.0f, 1.0f));
-                    }
-                    else
-                    {
-                        video->clearDefaultRenderTarget(Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
-                    }
-
                     population->listEntities({ Components::Transform::identifier, Components::Camera::identifier }, [&](const Population::Entity &cameraEntity) -> void
                     {
                         auto &transformComponent = population->getComponent<Components::Transform::Data>(cameraEntity, Components::Transform::identifier);
