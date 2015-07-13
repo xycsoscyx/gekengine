@@ -198,7 +198,6 @@ namespace Gek
                 CComPtr<Video3D::BufferInterface> lightingBuffer;
 
                 CComPtr<IUnknown> deferredVertexProgram;
-                CComPtr<Video3D::BufferInterface> deferredConstantBuffer;
                 CComPtr<Video3D::BufferInterface> deferredVertexBuffer;
 
                 concurrency::concurrent_unordered_map<std::size_t, CComPtr<IUnknown>> resourceMap;
@@ -284,43 +283,37 @@ namespace Gek
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 1024, Video3D::BufferFlags::Dynamic | Video3D::BufferFlags::StructuredBuffer | Video3D::BufferFlags::Resource);
+                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 256, Video3D::BufferFlags::Dynamic | Video3D::BufferFlags::StructuredBuffer | Video3D::BufferFlags::Resource);
                     }
-
-                    static const char program[] =
-                    "struct Vertex                                                                      \r\n" \
-                    "{                                                                                  \r\n" \
-                    "    float2 position : POSITION;                                                    \r\n" \
-                    "};                                                                                 \r\n" \
-                    "                                                                                   \r\n" \
-                    "struct Pixel                                                                       \r\n" \
-                    "{                                                                                  \r\n" \
-                    "    float4 position : SV_POSITION;                                                 \r\n" \
-                    "    float2 texcoord : TEXCOORD0;                                                   \r\n" \
-                    "};                                                                                 \r\n" \
-                    "                                                                                   \r\n" \
-                    "namespace Overlay                                                                  \r\n" \
-                    "{                                                                                  \r\n" \
-                    "    cbuffer buffer : register(b1)                                                  \r\n" \
-                    "    {                                                                              \r\n" \
-                    "        float4x4 transform;                                                        \r\n" \
-                    "    };                                                                             \r\n" \
-                    "};                                                                                 \r\n" \
-                    "                                                                                   \r\n" \
-                    "Pixel mainVertexProgram(in Vertex vertex)                                          \r\n" \
-                    "{                                                                                  \r\n" \
-                    "    Pixel pixel;                                                                   \r\n" \
-                    "    pixel.position = mul(Overlay::transform, float4(vertex.position, 0.0f, 1.0f)); \r\n" \
-                    "    pixel.texcoord = vertex.position.xy;                                           \r\n" \
-                    "    return pixel;                                                                  \r\n" \
-                    "}                                                                                  \r\n" \
-                    "                                                                                   \r\n";
 
                     if (SUCCEEDED(resultValue))
                     {
+                        static const char program[] =
+                            "struct Vertex                                                                      \r\n" \
+                            "{                                                                                  \r\n" \
+                            "    float2 position : POSITION;                                                    \r\n" \
+                            "    float2 texcoord : TEXCOORD0;                                                   \r\n" \
+                            "};                                                                                 \r\n" \
+                            "                                                                                   \r\n" \
+                            "struct Pixel                                                                       \r\n" \
+                            "{                                                                                  \r\n" \
+                            "    float4 position : SV_POSITION;                                                 \r\n" \
+                            "    float2 texcoord : TEXCOORD0;                                                   \r\n" \
+                            "};                                                                                 \r\n" \
+                            "                                                                                   \r\n" \
+                            "Pixel mainVertexProgram(in Vertex vertex)                                          \r\n" \
+                            "{                                                                                  \r\n" \
+                            "    Pixel pixel;                                                                   \r\n" \
+                            "    pixel.position = float4(vertex.position, 0.0f, 1.0f);                          \r\n" \
+                            "    pixel.texcoord = vertex.texcoord;                                              \r\n" \
+                            "    return pixel;                                                                  \r\n" \
+                            "}                                                                                  \r\n" \
+                            "                                                                                   \r\n";
+
                         static const std::vector<Video3D::InputElement> elementList =
                         {
                             Video3D::InputElement(Video3D::Format::Float2, "POSITION", 0),
+                            Video3D::InputElement(Video3D::Format::Float2, "TEXCOORD", 0),
                         };
 
                         resultValue = video->compileVertexProgram(&deferredVertexProgram, program, "mainVertexProgram", elementList);
@@ -330,21 +323,16 @@ namespace Gek
                     {
                         static const Math::Float2 vertexList[] =
                         {
-                            Math::Float2(0.0f, 0.0f),
-                            Math::Float2(1.0f, 0.0f),
-                            Math::Float2(1.0f, 1.0f),
+                            Math::Float2(-1.0f, -1.0f), Math::Float2(0.0f, 0.0f),
+                            Math::Float2( 1.0f, -1.0f), Math::Float2(1.0f, 0.0f),
+                            Math::Float2( 1.0f,  1.0f), Math::Float2(1.0f, 1.0f),
 
-                            Math::Float2(0.0f, 0.0f),
-                            Math::Float2(1.0f, 1.0f),
-                            Math::Float2(0.0f, 1.0f),
+                            Math::Float2(-1.0f, -1.0f), Math::Float2(0.0f, 0.0f),
+                            Math::Float2( 1.0f,  1.0f), Math::Float2(1.0f, 1.0f),
+                            Math::Float2(-1.0f,  1.0f), Math::Float2(0.0f, 1.0f),
                         };
 
-                        resultValue = video->createBuffer(&deferredVertexBuffer, sizeof(Math::Float2), 6, Video3D::BufferFlags::VertexBuffer | Video3D::BufferFlags::Static, vertexList);
-                    }
-
-                    if (SUCCEEDED(resultValue))
-                    {
-                        resultValue = video->createBuffer(&deferredConstantBuffer, sizeof(Math::Float4x4), 1, Video3D::BufferFlags::ConstantBuffer);
+                        resultValue = video->createBuffer(&deferredVertexBuffer, sizeof(Math::Float4), 6, Video3D::BufferFlags::VertexBuffer | Video3D::BufferFlags::Static, vertexList);
                     }
 
                     return resultValue;
@@ -724,7 +712,7 @@ namespace Gek
                         LPVOID lightingData = nullptr;
                         if (SUCCEEDED(video->mapBuffer(lightingBuffer, &lightingData)))
                         {
-                            UINT32 lightCount = std::min(visibleLightList.size(), size_t(512));
+                            UINT32 lightCount = std::min(visibleLightList.size(), size_t(256));
                             memcpy(lightingData, visibleLightList.data(), (sizeof(Light) * lightCount));
                             video->unmapBuffer(lightingBuffer);
 
@@ -805,13 +793,8 @@ namespace Gek
                                     video->getDefaultContext()->getPixelSystem()->setResource(lightingBuffer, 0);
                                 }
 
-                                Math::Float4x4 orthoTransform;
-                                orthoTransform.setOrthographic(0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f);
-                                video->updateBuffer(deferredConstantBuffer, &orthoTransform);
-
                                 video->getDefaultContext()->setVertexBuffer(0, deferredVertexBuffer, 0);
                                 video->getDefaultContext()->getVertexSystem()->setProgram(deferredVertexProgram);
-                                video->getDefaultContext()->getVertexSystem()->setConstantBuffer(deferredConstantBuffer, 1);
                                 video->getDefaultContext()->drawPrimitive(6, 0);
                             },
                                 [&](LPCVOID passData, bool lighting) -> void // drawCompute

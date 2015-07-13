@@ -727,15 +727,15 @@ namespace Gek
                                                 {
                                                 case PassMode::Deferred:
                                                     engineData +=
-                                                        "    float4 position : SV_POSITION;                     \r\n"\
-                                                        "    float2 texcoord : TEXCOORD0;                       \r\n";
+                                                        "    float4 position     : SV_POSITION;                 \r\n"\
+                                                        "    float2 texcoord     : TEXCOORD0;                   \r\n";
                                                     break;
 
                                                 case PassMode::Forward:
                                                     engineData +=
                                                         "    float4 position     : SV_POSITION;                 \r\n"\
-                                                        "    float4 viewposition : TEXCOORD0;                   \r\n"\
-                                                        "    float2 texcoord     : TEXCOORD1;                   \r\n"\
+                                                        "    float2 texcoord     : TEXCOORD0;                   \r\n"\
+                                                        "    float4 viewposition : TEXCOORD1;                   \r\n"\
                                                         "    float3 viewnormal   : NORMAL0;                     \r\n"\
                                                         "    float4 color        : COLOR0;                      \r\n"\
                                                         "    bool   frontface    : SV_ISFRONTFACE;              \r\n";
@@ -889,9 +889,6 @@ namespace Gek
                                                     engineData +=
                                                         "};                                                     \r\n"\
                                                         "                                                       \r\n";
-                                                    defines["dispatchWidth"] = String::setUINT32(pass.dispatchWidth);
-                                                    defines["dispatchHeight"] = String::setUINT32(pass.dispatchHeight);
-                                                    defines["dispatchDepth"] = String::setUINT32(pass.dispatchDepth);
                                                     resultValue = render->loadComputeProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
                                                 }
                                                 else
@@ -1097,6 +1094,7 @@ namespace Gek
                         const Pass &pass = *(const Pass *)passData;
 
                         std::vector<IUnknown *> resourceList;
+                        resourceList.reserve(materialMapList.size());
                         for (auto &resource : materialMapList)
                         {
                             resourceList.push_back(resource);
@@ -1161,12 +1159,14 @@ namespace Gek
                             }
 
                             std::vector<IUnknown *> resourceList;
+                            resourceList.reserve(pass.resourceList.size());
                             for (auto &resourceName : pass.resourceList)
                             {
                                 resourceList.push_back(findResource(resourceName));
                             }
 
                             std::vector<IUnknown *> unorderedAccessList;
+                            unorderedAccessList.reserve(pass.unorderedAccessList.size());
                             for (auto &unorderedAccessName : pass.unorderedAccessList)
                             {
                                 unorderedAccessList.push_back(findResource(unorderedAccessName));

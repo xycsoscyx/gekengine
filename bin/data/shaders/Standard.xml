@@ -27,7 +27,7 @@
     </targets>
 
     <buffers>
-        <tileIndexList size="ceil(%displayWidth% / %lightTileSize%) * ceil(%displayWidth% / %lightTileSize%) * %lightListSize%">int</tileIndexList>
+        <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %lightListSize%">byte</tileIndexList>
     </buffers>
 
     <pass mode="forward">

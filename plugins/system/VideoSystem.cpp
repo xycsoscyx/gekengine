@@ -30,7 +30,7 @@ namespace Gek
     using namespace Video3D;
     namespace Video
     {        
-        static const DXGI_FORMAT d3dFormatList[] =
+        static const DXGI_FORMAT d3dTextureFormatList[] =
         {
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_R8_UNORM,
@@ -56,7 +56,33 @@ namespace Gek
             DXGI_FORMAT_D32_FLOAT,
         };
 
-        static const UINT32 d3dFormatStrideList[] = 
+        static const DXGI_FORMAT d3dBufferFormatList[] =
+        {
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_R8_UINT,
+            DXGI_FORMAT_R8G8_UINT,
+            DXGI_FORMAT_R8G8B8A8_UINT,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_R16_UINT,
+            DXGI_FORMAT_R16G16_UINT,
+            DXGI_FORMAT_R16G16B16A16_UINT,
+            DXGI_FORMAT_R32_UINT,
+            DXGI_FORMAT_R32G32_UINT,
+            DXGI_FORMAT_R32G32B32_UINT,
+            DXGI_FORMAT_R32G32B32A32_UINT,
+            DXGI_FORMAT_R16_FLOAT,
+            DXGI_FORMAT_R16G16_FLOAT,
+            DXGI_FORMAT_R16G16B16A16_FLOAT,
+            DXGI_FORMAT_R32_FLOAT,
+            DXGI_FORMAT_R32G32_FLOAT,
+            DXGI_FORMAT_R32G32B32_FLOAT,
+            DXGI_FORMAT_R32G32B32A32_FLOAT,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+        };
+
+        static const UINT32 d3dFormatStrideList[] =
         {
             0,
             sizeof(UINT8),
@@ -1225,7 +1251,7 @@ namespace Gek
                     depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
                     depthDescription.CPUAccessFlags = 0;
                     depthDescription.MiscFlags = 0;
-                    depthDescription.Format = d3dFormatList[static_cast<UINT8>(depthFormat)];
+                    depthDescription.Format = d3dTextureFormatList[static_cast<UINT8>(depthFormat)];
                     if (depthDescription.Format != DXGI_FORMAT_UNKNOWN)
                     {
                         CComPtr<ID3D11Texture2D> d3dDepthTarget;
@@ -1787,7 +1813,7 @@ namespace Gek
                 textureDescription.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
                 textureDescription.CPUAccessFlags = 0;
                 textureDescription.MiscFlags = 0;
-                textureDescription.Format = d3dFormatList[static_cast<UINT8>(format)];
+                textureDescription.Format = d3dTextureFormatList[static_cast<UINT8>(format)];
 
                 CComPtr<ID3D11Texture2D> texture2D;
                 gekCheckResult(resultValue = d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D));
@@ -1850,7 +1876,7 @@ namespace Gek
                 depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
                 depthDescription.CPUAccessFlags = 0;
                 depthDescription.MiscFlags = 0;
-                depthDescription.Format = d3dFormatList[static_cast<UINT8>(format)];
+                depthDescription.Format = d3dTextureFormatList[static_cast<UINT8>(format)];
 
                 CComPtr<ID3D11Texture2D> texture2D;
                 gekCheckResult(resultValue = d3dDevice->CreateTexture2D(&depthDescription, nullptr, &texture2D));
@@ -2094,7 +2120,7 @@ namespace Gek
                     if (flags & Gek::Video3D::BufferFlags::Resource)
                     {
                         D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                        viewDescription.Format = d3dFormatList[static_cast<UINT8>(format)];
+                        viewDescription.Format = d3dBufferFormatList[static_cast<UINT8>(format)];
                         viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
                         viewDescription.Buffer.FirstElement = 0;
                         viewDescription.Buffer.NumElements = count;
@@ -2106,7 +2132,7 @@ namespace Gek
                     if (flags & Gek::Video3D::BufferFlags::UnorderedAccess)
                     {
                         D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                        viewDescription.Format = d3dFormatList[static_cast<UINT8>(format)];
+                        viewDescription.Format = d3dBufferFormatList[static_cast<UINT8>(format)];
                         viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                         viewDescription.Buffer.FirstElement = 0;
                         viewDescription.Buffer.NumElements = count;
@@ -2282,7 +2308,7 @@ namespace Gek
                                 inputElementList[inputElement].InstanceDataStepRate = 0;
                             };
 
-                            inputElementList[inputElement].Format = d3dFormatList[static_cast<UINT8>(elementLayout[inputElement].format)];
+                            inputElementList[inputElement].Format = d3dBufferFormatList[static_cast<UINT8>(elementLayout[inputElement].format)];
                             if (inputElementList[inputElement].Format == DXGI_FORMAT_UNKNOWN)
                             {
                                 inputElementList.clear();
@@ -2549,7 +2575,7 @@ namespace Gek
                     textureDescription.Width = width;
                     textureDescription.Height = height;
                     textureDescription.MipLevels = 1;
-                    textureDescription.Format = d3dFormatList[format];
+                    textureDescription.Format = d3dTextureFormatList[format];
                     textureDescription.ArraySize = 1;
                     textureDescription.SampleDesc.Count = 1;
                     textureDescription.SampleDesc.Quality = 0;
@@ -2572,7 +2598,7 @@ namespace Gek
                     textureDescription.Height = height;
                     textureDescription.Depth = depth;
                     textureDescription.MipLevels = 1;
-                    textureDescription.Format = d3dFormatList[format];
+                    textureDescription.Format = d3dTextureFormatList[format];
                     textureDescription.Usage = D3D11_USAGE_DEFAULT;
                     textureDescription.BindFlags = bindFlags;
                     textureDescription.CPUAccessFlags = 0;
@@ -2598,7 +2624,7 @@ namespace Gek
                     if (flags & Gek::Video3D::TextureFlags::UnorderedAccess)
                     {
                         D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                        viewDescription.Format = d3dFormatList[format];
+                        viewDescription.Format = d3dTextureFormatList[format];
                         if (depth == 1)
                         {
                             viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;

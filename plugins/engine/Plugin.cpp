@@ -180,8 +180,8 @@ namespace Gek
                                                 "struct ViewVertex                                                                  \r\n" \
                                                 "{                                                                                  \r\n" \
                                                 "    float4 position : SV_POSITION;                                                 \r\n" \
-                                                "    float4 viewposition : TEXCOORD0;                                               \r\n" \
-                                                "    float2 texcoord : TEXCOORD1;                                                   \r\n" \
+                                                "    float2 texcoord : TEXCOORD0;                                                   \r\n" \
+                                                "    float4 viewposition : TEXCOORD1;                                               \r\n" \
                                                 "    float3 viewnormal : NORMAL0;                                                   \r\n" \
                                                 "    float4 color : COLOR0;                                                         \r\n" \
                                                 "};                                                                                 \r\n" \
