@@ -203,6 +203,7 @@ float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
     float3 lightingContribution = 0.0f;
     float4 albedoTerm = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+    return albedoTerm;
 
     [branch]
     if (albedoTerm.a < 1.0f)

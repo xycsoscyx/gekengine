@@ -199,6 +199,7 @@ namespace Gek
 
                 CComPtr<IUnknown> deferredVertexProgram;
                 CComPtr<Video3D::BufferInterface> deferredVertexBuffer;
+                CComPtr<Video3D::BufferInterface> deferredIndexBuffer;
 
                 concurrency::concurrent_unordered_map<std::size_t, CComPtr<IUnknown>> resourceMap;
                 concurrency::concurrent_unordered_map<CComQIPtr<Plugin::Interface>, // plugin
@@ -323,13 +324,13 @@ namespace Gek
                     {
                         static const Math::Float2 vertexList[] =
                         {
-                            Math::Float2(-1.0f, -1.0f), Math::Float2(0.0f, 0.0f),
-                            Math::Float2( 1.0f, -1.0f), Math::Float2(1.0f, 0.0f),
-                            Math::Float2( 1.0f,  1.0f), Math::Float2(1.0f, 1.0f),
+                            Math::Float2(-1.0f, 1.0f), Math::Float2(0.0f, 0.0f),
+                            Math::Float2( 1.0f, 1.0f), Math::Float2(1.0f, 0.0f),
+                            Math::Float2( 1.0f,-1.0f), Math::Float2(1.0f, 1.0f),
 
-                            Math::Float2(-1.0f, -1.0f), Math::Float2(0.0f, 0.0f),
-                            Math::Float2( 1.0f,  1.0f), Math::Float2(1.0f, 1.0f),
-                            Math::Float2(-1.0f,  1.0f), Math::Float2(0.0f, 1.0f),
+                            Math::Float2(-1.0f, 1.0f), Math::Float2(0.0f, 0.0f),
+                            Math::Float2( 1.0f,-1.0f), Math::Float2(1.0f, 1.0f),
+                            Math::Float2(-1.0f,-1.0f), Math::Float2(0.0f, 1.0f),
                         };
 
                         resultValue = video->createBuffer(&deferredVertexBuffer, sizeof(Math::Float4), 6, Video3D::BufferFlags::VertexBuffer | Video3D::BufferFlags::Static, vertexList);
