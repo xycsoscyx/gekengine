@@ -19,8 +19,6 @@ namespace Gek
             {
                 struct { TYPE x, y; };
                 struct { TYPE u, v; };
-                struct { TYPE xy[2]; };
-                struct { TYPE uv[2]; };
                 struct { TYPE data[2]; };
             };
 
@@ -137,6 +135,16 @@ namespace Gek
             TYPE &operator [] (int axis)
             {
                 return xy[axis];
+            }
+
+            operator const TYPE *() const
+            {
+                return data;
+            }
+
+            operator TYPE *()
+            {
+                return data;
             }
 
             bool operator < (const BaseVector2<TYPE> &vector) const

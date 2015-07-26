@@ -1,4 +1,5 @@
-﻿#include "GEK\Engine\RenderInterface.h"
+﻿
+#include "GEK\Engine\RenderInterface.h"
 #include "GEK\Engine\PluginInterface.h"
 #include "GEK\Engine\ShaderInterface.h"
 #include "GEK\Engine\MaterialInterface.h"
@@ -112,10 +113,10 @@ namespace Gek
                 struct Light
                 {
                     Math::Float3 position;
-                    float distance;
                     float range;
-                    Math::Float3 color;
-                };
+					Math::Float3 color;
+					float distance;
+				};
 
                 enum class DrawType : UINT8
                 {
@@ -131,6 +132,7 @@ namespace Gek
                     std::vector<Video3D::BufferInterface *> vertexBufferList;
                     std::vector<UINT32> offsetList;
                     UINT32 instanceCount;
+                    UINT32 firstInstance;
                     UINT32 vertexCount;
                     UINT32 firstVertex;
                     CComPtr<Video3D::BufferInterface> indexBuffer;
@@ -144,6 +146,7 @@ namespace Gek
                         , vertexCount(vertexCount)
                         , firstVertex(firstVertex)
                         , instanceCount(0)
+                        , firstInstance(0)
                         , indexCount(0)
                         , firstIndex(0)
                     {
@@ -158,15 +161,17 @@ namespace Gek
                         , indexCount(indexCount)
                         , firstIndex(firstIndex)
                         , instanceCount(0)
+                        , firstInstance(0)
                         , vertexCount(0)
                     {
                     }
 
-                    DrawCommand(const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 vertexCount, UINT32 firstVertex)
+                    DrawCommand(const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
                         : drawType(DrawType::DrawInstancedPrimitive)
                         , vertexBufferList(vertexBufferList)
                         , offsetList(vertexBufferList.size(), 0)
                         , instanceCount(instanceCount)
+                        , firstInstance(firstInstance)
                         , vertexCount(vertexCount)
                         , firstVertex(firstVertex)
                         , indexCount(0)
@@ -174,11 +179,12 @@ namespace Gek
                     {
                     }
 
-                    DrawCommand(const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
+                    DrawCommand(const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                         : drawType(DrawType::DrawInstancedIndexedPrimitive)
                         , vertexBufferList(vertexBufferList)
                         , offsetList(vertexBufferList.size(), 0)
                         , instanceCount(instanceCount)
+                        , firstInstance(firstInstance)
                         , firstVertex(firstVertex)
                         , indexBuffer(indexBuffer)
                         , indexCount(indexCount)
@@ -193,6 +199,8 @@ namespace Gek
                 Video3D::Interface *video;
                 Population::Interface *population;
 
+                CComPtr<IUnknown> pointSamplerStates;
+                CComPtr<IUnknown> linearSamplerStates;
                 CComPtr<Video3D::BufferInterface> cameraConstantBuffer;
                 CComPtr<Video3D::BufferInterface> lightingConstantBuffer;
                 CComPtr<Video3D::BufferInterface> lightingBuffer;
@@ -274,6 +282,25 @@ namespace Gek
 
                     if (SUCCEEDED(resultValue))
                     {
+                        Video3D::SamplerStates samplerStates;
+                        samplerStates.filterMode = Video3D::FilterMode::AllPoint;
+                        samplerStates.addressModeU = Video3D::AddressMode::Clamp;
+                        samplerStates.addressModeV = Video3D::AddressMode::Clamp;
+                        resultValue = video->createSamplerStates(&pointSamplerStates, samplerStates);
+                    }
+
+                    if (SUCCEEDED(resultValue))
+                    {
+                        Video3D::SamplerStates samplerStates;
+						samplerStates.maximumAnisotropy = 8;
+                        samplerStates.filterMode = Video3D::FilterMode::Anisotropic;
+                        samplerStates.addressModeU = Video3D::AddressMode::Wrap;
+                        samplerStates.addressModeV = Video3D::AddressMode::Wrap;
+                        resultValue = video->createSamplerStates(&linearSamplerStates, samplerStates);
+                    }
+
+                    if (SUCCEEDED(resultValue))
+                    {
                         resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantData), 1, Video3D::BufferFlags::ConstantBuffer);
                     }
 
@@ -284,7 +311,7 @@ namespace Gek
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 256, Video3D::BufferFlags::Dynamic | Video3D::BufferFlags::StructuredBuffer | Video3D::BufferFlags::Resource);
+                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 1024, Video3D::BufferFlags::Dynamic | Video3D::BufferFlags::StructuredBuffer | Video3D::BufferFlags::Resource);
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -561,6 +588,35 @@ namespace Gek
                         {
                             if ((*fileName) == L'*')
                             {
+								if (_wcsnicmp(fileName, L"*color:", 7) == 0)
+								{
+									CComPtr<Video3D::TextureInterface> texture;
+									returnValue = video->createTexture(&texture, 1, 1, 1, Video3D::Format::Byte4, Video3D::TextureFlags::Resource);
+									if (texture)
+									{
+										Math::Float4 color(String::getFloat4(fileName + 7));
+										UINT32 colorValue = UINT32(UINT8(color.r * 255.0f)) |
+															UINT32(UINT8(color.g * 255.0f) << 8) |
+															UINT32(UINT8(color.b * 255.0f) << 16) |
+															UINT32(UINT8(color.a * 255.0f) << 24);
+										video->updateTexture(texture, &colorValue, 4);
+										returnValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
+									}
+								}
+								else if (_wcsnicmp(fileName, L"*normal:", 8) == 0)
+								{
+									CComPtr<Video3D::TextureInterface> texture;
+									returnValue = video->createTexture(&texture, 1, 1, 1, Video3D::Format::Byte4, Video3D::TextureFlags::Resource);
+									if (texture)
+									{
+										Math::Float3 normal((String::getFloat3(fileName + 8) + 1.0f) * 0.5f);
+										UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
+															 UINT32(UINT8(normal.y * 255.0f) << 8) |
+															 UINT32(UINT8(normal.z * 255.0f) << 16);
+										video->updateTexture(texture, &normalValue, 4);
+										returnValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
+									}
+								}
                             }
                             else
                             {
@@ -632,14 +688,14 @@ namespace Gek
                     drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
-                STDMETHODIMP_(void) drawInstancedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 vertexCount, UINT32 firstVertex)
+                STDMETHODIMP_(void) drawInstancedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
                 {
-                    drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, instanceCount, vertexCount, firstVertex));
+                    drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, vertexCount, firstVertex));
                 }
 
-                STDMETHODIMP_(void) drawInstancedIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount,  UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
+                STDMETHODIMP_(void) drawInstancedIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
-                    drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, instanceCount, firstVertex, indexBuffer, indexCount, firstIndex));
+                    drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
                 // Population::Observer
@@ -713,7 +769,7 @@ namespace Gek
                         LPVOID lightingData = nullptr;
                         if (SUCCEEDED(video->mapBuffer(lightingBuffer, &lightingData)))
                         {
-                            UINT32 lightCount = std::min(visibleLightList.size(), size_t(256));
+                            UINT32 lightCount = std::min(visibleLightList.size(), size_t(1024));
                             memcpy(lightingData, visibleLightList.data(), (sizeof(Light) * lightCount));
                             video->unmapBuffer(lightingBuffer);
 
@@ -742,6 +798,8 @@ namespace Gek
                             }
                         }
 
+                        video->getDefaultContext()->getPixelSystem()->setSamplerStates(pointSamplerStates, 0);
+                        video->getDefaultContext()->getPixelSystem()->setSamplerStates(linearSamplerStates, 1);
                         video->getDefaultContext()->setPrimitiveType(Video3D::PrimitiveType::TriangleList);
                         for (auto &shaderPair : sortedDrawQueue)
                         {
@@ -775,11 +833,11 @@ namespace Gek
                                                 break;
 
                                             case DrawType::DrawInstancedPrimitive:
-                                                video->getDefaultContext()->drawInstancedPrimitive(drawCommand.instanceCount, 0, drawCommand.vertexCount, drawCommand.firstVertex);
+                                                video->getDefaultContext()->drawInstancedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.vertexCount, drawCommand.firstVertex);
                                                 break;
 
                                             case DrawType::DrawInstancedIndexedPrimitive:
-                                                video->getDefaultContext()->drawInstancedIndexedPrimitive(drawCommand.instanceCount, 0, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                                video->getDefaultContext()->drawInstancedIndexedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
                                                 break;
                                             };
                                         }

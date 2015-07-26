@@ -1,484 +1,1945 @@
 <?xml version="1.0"?>
 <world name="Demo">
-	<population>
-		<entity>
-			<transform position="0,0,0" rotation="0,0,0,1" />
-            <model>sponza</model>
-            <dynamic_body>sponza</dynamic_body>
-            <mass>0</mass>
-        </entity>
+  <population>
+    <entity>
+      <transform position="0,0,0" rotation="0,0,0,1" />
+      <model>sponza</model>
+      <dynamic_body>sponza</dynamic_body>
+      <mass>0</mass>
+    </entity>
 
-        <entity name="player">
-			<transform position="0,3,0" rotation="0,0,0,1" />
-            <player_body outer_radius="1" inner_radius=".25" height="1.9" stair_step=".25"/>
-            <mass>250</mass>
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-		</entity>
+    <entity name="player">
+      <transform position="0,10,0" rotation="0,0,0,1" />
+      <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200"/>
+      <player_body outer_radius="1" inner_radius=".25" height="1.9" stair_step=".25"/>
+      <mass>250</mass>
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
 
-        <entity>
-			<transform position="0,10,0" rotation="0,0,0,1" />
-            <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200"/>
-            <follower offset="0,2,-10">player</follower>
-		</entity>
+    <!--entity>
+      <transform position="0,10,0" rotation="0,2,0,1" />
+      <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200"/>
+      <follower offset="0,2,-10">player</follower>
+    </entity-->
 
-        <!--entity>
+    <!--entity>
 			<transform />
             <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" viewport="0.6,0,0.4,0.4"/>
             <follower offset="0,5,20">player</follower>
 		</entity-->
 
-        <!-- 0 -->
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-             <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-           <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <entity>
-			<transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
-            <dynamic_body material="rock">*sphere</dynamic_body>
-            <mass>lerp(25,50,arand(1))</mass>
-            <size>lerp(1,3,arand(1))</size>
-            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
-			<model>boulder</model>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>   
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>   
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>   
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>   
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>   
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <entity>
+      <transform position="rand(45),lerp(50,70,arand(1)),rand(30)" />
+      <dynamic_body material="rock">*sphere</dynamic_body>
+      <mass>lerp(25,50,arand(1))</mass>
+      <size>lerp(1,3,arand(1))</size>
+      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>
+      <model>boulder</model>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
 
-        <!-- 0 -->
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <entity>
-            <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
-            <point_light radius="lerp(15,30,arand(1))" />
-            <color>lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),lerp(.5,3,arand(1)),1</color>
-        </entity>
-        <!-- 5 -->
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
 
-    </population>
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+    <!-- 0 -->
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <entity>
+      <transform position="rand(55),lerp(10,50,arand(1)),rand(30)" />
+      <point_light radius="lerp(15,30,arand(1))" />
+      <color>lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),lerp(.5,1.5,arand(1)),1</color>
+    </entity>
+    <!-- 5 -->
+
+  </population>
 </world>

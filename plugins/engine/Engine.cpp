@@ -1,5 +1,6 @@
 ﻿#include "GEK\Engine\CoreInterface.h"
 #include "GEK\Engine\PopulationInterface.h"
+#include "GEK\Engine\ActionInterface.h"
 #include "GEK\Engine\RenderInterface.h"
 #include "GEK\Engine\SystemInterface.h"
 #include "GEK\Context\BaseUser.h"
@@ -45,7 +46,8 @@ namespace Gek
         namespace Core
         {
             class System : public Context::BaseUser
-                , public Interface
+				, public BaseObservable
+				, public Interface
                 , public Render::Observer
             {
             private:
@@ -232,6 +234,40 @@ namespace Gek
 
                 STDMETHODIMP_(LRESULT) windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam)
                 {
+					auto onState = [&](WPARAM wParam, bool state)
+					{
+						switch (wParam)
+						{
+						case 'W':
+						case VK_UP:
+							BaseObservable::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"forward", state)));
+							break;
+
+						case 'S':
+						case VK_DOWN:
+							BaseObservable::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"backward", state)));
+							break;
+
+						case 'A':
+						case VK_LEFT:
+							BaseObservable::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"strafe_left", state)));
+							break;
+
+						case 'D':
+						case VK_RIGHT:
+							BaseObservable::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"strafe_right", state)));
+							break;
+
+						case 'Q':
+							BaseObservable::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"rise", state)));
+							break;
+
+						case 'Z':
+							BaseObservable::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"fall", state)));
+							break;
+						};
+					};
+
                     switch (message)
                     {
                     case WM_SETCURSOR:
@@ -317,7 +353,12 @@ namespace Gek
                         break;
 
                     case WM_KEYDOWN:
-                        return 1;
+                        if (!consoleActive)
+                        {
+                            onState(wParam, false);
+                        }
+
+						return 1;
 
                     case WM_KEYUP:
                         if (wParam == 0xC0)
@@ -326,36 +367,7 @@ namespace Gek
                         }
                         else if (!consoleActive)
                         {
-                            switch (wParam)
-                            {
-                            case 'W':
-                            case VK_UP:
-                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"forward", bState)));
-                                break;
-
-                            case 'S':
-                            case VK_DOWN:
-                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"backward", bState)));
-                                break;
-
-                            case 'A':
-                            case VK_LEFT:
-                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"strafe_left", bState)));
-                                break;
-
-                            case 'D':
-                            case VK_RIGHT:
-                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"strafe_right", bState)));
-                                break;
-
-                            case 'Q':
-                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"rise", bState)));
-                                break;
-
-                            case 'Z':
-                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnState, std::placeholders::_1, L"fall", bState)));
-                                break;
-                            };
+							onState(wParam, true);
                         }
 
                         return 1;
@@ -419,8 +431,8 @@ namespace Gek
                             INT32 cursorMovementY = ((cursorPosition.y - clientCenterY) / 2);
                             if (cursorMovementX != 0 || cursorMovementY != 0)
                             {
-                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, L"turn", float(cursorMovementX))));
-                                //CGEKObservable::SendEvent(TGEKEvent<IGEKInputObserver>(std::bind(&IGEKInputObserver::OnValue, std::placeholders::_1, L"tilt", float(cursorMovementY))));
+                                BaseObservable::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onValue, std::placeholders::_1, L"turn", float(cursorMovementX))));
+                                BaseObservable::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onValue, std::placeholders::_1, L"tilt", float(cursorMovementY))));
                             }
 
                             UINT32 frameCount = 3;

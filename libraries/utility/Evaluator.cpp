@@ -109,22 +109,22 @@ namespace Gek
 
         bool getFloat2(LPCWSTR expression, Gek::Math::Float2 &result)
         {
-            return evaluateFloat.getVector(expression, result.xy);
+            return evaluateFloat.getVector(expression, result.data);
         }
 
         bool getFloat3(LPCWSTR expression, Gek::Math::Float3 &result)
         {
-            return evaluateFloat.getVector(expression, result.xyz);
+            return evaluateFloat.getVector(expression, result.data);
         }
 
         bool getFloat4(LPCWSTR expression, Gek::Math::Float4 &result)
         {
-            return evaluateFloat.getVector(expression, result.xyzw);
+            return evaluateFloat.getVector(expression, result.data);
         }
 
         bool getQuaternion(LPCWSTR expression, Gek::Math::Quaternion &result)
         {
-            return evaluateFloat.getVector(expression, result.xyzw);
+            return evaluateFloat.getVector(expression, result.data);
         }
 
         bool getINT32(LPCWSTR expression, INT32 &result)

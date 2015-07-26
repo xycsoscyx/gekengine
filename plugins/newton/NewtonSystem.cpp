@@ -53,10 +53,6 @@ namespace Gek
             {
             }
 
-            // IUnknown
-            BEGIN_INTERFACE_LIST(BaseNewtonBody)
-            END_INTERFACE_LIST_UNKNOWN
-
             Engine::Population::Interface *getPopulationSystem(void)
             {
                 REQUIRE_RETURN(population, nullptr);
@@ -88,7 +84,7 @@ namespace Gek
             {
             }
 
-            // BaseNewtonBody
+			// BaseNewtonBody
             STDMETHODIMP_(NewtonBody *) getNewtonBody(void) const
             {
                 return GetNewtonBody();
@@ -107,7 +103,7 @@ namespace Gek
             void OnForceAndTorque(dFloat frameTime, int threadHandle)
             {
                 auto &massComponent = getPopulationSystem()->getComponent<Mass::Data>(getEntityHandle(), Mass::identifier);
-                //AddForce((GetNewtonSystem()->GetGravity() * massComponent).xyz);
+                AddForce((Math::Float4(0.0f, -9.81f, 0.0f, 0.0f) * massComponent).data);
             }
         };
 
@@ -116,18 +112,24 @@ namespace Gek
             , virtual public Engine::Action::Observer
         {
         private:
+			IUnknown *action;
+
+            float height;
+
             float viewAngle;
             concurrency::concurrent_unordered_map<CStringW, float> constantActionList;
             concurrency::concurrent_unordered_map<CStringW, float> singleActionList;
 
         public:
-            PlayerNewtonBody(Engine::Population::Interface *population, dNewtonPlayerManager *newtonPlayerManager, const Engine::Population::Entity &entity,
+            PlayerNewtonBody(IUnknown *action, Engine::Population::Interface *population, dNewtonPlayerManager *newtonPlayerManager, const Engine::Population::Entity &entity,
                 const Engine::Components::Transform::Data &transformComponent,
                 const Mass::Data &massComponent,
                 const Player::Data &playerComponent)
                 : BaseNewtonBody(population, entity)
+				, action(action)
                 , dNewtonPlayerManager::dNewtonPlayer(newtonPlayerManager, nullptr, massComponent, playerComponent.outerRadius, playerComponent.innerRadius,
-                    playerComponent.height, playerComponent.stairStep, Math::Float3(0.0f, 1.0f, 0.0f).xyz, Math::Float3(0.0f, 0.0f, 1.0f).xyz, 1)
+                    playerComponent.height, playerComponent.stairStep, Math::Float4(0.0f, 1.0f, 0.0f, 0.0f).data, Math::Float4(0.0f, 0.0f, -1.0f, 0.0f).data, 1)
+                , height(playerComponent.height)
                 , viewAngle(0.0f)
             {
                 SetMatrix(Math::Float4x4(transformComponent.rotation, transformComponent.position).data);
@@ -135,10 +137,15 @@ namespace Gek
 
             ~PlayerNewtonBody(void)
             {
-                //BaseObservable::removeObserver(GetEngineCore(), getClass<Engine::Action::Observer>());
+                BaseObservable::removeObserver(action, getClass<Engine::Action::Observer>());
             }
 
-            // BaseNewtonBody
+			// IUnknown
+			BEGIN_INTERFACE_LIST(PlayerNewtonBody)
+				INTERFACE_LIST_ENTRY_COM(Engine::Action::Observer);
+			END_INTERFACE_LIST_UNKNOWN
+
+			// BaseNewtonBody
             STDMETHODIMP_(NewtonBody *) getNewtonBody(void) const
             {
                 return GetNewtonBody();
@@ -150,6 +157,7 @@ namespace Gek
                 const Math::Float4x4 &matrix = *reinterpret_cast<const Math::Float4x4 *>(newtonMatrix);
                 auto &transformComponent = getPopulationSystem()->getComponent<Engine::Components::Transform::Data>(getEntityHandle(), Engine::Components::Transform::identifier);
                 transformComponent.position = matrix.translation;
+				transformComponent.position.y += height;
                 transformComponent.rotation = matrix;
             }
 
@@ -159,23 +167,33 @@ namespace Gek
                 float moveSpeed = 0.0f;
                 float strafeSpeed = 0.0f;
                 float jumpSpeed = 0.0f;
-                static auto checkActions = [&](concurrency::concurrent_unordered_map<CStringW, float> &aActions) -> void
+                static auto checkActions = [&](concurrency::concurrent_unordered_map<CStringW, float> &actionMap) -> void
                 {
-                    viewAngle += (aActions[L"turn"] * 0.01f);
+                    viewAngle += (actionMap[L"turn"] * 0.01f);
 
-                    moveSpeed += aActions[L"forward"];
-                    moveSpeed -= aActions[L"backward"];
-                    strafeSpeed += aActions[L"strafe_left"];
-                    strafeSpeed -= aActions[L"strafe_right"];
-                    jumpSpeed += aActions[L"rise"];
-                    jumpSpeed -= aActions[L"fall"];
+                    moveSpeed += actionMap[L"forward"];
+                    moveSpeed -= actionMap[L"backward"];
+
+                    strafeSpeed += actionMap[L"strafe_left"];
+                    strafeSpeed -= actionMap[L"strafe_right"];
+
+                    jumpSpeed += actionMap[L"rise"];
+                    //jumpSpeed -= actionMap[L"fall"];
                 };
 
                 checkActions(singleActionList);
                 singleActionList.clear();
                 checkActions(constantActionList);
 
-                SetPlayerVelocity(moveSpeed, strafeSpeed, jumpSpeed, viewAngle, Math::Float3(0.0f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.xyz, frameTime);
+                float magnitude = ((moveSpeed * moveSpeed) + (strafeSpeed * strafeSpeed));
+                if (magnitude > 0.0f)
+                {
+                    float inverseMagnitude = 5.0f / std::sqrt(magnitude);
+                    moveSpeed *= inverseMagnitude;
+                    strafeSpeed *= inverseMagnitude;
+                }
+
+                SetPlayerVelocity(moveSpeed, strafeSpeed, jumpSpeed, viewAngle, Math::Float4(0.0f, -9.81f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.data, frameTime);
             }
 
             // Action::ObserverInterface
@@ -183,7 +201,7 @@ namespace Gek
             {
                 if (state)
                 {
-                    constantActionList[name] = 10.0f;
+                    constantActionList[name] = 5.0f;
                 }
                 else
                 {
@@ -236,6 +254,7 @@ namespace Gek
 
         private:
             Engine::Population::Interface *population;
+			IUnknown *action;
 
             dNewtonPlayerManager *newtonPlayerManager;
 
@@ -248,6 +267,7 @@ namespace Gek
         public:
             System(void)
                 : population(nullptr)
+				, action(nullptr)
                 , gravity(0.0f, -9.8331f, 0.0f)
             {
             }
@@ -296,7 +316,7 @@ namespace Gek
                         {
                             dLong nAttribute = 0;
                             Math::Float3 nCollisionNormal;
-                            NewtonCollisionRayCast(newtonCollision, (position - normal).xyz, (position + normal).xyz, nCollisionNormal.xyz, &nAttribute);
+                            NewtonCollisionRayCast(newtonCollision, (position - normal).data, (position + normal).data, nCollisionNormal.data, &nAttribute);
                             if (nAttribute > 0)
                             {
                                 return INT32(nAttribute);
@@ -520,7 +540,7 @@ namespace Gek
                                         pointCloudList[index] = vertexList[indexList[index]].position;
                                     }
 
-                                    newtonCollision = new dNewtonCollisionConvexHull(this, pointCloudList.size(), pointCloudList[0].xyz, sizeof(Math::Float3), 0.025f, 1);
+                                    newtonCollision = new dNewtonCollisionConvexHull(this, pointCloudList.size(), pointCloudList[0].data, sizeof(Math::Float3), 0.025f, 1);
                                 }
                                 else
                                 {
@@ -541,7 +561,7 @@ namespace Gek
                                                     vertexList[material.firstVertex + indexList[material.firstIndex + index + 2]].position,
                                                 };
 
-                                                newtonCollisionMesh->AddFace(3, face[0].xyz, sizeof(Math::Float3), surfaceIndex);
+                                                newtonCollisionMesh->AddFace(3, face[0].data, sizeof(Math::Float3), surfaceIndex);
                                             }
                                         }
 
@@ -573,7 +593,9 @@ namespace Gek
                 CComQIPtr<Engine::Population::Interface> population(initializerContext);
                 if (population)
                 {
-                    this->population = population;
+					this->action = initializerContext;
+					this->population = population;
+
                     resultValue = BaseObservable::addObserver(population, getClass<Engine::Population::Observer>());
                 }
 
@@ -609,7 +631,7 @@ namespace Gek
                         NewtonMaterial *newtonMaterial = NewtonContactGetMaterial(newtonContact);
 
                         Math::Float3 position, normal;
-                        NewtonMaterialGetContactPositionAndNormal(newtonMaterial, baseBody0->getNewtonBody(), position.xyz, normal.xyz);
+                        NewtonMaterialGetContactPositionAndNormal(newtonMaterial, baseBody0->getNewtonBody(), position.data, normal.data);
 
                         INT32 surfaceIndex0 = getContactSurface(baseBody0->getEntityHandle(), baseBody0->getNewtonBody(), newtonMaterial, position, normal);
                         INT32 surfaceIndex1 = getContactSurface(baseBody1->getEntityHandle(), baseBody1->getNewtonBody(), newtonMaterial, position, normal);
@@ -639,8 +661,13 @@ namespace Gek
                 }
             }
 
+            static void bodySerialization(NewtonBody* const body, void* const bodyUserData, NewtonSerializeCallback serializeCallback, void* const serializeHandle)
+            {
+            }
+
             STDMETHODIMP_(void) onFree(void)
             {
+                NewtonSerializeToFile(GetNewton(), "d:\\newton.dat", nullptr, nullptr);
                 collisionList.clear();
                 bodyList.clear();
                 surfaceList.clear();
@@ -674,10 +701,10 @@ namespace Gek
                     else if (population->hasComponent(entity, Player::identifier))
                     {
                         auto &playerComponent = population->getComponent<Player::Data>(entity, Player::identifier);
-                        CComPtr<PlayerNewtonBody> player = new PlayerNewtonBody(population, newtonPlayerManager, entity, transformComponent, massComponent, playerComponent);
+                        CComPtr<PlayerNewtonBody> player = new PlayerNewtonBody(action, population, newtonPlayerManager, entity, transformComponent, massComponent, playerComponent);
                         if (player)
                         {
-                            //BaseObservable::addObserver(m_pEngine, player->getClass<Engine::Action::Observer>());
+                            BaseObservable::addObserver(action, player->getClass<Engine::Action::Observer>());
                             HRESULT resultValue = player.QueryInterface(&bodyList[entity]);
                         }
                     }

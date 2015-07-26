@@ -18,6 +18,7 @@ namespace Gek
             {
                 struct { TYPE data[6]; };
                 struct { TYPE table[3][2]; };
+                struct { BaseVector2<TYPE> rows; };
 
                 struct
                 {
@@ -96,6 +97,26 @@ namespace Gek
             BaseVector2<TYPE> getScaling(void) const
             {
                 return BaseVector2<TYPE>(_11, _22);
+            }
+
+            TYPE operator [] (int row) const
+            {
+                return rows[row];
+            }
+
+            TYPE &operator [] (int row)
+            {
+                return rows[row];
+            }
+
+            operator const TYPE *() const
+            {
+                return data;
+            }
+
+            operator TYPE *()
+            {
+                return data;
             }
 
             void operator *= (const BaseMatrix3x2<TYPE> &matrix)

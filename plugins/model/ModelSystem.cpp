@@ -274,7 +274,7 @@ namespace Gek
 
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = video->createBuffer(&instanceBuffer, sizeof(InstanceData), 512, Video3D::BufferFlags::VertexBuffer | Video3D::BufferFlags::Dynamic);
+                    resultValue = video->createBuffer(&instanceBuffer, sizeof(InstanceData), 1024, Video3D::BufferFlags::VertexBuffer | Video3D::BufferFlags::Dynamic);
                 }
 
                 return resultValue;
@@ -338,10 +338,10 @@ namespace Gek
             {
                 REQUIRE_VOID_RETURN(population);
 
-                auto &cameraTransform = population->getComponent<Engine::Components::Transform::Data>(cameraEntity, Engine::Components::Transform::identifier);
+                const auto &cameraTransform = population->getComponent<Engine::Components::Transform::Data>(cameraEntity, Engine::Components::Transform::identifier);
 
                 concurrency::concurrent_unordered_map<ModelData *, concurrency::concurrent_vector<InstanceData>> visibleList;
-                concurrency::parallel_for_each(dataEntityList.begin(), dataEntityList.end(), [&](std::pair<const Engine::Population::Entity, ModelData *> &dataEntity) -> void
+                concurrency::parallel_for_each(dataEntityList.begin(), dataEntityList.end(), [&](const std::pair<const Engine::Population::Entity, ModelData *> &dataEntity) -> void
                 {
                     ModelData &data = *(dataEntity.second);
                     Gek::Math::Float3 size(1.0f, 1.0f, 1.0f);
@@ -354,7 +354,7 @@ namespace Gek
                     alignedBox.minimum *= size;
                     alignedBox.maximum *= size;
 
-                    auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(dataEntity.first, Engine::Components::Transform::identifier);
+                    const auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(dataEntity.first, Engine::Components::Transform::identifier);
                     Shape::OrientedBox orientedBox(alignedBox, transformComponent.rotation, transformComponent.position);
                     if (viewFrustum.isVisible(orientedBox))
                     {
@@ -368,28 +368,37 @@ namespace Gek
                     }
                 });
 
+                std::vector<InstanceData> instanceArray;
+                std::map<ModelData *, std::pair<UINT32, UINT32>> instanceMap;
                 for (auto instancePair : visibleList)
                 {
                     ModelData &data = *(instancePair.first);
                     if (SUCCEEDED(loadData(data)) && data.ready)
                     {
-                        LPVOID instanceData = nullptr;
-                        if (SUCCEEDED(video->mapBuffer(instanceBuffer, &instanceData)))
+                        auto &instanceList = instancePair.second;
+                        concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [&](const InstanceData &leftInstance, const InstanceData &rightInstance) -> bool
                         {
-                            auto &instanceList = instancePair.second;
-                            concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [&](const InstanceData &leftInstance, const InstanceData &rightInstance) -> bool
-                            {
-                                return (leftInstance.distance < rightInstance.distance);
-                            });
+                            return (leftInstance.distance < rightInstance.distance);
+                        });
 
-                            std::vector<InstanceData> instanceArray(instancePair.second.begin(), instancePair.second.end());
-                            memcpy(instanceData, instanceArray.data(), (sizeof(InstanceData) * instanceArray.size()));
-                            video->unmapBuffer(instanceBuffer);
+                        instanceMap[&data] = std::make_pair(instanceList.size(), instanceArray.size());
+                        instanceArray.insert(instanceArray.end(), instanceList.begin(), instanceList.end());
+                    }
+                }
 
-                            for (auto &materialInfo : data.materialInfoList)
-                            {
-                                render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, { data.vertexBuffer, instanceBuffer }, instanceList.size(), materialInfo.firstVertex, data.indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
-                            }
+                LPVOID instanceData = nullptr;
+                if (SUCCEEDED(video->mapBuffer(instanceBuffer, &instanceData)))
+                {
+					UINT32 instanceCount = std::min(instanceArray.size(), size_t(1024));
+					memcpy(instanceData, instanceArray.data(), (sizeof(InstanceData) * instanceCount));
+                    video->unmapBuffer(instanceBuffer);
+
+                    for (auto &instancePair : instanceMap)
+                    {
+                        auto &data = *instancePair.first;
+                        for (auto &materialInfo : data.materialInfoList)
+                        {
+                            render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, { data.vertexBuffer, instanceBuffer }, instancePair.second.first, instancePair.second.second, materialInfo.firstVertex, data.indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
                         }
                     }
                 }

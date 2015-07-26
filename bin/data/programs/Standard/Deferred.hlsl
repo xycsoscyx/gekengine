@@ -15,7 +15,7 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
 
     // Viewspace vertex normal
     float3 viewNormal = (normalize(inputPixel.viewnormal) * (inputPixel.frontface ? 1 : -1));
-                
+
     float3 normal;
     // Normals stored as 3Dc format, so [0,1] XY components only
     normal.xy = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texcoord).yx * 2.0) - 1.0);
@@ -25,7 +25,7 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
     normal = mul(normal, coTangentFrame);
 
     OutputPixel outputPixel;
-    outputPixel.albedoBuffer = float4(albedo.xyz, 1.0f);
+    outputPixel.albedoBuffer = float4(albedo.xyz, 0.0f);
     outputPixel.normalBuffer = encodeNormal(normal);
     outputPixel.depthBuffer  = (inputPixel.viewposition.z / Camera::maximumDistance);
     outputPixel.infoBuffer   = Resources::info.Sample(Global::linearSampler, inputPixel.texcoord);

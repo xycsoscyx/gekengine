@@ -424,7 +424,7 @@ namespace Gek
                         fullValue.Replace(L"%displayWidth%", String::format(L"%d", video->getWidth()));
                         fullValue.Replace(L"%displayHeight%", String::format(L"%d", video->getHeight()));
 
-                        fullValue.Replace(L"%lightListSize%", L"256");
+                        fullValue.Replace(L"%lightListSize%", L"1024");
 
                         return replaceDefines(fullValue);
                     }
@@ -775,8 +775,8 @@ namespace Gek
                                                     "    {                                                  \r\n"\
                                                     "        float3  position;                              \r\n"\
                                                     "        float   range;                                 \r\n"\
-                                                    "        float   inverseRange;                          \r\n"\
-                                                    "        float3  color;                                 \r\n"\
+													"        float3  color;                                 \r\n"\
+													"        float   distance;                              \r\n"\
                                                     "    };                                                 \r\n"\
                                                     "                                                       \r\n"\
                                                     "    cbuffer Data : register(b2)                        \r\n"\
@@ -786,7 +786,7 @@ namespace Gek
                                                     "    };                                                 \r\n"\
                                                     "                                                       \r\n"\
                                                     "    StructuredBuffer<Point> list : register(t0);       \r\n"\
-                                                    "    static const uint listSize = 256;                  \r\n"\
+                                                    "    static const uint listSize = 1024;                 \r\n"\
                                                     "};                                                     \r\n"\
                                                     "                                                       \r\n";
                                             }

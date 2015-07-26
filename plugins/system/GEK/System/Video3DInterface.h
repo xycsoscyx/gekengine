@@ -478,7 +478,7 @@ namespace Gek
             STDMETHOD(loadGeometryProgram)                      (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
             STDMETHOD(loadPixelProgram)                         (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-            STDMETHOD(createTexture)                            (THIS_ TextureInterface **returnObject, UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags) PURE;
+            STDMETHOD(createTexture)                            (THIS_ TextureInterface **returnObject, UINT32 width, UINT32 height, UINT32 depth, Format format, UINT32 flags) PURE;
             STDMETHOD(loadTexture)                              (THIS_ TextureInterface **returnObject, LPCWSTR fileName, UINT32 flags) PURE;
             STDMETHOD_(void, updateTexture)                     (THIS_ TextureInterface *texture, LPCVOID data, UINT32 pitch, Shape::Rectangle<UINT32> *rectangle = nullptr) PURE;
 

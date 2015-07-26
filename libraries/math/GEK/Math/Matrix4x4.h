@@ -22,6 +22,7 @@ namespace Gek
             {
                 struct { TYPE data[16]; };
                 struct { TYPE table[4][4]; };
+                struct { BaseVector4<TYPE> rows; };
 
                 struct
                 {
@@ -48,11 +49,6 @@ namespace Gek
                             union { BaseVector3<TYPE> translation; float w; };
                         };
                     };
-                };
-
-                struct
-                {
-                    BaseVector4<TYPE> rows[4];
                 };
             };
 
@@ -438,6 +434,14 @@ namespace Gek
                 }
             }
 
+            BaseMatrix4x4 getRotation(void) const
+            {
+                return BaseMatrix4x4({ _11, _12, _13, 0,
+                                       _21, _22, _23, 0,
+                                       _31, _32, _33, 0,
+                                         0,   0,   0, 1 });
+            }
+
             void transpose(void)
             {
                 (*this) = getTranspose();
@@ -446,6 +450,26 @@ namespace Gek
             void invert(void)
             {
                 (*this) = getInverse();
+            }
+
+            TYPE operator [] (int row) const
+            {
+                return rows[row];
+            }
+
+            TYPE &operator [] (int row)
+            {
+                return rows[row];
+            }
+
+            operator const TYPE *() const
+            {
+                return data;
+            }
+
+            operator TYPE *()
+            {
+                return data;
             }
 
             void operator *= (const BaseMatrix4x4 &matrix)

@@ -3,7 +3,7 @@
     <material>
         <maps>
             <albedo bind="float4">Texture2D</albedo>
-            <normal bind="float2">Texture2D</normal>
+            <normal bind="float4">Texture2D</normal>
             <info bind="float4">Texture2D</info>
         </maps>
         <properties>
@@ -21,7 +21,7 @@
 
     <targets>
         <albedoBuffer bind="float4">byte4</albedoBuffer>
-        <normalBuffer bind="half2">half2</normalBuffer>
+        <normalBuffer bind="half2">float2</normalBuffer>
         <depthBuffer bind="float">float</depthBuffer> 
         <infoBuffer bind="float4">byte4</infoBuffer>
     </targets>
@@ -70,7 +70,7 @@
 				<depth>1</depth>
 			</compute>
             <entry>mainComputeProgram</entry>
-            <source>Standard\Lighting</source>
+            <source>Standard\Tiled</source>
         </program>
     </pass>
 

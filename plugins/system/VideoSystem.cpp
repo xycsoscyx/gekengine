@@ -975,7 +975,7 @@ namespace Gek
                 CComQIPtr<ID3D11RenderTargetView> d3dRenderTargetView(renderTarget);
                 if (d3dRenderTargetView)
                 {
-                    d3dDeviceContext->ClearRenderTargetView(d3dRenderTargetView, colorClear.rgba);
+                    d3dDeviceContext->ClearRenderTargetView(d3dRenderTargetView, colorClear.data);
                 }
             }
 
@@ -1039,7 +1039,7 @@ namespace Gek
                 CComQIPtr<ID3D11BlendState> d3dBlendState(blendStates);
                 if (d3dBlendState)
                 {
-                    d3dDeviceContext->OMSetBlendState(d3dBlendState, blendFactor.rgba, mask);
+                    d3dDeviceContext->OMSetBlendState(d3dBlendState, blendFactor.data, mask);
                 }
             }
 
@@ -2544,7 +2544,7 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP createTexture(TextureInterface **returnObject, UINT32 width, UINT32 height, UINT32 depth, UINT8 format, UINT32 flags)
+            STDMETHODIMP createTexture(TextureInterface **returnObject, UINT32 width, UINT32 height, UINT32 depth, Format format, UINT32 flags)
             {
                 gekLogScope(__FUNCTION__);
                 gekLogParameter("%d", width);
@@ -2575,7 +2575,7 @@ namespace Gek
                     textureDescription.Width = width;
                     textureDescription.Height = height;
                     textureDescription.MipLevels = 1;
-                    textureDescription.Format = d3dTextureFormatList[format];
+                    textureDescription.Format = d3dTextureFormatList[static_cast<UINT8>(format)];
                     textureDescription.ArraySize = 1;
                     textureDescription.SampleDesc.Count = 1;
                     textureDescription.SampleDesc.Quality = 0;
@@ -2598,7 +2598,7 @@ namespace Gek
                     textureDescription.Height = height;
                     textureDescription.Depth = depth;
                     textureDescription.MipLevels = 1;
-                    textureDescription.Format = d3dTextureFormatList[format];
+                    textureDescription.Format = d3dTextureFormatList[static_cast<UINT8>(format)];
                     textureDescription.Usage = D3D11_USAGE_DEFAULT;
                     textureDescription.BindFlags = bindFlags;
                     textureDescription.CPUAccessFlags = 0;
@@ -2624,7 +2624,7 @@ namespace Gek
                     if (flags & Gek::Video3D::TextureFlags::UnorderedAccess)
                     {
                         D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                        viewDescription.Format = d3dTextureFormatList[format];
+                        viewDescription.Format = d3dTextureFormatList[static_cast<UINT8>(format)];
                         if (depth == 1)
                         {
                             viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
@@ -2741,7 +2741,7 @@ namespace Gek
             {
                 REQUIRE_VOID_RETURN(d3dDeviceContext);
                 REQUIRE_VOID_RETURN(d3dDefaultRenderTargetView);
-                d3dDeviceContext->ClearRenderTargetView(d3dDefaultRenderTargetView, colorClear.rgba);
+                d3dDeviceContext->ClearRenderTargetView(d3dDefaultRenderTargetView, colorClear.data);
             }
 
             STDMETHODIMP_(void) clearDefaultDepthStencilTarget(UINT32 flags, float depthClear, UINT32 stencilClear)

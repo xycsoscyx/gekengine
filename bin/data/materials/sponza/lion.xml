@@ -3,7 +3,7 @@
     <shader>standard</shader>
     <maps>
         <albedo>%material%.ColorMap.dds</albedo>
-        <normal>%directory%\fabric.NormalMap.dds</normal>
+        <normal>*normal:.5,.5,0</normal>
         <info>*color:0.1,0.3,0.0,0</info>
     </maps>
     <properties>
