@@ -36,8 +36,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "..\external\D
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "newton", "..\plugins\newton\newton.vcxproj", "{3985C661-11F4-4E1B-B35D-C9C6C791F3D1}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tiled", "..\applications\tiled\tiled.vcxproj", "{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -159,15 +157,6 @@ Global
 		{3985C661-11F4-4E1B-B35D-C9C6C791F3D1}.Release|Win32.ActiveCfg = Release|Win32
 		{3985C661-11F4-4E1B-B35D-C9C6C791F3D1}.Release|Win32.Build.0 = Release|Win32
 		{3985C661-11F4-4E1B-B35D-C9C6C791F3D1}.Release|x64.ActiveCfg = Release|Win32
-		{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352}.Debug|Win32.ActiveCfg = Debug|Win32
-		{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352}.Debug|Win32.Build.0 = Debug|Win32
-		{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352}.Debug|x64.ActiveCfg = Debug|Win32
-		{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352}.Profile|Win32.ActiveCfg = Release|Win32
-		{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352}.Profile|Win32.Build.0 = Release|Win32
-		{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352}.Profile|x64.ActiveCfg = Release|Win32
-		{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352}.Release|Win32.ActiveCfg = Release|Win32
-		{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352}.Release|Win32.Build.0 = Release|Win32
-		{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -185,6 +174,5 @@ Global
 		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B} = {92314300-2CD5-4C87-923C-06D0BFD0135D}
 		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {92314300-2CD5-4C87-923C-06D0BFD0135D}
 		{3985C661-11F4-4E1B-B35D-C9C6C791F3D1} = {AC11844F-2CAD-41FC-81EB-A4E330694748}
-		{0CDDA04F-CF4A-4A46-81CC-2DBF0CD14352} = {0804103F-967E-4D50-A657-99A350E0937C}
 	EndGlobalSection
 EndGlobal
