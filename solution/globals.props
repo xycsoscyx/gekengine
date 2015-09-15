@@ -3,8 +3,8 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>C:\Program Files (x86)\Windows Kits\8.1\Include\um;$(SolutionDir)..\external\zLib\version 1.2.5\include;$(SolutionDir)..\external\iConv\version 1.9.2\include;$(SolutionDir)..\external\LibXML2\version 2.7.8\include;$(SolutionDir)..\external\Audiere\version 1.9.4\include;$(SolutionDir)..\external\Newton\version 3.XX\include;$(SolutionDir)..\external\Assimp\version 3.1.1\include;$(SolutionDir)..\libraries\math;$(SolutionDir)..\libraries\shape;$(SolutionDir)..\libraries\utility;$(SolutionDir)..\libraries\context;$(ProjectDir);$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x86;$(SolutionDir)..\external\zLib\version 1.2.5\lib;$(SolutionDir)..\external\iConv\version 1.9.2\lib;$(SolutionDir)..\external\LibXML2\version 2.7.8\lib;$(SolutionDir)..\external\Audiere\version 1.9.4\lib;$(SolutionDir)..\external\Newton\version 3.XX\lib;$(SolutionDir)..\external\Assimp\version 3.1.1\lib32;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files (x86)\Windows Kits\8.1\Include\um;$(SolutionDir)..\external\zLib\version 1.2.5\include;$(SolutionDir)..\external\iConv\version 1.9.2\include;$(SolutionDir)..\external\LibXML2\version 2.7.8\include;$(SolutionDir)..\external\Audiere\version 1.9.4\include;$(SolutionDir)..\external\Newton\version 3.XX\include;$(SolutionDir)..\external\Assimp\version 3.0\include;$(SolutionDir)..\libraries\math;$(SolutionDir)..\libraries\shape;$(SolutionDir)..\libraries\utility;$(SolutionDir)..\libraries\context;$(ProjectDir);$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x86;$(SolutionDir)..\external\zLib\version 1.2.5\lib;$(SolutionDir)..\external\iConv\version 1.9.2\lib;$(SolutionDir)..\external\LibXML2\version 2.7.8\lib;$(SolutionDir)..\external\Audiere\version 1.9.4\lib;$(SolutionDir)..\external\Newton\version 3.XX\lib;$(SolutionDir)..\external\Assimp\version 3.0\lib32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
