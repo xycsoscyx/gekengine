@@ -10,8 +10,8 @@
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
 #include "GEK\Context\Common.h"
-#include "GEK\Context\BaseUser.h"
-#include "GEK\Context\BaseObservable.h"
+#include "GEK\Context\UserMixin.h"
+#include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Shape\Sphere.h"
@@ -88,8 +88,8 @@ namespace Gek
     {
         namespace Render
         {
-            class System : public Context::BaseUser
-                , public BaseObservable
+            class System : public Context::UserMixin
+                , public ObservableMixin
                 , public Population::Observer
                 , public Render::Interface
             {
@@ -224,7 +224,7 @@ namespace Gek
 
                 ~System(void)
                 {
-                    BaseObservable::removeObserver(population, getClass<Engine::Population::Observer>());
+                    ObservableMixin::removeObserver(population, getClass<Engine::Population::Observer>());
                 }
 
                 BEGIN_INTERFACE_LIST(System)
@@ -277,7 +277,7 @@ namespace Gek
                         this->video = video;
                         this->population = population;
                         this->initializerContext = initializerContext;
-                        resultValue = BaseObservable::addObserver(population, getClass<Engine::Population::Observer>());
+                        resultValue = ObservableMixin::addObserver(population, getClass<Engine::Population::Observer>());
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -779,7 +779,7 @@ namespace Gek
                         }
 
                         drawQueue.clear();
-                        BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, viewFrustum)));
+                        ObservableMixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, viewFrustum)));
 
                         concurrency::concurrent_unordered_map<CComQIPtr<Shader::Interface>, // shader
                             concurrency::concurrent_unordered_map<Plugin::Interface *, // plugin
@@ -867,7 +867,7 @@ namespace Gek
                         }
                     });
 
-                    BaseObservable::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderOverlay, std::placeholders::_1)));
+                    ObservableMixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderOverlay, std::placeholders::_1)));
 
                     video->present(true);
                 }

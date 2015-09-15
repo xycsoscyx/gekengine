@@ -5,8 +5,8 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\Common.h"
-#include "GEK\Context\BaseUser.h"
-#include "GEK\Context\BaseObservable.h"
+#include "GEK\Context\UserMixin.h"
+#include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Engine\SystemInterface.h"
 #include "GEK\Engine\PopulationInterface.h"
@@ -31,8 +31,8 @@ namespace Gek
     {
         static const UINT32 MaxInstanceCount = 500;
 
-        class System : public Context::BaseUser
-            , public BaseObservable
+        class System : public Context::UserMixin
+            , public ObservableMixin
             , public Engine::Population::Observer
             , public Engine::Render::Observer
             , public Engine::System::Interface
@@ -114,8 +114,8 @@ namespace Gek
 
             ~System(void)
             {
-                BaseObservable::removeObserver(render, getClass<Engine::Render::Observer>());
-                BaseObservable::removeObserver(population, getClass<Engine::Population::Observer>());
+                ObservableMixin::removeObserver(render, getClass<Engine::Render::Observer>());
+                ObservableMixin::removeObserver(population, getClass<Engine::Population::Observer>());
             }
 
             BEGIN_INTERFACE_LIST(System)
@@ -259,12 +259,12 @@ namespace Gek
                     this->video = video;
                     this->render = render;
                     this->population = population;
-                    resultValue = BaseObservable::addObserver(population, getClass<Engine::Population::Observer>());
+                    resultValue = ObservableMixin::addObserver(population, getClass<Engine::Population::Observer>());
                 }
 
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = BaseObservable::addObserver(render, getClass<Engine::Render::Observer>());
+                    resultValue = ObservableMixin::addObserver(render, getClass<Engine::Render::Observer>());
                 }
 
                 if (SUCCEEDED(resultValue))

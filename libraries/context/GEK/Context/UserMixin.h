@@ -1,24 +1,24 @@
 #pragma once
 
 #include "Common.h"
-#include "BaseUnknown.h"
+#include "UnknownMixin.h"
 #include "UserInterface.h"
 
 namespace Gek
 {
     namespace Context
     {
-        class BaseUser : virtual public BaseUnknown
+        class UserMixin : virtual public UnknownMixin
                        , virtual public UserInterface
         {
         private:
             Interface *context;
 
         public:
-            BaseUser(void);
-            virtual ~BaseUser(void);
+            UserMixin(void);
+            virtual ~UserMixin(void);
 
-            DECLARE_UNKNOWN(BaseUser);
+            DECLARE_UNKNOWN(UserMixin);
 
             // UserInterface
             STDMETHOD_(void, registerContext)                   (THIS_ Interface *context);

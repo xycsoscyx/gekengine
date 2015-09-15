@@ -5,18 +5,18 @@
 
 namespace Gek
 {
-    class BaseUnknown : virtual public IUnknown
+    class UnknownMixin : virtual public IUnknown
     {
     private:
         ULONG referenceCount;
 
     public:
-        BaseUnknown(void);
-        virtual ~BaseUnknown(void);
+        UnknownMixin(void);
+        virtual ~UnknownMixin(void);
 
-        DECLARE_UNKNOWN(BaseUnknown);
+        DECLARE_UNKNOWN(UnknownMixin);
 
-        // BaseUnknown
+        // UnknownMixin
         STDMETHOD_(IUnknown *, getUnknown)                  (THIS);
         STDMETHOD_(const IUnknown *, getUnknown)            (THIS) const;
 

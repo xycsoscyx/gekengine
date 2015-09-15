@@ -1,6 +1,6 @@
 #include "GEK\Engine\ShaderInterface.h"
 #include "GEK\Engine\RenderInterface.h"
-#include "GEK\Context\BaseUser.h"
+#include "GEK\Context\UserMixin.h"
 #include "GEK\System\VideoInterface.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
@@ -101,7 +101,7 @@ namespace Gek
                     else return Video3D::BlendOperation::Add;
                 }
 
-                class System : public Context::BaseUser
+                class System : public Context::UserMixin
                     , public Interface
                 {
                 public:

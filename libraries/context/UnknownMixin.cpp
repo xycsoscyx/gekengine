@@ -1,23 +1,23 @@
-#include "GEK\Context\BaseUnknown.h"
+#include "GEK\Context\UnknownMixin.h"
 
 namespace Gek
 {
-    BaseUnknown::BaseUnknown(void)
+    UnknownMixin::UnknownMixin(void)
         : referenceCount(0)
     {
     }
 
-    BaseUnknown::~BaseUnknown(void)
+    UnknownMixin::~UnknownMixin(void)
     {
     }
 
     // IUnknown
-    STDMETHODIMP_(ULONG) BaseUnknown::AddRef(void)
+    STDMETHODIMP_(ULONG) UnknownMixin::AddRef(void)
     {
         return InterlockedIncrement(&referenceCount);
     }
 
-    STDMETHODIMP_(ULONG) BaseUnknown::Release(void)
+    STDMETHODIMP_(ULONG) UnknownMixin::Release(void)
     {
         LONG currentReferenceCount = InterlockedDecrement(&referenceCount);
         if (currentReferenceCount == 0)
@@ -28,7 +28,7 @@ namespace Gek
         return currentReferenceCount;
     }
 
-    STDMETHODIMP BaseUnknown::QueryInterface(REFIID interfaceType, LPVOID FAR *returnObject)
+    STDMETHODIMP UnknownMixin::QueryInterface(REFIID interfaceType, LPVOID FAR *returnObject)
     {
         REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
@@ -44,13 +44,13 @@ namespace Gek
         return resultValue;
     }
 
-    // BaseUnknown
-    STDMETHODIMP_(IUnknown *) BaseUnknown::getUnknown(void)
+    // UnknownMixin
+    STDMETHODIMP_(IUnknown *) UnknownMixin::getUnknown(void)
     {
         return dynamic_cast<IUnknown *>(this);
     }
 
-    STDMETHODIMP_(const IUnknown *) BaseUnknown::getUnknown(void) const
+    STDMETHODIMP_(const IUnknown *) UnknownMixin::getUnknown(void) const
     {
         return dynamic_cast<const IUnknown *>(this);
     }

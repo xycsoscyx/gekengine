@@ -31,12 +31,12 @@ namespace Gek
     };
 };
 
-extern HRESULT gekCheckResultBase(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
+extern HRESULT gekCheckResultInternal(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
 #define gekLogScope(FUNCTION)                           Gek::LoggingScope scope##FUNCTION##(getContext(), __FILE__, FUNCTION, __LINE__);
 #define gekLogParameter(FORMAT, PARAMETER)              getContext()->logMessage(__FILE__, __LINE__, L"[input] %S: " FORMAT, #PARAMETER, PARAMETER)
 #define gekLogTypedParameter(FORMAT, PARAMETER, TYPE)   getContext()->logMessage(__FILE__, __LINE__, L"[input] %S: " FORMAT, #PARAMETER, TYPE(PARAMETER))
 #define gekLogMessage(FORMAT, ...)                      getContext()->logMessage(__FILE__, __LINE__, FORMAT, __VA_ARGS__)
-#define gekCheckResult(FUNCTION)                        gekCheckResultBase(getContext(), __FILE__, __LINE__, #FUNCTION, FUNCTION)
+#define gekCheckResult(FUNCTION)                        gekCheckResultInternal(getContext(), __FILE__, __LINE__, #FUNCTION, FUNCTION)
 
 namespace std
 {
@@ -94,12 +94,12 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
 #define BEGIN_INTERFACE_LIST(CLASS)                                                                 \
     STDMETHODIMP_(ULONG) CLASS::AddRef(THIS)                                                        \
     {                                                                                               \
-        return BaseUnknown::AddRef();                                                               \
+        return UnknownMixin::AddRef();                                                               \
     }                                                                                               \
                                                                                                     \
     STDMETHODIMP_(ULONG) CLASS::Release(THIS)                                                       \
     {                                                                                               \
-        return BaseUnknown::Release();                                                              \
+        return UnknownMixin::Release();                                                              \
     }                                                                                               \
                                                                                                     \
     STDMETHODIMP CLASS::QueryInterface(THIS_ REFIID interfaceType, LPVOID FAR *returnObject)        \
@@ -160,11 +160,11 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
     }
 
 #define END_INTERFACE_LIST_UNKNOWN                                                                  \
-        return BaseUnknown::QueryInterface(interfaceType, returnObject);                            \
+        return UnknownMixin::QueryInterface(interfaceType, returnObject);                            \
         }
 
 #define END_INTERFACE_LIST_USER                                                                     \
-        return BaseUser::QueryInterface(interfaceType, returnObject);                               \
+        return UserMixin::QueryInterface(interfaceType, returnObject);                               \
         }
 
 #define END_INTERFACE_LIST_BASE(BASE_CLASS)                                                         \

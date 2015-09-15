@@ -1,12 +1,12 @@
-#include "GEK\Context\BaseObservable.h"
+#include "GEK\Context\ObservableMixin.h"
 
 namespace Gek
 {
-    BaseObservable::~BaseObservable(void)
+    ObservableMixin::~ObservableMixin(void)
     {
     }
 
-    void BaseObservable::sendEvent(const BaseEvent<void> &event) const
+    void ObservableMixin::sendEvent(const VirtualEvent<void> &event) const
     {
         for (auto &observer : observerList)
         {
@@ -14,10 +14,10 @@ namespace Gek
         }
     }
 
-    HRESULT BaseObservable::addObserver(IUnknown *observableBase, ObserverInterface *observer)
+    HRESULT ObservableMixin::addObserver(IUnknown *observableUnknown, ObserverInterface *observer)
     {
         HRESULT resultValue = E_FAIL;
-        ObservableInterface *observable = dynamic_cast<ObservableInterface *>(observableBase);
+        ObservableInterface *observable = dynamic_cast<ObservableInterface *>(observableUnknown);
         if (observable)
         {
             resultValue = observable->addObserver(observer);
@@ -26,10 +26,10 @@ namespace Gek
         return resultValue;
     }
 
-    HRESULT BaseObservable::removeObserver(IUnknown *observableBase, ObserverInterface *observer)
+    HRESULT ObservableMixin::removeObserver(IUnknown *observableUnknown, ObserverInterface *observer)
     {
         HRESULT resultValue = E_FAIL;
-        ObservableInterface *observable = dynamic_cast<ObservableInterface *>(observableBase);
+        ObservableInterface *observable = dynamic_cast<ObservableInterface *>(observableUnknown);
         if (observable)
         {
             resultValue = observable->removeObserver(observer);
@@ -39,7 +39,7 @@ namespace Gek
     }
 
     // ObservableInterface
-    STDMETHODIMP BaseObservable::addObserver(ObserverInterface *observer)
+    STDMETHODIMP ObservableMixin::addObserver(ObserverInterface *observer)
     {
         HRESULT resultValue = E_FAIL;
         auto observerIterator = observerList.find(observer);
@@ -52,7 +52,7 @@ namespace Gek
         return resultValue;
     }
 
-    STDMETHODIMP BaseObservable::removeObserver(ObserverInterface *observer)
+    STDMETHODIMP ObservableMixin::removeObserver(ObserverInterface *observer)
     {
         HRESULT resultValue = E_FAIL;
         auto observerIterator = observerList.find(observer);

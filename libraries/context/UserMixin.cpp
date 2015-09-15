@@ -1,36 +1,36 @@
-#include "GEK\Context\BaseUser.h"
+#include "GEK\Context\UserMixin.h"
 
 namespace Gek
 {
     namespace Context
     {
-        BaseUser::BaseUser(void)
+        UserMixin::UserMixin(void)
             : context(nullptr)
         {
         }
 
-        BaseUser::~BaseUser(void)
+        UserMixin::~UserMixin(void)
         {
         }
 
         // IUnknown
-        BEGIN_INTERFACE_LIST(BaseUser)
+        BEGIN_INTERFACE_LIST(UserMixin)
             INTERFACE_LIST_ENTRY_COM(UserInterface)
         END_INTERFACE_LIST_UNKNOWN
 
         // UserInterface
-        STDMETHODIMP_(void) BaseUser::registerContext(Interface *context)
+        STDMETHODIMP_(void) UserMixin::registerContext(Interface *context)
         {
             this->context = context;
         }
 
-        STDMETHODIMP_(Interface *) BaseUser::getContext(void)
+        STDMETHODIMP_(Interface *) UserMixin::getContext(void)
         {
             REQUIRE_RETURN(context, nullptr);
             return context;
         }
 
-        STDMETHODIMP_(const Interface *) BaseUser::getContext(void) const
+        STDMETHODIMP_(const Interface *) UserMixin::getContext(void) const
         {
             REQUIRE_RETURN(context, nullptr);
             return context;

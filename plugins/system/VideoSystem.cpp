@@ -1,8 +1,8 @@
 #pragma warning(disable : 4005)
 
 #include "GEK\Context\Common.h"
-#include "GEK\Context\BaseUnknown.h"
-#include "GEK\Context\BaseUser.h"
+#include "GEK\Context\UnknownMixin.h"
+#include "GEK\Context\UserMixin.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\System\VideoInterface.h"
@@ -228,7 +228,7 @@ namespace Gek
             D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC,
         };
 
-        class VertexProgram : public BaseUnknown
+        class VertexProgram : public UnknownMixin
         {
         private:
             CComPtr<ID3D11VertexShader> d3dVertexShader;
@@ -247,7 +247,7 @@ namespace Gek
             END_INTERFACE_LIST_UNKNOWN
         };
 
-        class Buffer : public BaseUnknown
+        class Buffer : public UnknownMixin
                      , public BufferInterface
         {
         private:
@@ -303,7 +303,7 @@ namespace Gek
             }
         };
 
-        class Texture : public BaseUnknown
+        class Texture : public UnknownMixin
                       , public TextureInterface
         {
         protected:
@@ -363,7 +363,7 @@ namespace Gek
             END_INTERFACE_LIST_BASE(Texture)
         };
 
-        class Geometry : public BaseUnknown
+        class Geometry : public UnknownMixin
                        , public GeometryInterface
         {
         private:
@@ -484,7 +484,7 @@ namespace Gek
             }
         };
 
-        class Include : public BaseUnknown
+        class Include : public UnknownMixin
                       , public ID3DInclude
         {
         private:
@@ -540,7 +540,7 @@ namespace Gek
             }
         };
 
-        class Context : public Gek::Context::BaseUser
+        class Context : public Gek::Context::UserMixin
                       , public Video3D::ContextInterface
         {
             friend class System;

@@ -1,8 +1,8 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Context\Common.h"
-#include "GEK\Context\BaseUnknown.h"
-#include "GEK\Context\BaseObservable.h"
+#include "GEK\Context\UnknownMixin.h"
+#include "GEK\Context\ObservableMixin.h"
 #include "GEK\Context\Interface.h"
 #include "GEK\Context\UserInterface.h"
 #include <atlbase.h>
@@ -30,7 +30,7 @@ namespace Gek
     }
 };
 
-HRESULT gekCheckResultBase(Gek::Context::Interface *context, LPCSTR file, UINT line, LPCSTR function, HRESULT resultValue)
+HRESULT gekCheckResultInternal(Gek::Context::Interface *context, LPCSTR file, UINT line, LPCSTR function, HRESULT resultValue)
 {
     if (FAILED(resultValue))
     {
@@ -45,8 +45,8 @@ namespace Gek
 {
     namespace Context
     {
-        class Context : virtual public BaseUnknown
-            , virtual public BaseObservable
+        class Context : virtual public UnknownMixin
+            , virtual public ObservableMixin
             , virtual public Interface
         {
         private:
@@ -222,7 +222,7 @@ namespace Gek
 
                     message = (indent.data() + message);
                     OutputDebugString(Gek::String::format(L"% 30S (%05d)%s\r\n", file, line, message.GetString()));
-                    BaseObservable::sendEvent(Event<Observer>(std::bind(&Observer::onLogMessage, std::placeholders::_1, file, line, message.GetString())));
+                    ObservableMixin::sendEvent(Event<Observer>(std::bind(&Observer::onLogMessage, std::placeholders::_1, file, line, message.GetString())));
                 }
             }
 

@@ -1,5 +1,5 @@
 #include "GEK\Components\Transform.h"
-#include "GEK\Context\BaseUser.h"
+#include "GEK\Context\UserMixin.h"
 #include "GEK\Engine\BaseComponent.h"
 #include "GEK\Utility\String.h"
 
@@ -29,7 +29,7 @@ namespace Gek
                     return S_OK;
                 }
 
-                class Component : public Context::BaseUser
+                class Component : public Context::UserMixin
                     , public BaseComponent < Data >
                 {
                 public:

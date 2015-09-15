@@ -1,6 +1,6 @@
 #include "GEK\Context\Common.h"
-#include "GEK\Context\BaseUser.h"
-#include "GEK\Context\BaseObservable.h"
+#include "GEK\Context\UserMixin.h"
+#include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
@@ -36,20 +36,20 @@ namespace Gek
 {
     namespace Newton
     {
-        class BaseNewtonBody : virtual public BaseUnknown
+        class NewtonBodyMixin : virtual public UnknownMixin
         {
         private:
             Engine::Population::Interface *population;
             Engine::Population::Entity entity;
 
         public:
-            BaseNewtonBody(Engine::Population::Interface *population, const Engine::Population::Entity &entity)
+            NewtonBodyMixin(Engine::Population::Interface *population, const Engine::Population::Entity &entity)
                 : population(population)
                 , entity(entity)
             {
             }
 
-            virtual ~BaseNewtonBody(void)
+            virtual ~NewtonBodyMixin(void)
             {
             }
 
@@ -64,18 +64,18 @@ namespace Gek
                 return entity;
             }
 
-            // BaseNewtonBody
+            // NewtonBodyMixin
             STDMETHOD_(NewtonBody *, getNewtonBody)     (THIS) const PURE;
         };
 
-        class DynamicNewtonBody : public BaseNewtonBody
+        class DynamicNewtonBody : public NewtonBodyMixin
             , public dNewtonDynamicBody
         {
         public:
             DynamicNewtonBody(Engine::Population::Interface *population, dNewton *newton, const dNewtonCollision* const newtonCollision, const Engine::Population::Entity &entity,
                 const Engine::Components::Transform::Data &transformComponent,
                 const Mass::Data &massComponent)
-                : BaseNewtonBody(population, entity)
+                : NewtonBodyMixin(population, entity)
                 , dNewtonDynamicBody(newton, massComponent, newtonCollision, nullptr, Math::Float4x4(transformComponent.rotation, transformComponent.position).data, NULL)
             {
             }
@@ -84,7 +84,7 @@ namespace Gek
             {
             }
 
-			// BaseNewtonBody
+			// NewtonBodyMixin
             STDMETHODIMP_(NewtonBody *) getNewtonBody(void) const
             {
                 return GetNewtonBody();
@@ -107,7 +107,7 @@ namespace Gek
             }
         };
 
-        class PlayerNewtonBody : public BaseNewtonBody
+        class PlayerNewtonBody : public NewtonBodyMixin
             , virtual public dNewtonPlayerManager::dNewtonPlayer
             , virtual public Engine::Action::Observer
         {
@@ -125,7 +125,7 @@ namespace Gek
                 const Engine::Components::Transform::Data &transformComponent,
                 const Mass::Data &massComponent,
                 const Player::Data &playerComponent)
-                : BaseNewtonBody(population, entity)
+                : NewtonBodyMixin(population, entity)
 				, action(action)
                 , dNewtonPlayerManager::dNewtonPlayer(newtonPlayerManager, nullptr, massComponent, playerComponent.outerRadius, playerComponent.innerRadius,
                     playerComponent.height, playerComponent.stairStep, Math::Float4(0.0f, 1.0f, 0.0f, 0.0f).data, Math::Float4(0.0f, 0.0f, -1.0f, 0.0f).data, 1)
@@ -137,7 +137,7 @@ namespace Gek
 
             ~PlayerNewtonBody(void)
             {
-                BaseObservable::removeObserver(action, getClass<Engine::Action::Observer>());
+                ObservableMixin::removeObserver(action, getClass<Engine::Action::Observer>());
             }
 
 			// IUnknown
@@ -145,7 +145,7 @@ namespace Gek
 				INTERFACE_LIST_ENTRY_COM(Engine::Action::Observer);
 			END_INTERFACE_LIST_UNKNOWN
 
-			// BaseNewtonBody
+			// NewtonBodyMixin
             STDMETHODIMP_(NewtonBody *) getNewtonBody(void) const
             {
                 return GetNewtonBody();
@@ -215,8 +215,8 @@ namespace Gek
             }
         };
 
-        class System : public Context::BaseUser
-            , public BaseObservable
+        class System : public Context::UserMixin
+            , public ObservableMixin
             , public Engine::Population::Observer
             , public Engine::System::Interface
             , public dNewton
@@ -274,7 +274,7 @@ namespace Gek
 
             ~System(void)
             {
-                BaseObservable::removeObserver(population, getClass<Engine::Population::Observer>());
+                ObservableMixin::removeObserver(population, getClass<Engine::Population::Observer>());
 
                 bodyList.clear();
                 collisionList.clear();
@@ -596,7 +596,7 @@ namespace Gek
 					this->action = initializerContext;
 					this->population = population;
 
-                    resultValue = BaseObservable::addObserver(population, getClass<Engine::Population::Observer>());
+                    resultValue = ObservableMixin::addObserver(population, getClass<Engine::Population::Observer>());
                 }
 
                 if (SUCCEEDED(resultValue))
@@ -621,8 +621,8 @@ namespace Gek
 
             void OnContactProcess(dNewtonContactMaterial* const newtonContactMaterial, dFloat frameTime, int threadHandle)
             {
-                BaseNewtonBody *baseBody0 = dynamic_cast<BaseNewtonBody *>(newtonContactMaterial->GetBody0());
-                BaseNewtonBody *baseBody1 = dynamic_cast<BaseNewtonBody *>(newtonContactMaterial->GetBody1());
+                NewtonBodyMixin *baseBody0 = dynamic_cast<NewtonBodyMixin *>(newtonContactMaterial->GetBody0());
+                NewtonBodyMixin *baseBody1 = dynamic_cast<NewtonBodyMixin *>(newtonContactMaterial->GetBody1());
                 if (baseBody0 && baseBody1)
                 {
                     NewtonWorldCriticalSectionLock(GetNewton(), threadHandle);
@@ -704,7 +704,7 @@ namespace Gek
                         CComPtr<PlayerNewtonBody> player = new PlayerNewtonBody(action, population, newtonPlayerManager, entity, transformComponent, massComponent, playerComponent);
                         if (player)
                         {
-                            BaseObservable::addObserver(action, player->getClass<Engine::Action::Observer>());
+                            ObservableMixin::addObserver(action, player->getClass<Engine::Action::Observer>());
                             HRESULT resultValue = player.QueryInterface(&bodyList[entity]);
                         }
                     }

@@ -7,14 +7,14 @@
 
 namespace Gek
 {
-    class BaseObservable : virtual public ObservableInterface
+    class ObservableMixin : virtual public ObservableInterface
     {
     public:
         template <typename RESULT>
-        class BaseEvent
+        class VirtualEvent
         {
         public:
-            virtual ~BaseEvent(void)
+            virtual ~VirtualEvent(void)
             {
             }
 
@@ -22,7 +22,7 @@ namespace Gek
         };
 
         template <typename INTERFACE>
-        class Event : public BaseEvent<void>
+        class Event : public VirtualEvent<void>
         {
         private:
             const std::function<void(INTERFACE *)> &onEvent;
@@ -47,12 +47,12 @@ namespace Gek
         concurrency::concurrent_unordered_set<ObserverInterface *> observerList;
 
     public:
-        virtual ~BaseObservable(void);
+        virtual ~ObservableMixin(void);
 
-        void sendEvent(const BaseEvent<void> &event) const;
+        void sendEvent(const VirtualEvent<void> &event) const;
 
-        static HRESULT addObserver(IUnknown *observableBase, ObserverInterface *observer);
-        static HRESULT removeObserver(IUnknown *observableBase, ObserverInterface *observer);
+        static HRESULT addObserver(IUnknown *observableUnknown, ObserverInterface *observer);
+        static HRESULT removeObserver(IUnknown *observableUnknown, ObserverInterface *observer);
 
         // ObservableInterface
         STDMETHOD(addObserver)      (THIS_ ObserverInterface *observer);

@@ -1,5 +1,5 @@
 #include "GEK\Components\Camera.h"
-#include "GEK\Context\BaseUser.h"
+#include "GEK\Context\UserMixin.h"
 #include "GEK\Engine\BaseComponent.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Math\Common.h"
@@ -38,7 +38,7 @@ namespace Gek
                     return S_OK;
                 }
 
-                class Component : public Context::BaseUser
+                class Component : public Context::UserMixin
                     , public BaseComponent < Data >
                 {
                 public:
