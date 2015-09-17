@@ -5,37 +5,6 @@
 
 namespace Gek
 {
-    namespace Message
-    {
-        namespace Exchange
-        {
-            DECLARE_INTERFACE(Interface) : virtual public IUnknown
-            {
-                STDMETHOD(initialize)               (THIS_ LPCWSTR name) PURE;
-            };
-        };
-
-        namespace Producer
-        {
-            DECLARE_INTERFACE(Interface) : virtual public IUnknown
-            {
-                STDMETHOD(connect)                  (THIS_ LPCWSTR exchangeName) PURE;
-                STDMETHOD(disconnect)               (THIS_ LPCWSTR exchangeName) PURE;
-                STDMETHOD(send)                     (THIS_ LPCWSTR filter, LPCVOID data, UINT32 dataSize) PURE;
-            };
-        };
-
-        namespace Consumer
-        {
-            DECLARE_INTERFACE(Interface) : virtual public IUnknown
-            {
-                STDMETHOD(connect)                  (THIS_ LPCWSTR exchangeName, LPCWSTR filter = nullptr) PURE;
-                STDMETHOD(disconnect)               (THIS_ LPCWSTR exchangeName) PURE;
-                STDMETHOD(receive)                  (THIS_ LPCVOID *data, UINT32 *dataSize) PURE;
-            };
-        };
-    };
-
     namespace Context
     {
         DECLARE_INTERFACE_IID(Interface, "E1BBAFAB-1DD8-42E4-A031-46E22835EF1E") : virtual public IUnknown

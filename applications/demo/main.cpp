@@ -8,8 +8,352 @@
 #include "GEK\Context\Common.h"
 #include "GEK\Context\Interface.h"
 #include "GEK\Engine\CoreInterface.h"
+#include "GEK\Math\Matrix4x4.h"
 #include <CommCtrl.h>
+#include <xmmintrin.h>
 #include "resource.h"
+
+namespace Gek
+{
+    namespace FastMath
+    {
+        typedef __m128 Vector;
+
+        struct __declspec(align(16)) Matrix
+        {
+            Vector rows[4];
+        };
+
+        struct Float2
+        {
+            union
+            {
+                struct { float x, y; };
+                struct { float u, v; };
+                struct { float data[2]; };
+            };
+
+            Float2(void)
+                : x(0.0f)
+                , y(0.0f)
+            {
+            }
+
+            void operator = (Vector vector)
+            {
+                float vectorData[4];
+                _mm_store_ps(vectorData, vector);
+                x = vectorData[0];
+                y = vectorData[1];
+            }
+
+            float * operator () (void)
+            {
+                return data;
+            }
+
+            const float * operator () (void) const
+            {
+                return data;
+            }
+        };
+
+        struct Float3
+        {
+            union
+            {
+                struct { float x, y, z; };
+                struct { float r, g, b; };
+                struct { float data[3]; };
+            };
+
+            Float3(void)
+                : x(0.0f)
+                , y(0.0f)
+                , z(0.0f)
+            {
+            }
+
+            void operator = (Vector vector)
+            {
+                float vectorData[4];
+                _mm_store_ps(vectorData, vector);
+                x = vectorData[0];
+                y = vectorData[1];
+                z = vectorData[2];
+            }
+
+            float * operator () (void)
+            {
+                return data;
+            }
+
+            const float * operator () (void) const
+            {
+                return data;
+            }
+        };
+
+        struct Float4
+        {
+            union
+            {
+                struct { float x, y, w, z; };
+                struct { float r, g, b, a; };
+                struct { float nx, ny, nz, d; };
+                struct { float data[4]; };
+            };
+
+            Float4(void)
+                : x(0.0f)
+                , y(0.0f)
+                , z(0.0f)
+                , w(0.0f)
+            {
+            }
+
+            Float4(Vector vector)
+            {
+                _mm_store_ps(data, vector);
+            }
+
+            void operator = (Vector vector)
+            {
+                _mm_store_ps(data, vector);
+            }
+
+            float * operator () (void)
+            {
+                return data;
+            }
+
+            const float * operator () (void) const
+            {
+                return data;
+            }
+        };
+
+        struct Float4x4
+        {
+            union
+            {
+                struct { Float4 rows[4]; };
+                struct { float data[16]; };
+            };
+
+            Float4x4(void)
+            {
+            }
+
+            Float4x4(const Matrix &value)
+                : rows{ Float4(value.rows[0]), Float4(value.rows[1]), Float4(value.rows[2]), Float4(value.rows[3]) }
+            {
+            }
+
+            void operator = (const Matrix &value)
+            {
+                rows[0] = value.rows[0];
+                rows[1] = value.rows[1];
+                rows[2] = value.rows[2];
+                rows[3] = value.rows[3];
+            }
+
+            Float4 * operator () (void)
+            {
+                return rows;
+            }
+
+            const Float4 * operator () (void) const
+            {
+                return rows;
+            }
+        };
+
+        Vector setVector(float value)
+        {
+            return _mm_set_ps1(value);
+        }
+
+        Vector setVector(const Float2 &value)
+        {
+            return _mm_set_ps(value.x, value.y, 0.0f, 0.0f);
+        }
+
+        Vector setVector(const Float3 &value)
+        {
+            return _mm_set_ps(value.x, value.y, value.y, 0.0f);
+        }
+
+        Vector setVector(const Float4 &value)
+        {
+            return _mm_loadu_ps(value.data);
+        }
+
+        Vector setVector(float x, float y, float z, float w)
+        {
+            return _mm_set_ps(x, y, z, w);
+        }
+
+        Vector setVector(const float (&data) [4])
+        {
+            return _mm_loadu_ps(data);
+        }
+
+        Matrix setMatrix(const Float4x4 &value)
+        {
+            return{ setVector(value.rows[0]), setVector(value.rows[1]), setVector(value.rows[2]), setVector(value.rows[3]) };
+        }
+
+        Matrix setMatrix(const Float4 data[4])
+        {
+            return{ setVector(data[0]), setVector(data[1]), setVector(data[2]), setVector(data[3]) };
+        }
+
+        Matrix setMatrix(const float (&data) [16])
+        {
+            return{ _mm_loadu_ps(data), _mm_loadu_ps(data + 4), _mm_loadu_ps(data + 8), _mm_loadu_ps(data + 12) };
+        }
+
+        Vector squareRoot(Vector value)
+        {
+            return _mm_sqrt_ps(value);
+        }
+
+        Matrix transpose(const Matrix &matrix)
+        {
+            Vector rows[4] =
+            {
+                _mm_unpacklo_ps(matrix.rows[0], matrix.rows[1]),
+                _mm_unpacklo_ps(matrix.rows[2], matrix.rows[3]),
+                _mm_unpackhi_ps(matrix.rows[0], matrix.rows[1]),
+                _mm_unpackhi_ps(matrix.rows[2], matrix.rows[3]),
+            };
+
+            return
+            {
+                _mm_unpacklo_ps(rows[0], rows[1]),
+                _mm_unpackhi_ps(rows[0], rows[1]),
+                _mm_unpacklo_ps(rows[2], rows[3]),
+                _mm_unpackhi_ps(rows[2], rows[3]),
+            };
+        }
+
+        float getX(Vector value)
+        {
+            Float4 output;
+            _mm_store_ps(output.data, value);
+            return output.x;
+        }
+
+        float getY(Vector value)
+        {
+            Float4 output;
+            _mm_store_ps(output.data, value);
+            return output.x;
+        }
+
+        float getZ(Vector value)
+        {
+            Float4 output;
+            _mm_store_ps(output.data, value);
+            return output.z;
+        }
+
+        float getW(Vector value)
+        {
+            Float4 output;
+            _mm_store_ps(output.data, value);
+            return output.w;
+        }
+
+        Vector add(Vector left, Vector right)
+        {
+            return _mm_add_ps(left, right);
+        }
+
+        Vector subtract(Vector left, Vector right)
+        {
+            return _mm_sub_ps(left, right);
+        }
+
+        Vector multiply(Vector left, Vector right)
+        {
+            return _mm_mul_ps(left, right);
+        }
+/*
+        Vector multiply(const Matrix &left, Vector right)
+        {
+            Matrix transposedLeft = transpose(left);
+            return 
+
+                return BaseMatrix4x4({ rx.dot(transpose.rx), rx.dot(transpose.ry), rx.dot(transpose.rz), rx.dot(transpose.rw),
+                    ry.dot(transpose.rx), ry.dot(transpose.ry), ry.dot(transpose.rz), ry.dot(transpose.rw),
+                    rz.dot(transpose.rx), rz.dot(transpose.ry), rz.dot(transpose.rz), rz.dot(transpose.rw),
+                    rw.dot(transpose.rx), rw.dot(transpose.ry), rw.dot(transpose.rz), rw.dot(transpose.rw) });
+
+        }
+/*
+        Matrix multiply(const Matrix &left, const Matrix &right)
+        {
+        }
+*/
+        Vector divide(Vector left, Vector right)
+        {
+            return _mm_div_ps(left, right);
+        }
+
+        Vector dot(Vector left, Vector right)
+        {
+            Vector multiply = _mm_mul_ps(left, right);
+            Vector shuffle0 = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(1, 0, 3, 2));
+            Vector add = _mm_add_ps(multiply, shuffle0);
+            Vector shuffle2 = _mm_shuffle_ps(add, add, _MM_SHUFFLE(2, 3, 0, 1));
+            return _mm_add_ps(shuffle2, add);
+        }
+
+        Vector dot3(Vector left, Vector right)
+        {
+            Vector multiply = _mm_mul_ps(left, right);
+            Vector shuffle0 = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(1, 0, 0, 0));
+            Vector shuffle2 = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(2, 0, 0, 0));
+            Vector add = _mm_add_ps(multiply, _mm_add_ps(shuffle0, shuffle2));
+            return _mm_shuffle_ps(add, add, _MM_SHUFFLE(0, 0, 0, 0));
+        }
+
+        Vector cross3(Vector left, Vector right)
+        {
+            const uint32_t maskYZX = _MM_SHUFFLE(1, 2, 0, 0);
+            const uint32_t maskZXY = _MM_SHUFFLE(2, 0, 1, 0);
+            Vector shuffle0 = _mm_shuffle_ps(left, left, maskYZX);
+            Vector shuffle1 = _mm_shuffle_ps(right, right, maskZXY);
+            Vector multiply0 = _mm_mul_ps(shuffle0, shuffle1); // (y1*z2), (z1*x2), (x1*y2), (x1*x2)
+            shuffle0 = _mm_shuffle_ps(left, left, maskZXY);
+            shuffle1 = _mm_shuffle_ps(right, right, maskYZX);
+            Vector multiple1 = _mm_mul_ps(shuffle0, shuffle1); // (z1*y2), (x1*z2), (y1*x2), (x1*x2)
+            return _mm_sub_ps(multiply0, multiple1);
+        }
+    };
+};
+
+Gek::FastMath::Vector operator + (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
+{
+    return _mm_add_ps(left, right);
+}
+
+Gek::FastMath::Vector operator - (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
+{
+    return _mm_sub_ps(left, right);
+}
+
+Gek::FastMath::Vector operator * (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
+{
+    return _mm_mul_ps(left, right);
+}
+
+Gek::FastMath::Vector operator / (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
+{
+    return _mm_div_ps(left, right);
+}
 
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -164,6 +508,94 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
 {
+    const UINT32 trialsCount = 100;
+    const UINT32 cyclesCount = 100000;
+
+    static const float identity[16] =
+    { 
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    };
+
+    UINT32 start;
+    std::vector<UINT32> times[3];
+    for (UINT32 average = 0; average < trialsCount; average++)
+    {
+        start = GetTickCount();
+        for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
+        {
+            /*
+            Gek::Math::Float4 value(1.0f, 2.0f, 3.0f, 4.0f);
+            value = value + value;
+            value = value - value;
+            value = value * value;
+            value = value / value;
+            auto dot = value.dot(value);
+            auto dot3 = Gek::Math::Float3(value).dot(value);
+            auto cross3 = Gek::Math::Float3(value).cross(value);
+            */
+            Gek::Math::Float4x4 matrix(identity);
+            auto transpose = matrix.getTranspose();
+        }
+
+        times[0].push_back(GetTickCount() - start);
+
+        start = GetTickCount();
+        for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
+        {
+            /*
+            Gek::FastMath::Vector value = Gek::FastMath::setVector(1.0f, 2.0f, 3.0f, 4.0f);
+            value = Gek::FastMath::add(value, value);
+            value = Gek::FastMath::subtract(value, value);
+            value = Gek::FastMath::multiply(value, value);
+            value = Gek::FastMath::divide(value, value);
+            auto dot = Gek::FastMath::dot(value, value);
+            auto dot3 = Gek::FastMath::dot3(value, value);
+            auto cross3 = Gek::FastMath::cross3(value, value);
+            */
+            Gek::FastMath::Matrix matrix = Gek::FastMath::setMatrix(identity);
+            auto transpose = Gek::FastMath::transpose(matrix);
+        }
+
+        times[1].push_back(GetTickCount() - start);
+
+        start = GetTickCount();
+        for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
+        {
+            /*
+            Gek::FastMath::Vector value = Gek::FastMath::setVector(1.0f, 2.0f, 3.0f, 4.0f);
+            value = value + value;
+            value = value - value;
+            value = value * value;
+            value = value / value;
+            auto dot = Gek::FastMath::dot(value, value);
+            auto dot3 = Gek::FastMath::dot3(value, value);
+            auto cross3 = Gek::FastMath::cross3(value, value);
+            */
+            Gek::FastMath::Matrix matrix = Gek::FastMath::setMatrix(identity);
+            auto transpose = Gek::FastMath::transpose(matrix);
+        }
+
+        times[2].push_back(GetTickCount() - start);
+    }
+
+    for (UINT32 type = 0; type < 3; type++)
+    {
+        UINT64 sum = 0;
+        for (auto time : times[type])
+        {
+            sum += time;
+        }
+
+        UINT32 average = (sum / times[type].size());
+
+        CStringA message;
+        message.AppendFormat("Average(%d)\r\n", average);
+        OutputDebugStringA(message);
+    }
+
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
         CComPtr<Gek::Context::Interface> context;
