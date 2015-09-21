@@ -46,16 +46,6 @@ namespace Gek
                 x = vectorData[0];
                 y = vectorData[1];
             }
-
-            float * operator () (void)
-            {
-                return data;
-            }
-
-            const float * operator () (void) const
-            {
-                return data;
-            }
         };
 
         struct Float3
@@ -81,16 +71,6 @@ namespace Gek
                 x = vectorData[0];
                 y = vectorData[1];
                 z = vectorData[2];
-            }
-
-            float * operator () (void)
-            {
-                return data;
-            }
-
-            const float * operator () (void) const
-            {
-                return data;
             }
         };
 
@@ -121,16 +101,6 @@ namespace Gek
             {
                 _mm_store_ps(data, vector);
             }
-
-            float * operator () (void)
-            {
-                return data;
-            }
-
-            const float * operator () (void) const
-            {
-                return data;
-            }
         };
 
         struct Float4x4
@@ -152,20 +122,10 @@ namespace Gek
 
             void operator = (const Matrix &value)
             {
-                rows[0] = value.rows[0];
-                rows[1] = value.rows[1];
-                rows[2] = value.rows[2];
-                rows[3] = value.rows[3];
-            }
-
-            Float4 * operator () (void)
-            {
-                return rows;
-            }
-
-            const Float4 * operator () (void) const
-            {
-                return rows;
+                rows[0] = value.rows[0]; // converts __m128 to float4
+                rows[1] = value.rows[1]; // converts __m128 to float4
+                rows[2] = value.rows[2]; // converts __m128 to float4
+                rows[3] = value.rows[3]; // converts __m128 to float4
             }
         };
 
@@ -249,7 +209,7 @@ namespace Gek
         {
             Float4 output;
             _mm_store_ps(output.data, value);
-            return output.x;
+            return output.y;
         }
 
         float getZ(Vector value)
@@ -280,23 +240,32 @@ namespace Gek
         {
             return _mm_mul_ps(left, right);
         }
-/*
+        /*
         Vector multiply(const Matrix &left, Vector right)
         {
-            Matrix transposedLeft = transpose(left);
-            return 
-
-                return BaseMatrix4x4({ rx.dot(transpose.rx), rx.dot(transpose.ry), rx.dot(transpose.rz), rx.dot(transpose.rw),
-                    ry.dot(transpose.rx), ry.dot(transpose.ry), ry.dot(transpose.rz), ry.dot(transpose.rw),
-                    rz.dot(transpose.rx), rz.dot(transpose.ry), rz.dot(transpose.rz), rz.dot(transpose.rw),
-                    rw.dot(transpose.rx), rw.dot(transpose.ry), rw.dot(transpose.rz), rw.dot(transpose.rw) });
-
         }
-/*
+        */
         Matrix multiply(const Matrix &left, const Matrix &right)
         {
+            Matrix result;
+            for (UINT32 rowIndex = 0; rowIndex < 4; rowIndex++)
+            {
+                __m128 xxxx = _mm_shuffle_ps(left.rows[rowIndex], left.rows[rowIndex], _MM_SHUFFLE(0, 0, 0, 0));
+                __m128 yyyy = _mm_shuffle_ps(left.rows[rowIndex], left.rows[rowIndex], _MM_SHUFFLE(1, 1, 1, 1));
+                __m128 zzzz = _mm_shuffle_ps(left.rows[rowIndex], left.rows[rowIndex], _MM_SHUFFLE(2, 2, 2, 2));
+                __m128 wwww = _mm_shuffle_ps(left.rows[rowIndex], left.rows[rowIndex], _MM_SHUFFLE(3, 3, 3, 3));
+                result.rows[rowIndex] = _mm_add_ps(
+                    _mm_add_ps(
+                        _mm_mul_ps(xxxx, right.rows[0]),
+                        _mm_mul_ps(yyyy, right.rows[1])),
+                    _mm_add_ps(
+                        _mm_mul_ps(zzzz, right.rows[2]),
+                        _mm_mul_ps(wwww, right.rows[3])));
+            }
+
+            return result;
         }
-*/
+
         Vector divide(Vector left, Vector right)
         {
             return _mm_div_ps(left, right);
