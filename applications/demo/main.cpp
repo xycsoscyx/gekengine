@@ -11,7 +11,12 @@
 #include "GEK\Math\Matrix4x4.h"
 #include <CommCtrl.h>
 #include <xmmintrin.h>
+#include <array>
 #include "resource.h"
+
+#define GEKINLINE __forceinline
+
+#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 namespace Gek
 {
@@ -19,10 +24,13 @@ namespace Gek
     {
         typedef __m128 Vector;
 
-        struct __declspec(align(16)) Matrix
+        typedef std::array<Vector, 4> Matrix;
+
+        void initialize(void)
         {
-            Vector rows[4];
-        };
+            BUILD_BUG_ON(sizeof(Gek::FastMath::Vector) != 16);
+            BUILD_BUG_ON(sizeof(Gek::FastMath::Matrix) != 64);
+        }
 
         struct Float2
         {
@@ -34,17 +42,14 @@ namespace Gek
             };
 
             Float2(void)
-                : x(0.0f)
-                , y(0.0f)
+                : data{ 0.0f, 0.0f }
             {
             }
 
             void operator = (Vector vector)
             {
-                float vectorData[4];
-                _mm_store_ps(vectorData, vector);
-                x = vectorData[0];
-                y = vectorData[1];
+                x = vector.m128_f32[0];
+                y = vector.m128_f32[1];
             }
         };
 
@@ -58,48 +63,42 @@ namespace Gek
             };
 
             Float3(void)
-                : x(0.0f)
-                , y(0.0f)
-                , z(0.0f)
+                : data{ 0.0f, 0.0f, 0.0f }
             {
             }
 
             void operator = (Vector vector)
             {
-                float vectorData[4];
-                _mm_store_ps(vectorData, vector);
-                x = vectorData[0];
-                y = vectorData[1];
-                z = vectorData[2];
+                x = vector.m128_f32[0];
+                y = vector.m128_f32[1];
+                z = vector.m128_f32[2];
             }
         };
 
-        struct Float4
+        struct __declspec(align(16)) Float4
         {
             union
             {
                 struct { float x, y, w, z; };
                 struct { float r, g, b, a; };
-                struct { float nx, ny, nz, d; };
+                struct { Float3 normal; float distance; };
                 struct { float data[4]; };
+                struct { Vector vector; };
             };
 
             Float4(void)
-                : x(0.0f)
-                , y(0.0f)
-                , z(0.0f)
-                , w(0.0f)
+                : data{ 0.0f, 0.0f, 0.0f, 0.0f }
             {
             }
 
             Float4(Vector vector)
+                : vector(vector)
             {
-                _mm_store_ps(data, vector);
             }
 
             void operator = (Vector vector)
             {
-                _mm_store_ps(data, vector);
+                this->vector = vector;
             }
         };
 
@@ -109,6 +108,7 @@ namespace Gek
             {
                 struct { Float4 rows[4]; };
                 struct { float data[16]; };
+                struct { Matrix matrix; };
             };
 
             Float4x4(void)
@@ -116,162 +116,148 @@ namespace Gek
             }
 
             Float4x4(const Matrix &value)
-                : rows{ Float4(value.rows[0]), Float4(value.rows[1]), Float4(value.rows[2]), Float4(value.rows[3]) }
+                : matrix{ value[0], value[1], value[2], value[3] }
             {
             }
 
             void operator = (const Matrix &value)
             {
-                rows[0] = value.rows[0]; // converts __m128 to float4
-                rows[1] = value.rows[1]; // converts __m128 to float4
-                rows[2] = value.rows[2]; // converts __m128 to float4
-                rows[3] = value.rows[3]; // converts __m128 to float4
+                matrix[0] = value[0];
+                matrix[1] = value[1];
+                matrix[2] = value[2];
+                matrix[3] = value[3];
             }
         };
 
-        Vector setVector(float value)
+        GEKINLINE Vector setVector(float value)
         {
             return _mm_set_ps1(value);
         }
 
-        Vector setVector(const Float2 &value)
-        {
-            return _mm_set_ps(value.x, value.y, 0.0f, 0.0f);
-        }
-
-        Vector setVector(const Float3 &value)
-        {
-            return _mm_set_ps(value.x, value.y, value.y, 0.0f);
-        }
-
-        Vector setVector(const Float4 &value)
-        {
-            return _mm_loadu_ps(value.data);
-        }
-
-        Vector setVector(float x, float y, float z, float w)
+        GEKINLINE Vector setVector(float x, float y, float z, float w)
         {
             return _mm_set_ps(x, y, z, w);
         }
 
-        Vector setVector(const float (&data) [4])
+        GEKINLINE Vector setVector(const float(&data)[4])
         {
             return _mm_loadu_ps(data);
         }
 
-        Matrix setMatrix(const Float4x4 &value)
+        GEKINLINE Vector setVector(const Float2 &value)
+        {
+            return _mm_set_ps(value.x, value.y, 0.0f, 0.0f);
+        }
+
+        GEKINLINE Vector setVector(const Float2 &valueOne, const Float2 &valueTwo)
+        {
+            return _mm_set_ps(valueOne.x, valueOne.y, valueTwo.x, valueTwo.y);
+        }
+
+        GEKINLINE Vector setVector(const Float3 &value)
+        {
+            return _mm_set_ps(value.x, value.y, value.y, 0.0f);
+        }
+
+        GEKINLINE Vector setVector(const Float3 &valueOne, float valueTwo)
+        {
+            return _mm_set_ps(valueOne.x, valueOne.y, valueOne.y, valueTwo);
+        }
+
+        GEKINLINE Vector setVector(const Float4 &value)
+        {
+            return _mm_loadu_ps(value.data);
+        }
+
+        GEKINLINE Matrix setMatrix(const Float4x4 &value)
         {
             return{ setVector(value.rows[0]), setVector(value.rows[1]), setVector(value.rows[2]), setVector(value.rows[3]) };
         }
 
-        Matrix setMatrix(const Float4 data[4])
+        GEKINLINE Matrix setMatrix(const Float4 data[4])
         {
             return{ setVector(data[0]), setVector(data[1]), setVector(data[2]), setVector(data[3]) };
         }
 
-        Matrix setMatrix(const float (&data) [16])
+        GEKINLINE Matrix setMatrix(const float (&data) [16])
         {
             return{ _mm_loadu_ps(data), _mm_loadu_ps(data + 4), _mm_loadu_ps(data + 8), _mm_loadu_ps(data + 12) };
         }
 
-        Vector squareRoot(Vector value)
+        GEKINLINE Vector sqrt(Vector value)
         {
             return _mm_sqrt_ps(value);
         }
 
-        Matrix transpose(const Matrix &matrix)
+        GEKINLINE Matrix transpose(const Matrix &matrix)
         {
-            Vector rows[4] =
+            Matrix unpacked =
             {
-                _mm_unpacklo_ps(matrix.rows[0], matrix.rows[1]),
-                _mm_unpacklo_ps(matrix.rows[2], matrix.rows[3]),
-                _mm_unpackhi_ps(matrix.rows[0], matrix.rows[1]),
-                _mm_unpackhi_ps(matrix.rows[2], matrix.rows[3]),
+                _mm_unpacklo_ps(matrix[0], matrix[1]),
+                _mm_unpacklo_ps(matrix[2], matrix[3]),
+                _mm_unpackhi_ps(matrix[0], matrix[1]),
+                _mm_unpackhi_ps(matrix[2], matrix[3]),
             };
 
             return
             {
-                _mm_unpacklo_ps(rows[0], rows[1]),
-                _mm_unpackhi_ps(rows[0], rows[1]),
-                _mm_unpacklo_ps(rows[2], rows[3]),
-                _mm_unpackhi_ps(rows[2], rows[3]),
+                _mm_unpacklo_ps(unpacked[0], unpacked[1]),
+                _mm_unpackhi_ps(unpacked[0], unpacked[1]),
+                _mm_unpacklo_ps(unpacked[2], unpacked[3]),
+                _mm_unpackhi_ps(unpacked[2], unpacked[3]),
             };
         }
 
-        float getX(Vector value)
-        {
-            Float4 output;
-            _mm_store_ps(output.data, value);
-            return output.x;
-        }
-
-        float getY(Vector value)
-        {
-            Float4 output;
-            _mm_store_ps(output.data, value);
-            return output.y;
-        }
-
-        float getZ(Vector value)
-        {
-            Float4 output;
-            _mm_store_ps(output.data, value);
-            return output.z;
-        }
-
-        float getW(Vector value)
-        {
-            Float4 output;
-            _mm_store_ps(output.data, value);
-            return output.w;
-        }
-
-        Vector add(Vector left, Vector right)
+        GEKINLINE Vector add(Vector left, Vector right)
         {
             return _mm_add_ps(left, right);
         }
 
-        Vector subtract(Vector left, Vector right)
+        GEKINLINE Vector subtract(Vector left, Vector right)
         {
             return _mm_sub_ps(left, right);
         }
 
-        Vector multiply(Vector left, Vector right)
+        GEKINLINE Vector multiply(Vector left, Vector right)
         {
             return _mm_mul_ps(left, right);
         }
         /*
-        Vector multiply(const Matrix &left, Vector right)
+        GEKINLINE Vector multiply(const Matrix &left, Vector right)
         {
         }
         */
-        Matrix multiply(const Matrix &left, const Matrix &right)
+        GEKINLINE Matrix multiply(const Matrix &left, const Matrix &right)
         {
             Matrix result;
             for (UINT32 rowIndex = 0; rowIndex < 4; rowIndex++)
             {
-                __m128 xxxx = _mm_shuffle_ps(left.rows[rowIndex], left.rows[rowIndex], _MM_SHUFFLE(0, 0, 0, 0));
-                __m128 yyyy = _mm_shuffle_ps(left.rows[rowIndex], left.rows[rowIndex], _MM_SHUFFLE(1, 1, 1, 1));
-                __m128 zzzz = _mm_shuffle_ps(left.rows[rowIndex], left.rows[rowIndex], _MM_SHUFFLE(2, 2, 2, 2));
-                __m128 wwww = _mm_shuffle_ps(left.rows[rowIndex], left.rows[rowIndex], _MM_SHUFFLE(3, 3, 3, 3));
-                result.rows[rowIndex] = _mm_add_ps(
+                Matrix shuffled =
+                {
+                    _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(0, 0, 0, 0)),
+                    _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(1, 1, 1, 1)),
+                    _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(2, 2, 2, 2)),
+                    _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(3, 3, 3, 3)),
+                };
+
+                result[rowIndex] = _mm_add_ps(
                     _mm_add_ps(
-                        _mm_mul_ps(xxxx, right.rows[0]),
-                        _mm_mul_ps(yyyy, right.rows[1])),
+                        _mm_mul_ps(shuffled[0], right[0]),
+                        _mm_mul_ps(shuffled[1], right[1])),
                     _mm_add_ps(
-                        _mm_mul_ps(zzzz, right.rows[2]),
-                        _mm_mul_ps(wwww, right.rows[3])));
+                        _mm_mul_ps(shuffled[2], right[2]),
+                        _mm_mul_ps(shuffled[3], right[3])));
             }
 
             return result;
         }
 
-        Vector divide(Vector left, Vector right)
+        GEKINLINE Vector divide(Vector left, Vector right)
         {
             return _mm_div_ps(left, right);
         }
 
-        Vector dot(Vector left, Vector right)
+        GEKINLINE Vector dot(Vector left, Vector right)
         {
             Vector multiply = _mm_mul_ps(left, right);
             Vector shuffle0 = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(1, 0, 3, 2));
@@ -280,7 +266,7 @@ namespace Gek
             return _mm_add_ps(shuffle2, add);
         }
 
-        Vector dot3(Vector left, Vector right)
+        GEKINLINE Vector dot3(Vector left, Vector right)
         {
             Vector multiply = _mm_mul_ps(left, right);
             Vector shuffle0 = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(1, 0, 0, 0));
@@ -289,39 +275,62 @@ namespace Gek
             return _mm_shuffle_ps(add, add, _MM_SHUFFLE(0, 0, 0, 0));
         }
 
-        Vector cross3(Vector left, Vector right)
+        GEKINLINE Vector cross3(Vector left, Vector right)
         {
-            const uint32_t maskYZX = _MM_SHUFFLE(1, 2, 0, 0);
-            const uint32_t maskZXY = _MM_SHUFFLE(2, 0, 1, 0);
-            Vector shuffle0 = _mm_shuffle_ps(left, left, maskYZX);
-            Vector shuffle1 = _mm_shuffle_ps(right, right, maskZXY);
+            Vector shuffle0 = _mm_shuffle_ps(left, left, _MM_SHUFFLE(1, 2, 0, 0));
+            Vector shuffle1 = _mm_shuffle_ps(right, right, _MM_SHUFFLE(2, 0, 1, 0));
             Vector multiply0 = _mm_mul_ps(shuffle0, shuffle1); // (y1*z2), (z1*x2), (x1*y2), (x1*x2)
-            shuffle0 = _mm_shuffle_ps(left, left, maskZXY);
-            shuffle1 = _mm_shuffle_ps(right, right, maskYZX);
-            Vector multiple1 = _mm_mul_ps(shuffle0, shuffle1); // (z1*y2), (x1*z2), (y1*x2), (x1*x2)
-            return _mm_sub_ps(multiply0, multiple1);
+            shuffle0 = _mm_shuffle_ps(left, left, _MM_SHUFFLE(2, 0, 1, 0));
+            shuffle1 = _mm_shuffle_ps(right, right, _MM_SHUFFLE(1, 2, 0, 0));
+            Vector multiply1 = _mm_mul_ps(shuffle0, shuffle1); // (z1*y2), (x1*z2), (y1*x2), (x1*x2)
+            return _mm_sub_ps(multiply0, multiply1);
         }
     };
 };
 
-Gek::FastMath::Vector operator + (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
+GEKINLINE Gek::FastMath::Vector operator + (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
 {
     return _mm_add_ps(left, right);
 }
 
-Gek::FastMath::Vector operator - (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
+GEKINLINE Gek::FastMath::Vector operator - (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
 {
     return _mm_sub_ps(left, right);
 }
 
-Gek::FastMath::Vector operator * (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
+GEKINLINE Gek::FastMath::Vector operator * (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
 {
     return _mm_mul_ps(left, right);
 }
 
-Gek::FastMath::Vector operator / (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
+GEKINLINE Gek::FastMath::Vector operator / (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
 {
     return _mm_div_ps(left, right);
+}
+
+GEKINLINE Gek::FastMath::Matrix operator * (const Gek::FastMath::Matrix &left, const Gek::FastMath::Matrix &right)
+{
+    Gek::FastMath::Matrix result;
+    for (UINT32 rowIndex = 0; rowIndex < 4; rowIndex++)
+    {
+        Gek::FastMath::Matrix shuffled =
+        {
+            _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(0, 0, 0, 0)),
+            _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(1, 1, 1, 1)),
+            _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(2, 2, 2, 2)),
+            _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(3, 3, 3, 3)),
+        };
+
+        result[rowIndex] = _mm_add_ps(
+            _mm_add_ps(
+                _mm_mul_ps(shuffled[0], right[0]),
+                _mm_mul_ps(shuffled[1], right[1])),
+            _mm_add_ps(
+                _mm_mul_ps(shuffled[2], right[2]),
+                _mm_mul_ps(shuffled[3], right[3])));
+    }
+
+    return result;
 }
 
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lParam)
@@ -477,93 +486,76 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
 {
-    const UINT32 trialsCount = 100;
-    const UINT32 cyclesCount = 100000;
+    OutputDebugString(Gek::String::format(L"Float2(%d)\r\n", sizeof(Gek::FastMath::Float2)));
+    OutputDebugString(Gek::String::format(L"Float3(%d)\r\n", sizeof(Gek::FastMath::Float3)));
+    OutputDebugString(Gek::String::format(L"Float4(%d)\r\n", sizeof(Gek::FastMath::Float4)));
+    OutputDebugString(Gek::String::format(L"Float4x4(%d)\r\n", sizeof(Gek::FastMath::Float4x4)));
+    OutputDebugString(Gek::String::format(L"Vector(%d)\r\n", sizeof(Gek::FastMath::Vector)));
+    OutputDebugString(Gek::String::format(L"Matrix(%d)\r\n", sizeof(Gek::FastMath::Matrix)));
+
+    const UINT32 cyclesCount = 1000000;
 
     static const float identity[16] =
-    { 
+    {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f
     };
 
-    UINT32 start;
-    std::vector<UINT32> times[3];
-    for (UINT32 average = 0; average < trialsCount; average++)
+    auto start = GetTickCount();
+    for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
     {
-        start = GetTickCount();
-        for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
-        {
-            /*
-            Gek::Math::Float4 value(1.0f, 2.0f, 3.0f, 4.0f);
-            value = value + value;
-            value = value - value;
-            value = value * value;
-            value = value / value;
-            auto dot = value.dot(value);
-            auto dot3 = Gek::Math::Float3(value).dot(value);
-            auto cross3 = Gek::Math::Float3(value).cross(value);
-            */
-            Gek::Math::Float4x4 matrix(identity);
-            auto transpose = matrix.getTranspose();
-        }
-
-        times[0].push_back(GetTickCount() - start);
-
-        start = GetTickCount();
-        for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
-        {
-            /*
-            Gek::FastMath::Vector value = Gek::FastMath::setVector(1.0f, 2.0f, 3.0f, 4.0f);
-            value = Gek::FastMath::add(value, value);
-            value = Gek::FastMath::subtract(value, value);
-            value = Gek::FastMath::multiply(value, value);
-            value = Gek::FastMath::divide(value, value);
-            auto dot = Gek::FastMath::dot(value, value);
-            auto dot3 = Gek::FastMath::dot3(value, value);
-            auto cross3 = Gek::FastMath::cross3(value, value);
-            */
-            Gek::FastMath::Matrix matrix = Gek::FastMath::setMatrix(identity);
-            auto transpose = Gek::FastMath::transpose(matrix);
-        }
-
-        times[1].push_back(GetTickCount() - start);
-
-        start = GetTickCount();
-        for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
-        {
-            /*
-            Gek::FastMath::Vector value = Gek::FastMath::setVector(1.0f, 2.0f, 3.0f, 4.0f);
-            value = value + value;
-            value = value - value;
-            value = value * value;
-            value = value / value;
-            auto dot = Gek::FastMath::dot(value, value);
-            auto dot3 = Gek::FastMath::dot3(value, value);
-            auto cross3 = Gek::FastMath::cross3(value, value);
-            */
-            Gek::FastMath::Matrix matrix = Gek::FastMath::setMatrix(identity);
-            auto transpose = Gek::FastMath::transpose(matrix);
-        }
-
-        times[2].push_back(GetTickCount() - start);
+        Gek::Math::Float4 value(1.0f, 2.0f, 3.0f, 4.0f);
+        value = value + value;
+        value = value - value;
+        value = value * value;
+        value = value / value;
+        auto dot = value.dot(value);
+        auto dot3 = Gek::Math::Float3(value).dot(value);
+        auto cross3 = Gek::Math::Float3(value).cross(value);
+        Gek::Math::Float4x4 matrix(identity);
+        auto transpose = matrix.getTranspose();
+        auto multiply = matrix * transpose;
     }
 
-    for (UINT32 type = 0; type < 3; type++)
+    OutputDebugString(Gek::String::format(L"Base: %d\r\n", GetTickCount() - start));
+    start = GetTickCount();
+    for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
     {
-        UINT64 sum = 0;
-        for (auto time : times[type])
-        {
-            sum += time;
-        }
-
-        UINT32 average = (sum / times[type].size());
-
-        CStringA message;
-        message.AppendFormat("Average(%d)\r\n", average);
-        OutputDebugStringA(message);
+        Gek::FastMath::Vector value = Gek::FastMath::setVector(1.0f, 2.0f, 3.0f, 4.0f);
+        value = value + value;
+        value = value - value;
+        value = value * value;
+        value = value / value;
+        auto dot = Gek::FastMath::dot(value, value);
+        auto dot3 = Gek::FastMath::dot3(value, value);
+        auto cross3 = Gek::FastMath::cross3(value, value);
+        Gek::FastMath::Matrix matrix = Gek::FastMath::setMatrix(identity);
+        auto transpose = Gek::FastMath::transpose(matrix);
+        auto multiply = matrix * transpose;
     }
+
+    OutputDebugString(Gek::String::format(L"Operator: %d\r\n", GetTickCount() - start));
+    start = GetTickCount();
+    for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
+    {
+        Gek::FastMath::Vector value = Gek::FastMath::setVector(1.0f, 2.0f, 3.0f, 4.0f);
+        value = Gek::FastMath::add(value, value);
+        value = Gek::FastMath::subtract(value, value);
+        value = Gek::FastMath::multiply(value, value);
+        value = Gek::FastMath::divide(value, value);
+        auto dot = Gek::FastMath::dot(value, value);
+        auto dot3 = Gek::FastMath::dot3(value, value);
+        auto cross3 = Gek::FastMath::cross3(value, value);
+        Gek::FastMath::Matrix matrix = Gek::FastMath::setMatrix(identity);
+        auto transpose = Gek::FastMath::transpose(matrix);
+        auto multiply = Gek::FastMath::multiply(matrix, transpose);
+    }
+
+    OutputDebugString(Gek::String::format(L"Fast: %d\r\n", GetTickCount() - start));
+    start = GetTickCount();
+    return 0;
 
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
