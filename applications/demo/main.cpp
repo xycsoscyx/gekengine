@@ -20,280 +20,268 @@
 
 namespace Gek
 {
-    namespace FastMath
+    namespace MathSIMD
     {
-        typedef __m128 Vector;
-
-        typedef std::array<Vector, 4> Matrix;
-
-        struct Float2
+        namespace Types
         {
-            union
-            {
-                struct { float x, y; };
-                struct { float u, v; };
-                struct { float data[2]; };
-            };
+            typedef __m128 Vector, Quaternion;
+            typedef std::array<Vector, 4> Matrix;
+        };
 
-            Float2(void)
-                : data{ 0.0f, 0.0f }
+        namespace Vector
+        {
+            GEKINLINE Types::Vector set(float value)
             {
+                return _mm_set_ps1(value);
             }
 
-            void operator = (Vector vector)
+            GEKINLINE Types::Vector set(float x, float y, float z, float w)
             {
-                x = vector.m128_f32[0];
-                y = vector.m128_f32[1];
+                return _mm_setr_ps(x, y, z, w);
+            }
+
+            GEKINLINE Types::Vector set(const float(&data)[4])
+            {
+                return _mm_loadu_ps(data);
+            }
+
+            GEKINLINE Types::Vector add(Types::Vector left, Types::Vector right)
+            {
+                return _mm_add_ps(left, right);
+            }
+
+            GEKINLINE Types::Vector subtract(Types::Vector left, Types::Vector right)
+            {
+                return _mm_sub_ps(left, right);
+            }
+
+            GEKINLINE Types::Vector multiply(Types::Vector left, Types::Vector right)
+            {
+                return _mm_mul_ps(left, right);
+            }
+
+            GEKINLINE Types::Vector divide(Types::Vector left, Types::Vector right)
+            {
+                return _mm_div_ps(left, right);
+            }
+
+            GEKINLINE Types::Vector dot(Types::Vector left, Types::Vector right)
+            {
+                Types::Vector multiply = _mm_mul_ps(left, right); // lx*rx, ly*ry, lz*rz, lw*rw
+                Types::Vector YXZW = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(2, 3, 0, 1)); // ry, rx, lw, lz
+                Types::Vector add = _mm_add_ps(multiply, YXZW);
+                Types::Vector ZWYX = _mm_shuffle_ps(add, add, _MM_SHUFFLE(0, 1, 2, 3)); // rz, rw, ly, lx
+                return _mm_add_ps(ZWYX, add);
+            }
+
+            GEKINLINE Types::Vector sqrt(Types::Vector value)
+            {
+                return _mm_sqrt_ps(value);
+            }
+
+            GEKINLINE Types::Vector length(Types::Vector vector)
+            {
+                return sqrt(dot(vector, vector));
+            }
+
+            GEKINLINE Types::Vector equal(Types::Vector left, Types::Vector right)
+            {
+                return _mm_cmpeq_ps(left, right);
+            }
+
+            GEKINLINE Types::Vector notEqual(Types::Vector left, Types::Vector right)
+            {
+                return _mm_cmpneq_ps(left, right);
+            }
+
+            GEKINLINE Types::Vector less(Types::Vector left, Types::Vector right)
+            {
+                return _mm_cmplt_ps(left, right);
+            }
+
+            GEKINLINE Types::Vector lessEqual(Types::Vector left, Types::Vector right)
+            {
+                return _mm_cmple_ps(left, right);
+            }
+
+            GEKINLINE Types::Vector greater(Types::Vector left, Types::Vector right)
+            {
+                return _mm_cmpgt_ps(left, right);
+            }
+
+            GEKINLINE Types::Vector greaterEqual(Types::Vector left, Types::Vector right)
+            {
+                return _mm_cmpge_ps(left, right);
             }
         };
 
-        struct Float3
+        namespace Vector3
         {
-            union
+            GEKINLINE Types::Vector dot(Types::Vector left, Types::Vector right)
             {
-                struct { float x, y, z; };
-                struct { float r, g, b; };
-                struct { float data[3]; };
-            };
-
-            Float3(void)
-                : data{ 0.0f, 0.0f, 0.0f }
-            {
+                Types::Vector multiply = _mm_mul_ps(left, right); // lx*rx, ly*ry, lz*rz, lw*rw
+                Types::Vector Y = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(0, 0, 0, 1)); // get lyry in a
+                Types::Vector Z = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(0, 0, 0, 2)); // get lzrz in a
+                Types::Vector addYZ = _mm_add_ps(Y, Z); // lyry+lzrz
+                Types::Vector addXYZ = _mm_add_ps(multiply, addYZ); // xx+(lyry+lzrz)
+                return _mm_shuffle_ps(addXYZ, addXYZ, _MM_SHUFFLE(0, 0, 0, 0)); // shuffle (lxrx+lyry+lzrz) to all four
             }
 
-            void operator = (Vector vector)
+            GEKINLINE Types::Vector cross(Types::Vector left, Types::Vector right)
             {
-                x = vector.m128_f32[0];
-                y = vector.m128_f32[1];
-                z = vector.m128_f32[2];
-            }
-        };
-
-        struct __declspec(align(16)) Float4
-        {
-            union
-            {
-                struct { float x, y, w, z; };
-                struct { float r, g, b, a; };
-                struct { Float3 normal; float distance; };
-                struct { float data[4]; };
-                struct { Vector vector; };
-            };
-
-            Float4(void)
-                : data{ 0.0f, 0.0f, 0.0f, 0.0f }
-            {
+                Types::Vector shuffle0 = _mm_shuffle_ps(left, left, _MM_SHUFFLE(0, 0, 2, 1));
+                Types::Vector shuffle1 = _mm_shuffle_ps(right, right, _MM_SHUFFLE(0, 1, 0, 2));
+                Types::Vector multiply0 = _mm_mul_ps(shuffle0, shuffle1); // (y1*z2), (z1*x2), (x1*y2), (x1*x2)
+                shuffle0 = _mm_shuffle_ps(left, left, _MM_SHUFFLE(0, 1, 0, 2));
+                shuffle1 = _mm_shuffle_ps(right, right, _MM_SHUFFLE(0, 0, 2, 1));
+                Types::Vector multiply1 = _mm_mul_ps(shuffle0, shuffle1); // (z1*y2), (x1*z2), (y1*x2), (x1*x2)
+                return _mm_sub_ps(multiply0, multiply1);
             }
 
-            Float4(Vector vector)
-                : vector(vector)
+            GEKINLINE Types::Vector length(Types::Vector vector)
             {
-            }
-
-            void operator = (Vector vector)
-            {
-                this->vector = vector;
+                return Vector::sqrt(dot(vector, vector));
             }
         };
 
-        struct Float4x4
+        namespace Quaternion
         {
-            union
-            {
-                struct { Float4 rows[4]; };
-                struct { float data[16]; };
-                struct { Matrix matrix; };
-            };
-
-            Float4x4(void)
+            GEKINLINE Types::Quaternion set(const Types::Matrix &value)
             {
             }
 
-            Float4x4(const Matrix &value)
-                : matrix{ value[0], value[1], value[2], value[3] }
+            GEKINLINE Types::Quaternion multiply(Types::Quaternion left, Types::Quaternion right)
             {
-            }
-
-            void operator = (const Matrix &value)
-            {
-                matrix[0] = value[0];
-                matrix[1] = value[1];
-                matrix[2] = value[2];
-                matrix[3] = value[3];
             }
         };
 
-        GEKINLINE Vector setVector(float value)
+        namespace Matrix
         {
-            return _mm_set_ps1(value);
-        }
-
-        GEKINLINE Vector setVector(float x, float y, float z, float w)
-        {
-            return _mm_setr_ps(x, y, z, w);
-        }
-
-        GEKINLINE Vector setVector(const float (&data) [4])
-        {
-            return _mm_loadu_ps(data);
-        }
-
-        GEKINLINE Vector setVector(const Float4 &value)
-        {
-            return _mm_setr_ps(value.x, value.y, value.z, value.w);
-        }
-
-        GEKINLINE Matrix setMatrix(const Float4x4 &value)
-        {
-            return{ setVector(value.rows[0]), setVector(value.rows[1]), setVector(value.rows[2]), setVector(value.rows[3]) };
-        }
-
-        GEKINLINE Matrix setMatrix(const Float4 data[4])
-        {
-            return{ setVector(data[0]), setVector(data[1]), setVector(data[2]), setVector(data[3]) };
-        }
-
-        GEKINLINE Matrix setMatrix(const float (&data) [16])
-        {
-            return{ _mm_loadu_ps(data), _mm_loadu_ps(data + 4), _mm_loadu_ps(data + 8), _mm_loadu_ps(data + 12) };
-        }
-
-        GEKINLINE Vector sqrt(Vector value)
-        {
-            return _mm_sqrt_ps(value);
-        }
-
-        GEKINLINE Matrix transpose(const Matrix &matrix)
-        {
-            Matrix unpacked =
+            GEKINLINE Types::Matrix set(const float(&data)[16])
             {
-                _mm_unpacklo_ps(matrix[0], matrix[2]),
-                _mm_unpackhi_ps(matrix[0], matrix[2]),
-                _mm_unpacklo_ps(matrix[1], matrix[3]),
-                _mm_unpackhi_ps(matrix[1], matrix[3]),
-            };
+                return{ _mm_loadu_ps(data), _mm_loadu_ps(data + 4), _mm_loadu_ps(data + 8), _mm_loadu_ps(data + 12) };
+            }
 
-            return
+            GEKINLINE Types::Matrix set(const Types::Vector(&data)[4])
             {
-                _mm_unpacklo_ps(unpacked[0], unpacked[2]),
-                _mm_unpackhi_ps(unpacked[0], unpacked[2]),
-                _mm_unpacklo_ps(unpacked[1], unpacked[3]),
-                _mm_unpackhi_ps(unpacked[1], unpacked[3]),
-            };
-        }
+                return{ data[0], data[1], data[2], data[3] };
+            }
 
-        GEKINLINE Vector add(Vector left, Vector right)
-        {
-            return _mm_add_ps(left, right);
-        }
-
-        GEKINLINE Vector subtract(Vector left, Vector right)
-        {
-            return _mm_sub_ps(left, right);
-        }
-
-        GEKINLINE Vector multiply(Vector left, Vector right)
-        {
-            return _mm_mul_ps(left, right);
-        }
-        /*
-        GEKINLINE Vector multiply(const Matrix &left, Vector right)
-        {
-        }
-        */
-        GEKINLINE Matrix multiply(const Matrix &left, const Matrix &right)
-        {
-            Matrix result;
-            for (UINT32 rowIndex = 0; rowIndex < 4; rowIndex++)
+            GEKINLINE Types::Matrix set(Types::Quaternion rotation)
             {
-                Matrix shuffled =
+            }
+
+            GEKINLINE Types::Matrix createPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
+            {
+                float x(1.0f / std::tan(fieldOfView * 0.5f));
+                float y(x * aspectRatio);
+                float distance(farDepth - nearDepth);
+
+                return set({ x,    0.0f, 0.0f, 0.0f,
+                             0.0f,    y, 0.0f, 0.0f,
+                             0.0f, 0.0f,         ((farDepth + nearDepth) / distance), 1.0f,
+                             0.0f, 0.0f, -((2.0f * farDepth * nearDepth) / distance), 0.0f, });
+            }
+
+            GEKINLINE Types::Matrix createOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth)
+            {
+                set({ (2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
+                      0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f,
+                      0.0f, 0.0f, (-2.0f / (farDepth - nearDepth)), 0.0f,
+                   -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farDepth + nearDepth) / (farDepth - nearDepth)), 1.0f, });
+            }
+
+            GEKINLINE Types::Matrix inverse(const Types::Matrix &matrix)
+            {
+            }
+
+            GEKINLINE Types::Matrix transpose(const Types::Matrix &matrix)
+            {
+                Types::Matrix unpacked =
                 {
-                    _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(0, 0, 0, 0)),
-                    _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(1, 1, 1, 1)),
-                    _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(2, 2, 2, 2)),
-                    _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(3, 3, 3, 3)),
+                    _mm_unpacklo_ps(matrix[0], matrix[2]),
+                    _mm_unpackhi_ps(matrix[0], matrix[2]),
+                    _mm_unpacklo_ps(matrix[1], matrix[3]),
+                    _mm_unpackhi_ps(matrix[1], matrix[3]),
                 };
 
-                result[rowIndex] = _mm_add_ps(
-                    _mm_add_ps(
-                        _mm_mul_ps(shuffled[0], right[0]),
-                        _mm_mul_ps(shuffled[1], right[1])),
-                    _mm_add_ps(
-                        _mm_mul_ps(shuffled[2], right[2]),
-                        _mm_mul_ps(shuffled[3], right[3])));
+                return
+                {
+                    _mm_unpacklo_ps(unpacked[0], unpacked[2]),
+                    _mm_unpackhi_ps(unpacked[0], unpacked[2]),
+                    _mm_unpacklo_ps(unpacked[1], unpacked[3]),
+                    _mm_unpackhi_ps(unpacked[1], unpacked[3]),
+                };
             }
 
-            return result;
-        }
+            GEKINLINE Types::Vector multiply(const Types::Matrix &matrix, Types::Vector vector)
+            {
+                Types::Matrix shuffled =
+                {
+                    _mm_shuffle_ps(vector, vector, _MM_SHUFFLE(0, 0, 0, 0)),
+                    _mm_shuffle_ps(vector, vector, _MM_SHUFFLE(1, 1, 1, 1)),
+                    _mm_shuffle_ps(vector, vector, _MM_SHUFFLE(2, 2, 2, 2)),
+                    _mm_shuffle_ps(vector, vector, _MM_SHUFFLE(3, 3, 3, 3)),
+                };
 
-        GEKINLINE Vector divide(Vector left, Vector right)
+                return _mm_add_ps(
+                    _mm_add_ps(
+                        _mm_mul_ps(shuffled[0], matrix[0]),
+                        _mm_mul_ps(shuffled[1], matrix[1])),
+                    _mm_add_ps(
+                        _mm_mul_ps(shuffled[2], matrix[2]),
+                        _mm_mul_ps(shuffled[3], matrix[3])));
+            }
+
+            GEKINLINE Types::Matrix multiply(const Types::Matrix &left, const Types::Matrix &right)
+            {
+                Types::Matrix result;
+                for (UINT32 rowIndex = 0; rowIndex < 4; rowIndex++)
+                {
+                    Types::Matrix shuffled =
+                    {
+                        _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(0, 0, 0, 0)),
+                        _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(1, 1, 1, 1)),
+                        _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(2, 2, 2, 2)),
+                        _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(3, 3, 3, 3)),
+                    };
+
+                    result[rowIndex] = _mm_add_ps(
+                        _mm_add_ps(
+                            _mm_mul_ps(shuffled[0], right[0]),
+                            _mm_mul_ps(shuffled[1], right[1])),
+                        _mm_add_ps(
+                            _mm_mul_ps(shuffled[2], right[2]),
+                            _mm_mul_ps(shuffled[3], right[3])));
+                }
+
+                return result;
+            }
+        };
+
+        void test(void)
         {
-            return _mm_div_ps(left, right);
-        }
+            BUILD_BUG_ON(sizeof(Types::Vector) != 16);
+            BUILD_BUG_ON(sizeof(Types::Matrix) != 64);
 
-        GEKINLINE Vector dot3(Vector left, Vector right)
-        {
-            Vector multiply = _mm_mul_ps(left, right); // lx*rx, ly*ry, lz*rz, lw*rw
-            Vector Y = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(0, 0, 0, 1)); // get lyry in a
-            Vector Z = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(0, 0, 0, 2)); // get lzrz in a
-            Vector addYZ = _mm_add_ps(Y, Z); // lyry+lzrz
-            Vector addXYZ = _mm_add_ps(multiply, addYZ); // xx+(lyry+lzrz)
-            return _mm_shuffle_ps(addXYZ, addXYZ, _MM_SHUFFLE(0, 0, 0, 0)); // shuffle (lxrx+lyry+lzrz) to all four
-        }
+            Types::Vector vector = Vector::set({ 1.0f, 2.0f, 4.0f, 4.0f });
 
-        GEKINLINE Vector dot(Vector left, Vector right)
-        {
-            Vector multiply = _mm_mul_ps(left, right); // lx*rx, ly*ry, lz*rz, lw*rw
-            Vector YXZW = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(2, 3, 0, 1)); // ry, rx, lw, lz
-            Vector add = _mm_add_ps(multiply, YXZW);
-            Vector ZWYX = _mm_shuffle_ps(add, add, _MM_SHUFFLE(0, 1, 2, 3)); // rz, rw, ly, lx
-            return _mm_add_ps(ZWYX, add);
-        }
+            Types::Vector xAxis = Vector::set(1.0f, 0.0f, 0.0f, 0.0f);
+            Types::Vector yAxis = Vector::set(0.0f, 1.0f, 0.0f, 0.0f);
+            Types::Vector zAxis = Vector3::cross(xAxis, yAxis);
 
-        GEKINLINE Vector cross3(Vector left, Vector right)
-        {
-            Vector shuffle0 = _mm_shuffle_ps(left, left, _MM_SHUFFLE(0, 0, 2, 1));
-            Vector shuffle1 = _mm_shuffle_ps(right, right, _MM_SHUFFLE(0, 1, 0, 2));
-            Vector multiply0 = _mm_mul_ps(shuffle0, shuffle1); // (y1*z2), (z1*x2), (x1*y2), (x1*x2)
-            shuffle0 = _mm_shuffle_ps(left, left, _MM_SHUFFLE(0, 1, 0, 2));
-            shuffle1 = _mm_shuffle_ps(right, right, _MM_SHUFFLE(0, 0, 2, 1));
-            Vector multiply1 = _mm_mul_ps(shuffle0, shuffle1); // (z1*y2), (x1*z2), (y1*x2), (x1*x2)
-            return _mm_sub_ps(multiply0, multiply1);
-        }
+            Types::Vector vectorA = Vector::set(1.0f, 2.0f, 3.0f, 4.0f);
+            Types::Vector vectorB = Vector::set(5.0f, 6.0f, 7.0f, 8.0f);
+            Types::Vector cross3Result = Vector3::cross(vectorA, vectorB);
 
-        GEKINLINE Vector length3(Vector vector)
-        {
-            return sqrt(dot3(vector, vector));
-        }
-
-        GEKINLINE Vector length(Vector vector)
-        {
-            return sqrt(dot(vector, vector));
-        }
-
-        void TestFastMath(void)
-        {
-            BUILD_BUG_ON(sizeof(Vector) != 16);
-            BUILD_BUG_ON(sizeof(Matrix) != 64);
-
-            Vector vector = setVector({ 1.0f, 2.0f, 4.0f, 4.0f });
-
-            Vector xAxis = setVector(1.0f, 0.0f, 0.0f, 0.0f);
-            Vector yAxis = setVector(0.0f, 1.0f, 0.0f, 0.0f);
-            Vector zAxis = cross3(xAxis, yAxis);
-
-            Vector vectorA = setVector(1.0f, 2.0f, 3.0f, 4.0f);
-            Vector vectorB = setVector(5.0f, 6.0f, 7.0f, 8.0f);
-            Vector cross3Result = cross3(vectorA, vectorB);
-
-            Vector length3Result = length3(vectorA);
-            Vector lengthResult = length(vectorA);
-            Vector dot3Result = dot3(vectorA, vectorB);
-            Vector dotResult = dot(vectorA, vectorB);
-            Vector addResult = add(vectorA, vectorB);
-            Vector subtractResult = subtract(vectorA, vectorB);
-            Vector multiplyResult = multiply(vectorA, vectorB);
-            Vector divideResult = divide(vectorA, vectorB);
+            Types::Vector length3Result = Vector3::length(vectorA);
+            Types::Vector lengthResult = Vector::length(vectorA);
+            Types::Vector dot3Result = Vector3::dot(vectorA, vectorB);
+            Types::Vector dotResult = Vector::dot(vectorA, vectorB);
+            Types::Vector addResult = Vector::add(vectorA, vectorB);
+            Types::Vector subtractResult = Vector::subtract(vectorA, vectorB);
+            Types::Vector multiplyResult = Vector::multiply(vectorA, vectorB);
+            Types::Vector divideResult = Vector::divide(vectorA, vectorB);
 
             static const float identityData[16] =
             {
@@ -303,7 +291,7 @@ namespace Gek
                 0.0f, 0.0f, 0.0f, 1.0f
             };
 
-            Matrix identity = setMatrix(identityData);
+            Types::Matrix identity = Matrix::set(identityData);
 
             static const float scaleData[16] = 
             {
@@ -313,11 +301,11 @@ namespace Gek
                 4.0f, 5.0f, 6.0f, 1.0f,
             };
 
-            Matrix scale = setMatrix(scaleData);
+            Types::Matrix scale = Matrix::set(scaleData);
 
-            Matrix multiplyResult1 = multiply(identity, scale);
-            Matrix multiplyResult2 = multiply(scale, identity);
-            Matrix multiplyResult3 = multiply(scale, scale);
+            Types::Matrix multiplyResult1 = Matrix::multiply(identity, scale);
+            Types::Matrix multiplyResult2 = Matrix::multiply(scale, identity);
+            Types::Matrix multiplyResult3 = Matrix::multiply(scale, scale);
             
             static const float fullData[16] =
             {
@@ -327,57 +315,17 @@ namespace Gek
                 13.0f, 14.0f, 15.0f, 16.0f,
             };
 
-            Matrix full = setMatrix(fullData);
-            Matrix transposeResult = transpose(full);
-            Matrix multiplyResult4 = multiply(full, transposeResult);
+            Types::Matrix full = Matrix::set(fullData);
+            Types::Matrix transposeResult = Matrix::transpose(full);
+            Types::Matrix multiplyResult4 = Matrix::multiply(full, transposeResult);
+            
+            Types::Vector base = Vector::set(1.0f, 1.0f, 1.0f, 1.0f);
+            Types::Vector base3 = Vector::set(1.0f, 1.0f, 1.0f, 0.0f);
+            Types::Vector multiplyBase = Matrix::multiply(scale, base);
+            Types::Vector multiplyBase3 = Matrix::multiply(scale, base3);
         }
     };
 };
-
-GEKINLINE Gek::FastMath::Vector operator + (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
-{
-    return _mm_add_ps(left, right);
-}
-
-GEKINLINE Gek::FastMath::Vector operator - (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
-{
-    return _mm_sub_ps(left, right);
-}
-
-GEKINLINE Gek::FastMath::Vector operator * (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
-{
-    return _mm_mul_ps(left, right);
-}
-
-GEKINLINE Gek::FastMath::Vector operator / (Gek::FastMath::Vector left, Gek::FastMath::Vector right)
-{
-    return _mm_div_ps(left, right);
-}
-
-GEKINLINE Gek::FastMath::Matrix operator * (const Gek::FastMath::Matrix &left, const Gek::FastMath::Matrix &right)
-{
-    Gek::FastMath::Matrix result;
-    for (UINT32 rowIndex = 0; rowIndex < 4; rowIndex++)
-    {
-        Gek::FastMath::Matrix shuffled =
-        {
-            _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(0, 0, 0, 0)),
-            _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(1, 1, 1, 1)),
-            _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(2, 2, 2, 2)),
-            _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(3, 3, 3, 3)),
-        };
-
-        result[rowIndex] = _mm_add_ps(
-            _mm_add_ps(
-                _mm_mul_ps(shuffled[0], right[0]),
-                _mm_mul_ps(shuffled[1], right[1])),
-            _mm_add_ps(
-                _mm_mul_ps(shuffled[2], right[2]),
-                _mm_mul_ps(shuffled[3], right[3])));
-    }
-
-    return result;
-}
 
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -532,81 +480,10 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
 {
-    Gek::FastMath::TestFastMath();
+    Gek::MathSIMD::test();
+
     return 0;
 
-/*
-    OutputDebugString(Gek::String::format(L"Float2(%d)\r\n", sizeof(Gek::FastMath::Float2)));
-    OutputDebugString(Gek::String::format(L"Float3(%d)\r\n", sizeof(Gek::FastMath::Float3)));
-    OutputDebugString(Gek::String::format(L"Float4(%d)\r\n", sizeof(Gek::FastMath::Float4)));
-    OutputDebugString(Gek::String::format(L"Float4x4(%d)\r\n", sizeof(Gek::FastMath::Float4x4)));
-    OutputDebugString(Gek::String::format(L"Vector(%d)\r\n", sizeof(Gek::FastMath::Vector)));
-    OutputDebugString(Gek::String::format(L"Matrix(%d)\r\n", sizeof(Gek::FastMath::Matrix)));
-
-    const UINT32 cyclesCount = 1000000;
-
-    static const float identity[16] =
-    {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-
-    auto start = GetTickCount();
-    for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
-    {
-        Gek::Math::Float4 value(1.0f, 2.0f, 3.0f, 4.0f);
-        value = value + value;
-        value = value - value;
-        value = value * value;
-        value = value / value;
-        auto dot = value.dot(value);
-        auto dot3 = Gek::Math::Float3(value).dot(value);
-        auto cross3 = Gek::Math::Float3(value).cross(value);
-        Gek::Math::Float4x4 matrix(identity);
-        auto transpose = matrix.getTranspose();
-        auto multiply = matrix * transpose;
-    }
-
-    OutputDebugString(Gek::String::format(L"Base: %d\r\n", GetTickCount() - start));
-    start = GetTickCount();
-    for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
-    {
-        Gek::FastMath::Vector value = Gek::FastMath::setVector(1.0f, 2.0f, 3.0f, 4.0f);
-        value = value + value;
-        value = value - value;
-        value = value * value;
-        value = value / value;
-        auto dot = Gek::FastMath::dot(value, value);
-        auto dot3 = Gek::FastMath::dot3(value, value);
-        auto cross3 = Gek::FastMath::cross3(value, value);
-        Gek::FastMath::Matrix matrix = Gek::FastMath::setMatrix(identity);
-        auto transpose = Gek::FastMath::transpose(matrix);
-        auto multiply = matrix * transpose;
-    }
-
-    OutputDebugString(Gek::String::format(L"Operator: %d\r\n", GetTickCount() - start));
-    start = GetTickCount();
-    for (UINT32 cycle = 0; cycle < cyclesCount; cycle++)
-    {
-        Gek::FastMath::Vector value = Gek::FastMath::setVector(1.0f, 2.0f, 3.0f, 4.0f);
-        value = Gek::FastMath::add(value, value);
-        value = Gek::FastMath::subtract(value, value);
-        value = Gek::FastMath::multiply(value, value);
-        value = Gek::FastMath::divide(value, value);
-        auto dot = Gek::FastMath::dot(value, value);
-        auto dot3 = Gek::FastMath::dot3(value, value);
-        auto cross3 = Gek::FastMath::cross3(value, value);
-        Gek::FastMath::Matrix matrix = Gek::FastMath::setMatrix(identity);
-        auto transpose = Gek::FastMath::transpose(matrix);
-        auto multiply = Gek::FastMath::multiply(matrix, transpose);
-    }
-
-    OutputDebugString(Gek::String::format(L"Fast: %d\r\n", GetTickCount() - start));
-    start = GetTickCount();
-    return 0;
-*/
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
         CComPtr<Gek::Context::Interface> context;
