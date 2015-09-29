@@ -8,6 +8,7 @@
 #include "GEK\Context\Common.h"
 #include "GEK\Context\Interface.h"
 #include "GEK\Engine\CoreInterface.h"
+#include "GEK\Math\Common.h"
 #include "GEK\Math\Matrix4x4.h"
 #include <CommCtrl.h>
 #include <xmmintrin.h>
@@ -24,7 +25,7 @@ namespace Gek
     {
         namespace Types
         {
-            typedef __m128 Vector, Quaternion;
+            typedef __m128 Vector;
             typedef std::array<Vector, 4> Matrix;
         };
 
@@ -82,6 +83,11 @@ namespace Gek
             GEKINLINE Types::Vector length(Types::Vector vector)
             {
                 return sqrt(dot(vector, vector));
+            }
+
+            GEKINLINE Types::Vector normalize(Types::Vector value)
+            {
+                return divide(value, length(value));
             }
 
             GEKINLINE Types::Vector equal(Types::Vector left, Types::Vector right)
@@ -142,15 +148,20 @@ namespace Gek
             {
                 return Vector::sqrt(dot(vector, vector));
             }
+
+            GEKINLINE Types::Vector normalize(Types::Vector value)
+            {
+                return Vector::divide(value, length(value));
+            }
         };
 
         namespace Quaternion
         {
-            GEKINLINE Types::Quaternion set(const Types::Matrix &value)
+            GEKINLINE Types::Vector set(const Types::Matrix &value)
             {
             }
 
-            GEKINLINE Types::Quaternion multiply(Types::Quaternion left, Types::Quaternion right)
+            GEKINLINE Types::Vector multiply(Types::Vector left, Types::Vector right)
             {
             }
         };
@@ -167,8 +178,38 @@ namespace Gek
                 return{ data[0], data[1], data[2], data[3] };
             }
 
-            GEKINLINE Types::Matrix set(Types::Quaternion rotation)
+            GEKINLINE Types::Matrix setEuler(float x, float y, float z)
             {
+                float cosX(std::cos(x));
+                float sinX(std::sin(x));
+                float cosY(std::cos(y));
+                float sinY(std::sin(y));
+                float cosZ(std::cos(z));
+                float sinZ(std::sin(z));
+                float cosXsinY(cosX * sinY);
+                float sinXsinY(sinX * sinY);
+
+                return set({ ( cosY * cosZ), ( sinXsinY * cosZ + cosX * sinZ), (-cosXsinY * cosZ + sinX * sinZ), 0.0f,
+                             (-cosY * sinZ), (-sinXsinY * sinZ + cosX * cosZ), ( cosXsinY * sinZ + sinX * cosZ), 0.0f,
+                               sinY, (-sinX * cosY), (cosX * cosY), 0.0f,
+                               0.0f, 0.0f, 0.0f, 1.0f, });
+            }
+
+            GEKINLINE Types::Matrix setQuaternion(Types::Vector rotation)
+            {
+                float xy(rotation.m128_f32[0] * rotation.m128_f32[1]);
+                float zw(rotation.m128_f32[2] * rotation.m128_f32[3]);
+                float xz(rotation.m128_f32[0] * rotation.m128_f32[2]);
+                float yw(rotation.m128_f32[1] * rotation.m128_f32[3]);
+                float yz(rotation.m128_f32[1] * rotation.m128_f32[2]);
+                float xw(rotation.m128_f32[0] * rotation.m128_f32[3]);
+                Types::Vector square = Vector::multiply(rotation, rotation);
+                float determinant(1.0f / (square.m128_f32[0] + square.m128_f32[1] + square.m128_f32[2] + square.m128_f32[3]));
+
+                return set({ ((square.m128_f32[0] - square.m128_f32[1] - square.m128_f32[2] + square.m128_f32[3]) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
+                              (2.0f * (xy - zw) * determinant), ((-square.m128_f32[0] + square.m128_f32[1] - square.m128_f32[2] + square.m128_f32[3]) * determinant), (2.0f * (yz + xw) * determinant), 0.0f,
+                              (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-square.m128_f32[0] - square.m128_f32[1] + square.m128_f32[2] + square.m128_f32[3]) * determinant), 0.0f,
+                               0.0f, 0.0f, 0.0f, 1.0f, });
             }
 
             GEKINLINE Types::Matrix createPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
@@ -177,18 +218,18 @@ namespace Gek
                 float y(x * aspectRatio);
                 float distance(farDepth - nearDepth);
 
-                return set({ x,    0.0f, 0.0f, 0.0f,
-                             0.0f,    y, 0.0f, 0.0f,
-                             0.0f, 0.0f,         ((farDepth + nearDepth) / distance), 1.0f,
+                return set({ x, 0.0f, 0.0f, 0.0f,
+                             0.0f, y, 0.0f, 0.0f,
+                             0.0f, 0.0f, ((farDepth + nearDepth) / distance), 1.0f,
                              0.0f, 0.0f, -((2.0f * farDepth * nearDepth) / distance), 0.0f, });
             }
 
             GEKINLINE Types::Matrix createOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth)
             {
-                set({ (2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
-                      0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f,
-                      0.0f, 0.0f, (-2.0f / (farDepth - nearDepth)), 0.0f,
-                   -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farDepth + nearDepth) / (farDepth - nearDepth)), 1.0f, });
+                return set({ (2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
+                              0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f,
+                              0.0f, 0.0f, (-2.0f / (farDepth - nearDepth)), 0.0f,
+                    -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farDepth + nearDepth) / (farDepth - nearDepth)), 1.0f, });
             }
 
             GEKINLINE Types::Matrix inverse(const Types::Matrix &matrix)
@@ -273,11 +314,13 @@ namespace Gek
             Types::Vector vectorA = Vector::set(1.0f, 2.0f, 3.0f, 4.0f);
             Types::Vector vectorB = Vector::set(5.0f, 6.0f, 7.0f, 8.0f);
             Types::Vector cross3Result = Vector3::cross(vectorA, vectorB);
+            Types::Vector normalA = Vector::normalize(vectorA);
+            Types::Vector normalA3 = Vector3::normalize(vectorA);
 
-            Types::Vector length3Result = Vector3::length(vectorA);
             Types::Vector lengthResult = Vector::length(vectorA);
-            Types::Vector dot3Result = Vector3::dot(vectorA, vectorB);
+            Types::Vector length3Result = Vector3::length(vectorA);
             Types::Vector dotResult = Vector::dot(vectorA, vectorB);
+            Types::Vector dot3Result = Vector3::dot(vectorA, vectorB);
             Types::Vector addResult = Vector::add(vectorA, vectorB);
             Types::Vector subtractResult = Vector::subtract(vectorA, vectorB);
             Types::Vector multiplyResult = Vector::multiply(vectorA, vectorB);
@@ -323,6 +366,22 @@ namespace Gek
             Types::Vector base3 = Vector::set(1.0f, 1.0f, 1.0f, 0.0f);
             Types::Vector multiplyBase = Matrix::multiply(scale, base);
             Types::Vector multiplyBase3 = Matrix::multiply(scale, base3);
+
+            Types::Matrix eulerX = Matrix::setEuler(Gek::Math::convertDegreesToRadians(90.0f), 0.0f, 0.0f);
+            Types::Matrix eulerY = Matrix::setEuler(0.0f, Gek::Math::convertDegreesToRadians(90.0f), 0.0f);
+            Types::Matrix eulerZ = Matrix::setEuler(0.0f, 0.0f, Gek::Math::convertDegreesToRadians(90.0f));
+            Types::Vector quaternion = Vector::set(0.0f, 0.0f, 0.0f, 1.0f);
+            Types::Matrix matrix = Matrix::setQuaternion(quaternion);
+
+            Types::Vector xxMultiplyResult = Matrix::multiply(eulerX, xAxis);
+            Types::Vector xyMultiplyResult = Matrix::multiply(eulerX, yAxis);
+            Types::Vector xzMultiplyResult = Matrix::multiply(eulerX, zAxis);
+            Types::Vector yxMultiplyResult = Matrix::multiply(eulerY, xAxis);
+            Types::Vector yyMultiplyResult = Matrix::multiply(eulerY, yAxis);
+            Types::Vector yzMultiplyResult = Matrix::multiply(eulerY, zAxis);
+            Types::Vector zxMultiplyResult = Matrix::multiply(eulerZ, xAxis);
+            Types::Vector zyMultiplyResult = Matrix::multiply(eulerZ, yAxis);
+            Types::Vector zzMultiplyResult = Matrix::multiply(eulerZ, zAxis);
         }
     };
 };
