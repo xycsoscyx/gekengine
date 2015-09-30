@@ -31,41 +31,90 @@ namespace Gek
 
         namespace Vector
         {
+            /**
+                Set all four components to a single value.
+                @param[in] value The value to set the components to
+                @return The vector with all components set to [value]
+            */
             GEKINLINE Types::Vector set(float value)
             {
                 return _mm_set_ps1(value);
             }
 
+            /**
+                Set all four components to four separate values.
+                Sets the values in reverse so that the internal order matches XYZW ordering
+                @param[in] x The first component value
+                @param[in] y The second component value
+                @param[in] z The third component value
+                @param[in] w The fourth component value
+                @return The vector with components set to [XYZW]
+            */
             GEKINLINE Types::Vector set(float x, float y, float z, float w)
             {
                 return _mm_setr_ps(x, y, z, w);
             }
 
+            /**
+                Loads an array of four floats into the components
+                @param[in] data The data to be loaded into the vector
+                @return The vector with components set to [data]
+            */
             GEKINLINE Types::Vector set(const float(&data)[4])
             {
                 return _mm_loadu_ps(data);
             }
 
+            /**
+                Adds two vectors
+                @param[in] left The left component in the operation
+                @param[in] right The right component in the operation
+                @return The resulting vector of (left + right)
+            */
             GEKINLINE Types::Vector add(Types::Vector left, Types::Vector right)
             {
                 return _mm_add_ps(left, right);
             }
 
+            /**
+                Subtracts two vectors
+                @param[in] left The left component in the operation
+                @param[in] right The right component in the operation
+                @return The resulting vector of (left - right)
+            */
             GEKINLINE Types::Vector subtract(Types::Vector left, Types::Vector right)
             {
                 return _mm_sub_ps(left, right);
             }
 
+            /**
+                Multiplies two vectors
+                @param[in] left The left component in the operation
+                @param[in] right The right component in the operation
+                @return The resulting vector of (left * right)
+            */
             GEKINLINE Types::Vector multiply(Types::Vector left, Types::Vector right)
             {
                 return _mm_mul_ps(left, right);
             }
 
+            /**
+                Divides two vectors
+                @param[in] left The left component in the operation
+                @param[in] right The right component in the operation
+                @return The resulting vector of (left / right)
+            */
             GEKINLINE Types::Vector divide(Types::Vector left, Types::Vector right)
             {
                 return _mm_div_ps(left, right);
             }
 
+            /**
+                Calculates the dot product of two vectors
+                @param[in] left The left component in the operation
+                @param[in] right The right component in the operation
+                @return The result of (lx*rx)+(ly*ry)+(lz*rz)+(lw*rw) in all four components
+            */
             GEKINLINE Types::Vector dot(Types::Vector left, Types::Vector right)
             {
                 Types::Vector multiply = _mm_mul_ps(left, right); // lx*rx, ly*ry, lz*rz, lw*rw
@@ -75,47 +124,84 @@ namespace Gek
                 return _mm_add_ps(ZWYX, add);
             }
 
+            /**
+                Calculates the square root of each component in a vector
+                @param[in] value The value to calculate the square root of
+                @return The resulting vector of sqrt(value)
+            */
             GEKINLINE Types::Vector sqrt(Types::Vector value)
             {
                 return _mm_sqrt_ps(value);
             }
 
-            GEKINLINE Types::Vector length(Types::Vector vector)
+            /**
+                Calculates the squared length of a vector
+                @param[in] value The value to calculate the squared length of
+                @return The squared length of the vector in all four components
+            */
+            GEKINLINE Types::Vector lengthSquared(Types::Vector vector)
             {
-                return sqrt(dot(vector, vector));
+                return dot(vector, vector);
             }
 
-            GEKINLINE Types::Vector normalize(Types::Vector value)
+            /**
+                Calculates the length of a vector
+                @param[in] value The value to calculate the length of
+                @return The length of the vector in all four components
+            */
+            GEKINLINE Types::Vector length(Types::Vector vector)
+            {
+                return sqrt(lengthSquared(vector));
+            }
+
+            /**
+                Calculates the normal vector of a (potentially) un-normalized vector
+                @param[in] value The value to calculate the normal of
+                @return The resulting normalized vector from (value / length(value))
+            */
+            GEKINLINE Types::Vector normal(Types::Vector value)
             {
                 return divide(value, length(value));
             }
 
-            GEKINLINE Types::Vector equal(Types::Vector left, Types::Vector right)
+            /**
+                Calculates the linear interpolation of two vectors
+                @param[in] left The left component in the operation
+                @param[in] right The right component in the operation
+                @param[in] factor The factor to interpolate by
+                @return The resulting vector of (((right - left) * factor) + left)
+            */
+            GEKINLINE Types::Vector lerp(Types::Vector left, Types::Vector right, float factor)
+            {
+                return add(left, multiply(subtract(right, left), set(factor)));
+            }
+
+            GEKINLINE Types::Vector isEqual(Types::Vector left, Types::Vector right)
             {
                 return _mm_cmpeq_ps(left, right);
             }
 
-            GEKINLINE Types::Vector notEqual(Types::Vector left, Types::Vector right)
+            GEKINLINE Types::Vector isNotEqual(Types::Vector left, Types::Vector right)
             {
                 return _mm_cmpneq_ps(left, right);
             }
 
-            GEKINLINE Types::Vector less(Types::Vector left, Types::Vector right)
+            GEKINLINE Types::Vector isLess(Types::Vector left, Types::Vector right)
             {
                 return _mm_cmplt_ps(left, right);
             }
 
-            GEKINLINE Types::Vector lessEqual(Types::Vector left, Types::Vector right)
+            GEKINLINE Types::Vector isLessEqual(Types::Vector left, Types::Vector right)
             {
                 return _mm_cmple_ps(left, right);
             }
 
-            GEKINLINE Types::Vector greater(Types::Vector left, Types::Vector right)
+            GEKINLINE Types::Vector isGreater(Types::Vector left, Types::Vector right)
             {
                 return _mm_cmpgt_ps(left, right);
             }
 
-            GEKINLINE Types::Vector greaterEqual(Types::Vector left, Types::Vector right)
+            GEKINLINE Types::Vector isGreaterEqual(Types::Vector left, Types::Vector right)
             {
                 return _mm_cmpge_ps(left, right);
             }
@@ -123,6 +209,12 @@ namespace Gek
 
         namespace Vector3
         {
+            /**
+                Calculates the dot product of two vectors, ignoring the W component
+                @param[in] left The left component in the operation
+                @param[in] right The right component in the operation
+                @return The result of (lx*rx)+(ly*ry)+(lz*rz) in all four components
+            */
             GEKINLINE Types::Vector dot(Types::Vector left, Types::Vector right)
             {
                 Types::Vector multiply = _mm_mul_ps(left, right); // lx*rx, ly*ry, lz*rz, lw*rw
@@ -133,6 +225,12 @@ namespace Gek
                 return _mm_shuffle_ps(addXYZ, addXYZ, _MM_SHUFFLE(0, 0, 0, 0)); // shuffle (lxrx+lyry+lzrz) to all four
             }
 
+            /**
+                Calculates the cross product of two vectors, ignoring the W component
+                @param[in] left
+                @param[in] right
+                @return The resulting vector of { ((ly*rz)-(lz*ry)), ((lz*rx)-(lx*rz)), ((lx*ry)-(ly*rx)), 0 }
+            */
             GEKINLINE Types::Vector cross(Types::Vector left, Types::Vector right)
             {
                 Types::Vector shuffle0 = _mm_shuffle_ps(left, left, _MM_SHUFFLE(0, 0, 2, 1));
@@ -144,12 +242,32 @@ namespace Gek
                 return _mm_sub_ps(multiply0, multiply1);
             }
 
-            GEKINLINE Types::Vector length(Types::Vector vector)
+            /**
+                Calculates the squared length of a vector, ignoring the W component
+                @param[in] value The value to calculate the squared length of
+                @return The squared length of the vector in all four components
+            */
+            GEKINLINE Types::Vector lengthSquared(Types::Vector vector)
             {
-                return Vector::sqrt(dot(vector, vector));
+                return dot(vector, vector);
             }
 
-            GEKINLINE Types::Vector normalize(Types::Vector value)
+            /**
+                Calculates the length of a vector, ignoring the W component
+                @param[in] value The value to calculate the length of
+                @return The length of the vector in all four components
+            */
+            GEKINLINE Types::Vector length(Types::Vector vector)
+            {
+                return Vector::sqrt(lengthSquared(vector));
+            }
+
+            /**
+                Calculates the normal vector of a (potentially) un-normalized vector, ignoring the W component
+                @param[in] value The value to calculate the normal of
+                @return The resulting normalized vector from (value / length(value))
+            */
+            GEKINLINE Types::Vector normal(Types::Vector value)
             {
                 return Vector::divide(value, length(value));
             }
@@ -157,62 +275,146 @@ namespace Gek
 
         namespace Quaternion
         {
+            /**
+                Converts the rotational part of a matrix into a quaternion vector
+                @param[in] value The matrix to convert to a quaternion vector
+                @return The resulting quaternion vector of the rotational part of the input matrix
+            */
             GEKINLINE Types::Vector set(const Types::Matrix &value)
             {
             }
 
+            /**
+                Multiplies two quaternion vectors
+                @param[in] left The left component in the operation
+                @param[in] right The right component in the operation
+                @return The resulting quaternion vector of (left * right)
+            */
             GEKINLINE Types::Vector multiply(Types::Vector left, Types::Vector right)
+            {
+            }
+
+            /**
+                Calculates the spherical interpolation of two quaternion vectors
+                @param[in] left The left component in the operation
+                @param[in] right The right component in the operation
+                @param[in] factor The factor to interpolate by
+                @return The resulting quaternion vector of the interpolation operation
+            */
+            GEKINLINE Types::Vector slerp(Types::Vector left, Types::Vector right, float factor)
+            {
+            }
+
+            /**
+                Calculates the inverse of a quaternion vector
+                @param[in] matrix The quaternion vector to invert
+                @return The resulting inverse quaternion vector of the input
+            */
+            GEKINLINE Types::Vector invert(const Types::Vector &quaternion)
             {
             }
         };
 
         namespace Matrix
         {
+            /**
+                Loads an array of sixteen floats into the matrix
+                @param[in] data The data to be loaded into the matrix
+                @return The matrix with components set to [data]
+            */
             GEKINLINE Types::Matrix set(const float(&data)[16])
             {
                 return{ _mm_loadu_ps(data), _mm_loadu_ps(data + 4), _mm_loadu_ps(data + 8), _mm_loadu_ps(data + 12) };
             }
 
+            /**
+                Loads an array of four vectors into the matrix
+                @param[in] data The data to be loaded into the matrix
+                @return The matrix with components set to [data]
+            */
             GEKINLINE Types::Matrix set(const Types::Vector(&data)[4])
             {
                 return{ data[0], data[1], data[2], data[3] };
             }
 
-            GEKINLINE Types::Matrix setEuler(float x, float y, float z)
+            /**
+                Converts Euler angles to a rotational matrix
+                @param[in] pitch The pitch to set the rotation matrix to (x axis rotation)
+                @param[in] roll The roll to set the rotation matrix to (y axis rotation)
+                @param[in] yaw The yaw to set the rotation matrix to (z axis rotation)
+                @return The resulting rotation matrix from the Euler angles
+            */
+            GEKINLINE Types::Matrix set(float pitch, float roll, float yaw)
             {
-                float cosX(std::cos(x));
-                float sinX(std::sin(x));
-                float cosY(std::cos(y));
-                float sinY(std::sin(y));
-                float cosZ(std::cos(z));
-                float sinZ(std::sin(z));
-                float cosXsinY(cosX * sinY);
-                float sinXsinY(sinX * sinY);
+                float cosPitch(std::cos(pitch));
+                float sinPitch(std::sin(pitch));
+                float cosRoll(std::cos(roll));
+                float sinRoll(std::sin(roll));
+                float cosYaw(std::cos(yaw));
+                float sinYaw(std::sin(yaw));
+                float cosPitchSinRoll(cosPitch * sinRoll);
+                float sinPitchSinRoll(sinPitch * sinRoll);
 
-                return set({ ( cosY * cosZ), ( sinXsinY * cosZ + cosX * sinZ), (-cosXsinY * cosZ + sinX * sinZ), 0.0f,
-                             (-cosY * sinZ), (-sinXsinY * sinZ + cosX * cosZ), ( cosXsinY * sinZ + sinX * cosZ), 0.0f,
-                               sinY, (-sinX * cosY), (cosX * cosY), 0.0f,
+                return set({ ( cosRoll * cosYaw), ( sinPitchSinRoll * cosYaw + cosPitch * sinYaw), (-cosPitchSinRoll * cosYaw + sinPitch * sinYaw), 0.0f,
+                             (-cosRoll * sinYaw), (-sinPitchSinRoll * sinYaw + cosPitch * cosYaw), ( cosPitchSinRoll * sinYaw + sinPitch * cosYaw), 0.0f,
+                               sinRoll, (-sinPitch * cosRoll), (cosPitch * cosRoll), 0.0f,
                                0.0f, 0.0f, 0.0f, 1.0f, });
             }
 
-            GEKINLINE Types::Matrix setQuaternion(Types::Vector rotation)
+            /**
+                Converts a quaternion vector to a rotational matrix
+                @param[in] quaternion The quaternion vector to convert to a rotational matrix
+                @return The resulting matrix from the quaternion vector
+            */
+            GEKINLINE Types::Matrix set(Types::Vector quaternion)
             {
-                float xy(rotation.m128_f32[0] * rotation.m128_f32[1]);
-                float zw(rotation.m128_f32[2] * rotation.m128_f32[3]);
-                float xz(rotation.m128_f32[0] * rotation.m128_f32[2]);
-                float yw(rotation.m128_f32[1] * rotation.m128_f32[3]);
-                float yz(rotation.m128_f32[1] * rotation.m128_f32[2]);
-                float xw(rotation.m128_f32[0] * rotation.m128_f32[3]);
-                Types::Vector square = Vector::multiply(rotation, rotation);
+                float xy(quaternion.m128_f32[0] * quaternion.m128_f32[1]);
+                float zw(quaternion.m128_f32[2] * quaternion.m128_f32[3]);
+                float xz(quaternion.m128_f32[0] * quaternion.m128_f32[2]);
+                float yw(quaternion.m128_f32[1] * quaternion.m128_f32[3]);
+                float yz(quaternion.m128_f32[1] * quaternion.m128_f32[2]);
+                float xw(quaternion.m128_f32[0] * quaternion.m128_f32[3]);
+                Types::Vector square = Vector::multiply(quaternion, quaternion);
                 float determinant(1.0f / (square.m128_f32[0] + square.m128_f32[1] + square.m128_f32[2] + square.m128_f32[3]));
 
-                return set({ ((square.m128_f32[0] - square.m128_f32[1] - square.m128_f32[2] + square.m128_f32[3]) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
-                              (2.0f * (xy - zw) * determinant), ((-square.m128_f32[0] + square.m128_f32[1] - square.m128_f32[2] + square.m128_f32[3]) * determinant), (2.0f * (yz + xw) * determinant), 0.0f,
-                              (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-square.m128_f32[0] - square.m128_f32[1] + square.m128_f32[2] + square.m128_f32[3]) * determinant), 0.0f,
-                               0.0f, 0.0f, 0.0f, 1.0f, });
+                return set({  ((square.m128_f32[0] - square.m128_f32[1] - square.m128_f32[2] + square.m128_f32[3]) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
+                             (2.0f * (xy - zw) * determinant), ((-square.m128_f32[0] + square.m128_f32[1] - square.m128_f32[2] + square.m128_f32[3]) * determinant), (2.0f * (yz + xw) * determinant), 0.0f,
+                             (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-square.m128_f32[0] - square.m128_f32[1] + square.m128_f32[2] + square.m128_f32[3]) * determinant), 0.0f,
+                              0.0f, 0.0f, 0.0f, 1.0f });
             }
 
-            GEKINLINE Types::Matrix createPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
+            /**
+                Converts a quaternion vector to a rotational matrix, setting the translation component of the matrix after conversion
+                @param[in] quaternion The quaternion vector to convert to a rotational matrix
+                @param[in] translation The translation component to set in the rotational matrix
+                @return The resulting matrix from the quaternion vector and translation component
+            */
+            GEKINLINE Types::Matrix set(Types::Vector quaternion, Types::Vector translation)
+            {
+                float xy(quaternion.m128_f32[0] * quaternion.m128_f32[1]);
+                float zw(quaternion.m128_f32[2] * quaternion.m128_f32[3]);
+                float xz(quaternion.m128_f32[0] * quaternion.m128_f32[2]);
+                float yw(quaternion.m128_f32[1] * quaternion.m128_f32[3]);
+                float yz(quaternion.m128_f32[1] * quaternion.m128_f32[2]);
+                float xw(quaternion.m128_f32[0] * quaternion.m128_f32[3]);
+                Types::Vector square = Vector::multiply(quaternion, quaternion);
+                float determinant(1.0f / (square.m128_f32[0] + square.m128_f32[1] + square.m128_f32[2] + square.m128_f32[3]));
+
+                return set({ Vector::set({  ((square.m128_f32[0] - square.m128_f32[1] - square.m128_f32[2] + square.m128_f32[3]) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f, }),
+                             Vector::set({ (2.0f * (xy - zw) * determinant), ((-square.m128_f32[0] + square.m128_f32[1] - square.m128_f32[2] + square.m128_f32[3]) * determinant), (2.0f * (yz + xw) * determinant), 0.0f, }),
+                             Vector::set({ (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-square.m128_f32[0] - square.m128_f32[1] + square.m128_f32[2] + square.m128_f32[3]) * determinant), 0.0f, }),
+                             translation });
+            }
+
+            /**
+                Creates a perspective projection matrix, scales far objects to zero
+                @param[in] fieldOfView The horizontal field of view (in radians) of the perspective projection
+                @param[in] aspectRatio The aspect ratio of the perspective projection (vertical / horizontal)
+                @param[in] nearDepth The near clipping plane of the perspective projection
+                @param[in] farDepth The far clipping plane of the perspective projection
+                @return The resulting perspective projection matrix
+            */
+            GEKINLINE Types::Matrix set(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
             {
                 float x(1.0f / std::tan(fieldOfView * 0.5f));
                 float y(x * aspectRatio);
@@ -224,7 +426,17 @@ namespace Gek
                              0.0f, 0.0f, -((2.0f * farDepth * nearDepth) / distance), 0.0f, });
             }
 
-            GEKINLINE Types::Matrix createOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth)
+            /**
+                Creates an orthographic projection matrix, no scale regardless of depth
+                @param[in] left The left clipping plane of the orthographic priojection
+                @param[in] top The top clipping plane of the orthographic priojection
+                @param[in] right The right clipping plane of the orthographic priojection
+                @param[in] bottom The bottom clipping plane of the orthographic priojection
+                @param[in] nearDepth The near clipping plane of the orthographic projection
+                @param[in] farDepth The far clipping plane of the orthographic projection
+                @return The resulting orthographic projection matrix
+            */
+            GEKINLINE Types::Matrix set(float left, float top, float right, float bottom, float nearDepth, float farDepth)
             {
                 return set({ (2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
                               0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f,
@@ -232,10 +444,20 @@ namespace Gek
                     -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farDepth + nearDepth) / (farDepth - nearDepth)), 1.0f, });
             }
 
-            GEKINLINE Types::Matrix inverse(const Types::Matrix &matrix)
+            /**
+                Calculates the inverse of a matrix
+                @param[in] matrix The matrix to invert
+                @return The resulting inverse matrix of the input
+            */
+            GEKINLINE Types::Matrix invert(const Types::Matrix &matrix)
             {
             }
 
+            /**
+                Calculates the transpose of a matrix
+                @param[in] matrix The matrix to transpose
+                @return The resulting transposed matrix of the input
+            */
             GEKINLINE Types::Matrix transpose(const Types::Matrix &matrix)
             {
                 Types::Matrix unpacked =
@@ -255,6 +477,12 @@ namespace Gek
                 };
             }
 
+            /**
+                Multiplies a vector by a matrix
+                @param[in] matrix The matrix to multiply by
+                @param[in] vetor The vector to multiply
+                @return The resulting vector of (matrix * vector)
+            */
             GEKINLINE Types::Vector multiply(const Types::Matrix &matrix, Types::Vector vector)
             {
                 Types::Matrix shuffled =
@@ -274,6 +502,12 @@ namespace Gek
                         _mm_mul_ps(shuffled[3], matrix[3])));
             }
 
+            /**
+                Multiplies two matrices
+                @param[in] left The left component in the operation
+                @param[in] right The right component in the operation
+                @return The resulting matrix of (left * right)
+            */
             GEKINLINE Types::Matrix multiply(const Types::Matrix &left, const Types::Matrix &right)
             {
                 Types::Matrix result;
@@ -314,8 +548,8 @@ namespace Gek
             Types::Vector vectorA = Vector::set(1.0f, 2.0f, 3.0f, 4.0f);
             Types::Vector vectorB = Vector::set(5.0f, 6.0f, 7.0f, 8.0f);
             Types::Vector cross3Result = Vector3::cross(vectorA, vectorB);
-            Types::Vector normalA = Vector::normalize(vectorA);
-            Types::Vector normalA3 = Vector3::normalize(vectorA);
+            Types::Vector normalA = Vector::normal(vectorA);
+            Types::Vector normalA3 = Vector3::normal(vectorA);
 
             Types::Vector lengthResult = Vector::length(vectorA);
             Types::Vector length3Result = Vector3::length(vectorA);
