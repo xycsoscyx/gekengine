@@ -11,13 +11,14 @@
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Matrix4x4.h"
 #include <CommCtrl.h>
-#include <xmmintrin.h>
-#include <array>
 #include "resource.h"
 
 #define GEKINLINE __forceinline
 
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
+
+#include <xmmintrin.h>
+#include <array>
 
 namespace Gek
 {
@@ -174,6 +175,17 @@ namespace Gek
             GEKINLINE Types::Vector lerp(Types::Vector left, Types::Vector right, float factor)
             {
                 return add(left, multiply(subtract(right, left), set(factor)));
+            }
+
+            /**
+            Returns the absolute value of each component
+            @param[in] value The value to return the absolute of
+            @return The resulting vector containing the absolute value of each component
+            */
+            GEKINLINE Types::Vector abs(Types::Vector value)
+            {
+                static const __m128i sign = _mm_set1_epi32(0x80000000);
+                return _mm_andnot_ps(_mm_castsi128_ps(sign), value);
             }
 
             GEKINLINE Types::Vector isEqual(Types::Vector left, Types::Vector right)
@@ -357,30 +369,8 @@ namespace Gek
 
                 return set({ ( cosRoll * cosYaw), ( sinPitchSinRoll * cosYaw + cosPitch * sinYaw), (-cosPitchSinRoll * cosYaw + sinPitch * sinYaw), 0.0f,
                              (-cosRoll * sinYaw), (-sinPitchSinRoll * sinYaw + cosPitch * cosYaw), ( cosPitchSinRoll * sinYaw + sinPitch * cosYaw), 0.0f,
-                               sinRoll, (-sinPitch * cosRoll), (cosPitch * cosRoll), 0.0f,
-                               0.0f, 0.0f, 0.0f, 1.0f, });
-            }
-
-            /**
-                Converts a quaternion vector to a rotational matrix
-                @param[in] quaternion The quaternion vector to convert to a rotational matrix
-                @return The resulting matrix from the quaternion vector
-            */
-            GEKINLINE Types::Matrix set(Types::Vector quaternion)
-            {
-                float xy(quaternion.m128_f32[0] * quaternion.m128_f32[1]);
-                float zw(quaternion.m128_f32[2] * quaternion.m128_f32[3]);
-                float xz(quaternion.m128_f32[0] * quaternion.m128_f32[2]);
-                float yw(quaternion.m128_f32[1] * quaternion.m128_f32[3]);
-                float yz(quaternion.m128_f32[1] * quaternion.m128_f32[2]);
-                float xw(quaternion.m128_f32[0] * quaternion.m128_f32[3]);
-                Types::Vector square = Vector::multiply(quaternion, quaternion);
-                float determinant(1.0f / (square.m128_f32[0] + square.m128_f32[1] + square.m128_f32[2] + square.m128_f32[3]));
-
-                return set({  ((square.m128_f32[0] - square.m128_f32[1] - square.m128_f32[2] + square.m128_f32[3]) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
-                             (2.0f * (xy - zw) * determinant), ((-square.m128_f32[0] + square.m128_f32[1] - square.m128_f32[2] + square.m128_f32[3]) * determinant), (2.0f * (yz + xw) * determinant), 0.0f,
-                             (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-square.m128_f32[0] - square.m128_f32[1] + square.m128_f32[2] + square.m128_f32[3]) * determinant), 0.0f,
-                              0.0f, 0.0f, 0.0f, 1.0f });
+                                         sinRoll,                           (-sinPitch * cosRoll),                            (cosPitch * cosRoll), 0.0f,
+                                            0.0f,                                            0.0f,                                            0.0f, 1.0f, });
             }
 
             /**
@@ -407,6 +397,16 @@ namespace Gek
             }
 
             /**
+                Converts a quaternion vector to a rotational matrix
+                @param[in] quaternion The quaternion vector to convert to a rotational matrix
+                @return The resulting matrix from the quaternion vector
+            */
+            GEKINLINE Types::Matrix set(Types::Vector quaternion)
+            {
+                return set(quaternion, Vector::set(0.0f, 0.0f, 0.0f, 1.0f));
+            }
+
+            /**
                 Creates a perspective projection matrix, scales far objects to zero
                 @param[in] fieldOfView The horizontal field of view (in radians) of the perspective projection
                 @param[in] aspectRatio The aspect ratio of the perspective projection (vertical / horizontal)
@@ -416,14 +416,14 @@ namespace Gek
             */
             GEKINLINE Types::Matrix set(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
             {
-                float x(1.0f / std::tan(fieldOfView * 0.5f));
-                float y(x * aspectRatio);
+                float widthFieldOfView(1.0f / std::tan(fieldOfView * 0.5f));
+                float heightFieldOfView(widthFieldOfView * aspectRatio);
                 float distance(farDepth - nearDepth);
 
-                return set({ x, 0.0f, 0.0f, 0.0f,
-                             0.0f, y, 0.0f, 0.0f,
-                             0.0f, 0.0f, ((farDepth + nearDepth) / distance), 1.0f,
-                             0.0f, 0.0f, -((2.0f * farDepth * nearDepth) / distance), 0.0f, });
+                return set({ widthFieldOfView,              0.0f,                                        0.0f, 0.0f,
+                                         0.0f, heightFieldOfView,                                        0.0f, 0.0f,
+                                         0.0f,              0.0f,         ((farDepth + nearDepth) / distance), 1.0f,
+                                         0.0f,              0.0f, -((2.0f * farDepth * nearDepth) / distance), 0.0f, });
             }
 
             /**
@@ -438,9 +438,9 @@ namespace Gek
             */
             GEKINLINE Types::Matrix set(float left, float top, float right, float bottom, float nearDepth, float farDepth)
             {
-                return set({ (2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
-                              0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f,
-                              0.0f, 0.0f, (-2.0f / (farDepth - nearDepth)), 0.0f,
+                return set({   (2.0f / (right - left)),                               0.0f,                                               0.0f, 0.0f,
+                                                  0.0f,            (2.0f / (top - bottom)),                                               0.0f, 0.0f,
+                                                  0.0f,                               0.0f,                   (-2.0f / (farDepth - nearDepth)), 0.0f,
                     -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farDepth + nearDepth) / (farDepth - nearDepth)), 1.0f, });
             }
 
@@ -601,11 +601,11 @@ namespace Gek
             Types::Vector multiplyBase = Matrix::multiply(scale, base);
             Types::Vector multiplyBase3 = Matrix::multiply(scale, base3);
 
-            Types::Matrix eulerX = Matrix::setEuler(Gek::Math::convertDegreesToRadians(90.0f), 0.0f, 0.0f);
-            Types::Matrix eulerY = Matrix::setEuler(0.0f, Gek::Math::convertDegreesToRadians(90.0f), 0.0f);
-            Types::Matrix eulerZ = Matrix::setEuler(0.0f, 0.0f, Gek::Math::convertDegreesToRadians(90.0f));
+            Types::Matrix eulerX = Matrix::set(Gek::Math::convertDegreesToRadians(90.0f), 0.0f, 0.0f);
+            Types::Matrix eulerY = Matrix::set(0.0f, Gek::Math::convertDegreesToRadians(90.0f), 0.0f);
+            Types::Matrix eulerZ = Matrix::set(0.0f, 0.0f, Gek::Math::convertDegreesToRadians(90.0f));
             Types::Vector quaternion = Vector::set(0.0f, 0.0f, 0.0f, 1.0f);
-            Types::Matrix matrix = Matrix::setQuaternion(quaternion);
+            Types::Matrix matrix = Matrix::set(quaternion);
 
             Types::Vector xxMultiplyResult = Matrix::multiply(eulerX, xAxis);
             Types::Vector xyMultiplyResult = Matrix::multiply(eulerX, yAxis);
