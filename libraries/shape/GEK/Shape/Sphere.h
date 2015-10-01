@@ -7,41 +7,40 @@ namespace Gek
 {
     namespace Shape
     {
-        template <typename TYPE>
-        struct BaseSphere
+        struct Sphere
         {
         public:
-            Math::BaseVector3<TYPE> position;
-            TYPE radius;
+            Math::Float3 position;
+            float radius;
 
         public:
-            BaseSphere(void)
+            Sphere(void)
                 : radius(0.0f)
             {
             }
 
-            BaseSphere(const BaseSphere<TYPE> &nSphere)
-                : position(nSphere.position)
-                , radius(nSphere.radius)
+            Sphere(const Sphere &sphere)
+                : position(sphere.position)
+                , radius(sphere.radius)
             {
             }
 
-            BaseSphere(const Math::BaseVector3<TYPE> &nPosition, TYPE nRadius)
-                : position(nPosition)
-                , radius(nRadius)
+            Sphere(const Math::Float3 &position, float radius)
+                : position(position)
+                , radius(radius)
             {
             }
 
-            BaseSphere operator = (const BaseSphere<TYPE> &sphere)
+            Sphere operator = (const Sphere &sphere)
             {
                 position = sphere.position;
                 radius = sphere.radius;
                 return (*this);
             }
 
-            int getPosition(const BasePlane<TYPE> &plane) const
+            int getPosition(const Plane &plane) const
             {
-                TYPE distance = plane.getDistance(position);
+                float distance = plane.getDistance(position);
                 if (distance < -radius)
                 {
                     return -1;
@@ -56,7 +55,5 @@ namespace Gek
                 }
             }
         };
-
-        typedef BaseSphere<float> Sphere;
     }; // namespace Shape
 }; // namespace Gek

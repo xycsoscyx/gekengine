@@ -8,14 +8,13 @@ namespace Gek
 {
     namespace Shape
     {
-        template <typename TYPE>
-        struct BaseFrustum
+        struct Frustum
         {
         public:
-            BasePlane<TYPE> planes[6];
+            Plane planes[6];
 
         public:
-            BaseFrustum(const Math::BaseMatrix4x4<TYPE> &transform)
+            Frustum(const Math::Float4x4 &transform)
             {
                 // Calculate near plane of frustum.
                 planes[0].normal.x = transform._14 + transform._13;
@@ -71,7 +70,5 @@ namespace Gek
                 return true;
             }
         };
-
-        typedef BaseFrustum<float> Frustum;
     }; // namespace Shape
 }; // namespace Gek

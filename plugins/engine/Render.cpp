@@ -750,11 +750,13 @@ namespace Gek
                             auto &pointLightComponent = population->getComponent<Components::PointLight::Data>(lightEntity, Components::PointLight::identifier);
                             if (viewFrustum.isVisible(Shape::Sphere(transformComponent.position, pointLightComponent.radius)))
                             {
+                                auto lightColor = population->getComponent<Components::Color::Data>(lightEntity, Components::Color::identifier).value;
+
                                 auto lightIterator = concurrentVisibleLightList.grow_by(1);
-                                (*lightIterator).position = (cameraConstantData.viewMatrix * Math::Float4(transformComponent.position, 1.0f));
+                                (*lightIterator).position = (cameraConstantData.viewMatrix * transformComponent.position);
                                 (*lightIterator).distance = (*lightIterator).position.getLengthSquared();
                                 (*lightIterator).range = pointLightComponent.radius;
-                                (*lightIterator).color = population->getComponent<Components::Color::Data>(lightEntity, Components::Color::identifier);
+                                (*lightIterator).color.set(lightColor.x, lightColor.y, lightColor.z);
                             }
                         }, true);
 

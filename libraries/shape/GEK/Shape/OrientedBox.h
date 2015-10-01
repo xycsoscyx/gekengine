@@ -4,54 +4,54 @@
 #include "GEK\Math\Matrix4x4.h"
 #include "GEK\Math\Quaternion.h"
 #include "GEK\Shape\Plane.h"
+#include "GEK\Shape\AlignedBox.h"
 
 namespace Gek
 {
     namespace Shape
     {
-        template <typename TYPE>
-        struct BaseOrientedBox
+        struct OrientedBox
         {
         public:
-            Math::BaseMatrix4x4<TYPE> matrix;
-            Math::BaseVector3<TYPE> halfsize;
+            Math::Float4x4 matrix;
+            Math::Float3 halfsize;
 
         public:
-            BaseOrientedBox(void)
+            OrientedBox(void)
             {
             }
 
-            BaseOrientedBox(const BaseOrientedBox<TYPE> &box)
+            OrientedBox(const OrientedBox &box)
                 : matrix(box.matrix)
                 , halfsize(box.halfsize)
             {
             }
 
-            BaseOrientedBox(const BaseAlignedBox<TYPE> &box, const Math::BaseQuaternion<TYPE> &rotation, const Math::BaseVector3<TYPE> &translation)
+            OrientedBox(const AlignedBox &box, const Math::Quaternion &rotation, const Math::Float3 &translation)
                 : matrix(rotation, (translation + box.getCenter()))
                 , halfsize(box.getSize() * 0.5f)
             {
             }
 
-            BaseOrientedBox(const BaseAlignedBox<TYPE> &box, const Math::BaseMatrix4x4<TYPE> &matrix)
-                : rotation(matrix, (matrix.translation + box.getCenter()))
+            OrientedBox(const AlignedBox &box, const Math::Float4x4 &matrix)
+                : matrix(matrix, (matrix.translation + box.getCenter()))
                 , halfsize(box.getSize() * 0.5f)
             {
             }
 
-            BaseOrientedBox operator = (const BaseOrientedBox<TYPE> &box)
+            OrientedBox operator = (const OrientedBox &box)
             {
                 matrix = box.matrix;
                 return (*this);
             }
 
-            int getPosition(const BasePlane<TYPE> &plane) const
+            int getPosition(const Plane &plane) const
             {
-                TYPE distance = plane.getDistance(matrix.translation);
-                TYPE radiusX = std::abs(matrix.rx.xyz.dot(plane.normal) * halfsize.x);
-                TYPE radiusY = std::abs(matrix.ry.xyz.dot(plane.normal) * halfsize.y);
-                TYPE radiusZ = std::abs(matrix.rz.xyz.dot(plane.normal) * halfsize.z);
-                TYPE radius = (radiusX + radiusY + radiusZ);
+                float distance = plane.getDistance(matrix.translation);
+                float radiusX = std::abs(matrix.nx.dot(plane.normal) * halfsize.x);
+                float radiusY = std::abs(matrix.ny.dot(plane.normal) * halfsize.y);
+                float radiusZ = std::abs(matrix.nz.dot(plane.normal) * halfsize.z);
+                float radius = (radiusX + radiusY + radiusZ);
                 if (distance < -radius)
                 {
                     return -1;
@@ -66,7 +66,5 @@ namespace Gek
                 }
             }
         };
-
-        typedef BaseOrientedBox<float> OrientedBox;
     }; // namespace Shape
 }; // namespace Gek

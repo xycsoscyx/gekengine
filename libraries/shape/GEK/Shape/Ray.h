@@ -7,55 +7,52 @@ namespace Gek
 {
     namespace Shape
     {
-        template <typename TYPE>
-        struct BaseRay
+        struct Ray
         {
         public:
-            Math::BaseVector3<TYPE> origin;
-            Math::BaseVector3<TYPE> normal;
+            Math::Float3 origin;
+            Math::Float3 normal;
 
         public:
-            BaseRay(void)
+            Ray(void)
             {
             }
 
-            BaseRay(const Math::BaseVector3<TYPE> &origin, const Math::BaseVector3<TYPE> &normal)
+            Ray(const Math::Float3 &origin, const Math::Float3 &normal)
                 : origin(origin)
                 , normal(normal)
             {
             }
 
-            BaseRay(const BaseRay<TYPE> &ray)
+            Ray(const Ray &ray)
                 : origin(ray.origin)
                 , normal(ray.normal)
             {
             }
 
-            BaseRay operator = (const BaseRay<TYPE> &ray)
+            Ray operator = (const Ray &ray)
             {
                 origin = ray.origin;
                 normal = ray.normal;
                 return (*this);
             }
 
-            TYPE getDistance(const BaseOrientedBox<TYPE> &orientedBox) const
+            float getDistance(const OrientedBox &orientedBox) const
             {
-                TYPE minimum(0.0f);
-                TYPE maximum(Math::Infinity);
-                Math::BaseVector3<TYPE> positionDelta(orientedBox.position - origin);
-                Math::BaseMatrix4x4<TYPE> orientedBoxMatrix(orientedBox.rotation);
-                Math::BaseVector3<TYPE> orientedBoxHalfSize(orientedBox.size * 0.5f);
-                for (UINT32 axis = 0; axis < 3; ++axis)
+                float minimum(0.0f);
+                float maximum(Math::Infinity);
+                Math::Float3 positionDelta(orientedBox.matrix.translation - origin);
+                for (int axis = 0; axis < 3; ++axis)
                 {
-                    TYPE axisAngle = orientedBoxMatrix.r[axis].xyz.Dot(positionDelta);
-                    TYPE rayAngle = normal.Dot(orientedBoxMatrix.r[axis].xyz);
+                    float axisAngle = orientedBox.matrix.rows[axis].dot(positionDelta);
+                    float rayAngle = normal.dot(orientedBox.matrix.rows[axis]);
                     if (std::abs(rayAngle) > Math::Epsilon)
                     {
-                        TYPE positionDelta1 = ((axisAngle - orientedBoxHalfSize.xyz[axis]) / rayAngle);
-                        TYPE positionDelta2 = ((axisAngle + orientedBoxHalfSize.xyz[axis]) / rayAngle);
+                        float positionDelta1 = ((axisAngle - orientedBox.halfsize.data[axis]) / rayAngle);
+                        float positionDelta2 = ((axisAngle + orientedBox.halfsize.data[axis]) / rayAngle);
                         if (positionDelta1 > positionDelta2)
                         {
-                            TYPE positionDeltaSwap = positionDelta1;
+                            float positionDeltaSwap = positionDelta1;
                             positionDelta1 = positionDelta2;
                             positionDelta2 = positionDeltaSwap;
                         }
@@ -72,15 +69,15 @@ namespace Gek
 
                         if (maximum < minimum)
                         {
-                            return TYPE(-1);
+                            return float(-1);
                         }
                     }
                     else
                     {
-                        if ((-axisAngle - orientedBoxHalfSize.xyz[axis]) > 0.0f ||
-                            (-axisAngle + orientedBoxHalfSize.xyz[axis]) < 0.0f)
+                        if ((-axisAngle - orientedBox.halfsize.data[axis]) > 0.0f ||
+                            (-axisAngle + orientedBox.halfsize.data[axis]) < 0.0f)
                         {
-                            return TYPE(-1);
+                            return float(-1);
                         }
                     }
                 }
@@ -88,7 +85,5 @@ namespace Gek
                 return minimum;
             }
         };
-
-        typedef BaseRay<float> Ray;
     }; // namespace Shape
 }; // namespace Gek

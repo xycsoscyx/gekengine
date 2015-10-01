@@ -868,20 +868,24 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     {
         auto loop = [&](std::function<void(void)> call) -> void
         {
-            for (UINT32 cycles = 0; cycles < 1000; cycles++)
+            for (UINT32 cycles1 = 0; cycles1 < 1000; cycles1++)
             {
-                call();
+                for (UINT32 cycles2 = 0; cycles2 < 1000; cycles2++)
+                {
+                    for (UINT32 cycles3 = 0; cycles3 < 1000; cycles3++)
+                    {
+                        call();
+                    }
+                }
             }
         };
 
-        auto looper = std::bind(loop, std::placeholders::_1);
-
         start = GetTickCount();
-        loop(std::bind(looper, std::bind(looper, baseCall)));
+        loop(baseCall);
         base = (GetTickCount() - start);
 
         start = GetTickCount();
-        //loop(std::bind(loop, std::bind(loop, simdCall)));
+        loop(simdCall);
         simd = (GetTickCount() - start);
 
         OutputDebugString(Gek::String::format(L"(%10s) Base: %8d, SIMD: %8d\r\n", name, base, simd));

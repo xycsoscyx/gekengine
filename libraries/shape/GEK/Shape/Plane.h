@@ -7,57 +7,61 @@ namespace Gek
 {
     namespace Shape
     {
-        template <typename TYPE>
-        struct BasePlane : public Math::BaseVector4<TYPE>
+        struct Plane
         {
         public:
-            BasePlane(void)
-                : BaseVector4(0, 0, 0, 0)
+            union
+            {
+                struct { float a, b, c, d; };
+                struct { Math::Float3 normal; float distance; };
+                struct { Math::Float4 vector; };
+                struct { float data[4]; };
+            };
+
+        public:
+            Plane(void)
+                : normal(0.0f, 0.0f, 0.0f)
+                , distance(0.0f)
             {
             }
 
-            BasePlane(const Math::BaseVector4<TYPE> &vector)
-                : Math::BaseVector4(vector)
+            Plane(float a, float b, float c, float d)
+                : normal(a, b, c)
+                , distance(d)
             {
             }
 
-            BasePlane(TYPE a, TYPE b, TYPE c, TYPE d)
-                : Math::BaseVector4(a, b, c, d)
+            Plane(const Math::Float3 &normal, float distance)
+                : normal(normal)
+                , distance(distance)
             {
             }
 
-            BasePlane(const Math::BaseVector3<TYPE> &normal, TYPE distance)
-                : Math::BaseVector4(normal, distance)
+            Plane(const Math::Float3 &pointA, const Math::Float3 &pointB, const Math::Float3 &pointC)
             {
-            }
-
-            BasePlane(const Math::BaseVector3<TYPE> &pointA, const Math::BaseVector3<TYPE> &pointB, const Math::BaseVector3<TYPE> &pointC)
-            {
-                Math::BaseVector3 sideA(pointB - pointA);
-                Math::BaseVector3 sideB(pointC - pointA);
-                Math::BaseVector3 sideC(sideA.Cross(sideB));
+                Math::Float3 sideA(pointB - pointA);
+                Math::Float3 sideB(pointC - pointA);
+                Math::Float3 sideC(sideA.cross(sideB));
 
                 normal = sideC.getNormal();
                 distance = -normal.dot(pointA);
             }
 
-            BasePlane(const Math::BaseVector3<TYPE> &nNormal, const Math::BaseVector3<TYPE> &nPointOnPlane)
+            Plane(const Math::Float3 &normal, const Math::Float3 &pointOnPlane)
+                : normal(normal)
+                , distance(-normal.dot(pointOnPlane))
             {
-                normal = nNormal;
-                distance = -normal.Dot(nPointOnPlane);
             }
 
             void normalize(void)
             {
-                (*this) *= (1.0f / normal.getLength());
+                vector *= (1.0f / normal.getLength());
             }
 
-            TYPE getDistance(const Math::BaseVector3<TYPE> &point) const
+            float getDistance(const Math::Float3 &point) const
             {
                 return (normal.dot(point) + distance);
             }
         };
-
-        typedef BasePlane<float> Plane;
     }; // namespace Shape
 }; // namespace Gek

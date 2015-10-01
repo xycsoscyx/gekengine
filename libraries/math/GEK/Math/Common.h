@@ -13,12 +13,12 @@ namespace Gek
         const float Epsilon = 1.0e-5f;
         const float Pi = 3.14159265358979323846f;
 
-        inline float convertDegreesToRadians(float degrees)
+        float convertDegreesToRadians(float degrees)
         {
             return (degrees * (Pi / 180.0f));
         }
 
-        inline float convertRadiansToDegrees(float radians)
+        float convertRadiansToDegrees(float radians)
         {
             return (radians * (180.0f / Pi));
         }

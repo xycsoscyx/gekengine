@@ -127,10 +127,9 @@ void GetMeshes(const aiScene *scene, const aiNode *node, const Gek::Math::Float4
                 for (UINT32 vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
                 {
                     Vertex vertex;
-                    Gek::Math::Float3 position(mesh->mVertices[vertexIndex].x,
-                                     mesh->mVertices[vertexIndex].y,
-                                     mesh->mVertices[vertexIndex].z);
-                    vertex.position = (transformation * Gek::Math::Float4(position, 1.0f));
+                    vertex.position = (transformation * Gek::Math::Float3(mesh->mVertices[vertexIndex].x,
+                                                                          mesh->mVertices[vertexIndex].y,
+                                                                          mesh->mVertices[vertexIndex].z));
                     if (flipAxis)
                     {
                         vertex.position *= Gek::Math::Float3(-1.0f, 1.0f, -1.0f);

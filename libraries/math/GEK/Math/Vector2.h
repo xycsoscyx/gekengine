@@ -1,109 +1,90 @@
 #pragma once
 
-#include <cmath>
 #include <algorithm>
-#include <initializer_list>
+#include "Gek\Math\Common.h"
 
 namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE> struct BaseVector3;
-        template <typename TYPE> struct BaseVector4;
-
-        template <typename TYPE>
-        struct BaseVector2
+        struct Float2
         {
         public:
             union
             {
-                struct { TYPE x, y; };
-                struct { TYPE u, v; };
-                struct { TYPE data[2]; };
+                struct { float x, y; };
+                struct { float u, v; };
+                struct { float data[2]; };
             };
 
         public:
-            BaseVector2(void)
-                : x(0)
-                , y(0)
+            Float2(void)
+                : data{ 0.0f, 0.0f }
             {
             }
 
-            BaseVector2(const std::initializer_list<float> &list)
+            Float2(const float(&data)[2])
+                : data { data[0], data[1] }
             {
-                std::copy(list.begin(), list.end(), data);
             }
 
-            BaseVector2(const TYPE *vector)
+            Float2(const float *data)
+                : data{ data[0], data[1] }
             {
-                std::copy_n(vector, 2, data);
             }
 
-            BaseVector2(TYPE scalar)
-                : x(value)
-                , y(value)
+            Float2(float scalar)
+                : data{ scalar, scalar }
             {
                 x = y = scalar;
             }
 
-            BaseVector2(const BaseVector2<TYPE> &vector)
+            Float2(const Float2 &vector)
                 : x(vector.x)
                 , y(vector.y)
             {
             }
 
-            BaseVector2(const BaseVector3<TYPE> &vector)
-                : x(vector.x)
-                , y(vector.y)
-            {
-            }
-
-            BaseVector2(const BaseVector4<TYPE> &vector)
-                : x(vector.x)
-                , y(vector.y)
-            {
-            }
-
-            BaseVector2(TYPE x, TYPE y)
+            Float2(float x, float y)
                 : x(x)
                 , y(y)
             {
             }
 
-            void set(TYPE x, TYPE y)
+            void set(float x, float y)
             {
                 this->x = x;
                 this->y = y;
             }
 
-            void setLength(TYPE length)
+            void setLength(float length)
             {
                 (*this) *= (length / getLength());
             }
 
-            TYPE getLengthSquared(void) const
+            float getLengthSquared(void) const
             {
                 return ((x * x) + (y * y));
             }
 
-            TYPE getLength(void) const
+            float getLength(void) const
             {
                 return std::sqrt(getLengthSquared());
             }
 
-            TYPE getMax(void) const
+            float getMax(void) const
             {
                 return std::max(x, y);
             }
 
-            TYPE getDistance(const BaseVector2<TYPE> &vector) const
+            float getDistance(const Float2 &vector) const
             {
                 return (vector - (*this)).getLength();
             }
 
-            BaseVector2 getNormal(void) const
+            Float2 getNormal(void) const
             {
-                TYPE length = getLength();
+                float length = getLength();
                 if (length != 0.0f)
                 {
                     return ((*this) * (1.0f / length));
@@ -117,224 +98,203 @@ namespace Gek
                 (*this) = getNormal();
             }
 
-            TYPE dot(const BaseVector2<TYPE> &vector) const
+            float dot(const Float2 &vector) const
             {
                 return ((x * vector.x) + (y * vector.y));
             }
 
-            BaseVector2 lerp(const BaseVector2<TYPE> &vector, TYPE factor) const
+            Float2 lerp(const Float2 &vector, float factor) const
             {
-                return lerp((*this), vector, factor);
+                return Gek::Math::lerp((*this), vector, factor);
             }
 
-            TYPE operator [] (int axis) const
+            float operator [] (int axis) const
             {
-                return xy[axis];
+                return data[axis];
             }
 
-            TYPE &operator [] (int axis)
+            float &operator [] (int axis)
             {
-                return xy[axis];
+                return data[axis];
             }
 
-            operator const TYPE *() const
-            {
-                return data;
-            }
-
-            operator TYPE *()
+            operator const float *() const
             {
                 return data;
             }
 
-            bool operator < (const BaseVector2<TYPE> &vector) const
+            operator float *()
+            {
+                return data;
+            }
+
+            bool operator < (const Float2 &vector) const
             {
                 if (x >= vector.x) return false;
                 if (y >= vector.y) return false;
                 return true;
             }
 
-            bool operator > (const BaseVector2<TYPE> &vector) const
+            bool operator > (const Float2 &vector) const
             {
                 if (x <= vector.x) return false;
                 if (y <= vector.y) return false;
                 return true;
             }
 
-            bool operator <= (const BaseVector2<TYPE> &vector) const
+            bool operator <= (const Float2 &vector) const
             {
                 if (x > vector.x) return false;
                 if (y > vector.y) return false;
                 return true;
             }
 
-            bool operator >= (const BaseVector2<TYPE> &vector) const
+            bool operator >= (const Float2 &vector) const
             {
                 if (x < vector.x) return false;
                 if (y < vector.y) return false;
                 return true;
             }
 
-            bool operator == (const BaseVector2<TYPE> &vector) const
+            bool operator == (const Float2 &vector) const
             {
                 if (x != vector.x) return false;
                 if (y != vector.y) return false;
                 return true;
             }
 
-            bool operator != (const BaseVector2<TYPE> &vector) const
+            bool operator != (const Float2 &vector) const
             {
                 if (x != vector.x) return true;
                 if (y != vector.y) return true;
                 return false;
             }
 
-            BaseVector2 operator = (float scalar)
+            Float2 operator = (float scalar)
             {
                 x = y = scalar;
                 return (*this);
             }
 
-            BaseVector2 operator = (const BaseVector2<TYPE> &vector)
+            Float2 operator = (const Float2 &vector)
             {
                 x = vector.x;
                 y = vector.y;
                 return (*this);
             }
 
-            BaseVector2 operator = (const BaseVector3<TYPE> &vector)
-            {
-                x = vector.x;
-                y = vector.y;
-                return (*this);
-            }
-
-            BaseVector2 operator = (const BaseVector4<TYPE> &vector)
-            {
-                x = vector.x;
-                y = vector.y;
-                return (*this);
-            }
-
-            void operator -= (const BaseVector2<TYPE> &vector)
+            void operator -= (const Float2 &vector)
             {
                 x -= vector.x;
                 y -= vector.y;
             }
 
-            void operator += (const BaseVector2<TYPE> &vector)
+            void operator += (const Float2 &vector)
             {
                 x += vector.x;
                 y += vector.y;
             }
 
-            void operator /= (const BaseVector2<TYPE> &vector)
+            void operator /= (const Float2 &vector)
             {
                 x /= vector.x;
                 y /= vector.y;
             }
 
-            void operator *= (const BaseVector2<TYPE> &vector)
+            void operator *= (const Float2 &vector)
             {
                 x *= vector.x;
                 y *= vector.y;
             }
 
-            void operator -= (TYPE scalar)
+            void operator -= (float scalar)
             {
                 x -= scalar;
                 y -= scalar;
             }
 
-            void operator += (TYPE scalar)
+            void operator += (float scalar)
             {
                 x += scalar;
                 y += scalar;
             }
 
-            void operator /= (TYPE scalar)
+            void operator /= (float scalar)
             {
                 x /= scalar;
                 y /= scalar;
             }
 
-            void operator *= (TYPE scalar)
+            void operator *= (float scalar)
             {
                 x *= scalar;
                 y *= scalar;
             }
 
-            BaseVector2 operator - (const BaseVector2<TYPE> &vector) const
+            Float2 operator - (const Float2 &vector) const
             {
-                return BaseVector2((x - vector.x), (y - vector.y));
+                return Float2((x - vector.x), (y - vector.y));
             }
 
-            BaseVector2 operator + (const BaseVector2<TYPE> &vector) const
+            Float2 operator + (const Float2 &vector) const
             {
-                return BaseVector2((x + vector.x), (y + vector.y));
+                return Float2((x + vector.x), (y + vector.y));
             }
 
-            BaseVector2 operator / (const BaseVector2<TYPE> &vector) const
+            Float2 operator / (const Float2 &vector) const
             {
-                return BaseVector2((x / vector.x), (y / vector.y));
+                return Float2((x / vector.x), (y / vector.y));
             }
 
-            BaseVector2 operator * (const BaseVector2<TYPE> &vector) const
+            Float2 operator * (const Float2 &vector) const
             {
-                return BaseVector2((x * vector.x), (y * vector.y));
+                return Float2((x * vector.x), (y * vector.y));
             }
 
-            BaseVector2 operator - (TYPE scalar) const
+            Float2 operator - (float scalar) const
             {
-                return BaseVector2((x - scalar), (y - scalar));
+                return Float2((x - scalar), (y - scalar));
             }
 
-            BaseVector2 operator + (TYPE scalar) const
+            Float2 operator + (float scalar) const
             {
-                return BaseVector2((x + scalar), (y + scalar));
+                return Float2((x + scalar), (y + scalar));
             }
 
-            BaseVector2 operator / (TYPE scalar) const
+            Float2 operator / (float scalar) const
             {
-                return BaseVector2((x / scalar), (y / scalar));
+                return Float2((x / scalar), (y / scalar));
             }
 
-            BaseVector2 operator * (TYPE scalar) const
+            Float2 operator * (float scalar) const
             {
-                return BaseVector2((x * scalar), (y * scalar));
+                return Float2((x * scalar), (y * scalar));
             }
         };
 
-        template <typename TYPE>
-        BaseVector2<TYPE> operator - (const BaseVector2<TYPE> &vector)
+        Float2 operator - (const Float2 &vector)
         {
-            return BaseVector2(-vector.x, -vector.y);
+            return Float2(-vector.x, -vector.y);
         }
 
-        template <typename TYPE>
-        BaseVector2<TYPE> operator - (TYPE scalar, const BaseVector2<TYPE> &vector)
+        Float2 operator - (float scalar, const Float2 &vector)
         {
-            return BaseVector2((scalar - vector.x), (scalar - vector.y));
+            return Float2((scalar - vector.x), (scalar - vector.y));
         }
 
-        template <typename TYPE>
-        BaseVector2<TYPE> operator + (TYPE scalar, const BaseVector2<TYPE> &vector)
+        Float2 operator + (float scalar, const Float2 &vector)
         {
-            return BaseVector2((scalar + vector.x), (scalar + vector.y));
+            return Float2((scalar + vector.x), (scalar + vector.y));
         }
 
-        template <typename TYPE>
-        BaseVector2<TYPE> operator / (TYPE scalar, const BaseVector2<TYPE> &vector)
+        Float2 operator / (float scalar, const Float2 &vector)
         {
-            return BaseVector2((scalar / vector.x), (scalar / vector.y));
+            return Float2((scalar / vector.x), (scalar / vector.y));
         }
 
-        template <typename TYPE>
-        BaseVector2<TYPE> operator * (TYPE scalar, const BaseVector2<TYPE> &vector)
+        Float2 operator * (float scalar, const Float2 &vector)
         {
-            return BaseVector2((scalar * vector.x), (scalar * vector.y));
+            return Float2((scalar * vector.x), (scalar * vector.y));
         }
-
-        typedef BaseVector2<float> Float2;
     }; // namespace Math
 }; // namespace Gek

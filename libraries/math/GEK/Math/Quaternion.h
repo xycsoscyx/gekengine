@@ -1,8 +1,6 @@
 #pragma once
 
-#include <cmath>
 #include <algorithm>
-#include <initializer_list>
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Vector4.h"
 
@@ -10,57 +8,59 @@ namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE> struct BaseVector3;
-        template <typename TYPE> struct BaseVector4;
-        template <typename TYPE> struct BaseMatrix4x4;
+        struct Float4x4;
 
-        template <typename TYPE>
-        struct BaseQuaternion : public BaseVector4<TYPE>
+        struct Quaternion : public Float4
         {
         public:
-            BaseQuaternion(void)
-                : BaseVector4()
+            Quaternion(void)
+                : Float4(0.0f, 0.0f, 0.0f, 1.0f)
             {
             }
 
-            BaseQuaternion(const std::initializer_list<float> &list)
-                : BaseVector4(list)
+            Quaternion(__m128 data)
+                : Float4(data)
             {
             }
 
-            BaseQuaternion(const TYPE *vector)
-                : BaseVector4(vector)
+            Quaternion(const float(&data)[4])
+                : Float4({ data[0], data[1], data[2], data[3] })
             {
             }
 
-            BaseQuaternion(const BaseVector4<TYPE> &vector)
-                : BaseVector4(vector)
+            Quaternion(const float *data)
+                : Float4(data)
             {
             }
 
-            BaseQuaternion(TYPE x, TYPE y, TYPE z, TYPE w)
-                : BaseVector4(x, y, z, w)
+            Quaternion(const Float4 &vector)
+                : Float4(vector)
             {
             }
 
-            BaseQuaternion(const BaseMatrix4x4<TYPE> &rotation)
+            Quaternion(float x, float y, float z, float w)
+                : Float4(x, y, z, w)
+            {
+            }
+
+            Quaternion(const Float4x4 &rotation)
             {
                 setRotation(rotation);
             }
 
-            BaseQuaternion(const BaseVector3<TYPE> &axis, TYPE radians)
+            Quaternion(const Float3 &axis, float radians)
             {
                 setRotation(axis, radians);
             }
 
-            BaseQuaternion(TYPE x, TYPE y, TYPE z)
+            Quaternion(const Float3 &euler)
             {
-                setEuler(x, y, z);
+                setEuler(euler.x, euler.y, euler.z);
             }
 
-            BaseQuaternion(const BaseVector3<TYPE> &euler)
+            Quaternion(float x, float y, float z)
             {
-                setEuler(euler);
+                setEuler(x, y, z);
             }
 
             void setIdentity(void)
@@ -69,7 +69,7 @@ namespace Gek
                 w = 1.0f;
             }
 
-            void setLength(TYPE length)
+            void setLength(float length)
             {
                 length = (length / getLength());
                 x *= length;
@@ -78,110 +78,59 @@ namespace Gek
                 w *= length;
             }
 
-            void setEuler(const BaseVector3<TYPE> &euler)
+            void setEuler(const Float3 &euler)
             {
                 setEuler(euler.x, euler.y, euler.z);
             }
 
-            void setEuler(TYPE x, TYPE y, TYPE z)
+            void setEuler(float x, float y, float z)
             {
-                TYPE sinX(std::sin(x * 0.5f));
-                TYPE sinY(std::sin(y * 0.5f));
-                TYPE sinZ(std::sin(z * 0.5f));
-                TYPE cosX(std::cos(x * 0.5f));
-                TYPE cosY(std::cos(y * 0.5f));
-                TYPE cosZ(std::cos(z * 0.5f));
+                float sinX(std::sin(x * 0.5f));
+                float sinY(std::sin(y * 0.5f));
+                float sinZ(std::sin(z * 0.5f));
+                float cosX(std::cos(x * 0.5f));
+                float cosY(std::cos(y * 0.5f));
+                float cosZ(std::cos(z * 0.5f));
                 this->x = ((sinX * cosY * cosZ) - (cosX * sinY * sinZ));
                 this->y = ((sinX * cosY * sinZ) + (cosX * sinY * cosZ));
                 this->z = ((cosX * cosY * sinZ) - (sinX * sinY * cosZ));
                 this->w = ((cosX * cosY * cosZ) + (sinX * sinY * sinZ));
             }
 
-            void setRotation(const BaseVector3<TYPE> &axis, TYPE radians)
+            void setRotation(const Float3 &axis, float radians)
             {
-                BaseVector3<TYPE> normal(axis.getNormal());
-                TYPE sinAngle(std::sin(radians * 0.5f));
+                Float3 normal(axis.getNormal());
+                float sinAngle(std::sin(radians * 0.5f));
                 x = (normal.x * sinAngle);
                 y = (normal.y * sinAngle);
                 z = (normal.z * sinAngle);
                 w = std::cos(radians * 0.5f);
             }
 
-            void setRotation(const BaseMatrix4x4<TYPE> &rotation)
-            {
-                TYPE trace(rotation.table[0][0] + rotation.table[1][1] + rotation.table[2][2] + 1.0f);
-                if (trace > Math::Epsilon)
-                {
-                    TYPE denominator(0.5f / std::sqrt(trace));
-                    w = (0.25f / denominator);
-                    x = ((rotation.table[1][2] - rotation.table[2][1]) * denominator);
-                    y = ((rotation.table[2][0] - rotation.table[0][2]) * denominator);
-                    z = ((rotation.table[0][1] - rotation.table[1][0]) * denominator);
-                }
-                else
-                {
-                    if ((rotation.table[0][0] > rotation.table[1][1]) && (rotation.table[0][0] > rotation.table[2][2]))
-                    {
-                        TYPE denominator(2.0f * std::sqrt(1.0f + rotation.table[0][0] - rotation.table[1][1] - rotation.table[2][2]));
-                        x = (0.25f * denominator);
-                        y = ((rotation.table[1][0] + rotation.table[0][1]) / denominator);
-                        z = ((rotation.table[2][0] + rotation.table[0][2]) / denominator);
-                        w = ((rotation.table[2][1] - rotation.table[1][2]) / denominator);
-                    }
-                    else if (rotation.table[1][1] > rotation.table[2][2])
-                    {
-                        TYPE denominator(2.0f * (std::sqrt(1.0f + rotation.table[1][1] - rotation.table[0][0] - rotation.table[2][2])));
-                        x = ((rotation.table[1][0] + rotation.table[0][1]) / denominator);
-                        y = (0.25f * denominator);
-                        z = ((rotation.table[2][1] + rotation.table[1][2]) / denominator);
-                        w = ((rotation.table[2][0] - rotation.table[0][2]) / denominator);
-                    }
-                    else
-                    {
-                        TYPE denominator(2.0f * (std::sqrt(1.0f + rotation.table[2][2] - rotation.table[0][0] - rotation.table[1][1])));
-                        x = ((rotation.table[2][0] + rotation.table[0][2]) / denominator);
-                        y = ((rotation.table[2][1] + rotation.table[1][2]) / denominator);
-                        z = (0.25f * denominator);
-                        w = ((rotation.table[1][0] - rotation.table[0][1]) / denominator);
-                    }
-                }
+            void setRotation(const Float4x4 &rotation);
 
-                normalize();
+            Float3 getEuler(void) const
+            {
+                Float4 square((*this) * (*this));
+                return Float3(std::atan2(2.0f * ((y * z) + (x * w)), (-square.x - square.y + square.z + square.w)),
+                              std::asin(-2.0f * ((x * z) - (y * w))),
+                              std::atan2(2.0f * ((x * y) + (z * w)), (square.x - square.y - square.z + square.w)));
             }
 
-            BaseVector3<TYPE> getEuler(void) const
+            Quaternion getInverse(void) const
             {
-                TYPE squareX(x * x);
-                TYPE squareY(y * y);
-                TYPE squareZ(z * z);
-                TYPE squareW(w * w);
-                return BaseVector3<TYPE>(std::atan2(2.0f * ((y * z) + (x * w)), (-squareX - squareY + squareZ + squareW)),
-                                         std::asin(-2.0f * ((x * z) - (y * w))),
-                                         std::atan2(2.0f * ((x * y) + (z * w)), (squareX - squareY - squareZ + squareW)));
-            }
-
-            BaseMatrix4x4<TYPE> getMatrix(void) const
-            {
-                return BaseMatrix4x4<TYPE>(*this);
-            }
-
-            BaseQuaternion<TYPE> getInverse(void) const
-            {
-                return BaseQuaternion<TYPE>(-x, -y, -z, w);
+                return Quaternion(-x, -y, -z, w);
             }
 
             void invert(void)
             {
-                x = -x;
-                y = -y;
-                z = -z;
-                w = w;
+                (*this) *= Float4({ -1.0f, -1.0f, -1.0f, 1.0f });
             }
 
-            BaseQuaternion<TYPE> slerp(const BaseQuaternion<TYPE> &rotation, TYPE factor) const
+            Quaternion slerp(const Quaternion &rotation, float factor) const
             {
-                BaseQuaternion<TYPE> adjustedRotation(rotation);
-                TYPE cosAngle(rotation.Dot(*this));
+                Quaternion adjustedRotation(rotation);
+                float cosAngle(rotation.dot(*this));
                 if (cosAngle < 0.0f)
                 {
                     cosAngle = -cosAngle;
@@ -197,74 +146,116 @@ namespace Gek
                 }
                 else
                 {
-                    TYPE omega(std::acos(cosAngle));
-                    TYPE sinOmega(std::sin(omega));
-                    TYPE factorA = (std::sin((1.0f - factor) * omega) / sinOmega);
-                    TYPE factorB = (std::sin(factor * omega) / sinOmega);
-                    return BaseQuaternion<TYPE>(((factorA * x) + (factorB * adjustedRotation.x)),
-                                                ((factorA * y) + (factorB * adjustedRotation.y)),
-                                                ((factorA * z) + (factorB * adjustedRotation.z)),
-                                                ((factorA * w) + (factorB * adjustedRotation.w)));
+                    float omega(std::acos(cosAngle));
+                    float sinOmega(std::sin(omega));
+                    float factorA = (std::sin((1.0f - factor) * omega) / sinOmega);
+                    float factorB = (std::sin(factor * omega) / sinOmega);
+                    return Quaternion(((factorA * x) + (factorB * adjustedRotation.x)),
+                                      ((factorA * y) + (factorB * adjustedRotation.y)),
+                                      ((factorA * z) + (factorB * adjustedRotation.z)),
+                                      ((factorA * w) + (factorB * adjustedRotation.w)));
                 }
             }
 
-            BaseVector3<TYPE> operator * (const BaseVector3<TYPE> &vector) const
+            Float3 operator * (const Float3 &vector) const
             {
-                TYPE x2(x * 2.0f);
-                TYPE y2(y * 2.0f);
-                TYPE z2(z * 2.0f);
-                TYPE xx2(x * x2);
-                TYPE yy2(y * y2);
-                TYPE zz2(z * z2);
-                TYPE xy2(x * y2);
-                TYPE xz2(x * z2);
-                TYPE yz2(y * z2);
-                TYPE wx2(w * x2);
-                TYPE wy2(w * y2);
-                TYPE wz2(w * z2);
-                return BaseVector3<TYPE>(((1.0f - (yy2 + zz2)) * vector.x + (xy2 - wz2) * vector.y + (xz2 + wy2) * vector.z),
-                                         ((xy2 + wz2) * vector.x + (1.0f - (xx2 + zz2)) * vector.y + (yz2 - wx2) * vector.z),
-                                         ((xz2 - wy2) * vector.x + (yz2 + wx2) * vector.y + (1.0f - (xx2 + yy2)) * vector.z));
+                float x2(x * 2.0f);
+                float y2(y * 2.0f);
+                float z2(z * 2.0f);
+                float xx2(x * x2);
+                float yy2(y * y2);
+                float zz2(z * z2);
+                float xy2(x * y2);
+                float xz2(x * z2);
+                float yz2(y * z2);
+                float wx2(w * x2);
+                float wy2(w * y2);
+                float wz2(w * z2);
+                return Float3(((1.0f - (yy2 + zz2)) * vector.x + (xy2 - wz2) * vector.y + (xz2 + wy2) * vector.z),
+                              ((xy2 + wz2) * vector.x + (1.0f - (xx2 + zz2)) * vector.y + (yz2 - wx2) * vector.z),
+                              ((xz2 - wy2) * vector.x + (yz2 + wx2) * vector.y + (1.0f - (xx2 + yy2)) * vector.z));
             }
 
-            BaseQuaternion<TYPE> operator * (const BaseQuaternion<TYPE> &rotation) const
+            Quaternion operator * (const Quaternion &rotation) const
             {
-                return BaseQuaternion<TYPE>(((w * rotation.x) + (x * rotation.w) + (y * rotation.z) - (z * rotation.y)),
-                                            ((w * rotation.y) + (y * rotation.w) + (z * rotation.x) - (x * rotation.z)),
-                                            ((w * rotation.z) + (z * rotation.w) + (x * rotation.y) - (y * rotation.x)),
-                                            ((w * rotation.w) - (x * rotation.x) - (y * rotation.y) - (z * rotation.z)));
+                return Quaternion(((w * rotation.x) + (x * rotation.w) + (y * rotation.z) - (z * rotation.y)),
+                                  ((w * rotation.y) + (y * rotation.w) + (z * rotation.x) - (x * rotation.z)),
+                                  ((w * rotation.z) + (z * rotation.w) + (x * rotation.y) - (y * rotation.x)),
+                                  ((w * rotation.w) - (x * rotation.x) - (y * rotation.y) - (z * rotation.z)));
             }
 
-            void operator *= (const BaseQuaternion<TYPE> &rotation)
+            void operator *= (const Quaternion &rotation)
             {
                 (*this) = ((*this) * rotation);
             }
 
-            BaseQuaternion<TYPE> operator = (const BaseVector4<TYPE> &vector)
+            Quaternion operator = (const Float4 &vector)
             {
-                x = vector.x;
-                y = vector.y;
-                z = vector.z;
-                w = vector.w;
+                simd = vector.simd;
                 return (*this);
             }
 
-            BaseQuaternion<TYPE> operator = (const BaseQuaternion<TYPE> &rotation)
+            Quaternion operator = (const Quaternion &rotation)
             {
-                x = rotation.x;
-                y = rotation.y;
-                z = rotation.z;
-                w = rotation.w;
+                simd = rotation.simd;
                 return (*this);
             }
 
-            BaseQuaternion<TYPE> operator = (const BaseMatrix4x4<TYPE> &rotation)
+            Quaternion operator = (const Float4x4 &rotation)
             {
                 setRotation(rotation);
                 return (*this);
             }
         };
+    }; // namespace Math
+}; // namespace Gek
 
-        typedef BaseQuaternion<float> Quaternion;
+#include "GEK\Math\Matrix4x4.h"
+
+namespace Gek
+{
+    namespace Math
+    {
+        void Quaternion::setRotation(const Float4x4 &rotation)
+        {
+            float trace(rotation.table[0][0] + rotation.table[1][1] + rotation.table[2][2] + 1.0f);
+            if (trace > Math::Epsilon)
+            {
+                float denominator(0.5f / std::sqrt(trace));
+                w = (0.25f / denominator);
+                x = ((rotation.table[1][2] - rotation.table[2][1]) * denominator);
+                y = ((rotation.table[2][0] - rotation.table[0][2]) * denominator);
+                z = ((rotation.table[0][1] - rotation.table[1][0]) * denominator);
+            }
+            else
+            {
+                if ((rotation.table[0][0] > rotation.table[1][1]) && (rotation.table[0][0] > rotation.table[2][2]))
+                {
+                    float denominator(2.0f * std::sqrt(1.0f + rotation.table[0][0] - rotation.table[1][1] - rotation.table[2][2]));
+                    x = (0.25f * denominator);
+                    y = ((rotation.table[1][0] + rotation.table[0][1]) / denominator);
+                    z = ((rotation.table[2][0] + rotation.table[0][2]) / denominator);
+                    w = ((rotation.table[2][1] - rotation.table[1][2]) / denominator);
+                }
+                else if (rotation.table[1][1] > rotation.table[2][2])
+                {
+                    float denominator(2.0f * (std::sqrt(1.0f + rotation.table[1][1] - rotation.table[0][0] - rotation.table[2][2])));
+                    x = ((rotation.table[1][0] + rotation.table[0][1]) / denominator);
+                    y = (0.25f * denominator);
+                    z = ((rotation.table[2][1] + rotation.table[1][2]) / denominator);
+                    w = ((rotation.table[2][0] - rotation.table[0][2]) / denominator);
+                }
+                else
+                {
+                    float denominator(2.0f * (std::sqrt(1.0f + rotation.table[2][2] - rotation.table[0][0] - rotation.table[1][1])));
+                    x = ((rotation.table[2][0] + rotation.table[0][2]) / denominator);
+                    y = ((rotation.table[2][1] + rotation.table[1][2]) / denominator);
+                    z = (0.25f * denominator);
+                    w = ((rotation.table[1][0] - rotation.table[0][1]) / denominator);
+                }
+            }
+
+            normalize();
+        }
     }; // namespace Math
 }; // namespace Gek

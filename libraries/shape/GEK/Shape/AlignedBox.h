@@ -8,46 +8,45 @@ namespace Gek
 {
     namespace Shape
     {
-        template <typename TYPE>
-        struct BaseAlignedBox
+        struct AlignedBox
         {
         public:
-            Math::BaseVector3<TYPE> minimum;
-            Math::BaseVector3<TYPE> maximum;
+            Math::Float3 minimum;
+            Math::Float3 maximum;
 
         public:
-            BaseAlignedBox(void)
+            AlignedBox(void)
                 : minimum(Math::Infinity)
                 , maximum(-Math::Infinity)
             {
             }
 
-            BaseAlignedBox(const BaseAlignedBox<TYPE> &box)
+            AlignedBox(const AlignedBox &box)
                 : minimum(box.minimum)
                 , maximum(box.maximum)
             {
             }
 
-            BaseAlignedBox(TYPE size)
+            AlignedBox(float size)
                 : minimum(-(size * 0.5f))
                 , maximum( (size * 0.5f))
             {
             }
 
-            BaseAlignedBox(const Math::BaseVector3<TYPE> &minimum, const Math::BaseVector3<TYPE> &maximum)
+            AlignedBox(const Math::Float3 &minimum, const Math::Float3 &maximum)
                 : minimum(minimum)
                 , maximum(maximum)
             {
             }
 
-            BaseAlignedBox operator = (const BaseAlignedBox<TYPE> &box)
+            AlignedBox operator = (const AlignedBox &box)
             {
                 minimum = box.minimum;
                 maximum = box.maximum;
                 return (*this);
             }
 
-            void Extend(Math::BaseVector3<TYPE> &point)
+            void Extend(Math::Float3 &point)
             {
                 minimum.x = std::min(point.x, minimum.x);
                 minimum.y = std::min(point.y, minimum.y);
@@ -58,28 +57,28 @@ namespace Gek
                 maximum.z = std::max(point.z, maximum.z);
             }
 
-            Math::BaseVector3<TYPE> getSize(void) const
+            Math::Float3 getSize(void) const
             {
                 return (maximum - minimum);
             }
 
-            Math::BaseVector3<TYPE> getCenter(void) const
+            Math::Float3 getCenter(void) const
             {
                 return (minimum + (getSize() * 0.5f));
             }
 
-            int getPosition(const BasePlane<TYPE> &plane) const
+            int getPosition(const Plane &plane) const
             {
-                if (plane.Distance(Math::BaseVector3<TYPE>((plane.normal.x > 0.0f ? maximum.x : minimum.x),
-                                                           (plane.normal.y > 0.0f ? maximum.y : minimum.y),
-                                                           (plane.normal.z > 0.0f ? maximum.z : minimum.z))) < 0.0f)
+                if (plane.getDistance(Math::Float3((plane.normal.x > 0.0f ? maximum.x : minimum.x),
+                                                   (plane.normal.y > 0.0f ? maximum.y : minimum.y),
+                                                   (plane.normal.z > 0.0f ? maximum.z : minimum.z))) < 0.0f)
                 {
                     return -1;
                 }
 
-                if (plane.Distance(Math::BaseVector3<TYPE>((plane.normal.x < 0.0f ? maximum.x : minimum.x),
-                                                           (plane.normal.y < 0.0f ? maximum.y : minimum.y),
-                                                           (plane.normal.z < 0.0f ? maximum.z : minimum.z))) < 0.0f)
+                if (plane.getDistance(Math::Float3((plane.normal.x < 0.0f ? maximum.x : minimum.x),
+                                                   (plane.normal.y < 0.0f ? maximum.y : minimum.y),
+                                                   (plane.normal.z < 0.0f ? maximum.z : minimum.z))) < 0.0f)
                 {
                     return 0;
                 }
@@ -87,7 +86,5 @@ namespace Gek
                 return 1;
             }
         };
-        
-        typedef BaseAlignedBox<float> AlignedBox;
     }; // namespace Shape
 }; // namespace Gek

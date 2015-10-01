@@ -1,154 +1,167 @@
 #pragma once
 
-#include <cmath>
 #include <algorithm>
-#include <initializer_list>
+#include <xmmintrin.h>
+#include "GEK\Math\Common.h"
 #include "GEK\Math\Vector4.h"
-#include "GEK\Math\Quaternion.h"
 
 namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE> struct BaseVector3;
-        template <typename TYPE> struct BaseVector4;
-        template <typename TYPE> struct BaseQuaternion;
+        struct Quaternion;
 
-        template <typename TYPE>
-        struct BaseMatrix4x4
+        struct Float4x4
         {
         public:
             union
             {
-                struct { TYPE data[16]; };
-                struct { TYPE table[4][4]; };
-                struct { BaseVector4<TYPE> rows; };
+                struct { float data[16]; };
+                struct { float table[4][4]; };
+                struct { Float4 rows[4]; };
+                struct { __m128 simd[4]; };
 
                 struct
                 {
-                    TYPE _11, _12, _13, _14;
-                    TYPE _21, _22, _23, _24;
-                    TYPE _31, _32, _33, _34;
-                    TYPE _41, _42, _43, _44;
+                    float _11, _12, _13, _14;
+                    float _21, _22, _23, _24;
+                    float _31, _32, _33, _34;
+                    float _41, _42, _43, _44;
                 };
 
                 struct
                 {
-                    BaseVector4<TYPE> rx;
-                    BaseVector4<TYPE> ry;
-                    BaseVector4<TYPE> rz;
+                    Float4 rx;
+                    Float4 ry;
+                    Float4 rz;
                     union
                     {
                         struct
                         {
-                            BaseVector4<TYPE> rw;
+                            Float4 rw;
                         };
 
                         struct
                         {
-                            union { BaseVector3<TYPE> translation; float w; };
+                            Float3 translation;
+                            float tw;
                         };
+                    };
+                };
+
+                struct
+                {
+                    struct { Float3 nx; float nxw; };
+                    struct { Float3 ny; float nyw; };
+                    struct { Float3 nz; float nzw; };
+                    struct
+                    {
+                        Float3 translation;
+                        float tw;
                     };
                 };
             };
 
         public:
-            BaseMatrix4x4(void)
+            Float4x4(void)
             {
                 setIdentity();
             }
 
-            BaseMatrix4x4(const std::initializer_list<float> &list)
+            Float4x4(const __m128(&data)[4])
+                : simd{ data[0], data[1], data[2], data[3] }
             {
-                std::copy(list.begin(), list.end(), data);
             }
 
-            BaseMatrix4x4(const TYPE *vector)
+            Float4x4(const float(&data)[16])
+                : data{ data[ 0], data[ 1], data[ 2], data[ 3],
+                        data[ 4], data[ 5], data[ 6], data[ 7],
+                        data[ 8], data[ 9], data[10], data[11],
+                        data[12], data[13], data[14], data[15] }
             {
-                std::copy_n(vector, 16, data);
             }
 
-            BaseMatrix4x4(const BaseMatrix4x4<TYPE> &matrix)
+            Float4x4(const float *data)
+                : data{ data[ 0], data[ 1], data[ 2], data[ 3],
+                        data[ 4], data[ 5], data[ 6], data[ 7],
+                        data[ 8], data[ 9], data[10], data[11],
+                        data[12], data[13], data[14], data[15] }
             {
-                std::copy_n(matrix.data, 16, data);
             }
 
-            BaseMatrix4x4(const BaseVector4<TYPE> &euler)
+            Float4x4(const Float4x4 &matrix)
+                : simd{ matrix.simd[0], matrix.simd[1], matrix.simd[2], matrix.simd[3] }
             {
-                setEuler(euler);
             }
 
-            BaseMatrix4x4(TYPE x, TYPE y, TYPE z)
+            Float4x4(const Float3 &euler)
+            {
+                setEuler(euler.x, euler.y, euler.z);
+            }
+
+            Float4x4(float x, float y, float z)
             {
                 setEuler(x, y, z);
             }
 
-            BaseMatrix4x4(const BaseVector4<TYPE> &axis, TYPE radians)
+            Float4x4(const Float3 &axis, float radians)
             {
                 setRotation(axis, radians);
             }
 
-            BaseMatrix4x4(const BaseQuaternion<TYPE> &rotation)
+            Float4x4(const Quaternion &rotation)
             {
                 setRotation(rotation);
             }
 
-            BaseMatrix4x4(const BaseQuaternion<TYPE> &rotation, const BaseVector4<TYPE> &translation)
+            Float4x4(const Quaternion &rotation, const Float3 &translation)
             {
-                setRotation(rotation);
-                this->translation = translation;
+                setRotation(rotation, translation);
             }
 
             void setZero(void)
             {
-                memset(data, 0, sizeof(data));
+                rows[0].set(0.0f, 0.0f, 0.0f, 0.0f);
+                rows[1].set(0.0f, 0.0f, 0.0f, 0.0f);
+                rows[2].set(0.0f, 0.0f, 0.0f, 0.0f);
+                rows[3].set(0.0f, 0.0f, 0.0f, 0.0f);
             }
 
             void setIdentity(void)
             {
-                _11 = _22 = _33 = _44 = 1.0f;
-                _12 = _13 = _14 = 0.0f;
-                _21 = _23 = _24 = 0.0f;
-                _31 = _32 = _34 = 0.0f;
-                _41 = _42 = _43 = 0.0f;
+                rows[0].set(1.0f, 0.0f, 0.0f, 0.0f);
+                rows[1].set(0.0f, 1.0f, 0.0f, 0.0f);
+                rows[2].set(0.0f, 0.0f, 1.0f, 0.0f);
+                rows[3].set(0.0f, 0.0f, 0.0f, 1.0f);
             }
 
-            void setScaling(TYPE scalar)
+            void setScaling(float scalar)
             {
-                _11 = scalar;
-                _22 = scalar;
-                _33 = scalar;
+                setScaling(Float3(scalar));
             }
 
-            void setScaling(const BaseVector4<TYPE> &vector)
+            void setScaling(const Float3 &vector)
             {
                 _11 = vector.x;
                 _22 = vector.y;
                 _33 = vector.z;
             }
 
-            void setTranslation(const BaseVector4<TYPE> &nTranslation)
-            {
-                _41 = nTranslation.x;
-                _42 = nTranslation.y;
-                _43 = nTranslation.z;
-            }
-
-            void setEuler(const BaseVector4<TYPE> &euler)
+            void setEuler(const Float3 &euler)
             {
                 setEuler(euler.x, euler.y, euler.z);
             }
 
-            void setEuler(TYPE x, TYPE y, TYPE z)
+            void setEuler(float x, float y, float z)
             {
-                TYPE cosX(std::cos(x));
-                TYPE sinX(std::sin(x));
-                TYPE cosY(std::cos(y));
-                TYPE sinY(std::sin(y));
-                TYPE cosZ(std::cos(z));
-                TYPE sinZ(std::sin(z));
-                TYPE cosXsinY(cosX * sinY);
-                TYPE sinXsinY(sinX * sinY);
+                float cosX(std::cos(x));
+                float sinX(std::sin(x));
+                float cosY(std::cos(y));
+                float sinY(std::sin(y));
+                float cosZ(std::cos(z));
+                float sinZ(std::sin(z));
+                float cosXsinY(cosX * sinY);
+                float sinXsinY(sinX * sinY);
 
                 table[0][0] = ( cosY * cosZ);
                 table[1][0] = (-cosY * sinZ);
@@ -171,10 +184,10 @@ namespace Gek
                 table[3][3] = 1.0f;
             }
 
-            void setRotation(const BaseVector4<TYPE> &axis, TYPE radians)
+            void setRotation(const Float3 &axis, float radians)
             {
-                TYPE cosAngle(std::cos(radians));
-                TYPE sinAngle(std::sin(radians));
+                float cosAngle(std::cos(radians));
+                float sinAngle(std::sin(radians));
 
                 table[0][0] = (cosAngle + axis.x * axis.x * (1.0f - cosAngle));
                 table[0][1] = ( axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle));
@@ -197,72 +210,41 @@ namespace Gek
                 table[3][3] = 1.0f;
             }
 
-            void setRotation(const BaseQuaternion<TYPE> &rotation)
+            void setRotation(const Quaternion &rotation);
+
+            void setRotation(const Quaternion &rotation, const Float3 &translation);
+
+            void setRotationX(float radians)
             {
-                TYPE xy(rotation.x * rotation.y);
-                TYPE zw(rotation.z * rotation.w);
-                TYPE xz(rotation.x * rotation.z);
-                TYPE yw(rotation.y * rotation.w);
-                TYPE yz(rotation.y * rotation.z);
-                TYPE xw(rotation.x * rotation.w);
-                TYPE squareX(rotation.x * rotation.x);
-                TYPE squareY(rotation.y * rotation.y);
-                TYPE squareZ(rotation.z * rotation.z);
-                TYPE squareW(rotation.w * rotation.w);
-                TYPE determinant(1.0f / (squareX + squareY + squareZ + squareW));
-
-                table[0][0] = (( squareX - squareY - squareZ + squareW) * determinant);
-                table[0][1] = (2.0f * (xy + zw) * determinant);
-                table[0][2] = (2.0f * (xz - yw) * determinant);
-                table[0][3] = 0.0f;
-
-                table[1][0] = (2.0f * (xy - zw) * determinant);
-                table[1][1] = ((-squareX + squareY - squareZ + squareW) * determinant);
-                table[1][2] = (2.0f * (yz + xw) * determinant);
-                table[1][3] = 0.0f;
-
-                table[2][0] = (2.0f * (xz + yw) * determinant);
-                table[2][1] = (2.0f * (yz - xw) * determinant);
-                table[2][2] = ((-squareX - squareY + squareZ + squareW) * determinant);
-                table[2][3] = 0.0f;
-
-                table[3][0] = 0.0f;
-                table[3][1] = 0.0f;
-                table[3][2] = 0.0f;
-                table[3][3] = 1.0f;
-            }
-
-            void setRotationX(TYPE radians)
-            {
-                TYPE cosAngle(std::cos(radians));
-                TYPE sinAngle(std::sin(radians));
+                float cosAngle(std::cos(radians));
+                float sinAngle(std::sin(radians));
                 table[0][0] = 1.0f; table[0][1] = 0.0f;   table[0][2] = 0.0f;  table[0][3] = 0.0f;
                 table[1][0] = 0.0f; table[1][1] = cosAngle;  table[1][2] = sinAngle; table[1][3] = 0.0f;
                 table[2][0] = 0.0f; table[2][1] = -sinAngle; table[2][2] = cosAngle; table[2][3] = 0.0f;
                 table[3][0] = 0.0f; table[3][1] = 0.0f;   table[3][2] = 0.0f;  table[3][3] = 1.0f;
             }
 
-            void setRotationY(TYPE radians)
+            void setRotationY(float radians)
             {
-                TYPE cosAngle(std::cos(radians));
-                TYPE sinAngle(std::sin(radians));
+                float cosAngle(std::cos(radians));
+                float sinAngle(std::sin(radians));
                 table[0][0] = cosAngle; table[0][1] = 0.0f; table[0][2] = -sinAngle; table[0][3] = 0.0f;
                 table[1][0] = 0.0f;  table[1][1] = 1.0f; table[1][2] = 0.0f;   table[1][3] = 0.0f;
                 table[2][0] = sinAngle; table[2][1] = 0.0f; table[2][2] = cosAngle;  table[2][3] = 0.0f;
                 table[3][0] = 0.0f;  table[3][1] = 0.0f; table[3][2] = 0.0f;   table[3][3] = 1.0f;
             }
 
-            void setRotationZ(TYPE radians)
+            void setRotationZ(float radians)
             {
-                TYPE cosAngle(std::cos(radians));
-                TYPE sinAngle(std::sin(radians));
+                float cosAngle(std::cos(radians));
+                float sinAngle(std::sin(radians));
                 table[0][0] = cosAngle; table[0][1] = sinAngle; table[0][2] = 0.0f; table[0][3] = 0.0f;
                 table[1][0] =-sinAngle; table[1][1] = cosAngle; table[1][2] = 0.0f; table[1][3] = 0.0f;
                 table[2][0] = 0.0f;  table[2][1] = 0.0f;  table[2][2] = 1.0f; table[2][3] = 0.0f;
                 table[3][0] = 0.0f;  table[3][1] = 0.0f;  table[3][2] = 0.0f; table[3][3] = 1.0f;
             }
 
-            void setOrthographic(TYPE left, TYPE top, TYPE right, TYPE bottom, TYPE nearDepth, TYPE farDepth)
+            void setOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth)
             {
                 table[0][0] = (2.0f / (right - left));
                 table[1][0] = 0.0f;
@@ -285,11 +267,11 @@ namespace Gek
                 table[3][3] = 1.0f;
             }
 
-            void setPerspective(TYPE fieldOfView, TYPE aspectRatio, TYPE nearDepth, TYPE farDepth)
+            void setPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
             {
-                TYPE x(1.0f / std::tan(fieldOfView * 0.5f));
-                TYPE y(x * aspectRatio);
-                TYPE distance(farDepth - nearDepth);
+                float x(1.0f / std::tan(fieldOfView * 0.5f));
+                float y(x * aspectRatio);
+                float distance(farDepth - nearDepth);
 
                 table[0][0] = x;
                 table[0][1] = 0.0f;
@@ -312,38 +294,40 @@ namespace Gek
                 table[3][3] = 0.0f;
             }
 
-            void setLookAt(const BaseVector4<TYPE> &source, const BaseVector4<TYPE> &target, const BaseVector4<TYPE> &worldUpVector)
+            void setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)
             {
-                rz = ((target - source).getNormal());
-                rx = (worldUpVector.Cross(rz).getNormal());
-                ry = (rz.Cross(rx).getNormal());
+                nz = ((target - source).getNormal());
+                nx = (worldUpVector.cross(nz).getNormal());
+                ny = (nz.cross(nx).getNormal());
+                nxw = 0.0f;
+                nyw = 0.0f;
+                nzw = 0.0f;
 
-                table[0][3] = 0.0f;
-                table[1][3] = 0.0f;
-                table[2][3] = 0.0f;
-                table[3][3] = 1.0f;
+                rw.set(0.0f, 0.0f, 0.0f, 1.0f);
 
                 invert();
             }
 
-            void setLookAt(const BaseVector4<TYPE> &direction, const BaseVector4<TYPE> &worldUpVector)
+            void setLookAt(const Float3 &direction, const Float3 &worldUpVector)
             {
-                rz = (direction.getNormal());
-                rx = (worldUpVector.Cross(rz).getNormal());
-                ry = (rz.Cross(rx).getNormal());
+                nz = (direction.getNormal());
+                nx = (worldUpVector.cross(nz).getNormal());
+                ny = (nz.cross(nx).getNormal());
+                nxw = 0.0f;
+                nyw = 0.0f;
+                nzw = 0.0f;
 
-                table[0][3] = 0.0f;
-                table[1][3] = 0.0f;
-                table[2][3] = 0.0f;
-                table[3][3] = 1.0f;
+                rw.set(0.0f, 0.0f, 0.0f, 1.0f);
+
+                invert();
             }
 
-            BaseVector3<TYPE> getEuler(void) const
+            Float3 getEuler(void) const
             {
-                BaseVector3 euler;
+                Float3 euler;
                 euler.y = std::asin(_31);
 
-                TYPE cosAngle = std::cos(euler.y);
+                float cosAngle = std::cos(euler.y);
                 if (std::abs(cosAngle) > 0.005)
                 {
                     euler.x = std::atan2(-(_32 / cosAngle), (_33 / cosAngle));
@@ -373,12 +357,12 @@ namespace Gek
                 return euler;
             }
 
-            BaseVector3<TYPE> getScaling(void) const
+            Float3 getScaling(void) const
             {
-                return BaseVector3(_11, _22, _33);
+                return Float3(_11, _22, _33);
             }
 
-            TYPE getDeterminant(void) const
+            float getDeterminant(void) const
             {
                 return ((table[0][0] * table[1][1] - table[1][0] * table[0][1]) *
                         (table[2][2] * table[3][3] - table[3][2] * table[2][3]) -
@@ -394,26 +378,26 @@ namespace Gek
                         (table[0][2] * table[1][3] - table[1][2] * table[0][3]));
             }
 
-            BaseMatrix4x4 getTranspose(void) const
+            Float4x4 getTranspose(void) const
             {
-                return BaseMatrix4x4({ _11, _21, _31, _41,
-                                       _12, _22, _32, _42,
-                                       _13, _23, _33, _43, 
-                                       _14, _24, _34, _44 });
+                return Float4x4({ _11, _21, _31, _41,
+                                  _12, _22, _32, _42,
+                                  _13, _23, _33, _43, 
+                                  _14, _24, _34, _44 });
             }
 
-            BaseMatrix4x4 getInverse(void) const
+            Float4x4 getInverse(void) const
             {
-                TYPE determinant(getDeterminant());
+                float determinant(getDeterminant());
                 if (std::abs(determinant) < Epsilon)
                 {
-                    return BaseMatrix4x4();
+                    return Float4x4();
                 }
                 else
                 {
                     determinant = (1.0f / determinant);
 
-                    BaseMatrix4x4 matrix;
+                    Float4x4 matrix;
                     matrix.table[0][0] = (determinant * (table[1][1] * (table[2][2] * table[3][3] - table[3][2] * table[2][3]) + table[2][1] * (table[3][2] * table[1][3] - table[1][2] * table[3][3]) + table[3][1] * (table[1][2] * table[2][3] - table[2][2] * table[1][3])));
                     matrix.table[1][0] = (determinant * (table[1][2] * (table[2][0] * table[3][3] - table[3][0] * table[2][3]) + table[2][2] * (table[3][0] * table[1][3] - table[1][0] * table[3][3]) + table[3][2] * (table[1][0] * table[2][3] - table[2][0] * table[1][3])));
                     matrix.table[2][0] = (determinant * (table[1][3] * (table[2][0] * table[3][1] - table[3][0] * table[2][1]) + table[2][3] * (table[3][0] * table[1][1] - table[1][0] * table[3][1]) + table[3][3] * (table[1][0] * table[2][1] - table[2][0] * table[1][1])));
@@ -434,12 +418,12 @@ namespace Gek
                 }
             }
 
-            BaseMatrix4x4 getRotation(void) const
+            Float4x4 getRotation(void) const
             {
-                return BaseMatrix4x4({ _11, _12, _13, 0,
-                                       _21, _22, _23, 0,
-                                       _31, _32, _33, 0,
-                                         0,   0,   0, 1 });
+                return Float4x4({ _11, _12, _13, 0,
+                                  _21, _22, _23, 0,
+                                  _31, _32, _33, 0,
+                                    0,   0,   0, 1 });
             }
 
             void transpose(void)
@@ -452,84 +436,113 @@ namespace Gek
                 (*this) = getInverse();
             }
 
-            TYPE operator [] (int row) const
+            Float4 operator [] (int row) const
             {
                 return rows[row];
             }
 
-            TYPE &operator [] (int row)
+            Float4 &operator [] (int row)
             {
                 return rows[row];
             }
 
-            operator const TYPE *() const
+            operator const float *() const
             {
                 return data;
             }
 
-            operator TYPE *()
+            operator float *()
             {
                 return data;
             }
 
-            void operator *= (const BaseMatrix4x4 &matrix)
+            void operator *= (const Float4x4 &matrix)
             {
-                memcpy(data, ((*this) * matrix).data, sizeof(data));
+                simd[0] = _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(0, 0, 0, 0)), matrix.simd[0]),
+                                                _mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(1, 1, 1, 1)), matrix.simd[1])),
+                                     _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(2, 2, 2, 2)), matrix.simd[2]),
+                                                _mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(3, 3, 3, 3)), matrix.simd[3])));
+                simd[1] = _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[1], simd[1], _MM_SHUFFLE(0, 0, 0, 0)), matrix.simd[0]),
+                                                _mm_mul_ps(_mm_shuffle_ps(simd[1], simd[1], _MM_SHUFFLE(1, 1, 1, 1)), matrix.simd[1])),
+                                     _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[1], simd[1], _MM_SHUFFLE(2, 2, 2, 2)), matrix.simd[2]),
+                                                _mm_mul_ps(_mm_shuffle_ps(simd[1], simd[1], _MM_SHUFFLE(3, 3, 3, 3)), matrix.simd[3])));
+                simd[2] = _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[2], simd[2], _MM_SHUFFLE(0, 0, 0, 0)), matrix.simd[0]),
+                                                _mm_mul_ps(_mm_shuffle_ps(simd[2], simd[2], _MM_SHUFFLE(1, 1, 1, 1)), matrix.simd[1])),
+                                     _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[2], simd[2], _MM_SHUFFLE(2, 2, 2, 2)), matrix.simd[2]),
+                                                _mm_mul_ps(_mm_shuffle_ps(simd[2], simd[2], _MM_SHUFFLE(3, 3, 3, 3)), matrix.simd[3])));
+                simd[3] = _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[3], simd[3], _MM_SHUFFLE(0, 0, 0, 0)), matrix.simd[0]),
+                                                _mm_mul_ps(_mm_shuffle_ps(simd[3], simd[3], _MM_SHUFFLE(1, 1, 1, 1)), matrix.simd[1])),
+                                     _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[3], simd[3], _MM_SHUFFLE(2, 2, 2, 2)), matrix.simd[2]),
+                                                _mm_mul_ps(_mm_shuffle_ps(simd[3], simd[3], _MM_SHUFFLE(3, 3, 3, 3)), matrix.simd[3])));
             }
 
-            BaseMatrix4x4 operator * (const BaseMatrix4x4 &matrix) const
+            Float4x4 operator * (const Float4x4 &matrix) const
             {
-                BaseMatrix4x4 transpose(matrix.getTranspose());
-                return BaseMatrix4x4( { rx.dot(transpose.rx), rx.dot(transpose.ry), rx.dot(transpose.rz), rx.dot(transpose.rw),
-                                        ry.dot(transpose.rx), ry.dot(transpose.ry), ry.dot(transpose.rz), ry.dot(transpose.rw),
-                                        rz.dot(transpose.rx), rz.dot(transpose.ry), rz.dot(transpose.rz), rz.dot(transpose.rw),
-                                        rw.dot(transpose.rx), rw.dot(transpose.ry), rw.dot(transpose.rz), rw.dot(transpose.rw) } );
+                return Float4x4({ _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(0, 0, 0, 0)), matrix.simd[0]),
+                                             _mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(1, 1, 1, 1)), matrix.simd[1])),
+                                  _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(2, 2, 2, 2)), matrix.simd[2]),
+                                             _mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(3, 3, 3, 3)), matrix.simd[3]))),
+                                  _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[1], simd[1], _MM_SHUFFLE(0, 0, 0, 0)), matrix.simd[0]),
+                                             _mm_mul_ps(_mm_shuffle_ps(simd[1], simd[1], _MM_SHUFFLE(1, 1, 1, 1)), matrix.simd[1])),
+                                  _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[1], simd[1], _MM_SHUFFLE(2, 2, 2, 2)), matrix.simd[2]),
+                                             _mm_mul_ps(_mm_shuffle_ps(simd[1], simd[1], _MM_SHUFFLE(3, 3, 3, 3)), matrix.simd[3]))),
+                                  _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[2], simd[2], _MM_SHUFFLE(0, 0, 0, 0)), matrix.simd[0]),
+                                             _mm_mul_ps(_mm_shuffle_ps(simd[2], simd[2], _MM_SHUFFLE(1, 1, 1, 1)), matrix.simd[1])),
+                                  _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[2], simd[2], _MM_SHUFFLE(2, 2, 2, 2)), matrix.simd[2]),
+                                             _mm_mul_ps(_mm_shuffle_ps(simd[2], simd[2], _MM_SHUFFLE(3, 3, 3, 3)), matrix.simd[3]))),
+                                  _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[3], simd[3], _MM_SHUFFLE(0, 0, 0, 0)), matrix.simd[0]),
+                                             _mm_mul_ps(_mm_shuffle_ps(simd[3], simd[3], _MM_SHUFFLE(1, 1, 1, 1)), matrix.simd[1])),
+                                  _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[3], simd[3], _MM_SHUFFLE(2, 2, 2, 2)), matrix.simd[2]),
+                                             _mm_mul_ps(_mm_shuffle_ps(simd[3], simd[3], _MM_SHUFFLE(3, 3, 3, 3)), matrix.simd[3]))) });
             }
 
-            BaseMatrix4x4 operator = (const BaseMatrix4x4 &matrix)
+            Float4x4 operator = (const Float4x4 &matrix)
             {
-                memcpy(data, matrix.data, sizeof(data));
+                rows[0] = matrix.rows[0];
+                rows[1] = matrix.rows[1];
+                rows[2] = matrix.rows[2];
+                rows[3] = matrix.rows[3];
                 return (*this);
             }
 
-            BaseMatrix4x4 operator = (const BaseQuaternion<TYPE> &rotation)
+            Float4x4 operator = (const Quaternion &rotation)
             {
                 setRotation(rotation);
                 return (*this);
             }
 
-            BaseVector3<TYPE> operator * (const BaseVector3<TYPE> &vector) const
+            Float3 operator * (const Float3 &vector) const
             {
-                return BaseVector3<TYPE>(((vector.x * _11) + (vector.y * _21) + (vector.z * _31)),
-                                         ((vector.x * _12) + (vector.y * _22) + (vector.z * _32)),
-                                         ((vector.x * _13) + (vector.y * _23) + (vector.z * _33)));
+                return Float3(((vector.x * _11) + (vector.y * _21) + (vector.z * _31)) + _41,
+                              ((vector.x * _12) + (vector.y * _22) + (vector.z * _32)) + _42,
+                              ((vector.x * _13) + (vector.y * _23) + (vector.z * _33)) + _43);
             }
 
-            BaseVector4<TYPE> operator * (const BaseVector4<TYPE> &vector) const
+            Float4 operator * (const Float4 &vector) const
             {
-                return BaseVector4<TYPE>(((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + (vector.w * _41)),
-                                         ((vector.x * _12) + (vector.y * _22) + (vector.z * _32) + (vector.w * _42)),
-                                         ((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + (vector.w * _43)),
-                                         ((vector.x * _14) + (vector.y * _24) + (vector.z * _34) + (vector.w * _44)));
+                return Float4(((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + (vector.w * _41)),
+                              ((vector.x * _12) + (vector.y * _22) + (vector.z * _32) + (vector.w * _42)),
+                              ((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + (vector.w * _43)),
+                              ((vector.x * _14) + (vector.y * _24) + (vector.z * _34) + (vector.w * _44)));
             }
 
-            BaseMatrix4x4 operator * (TYPE nScalar) const
+            Float4x4 operator * (float nScalar) const
             {
-                return BaseMatrix4x4((_11 * nScalar), (_12 * nScalar), (_13 * nScalar), (_14 * nScalar),
-                    (_21 * nScalar), (_22 * nScalar), (_23 * nScalar), (_24 * nScalar),
-                    (_31 * nScalar), (_32 * nScalar), (_33 * nScalar), (_34 * nScalar),
-                    (_41 * nScalar), (_42 * nScalar), (_43 * nScalar), (_44 * nScalar));
+                return Float4x4({ (_11 * nScalar), (_12 * nScalar), (_13 * nScalar), (_14 * nScalar),
+                                  (_21 * nScalar), (_22 * nScalar), (_23 * nScalar), (_24 * nScalar),
+                                  (_31 * nScalar), (_32 * nScalar), (_33 * nScalar), (_34 * nScalar),
+                                  (_41 * nScalar), (_42 * nScalar), (_43 * nScalar), (_44 * nScalar) });
             }
 
-            BaseMatrix4x4 operator + (const BaseMatrix4x4 &matrix) const
+            Float4x4 operator + (const Float4x4 &matrix) const
             {
-                return BaseMatrix4x4(_11 + matrix._11, _12 + matrix._12, _13 + matrix._13, _14 + matrix._14,
-                                     _21 + matrix._21, _22 + matrix._22, _23 + matrix._23, _24 + matrix._24,
-                                     _31 + matrix._31, _32 + matrix._32, _33 + matrix._33, _34 + matrix._34,
-                                     _41 + matrix._41, _42 + matrix._42, _43 + matrix._43, _44 + matrix._44);
+                return Float4x4({ _11 + matrix._11, _12 + matrix._12, _13 + matrix._13, _14 + matrix._14,
+                                  _21 + matrix._21, _22 + matrix._22, _23 + matrix._23, _24 + matrix._24,
+                                  _31 + matrix._31, _32 + matrix._32, _33 + matrix._33, _34 + matrix._34,
+                                  _41 + matrix._41, _42 + matrix._42, _43 + matrix._43, _44 + matrix._44 });
             }
 
-            void operator += (const BaseMatrix4x4 &matrix)
+            void operator += (const Float4x4 &matrix)
             {
                 _11 += matrix._11; _12 += matrix._12; _13 += matrix._13; _14 += matrix._14;
                 _21 += matrix._21; _22 += matrix._22; _23 += matrix._23; _24 += matrix._24;
@@ -537,7 +550,38 @@ namespace Gek
                 _41 += matrix._41; _42 += matrix._42; _43 += matrix._43; _44 += matrix._44;
             }
         };
+    }; // namespace Math
+}; // namespace Gek
 
-        typedef BaseMatrix4x4<float> Float4x4;
+#include "GEK\Math\Quaternion.h"
+
+namespace Gek
+{
+    namespace Math
+    {
+        void Float4x4::setRotation(const Quaternion &rotation)
+        {
+            setRotation(rotation, Float3(0.0f, 0.0f, 0.0f));
+        }
+
+        void Float4x4::setRotation(const Quaternion &rotation, const Float3 &translation)
+        {
+            float xy(rotation.x * rotation.y);
+            float zw(rotation.z * rotation.w);
+            float xz(rotation.x * rotation.z);
+            float yw(rotation.y * rotation.w);
+            float yz(rotation.y * rotation.z);
+            float xw(rotation.x * rotation.w);
+            float squareX(rotation.x * rotation.x);
+            float squareY(rotation.y * rotation.y);
+            float squareZ(rotation.z * rotation.z);
+            float squareW(rotation.w * rotation.w);
+            float determinant(1.0f / (squareX + squareY + squareZ + squareW));
+            rows[0].set( ((squareX - squareY - squareZ + squareW) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f);
+            rows[1].set((2.0f * (xy - zw) * determinant), ((-squareX + squareY - squareZ + squareW) * determinant), (2.0f * (yz + xw) * determinant), 0.0f);
+            rows[2].set((2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-squareX - squareY + squareZ + squareW) * determinant), 0.0f);
+            this->translation = translation;
+            tw = 1.0f;
+        }
     }; // namespace Math
 }; // namespace Gek
