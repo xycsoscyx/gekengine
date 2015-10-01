@@ -107,7 +107,7 @@ namespace Gek
             */
             GEKINLINE Types::Vector divide(Types::Vector left, Types::Vector right)
             {
-                return _mm_div_ps(left, right);
+                return _mm_mul_ps(left, _mm_rcp_ps(right));
             }
 
             /**
@@ -860,25 +860,30 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
     return resultValue;
 }
 
+#include <algorithm>
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
 {
     DWORD start = 0, simd = 0, base = 0;
     auto baseVSsimd = [&](LPCWSTR name, std::function<void(void)> baseCall, std::function<void(void)> simdCall) -> void
     {
-        start = GetTickCount();
-        for (UINT32 cycles = 0; cycles < 10000000; cycles++)
+        auto loop = [&](std::function<void(void)> call) -> void
         {
-            baseCall();
-        }
+            for (UINT32 cycles = 0; cycles < 1000; cycles++)
+            {
+                call();
+            }
+        };
 
+        auto looper = std::bind(loop, std::placeholders::_1);
+
+        start = GetTickCount();
+        loop(std::bind(looper, std::bind(looper, baseCall)));
         base = (GetTickCount() - start);
-        start = GetTickCount();
-        for (UINT32 cycles = 0; cycles < 10000000; cycles++)
-        {
-            simdCall();
-        }
 
+        start = GetTickCount();
+        //loop(std::bind(loop, std::bind(loop, simdCall)));
         simd = (GetTickCount() - start);
+
         OutputDebugString(Gek::String::format(L"(%10s) Base: %8d, SIMD: %8d\r\n", name, base, simd));
     };
 
@@ -895,7 +900,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                                                                            9.0f,10.0f,11.0f,12.0f,
                                                                           13.0f,14.0f,15.0f,16.0f });
 
-    #define TEST(NAME, BASE, SIMD) baseVSsimd(NAME, [&](void)->void { BASE; }, [&](void)->void { SIMD; })
+    #define TEST(NAME, BASE, SIMD) baseVSsimd(NAME, [&](void) -> void { BASE; }, [&](void) -> void { SIMD; })
     TEST(L"v4 add", auto result(baseSequence + baseSequence), auto result = Gek::MathSIMD::Vector::add(simdSequence, simdSequence));
     TEST(L"v4 sub", auto result(baseSequence - baseSequence), auto result = Gek::MathSIMD::Vector::subtract(simdSequence, simdSequence));
     TEST(L"v4 mul", auto result(baseSequence * baseSequence), auto result = Gek::MathSIMD::Vector::multiply(simdSequence, simdSequence));
