@@ -118,11 +118,11 @@ namespace Gek
             */
             GEKINLINE Types::Vector dot(Types::Vector left, Types::Vector right)
             {
-                Types::Vector multiply = _mm_mul_ps(left, right); // lx*rx, ly*ry, lz*rz, lw*rw
-                Types::Vector YXZW = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(2, 3, 0, 1)); // ry, rx, lw, lz
-                Types::Vector add = _mm_add_ps(multiply, YXZW);
-                Types::Vector ZWYX = _mm_shuffle_ps(add, add, _MM_SHUFFLE(0, 1, 2, 3)); // rz, rw, ly, lx
-                return _mm_add_ps(ZWYX, add);
+                left = _mm_mul_ps(left, right); // lx*rx, ly*ry, lz*rz, lw*rw
+                right = _mm_shuffle_ps(left, left, _MM_SHUFFLE(2, 3, 0, 1)); // ry, rx, lw, lz
+                left = _mm_add_ps(left, right);
+                right = _mm_shuffle_ps(left, left, _MM_SHUFFLE(0, 1, 2, 3)); // rz, rw, ly, lx
+                return _mm_add_ps(left, right);
             }
 
             /**
@@ -178,14 +178,122 @@ namespace Gek
             }
 
             /**
-            Returns the absolute value of each component
-            @param[in] value The value to return the absolute of
-            @return The resulting vector containing the absolute value of each component
+                Returns the absolute value of each component
+                @param[in] value The value to return the absolute of
+                @return The resulting vector containing the absolute value of each component
             */
             GEKINLINE Types::Vector abs(Types::Vector value)
             {
                 static const __m128i sign = _mm_set1_epi32(0x80000000);
                 return _mm_andnot_ps(_mm_castsi128_ps(sign), value);
+            }
+
+            /**
+                Returns the absolute value of each component
+                @param[in] value The value to return the absolute of
+                @param[in] exponent The exponetial value to raise to
+                @return The resulting vector containing the exponential value of each component
+            */
+            GEKINLINE Types::Vector pow(Types::Vector value, Types::Vector exponent)
+            {
+                __declspec(align(16)) float valueData[4];
+                __declspec(align(16)) float exponentData[4];
+                _mm_store_ps(valueData, value);
+                _mm_store_ps(exponentData, exponent);
+                return set(std::pow(valueData[0], exponentData[0]),
+                           std::pow(valueData[1], exponentData[1]),
+                           std::pow(valueData[2], exponentData[2]),
+                           std::pow(valueData[3], exponentData[3]));
+            }
+
+            /**
+                Returns the sin value of each component
+                @param[in] value The value to return the sin of
+                @return The resulting vector containing the sin value of each component
+            */
+            GEKINLINE Types::Vector sin(Types::Vector value)
+            {
+                __declspec(align(16)) float valueData[4];
+                _mm_store_ps(valueData, value);
+                return set(std::sin(valueData[0]),
+                           std::sin(valueData[1]),
+                           std::sin(valueData[2]),
+                           std::sin(valueData[3]));
+            }
+
+            /**
+                Returns the asin value of each component
+                @param[in] value The value to return the asin of
+                @return The resulting vector containing the asin value of each component
+            */
+            GEKINLINE Types::Vector asin(Types::Vector value)
+            {
+                __declspec(align(16)) float valueData[4];
+                _mm_store_ps(valueData, value);
+                return set(std::asin(valueData[0]),
+                           std::asin(valueData[1]),
+                           std::asin(valueData[2]),
+                           std::asin(valueData[3]));
+            }
+
+            /**
+                Returns the cos value of each component
+                @param[in] value The value to return the cos of
+                @return The resulting vector containing the cos value of each component
+            */
+            GEKINLINE Types::Vector cos(Types::Vector value)
+            {
+                __declspec(align(16)) float valueData[4];
+                _mm_store_ps(valueData, value);
+                return set(std::cos(valueData[0]),
+                           std::cos(valueData[1]),
+                           std::cos(valueData[2]),
+                           std::cos(valueData[3]));
+            }
+
+            /**
+                Returns the acos value of each component
+                @param[in] value The value to return the acos of
+                @return The resulting vector containing the acos value of each component
+            */
+            GEKINLINE Types::Vector acos(Types::Vector value)
+            {
+                __declspec(align(16)) float valueData[4];
+                _mm_store_ps(valueData, value);
+                return set(std::acos(valueData[0]),
+                           std::acos(valueData[1]),
+                           std::acos(valueData[2]),
+                           std::acos(valueData[3]));
+            }
+
+            /**
+                Returns the tan value of each component
+                @param[in] value The value to return the tan of
+                @return The resulting vector containing the tan value of each component
+            */
+            GEKINLINE Types::Vector tan(Types::Vector value)
+            {
+                __declspec(align(16)) float valueData[4];
+                _mm_store_ps(valueData, value);
+                return set(std::tan(valueData[0]),
+                           std::tan(valueData[1]),
+                           std::tan(valueData[2]),
+                           std::tan(valueData[3]));
+            }
+
+            /**
+                Returns the atan value of each component
+                @param[in] value The value to return the atan of
+                @return The resulting vector containing the atan value of each component
+            */
+            GEKINLINE Types::Vector atan(Types::Vector value)
+            {
+                __declspec(align(16)) float valueData[4];
+                _mm_store_ps(valueData, value);
+                return set(std::atan(valueData[0]),
+                           std::atan(valueData[1]),
+                           std::atan(valueData[2]),
+                           std::atan(valueData[3]));
             }
 
             GEKINLINE Types::Vector isEqual(Types::Vector left, Types::Vector right)
@@ -229,12 +337,12 @@ namespace Gek
             */
             GEKINLINE Types::Vector dot(Types::Vector left, Types::Vector right)
             {
-                Types::Vector multiply = _mm_mul_ps(left, right); // lx*rx, ly*ry, lz*rz, lw*rw
-                Types::Vector Y = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(0, 0, 0, 1)); // get lyry in a
-                Types::Vector Z = _mm_shuffle_ps(multiply, multiply, _MM_SHUFFLE(0, 0, 0, 2)); // get lzrz in a
-                Types::Vector addYZ = _mm_add_ps(Y, Z); // lyry+lzrz
-                Types::Vector addXYZ = _mm_add_ps(multiply, addYZ); // xx+(lyry+lzrz)
-                return _mm_shuffle_ps(addXYZ, addXYZ, _MM_SHUFFLE(0, 0, 0, 0)); // shuffle (lxrx+lyry+lzrz) to all four
+                left = _mm_mul_ps(left, right); // lx*rx, ly*ry, lz*rz, lw*rw
+                Types::Vector Y = _mm_shuffle_ps(left, left, _MM_SHUFFLE(0, 0, 0, 1)); // get lyry in a
+                Types::Vector Z = _mm_shuffle_ps(left, left, _MM_SHUFFLE(0, 0, 0, 2)); // get lzrz in a
+                right = _mm_add_ps(Y, Z); // lyry+lzrz
+                left = _mm_add_ps(left, right); // xx+(lyry+lzrz)
+                return _mm_shuffle_ps(left, left, _MM_SHUFFLE(0, 0, 0, 0)); // shuffle (lxrx+lyry+lzrz) to all four
             }
 
             /**
@@ -485,21 +593,10 @@ namespace Gek
             */
             GEKINLINE Types::Vector multiply(const Types::Matrix &matrix, Types::Vector vector)
             {
-                Types::Matrix shuffled =
-                {
-                    _mm_shuffle_ps(vector, vector, _MM_SHUFFLE(0, 0, 0, 0)),
-                    _mm_shuffle_ps(vector, vector, _MM_SHUFFLE(1, 1, 1, 1)),
-                    _mm_shuffle_ps(vector, vector, _MM_SHUFFLE(2, 2, 2, 2)),
-                    _mm_shuffle_ps(vector, vector, _MM_SHUFFLE(3, 3, 3, 3)),
-                };
-
-                return _mm_add_ps(
-                    _mm_add_ps(
-                        _mm_mul_ps(shuffled[0], matrix[0]),
-                        _mm_mul_ps(shuffled[1], matrix[1])),
-                    _mm_add_ps(
-                        _mm_mul_ps(shuffled[2], matrix[2]),
-                        _mm_mul_ps(shuffled[3], matrix[3])));
+                return _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(vector, vector, _MM_SHUFFLE(0, 0, 0, 0)), matrix[0]),
+                                             _mm_mul_ps(_mm_shuffle_ps(vector, vector, _MM_SHUFFLE(1, 1, 1, 1)), matrix[1])),
+                                  _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(vector, vector, _MM_SHUFFLE(2, 2, 2, 2)), matrix[2]),
+                                             _mm_mul_ps(_mm_shuffle_ps(vector, vector, _MM_SHUFFLE(3, 3, 3, 3)), matrix[3])));
             }
 
             /**
@@ -510,35 +607,27 @@ namespace Gek
             */
             GEKINLINE Types::Matrix multiply(const Types::Matrix &left, const Types::Matrix &right)
             {
-                Types::Matrix result;
-                for (UINT32 rowIndex = 0; rowIndex < 4; rowIndex++)
-                {
-                    Types::Matrix shuffled =
-                    {
-                        _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(0, 0, 0, 0)),
-                        _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(1, 1, 1, 1)),
-                        _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(2, 2, 2, 2)),
-                        _mm_shuffle_ps(left[rowIndex], left[rowIndex], _MM_SHUFFLE(3, 3, 3, 3)),
-                    };
-
-                    result[rowIndex] = _mm_add_ps(
-                        _mm_add_ps(
-                            _mm_mul_ps(shuffled[0], right[0]),
-                            _mm_mul_ps(shuffled[1], right[1])),
-                        _mm_add_ps(
-                            _mm_mul_ps(shuffled[2], right[2]),
-                            _mm_mul_ps(shuffled[3], right[3])));
-                }
-
-                return result;
+                return{ _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(left[0], left[0], _MM_SHUFFLE(0, 0, 0, 0)), right[0]),
+                                              _mm_mul_ps(_mm_shuffle_ps(left[0], left[0], _MM_SHUFFLE(1, 1, 1, 1)), right[1])),
+                                   _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(left[0], left[0], _MM_SHUFFLE(2, 2, 2, 2)), right[2]),
+                                              _mm_mul_ps(_mm_shuffle_ps(left[0], left[0], _MM_SHUFFLE(3, 3, 3, 3)), right[3]))),
+                        _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(left[1], left[1], _MM_SHUFFLE(0, 0, 0, 0)), right[0]),
+                                              _mm_mul_ps(_mm_shuffle_ps(left[1], left[1], _MM_SHUFFLE(1, 1, 1, 1)), right[1])),
+                                   _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(left[1], left[1], _MM_SHUFFLE(2, 2, 2, 2)), right[2]),
+                                              _mm_mul_ps(_mm_shuffle_ps(left[1], left[1], _MM_SHUFFLE(3, 3, 3, 3)), right[3]))),
+                        _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(left[2], left[2], _MM_SHUFFLE(0, 0, 0, 0)), right[0]),
+                                              _mm_mul_ps(_mm_shuffle_ps(left[2], left[2], _MM_SHUFFLE(1, 1, 1, 1)), right[1])),
+                                   _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(left[2], left[2], _MM_SHUFFLE(2, 2, 2, 2)), right[2]),
+                                              _mm_mul_ps(_mm_shuffle_ps(left[2], left[2], _MM_SHUFFLE(3, 3, 3, 3)), right[3]))),
+                        _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(left[3], left[3], _MM_SHUFFLE(0, 0, 0, 0)), right[0]),
+                                              _mm_mul_ps(_mm_shuffle_ps(left[3], left[3], _MM_SHUFFLE(1, 1, 1, 1)), right[1])),
+                                   _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(left[3], left[3], _MM_SHUFFLE(2, 2, 2, 2)), right[2]),
+                                              _mm_mul_ps(_mm_shuffle_ps(left[3], left[3], _MM_SHUFFLE(3, 3, 3, 3)), right[3]))) };
             }
         };
 
         void test(void)
         {
-            BUILD_BUG_ON(sizeof(Types::Vector) != 16);
-            BUILD_BUG_ON(sizeof(Types::Matrix) != 64);
-
             Types::Vector vector = Vector::set({ 1.0f, 2.0f, 4.0f, 4.0f });
 
             Types::Vector xAxis = Vector::set(1.0f, 0.0f, 0.0f, 0.0f);
@@ -773,7 +862,49 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
 {
-    Gek::MathSIMD::test();
+    DWORD start = 0, simd = 0, base = 0;
+    auto baseVSsimd = [&](LPCWSTR name, std::function<void(void)> baseCall, std::function<void(void)> simdCall) -> void
+    {
+        start = GetTickCount();
+        for (UINT32 cycles = 0; cycles < 10000000; cycles++)
+        {
+            baseCall();
+        }
+
+        base = (GetTickCount() - start);
+        start = GetTickCount();
+        for (UINT32 cycles = 0; cycles < 10000000; cycles++)
+        {
+            simdCall();
+        }
+
+        simd = (GetTickCount() - start);
+        OutputDebugString(Gek::String::format(L"(%10s) Base: %8d, SIMD: %8d\r\n", name, base, simd));
+    };
+
+    Gek::Math::Float3 baseTriple(1.0f, 2.0f, 3.0f);
+    Gek::Math::Float4 baseSequence(1.0f, 2.0f, 3.0f, 4.0f);
+    Gek::Math::Float4x4 baseMatrix({ 1.0f, 2.0f, 3.0f, 4.0f,
+                                     5.0f, 6.0f, 7.0f, 8.0f,
+                                     9.0f,10.0f,11.0f,12.0f,
+                                    13.0f,14.0f,15.0f,16.0f });
+
+    Gek::MathSIMD::Types::Vector simdSequence = Gek::MathSIMD::Vector::set(1.0f, 2.0f, 3.0f, 4.0f);
+    Gek::MathSIMD::Types::Matrix simdMatrix = Gek::MathSIMD::Matrix::set({ 1.0f, 2.0f, 3.0f, 4.0f,
+                                                                           5.0f, 6.0f, 7.0f, 8.0f,
+                                                                           9.0f,10.0f,11.0f,12.0f,
+                                                                          13.0f,14.0f,15.0f,16.0f });
+
+    #define TEST(NAME, BASE, SIMD) baseVSsimd(NAME, [&](void)->void { BASE; }, [&](void)->void { SIMD; })
+    TEST(L"v4 add", auto result(baseSequence + baseSequence), auto result = Gek::MathSIMD::Vector::add(simdSequence, simdSequence));
+    TEST(L"v4 sub", auto result(baseSequence - baseSequence), auto result = Gek::MathSIMD::Vector::subtract(simdSequence, simdSequence));
+    TEST(L"v4 mul", auto result(baseSequence * baseSequence), auto result = Gek::MathSIMD::Vector::multiply(simdSequence, simdSequence));
+    TEST(L"v4 div", auto result(baseSequence / baseSequence), auto result = Gek::MathSIMD::Vector::divide(simdSequence, simdSequence));
+    TEST(L"v4 dot", auto result(baseSequence.dot(baseSequence)), auto result = Gek::MathSIMD::Vector::dot(simdSequence, simdSequence));
+    TEST(L"v3 dot", auto result(baseTriple.dot(baseTriple)), auto result = Gek::MathSIMD::Vector3::dot(simdSequence, simdSequence));
+    TEST(L"v3 cross", auto result(baseTriple.cross(baseTriple)), auto result = Gek::MathSIMD::Vector3::cross(simdSequence, simdSequence));
+    TEST(L"m.m mul", auto result(baseMatrix * baseMatrix), auto result = Gek::MathSIMD::Matrix::multiply(simdMatrix, simdMatrix));
+    TEST(L"m.v4 mul", auto result(baseMatrix * baseSequence), auto result = Gek::MathSIMD::Matrix::multiply(simdMatrix, simdSequence));
 
     return 0;
 
@@ -787,8 +918,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
             context->addSearchPath(L"%root%\\Debug\\Plugins");
 #else
-            SetCurrentDirectory(GEKParseFileName(L"%root%\\Release"));
-            context->AddSearchPath(GEKParseFileName(L"%root%\\Release\\Plugins"));
+            SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Release"));
+            context->addSearchPath(L"%root%\\Release\\Plugins");
 #endif
 
             context->initialize();
