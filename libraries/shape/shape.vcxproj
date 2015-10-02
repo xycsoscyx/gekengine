@@ -19,6 +19,14 @@
     <ClInclude Include="GEK\Shape\Rectangle.h" />
     <ClInclude Include="GEK\Shape\Sphere.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AlignedBox.cpp" />
+    <ClCompile Include="Frustum.cpp" />
+    <ClCompile Include="OrientedBox.cpp" />
+    <ClCompile Include="Plane.cpp" />
+    <ClCompile Include="Ray.cpp" />
+    <ClCompile Include="Sphere.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

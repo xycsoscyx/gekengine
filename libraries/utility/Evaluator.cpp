@@ -1,6 +1,7 @@
 #include "exprtk.hpp"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
+#include "GEK\Math\Common.h"
 #include <random>
 
 namespace Gek

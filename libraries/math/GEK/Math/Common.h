@@ -13,14 +13,16 @@ namespace Gek
         const float Epsilon = 1.0e-5f;
         const float Pi = 3.14159265358979323846f;
 
-        float convertDegreesToRadians(float degrees)
+        template <typename TYPE>
+        TYPE convertDegreesToRadians(TYPE degrees)
         {
-            return (degrees * (Pi / 180.0f));
+            return TYPE(degrees * (Pi / 180.0f));
         }
 
-        float convertRadiansToDegrees(float radians)
+        template <typename TYPE>
+        TYPE convertRadiansToDegrees(TYPE radians)
         {
-            return (radians * (180.0f / Pi));
+            return TYPE(radians * (180.0f / Pi));
         }
 
         template <typename DATA, typename TYPE>

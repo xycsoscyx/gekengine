@@ -19,6 +19,14 @@
     <ClInclude Include="GEK\Math\Vector3.h" />
     <ClInclude Include="GEK\Math\Vector4.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Matrix3x2.cpp" />
+    <ClCompile Include="Matrix4x4.cpp" />
+    <ClCompile Include="Quaternion.cpp" />
+    <ClCompile Include="Vector2.cpp" />
+    <ClCompile Include="Vector3.cpp" />
+    <ClCompile Include="Vector4.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{80C85026-E106-47BF-91FA-43220B44141B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

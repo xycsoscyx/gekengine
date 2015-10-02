@@ -135,7 +135,7 @@ void GetMeshes(const aiScene *scene, const aiNode *node, const Gek::Math::Float4
                         vertex.position *= Gek::Math::Float3(-1.0f, 1.0f, -1.0f);
                     }
 
-                    alignedBox.Extend(vertex.position);
+                    alignedBox.extend(vertex.position);
 
                     vertex.texCoord.x = mesh->mTextureCoords[0][vertexIndex].x;
                     vertex.texCoord.y = mesh->mTextureCoords[0][vertexIndex].y;

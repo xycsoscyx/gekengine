@@ -1,7 +1,5 @@
 #pragma once
 
-#include <algorithm>
-#include "GEK\Math\Common.h"
 #include "GEK\Math\Vector2.h"
 
 
@@ -34,106 +32,29 @@ namespace Gek
             };
 
         public:
-            Float3x2(void)
-            {
-                setIdentity();
-            }
+            Float3x2(void);
+            Float3x2(const float(&data)[6]);
+            Float3x2(const float *data);
+            Float3x2(const Float3x2 &matrix);
 
-            Float3x2(const float (&data)[6])
-                : data{ data[0], data[1], data[2], data[3], data[4], data[5] }
-            {
-            }
+            void setZero(void);
+            void setIdentity(void);
+            void setScaling(float scalar);
+            void setScaling(const Float2 &vector);
+            void setRotation(float radians);
 
-            Float3x2(const float *data)
-                : data{ data[0], data[1], data[2], data[3], data[4], data[5] }
-            {
-            }
+            Float2 getScaling(void) const;
 
-            Float3x2(const Float3x2 &matrix)
-                : rows{ matrix.rows[0], matrix.rows[1], matrix.rows[2] }
-            {
-            }
+            Float2 operator [] (int row) const;
+            Float2 &operator [] (int row);
 
-            void setZero(void)
-            {
-                rows[0].set(0.0f, 0.0f);
-                rows[1].set(0.0f, 0.0f);
-                rows[2].set(0.0f, 0.0f);
-            }
+            operator const float *() const;
+            operator float *();
 
-            void setIdentity(void)
-            {
-                rows[0].set(1.0f, 0.0f);
-                rows[1].set(0.0f, 1.0f);
-                rows[2].set(0.0f, 0.0f);
-            }
+            Float3x2 operator = (const Float3x2 &matrix);
 
-            void setScaling(float scalar)
-            {
-                _11 = scalar;
-                _22 = scalar;
-            }
-
-            void setScaling(const Float2 &vector)
-            {
-                _11 = vector.x;
-                _22 = vector.y;
-            }
-
-            void setRotation(float radians)
-            {
-                rows[0].set(std::cos(radians), -std::sin(radians));
-                rows[1].set(std::sin(radians), std::cos(radians));
-                rows[2].set(0.0f, 0.0f);
-            }
-
-            Float2 getScaling(void) const
-            {
-                return Float2(_11, _22);
-            }
-
-            Float2 operator [] (int row) const
-            {
-                return rows[row];
-            }
-
-            Float2 &operator [] (int row)
-            {
-                return rows[row];
-            }
-
-            operator const float *() const
-            {
-                return data;
-            }
-
-            operator float *()
-            {
-                return data;
-            }
-
-            void operator *= (const Float3x2 &matrix)
-            {
-                (*this) = ((*this) * matrix);
-            }
-
-            Float3x2 operator * (const Float3x2 &matrix) const
-            {
-                return Float3x2({ _11 * matrix._11 + _12 * matrix._21,
-                                  _11 * matrix._12 + _12 * matrix._22,
-                                  _21 * matrix._11 + _22 * matrix._21,
-                                  _21 * matrix._12 + _22 * matrix._22,
-                                  _31 * matrix._11 + _32 * matrix._21 + matrix._31,
-                                  _31 * matrix._12 + _32 * matrix._22 + matrix._32 });
-            }
-
-            Float3x2 operator = (const Float3x2 &matrix)
-            {
-                rows[0] = matrix.rows[0];
-                rows[1] = matrix.rows[1];
-                rows[2] = matrix.rows[2];
-                return (*this);
-            }
+            void operator *= (const Float3x2 &matrix);
+            Float3x2 operator * (const Float3x2 &matrix) const;
         };
     }; // namespace Math
 }; // namespace Gek
