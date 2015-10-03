@@ -7,40 +7,6 @@ namespace Gek
 {
     namespace Math
     {
-        Float3::Float3(void)
-            : data{ 0.0f, 0.0f, 0.0f }
-        {
-        }
-
-        Float3::Float3(const float(&data)[3])
-            : data{ data[0], data[1], data[2] }
-        {
-        }
-
-        Float3::Float3(const float *data)
-            : data{ data[0], data[1], data[2] }
-        {
-        }
-
-        Float3::Float3(float scalar)
-            : data{ scalar, scalar, scalar }
-        {
-        }
-
-        Float3::Float3(const Float3 &vector)
-            : x(vector.x)
-            , y(vector.y)
-            , z(vector.z)
-        {
-        }
-
-        Float3::Float3(float x, float y, float z)
-            : x(x)
-            , y(y)
-            , z(z)
-        {
-        }
-
         Float4 Float3::w(float w)
         {
             return Float4(x, y, z, w);
@@ -58,9 +24,11 @@ namespace Gek
             this->z = z;
         }
 
-        void Float3::setLength(float length)
+        void Float3::set(const Float3 &vector)
         {
-            (*this) *= (length / getLength());
+            this->x = vector.x;
+            this->y = vector.y;
+            this->z = vector.z;
         }
 
         float Float3::getLengthSquared(void) const
@@ -73,11 +41,6 @@ namespace Gek
             return std::sqrt(getLengthSquared());
         }
 
-        float Float3::getMax(void) const
-        {
-            return std::max(std::max(x, y), z);
-        }
-
         float Float3::getDistance(const Float3 &vector) const
         {
             return (vector - (*this)).getLength();
@@ -85,13 +48,7 @@ namespace Gek
 
         Float3 Float3::getNormal(void) const
         {
-            float length(getLength());
-            if (length != 0.0f)
-            {
-                return ((*this) * (1.0f / length));
-            }
-
-            return (*this);
+            return ((*this) / getLength());
         }
 
         float Float3::dot(const Float3 &vector) const
@@ -102,8 +59,8 @@ namespace Gek
         Float3 Float3::cross(const Float3 &vector) const
         {
             return Float3(((y * vector.z) - (z * vector.y)),
-                ((z * vector.x) - (x * vector.z)),
-                ((x * vector.y) - (y * vector.x)));
+                          ((z * vector.x) - (x * vector.z)),
+                          ((x * vector.y) - (y * vector.x)));
         }
 
         Float3 Float3::lerp(const Float3 &vector, float factor) const

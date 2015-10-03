@@ -6,39 +6,6 @@ namespace Gek
 {
     namespace Math
     {
-        Float2::Float2(void)
-            : data{ 0.0f, 0.0f }
-        {
-        }
-
-        Float2::Float2(const float(&data)[2])
-            : data{ data[0], data[1] }
-        {
-        }
-
-        Float2::Float2(const float *data)
-            : data{ data[0], data[1] }
-        {
-        }
-
-        Float2::Float2(float scalar)
-            : data{ scalar, scalar }
-        {
-            x = y = scalar;
-        }
-
-        Float2::Float2(const Float2 &vector)
-            : x(vector.x)
-            , y(vector.y)
-        {
-        }
-
-        Float2::Float2(float x, float y)
-            : x(x)
-            , y(y)
-        {
-        }
-
         void Float2::set(float value)
         {
             this->x = this->y = value;
@@ -50,9 +17,10 @@ namespace Gek
             this->y = y;
         }
 
-        void Float2::setLength(float length)
+        void Float2::set(const Float2 &vector)
         {
-            (*this) *= (length / getLength());
+            this->x = vector.x;
+            this->y = vector.y;
         }
 
         float Float2::getLengthSquared(void) const
@@ -65,11 +33,6 @@ namespace Gek
             return std::sqrt(getLengthSquared());
         }
 
-        float Float2::getMax(void) const
-        {
-            return std::max(x, y);
-        }
-
         float Float2::getDistance(const Float2 &vector) const
         {
             return (vector - (*this)).getLength();
@@ -77,13 +40,7 @@ namespace Gek
 
         Float2 Float2::getNormal(void) const
         {
-            float length = getLength();
-            if (length != 0.0f)
-            {
-                return ((*this) * (1.0f / length));
-            }
-
-            return (*this);
+            return ((*this) / getLength());
         }
 
         void Float2::normalize(void)

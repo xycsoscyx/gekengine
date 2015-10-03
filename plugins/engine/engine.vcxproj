@@ -132,6 +132,12 @@
     <ProjectReference Include="..\..\libraries\context\context.vcxproj">
       <Project>{e4015f2b-c176-414f-8733-1c2d88ef3fb5}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\libraries\math\math.vcxproj">
+      <Project>{80c85026-e106-47bf-91fa-43220b44141b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libraries\shape\shape.vcxproj">
+      <Project>{4ebfe6d0-93e4-436b-9249-19ee13e7cf0b}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\libraries\utility\utility.vcxproj">
       <Project>{be4f1e7f-e045-4d30-aed6-02a60c83bd97}</Project>
     </ProjectReference>

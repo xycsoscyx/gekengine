@@ -8,36 +8,6 @@ namespace Gek
 {
     namespace Math
     {
-        Quaternion::Quaternion(void)
-            : Float4(0.0f, 0.0f, 0.0f, 1.0f)
-        {
-        }
-
-        Quaternion::Quaternion(__m128 data)
-            : Float4(data)
-        {
-        }
-
-        Quaternion::Quaternion(const float(&data)[4])
-            : Float4({ data[0], data[1], data[2], data[3] })
-        {
-        }
-
-        Quaternion::Quaternion(const float *data)
-            : Float4(data)
-        {
-        }
-
-        Quaternion::Quaternion(const Float4 &vector)
-            : Float4(vector)
-        {
-        }
-
-        Quaternion::Quaternion(float x, float y, float z, float w)
-            : Float4(x, y, z, w)
-        {
-        }
-
         Quaternion::Quaternion(const Float4x4 &rotation)
         {
             setRotation(rotation);
@@ -62,15 +32,6 @@ namespace Gek
         {
             x = y = z = 0.0f;
             w = 1.0f;
-        }
-
-        void Quaternion::setLength(float length)
-        {
-            length = (length / getLength());
-            x *= length;
-            y *= length;
-            z *= length;
-            w *= length;
         }
 
         void Quaternion::setEuler(const Float3 &euler)

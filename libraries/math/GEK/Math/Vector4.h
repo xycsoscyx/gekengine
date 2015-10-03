@@ -20,24 +20,50 @@ namespace Gek
             };
 
         public:
-            Float4(void);
-            Float4(float value);
-            Float4(__m128 simd);
-            Float4(const float(&data)[4]);
-            Float4(const float *data);
-            Float4(const Float4 &vector);
-            Float4(float x, float y, float z, float w);
+            Float4(void)
+                : data{ 0.0f, 0.0f, 0.0f, 0.0f }
+            {
+            }
+
+            Float4(float value)
+                : data{ value, value, value, value }
+            {
+            }
+
+            Float4(__m128 simd)
+                : simd(simd)
+            {
+            }
+
+            Float4(const float(&data)[4])
+                : data{ data[0], data[1], data[2], data[3] }
+            {
+            }
+
+            Float4(const float *data)
+                : data{ data[0], data[1], data[2], data[3] }
+            {
+            }
+
+            Float4(const Float4 &vector)
+                : simd(vector.simd)
+            {
+            }
+
+            Float4(float x, float y, float z, float w)
+                : data{ x, y, z, w }
+            {
+            }
 
             Float3 getXYZ(void) const;
             __declspec(property(get = getXYZ)) Float3 xyz;
 
             void set(float value);
             void set(float x, float y, float z, float w);
-            void setLength(float length);
+            void set(const Float4 &vector);
 
             float getLengthSquared(void) const;
             float getLength(void) const;
-            float getMax(void) const;
             float getDistance(const Float4 &vector) const;
             Float4 getNormal(void) const;
 

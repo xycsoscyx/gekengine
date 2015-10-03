@@ -103,7 +103,7 @@ namespace Gek
             void OnForceAndTorque(dFloat frameTime, int threadHandle)
             {
                 auto &massComponent = getPopulationSystem()->getComponent<Mass::Data>(getEntityHandle(), Mass::identifier);
-                AddForce((Math::Float4(0.0f, -9.81f, 0.0f, 0.0f) * massComponent).data);
+                AddForce(Math::Float4(0.0f, (-9.81f * massComponent), 0.0f, 0.0f).data);
             }
         };
 
@@ -397,7 +397,7 @@ namespace Gek
                 Math::Float3 size(1.0f, 1.0f, 1.0f);
                 if (population->hasComponent(entity, Engine::Components::Size::identifier))
                 {
-                    size = population->getComponent<Engine::Components::Size::Data>(entity, Engine::Components::Size::identifier);
+                    size.set(population->getComponent<Engine::Components::Size::Data>(entity, Engine::Components::Size::identifier));
                 }
 
                 CStringW shape(Gek::String::format(L"%s:%f,%f,%f", dynamicBodyComponent.shape.GetString(), size.x, size.y, size.z));

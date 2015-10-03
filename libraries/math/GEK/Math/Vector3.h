@@ -16,22 +16,44 @@ namespace Gek
             };
 
         public:
-            Float3(void);
-            Float3(const float(&data)[3]);
-            Float3(const float *data);
-            Float3(float scalar);
-            Float3(const Float3 &vector);
-            Float3(float x, float y, float z);
+            Float3(void)
+                : data{ 0.0f, 0.0f, 0.0f }
+            {
+            }
+
+            Float3(const float(&data)[3])
+                : data{ data[0], data[1], data[2] }
+            {
+            }
+
+            Float3(const float *data)
+                : data{ data[0], data[1], data[2] }
+            {
+            }
+
+            Float3(float scalar)
+                : data{ scalar, scalar, scalar }
+            {
+            }
+
+            Float3(const Float3 &vector)
+                : data{ vector.x, vector.y, vector.z }
+            {
+            }
+
+            Float3(float x, float y, float z)
+                : data{ x, y, z }
+            {
+            }
 
             Float4 w(float w);
 
             void set(float value);
             void set(float x, float y, float z);
-            void setLength(float length);
+            void set(const Float3 &vector);
 
             float getLengthSquared(void) const;
             float getLength(void) const;
-            float getMax(void) const;
             float getDistance(const Float3 &vector) const;
             Float3 getNormal(void) const;
 

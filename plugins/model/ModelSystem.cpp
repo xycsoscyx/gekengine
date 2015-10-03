@@ -347,7 +347,7 @@ namespace Gek
                     Gek::Math::Float3 size(1.0f, 1.0f, 1.0f);
                     if (population->hasComponent(dataEntity.first, Engine::Components::Size::identifier))
                     {
-                        size = population->getComponent<Engine::Components::Size::Data>(dataEntity.first, Engine::Components::Size::identifier);
+                        size.set(population->getComponent<Engine::Components::Size::Data>(dataEntity.first, Engine::Components::Size::identifier));
                     }
 
                     Gek::Shape::AlignedBox alignedBox(data.alignedBox);

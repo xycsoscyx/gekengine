@@ -7,44 +7,6 @@ namespace Gek
 {
     namespace Math
     {
-        Float4::Float4(void)
-            : data{ 0.0f, 0.0f, 0.0f, 0.0f }
-        {
-        }
-
-        Float4::Float4(float value)
-            : data{ value, value, value, value }
-        {
-        }
-
-        Float4::Float4(__m128 simd)
-            : simd(simd)
-        {
-        }
-
-        Float4::Float4(const float(&data)[4])
-            : data{ data[0], data[1], data[2], data[3] }
-        {
-        }
-
-        Float4::Float4(const float *data)
-            : data{ data[0], data[1], data[2], data[3] }
-        {
-        }
-
-        Float4::Float4(const Float4 &vector)
-            : simd(vector.simd)
-        {
-        }
-
-        Float4::Float4(float x, float y, float z, float w)
-            : x(x)
-            , y(y)
-            , z(z)
-            , w(w)
-        {
-        }
-
         Float3 Float4::getXYZ(void) const
         {
             return Float3(x, y, z);
@@ -52,35 +14,27 @@ namespace Gek
 
         void Float4::set(float value)
         {
-            this->x = this->y = this->z = this->w = value;
+            simd = _mm_set1_ps(value);
         }
 
         void Float4::set(float x, float y, float z, float w)
         {
-            this->x = x;
-            this->y = y;
-            this->z = z;
-            this->w = w;
+            simd = _mm_setr_ps(x, y, z, w);
         }
 
-        void Float4::setLength(float length)
+        void Float4::set(const Float4 &vector)
         {
-            (*this) *= (length / getLength());
+            simd = vector.simd;
         }
 
         float Float4::getLengthSquared(void) const
         {
-            return ((x * x) + (y * y) + (z * z) + (w * w));
+            return this->dot(*this);
         }
 
         float Float4::getLength(void) const
         {
             return std::sqrt(getLengthSquared());
-        }
-
-        float Float4::getMax(void) const
-        {
-            return std::max(std::max(std::max(x, y), z), w);
         }
 
         float Float4::getDistance(const Float4 &vector) const
@@ -90,13 +44,7 @@ namespace Gek
 
         Float4 Float4::getNormal(void) const
         {
-            float length(getLength());
-            if (length != 0.0f)
-            {
-                return ((*this) * (1.0f / length));
-            }
-
-            return (*this);
+            return ((*this) / getLength());
         }
 
         float Float4::dot(const Float4 &vector) const
@@ -111,7 +59,7 @@ namespace Gek
 
         void Float4::normalize(void)
         {
-            (*this) = getNormal();
+            (*this).set(getNormal());
         }
 
         float Float4::operator [] (int axis) const
