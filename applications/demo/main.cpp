@@ -893,23 +893,25 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     Gek::Math::Float3 baseTriple(1.0f, 2.0f, 3.0f);
     Gek::Math::Float4 baseSequence(1.0f, 2.0f, 3.0f, 4.0f);
+    Gek::Math::Float4 baseSequenceReverse(4.0f, 3.0f, 2.0f, 1.0f);
     Gek::Math::Float4x4 baseMatrix({ 1.0f, 2.0f, 3.0f, 4.0f,
                                      5.0f, 6.0f, 7.0f, 8.0f,
                                      9.0f,10.0f,11.0f,12.0f,
                                     13.0f,14.0f,15.0f,16.0f });
 
     Gek::MathSIMD::Types::Vector simdSequence = Gek::MathSIMD::Vector::set(1.0f, 2.0f, 3.0f, 4.0f);
+    Gek::MathSIMD::Types::Vector simdSequenceReverse = Gek::MathSIMD::Vector::set(4.0f, 3.0f, 2.0f, 1.0f);
     Gek::MathSIMD::Types::Matrix simdMatrix = Gek::MathSIMD::Matrix::set({ 1.0f, 2.0f, 3.0f, 4.0f,
                                                                            5.0f, 6.0f, 7.0f, 8.0f,
                                                                            9.0f,10.0f,11.0f,12.0f,
                                                                           13.0f,14.0f,15.0f,16.0f });
 
     #define TEST(NAME, BASE, SIMD) baseVSsimd(NAME, [&](void) -> void { BASE; }, [&](void) -> void { SIMD; })
-    TEST(L"v4 add", auto result(baseSequence + baseSequence), auto result = Gek::MathSIMD::Vector::add(simdSequence, simdSequence));
-    TEST(L"v4 sub", auto result(baseSequence - baseSequence), auto result = Gek::MathSIMD::Vector::subtract(simdSequence, simdSequence));
-    TEST(L"v4 mul", auto result(baseSequence * baseSequence), auto result = Gek::MathSIMD::Vector::multiply(simdSequence, simdSequence));
-    TEST(L"v4 div", auto result(baseSequence / baseSequence), auto result = Gek::MathSIMD::Vector::divide(simdSequence, simdSequence));
-    TEST(L"v4 dot", auto result(baseSequence.dot(baseSequence)), auto result = Gek::MathSIMD::Vector::dot(simdSequence, simdSequence));
+    TEST(L"v4 add", auto result(baseSequence + baseSequenceReverse), auto result = Gek::MathSIMD::Vector::add(simdSequence, simdSequenceReverse));
+    TEST(L"v4 sub", auto result(baseSequence - baseSequenceReverse), auto result = Gek::MathSIMD::Vector::subtract(simdSequence, simdSequenceReverse));
+    TEST(L"v4 mul", auto result(baseSequence * baseSequenceReverse), auto result = Gek::MathSIMD::Vector::multiply(simdSequence, simdSequenceReverse));
+    TEST(L"v4 div", auto result(baseSequence / baseSequenceReverse), auto result = Gek::MathSIMD::Vector::divide(simdSequence, simdSequenceReverse));
+    TEST(L"v4 dot", auto result(baseSequence.dot(baseSequenceReverse)), auto result = Gek::MathSIMD::Vector::dot(simdSequence, simdSequenceReverse));
     TEST(L"v3 dot", auto result(baseTriple.dot(baseTriple)), auto result = Gek::MathSIMD::Vector3::dot(simdSequence, simdSequence));
     TEST(L"v3 cross", auto result(baseTriple.cross(baseTriple)), auto result = Gek::MathSIMD::Vector3::cross(simdSequence, simdSequence));
     TEST(L"m.m mul", auto result(baseMatrix * baseMatrix), auto result = Gek::MathSIMD::Matrix::multiply(simdMatrix, simdMatrix));

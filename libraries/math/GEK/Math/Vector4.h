@@ -71,12 +71,6 @@ namespace Gek
             Float4 lerp(const Float4 &vector, float factor) const;
             void normalize(void);
 
-            float operator [] (int axis) const;
-            float &operator [] (int axis);
-
-            operator const float *() const;
-            operator float *();
-
             bool operator < (const Float4 &vector) const;
             bool operator > (const Float4 &vector) const;
             bool operator <= (const Float4 &vector) const;
@@ -84,18 +78,76 @@ namespace Gek
             bool operator == (const Float4 &vector) const;
             bool operator != (const Float4 &vector) const;
 
-            Float4 operator = (const Float4 &vector);
-            void operator -= (const Float4 &vector);
-            void operator += (const Float4 &vector);
-            void operator /= (const Float4 &vector);
-            void operator *= (const Float4 &vector);
+            inline float operator [] (int axis) const
+            {
+                return data[axis];
+            }
 
-            Float4 operator - (const Float4 &vector) const;
-            Float4 operator + (const Float4 &vector) const;
-            Float4 operator / (const Float4 &vector) const;
-            Float4 operator * (const Float4 &vector) const;
+            inline float &operator [] (int axis)
+            {
+                return data[axis];
+            }
+
+            inline operator const float *() const
+            {
+                return data;
+            }
+
+            inline operator float *()
+            {
+                return data;
+            }
+
+            inline Float4 operator = (const Float4 &vector)
+            {
+                simd = vector.simd;
+                return (*this);
+            }
+
+            inline void operator -= (const Float4 &vector)
+            {
+                simd = _mm_sub_ps(simd, vector.simd);
+            }
+
+            inline void operator += (const Float4 &vector)
+            {
+                simd = _mm_add_ps(simd, vector.simd);
+            }
+
+            inline void operator /= (const Float4 &vector)
+            {
+                simd = _mm_div_ps(simd, vector.simd);
+            }
+
+            inline void operator *= (const Float4 &vector)
+            {
+                simd = _mm_mul_ps(simd, vector.simd);
+            }
+
+            inline Float4 operator - (const Float4 &vector) const
+            {
+                return _mm_sub_ps(simd, vector.simd);
+            }
+
+            inline Float4 operator + (const Float4 &vector) const
+            {
+                return _mm_add_ps(simd, vector.simd);
+            }
+
+            inline Float4 operator / (const Float4 &vector) const
+            {
+                return _mm_div_ps(simd, vector.simd);
+            }
+
+            inline Float4 operator * (const Float4 &vector) const
+            {
+                return _mm_mul_ps(simd, vector.simd);
+            }
         };
 
-        Float4 operator - (const Float4 &vector);
+        inline Float4 operator - (const Float4 &vector)
+        {
+            return _mm_sub_ps(_mm_set1_ps(0.0f), vector.simd);
+        }
     }; // namespace Math
 }; // namespace Gek

@@ -781,7 +781,7 @@ namespace Gek
                         }
 
                         drawQueue.clear();
-                        ObservableMixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, viewFrustum)));
+                        ObservableMixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
 
                         concurrency::concurrent_unordered_map<CComQIPtr<Shader::Interface>, // shader
                             concurrency::concurrent_unordered_map<Plugin::Interface *, // plugin

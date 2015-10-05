@@ -334,9 +334,10 @@ namespace Gek
             }
 
             // Render::Observer
-            STDMETHODIMP_(void) OnRenderScene(const Engine::Population::Entity &cameraEntity, const Gek::Shape::Frustum &viewFrustum)
+            STDMETHODIMP_(void) OnRenderScene(const Engine::Population::Entity &cameraEntity, const Gek::Shape::Frustum *viewFrustum)
             {
                 REQUIRE_VOID_RETURN(population);
+                REQUIRE_VOID_RETURN(viewFrustum);
 
                 const auto &cameraTransform = population->getComponent<Engine::Components::Transform::Data>(cameraEntity, Engine::Components::Transform::identifier);
 
@@ -356,7 +357,7 @@ namespace Gek
 
                     const auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(dataEntity.first, Engine::Components::Transform::identifier);
                     Shape::OrientedBox orientedBox(alignedBox, transformComponent.rotation, transformComponent.position);
-                    if (viewFrustum.isVisible(orientedBox))
+                    if (viewFrustum->isVisible(orientedBox))
                     {
                         Gek::Math::Float4 color(1.0f, 1.0f, 1.0f, 1.0f);
                         if (population->hasComponent(dataEntity.first, Engine::Components::Color::identifier))

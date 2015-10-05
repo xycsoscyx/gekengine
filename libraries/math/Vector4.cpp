@@ -44,7 +44,7 @@ namespace Gek
 
         Float4 Float4::getNormal(void) const
         {
-            return ((*this) / getLength());
+            return _mm_mul_ps(simd, _mm_rcp_ps(_mm_set1_ps(getLength())));
         }
 
         float Float4::dot(const Float4 &vector) const
@@ -60,26 +60,6 @@ namespace Gek
         void Float4::normalize(void)
         {
             (*this).set(getNormal());
-        }
-
-        float Float4::operator [] (int axis) const
-        {
-            return data[axis];
-        }
-
-        float &Float4::operator [] (int axis)
-        {
-            return data[axis];
-        }
-
-        Float4::operator const float *() const
-        {
-            return data;
-        }
-
-        Float4::operator float *()
-        {
-            return data;
         }
 
         bool Float4::operator < (const Float4 &vector) const
@@ -134,72 +114,6 @@ namespace Gek
             if (z != vector.z) return true;
             if (w != vector.w) return true;
             return false;
-        }
-
-        Float4 Float4::operator = (const Float4 &vector)
-        {
-            x = vector.x;
-            y = vector.y;
-            z = vector.z;
-            w = vector.w;
-            return (*this);
-        }
-
-        void Float4::operator -= (const Float4 &vector)
-        {
-            x -= vector.x;
-            y -= vector.y;
-            z -= vector.z;
-            w -= vector.w;
-        }
-
-        void Float4::operator += (const Float4 &vector)
-        {
-            x += vector.x;
-            y += vector.y;
-            z += vector.z;
-            w += vector.w;
-        }
-
-        void Float4::operator /= (const Float4 &vector)
-        {
-            x /= vector.x;
-            y /= vector.y;
-            z /= vector.z;
-            w /= vector.w;
-        }
-
-        void Float4::operator *= (const Float4 &vector)
-        {
-            x *= vector.x;
-            y *= vector.y;
-            z *= vector.z;
-            w *= vector.w;
-        }
-
-        Float4 Float4::operator - (const Float4 &vector) const
-        {
-            return Float4((x - vector.x), (y - vector.y), (z - vector.z), (w - vector.w));
-        }
-
-        Float4 Float4::operator + (const Float4 &vector) const
-        {
-            return Float4((x + vector.x), (y + vector.y), (z + vector.z), (w + vector.w));
-        }
-
-        Float4 Float4::operator / (const Float4 &vector) const
-        {
-            return Float4((x / vector.x), (y / vector.y), (z / vector.z), (w / vector.w));
-        }
-
-        Float4 Float4::operator * (const Float4 &vector) const
-        {
-            return Float4((x * vector.x), (y * vector.y), (z * vector.z), (w * vector.w));
-        }
-
-        Float4 operator - (const Float4 &vector)
-        {
-            return Float4(-vector.x, -vector.y, -vector.z, -vector.w);
         }
     }; // namespace Math
 }; // namespace Gek
