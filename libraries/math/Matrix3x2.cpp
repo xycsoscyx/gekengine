@@ -12,17 +12,23 @@ namespace Gek
         }
 
         Float3x2::Float3x2(const float(&data)[6])
-            : data{ data[0], data[1], data[2], data[3], data[4], data[5] }
+            : data{ data[0], data[1],
+                    data[2], data[3],
+                    data[4], data[5] }
         {
         }
 
         Float3x2::Float3x2(const float *data)
-            : data{ data[0], data[1], data[2], data[3], data[4], data[5] }
+            : data{ data[0], data[1],
+                    data[2], data[3],
+                    data[4], data[5] }
         {
         }
 
         Float3x2::Float3x2(const Float3x2 &matrix)
-            : rows{ matrix.rows[0], matrix.rows[1], matrix.rows[2] }
+            : rows{ matrix.rows[0],
+                    matrix.rows[1],
+                    matrix.rows[2] }
         {
         }
 

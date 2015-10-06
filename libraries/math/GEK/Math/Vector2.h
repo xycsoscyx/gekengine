@@ -36,7 +36,7 @@ namespace Gek
             }
 
             Float2(const Float2 &vector)
-                : data{ vector.x, vector.y }
+                : data{ vector.data[0], vector.data[1] }
             {
             }
 
@@ -45,9 +45,22 @@ namespace Gek
             {
             }
 
-            void set(float value);
-            void set(float x, float y);
-            void set(const Float2 &vector);
+            inline void set(float value)
+            {
+                this->x = this->y = value;
+            }
+
+            inline void set(float x, float y)
+            {
+                this->x = x;
+                this->y = y;
+            }
+
+            inline void set(const Float2 &vector)
+            {
+                this->x = vector.x;
+                this->y = vector.y;
+            }
 
             float getLengthSquared(void) const;
             float getLength(void) const;
@@ -58,12 +71,6 @@ namespace Gek
             float dot(const Float2 &vector) const;
             Float2 lerp(const Float2 &vector, float factor) const;
 
-            float operator [] (int axis) const;
-            float &operator [] (int axis);
-
-            operator const float *() const;
-            operator float *();
-
             bool operator < (const Float2 &vector) const;
             bool operator > (const Float2 &vector) const;
             bool operator <= (const Float2 &vector) const;
@@ -71,17 +78,81 @@ namespace Gek
             bool operator == (const Float2 &vector) const;
             bool operator != (const Float2 &vector) const;
 
-            Float2 operator = (const Float2 &vector);
-            void operator -= (const Float2 &vector);
-            void operator += (const Float2 &vector);
-            void operator /= (const Float2 &vector);
-            void operator *= (const Float2 &vector);
-            Float2 operator - (const Float2 &vector) const;
-            Float2 operator + (const Float2 &vector) const;
-            Float2 operator / (const Float2 &vector) const;
-            Float2 operator * (const Float2 &vector) const;
+            inline float operator [] (int axis) const
+            {
+                return data[axis];
+            }
+
+            inline float &operator [] (int axis)
+            {
+                return data[axis];
+            }
+
+            inline operator const float *() const
+            {
+                return data;
+            }
+
+            inline operator float *()
+            {
+                return data;
+            }
+
+            inline Float2 operator = (const Float2 &vector)
+            {
+                x = vector.x;
+                y = vector.y;
+                return (*this);
+            }
+
+            inline void operator -= (const Float2 &vector)
+            {
+                x -= vector.x;
+                y -= vector.y;
+            }
+
+            inline void operator += (const Float2 &vector)
+            {
+                x += vector.x;
+                y += vector.y;
+            }
+
+            inline void operator /= (const Float2 &vector)
+            {
+                x /= vector.x;
+                y /= vector.y;
+            }
+
+            inline void operator *= (const Float2 &vector)
+            {
+                x *= vector.x;
+                y *= vector.y;
+            }
+
+            inline Float2 operator - (const Float2 &vector) const
+            {
+                return Float2((x - vector.x), (y - vector.y));
+            }
+
+            inline Float2 operator + (const Float2 &vector) const
+            {
+                return Float2((x + vector.x), (y + vector.y));
+            }
+
+            inline Float2 operator / (const Float2 &vector) const
+            {
+                return Float2((x / vector.x), (y / vector.y));
+            }
+
+            inline Float2 operator * (const Float2 &vector) const
+            {
+                return Float2((x * vector.x), (y * vector.y));
+            }
         };
 
-        Float2 operator - (const Float2 &vector);
+        inline Float2 operator - (const Float2 &vector)
+        {
+            return Float2(-vector.x, -vector.y);
+        }
     }; // namespace Math
 }; // namespace Gek

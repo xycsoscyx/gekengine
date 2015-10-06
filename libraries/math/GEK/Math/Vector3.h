@@ -37,7 +37,7 @@ namespace Gek
             }
 
             Float3(const Float3 &vector)
-                : data{ vector.x, vector.y, vector.z }
+                : data{ vector.data[0], vector.data[1], vector.data[2] }
             {
             }
 
@@ -46,11 +46,26 @@ namespace Gek
             {
             }
 
-            Float4 w(float w);
+            Float4 w(float w) const;
 
-            void set(float value);
-            void set(float x, float y, float z);
-            void set(const Float3 &vector);
+            inline void set(float value)
+            {
+                this->x = this->y = this->z = value;
+            }
+
+            inline void set(float x, float y, float z)
+            {
+                this->x = x;
+                this->y = y;
+                this->z = z;
+            }
+
+            inline void set(const Float3 &vector)
+            {
+                this->x = vector.x;
+                this->y = vector.y;
+                this->z = vector.z;
+            }
 
             float getLengthSquared(void) const;
             float getLength(void) const;
@@ -62,12 +77,6 @@ namespace Gek
             Float3 lerp(const Float3 &vector, float factor) const;
             void normalize(void);
 
-            float operator [] (int axis) const;
-            float &operator [] (int axis);
-
-            operator const float *() const;
-            operator float *();
-
             bool operator < (const Float3 &vector) const;
             bool operator > (const Float3 &vector) const;
             bool operator <= (const Float3 &vector) const;
@@ -75,17 +84,86 @@ namespace Gek
             bool operator == (const Float3 &vector) const;
             bool operator != (const Float3 &vector) const;
 
-            Float3 operator = (const Float3 &vector);
-            void operator -= (const Float3 &vector);
-            void operator += (const Float3 &vector);
-            void operator /= (const Float3 &vector);
-            void operator *= (const Float3 &vector);
-            Float3 operator - (const Float3 &vector) const;
-            Float3 operator + (const Float3 &vector) const;
-            Float3 operator / (const Float3 &vector) const;
-            Float3 operator * (const Float3 &vector) const;
+            inline float operator [] (int axis) const
+            {
+                return data[axis];
+            }
+
+            inline float &operator [] (int axis)
+            {
+                return data[axis];
+            }
+
+            inline operator const float *() const
+            {
+                return data;
+            }
+
+            inline operator float *()
+            {
+                return data;
+            }
+
+            inline Float3 operator = (const Float3 &vector)
+            {
+                x = vector.x;
+                y = vector.y;
+                z = vector.z;
+                return (*this);
+            }
+
+            inline void operator -= (const Float3 &vector)
+            {
+                x -= vector.x;
+                y -= vector.y;
+                z -= vector.z;
+            }
+
+            inline void operator += (const Float3 &vector)
+            {
+                x += vector.x;
+                y += vector.y;
+                z += vector.z;
+            }
+
+            inline void operator /= (const Float3 &vector)
+            {
+                x /= vector.x;
+                y /= vector.y;
+                z /= vector.z;
+            }
+
+            inline void operator *= (const Float3 &vector)
+            {
+                x *= vector.x;
+                y *= vector.y;
+                z *= vector.z;
+            }
+
+            inline Float3 operator - (const Float3 &vector) const
+            {
+                return Float3((x - vector.x), (y - vector.y), (z - vector.z));
+            }
+
+            inline Float3 operator + (const Float3 &vector) const
+            {
+                return Float3((x + vector.x), (y + vector.y), (z + vector.z));
+            }
+
+            inline Float3 operator / (const Float3 &vector) const
+            {
+                return Float3((x / vector.x), (y / vector.y), (z / vector.z));
+            }
+
+            inline Float3 operator * (const Float3 &vector) const
+            {
+                return Float3((x * vector.x), (y * vector.y), (z * vector.z));
+            }
         };
 
-        Float3 operator - (const Float3 &vector);
+        inline Float3 operator - (const Float3 &vector)
+        {
+            return Float3(-vector.x, -vector.y, -vector.z);
+        }
     }; // namespace Math
 }; // namespace Gek

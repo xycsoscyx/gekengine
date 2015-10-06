@@ -36,12 +36,12 @@ namespace Gek
             }
 
             Float4(const float(&data)[4])
-                : data{ data[0], data[1], data[2], data[3] }
+                : simd(_mm_loadu_ps(data))
             {
             }
 
             Float4(const float *data)
-                : data{ data[0], data[1], data[2], data[3] }
+                : simd(_mm_loadu_ps(data))
             {
             }
 
@@ -58,9 +58,20 @@ namespace Gek
             Float3 getXYZ(void) const;
             __declspec(property(get = getXYZ)) Float3 xyz;
 
-            void set(float value);
-            void set(float x, float y, float z, float w);
-            void set(const Float4 &vector);
+            inline void set(float value)
+            {
+                simd = _mm_set1_ps(value);
+            }
+
+            inline void set(float x, float y, float z, float w)
+            {
+                simd = _mm_setr_ps(x, y, z, w);
+            }
+
+            inline void set(const Float4 &vector)
+            {
+                simd = vector.simd;
+            }
 
             float getLengthSquared(void) const;
             float getLength(void) const;

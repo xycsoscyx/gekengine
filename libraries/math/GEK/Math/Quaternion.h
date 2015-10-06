@@ -23,7 +23,7 @@ namespace Gek
             }
 
             Quaternion(const float(&data)[4])
-                : Float4({ data[0], data[1], data[2], data[3] })
+                : Float4((const float &)data)
             {
             }
 

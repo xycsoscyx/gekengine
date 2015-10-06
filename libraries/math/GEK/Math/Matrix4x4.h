@@ -106,15 +106,13 @@ namespace Gek
             operator const float *() const;
             operator float *();
 
-            void operator *= (const Float4x4 &matrix);
-            Float4x4 operator * (const Float4x4 &matrix) const;
             Float4x4 operator = (const Float4x4 &matrix);
             Float4x4 operator = (const Quaternion &rotation);
+
+            void operator *= (const Float4x4 &matrix);
+            Float4x4 operator * (const Float4x4 &matrix) const;
             Float3 operator * (const Float3 &vector) const;
             Float4 operator * (const Float4 &vector) const;
-            Float4x4 operator * (float nScalar) const;
-            Float4x4 operator + (const Float4x4 &matrix) const;
-            void operator += (const Float4x4 &matrix);
         };
     }; // namespace Math
 }; // namespace Gek

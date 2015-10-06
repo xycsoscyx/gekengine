@@ -12,21 +12,6 @@ namespace Gek
             return Float3(x, y, z);
         }
 
-        void Float4::set(float value)
-        {
-            simd = _mm_set1_ps(value);
-        }
-
-        void Float4::set(float x, float y, float z, float w)
-        {
-            simd = _mm_setr_ps(x, y, z, w);
-        }
-
-        void Float4::set(const Float4 &vector)
-        {
-            simd = vector.simd;
-        }
-
         float Float4::getLengthSquared(void) const
         {
             return this->dot(*this);
