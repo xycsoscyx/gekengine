@@ -88,9 +88,9 @@ namespace Gek
     {
         namespace Render
         {
-            class System : public Context::UserMixin
-                , public ObservableMixin
-                , public Population::Observer
+            class System : public Context::User::Mixin
+                , public Observable::Mixin
+                , public Engine::Population::Observer
                 , public Render::Interface
             {
             public:
@@ -197,7 +197,7 @@ namespace Gek
             private:
                 IUnknown *initializerContext;
                 Video3D::Interface *video;
-                Population::Interface *population;
+                Engine::Population::Interface *population;
 
                 CComPtr<IUnknown> pointSamplerStates;
                 CComPtr<IUnknown> linearSamplerStates;
@@ -224,13 +224,13 @@ namespace Gek
 
                 ~System(void)
                 {
-                    ObservableMixin::removeObserver(population, getClass<Engine::Population::Observer>());
+                    Observable::Mixin::removeObserver(population, getClass<Engine::Population::Observer>());
                 }
 
                 BEGIN_INTERFACE_LIST(System)
-                    INTERFACE_LIST_ENTRY_COM(Gek::ObservableInterface)
-                    INTERFACE_LIST_ENTRY_COM(Population::Observer)
-                    INTERFACE_LIST_ENTRY_COM(Interface)
+                    INTERFACE_LIST_ENTRY_COM(Observable::Interface)
+                    INTERFACE_LIST_ENTRY_COM(Engine::Population::Observer)
+                    INTERFACE_LIST_ENTRY_COM(Engine::Render::Interface)
                 END_INTERFACE_LIST_USER
 
                 template <typename CLASS>
@@ -271,13 +271,13 @@ namespace Gek
 
                     HRESULT resultValue = E_FAIL;
                     CComQIPtr<Video3D::Interface> video(initializerContext);
-                    CComQIPtr<Population::Interface> population(initializerContext);
+                    CComQIPtr<Engine::Population::Interface> population(initializerContext);
                     if (video && population)
                     {
                         this->video = video;
                         this->population = population;
                         this->initializerContext = initializerContext;
-                        resultValue = ObservableMixin::addObserver(population, getClass<Engine::Population::Observer>());
+                        resultValue = Observable::Mixin::addObserver(population, getClass<Engine::Population::Observer>());
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -698,7 +698,7 @@ namespace Gek
                     drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
-                // Population::Observer
+                // Engine::Population::Observer
                 STDMETHODIMP_(void) onLoadBegin(void)
                 {
                 }
@@ -718,7 +718,7 @@ namespace Gek
 
                 STDMETHODIMP_(void) onUpdateEnd(float frameTime)
                 {
-                    population->listEntities({ Components::Transform::identifier, Components::Camera::identifier }, [&](const Population::Entity &cameraEntity) -> void
+                    population->listEntities({ Components::Transform::identifier, Components::Camera::identifier }, [&](const Engine::Population::Entity &cameraEntity) -> void
                     {
                         auto &transformComponent = population->getComponent<Components::Transform::Data>(cameraEntity, Components::Transform::identifier);
                         auto &cameraComponent = population->getComponent<Components::Camera::Data>(cameraEntity, Components::Camera::identifier);
@@ -744,7 +744,7 @@ namespace Gek
                         const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
                         concurrency::concurrent_vector<Light> concurrentVisibleLightList;
-                        population->listEntities({ Components::Transform::identifier, Components::PointLight::identifier, Components::Color::identifier }, [&](const Population::Entity &lightEntity) -> void
+                        population->listEntities({ Components::Transform::identifier, Components::PointLight::identifier, Components::Color::identifier }, [&](const Engine::Population::Entity &lightEntity) -> void
                         {
                             auto &transformComponent = population->getComponent<Components::Transform::Data>(lightEntity, Components::Transform::identifier);
                             auto &pointLightComponent = population->getComponent<Components::PointLight::Data>(lightEntity, Components::PointLight::identifier);
@@ -781,7 +781,7 @@ namespace Gek
                         }
 
                         drawQueue.clear();
-                        ObservableMixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
+                        Observable::Mixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
 
                         concurrency::concurrent_unordered_map<CComQIPtr<Shader::Interface>, // shader
                             concurrency::concurrent_unordered_map<Plugin::Interface *, // plugin
@@ -869,7 +869,7 @@ namespace Gek
                         }
                     });
 
-                    ObservableMixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderOverlay, std::placeholders::_1)));
+                    Observable::Mixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderOverlay, std::placeholders::_1)));
 
                     video->present(true);
                 }

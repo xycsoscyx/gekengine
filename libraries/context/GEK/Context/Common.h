@@ -94,12 +94,12 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
 #define BEGIN_INTERFACE_LIST(CLASS)                                                                 \
     STDMETHODIMP_(ULONG) CLASS::AddRef(THIS)                                                        \
     {                                                                                               \
-        return UnknownMixin::AddRef();                                                               \
+        return Gek::Unknown::Mixin::AddRef();                                                       \
     }                                                                                               \
                                                                                                     \
     STDMETHODIMP_(ULONG) CLASS::Release(THIS)                                                       \
     {                                                                                               \
-        return UnknownMixin::Release();                                                              \
+        return Gek::Unknown::Mixin::Release();                                                      \
     }                                                                                               \
                                                                                                     \
     STDMETHODIMP CLASS::QueryInterface(THIS_ REFIID interfaceType, LPVOID FAR *returnObject)        \
@@ -160,11 +160,11 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
     }
 
 #define END_INTERFACE_LIST_UNKNOWN                                                                  \
-        return UnknownMixin::QueryInterface(interfaceType, returnObject);                            \
+        return Gek::Unknown::Mixin::QueryInterface(interfaceType, returnObject);                    \
         }
 
 #define END_INTERFACE_LIST_USER                                                                     \
-        return UserMixin::QueryInterface(interfaceType, returnObject);                               \
+        return Gek::Context::User::Mixin::QueryInterface(interfaceType, returnObject);              \
         }
 
 #define END_INTERFACE_LIST_BASE(BASE_CLASS)                                                         \
@@ -176,7 +176,7 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
     }
 
 #define REGISTER_CLASS(CLASS)                                                                       \
-HRESULT CLASS##CreateInstance(Gek::Context::UserInterface **returnObject)                           \
+HRESULT CLASS##CreateInstance(Gek::Context::User::Interface **returnObject)                         \
 {                                                                                                   \
     REQUIRE_RETURN(returnObject, E_INVALIDARG);                                                     \
                                                                                                     \
@@ -191,12 +191,12 @@ HRESULT CLASS##CreateInstance(Gek::Context::UserInterface **returnObject)       
 }
 
 #define DECLARE_REGISTERED_CLASS(CLASS)                                                             \
-extern HRESULT CLASS##CreateInstance(Gek::Context::UserInterface **returnObject);
+extern HRESULT CLASS##CreateInstance(Gek::Context::User::Interface **returnObject);
 
 #define DECLARE_CONTEXT_SOURCE(SOURCENAME)                                                          \
 extern "C" __declspec(dllexport)                                                                    \
 HRESULT GEKGetModuleClasses(                                                                        \
-    std::unordered_map<CLSID, std::function<HRESULT (Gek::Context::UserInterface **)>> &classList,  \
+    std::unordered_map<CLSID, std::function<HRESULT (Gek::Context::User::Interface **)>> &classList,\
     std::unordered_map<CLSID, std::vector<CLSID>> &typedClassList)                                  \
 {                                                                                                   \
     CLSID lastClassName = GUID_NULL;

@@ -8,8 +8,6 @@
 #include "GEK\Context\Common.h"
 #include "GEK\Context\Interface.h"
 #include "GEK\Engine\CoreInterface.h"
-#include "GEK\Math\Common.h"
-#include "GEK\Math\Matrix4x4.h"
 #include <CommCtrl.h>
 #include "resource.h"
 
@@ -166,20 +164,6 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
 {
-    Gek::Math::Float4 vector(1.0f, 1.0f, 1.0f, 1.0f);
-    Gek::Math::Float4x4 matrix(Gek::Math::convertDegreesToRadians(90.0f), Gek::Math::convertDegreesToRadians(45.0f), Gek::Math::convertDegreesToRadians(180.0f));
-    auto function = [&](void)->void
-    {
-        auto result = matrix * vector;
-    };
-
-    DWORD start = GetTickCount();
-    for (UINT32 cycle = 0; cycle < 1000000; cycle++)
-    {
-        function();
-    }
-
-    DWORD total = (GetTickCount() - start);
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
         CComPtr<Gek::Context::Interface> context;

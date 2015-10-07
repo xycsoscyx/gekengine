@@ -4,36 +4,40 @@ namespace Gek
 {
     namespace Context
     {
-        UserMixin::UserMixin(void)
-            : context(nullptr)
+        namespace User
         {
-        }
+            Mixin::Mixin(void)
+                : context(nullptr)
+            {
+            }
 
-        UserMixin::~UserMixin(void)
-        {
-        }
+            Mixin::~Mixin(void)
+            {
+            }
 
-        // IUnknown
-        BEGIN_INTERFACE_LIST(UserMixin)
-            INTERFACE_LIST_ENTRY_COM(UserInterface)
-        END_INTERFACE_LIST_UNKNOWN
+            // IUnknown
+            BEGIN_INTERFACE_LIST(Mixin)
+                INTERFACE_LIST_ENTRY_COM(Context::User::Interface)
+            END_INTERFACE_LIST_UNKNOWN
 
-        // UserInterface
-        STDMETHODIMP_(void) UserMixin::registerContext(Interface *context)
-        {
-            this->context = context;
-        }
+            // User::Interface
+            STDMETHODIMP_(void) Mixin::registerContext(Context::Interface *context)
+            {
+                this->context = context;
+            }
 
-        STDMETHODIMP_(Interface *) UserMixin::getContext(void)
-        {
-            REQUIRE_RETURN(context, nullptr);
-            return context;
-        }
+            // Utility
+            Context::Interface * Mixin::getContext(void)
+            {
+                REQUIRE_RETURN(context, nullptr);
+                return context;
+            }
 
-        STDMETHODIMP_(const Interface *) UserMixin::getContext(void) const
-        {
-            REQUIRE_RETURN(context, nullptr);
-            return context;
-        }
+            const Context::Interface * Mixin::getContext(void) const
+            {
+                REQUIRE_RETURN(context, nullptr);
+                return context;
+            }
+        }; // namespace User
     }; // namespace Context
 }; // namespace Gek

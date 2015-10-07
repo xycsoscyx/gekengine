@@ -18,7 +18,7 @@ namespace Gek
                 HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
                     componentParameterList[L""] = target;
-                    componentParameterList[L"offset"] = String::setFloat3(offset);
+                    componentParameterList[L"offset"] = String::setFloat4(offset);
                     componentParameterList[L"rotation"] = String::setQuaternion(rotation);
                     return S_OK;
                 }
@@ -26,13 +26,13 @@ namespace Gek
                 HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
                     setParameter(componentParameterList, L"", target, [](LPCWSTR value) -> LPCWSTR { return value; });
-                    setParameter(componentParameterList, L"offset", offset, String::getFloat3);
+                    setParameter(componentParameterList, L"offset", offset, String::getFloat4);
                     setParameter(componentParameterList, L"rotation", rotation, String::getQuaternion);
                     return S_OK;
                 }
 
-                class Component : public Context::UserMixin
-                    , public BaseComponent< Data, 16 >
+                class Component : public Context::User::Mixin
+                    , public BaseComponent< Data, AlignedAllocator<Data, 16> >
                 {
                 public:
                     Component(void)
@@ -40,7 +40,7 @@ namespace Gek
                     }
 
                     BEGIN_INTERFACE_LIST(Component)
-                        INTERFACE_LIST_ENTRY_COM(Component::Interface)
+                        INTERFACE_LIST_ENTRY_COM(Engine::Component::Interface)
                     END_INTERFACE_LIST_USER
 
                     // Component::Interface

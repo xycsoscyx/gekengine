@@ -228,7 +228,7 @@ namespace Gek
             D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC,
         };
 
-        class VertexProgram : public UnknownMixin
+        class VertexProgram : public Unknown::Mixin
         {
         private:
             CComPtr<ID3D11VertexShader> d3dVertexShader;
@@ -247,7 +247,7 @@ namespace Gek
             END_INTERFACE_LIST_UNKNOWN
         };
 
-        class Buffer : public UnknownMixin
+        class Buffer : public Unknown::Mixin
                      , public BufferInterface
         {
         private:
@@ -303,7 +303,7 @@ namespace Gek
             }
         };
 
-        class Texture : public UnknownMixin
+        class Texture : public Unknown::Mixin
                       , public TextureInterface
         {
         protected:
@@ -363,7 +363,7 @@ namespace Gek
             END_INTERFACE_LIST_BASE(Texture)
         };
 
-        class Geometry : public UnknownMixin
+        class Geometry : public Unknown::Mixin
                        , public GeometryInterface
         {
         private:
@@ -484,7 +484,7 @@ namespace Gek
             }
         };
 
-        class Include : public UnknownMixin
+        class Include : public Unknown::Mixin
                       , public ID3DInclude
         {
         private:
@@ -540,7 +540,7 @@ namespace Gek
             }
         };
 
-        class Context : public Gek::Context::UserMixin
+        class Context : public Gek::Context::User::Mixin
                       , public Video3D::ContextInterface
         {
             friend class System;

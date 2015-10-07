@@ -22,19 +22,19 @@ namespace Gek
                 STDMETHOD_(LPCWSTR, getName)                (THIS) const PURE;
                 STDMETHOD_(UINT32, getIdentifier)           (THIS) const PURE;
 
-                STDMETHOD_(void, addComponent)              (THIS_ const Population::Entity &entity) PURE;
-                STDMETHOD_(void, removeComponent)           (THIS_ const Population::Entity &entity) PURE;
-                STDMETHOD_(bool, hasComponent)              (THIS_ const Population::Entity &entity) const PURE;
-                STDMETHOD_(LPVOID, getComponent)            (THIS_ const Population::Entity &entity) PURE;
+                STDMETHOD_(void, addComponent)              (THIS_ const Engine::Population::Entity &entity) PURE;
+                STDMETHOD_(void, removeComponent)           (THIS_ const Engine::Population::Entity &entity) PURE;
+                STDMETHOD_(bool, hasComponent)              (THIS_ const Engine::Population::Entity &entity) const PURE;
+                STDMETHOD_(LPVOID, getComponent)            (THIS_ const Engine::Population::Entity &entity) PURE;
                 STDMETHOD_(void, clear)                     (THIS) PURE;
 
-                STDMETHOD_(void, getIntersectingSet)        (THIS_ std::set<Population::Entity> &entityList) PURE;
+                STDMETHOD_(void, getIntersectingSet)        (THIS_ std::set<Engine::Population::Entity> &entityList) PURE;
 
-                STDMETHOD(getData)                          (THIS_ const Population::Entity &entity, std::unordered_map<CStringW, CStringW> &componentParameterList) PURE;
-                STDMETHOD(setData)                          (THIS_ const Population::Entity &entity, const std::unordered_map<CStringW, CStringW> &componentParameterList) PURE;
+                STDMETHOD(getData)                          (THIS_ const Engine::Population::Entity &entity, std::unordered_map<CStringW, CStringW> &componentParameterList) PURE;
+                STDMETHOD(setData)                          (THIS_ const Engine::Population::Entity &entity, const std::unordered_map<CStringW, CStringW> &componentParameterList) PURE;
 
                 template <typename CLASS>
-                CLASS &getComponent(const Population::Entity &entity)
+                CLASS &getComponent(const Engine::Population::Entity &entity)
                 {
                     return *(CLASS *)getComponent(nEntityID);
                 }

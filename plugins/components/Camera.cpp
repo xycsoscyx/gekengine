@@ -38,7 +38,7 @@ namespace Gek
                     return S_OK;
                 }
 
-                class Component : public Context::UserMixin
+                class Component : public Context::User::Mixin
                     , public BaseComponent< Data >
                 {
                 public:
@@ -47,7 +47,7 @@ namespace Gek
                     }
 
                     BEGIN_INTERFACE_LIST(Component)
-                        INTERFACE_LIST_ENTRY_COM(Component::Interface)
+                        INTERFACE_LIST_ENTRY_COM(Engine::Component::Interface)
                     END_INTERFACE_LIST_USER
 
                     // Component::Interface

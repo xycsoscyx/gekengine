@@ -20,7 +20,7 @@ namespace Gek
             STDMETHOD_(void, logExitScope)      (THIS) PURE;
         };
 
-        DECLARE_INTERFACE_IID(Observer, "4678440B-94FC-4671-9622-0D4030F8CE94") : virtual public ObserverInterface
+        DECLARE_INTERFACE_IID(Observer, "4678440B-94FC-4671-9622-0D4030F8CE94") : virtual public Observer::Interface
         {
             STDMETHOD_(void, onLogMessage)      (THIS_ LPCSTR file, UINT32 line, LPCWSTR message) PURE;
         };

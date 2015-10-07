@@ -7,105 +7,6 @@ namespace Gek
 {
     namespace Engine
     {
-        template <typename T, std::size_t Alignment>
-        class aligned_allocator
-        {
-        public:
-            typedef T * pointer;
-            typedef const T * const_pointer;
-            typedef T& reference;
-            typedef const T& const_reference;
-            typedef T value_type;
-            typedef std::size_t size_type;
-            typedef ptrdiff_t difference_type;
-
-            T * address(T& r) const
-            {
-                return &r;
-            }
-
-            const T * address(const T& s) const
-            {
-                return &s;
-            }
-
-            std::size_t max_size() const
-            {
-                return (static_cast<std::size_t>(0) - static_cast<std::size_t>(1)) / sizeof(T);
-            }
-
-            template <typename U>
-            struct rebind
-            {
-                typedef aligned_allocator<U, Alignment> other;
-            };
-
-            bool operator!=(const aligned_allocator& other) const
-            {
-                return !(*this == other);
-            }
-
-            void construct(T * const p, const T& t) const
-            {
-                void * const pv = static_cast<void *>(p);
-
-                new (pv) T(t);
-            }
-
-            void destroy(T * const p) const
-            {
-                p->~T();
-            }
-
-            bool operator==(const aligned_allocator& other) const
-            {
-                return true;
-            }
-
-            aligned_allocator() { }
-
-            aligned_allocator(const aligned_allocator&) { }
-
-            template <typename U> aligned_allocator(const aligned_allocator<U, Alignment>&) { }
-
-            ~aligned_allocator() { }
-
-            T * allocate(const std::size_t n) const
-            {
-                if (n == 0) {
-                    return NULL;
-                }
-
-                if (n > max_size())
-                {
-                    throw std::length_error("aligned_allocator<T>::allocate() - Integer overflow.");
-                }
-
-                void * const pv = _mm_malloc(n * sizeof(T), Alignment);
-
-                if (pv == NULL)
-                {
-                    throw std::bad_alloc();
-                }
-
-                return static_cast<T *>(pv);
-            }
-
-            void deallocate(T * const p, const std::size_t n) const
-            {
-                _mm_free(p);
-            }
-
-            template <typename U>
-            T * allocate(const std::size_t n, const U * /* const hint */) const
-            {
-                return allocate(n);
-            }
-
-        private:
-            aligned_allocator& operator=(const aligned_allocator&);
-        };
-
         template <typename TYPE, typename CONVERTER>
         void setParameter(const std::unordered_map<CStringW, CStringW> &list, LPCWSTR name, TYPE &value, CONVERTER convert)
         {
@@ -116,13 +17,119 @@ namespace Gek
             }
         }
 
-        template <class DATA, std::size_t ALIGNMENT = 8>
+        template <class DATA, std::size_t ALIGNMENT>
+        class AlignedAllocator
+        {
+        public:
+            typedef DATA* pointer;
+            typedef const DATA* const_pointer;
+            typedef DATA& reference;
+            typedef const DATA& const_reference;
+            typedef DATA value_type;
+            typedef std::size_t size_type;
+            typedef ptrdiff_t difference_type;
+
+        public:
+            AlignedAllocator(void)
+            {
+            }
+
+            AlignedAllocator(const AlignedAllocator&)
+            {
+            }
+
+            template <typename NEWTYPE>
+            AlignedAllocator(const AlignedAllocator<NEWTYPE, ALIGNMENT>&)
+            {
+            }
+
+            ~AlignedAllocator()
+            {
+            }
+
+            DATA* address(DATA& value) const
+            {
+                return &value;
+            }
+
+            const DATA* address(const DATA& value) const
+            {
+                return &value;
+            }
+
+            std::size_t max_size() const
+            {
+                return (static_cast<std::size_t>(0) - static_cast<std::size_t>(1)) / sizeof(DATA);
+            }
+
+            template <typename NEWTYPE>
+            struct rebind
+            {
+                typedef AlignedAllocator<NEWTYPE, ALIGNMENT> other;
+            };
+
+            bool operator != (const AlignedAllocator& allocator) const
+            {
+                return !(*this == allocator);
+            }
+
+            void construct(DATA* const pointer, const DATA& value) const
+            {
+                void * const voidPointer = static_cast<void *>(pointer);
+
+                new (voidPointer) DATA(value);
+            }
+
+            void destroy(DATA* const pointer) const
+            {
+                pointer->~DATA();
+            }
+
+            bool operator == (const AlignedAllocator& allocator) const
+            {
+                return true;
+            }
+
+            DATA* allocate(const std::size_t count) const
+            {
+                if (count == 0)
+                {
+                    return NULL;
+                }
+
+                if (count > max_size())
+                {
+                    throw std::length_error("AlignedAllocator<DATA>::allocate() - Integer overflow.");
+                }
+
+                void * const voidPointer = _mm_malloc(count * sizeof(DATA), ALIGNMENT);
+                if (voidPointer == NULL)
+                {
+                    throw std::bad_alloc();
+                }
+
+                return static_cast<DATA *>(voidPointer);
+            }
+
+            void deallocate(DATA* const pointer, const std::size_t count) const
+            {
+                _mm_free(pointer);
+            }
+
+            template <typename NEWTYPE>
+            DATA* allocate(const std::size_t count, const NEWTYPE *) const
+            {
+                return allocate(count);
+            }
+        };
+
+        template <class DATA, class ALLOCATOR = std::allocator<DATA>>
         class BaseComponent : public Component::Interface
         {
         private:
             UINT32 emptyIndex;
             std::unordered_map<Population::Entity, UINT32> entityIndexList;
-            std::vector<DATA, aligned_allocator<DATA, ALIGNMENT>> dataList;
+            std::vector<DATA, ALLOCATOR> dataList;
 
         public:
             BaseComponent(void)

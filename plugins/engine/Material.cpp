@@ -18,7 +18,7 @@ namespace Gek
         {
             namespace Material
             {
-                class System : public Context::UserMixin
+                class System : public Context::User::Mixin
                     , public Interface
                 {
                 private:
@@ -40,7 +40,7 @@ namespace Gek
                     }
 
                     BEGIN_INTERFACE_LIST(System)
-                        INTERFACE_LIST_ENTRY_COM(Interface)
+                        INTERFACE_LIST_ENTRY_COM(Engine::Render::Material::Interface)
                     END_INTERFACE_LIST_USER
 
                     // Interface

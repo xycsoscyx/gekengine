@@ -45,15 +45,15 @@ namespace Gek
 {
     namespace Context
     {
-        class Context : virtual public UnknownMixin
-            , virtual public ObservableMixin
+        class Context : virtual public Unknown::Mixin
+            , virtual public Observable::Mixin
             , virtual public Interface
         {
         private:
             std::list<CStringW> searchPathList;
 
             std::list<HMODULE> moduleList;
-            std::unordered_map<CLSID, std::function<HRESULT(UserInterface **)>> classList;
+            std::unordered_map<CLSID, std::function<HRESULT(User::Interface **)>> classList;
             std::unordered_map<CLSID, std::vector<CLSID>> typedClassList;
 
             UINT32 loggingIndent;
@@ -76,8 +76,8 @@ namespace Gek
 
             // IUnknown
             BEGIN_INTERFACE_LIST(Context)
-                INTERFACE_LIST_ENTRY_COM(Interface)
-                INTERFACE_LIST_ENTRY_COM(ObservableInterface)
+                INTERFACE_LIST_ENTRY_COM(Context::Interface)
+                INTERFACE_LIST_ENTRY_COM(Observable::Interface)
             END_INTERFACE_LIST_UNKNOWN
 
             // Interface
@@ -99,14 +99,14 @@ namespace Gek
                         HMODULE module = LoadLibrary(fileName);
                         if (module)
                         {
-                            typedef HRESULT(*GEKGETMODULECLASSES)(std::unordered_map<CLSID, std::function<HRESULT(UserInterface **)>> &, std::unordered_map<CLSID, std::vector<CLSID >> &);
+                            typedef HRESULT(*GEKGETMODULECLASSES)(std::unordered_map<CLSID, std::function<HRESULT(User::Interface **)>> &, std::unordered_map<CLSID, std::vector<CLSID >> &);
                             GEKGETMODULECLASSES getModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(module, "GEKGetModuleClasses");
                             if (getModuleClasses)
                             {
                                 logMessage(__FILE__, __LINE__, L"GEK Plugin Found: %s", fileName);
 
                                 moduleList.push_back(module);
-                                std::unordered_map<CLSID, std::function<HRESULT(UserInterface **)>> moduleClassList;
+                                std::unordered_map<CLSID, std::function<HRESULT(User::Interface **)>> moduleClassList;
                                 std::unordered_map<CLSID, std::vector<CLSID>> moduleTypedClassList;
 
                                 if (SUCCEEDED(getModuleClasses(moduleClassList, moduleTypedClassList)))
@@ -152,7 +152,7 @@ namespace Gek
                 auto classIterator = classList.find(className);
                 if (classIterator != classList.end())
                 {
-                    CComPtr<UserInterface> classInstance;
+                    CComPtr<User::Interface> classInstance;
                     resultValue = ((*classIterator).second)(&classInstance);
                     if (SUCCEEDED(resultValue) && classInstance)
                     {
@@ -222,7 +222,7 @@ namespace Gek
 
                     message = (indent.data() + message);
                     OutputDebugString(Gek::String::format(L"% 30S (%05d)%s\r\n", file, line, message.GetString()));
-                    ObservableMixin::sendEvent(Event<Observer>(std::bind(&Observer::onLogMessage, std::placeholders::_1, file, line, message.GetString())));
+                    Observable::Mixin::sendEvent(Event<Observer>(std::bind(&Observer::onLogMessage, std::placeholders::_1, file, line, message.GetString())));
                 }
             }
 

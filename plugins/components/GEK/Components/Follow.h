@@ -20,7 +20,7 @@ namespace Gek
                 struct Data
                 {
                     CStringW target;
-                    Gek::Math::Float3 offset;
+                    Gek::Math::Float4 offset;
                     Gek::Math::Quaternion rotation;
 
                     Data(void);

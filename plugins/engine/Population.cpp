@@ -17,9 +17,9 @@ namespace Gek
     {
         namespace Population
         {
-            class System : public Context::UserMixin
-                , public ObservableMixin
-                , public Population::Interface
+            class System : public Context::User::Mixin
+                , public Observable::Mixin
+                , public Engine::Population::Interface
             {
             private:
                 Entity nextEntity;
@@ -41,11 +41,11 @@ namespace Gek
                 }
 
                 BEGIN_INTERFACE_LIST(System)
-                    INTERFACE_LIST_ENTRY_COM(Gek::ObservableInterface)
-                    INTERFACE_LIST_ENTRY_COM(Interface)
+                    INTERFACE_LIST_ENTRY_COM(Observable::Interface)
+                    INTERFACE_LIST_ENTRY_COM(Engine::Population::Interface)
                 END_INTERFACE_LIST_USER
 
-                // Population::Interface
+                // Engine::Population::Interface
                 STDMETHODIMP initialize(IUnknown *initializerContext)
                 {
                     REQUIRE_RETURN(initializerContext, E_INVALIDARG);
@@ -84,9 +84,9 @@ namespace Gek
 
                 STDMETHODIMP_(void) update(float frameTime)
                 {
-                    ObservableMixin::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdateBegin, std::placeholders::_1, frameTime)));
-                    ObservableMixin::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdate, std::placeholders::_1, frameTime)));
-                    ObservableMixin::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onUpdateEnd, std::placeholders::_1, frameTime)));
+                    Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onUpdateBegin, std::placeholders::_1, frameTime)));
+                    Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onUpdate, std::placeholders::_1, frameTime)));
+                    Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onUpdateEnd, std::placeholders::_1, frameTime)));
                     for (auto killEntity : killEntityList)
                     {
                         auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity> &namedEntity) -> bool
@@ -135,7 +135,7 @@ namespace Gek
                     gekLogMessage(L"Loading Population (%s)...", fileName);
 
                     free();
-                    ObservableMixin::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onLoadBegin, std::placeholders::_1)));
+                    Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onLoadBegin, std::placeholders::_1)));
 
                     Gek::Xml::Document xmlDocument;
                     HRESULT resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\worlds\\%s.xml", fileName));
@@ -193,7 +193,7 @@ namespace Gek
                         gekLogMessage(L"[error] Unable to load population");
                     }
 
-                    ObservableMixin::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onLoadEnd, std::placeholders::_1, resultValue)));
+                    Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onLoadEnd, std::placeholders::_1, resultValue)));
                     return resultValue;
                 }
 
@@ -251,7 +251,7 @@ namespace Gek
                         component.second->clear();
                     }
 
-                    ObservableMixin::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onFree, std::placeholders::_1)));
+                    Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onFree, std::placeholders::_1)));
                 }
 
                 STDMETHODIMP_(Entity) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
@@ -291,13 +291,13 @@ namespace Gek
                         }
                     }
 
-                    ObservableMixin::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onEntityCreated, std::placeholders::_1, entity)));
+                    Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onEntityCreated, std::placeholders::_1, entity)));
                     return entity;
                 }
 
                 STDMETHODIMP_(void) killEntity(const Entity &entity)
                 {
-                    ObservableMixin::sendEvent(Event<Population::Observer>(std::bind(&Population::Observer::onEntityDestroyed, std::placeholders::_1, entity)));
+                    Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onEntityDestroyed, std::placeholders::_1, entity)));
                     killEntityList.push_back(entity);
                 }
 

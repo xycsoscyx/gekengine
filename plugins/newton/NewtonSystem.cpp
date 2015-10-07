@@ -36,7 +36,7 @@ namespace Gek
 {
     namespace Newton
     {
-        class NewtonBodyMixin : virtual public UnknownMixin
+        class NewtonBodyMixin : virtual public Unknown::Mixin
         {
         private:
             Engine::Population::Interface *population;
@@ -137,7 +137,7 @@ namespace Gek
 
             ~PlayerNewtonBody(void)
             {
-                ObservableMixin::removeObserver(action, getClass<Engine::Action::Observer>());
+                Observable::Mixin::removeObserver(action, getClass<Engine::Action::Observer>());
             }
 
 			// IUnknown
@@ -196,7 +196,7 @@ namespace Gek
                 SetPlayerVelocity(moveSpeed, strafeSpeed, jumpSpeed, viewAngle, Math::Float4(0.0f, -9.81f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.data, frameTime);
             }
 
-            // Action::ObserverInterface
+            // Action::Observer::Interface
             STDMETHODIMP_(void) onState(LPCWSTR name, bool state)
             {
                 if (state)
@@ -215,8 +215,8 @@ namespace Gek
             }
         };
 
-        class System : public Context::UserMixin
-            , public ObservableMixin
+        class System : public Context::User::Mixin
+            , public Observable::Mixin
             , public Engine::Population::Observer
             , public Engine::System::Interface
             , public dNewton
@@ -274,7 +274,7 @@ namespace Gek
 
             ~System(void)
             {
-                ObservableMixin::removeObserver(population, getClass<Engine::Population::Observer>());
+                Observable::Mixin::removeObserver(population, getClass<Engine::Population::Observer>());
 
                 bodyList.clear();
                 collisionList.clear();
@@ -284,7 +284,7 @@ namespace Gek
             }
 
             BEGIN_INTERFACE_LIST(System)
-                INTERFACE_LIST_ENTRY_COM(ObservableInterface)
+                INTERFACE_LIST_ENTRY_COM(Observable::Interface)
                 INTERFACE_LIST_ENTRY_COM(Engine::Population::Observer)
                 INTERFACE_LIST_ENTRY_COM(Engine::System::Interface)
             END_INTERFACE_LIST_USER
@@ -596,7 +596,7 @@ namespace Gek
 					this->action = initializerContext;
 					this->population = population;
 
-                    resultValue = ObservableMixin::addObserver(population, getClass<Engine::Population::Observer>());
+                    resultValue = Observable::Mixin::addObserver(population, getClass<Engine::Population::Observer>());
                 }
 
                 if (SUCCEEDED(resultValue))
@@ -648,7 +648,7 @@ namespace Gek
                 NewtonWorldCriticalSectionUnlock(GetNewton());
             }
 
-            // Population::ObserverInterface
+            // Engine::Population::Observer::Interface
             STDMETHODIMP_(void) onLoadBegin(void)
             {
             }
@@ -704,7 +704,7 @@ namespace Gek
                         CComPtr<PlayerNewtonBody> player = new PlayerNewtonBody(action, population, newtonPlayerManager, entity, transformComponent, massComponent, playerComponent);
                         if (player)
                         {
-                            ObservableMixin::addObserver(action, player->getClass<Engine::Action::Observer>());
+                            Observable::Mixin::addObserver(action, player->getClass<Engine::Action::Observer>());
                             HRESULT resultValue = player.QueryInterface(&bodyList[entity]);
                         }
                     }

@@ -8,22 +8,27 @@ namespace Gek
 {
     namespace Context
     {
-        class UserMixin : virtual public UnknownMixin
-                       , virtual public UserInterface
+        namespace User
         {
-        private:
-            Interface *context;
+            class Mixin : virtual public Unknown::Mixin
+                , virtual public Interface
+            {
+            private:
+                Context::Interface *context;
 
-        public:
-            UserMixin(void);
-            virtual ~UserMixin(void);
+            public:
+                Mixin(void);
+                virtual ~Mixin(void);
 
-            DECLARE_UNKNOWN(UserMixin);
+                DECLARE_UNKNOWN(Mixin);
 
-            // UserInterface
-            STDMETHOD_(void, registerContext)                   (THIS_ Interface *context);
-            STDMETHOD_(Interface *, getContext)                 (THIS);
-            STDMETHOD_(const Interface *, getContext)           (THIS) const;
-        };
+                // Interface
+                STDMETHOD_(void, registerContext)                   (THIS_ Context::Interface *context);
+
+                // Utilities
+                Context::Interface * getContext(void);
+                const Context::Interface * getContext(void) const;
+            };
+        }; // namespace User
     }; // namespace Context
 };

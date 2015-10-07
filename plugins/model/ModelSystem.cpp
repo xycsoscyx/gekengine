@@ -31,8 +31,8 @@ namespace Gek
     {
         static const UINT32 MaxInstanceCount = 500;
 
-        class System : public Context::UserMixin
-            , public ObservableMixin
+        class System : public Context::User::Mixin
+            , public Observable::Mixin
             , public Engine::Population::Observer
             , public Engine::Render::Observer
             , public Engine::System::Interface
@@ -114,12 +114,12 @@ namespace Gek
 
             ~System(void)
             {
-                ObservableMixin::removeObserver(render, getClass<Engine::Render::Observer>());
-                ObservableMixin::removeObserver(population, getClass<Engine::Population::Observer>());
+                Observable::Mixin::removeObserver(render, getClass<Engine::Render::Observer>());
+                Observable::Mixin::removeObserver(population, getClass<Engine::Population::Observer>());
             }
 
             BEGIN_INTERFACE_LIST(System)
-                INTERFACE_LIST_ENTRY_COM(ObservableInterface)
+                INTERFACE_LIST_ENTRY_COM(Observable::Interface)
                 INTERFACE_LIST_ENTRY_COM(Engine::Population::Observer)
                 INTERFACE_LIST_ENTRY_COM(Engine::Render::Observer)
                 INTERFACE_LIST_ENTRY_COM(Engine::System::Interface)
@@ -259,12 +259,12 @@ namespace Gek
                     this->video = video;
                     this->render = render;
                     this->population = population;
-                    resultValue = ObservableMixin::addObserver(population, getClass<Engine::Population::Observer>());
+                    resultValue = Observable::Mixin::addObserver(population, getClass<Engine::Population::Observer>());
                 }
 
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = ObservableMixin::addObserver(render, getClass<Engine::Render::Observer>());
+                    resultValue = Observable::Mixin::addObserver(render, getClass<Engine::Render::Observer>());
                 }
 
                 if (SUCCEEDED(resultValue))
@@ -280,7 +280,7 @@ namespace Gek
                 return resultValue;
             };
 
-            // Population::Observer
+            // Engine::Population::Observer
             STDMETHODIMP_(void) onLoadBegin(void)
             {
             }

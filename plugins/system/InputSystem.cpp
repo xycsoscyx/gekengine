@@ -11,368 +11,371 @@ namespace Gek
 {
     namespace Input
     {
-        static BOOL CALLBACK setDeviceAxisInfo(LPCDIDEVICEOBJECTINSTANCE deviceObjectInstance, void *userData)
+        namespace Device
         {
-            LPDIRECTINPUTDEVICE7 device = (LPDIRECTINPUTDEVICE7)userData;
-
-            DIPROPRANGE propertyRange = { 0 };
-            propertyRange.diph.dwSize = sizeof(DIPROPRANGE);
-            propertyRange.diph.dwHeaderSize = sizeof(DIPROPHEADER);
-            propertyRange.diph.dwObj = deviceObjectInstance->dwOfs;
-            propertyRange.diph.dwHow = DIPH_BYOFFSET;
-            propertyRange.lMin = -1000;
-            propertyRange.lMax = +1000;
-            device->SetProperty(DIPROP_RANGE, &propertyRange.diph);
-
-            DIPROPDWORD propertyDeadZone = { 0 };
-            propertyDeadZone.diph.dwSize = sizeof(DIPROPDWORD);
-            propertyDeadZone.diph.dwHeaderSize = sizeof(DIPROPHEADER);
-            propertyDeadZone.diph.dwObj = deviceObjectInstance->dwOfs;
-            propertyDeadZone.diph.dwHow = DIPH_BYOFFSET;
-            propertyDeadZone.dwData = 1000;
-            device->SetProperty(DIPROP_DEADZONE, &propertyDeadZone.diph);
-
-            return DIENUM_CONTINUE;
-        }
-
-        class InputDevice : public Context::UserMixin
-            , public DeviceInterface
-        {
-        protected:
-            CComPtr<IDirectInputDevice8> device;
-            UINT32 buttonCount;
-
-            std::vector<UINT8> buttonStateList;
-
-            Math::Float3 axisValues;
-            Math::Float3 rotationValues;
-            float pointOfView;
-
-        public:
-            InputDevice(void)
-                : buttonCount(0)
-                , pointOfView(0.0f)
+            static BOOL CALLBACK setDeviceAxisInfo(LPCDIDEVICEOBJECTINSTANCE deviceObjectInstance, void *userData)
             {
+                LPDIRECTINPUTDEVICE7 device = (LPDIRECTINPUTDEVICE7)userData;
+
+                DIPROPRANGE propertyRange = { 0 };
+                propertyRange.diph.dwSize = sizeof(DIPROPRANGE);
+                propertyRange.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+                propertyRange.diph.dwObj = deviceObjectInstance->dwOfs;
+                propertyRange.diph.dwHow = DIPH_BYOFFSET;
+                propertyRange.lMin = -1000;
+                propertyRange.lMax = +1000;
+                device->SetProperty(DIPROP_RANGE, &propertyRange.diph);
+
+                DIPROPDWORD propertyDeadZone = { 0 };
+                propertyDeadZone.diph.dwSize = sizeof(DIPROPDWORD);
+                propertyDeadZone.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+                propertyDeadZone.diph.dwObj = deviceObjectInstance->dwOfs;
+                propertyDeadZone.diph.dwHow = DIPH_BYOFFSET;
+                propertyDeadZone.dwData = 1000;
+                device->SetProperty(DIPROP_DEADZONE, &propertyDeadZone.diph);
+
+                return DIENUM_CONTINUE;
             }
 
-            virtual ~InputDevice(void)
+            class Base : public Context::User::Mixin
+                , public Interface
             {
-            }
+            protected:
+                CComPtr<IDirectInputDevice8> device;
+                UINT32 buttonCount;
 
-            BEGIN_INTERFACE_LIST(InputDevice);
-                INTERFACE_LIST_ENTRY_COM(DeviceInterface);
-            END_INTERFACE_LIST_UNKNOWN;
+                std::vector<UINT8> buttonStateList;
 
-            STDMETHODIMP_(UINT32) getButtonCount(void) const
-            {
-                return buttonCount;
-            }
+                Math::Float3 axisValues;
+                Math::Float3 rotationValues;
+                float pointOfView;
 
-            STDMETHODIMP_(UINT8) getButtonState(UINT32 buttonIndex) const
-            {
-                return buttonStateList[buttonIndex];
-            }
-
-            STDMETHODIMP_(Math::Float3) getAxis(void) const
-            {
-                return axisValues;
-            }
-
-            STDMETHODIMP_(Math::Float3) getRotation(void) const
-            {
-                return rotationValues;
-            }
-
-            STDMETHODIMP_(float) getPointOfView(void) const
-            {
-                return pointOfView;
-            }
-        };
-
-        class KeyboardDevice : public InputDevice
-        {
-        public:
-            KeyboardDevice(void)
-            {
-                buttonStateList.resize(256);
-            }
-
-            HRESULT initialize(IDirectInput8 *directInput, HWND window)
-            {
-                HRESULT resultValue = directInput->CreateDevice(GUID_SysKeyboard, &device, nullptr);
-                if (SUCCEEDED(resultValue))
+            public:
+                Base(void)
+                    : buttonCount(0)
+                    , pointOfView(0.0f)
                 {
-                    resultValue = device->SetDataFormat(&c_dfDIKeyboard);
+                }
+
+                virtual ~Base(void)
+                {
+                }
+
+                BEGIN_INTERFACE_LIST(Base)
+                    INTERFACE_LIST_ENTRY_COM(Input::Device::Interface)
+                END_INTERFACE_LIST_UNKNOWN
+
+                STDMETHODIMP_(UINT32) getButtonCount(void) const
+                {
+                    return buttonCount;
+                }
+
+                STDMETHODIMP_(UINT8) getButtonState(UINT32 buttonIndex) const
+                {
+                    return buttonStateList[buttonIndex];
+                }
+
+                STDMETHODIMP_(Math::Float3) getAxis(void) const
+                {
+                    return axisValues;
+                }
+
+                STDMETHODIMP_(Math::Float3) getRotation(void) const
+                {
+                    return rotationValues;
+                }
+
+                STDMETHODIMP_(float) getPointOfView(void) const
+                {
+                    return pointOfView;
+                }
+            };
+
+            class Keyboard : public Base
+            {
+            public:
+                Keyboard(void)
+                {
+                    buttonStateList.resize(256);
+                }
+
+                HRESULT initialize(IDirectInput8 *directInput, HWND window)
+                {
+                    HRESULT resultValue = directInput->CreateDevice(GUID_SysKeyboard, &device, nullptr);
                     if (SUCCEEDED(resultValue))
                     {
-                        UINT32 flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
-                        resultValue = device->SetCooperativeLevel(window, flags);
+                        resultValue = device->SetDataFormat(&c_dfDIKeyboard);
                         if (SUCCEEDED(resultValue))
+                        {
+                            UINT32 flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
+                            resultValue = device->SetCooperativeLevel(window, flags);
+                            if (SUCCEEDED(resultValue))
+                            {
+                                resultValue = device->Acquire();
+                            }
+                        }
+                    }
+
+                    return resultValue;
+                }
+
+                STDMETHODIMP update(void)
+                {
+                    HRESULT resultValue = E_FAIL;
+
+                    UINT32 retryCount = 5;
+                    unsigned char rawKeyBuffer[256] = { 0 };
+                    do
+                    {
+                        resultValue = device->GetDeviceState(sizeof(rawKeyBuffer), (void *)&rawKeyBuffer);
+                        if (FAILED(resultValue))
                         {
                             resultValue = device->Acquire();
                         }
-                    }
-                }
+                    } while ((resultValue == DIERR_INPUTLOST) && (retryCount-- > 0));
 
-                return resultValue;
-            }
-
-            STDMETHODIMP update(void)
-            {
-                HRESULT resultValue = E_FAIL;
-
-                UINT32 retryCount = 5;
-                unsigned char rawKeyBuffer[256] = { 0 };
-                do
-                {
-                    resultValue = device->GetDeviceState(sizeof(rawKeyBuffer), (void *)&rawKeyBuffer);
-                    if (FAILED(resultValue))
-                    {
-                        resultValue = device->Acquire();
-                    }
-                } while ((resultValue == DIERR_INPUTLOST) && (retryCount-- > 0));
-
-                if (SUCCEEDED(resultValue))
-                {
-                    for (UINT32 keyIndex = 0; keyIndex < 256; keyIndex++)
-                    {
-                        if (rawKeyBuffer[keyIndex] & 0x80 ? true : false)
-                        {
-                            if (buttonStateList[keyIndex] & State::NONE)
-                            {
-                                buttonStateList[keyIndex] = (State::DOWN | State::PRESSED);
-                            }
-                            else
-                            {
-                                buttonStateList[keyIndex] = State::DOWN;
-                            }
-                        }
-                        else
-                        {
-                            if (buttonStateList[keyIndex] & State::DOWN)
-                            {
-                                buttonStateList[keyIndex] = (State::NONE | State::RELEASED);
-                            }
-                            else
-                            {
-                                buttonStateList[keyIndex] = State::NONE;
-                            }
-                        }
-                    }
-                }
-
-                return resultValue;
-            }
-        };
-
-        class MouseDevice : public InputDevice
-        {
-        public:
-            MouseDevice(void)
-            {
-            }
-
-            ~MouseDevice(void)
-            {
-            }
-
-            HRESULT initialize(IDirectInput8 *directInput, HWND window)
-            {
-                HRESULT resultValue = directInput->CreateDevice(GUID_SysMouse, &device, nullptr);
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = device->SetDataFormat(&c_dfDIMouse2);
                     if (SUCCEEDED(resultValue))
                     {
-                        UINT32 flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
-                        resultValue = device->SetCooperativeLevel(window, flags);
-                        if (SUCCEEDED(resultValue))
+                        for (UINT32 keyIndex = 0; keyIndex < 256; keyIndex++)
                         {
-                            DIDEVCAPS deviceCaps = { 0 };
-                            deviceCaps.dwSize = sizeof(DIDEVCAPS);
-                            resultValue = device->GetCapabilities(&deviceCaps);
-                            if (SUCCEEDED(resultValue))
+                            if (rawKeyBuffer[keyIndex] & 0x80 ? true : false)
                             {
-                                device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
-
-                                buttonCount = deviceCaps.dwButtons;
-                                buttonStateList.resize(buttonCount);
-
-                                resultValue = device->Acquire();
-                            }
-                        }
-                    }
-                }
-
-                return resultValue;
-            }
-
-            STDMETHODIMP update(void)
-            {
-                HRESULT resultValue = S_OK;
-
-                UINT32 retryCount = 5;
-                DIMOUSESTATE2 mouseStates;
-                do
-                {
-                    resultValue = device->GetDeviceState(sizeof(DIMOUSESTATE2), (void *)&mouseStates);
-                    if (FAILED(resultValue))
-                    {
-                        resultValue = device->Acquire();
-                    }
-                } while ((resultValue == DIERR_INPUTLOST) && (retryCount-- > 0));
-
-                if (SUCCEEDED(resultValue))
-                {
-                    axisValues.x = float(mouseStates.lX);
-                    axisValues.y = float(mouseStates.lY);
-                    axisValues.z = float(mouseStates.lZ);
-                    for (UINT32 buttonIndex = 0; buttonIndex < getButtonCount(); buttonIndex++)
-                    {
-                        if (mouseStates.rgbButtons[buttonIndex] & 0x80 ? true : false)
-                        {
-                            if (buttonStateList[buttonIndex] & State::NONE)
-                            {
-                                buttonStateList[buttonIndex] = (State::DOWN | State::PRESSED);
+                                if (buttonStateList[keyIndex] & State::None)
+                                {
+                                    buttonStateList[keyIndex] = (State::Down | State::Pressed);
+                                }
+                                else
+                                {
+                                    buttonStateList[keyIndex] = State::Down;
+                                }
                             }
                             else
                             {
-                                buttonStateList[buttonIndex] = State::DOWN;
-                            }
-                        }
-                        else
-                        {
-                            if (buttonStateList[buttonIndex] & State::DOWN)
-                            {
-                                buttonStateList[buttonIndex] = (State::NONE | State::RELEASED);
-                            }
-                            else
-                            {
-                                buttonStateList[buttonIndex] = State::NONE;
+                                if (buttonStateList[keyIndex] & State::Down)
+                                {
+                                    buttonStateList[keyIndex] = (State::None | State::Released);
+                                }
+                                else
+                                {
+                                    buttonStateList[keyIndex] = State::None;
+                                }
                             }
                         }
                     }
+
+                    return resultValue;
+                }
+            };
+
+            class Mouse : public Base
+            {
+            public:
+                Mouse(void)
+                {
                 }
 
-                return resultValue;
-            }
-        };
-
-        class JoystickDevice : public InputDevice
-        {
-        public:
-            JoystickDevice(void)
-            {
-            }
-
-            ~JoystickDevice(void)
-            {
-            }
-
-            HRESULT initialize(IDirectInput8 *directInput, HWND window, const GUID &deviceID)
-            {
-                HRESULT resultValue = directInput->CreateDevice(deviceID, &device, nullptr);
-                if (SUCCEEDED(resultValue))
+                ~Mouse(void)
                 {
-                    resultValue = device->SetDataFormat(&c_dfDIJoystick2);
+                }
+
+                HRESULT initialize(IDirectInput8 *directInput, HWND window)
+                {
+                    HRESULT resultValue = directInput->CreateDevice(GUID_SysMouse, &device, nullptr);
                     if (SUCCEEDED(resultValue))
                     {
-                        UINT32 flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
-                        resultValue = device->SetCooperativeLevel(window, flags);
+                        resultValue = device->SetDataFormat(&c_dfDIMouse2);
                         if (SUCCEEDED(resultValue))
                         {
-                            DIDEVCAPS deviceCaps = { 0 };
-                            deviceCaps.dwSize = sizeof(DIDEVCAPS);
-                            resultValue = device->GetCapabilities(&deviceCaps);
+                            UINT32 flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
+                            resultValue = device->SetCooperativeLevel(window, flags);
                             if (SUCCEEDED(resultValue))
                             {
-                                device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
+                                DIDEVCAPS deviceCaps = { 0 };
+                                deviceCaps.dwSize = sizeof(DIDEVCAPS);
+                                resultValue = device->GetCapabilities(&deviceCaps);
+                                if (SUCCEEDED(resultValue))
+                                {
+                                    device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
 
-                                buttonCount = deviceCaps.dwButtons;
-                                buttonStateList.resize(buttonCount);
+                                    buttonCount = deviceCaps.dwButtons;
+                                    buttonStateList.resize(buttonCount);
 
-                                resultValue = device->Acquire();
+                                    resultValue = device->Acquire();
+                                }
                             }
                         }
                     }
+
+                    return resultValue;
                 }
 
-                return resultValue;
-            }
-
-            STDMETHODIMP update(void)
-            {
-                HRESULT resultValue = S_OK;
-
-                UINT32 retryCount = 5;
-                DIJOYSTATE2 joystickStates;
-                do
+                STDMETHODIMP update(void)
                 {
-                    resultValue = device->Poll();
-                    resultValue = device->GetDeviceState(sizeof(DIJOYSTATE2), (void *)&joystickStates);
-                    if (FAILED(resultValue))
-                    {
-                        resultValue = device->Acquire();
-                    }
-                } while ((resultValue == DIERR_INPUTLOST) && (retryCount-- > 0));
+                    HRESULT resultValue = S_OK;
 
-                if (SUCCEEDED(resultValue))
-                {
-                    if (LOWORD(joystickStates.rgdwPOV[0]) == 0xFFFF)
+                    UINT32 retryCount = 5;
+                    DIMOUSESTATE2 mouseStates;
+                    do
                     {
-                        pointOfView = -1.0f;
-                    }
-                    else
-                    {
-                        pointOfView = (float(joystickStates.rgdwPOV[0]) / 100.0f);
-                    }
-
-                    axisValues.x = float(joystickStates.lX);
-                    axisValues.y = float(joystickStates.lY);
-                    axisValues.z = float(joystickStates.lZ);
-                    rotationValues.x = float(joystickStates.lRx);
-                    rotationValues.y = float(joystickStates.lRy);
-                    rotationValues.z = float(joystickStates.lRz);
-                    for (UINT32 buttonIndex = 0; buttonIndex < getButtonCount(); buttonIndex++)
-                    {
-                        if (joystickStates.rgbButtons[buttonIndex] & 0x80 ? true : false)
+                        resultValue = device->GetDeviceState(sizeof(DIMOUSESTATE2), (void *)&mouseStates);
+                        if (FAILED(resultValue))
                         {
-                            if (buttonStateList[buttonIndex] & State::NONE)
+                            resultValue = device->Acquire();
+                        }
+                    } while ((resultValue == DIERR_INPUTLOST) && (retryCount-- > 0));
+
+                    if (SUCCEEDED(resultValue))
+                    {
+                        axisValues.x = float(mouseStates.lX);
+                        axisValues.y = float(mouseStates.lY);
+                        axisValues.z = float(mouseStates.lZ);
+                        for (UINT32 buttonIndex = 0; buttonIndex < getButtonCount(); buttonIndex++)
+                        {
+                            if (mouseStates.rgbButtons[buttonIndex] & 0x80 ? true : false)
                             {
-                                buttonStateList[buttonIndex] = (State::DOWN | State::PRESSED);
+                                if (buttonStateList[buttonIndex] & State::None)
+                                {
+                                    buttonStateList[buttonIndex] = (State::Down | State::Pressed);
+                                }
+                                else
+                                {
+                                    buttonStateList[buttonIndex] = State::Down;
+                                }
                             }
                             else
                             {
-                                buttonStateList[buttonIndex] = State::DOWN;
+                                if (buttonStateList[buttonIndex] & State::Down)
+                                {
+                                    buttonStateList[buttonIndex] = (State::None | State::Released);
+                                }
+                                else
+                                {
+                                    buttonStateList[buttonIndex] = State::None;
+                                }
                             }
+                        }
+                    }
+
+                    return resultValue;
+                }
+            };
+
+            class Joystick : public Base
+            {
+            public:
+                Joystick(void)
+                {
+                }
+
+                ~Joystick(void)
+                {
+                }
+
+                HRESULT initialize(IDirectInput8 *directInput, HWND window, const GUID &deviceID)
+                {
+                    HRESULT resultValue = directInput->CreateDevice(deviceID, &device, nullptr);
+                    if (SUCCEEDED(resultValue))
+                    {
+                        resultValue = device->SetDataFormat(&c_dfDIJoystick2);
+                        if (SUCCEEDED(resultValue))
+                        {
+                            UINT32 flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
+                            resultValue = device->SetCooperativeLevel(window, flags);
+                            if (SUCCEEDED(resultValue))
+                            {
+                                DIDEVCAPS deviceCaps = { 0 };
+                                deviceCaps.dwSize = sizeof(DIDEVCAPS);
+                                resultValue = device->GetCapabilities(&deviceCaps);
+                                if (SUCCEEDED(resultValue))
+                                {
+                                    device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
+
+                                    buttonCount = deviceCaps.dwButtons;
+                                    buttonStateList.resize(buttonCount);
+
+                                    resultValue = device->Acquire();
+                                }
+                            }
+                        }
+                    }
+
+                    return resultValue;
+                }
+
+                STDMETHODIMP update(void)
+                {
+                    HRESULT resultValue = S_OK;
+
+                    UINT32 retryCount = 5;
+                    DIJOYSTATE2 joystickStates;
+                    do
+                    {
+                        resultValue = device->Poll();
+                        resultValue = device->GetDeviceState(sizeof(DIJOYSTATE2), (void *)&joystickStates);
+                        if (FAILED(resultValue))
+                        {
+                            resultValue = device->Acquire();
+                        }
+                    } while ((resultValue == DIERR_INPUTLOST) && (retryCount-- > 0));
+
+                    if (SUCCEEDED(resultValue))
+                    {
+                        if (LOWORD(joystickStates.rgdwPOV[0]) == 0xFFFF)
+                        {
+                            pointOfView = -1.0f;
                         }
                         else
                         {
-                            if (buttonStateList[buttonIndex] & State::DOWN)
+                            pointOfView = (float(joystickStates.rgdwPOV[0]) / 100.0f);
+                        }
+
+                        axisValues.x = float(joystickStates.lX);
+                        axisValues.y = float(joystickStates.lY);
+                        axisValues.z = float(joystickStates.lZ);
+                        rotationValues.x = float(joystickStates.lRx);
+                        rotationValues.y = float(joystickStates.lRy);
+                        rotationValues.z = float(joystickStates.lRz);
+                        for (UINT32 buttonIndex = 0; buttonIndex < getButtonCount(); buttonIndex++)
+                        {
+                            if (joystickStates.rgbButtons[buttonIndex] & 0x80 ? true : false)
                             {
-                                buttonStateList[buttonIndex] = (State::NONE | State::RELEASED);
+                                if (buttonStateList[buttonIndex] & State::None)
+                                {
+                                    buttonStateList[buttonIndex] = (State::Down | State::Pressed);
+                                }
+                                else
+                                {
+                                    buttonStateList[buttonIndex] = State::Down;
+                                }
                             }
                             else
                             {
-                                buttonStateList[buttonIndex] = State::NONE;
+                                if (buttonStateList[buttonIndex] & State::Down)
+                                {
+                                    buttonStateList[buttonIndex] = (State::None | State::Released);
+                                }
+                                else
+                                {
+                                    buttonStateList[buttonIndex] = State::None;
+                                }
                             }
                         }
                     }
+
+                    return resultValue;
                 }
+            };
+        }; // namespace Device
 
-                return resultValue;
-            }
-        };
-
-        class System : public Context::UserMixin
-                    , public Interface
+        class System : public Context::User::Mixin
+                    , public Input::Interface
         {
         private:
             HWND window;
             CComPtr<IDirectInput8> directInput;
-            CComPtr<DeviceInterface> mouseDevice;
-            CComPtr<DeviceInterface> keyboardDevice;
-            std::vector<CComPtr<DeviceInterface>> joystickDeviceList;
+            CComPtr<Device::Interface> mouseDevice;
+            CComPtr<Device::Interface> keyboardDevice;
+            std::vector<CComPtr<Device::Interface>> joystickDeviceList;
 
         private:
             static BOOL CALLBACK joystickEnumeration(LPCDIDEVICEINSTANCE deviceObjectInstance, void *userData)
@@ -390,13 +393,13 @@ namespace Gek
             {
                 gekLogScope(__FUNCTION__);
 
-                CComPtr<JoystickDevice> joystick = new JoystickDevice();
+                CComPtr<Device::Joystick> joystick = new Device::Joystick();
                 if (joystick != nullptr)
                 {
                     if (SUCCEEDED(gekCheckResult(joystick->initialize(directInput, window, deviceObjectInstance->guidInstance))))
                     {
-                        CComPtr<DeviceInterface> joystickDevice;
-                        joystick->QueryInterface(IID_PPV_ARGS(&joystickDevice));
+                        CComPtr<Device::Interface> joystickDevice;
+                        joystickDevice->QueryInterface(IID_PPV_ARGS(&joystickDevice));
                         if (joystickDevice != nullptr)
                         {
                             joystickDeviceList.push_back(joystickDevice);
@@ -417,7 +420,7 @@ namespace Gek
             }
 
             BEGIN_INTERFACE_LIST(System)
-                INTERFACE_LIST_ENTRY_COM(Interface)
+                INTERFACE_LIST_ENTRY_COM(Input::Interface)
             END_INTERFACE_LIST_USER
 
             // Interface
@@ -432,7 +435,7 @@ namespace Gek
                 if (directInput != nullptr)
                 {
                     resultValue = E_OUTOFMEMORY;
-                    CComPtr<KeyboardDevice> keyboard = new KeyboardDevice();
+                    CComPtr<Device::Keyboard> keyboard = new Device::Keyboard();
                     if (keyboard != nullptr)
                     {
                         if (SUCCEEDED(gekCheckResult(resultValue = keyboard->initialize(directInput, window))))
@@ -444,7 +447,7 @@ namespace Gek
                     if (SUCCEEDED(resultValue))
                     {
                         resultValue = E_OUTOFMEMORY;
-                        CComPtr<MouseDevice> mouse = new MouseDevice();
+                        CComPtr<Device::Mouse> mouse = new Device::Mouse();
                         if (mouse != nullptr)
                         {
                             if (SUCCEEDED(gekCheckResult(resultValue = mouse->initialize(directInput, window))))
@@ -463,13 +466,13 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP_(DeviceInterface *) getKeyboard(void)
+            STDMETHODIMP_(Device::Interface *) getKeyboard(void)
             {
                 REQUIRE_RETURN(keyboardDevice, nullptr);
                 return keyboardDevice;
             }
 
-            STDMETHODIMP_(DeviceInterface *) getMouse(void)
+            STDMETHODIMP_(Device::Interface *) getMouse(void)
             {
                 REQUIRE_RETURN(mouseDevice, nullptr);
                 return mouseDevice;
@@ -480,7 +483,7 @@ namespace Gek
                 return joystickDeviceList.size();
             }
 
-            STDMETHODIMP_(DeviceInterface *) getJoystick(UINT32 deviceIndex)
+            STDMETHODIMP_(Device::Interface *) getJoystick(UINT32 deviceIndex)
             {
                 if (deviceIndex < joystickDeviceList.size())
                 {

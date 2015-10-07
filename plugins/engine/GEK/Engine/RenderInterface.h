@@ -39,9 +39,9 @@ namespace Gek
                 STDMETHOD_(void, drawInstancedIndexedPrimitive) (THIS_ IUnknown *plugin, IUnknown *material, const std::vector<Video3D::BufferInterface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 firstVertex, Video3D::BufferInterface *indexBuffer, UINT32 indexCount, UINT32 firstIndex) PURE;
             };
 
-            DECLARE_INTERFACE_IID(Observer, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Gek::ObserverInterface
+            DECLARE_INTERFACE_IID(Observer, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Gek::Observer::Interface
             {
-                STDMETHOD_(void, OnRenderScene)                 (THIS_ const Population::Entity &cameraEntity, const Gek::Shape::Frustum *viewFrustum) { };
+                STDMETHOD_(void, OnRenderScene)                 (THIS_ const Engine::Population::Entity &cameraEntity, const Gek::Shape::Frustum *viewFrustum) { };
                 STDMETHOD_(void, onRenderOverlay)               (THIS) { };
             };
         }; // namespace Render

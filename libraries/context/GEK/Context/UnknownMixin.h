@@ -5,31 +5,34 @@
 
 namespace Gek
 {
-    class UnknownMixin : virtual public IUnknown
+    namespace Unknown
     {
-    private:
-        ULONG referenceCount;
-
-    public:
-        UnknownMixin(void);
-        virtual ~UnknownMixin(void);
-
-        DECLARE_UNKNOWN(UnknownMixin);
-
-        // UnknownMixin
-        STDMETHOD_(IUnknown *, getUnknown)                  (THIS);
-        STDMETHOD_(const IUnknown *, getUnknown)            (THIS) const;
-
-        template <typename CLASS>
-        CLASS *getClass(void)
+        class Mixin : virtual public IUnknown
         {
-            return dynamic_cast<CLASS *>(getUnknown());
-        }
+        private:
+            ULONG referenceCount;
 
-        template <typename CLASS>
-        const CLASS *getClass(void) const
-        {
-            return dynamic_cast<const CLASS *>(getUnknown());
-        }
-    };
+        public:
+            Mixin(void);
+            virtual ~Mixin(void);
+
+            DECLARE_UNKNOWN(Mixin);
+
+            // Utilities
+            IUnknown * getUnknown(void);
+            const IUnknown * getUnknown(void) const;
+
+            template <typename CLASS>
+            CLASS *getClass(void)
+            {
+                return dynamic_cast<CLASS *>(getUnknown());
+            }
+
+            template <typename CLASS>
+            const CLASS *getClass(void) const
+            {
+                return dynamic_cast<const CLASS *>(getUnknown());
+            }
+        };
+    }; // namespace Unknown
 };

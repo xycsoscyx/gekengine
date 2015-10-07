@@ -101,7 +101,7 @@ namespace Gek
                     else return Video3D::BlendOperation::Add;
                 }
 
-                class System : public Context::UserMixin
+                class System : public Context::User::Mixin
                     , public Interface
                 {
                 public:
@@ -462,7 +462,7 @@ namespace Gek
                     }
 
                     BEGIN_INTERFACE_LIST(System)
-                        INTERFACE_LIST_ENTRY_COM(Interface)
+                        INTERFACE_LIST_ENTRY_COM(Engine::Render::Shader::Interface)
                     END_INTERFACE_LIST_USER
 
                     // Shader::Interface
