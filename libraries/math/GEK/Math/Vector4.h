@@ -137,28 +137,28 @@ namespace Gek
 
             inline Float4 operator - (const Float4 &vector) const
             {
-                return _mm_sub_ps(simd, vector.simd);
+                return reinterpret_cast<Float4 &>(_mm_sub_ps(simd, vector.simd));
             }
 
             inline Float4 operator + (const Float4 &vector) const
             {
-                return _mm_add_ps(simd, vector.simd);
+                return reinterpret_cast<Float4 &>(_mm_add_ps(simd, vector.simd));
             }
 
             inline Float4 operator / (const Float4 &vector) const
             {
-                return _mm_div_ps(simd, vector.simd);
+                return reinterpret_cast<Float4 &>(_mm_div_ps(simd, vector.simd));
             }
 
             inline Float4 operator * (const Float4 &vector) const
             {
-                return _mm_mul_ps(simd, vector.simd);
+                return reinterpret_cast<Float4 &>(_mm_mul_ps(simd, vector.simd));
             }
         };
 
         inline Float4 operator - (const Float4 &vector)
         {
-            return _mm_sub_ps(_mm_set1_ps(0.0f), vector.simd);
+            return reinterpret_cast<Float4 &>(_mm_sub_ps(_mm_set1_ps(0.0f), vector.simd));
         }
     }; // namespace Math
 }; // namespace Gek

@@ -9,6 +9,8 @@
 #include <concurrent_unordered_map.h>
 #include <ppl.h>
 
+#include "GEK\Components\Transform.h"
+
 namespace Gek
 {
     namespace Engine
@@ -331,7 +333,7 @@ namespace Gek
                     }
                 }
 
-                STDMETHODIMP_(void) listEntities(const std::vector<Entity> &requiredComponentList, std::function<void(const Entity &)> onEntity, bool runInParallel)
+                STDMETHODIMP_(void) listEntities(const std::vector<UINT32> &requiredComponentList, std::function<void(const Entity &)> onEntity, bool runInParallel)
                 {
                     std::set<Entity> entityList;
                     for (auto &requiredComponent : requiredComponentList)

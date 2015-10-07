@@ -162,12 +162,16 @@ namespace Gek
         void Float4x4::setRotation(const Quaternion &rotation, const Float3 &translation)
         {
             float xy(rotation.x * rotation.y);
-            float zw(rotation.z * rotation.w);
             float xz(rotation.x * rotation.z);
-            float yw(rotation.y * rotation.w);
-            float yz(rotation.y * rotation.z);
             float xw(rotation.x * rotation.w);
-            Float4 square(_mm_mul_ps(rotation.simd, rotation.simd));
+
+            float yz(rotation.y * rotation.z);
+            float yw(rotation.y * rotation.w);
+
+            float zw(rotation.z * rotation.w);
+
+            const Float4 &square = reinterpret_cast<const Float4 &>(rotation) * reinterpret_cast<const Float4 &>(rotation);
+            //Float4 square(reinterpret_cast<const Float4 &>(rotation) * reinterpret_cast<const Float4 &>(rotation));
             float determinant(1.0f / (square.x + square.y + square.z + square.w));
             
             this->rx.set((( square.x - square.y - square.z + square.w) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f);

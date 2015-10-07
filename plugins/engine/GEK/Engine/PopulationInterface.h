@@ -33,7 +33,7 @@ namespace Gek
                 STDMETHOD_(Entity, getNamedEntity)          (THIS_ LPCWSTR name) PURE;
 
                 STDMETHOD_(void, listEntities)              (THIS_ std::function<void(const Entity &)> onEntity, bool runInParallel = false) PURE;
-                STDMETHOD_(void, listEntities)              (THIS_ const std::vector<Entity> &requiredComponentList, std::function<void(const Entity &)> onEntity, bool runInParallel = false) PURE;
+                STDMETHOD_(void, listEntities)              (THIS_ const std::vector<UINT32> &requiredComponentList, std::function<void(const Entity &)> onEntity, bool runInParallel = false) PURE;
 
                 STDMETHOD_(bool, hasComponent)              (THIS_ const Entity &entity, UINT32 component) PURE;
                 STDMETHOD_(LPVOID, getComponent)            (THIS_ const Entity &entity, UINT32 component) PURE;

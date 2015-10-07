@@ -29,7 +29,7 @@ namespace Gek
 
         Float4 Float4::getNormal(void) const
         {
-            return _mm_mul_ps(simd, _mm_rcp_ps(_mm_set1_ps(getLength())));
+            return reinterpret_cast<Float4 &>(_mm_mul_ps(simd, _mm_rcp_ps(_mm_set1_ps(getLength()))));
         }
 
         float Float4::dot(const Float4 &vector) const

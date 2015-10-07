@@ -20,7 +20,7 @@ namespace Gek
                 struct { Float4 rows[4]; };
                 struct { __m128 simd[4]; };
 
-                struct
+                struct __declspec(align(16))
                 {
                     float _11, _12, _13, _14;
                     float _21, _22, _23, _24;
@@ -28,19 +28,19 @@ namespace Gek
                     float _41, _42, _43, _44;
                 };
 
-                struct
+                struct __declspec(align(16))
                 {
                     Float4 rx;
                     Float4 ry;
                     Float4 rz;
                     union
                     {
-                        struct
+                        struct __declspec(align(16))
                         {
                             Float4 rw;
                         };
 
-                        struct
+                        struct __declspec(align(16))
                         {
                             Float3 translation;
                             float tw;
@@ -48,12 +48,12 @@ namespace Gek
                     };
                 };
 
-                struct
+                struct __declspec(align(16))
                 {
                     struct { Float3 nx; float nxw; };
                     struct { Float3 ny; float nyw; };
                     struct { Float3 nz; float nzw; };
-                    struct
+                    struct __declspec(align(16))
                     {
                         Float3 translation;
                         float tw;
