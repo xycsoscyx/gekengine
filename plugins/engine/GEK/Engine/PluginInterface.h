@@ -18,7 +18,7 @@ namespace Gek
                 {
                     STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
 
-                    STDMETHOD_(void, enable)                    (THIS_ Video3D::ContextInterface *context) PURE;
+                    STDMETHOD_(void, enable)                    (THIS_ Video::Context::Interface *context) PURE;
                 };
             }; // namespace Plugin
         }; // namespace Render

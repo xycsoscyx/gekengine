@@ -24,12 +24,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\System\Video2DInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\System\Video3DInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\System\AudioInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -37,6 +31,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\System\VideoInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\System\OverlayInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

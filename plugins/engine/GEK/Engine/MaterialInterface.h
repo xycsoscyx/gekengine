@@ -19,7 +19,7 @@ namespace Gek
                     STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
                     STDMETHOD(getShader)                        (THIS_ IUnknown **returnObject) PURE;
 
-                    STDMETHOD_(void, enable)                    (THIS_ Video3D::ContextInterface *context, LPCVOID passData) PURE;
+                    STDMETHOD_(void, enable)                    (THIS_ Video::Context::Interface *context, LPCVOID passData) PURE;
                 };
             }; // namespace Material
         }; // namespace Render

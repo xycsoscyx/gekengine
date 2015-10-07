@@ -20,10 +20,10 @@ namespace Gek
                 {
                     STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
 
-                    STDMETHOD(getMaterialValues)                (THIS_ LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, std::vector<UINT32> &materialPropertyList) PURE;
-                    STDMETHOD_(void, setMaterialValues)         (THIS_ Video3D::ContextInterface *context, LPCVOID passData, const std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, const std::vector<UINT32> &materialPropertyList) PURE;
+                    STDMETHOD(getMaterialValues)                (THIS_ LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video::Texture::Interface>> &materialMapList, std::vector<UINT32> &materialPropertyList) PURE;
+                    STDMETHOD_(void, setMaterialValues)         (THIS_ Video::Context::Interface *context, LPCVOID passData, const std::vector<CComPtr<Video::Texture::Interface>> &materialMapList, const std::vector<UINT32> &materialPropertyList) PURE;
 
-                    STDMETHOD_(void, draw)                      (THIS_ Video3D::ContextInterface *context,
+                    STDMETHOD_(void, draw)                      (THIS_ Video::Context::Interface *context,
                         std::function<void(LPCVOID passData, bool lighting)> drawForward,
                         std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
                         std::function<void(LPCVOID passData, bool lighting)> drawCompute) PURE;

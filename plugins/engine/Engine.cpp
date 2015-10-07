@@ -17,30 +17,30 @@ namespace Gek
 {
     namespace Engine
     {
-        Video3D::Format getFormat(LPCWSTR formatString)
+        Video::Format getFormat(LPCWSTR formatString)
         {
-            if (_wcsicmp(formatString, L"BYTE") == 0) return Video3D::Format::Byte;
-            else if (_wcsicmp(formatString, L"BYTE2") == 0) return Video3D::Format::Byte2;
-            else if (_wcsicmp(formatString, L"BYTE4") == 0) return Video3D::Format::Byte4;
-            else if (_wcsicmp(formatString, L"BGRA") == 0) return Video3D::Format::BGRA;
-            else if (_wcsicmp(formatString, L"SHORT") == 0) return Video3D::Format::Short;
-            else if (_wcsicmp(formatString, L"SHORT2") == 0) return Video3D::Format::Short2;
-            else if (_wcsicmp(formatString, L"SHORT4") == 0) return Video3D::Format::Short4;
-            else if (_wcsicmp(formatString, L"INT") == 0) return Video3D::Format::Int;
-            else if (_wcsicmp(formatString, L"INT2") == 0) return Video3D::Format::Int2;
-            else if (_wcsicmp(formatString, L"INT3") == 0) return Video3D::Format::Int3;
-            else if (_wcsicmp(formatString, L"INT4") == 0) return Video3D::Format::Int4;
-            else if (_wcsicmp(formatString, L"HALF") == 0) return Video3D::Format::Half;
-            else if (_wcsicmp(formatString, L"HALF2") == 0) return Video3D::Format::Half2;
-            else if (_wcsicmp(formatString, L"HALF4") == 0) return Video3D::Format::Half4;
-            else if (_wcsicmp(formatString, L"FLOAT") == 0) return Video3D::Format::Float;
-            else if (_wcsicmp(formatString, L"FLOAT2") == 0) return Video3D::Format::Float2;
-            else if (_wcsicmp(formatString, L"FLOAT3") == 0) return Video3D::Format::Float3;
-            else if (_wcsicmp(formatString, L"FLOAT4") == 0) return Video3D::Format::Float4;
-            else if (_wcsicmp(formatString, L"D16") == 0) return Video3D::Format::Depth16;
-            else if (_wcsicmp(formatString, L"D24S8") == 0) return Video3D::Format::Depth24Stencil8;
-            else if (_wcsicmp(formatString, L"D32") == 0) return Video3D::Format::Depth32;
-            return Video3D::Format::Invalid;
+            if (_wcsicmp(formatString, L"BYTE") == 0) return Video::Format::Byte;
+            else if (_wcsicmp(formatString, L"BYTE2") == 0) return Video::Format::Byte2;
+            else if (_wcsicmp(formatString, L"BYTE4") == 0) return Video::Format::Byte4;
+            else if (_wcsicmp(formatString, L"BGRA") == 0) return Video::Format::BGRA;
+            else if (_wcsicmp(formatString, L"SHORT") == 0) return Video::Format::Short;
+            else if (_wcsicmp(formatString, L"SHORT2") == 0) return Video::Format::Short2;
+            else if (_wcsicmp(formatString, L"SHORT4") == 0) return Video::Format::Short4;
+            else if (_wcsicmp(formatString, L"INT") == 0) return Video::Format::Int;
+            else if (_wcsicmp(formatString, L"INT2") == 0) return Video::Format::Int2;
+            else if (_wcsicmp(formatString, L"INT3") == 0) return Video::Format::Int3;
+            else if (_wcsicmp(formatString, L"INT4") == 0) return Video::Format::Int4;
+            else if (_wcsicmp(formatString, L"HALF") == 0) return Video::Format::Half;
+            else if (_wcsicmp(formatString, L"HALF2") == 0) return Video::Format::Half2;
+            else if (_wcsicmp(formatString, L"HALF4") == 0) return Video::Format::Half4;
+            else if (_wcsicmp(formatString, L"FLOAT") == 0) return Video::Format::Float;
+            else if (_wcsicmp(formatString, L"FLOAT2") == 0) return Video::Format::Float2;
+            else if (_wcsicmp(formatString, L"FLOAT3") == 0) return Video::Format::Float3;
+            else if (_wcsicmp(formatString, L"FLOAT4") == 0) return Video::Format::Float4;
+            else if (_wcsicmp(formatString, L"D16") == 0) return Video::Format::Depth16;
+            else if (_wcsicmp(formatString, L"D24S8") == 0) return Video::Format::Depth24Stencil8;
+            else if (_wcsicmp(formatString, L"D32") == 0) return Video::Format::Depth32;
+            return Video::Format::Invalid;
         }
 
         namespace Core
@@ -57,7 +57,7 @@ namespace Gek
 
                 Gek::Timer timer;
                 double updateAccumulator;
-                CComPtr<Video3D::Interface> video;
+                CComPtr<Video::Interface> video;
                 CComPtr<Engine::Population::Interface> population;
                 CComPtr<Render::Interface> render;
                 std::list<CComPtr<Engine::System::Interface>> systemList;
@@ -109,7 +109,7 @@ namespace Gek
                     INTERFACE_LIST_ENTRY_COM(Engine::Core::Interface)
                     INTERFACE_LIST_ENTRY_COM(Engine::Render::Observer)
                     INTERFACE_LIST_ENTRY_MEMBER_COM(Video2D::Interface, video)
-                    INTERFACE_LIST_ENTRY_MEMBER_COM(Video3D::Interface, video)
+                    INTERFACE_LIST_ENTRY_MEMBER_COM(Video::Interface, video)
                     INTERFACE_LIST_ENTRY_MEMBER_COM(Engine::Population::Interface, population)
                     INTERFACE_LIST_ENTRY_MEMBER_COM(Engine::Render::Interface, render)
                 END_INTERFACE_LIST_USER
@@ -181,45 +181,45 @@ namespace Gek
                         float height = float(video->getHeight());
                         float consoleHeight = (height * 0.5f);
 
-                        resultValue = video->getVideo2D()->createBrush(&backgroundBrush, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 0.5f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 0.5f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                        resultValue = video->video2D()->createBrush(&backgroundBrush, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 0.5f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 0.5f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->getVideo2D()->createBrush(&foregroundBrush, { { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 0.75f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 0.75f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                            resultValue = video->video2D()->createBrush(&foregroundBrush, { { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 0.75f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 0.75f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
                         }
 
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->getVideo2D()->createBrush(&textBrush, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+                            resultValue = video->video2D()->createBrush(&textBrush, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
                         }
 
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->getVideo2D()->createFont(&font, L"Tahoma", 400, Video2D::FontStyle::Normal, 15.0f);
+                            resultValue = video->video2D()->createFont(&font, L"Tahoma", 400, Video2D::FontStyle::Normal, 15.0f);
                         }
 
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->getVideo2D()->loadBitmap(&bitmap, L"%root%\\data\\console.bmp");
+                            resultValue = video->video2D()->loadBitmap(&bitmap, L"%root%\\data\\console.bmp");
                         }
 
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->getVideo2D()->createBrush(&logTypeBrushList[0], Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+                            resultValue = video->video2D()->createBrush(&logTypeBrushList[0], Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
                         }
 
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->getVideo2D()->createBrush(&logTypeBrushList[1], Math::Float4(1.0f, 1.0f, 0.0f, 1.0f));
+                            resultValue = video->video2D()->createBrush(&logTypeBrushList[1], Math::Float4(1.0f, 1.0f, 0.0f, 1.0f));
                         }
                         
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->getVideo2D()->createBrush(&logTypeBrushList[2], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                            resultValue = video->video2D()->createBrush(&logTypeBrushList[2], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
                         }
                         
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->getVideo2D()->createBrush(&logTypeBrushList[3], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                            resultValue = video->video2D()->createBrush(&logTypeBrushList[3], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
                         }
                     }
 
@@ -464,35 +464,35 @@ namespace Gek
                 {
                     if (consolePosition > 0.0f)
                     {
-                        video->getVideo2D()->beginDraw();
+                        video->video2D()->beginDraw();
 
                         float width = float(video->getWidth());
                         float height = float(video->getHeight());
                         float consoleHeight = (height * 0.5f);
 
-                        video->getVideo2D()->setTransform(Math::Float3x2());
+                        video->video2D()->setTransform(Math::Float3x2());
 
                         float nTop = -((1.0f - consolePosition) * consoleHeight);
 
                         Math::Float3x2 transformMatrix;
                         transformMatrix.translation = Math::Float2(0.0f, nTop);
-                        video->getVideo2D()->setTransform(transformMatrix);
+                        video->video2D()->setTransform(transformMatrix);
 
-                        video->getVideo2D()->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrush, true);
-                        video->getVideo2D()->drawBitmap(bitmap, { 0.0f, 0.0f, width, consoleHeight }, Video2D::InterpolationMode::Linear, 1.0f);
-                        video->getVideo2D()->drawRectangle({ 10.0f, 10.0f, (width - 10.0f), (consoleHeight - 40.0f) }, foregroundBrush, true);
-                        video->getVideo2D()->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrush, true);
-                        video->getVideo2D()->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, font, textBrush, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
+                        video->video2D()->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrush, true);
+                        video->video2D()->drawBitmap(bitmap, { 0.0f, 0.0f, width, consoleHeight }, Video2D::InterpolationMode::Linear, 1.0f);
+                        video->video2D()->drawRectangle({ 10.0f, 10.0f, (width - 10.0f), (consoleHeight - 40.0f) }, foregroundBrush, true);
+                        video->video2D()->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrush, true);
+                        video->video2D()->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, font, textBrush, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
 
                         float nPosition = (consoleHeight - 40.0f);
                         /*
                         for (auto &kMessage : m_aConsoleLog)
                         {
-                        video->getVideo2D()->drawText({ 15.0f, (nPosition - 20.0f), (width - 15.0f), nPosition }, font, logTypeBrushList[kMessage.first], kMessage.second);
+                        video->video2D()->drawText({ 15.0f, (nPosition - 20.0f), (width - 15.0f), nPosition }, font, logTypeBrushList[kMessage.first], kMessage.second);
                         nPosition -= 20.0f;
                         }
                         */
-                        video->getVideo2D()->endDraw();
+                        video->video2D()->endDraw();
                     }
                 }
             };

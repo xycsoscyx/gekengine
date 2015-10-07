@@ -22,9 +22,9 @@ namespace Gek
                     , public Interface
                 {
                 private:
-                    Video3D::Interface *video;
+                    Video::Interface *video;
                     Render::Interface *render;
-                    std::vector<CComPtr<Video3D::TextureInterface>> mapList;
+                    std::vector<CComPtr<Video::Texture::Interface>> mapList;
                     std::vector<UINT32> propertyList;
                     CComPtr<Shader::Interface> shader;
 
@@ -53,7 +53,7 @@ namespace Gek
                         REQUIRE_RETURN(fileName, E_INVALIDARG);
 
                         HRESULT resultValue = E_FAIL;
-                        CComQIPtr<Video3D::Interface> video(initializerContext);
+                        CComQIPtr<Video::Interface> video(initializerContext);
                         CComQIPtr<Render::Interface> render(initializerContext);
                         if (video && render)
                         {
@@ -109,7 +109,7 @@ namespace Gek
                         return resultValue;
                     }
 
-                    STDMETHODIMP_(void) enable(Video3D::ContextInterface *context, LPCVOID passData)
+                    STDMETHODIMP_(void) enable(Video::Context::Interface *context, LPCVOID passData)
                     {
                         REQUIRE_VOID_RETURN(shader);
                         shader->setMaterialValues(context, passData, mapList, propertyList);

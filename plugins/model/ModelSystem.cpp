@@ -66,8 +66,8 @@ namespace Gek
                 bool ready;
                 CStringW fileName;
                 Shape::AlignedBox alignedBox;
-                CComPtr<Video3D::BufferInterface> vertexBuffer;
-                CComPtr<Video3D::BufferInterface> indexBuffer;
+                CComPtr<Video::Buffer::Interface> vertexBuffer;
+                CComPtr<Video::Buffer::Interface> indexBuffer;
                 std::vector<MaterialInfo> materialInfoList;
 
                 ModelData(void)
@@ -94,7 +94,7 @@ namespace Gek
             };
 
         private:
-            Video3D::Interface *video;
+            Video::Interface *video;
             Engine::Render::Interface *render;
             Engine::Population::Interface *population;
 
@@ -102,7 +102,7 @@ namespace Gek
 
             concurrency::concurrent_unordered_map<CStringW, ModelData> dataMap;
             concurrency::concurrent_unordered_map<Engine::Population::Entity, ModelData *> dataEntityList;
-            CComPtr<Video3D::BufferInterface> instanceBuffer;
+            CComPtr<Video::Buffer::Interface> instanceBuffer;
 
         public:
             System(void)
@@ -220,7 +220,7 @@ namespace Gek
                             UINT32 vertexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            resultValue = video->createBuffer(&data.vertexBuffer, sizeof(Vertex), vertexCount, Video3D::BufferFlags::VertexBuffer | Video3D::BufferFlags::Static, rawFileData);
+                            resultValue = video->createBuffer(&data.vertexBuffer, sizeof(Vertex), vertexCount, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, rawFileData);
                             rawFileData += (sizeof(Vertex) * vertexCount);
                         }
 
@@ -229,7 +229,7 @@ namespace Gek
                             UINT32 indexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            resultValue = video->createBuffer(&data.indexBuffer, Video3D::Format::Short, indexCount, Video3D::BufferFlags::IndexBuffer | Video3D::BufferFlags::Static, rawFileData);
+                            resultValue = video->createBuffer(&data.indexBuffer, Video::Format::Short, indexCount, Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, rawFileData);
                             rawFileData += (sizeof(UINT16) * indexCount);
                         }
                     }
@@ -251,7 +251,7 @@ namespace Gek
                 REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
                 HRESULT resultValue = E_FAIL;
-                CComQIPtr<Video3D::Interface> video(initializerContext);
+                CComQIPtr<Video::Interface> video(initializerContext);
                 CComQIPtr<Engine::Render::Interface> render(initializerContext);
                 CComQIPtr<Engine::Population::Interface> population(initializerContext);
                 if (render && video && population)
@@ -274,7 +274,7 @@ namespace Gek
 
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = video->createBuffer(&instanceBuffer, sizeof(InstanceData), 1024, Video3D::BufferFlags::VertexBuffer | Video3D::BufferFlags::Dynamic);
+                    resultValue = video->createBuffer(&instanceBuffer, sizeof(InstanceData), 1024, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Dynamic);
                 }
 
                 return resultValue;

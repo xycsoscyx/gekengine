@@ -128,8 +128,7 @@
   <ItemGroup>
     <ClInclude Include="GEK\System\AudioInterface.h" />
     <ClInclude Include="GEK\System\InputInterface.h" />
-    <ClInclude Include="GEK\System\Video2DInterface.h" />
-    <ClInclude Include="GEK\System\Video3DInterface.h" />
+    <ClInclude Include="GEK\System\OverlayInterface.h" />
     <ClInclude Include="GEK\System\VideoInterface.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

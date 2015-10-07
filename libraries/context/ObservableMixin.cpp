@@ -8,7 +8,7 @@ namespace Gek
         {
         }
 
-        void Mixin::sendEvent(const VirtualEvent<void> &event) const
+        void Mixin::sendEvent(const BaseEvent &event) const
         {
             for (auto &observer : observerList)
             {

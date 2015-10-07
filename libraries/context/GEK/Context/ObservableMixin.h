@@ -12,19 +12,13 @@ namespace Gek
         class Mixin : virtual public Interface
         {
         public:
-            template <typename RESULT>
-            class VirtualEvent
+            struct BaseEvent
             {
-            public:
-                virtual ~VirtualEvent(void)
-                {
-                }
-
-                virtual RESULT operator () (Observer::Interface *observer) const = 0;
+                virtual void operator () (Observer::Interface *observer) const = 0;
             };
 
             template <typename INTERFACE>
-            class Event : public VirtualEvent<void>
+            struct Event : public BaseEvent
             {
             private:
                 const std::function<void(INTERFACE *)> &onEvent;
@@ -35,7 +29,7 @@ namespace Gek
                 {
                 }
 
-                virtual void operator () (Observer::Interface *observer) const
+                void operator () (Observer::Interface *observer) const
                 {
                     CComQIPtr<INTERFACE> eventHandler(observer);
                     if (eventHandler)
@@ -51,7 +45,7 @@ namespace Gek
         public:
             virtual ~Mixin(void);
 
-            void sendEvent(const VirtualEvent<void> &event) const;
+            void sendEvent(const BaseEvent &event) const;
 
             static HRESULT addObserver(IUnknown *observableUnknown, Observer::Interface *observer);
             static HRESULT removeObserver(IUnknown *observableUnknown, Observer::Interface *observer);

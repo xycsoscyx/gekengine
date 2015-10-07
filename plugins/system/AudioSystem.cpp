@@ -18,29 +18,24 @@ namespace Gek
     {
         namespace Sample
         {
-            class Class : public Context::User::Mixin
-                , public Sample::Interface
+            class Base
             {
             protected:
                 CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSoundBuffer;
 
             public:
-                Class(IDirectSoundBuffer8 *directSoundBuffer)
+                Base(IDirectSoundBuffer8 *directSoundBuffer)
                     : directSoundBuffer(directSoundBuffer)
                 {
                     setVolume(1.0f);
                 }
 
-                virtual ~Class(void)
+                virtual ~Base(void)
                 {
                 }
 
-                BEGIN_INTERFACE_LIST(Class)
-                    INTERFACE_LIST_ENTRY_COM(Audio::Sample::Interface)
-                END_INTERFACE_LIST_UNKNOWN
-
                 // Sample::Interface
-                STDMETHODIMP_(LPVOID) getBuffer(void)
+                virtual STDMETHODIMP_(LPVOID) getBuffer(void)
                 {
                     REQUIRE_RETURN(directSoundBuffer, nullptr);
                     return LPVOID(directSoundBuffer);
@@ -69,18 +64,19 @@ namespace Gek
 
         namespace Effect
         {
-            class Class : public Sample::Class
-                , public Effect::Interface
+            class Class : public Unknown::Mixin
+                , virtual public Sample::Base
+                , virtual public Effect::Interface
             {
             public:
                 Class(IDirectSoundBuffer8 *directSoundBuffer)
-                    : Sample::Class(directSoundBuffer)
+                    : Base(directSoundBuffer)
                 {
                 }
 
                 BEGIN_INTERFACE_LIST(Class)
                     INTERFACE_LIST_ENTRY_COM(Audio::Effect::Interface)
-                END_INTERFACE_LIST_BASE(Sample::Class)
+                END_INTERFACE_LIST_UNKNOWN
 
                 // Effect::Interface
                 STDMETHODIMP_(void) setPan(float pan)
@@ -99,28 +95,13 @@ namespace Gek
                         directSoundBuffer->Play(0, 0, (loop ? DSBPLAY_LOOPING : 0));
                     }
                 }
-
-                // Sample::Interface
-                STDMETHODIMP_(LPVOID) getBuffer(void)
-                {
-                    return Sample::Class::getBuffer();
-                }
-
-                STDMETHODIMP_(void) setFrequency(UINT32 frequency)
-                {
-                    Sample::Class::setFrequency(frequency);
-                }
-
-                STDMETHODIMP_(void) setVolume(float volume)
-                {
-                    Sample::Class::setVolume(volume);
-                }
             };
         }; // namespace Effect
 
         namespace Sound
         {
-            class Class : public Sample::Class
+            class Class : public Unknown::Mixin
+                , public Sample::Base
                 , public Sound::Interface
             {
             private:
@@ -128,14 +109,14 @@ namespace Gek
 
             public:
                 Class(IDirectSoundBuffer8 *directSoundBuffer, IDirectSound3DBuffer8 *directSound8Buffer3D)
-                    : Sample::Class(directSoundBuffer)
+                    : Base(directSoundBuffer)
                     , directSound8Buffer3D(directSound8Buffer3D)
                 {
                 }
 
                 BEGIN_INTERFACE_LIST(Class)
                     INTERFACE_LIST_ENTRY_COM(Audio::Sound::Interface)
-                END_INTERFACE_LIST_BASE(Sample::Class)
+                END_INTERFACE_LIST_UNKNOWN
 
                 // Sound::Interface
                 STDMETHODIMP_(void) setDistance(float minimum, float maximum)
@@ -157,22 +138,6 @@ namespace Gek
                     {
                         directSoundBuffer->Play(0, 0, (loop ? DSBPLAY_LOOPING : 0));
                     }
-                }
-
-                // Sample::Interface
-                STDMETHODIMP_(LPVOID) getBuffer(void)
-                {
-                    return Sample::Class::getBuffer();
-                }
-
-                STDMETHODIMP_(void) setFrequency(UINT32 frequency)
-                {
-                    Sample::Class::setFrequency(frequency);
-                }
-
-                STDMETHODIMP_(void) setVolume(float volume)
-                {
-                    Sample::Class::setVolume(volume);
                 }
             };
         }; // namespace Sound

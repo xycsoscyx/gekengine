@@ -15,90 +15,90 @@ namespace Gek
 {
     namespace Engine
     {
-        extern Video3D::Format getFormat(LPCWSTR formatString);
+        extern Video::Format getFormat(LPCWSTR formatString);
 
         namespace Render
         {
             namespace Shader
             {
-                static Video3D::DepthWrite getDepthWriteMask(LPCWSTR depthWrite)
+                static Video::DepthWrite getDepthWriteMask(LPCWSTR depthWrite)
                 {
-                    if (_wcsicmp(depthWrite, L"zero") == 0) return Video3D::DepthWrite::Zero;
-                    else if (_wcsicmp(depthWrite, L"all") == 0) return Video3D::DepthWrite::All;
-                    else return Video3D::DepthWrite::Zero;
+                    if (_wcsicmp(depthWrite, L"zero") == 0) return Video::DepthWrite::Zero;
+                    else if (_wcsicmp(depthWrite, L"all") == 0) return Video::DepthWrite::All;
+                    else return Video::DepthWrite::Zero;
                 }
 
-                static Video3D::ComparisonFunction getComparisonFunction(LPCWSTR comparisonFunction)
+                static Video::ComparisonFunction getComparisonFunction(LPCWSTR comparisonFunction)
                 {
-                    if (_wcsicmp(comparisonFunction, L"always") == 0) return Video3D::ComparisonFunction::Always;
-                    else if (_wcsicmp(comparisonFunction, L"never") == 0) return Video3D::ComparisonFunction::Never;
-                    else if (_wcsicmp(comparisonFunction, L"equal") == 0) return Video3D::ComparisonFunction::Equal;
-                    else if (_wcsicmp(comparisonFunction, L"notequal") == 0) return Video3D::ComparisonFunction::NotEqual;
-                    else if (_wcsicmp(comparisonFunction, L"less") == 0) return Video3D::ComparisonFunction::Less;
-                    else if (_wcsicmp(comparisonFunction, L"lessequal") == 0) return Video3D::ComparisonFunction::LessEqual;
-                    else if (_wcsicmp(comparisonFunction, L"greater") == 0) return Video3D::ComparisonFunction::Greater;
-                    else if (_wcsicmp(comparisonFunction, L"greaterequal") == 0) return Video3D::ComparisonFunction::GreaterEqual;
-                    else return Video3D::ComparisonFunction::Always;
+                    if (_wcsicmp(comparisonFunction, L"always") == 0) return Video::ComparisonFunction::Always;
+                    else if (_wcsicmp(comparisonFunction, L"never") == 0) return Video::ComparisonFunction::Never;
+                    else if (_wcsicmp(comparisonFunction, L"equal") == 0) return Video::ComparisonFunction::Equal;
+                    else if (_wcsicmp(comparisonFunction, L"notequal") == 0) return Video::ComparisonFunction::NotEqual;
+                    else if (_wcsicmp(comparisonFunction, L"less") == 0) return Video::ComparisonFunction::Less;
+                    else if (_wcsicmp(comparisonFunction, L"lessequal") == 0) return Video::ComparisonFunction::LessEqual;
+                    else if (_wcsicmp(comparisonFunction, L"greater") == 0) return Video::ComparisonFunction::Greater;
+                    else if (_wcsicmp(comparisonFunction, L"greaterequal") == 0) return Video::ComparisonFunction::GreaterEqual;
+                    else return Video::ComparisonFunction::Always;
                 }
 
-                static Video3D::StencilOperation getStencilOperation(LPCWSTR stencilOperation)
+                static Video::StencilOperation getStencilOperation(LPCWSTR stencilOperation)
                 {
-                    if (_wcsicmp(stencilOperation, L"Zero") == 0) return Video3D::StencilOperation::Zero;
-                    else if (_wcsicmp(stencilOperation, L"Keep") == 0) return Video3D::StencilOperation::Keep;
-                    else if (_wcsicmp(stencilOperation, L"Replace") == 0) return Video3D::StencilOperation::Replace;
-                    else if (_wcsicmp(stencilOperation, L"Invert") == 0) return Video3D::StencilOperation::Invert;
-                    else if (_wcsicmp(stencilOperation, L"Increase") == 0) return Video3D::StencilOperation::Increase;
-                    else if (_wcsicmp(stencilOperation, L"IncreaseSaturated") == 0) return Video3D::StencilOperation::IncreaseSaturated;
-                    else if (_wcsicmp(stencilOperation, L"Decrease") == 0) return Video3D::StencilOperation::Decrease;
-                    else if (_wcsicmp(stencilOperation, L"DecreaseSaturated") == 0) return Video3D::StencilOperation::DecreaseSaturated;
-                    else return Video3D::StencilOperation::Zero;
+                    if (_wcsicmp(stencilOperation, L"Zero") == 0) return Video::StencilOperation::Zero;
+                    else if (_wcsicmp(stencilOperation, L"Keep") == 0) return Video::StencilOperation::Keep;
+                    else if (_wcsicmp(stencilOperation, L"Replace") == 0) return Video::StencilOperation::Replace;
+                    else if (_wcsicmp(stencilOperation, L"Invert") == 0) return Video::StencilOperation::Invert;
+                    else if (_wcsicmp(stencilOperation, L"Increase") == 0) return Video::StencilOperation::Increase;
+                    else if (_wcsicmp(stencilOperation, L"IncreaseSaturated") == 0) return Video::StencilOperation::IncreaseSaturated;
+                    else if (_wcsicmp(stencilOperation, L"Decrease") == 0) return Video::StencilOperation::Decrease;
+                    else if (_wcsicmp(stencilOperation, L"DecreaseSaturated") == 0) return Video::StencilOperation::DecreaseSaturated;
+                    else return Video::StencilOperation::Zero;
                 }
 
-                static Video3D::FillMode getFillMode(LPCWSTR fillMode)
+                static Video::FillMode getFillMode(LPCWSTR fillMode)
                 {
-                    if (_wcsicmp(fillMode, L"solid") == 0) return Video3D::FillMode::Solid;
-                    else if (_wcsicmp(fillMode, L"wire") == 0) return Video3D::FillMode::WireFrame;
-                    else return Video3D::FillMode::Solid;
+                    if (_wcsicmp(fillMode, L"solid") == 0) return Video::FillMode::Solid;
+                    else if (_wcsicmp(fillMode, L"wire") == 0) return Video::FillMode::WireFrame;
+                    else return Video::FillMode::Solid;
                 }
 
-                static Video3D::CullMode getCullMode(LPCWSTR cullMode)
+                static Video::CullMode getCullMode(LPCWSTR cullMode)
                 {
-                    if (_wcsicmp(cullMode, L"none") == 0) return Video3D::CullMode::None;
-                    else if (_wcsicmp(cullMode, L"front") == 0) return Video3D::CullMode::Front;
-                    else if (_wcsicmp(cullMode, L"back") == 0) return Video3D::CullMode::Back;
-                    else return Video3D::CullMode::None;
+                    if (_wcsicmp(cullMode, L"none") == 0) return Video::CullMode::None;
+                    else if (_wcsicmp(cullMode, L"front") == 0) return Video::CullMode::Front;
+                    else if (_wcsicmp(cullMode, L"back") == 0) return Video::CullMode::Back;
+                    else return Video::CullMode::None;
                 }
 
-                static Video3D::BlendSource getBlendSource(LPCWSTR blendSource)
+                static Video::BlendSource getBlendSource(LPCWSTR blendSource)
                 {
-                    if (_wcsicmp(blendSource, L"zero") == 0) return Video3D::BlendSource::Zero;
-                    else if (_wcsicmp(blendSource, L"one") == 0) return Video3D::BlendSource::One;
-                    else if (_wcsicmp(blendSource, L"blend_factor") == 0) return Video3D::BlendSource::BlendFactor;
-                    else if (_wcsicmp(blendSource, L"inverse_blend_factor") == 0) return Video3D::BlendSource::InverseBlendFactor;
-                    else if (_wcsicmp(blendSource, L"source_color") == 0) return Video3D::BlendSource::SourceColor;
-                    else if (_wcsicmp(blendSource, L"inverse_source_color") == 0) return Video3D::BlendSource::InverseSourceColor;
-                    else if (_wcsicmp(blendSource, L"source_alpha") == 0) return Video3D::BlendSource::SourceAlpha;
-                    else if (_wcsicmp(blendSource, L"inverse_source_alpha") == 0) return Video3D::BlendSource::InverseSourceAlpha;
-                    else if (_wcsicmp(blendSource, L"source_alpha_saturate") == 0) return Video3D::BlendSource::SourceAlphaSaturated;
-                    else if (_wcsicmp(blendSource, L"destination_color") == 0) return Video3D::BlendSource::DestinationColor;
-                    else if (_wcsicmp(blendSource, L"inverse_destination_color") == 0) return Video3D::BlendSource::InverseDestinationColor;
-                    else if (_wcsicmp(blendSource, L"destination_alpha") == 0) return Video3D::BlendSource::DestinationAlpha;
-                    else if (_wcsicmp(blendSource, L"inverse_destination_alpha") == 0) return Video3D::BlendSource::InverseDestinationAlpha;
-                    else if (_wcsicmp(blendSource, L"secondary_source_color") == 0) return Video3D::BlendSource::SecondarySourceColor;
-                    else if (_wcsicmp(blendSource, L"inverse_secondary_source_color") == 0) return Video3D::BlendSource::InverseSecondarySourceColor;
-                    else if (_wcsicmp(blendSource, L"secondary_source_alpha") == 0) return Video3D::BlendSource::SecondarySourceAlpha;
-                    else if (_wcsicmp(blendSource, L"inverse_secondary_source_alpha") == 0) return Video3D::BlendSource::InverseSecondarySourceAlpha;
-                    else return Video3D::BlendSource::Zero;
+                    if (_wcsicmp(blendSource, L"zero") == 0) return Video::BlendSource::Zero;
+                    else if (_wcsicmp(blendSource, L"one") == 0) return Video::BlendSource::One;
+                    else if (_wcsicmp(blendSource, L"blend_factor") == 0) return Video::BlendSource::BlendFactor;
+                    else if (_wcsicmp(blendSource, L"inverse_blend_factor") == 0) return Video::BlendSource::InverseBlendFactor;
+                    else if (_wcsicmp(blendSource, L"source_color") == 0) return Video::BlendSource::SourceColor;
+                    else if (_wcsicmp(blendSource, L"inverse_source_color") == 0) return Video::BlendSource::InverseSourceColor;
+                    else if (_wcsicmp(blendSource, L"source_alpha") == 0) return Video::BlendSource::SourceAlpha;
+                    else if (_wcsicmp(blendSource, L"inverse_source_alpha") == 0) return Video::BlendSource::InverseSourceAlpha;
+                    else if (_wcsicmp(blendSource, L"source_alpha_saturate") == 0) return Video::BlendSource::SourceAlphaSaturated;
+                    else if (_wcsicmp(blendSource, L"destination_color") == 0) return Video::BlendSource::DestinationColor;
+                    else if (_wcsicmp(blendSource, L"inverse_destination_color") == 0) return Video::BlendSource::InverseDestinationColor;
+                    else if (_wcsicmp(blendSource, L"destination_alpha") == 0) return Video::BlendSource::DestinationAlpha;
+                    else if (_wcsicmp(blendSource, L"inverse_destination_alpha") == 0) return Video::BlendSource::InverseDestinationAlpha;
+                    else if (_wcsicmp(blendSource, L"secondary_source_color") == 0) return Video::BlendSource::SecondarySourceColor;
+                    else if (_wcsicmp(blendSource, L"inverse_secondary_source_color") == 0) return Video::BlendSource::InverseSecondarySourceColor;
+                    else if (_wcsicmp(blendSource, L"secondary_source_alpha") == 0) return Video::BlendSource::SecondarySourceAlpha;
+                    else if (_wcsicmp(blendSource, L"inverse_secondary_source_alpha") == 0) return Video::BlendSource::InverseSecondarySourceAlpha;
+                    else return Video::BlendSource::Zero;
                 }
 
-                static Video3D::BlendOperation getBlendOperation(LPCWSTR blendOperation)
+                static Video::BlendOperation getBlendOperation(LPCWSTR blendOperation)
                 {
-                    if (_wcsicmp(blendOperation, L"add") == 0) return Video3D::BlendOperation::Add;
-                    else if (_wcsicmp(blendOperation, L"subtract") == 0) return Video3D::BlendOperation::Subtract;
-                    else if (_wcsicmp(blendOperation, L"reverse_subtract") == 0) return Video3D::BlendOperation::ReverseSubtract;
-                    else if (_wcsicmp(blendOperation, L"minimum") == 0) return Video3D::BlendOperation::Minimum;
-                    else if (_wcsicmp(blendOperation, L"maximum") == 0) return Video3D::BlendOperation::Maximum;
-                    else return Video3D::BlendOperation::Add;
+                    if (_wcsicmp(blendOperation, L"add") == 0) return Video::BlendOperation::Add;
+                    else if (_wcsicmp(blendOperation, L"subtract") == 0) return Video::BlendOperation::Subtract;
+                    else if (_wcsicmp(blendOperation, L"reverse_subtract") == 0) return Video::BlendOperation::ReverseSubtract;
+                    else if (_wcsicmp(blendOperation, L"minimum") == 0) return Video::BlendOperation::Minimum;
+                    else if (_wcsicmp(blendOperation, L"maximum") == 0) return Video::BlendOperation::Maximum;
+                    else return Video::BlendOperation::Add;
                 }
 
                 class System : public Context::User::Mixin
@@ -196,7 +196,7 @@ namespace Gek
                     };
 
                 private:
-                    Video3D::Interface *video;
+                    Video::Interface *video;
                     Render::Interface *render;
                     UINT32 width;
                     UINT32 height;
@@ -204,10 +204,10 @@ namespace Gek
                     std::vector<Property> propertyList;
                     std::unordered_map<CStringW, CStringW> defineList;
                     CComPtr<IUnknown> depthBuffer;
-                    std::unordered_map<CStringW, CComPtr<Video3D::TextureInterface>> renderTargetMap;
-                    std::unordered_map<CStringW, CComPtr<Video3D::BufferInterface>> bufferMap;
+                    std::unordered_map<CStringW, CComPtr<Video::Texture::Interface>> renderTargetMap;
+                    std::unordered_map<CStringW, CComPtr<Video::Buffer::Interface>> bufferMap;
                     std::vector<Pass> passList;
-                    CComPtr<Video3D::BufferInterface> propertyConstantBuffer;
+                    CComPtr<Video::Buffer::Interface> propertyConstantBuffer;
 
                 private:
                     static MapType getMapType(LPCWSTR mapType)
@@ -270,7 +270,7 @@ namespace Gek
                         return L"float4";
                     }
 
-                    void loadStencilStates(Video3D::DepthStates::StencilStates &stencilStates, Gek::Xml::Node &xmlStencilNode)
+                    void loadStencilStates(Video::DepthStates::StencilStates &stencilStates, Gek::Xml::Node &xmlStencilNode)
                     {
                         stencilStates.passOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"pass").getText());
                         stencilStates.failOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"fail").getText());
@@ -278,14 +278,14 @@ namespace Gek
                         stencilStates.comparisonFunction = getComparisonFunction(xmlStencilNode.firstChildElement(L"comparison").getText());
                     }
 
-                    void loadBlendStates(Video3D::TargetBlendStates &blendStates, Gek::Xml::Node &xmlTargetNode)
+                    void loadBlendStates(Video::TargetBlendStates &blendStates, Gek::Xml::Node &xmlTargetNode)
                     {
                         blendStates.writeMask = 0;
                         CStringW writeMask(xmlTargetNode.firstChildElement(L"writemask").getText());
-                        if (writeMask.Find(L"r") >= 0) blendStates.writeMask |= Video3D::ColorMask::R;
-                        if (writeMask.Find(L"g") >= 0) blendStates.writeMask |= Video3D::ColorMask::G;
-                        if (writeMask.Find(L"b") >= 0) blendStates.writeMask |= Video3D::ColorMask::B;
-                        if (writeMask.Find(L"a") >= 0) blendStates.writeMask |= Video3D::ColorMask::A;
+                        if (writeMask.Find(L"r") >= 0) blendStates.writeMask |= Video::ColorMask::R;
+                        if (writeMask.Find(L"g") >= 0) blendStates.writeMask |= Video::ColorMask::G;
+                        if (writeMask.Find(L"b") >= 0) blendStates.writeMask |= Video::ColorMask::B;
+                        if (writeMask.Find(L"a") >= 0) blendStates.writeMask |= Video::ColorMask::A;
 
                         if (xmlTargetNode.hasChildElement(L"color"))
                         {
@@ -306,12 +306,12 @@ namespace Gek
 
                     HRESULT loadDepthStates(Pass &pass, Gek::Xml::Node &xmlDepthStatesNode)
                     {
-                        Video3D::DepthStates depthStates;
+                        Video::DepthStates depthStates;
                         depthStates.enable = true;
 
                         if (xmlDepthStatesNode.hasChildElement(L"clear"))
                         {
-                            pass.depthClearFlags |= Video3D::ClearMask::Depth;
+                            pass.depthClearFlags |= Video::ClearMask::Depth;
                             pass.depthClearValue = String::getFloat(xmlDepthStatesNode.firstChildElement(L"clear").getText());
                         }
 
@@ -325,7 +325,7 @@ namespace Gek
 
                             if (xmlStencilNode.hasChildElement(L"clear"))
                             {
-                                pass.depthClearFlags |= Video3D::ClearMask::Stencil;
+                                pass.depthClearFlags |= Video::ClearMask::Stencil;
                                 pass.stencilClearValue = String::getUINT32(xmlStencilNode.firstChildElement(L"clear").getText());
                             }
 
@@ -345,7 +345,7 @@ namespace Gek
 
                     HRESULT loadRenderStates(Pass &pass, Gek::Xml::Node &xmlRenderStatesNode)
                     {
-                        Video3D::RenderStates renderStates;
+                        Video::RenderStates renderStates;
                         renderStates.fillMode = getFillMode(xmlRenderStatesNode.firstChildElement(L"fillmode").getText());
                         renderStates.cullMode = getCullMode(xmlRenderStatesNode.firstChildElement(L"comparison").getText());
                         renderStates.frontCounterClockwise = String::getBoolean(xmlRenderStatesNode.firstChildElement(L"frontcounterclockwise").getText());
@@ -367,7 +367,7 @@ namespace Gek
                             if (xmlTargetNode.hasSiblingElement(L"target"))
                             {
                                 UINT32 targetIndex = 0;
-                                Video3D::IndependentBlendStates blendStates;
+                                Video::IndependentBlendStates blendStates;
                                 blendStates.alphaToCoverage = alphaToCoverage;
                                 while (xmlTargetNode)
                                 {
@@ -380,7 +380,7 @@ namespace Gek
                             }
                             else
                             {
-                                Video3D::UnifiedBlendStates blendStates;
+                                Video::UnifiedBlendStates blendStates;
                                 blendStates.enable = true;
                                 blendStates.alphaToCoverage = alphaToCoverage;
                                 loadBlendStates(blendStates, xmlTargetNode);
@@ -475,7 +475,7 @@ namespace Gek
                         REQUIRE_RETURN(fileName, E_INVALIDARG);
 
                         HRESULT resultValue = E_FAIL;
-                        CComQIPtr<Video3D::Interface> video(initializerContext);
+                        CComQIPtr<Video::Interface> video(initializerContext);
                         CComQIPtr<Render::Interface> render(initializerContext);
                         if (video && render)
                         {
@@ -556,7 +556,7 @@ namespace Gek
 
                                             if (propertyBufferSize > 0)
                                             {
-                                                resultValue = video->createBuffer(&propertyConstantBuffer, propertyBufferSize, 1, Video3D::BufferFlags::ConstantBuffer | Video3D::BufferFlags::Dynamic);
+                                                resultValue = video->createBuffer(&propertyConstantBuffer, propertyBufferSize, 1, Video::BufferFlags::ConstantBuffer | Video::BufferFlags::Dynamic);
                                             }
                                         }
                                     }
@@ -581,7 +581,7 @@ namespace Gek
                                     Gek::Xml::Node xmlDepthNode = xmlShaderNode.firstChildElement(L"depth");
                                     if (xmlDepthNode)
                                     {
-                                        Video3D::Format format = getFormat(xmlDepthNode.getText());
+                                        Video::Format format = getFormat(xmlDepthNode.getText());
                                         resultValue = render->createDepthTarget(&depthBuffer, width, height, format);
                                     }
 
@@ -592,7 +592,7 @@ namespace Gek
                                         while (xmlTargetNode)
                                         {
                                             CStringW name(xmlTargetNode.getType());
-                                            Video3D::Format format = getFormat(xmlTargetNode.getText());
+                                            Video::Format format = getFormat(xmlTargetNode.getText());
                                             BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
                                             resultValue = render->createRenderTarget(&renderTargetMap[name], width, height, format);
 
@@ -609,50 +609,50 @@ namespace Gek
                                         while (xmlBufferNode && xmlBufferNode.hasAttribute(L"size"))
                                         {
                                             CStringW name(xmlBufferNode.getType());
-                                            Video3D::Format format = getFormat(xmlBufferNode.getText());
+                                            Video::Format format = getFormat(xmlBufferNode.getText());
                                             UINT32 size = String::getUINT32(replaceDefines(xmlBufferNode.getAttribute(L"size")));
-                                            resultValue = render->createBuffer(&bufferMap[name], format, size, Video3D::BufferFlags::UnorderedAccess | Video3D::BufferFlags::Resource);
+                                            resultValue = render->createBuffer(&bufferMap[name], format, size, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                                             switch (format)
                                             {
-                                            case Video3D::Format::Byte:
-                                            case Video3D::Format::Short:
-                                            case Video3D::Format::Int:
+                                            case Video::Format::Byte:
+                                            case Video::Format::Short:
+                                            case Video::Format::Int:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int);
                                                 break;
 
-                                            case Video3D::Format::Byte2:
-                                            case Video3D::Format::Short2:
-                                            case Video3D::Format::Int2:
+                                            case Video::Format::Byte2:
+                                            case Video::Format::Short2:
+                                            case Video::Format::Int2:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int2);
                                                 break;
 
-                                            case Video3D::Format::Int3:
+                                            case Video::Format::Int3:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int3);
                                                 break;
 
-                                            case Video3D::Format::BGRA:
-                                            case Video3D::Format::Byte4:
-                                            case Video3D::Format::Short4:
-                                            case Video3D::Format::Int4:
+                                            case Video::Format::BGRA:
+                                            case Video::Format::Byte4:
+                                            case Video::Format::Short4:
+                                            case Video::Format::Int4:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int4);
                                                 break;
 
-                                            case Video3D::Format::Half:
-                                            case Video3D::Format::Float:
+                                            case Video::Format::Half:
+                                            case Video::Format::Float:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float);
                                                 break;
 
-                                            case Video3D::Format::Half2:
-                                            case Video3D::Format::Float2:
+                                            case Video::Format::Half2:
+                                            case Video::Format::Float2:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
                                                 break;
 
-                                            case Video3D::Format::Float3:
+                                            case Video::Format::Float3:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
                                                 break;
 
-                                            case Video3D::Format::Half4:
-                                            case Video3D::Format::Float4:
+                                            case Video::Format::Half4:
+                                            case Video::Format::Float4:
                                                 resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
                                                 break;
                                             };
@@ -932,7 +932,7 @@ namespace Gek
                         return resultValue;
                     }
 
-                    STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, std::vector<UINT32> &materialPropertyList)
+                    STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video::Texture::Interface>> &materialMapList, std::vector<UINT32> &materialPropertyList)
                     {
                         std::unordered_map<CStringW, CStringW> materialMapDefineList;
                         Gek::Xml::Node xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
@@ -958,7 +958,7 @@ namespace Gek
 
                         for (auto &mapValue : mapList)
                         {
-                            CComPtr<Video3D::TextureInterface> map;
+                            CComPtr<Video::Texture::Interface> map;
                             auto materialMapIterator = materialMapDefineList.find(mapValue.name);
                             if (materialMapIterator != materialMapDefineList.end())
                             {
@@ -1089,7 +1089,7 @@ namespace Gek
                         return S_OK;
                     }
 
-                    STDMETHODIMP_(void) setMaterialValues(Video3D::ContextInterface *context, LPCVOID passData, const std::vector<CComPtr<Video3D::TextureInterface>> &materialMapList, const std::vector<UINT32> &materialPropertyList)
+                    STDMETHODIMP_(void) setMaterialValues(Video::Context::Interface *context, LPCVOID passData, const std::vector<CComPtr<Video::Texture::Interface>> &materialMapList, const std::vector<UINT32> &materialPropertyList)
                     {
                         const Pass &pass = *(const Pass *)passData;
 
@@ -1106,8 +1106,8 @@ namespace Gek
                             firstStage = 1;
                         }
 
-                        Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.mode == PassMode::Compute ? context->getComputeSystem() : context->getPixelSystem());
-                        subSystem->setResourceList(resourceList, firstStage);
+                        Video::Context::System::Interface *system = (pass.mode == PassMode::Compute ? context->computeSystem() : context->pixelSystem());
+                        system->setResourceList(resourceList, firstStage);
 
                         LPVOID materialData = nullptr;
                         if (SUCCEEDED(video->mapBuffer(propertyConstantBuffer, &materialData)))
@@ -1117,7 +1117,7 @@ namespace Gek
                         }
                     }
 
-                    STDMETHODIMP_(void) draw(Video3D::ContextInterface *context,
+                    STDMETHODIMP_(void) draw(Video::Context::Interface *context,
                         std::function<void(LPCVOID passData, bool lighting)> drawForward, 
                         std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
                         std::function<void(LPCVOID passData, bool lighting)> drawCompute)
@@ -1134,18 +1134,18 @@ namespace Gek
                             }
                             else
                             {
-                                std::vector<Video3D::ViewPort> viewPortList;
-                                std::vector<Video3D::TextureInterface *> renderTargetList;
+                                std::vector<Video::ViewPort> viewPortList;
+                                std::vector<Video::Texture::Interface *> renderTargetList;
                                 for (auto &renderTargetName : pass.renderTargetList)
                                 {
-                                    Video3D::TextureInterface *renderTarget = nullptr;
+                                    Video::Texture::Interface *renderTarget = nullptr;
                                     auto renderTargetIterator = renderTargetMap.find(renderTargetName);
                                     if (renderTargetIterator != renderTargetMap.end())
                                     {
                                         renderTarget = (*renderTargetIterator).second;
                                     }
 
-                                    viewPortList.emplace_back(Video3D::ViewPort(Math::Float2(0.0f, 0.0f), Math::Float2(renderTarget->getWidth(), renderTarget->getHeight()), 0.0f, 1.0f));
+                                    viewPortList.emplace_back(Video::ViewPort(Math::Float2(0.0f, 0.0f), Math::Float2(renderTarget->getWidth(), renderTarget->getHeight()), 0.0f, 1.0f));
                                     renderTargetList.push_back(renderTarget);
                                 }
 
@@ -1172,7 +1172,7 @@ namespace Gek
                                 unorderedAccessList.push_back(findResource(unorderedAccessName));
                             }
 
-                            Video3D::ContextInterface::SubSystemInterface *subSystem = (pass.mode == PassMode::Compute ? context->getComputeSystem() : context->getPixelSystem());
+                            Video::Context::System::Interface *system = (pass.mode == PassMode::Compute ? context->computeSystem() : context->pixelSystem());
 
                             UINT32 firstStage = mapList.size();
                             if (pass.lighting)
@@ -1180,14 +1180,14 @@ namespace Gek
                                 firstStage = 1;
                             }
 
-                            subSystem->setResourceList(resourceList, firstStage);
-                            subSystem->setUnorderedAccessList(unorderedAccessList, 0);
-                            subSystem->setProgram(pass.program);
+                            system->setResourceList(resourceList, firstStage);
+                            system->setUnorderedAccessList(unorderedAccessList, 0);
+                            system->setProgram(pass.program);
 
                             switch (pass.mode)
                             {
                             case PassMode::Forward:
-                                subSystem->setConstantBuffer(propertyConstantBuffer, 1);
+                                system->setConstantBuffer(propertyConstantBuffer, 1);
                                 drawForward(&pass, pass.lighting);
                                 break;
 
@@ -1197,7 +1197,7 @@ namespace Gek
 
                             case PassMode::Compute:
                                 drawCompute(&pass, pass.lighting);
-                                video->getDefaultContext()->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
+                                video->getClass()->defaultContext()->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
                                 break;
                             };
 
