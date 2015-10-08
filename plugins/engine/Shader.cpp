@@ -1197,7 +1197,7 @@ namespace Gek
 
                             case PassMode::Compute:
                                 drawCompute(&pass, pass.lighting);
-                                video->getClass()->defaultContext()->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
+                                context->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
                                 break;
                             };
 

@@ -23,7 +23,7 @@ namespace Gek
 
         namespace Effect
         {
-            DECLARE_INTERFACE_IID(Interface, "19ED8F1F-D117-4D9A-9AC0-7DC229D478D6") : virtual public Sample::Interface
+            DECLARE_INTERFACE_IID(Interface, "19ED8F1F-D117-4D9A-9AC0-7DC229D478D6") : virtual public IUnknown
             {
                 STDMETHOD_(void, setPan)            (THIS_ float pan) PURE;
                 STDMETHOD_(void, play)              (THIS_ bool loop) PURE;
@@ -32,7 +32,7 @@ namespace Gek
 
         namespace Sound
         {
-            DECLARE_INTERFACE_IID(Interface, "7C3C561D-669B-4559-A1DD-6350AE7A14C0") : virtual public Sample::Interface
+            DECLARE_INTERFACE_IID(Interface, "7C3C561D-669B-4559-A1DD-6350AE7A14C0") : virtual public IUnknown
             {
                 STDMETHOD_(void, setDistance)       (THIS_ float minimum, float maximum) PURE;
                 STDMETHOD_(void, play)              (THIS_ const Gek::Math::Float3 &origin, bool loop) PURE;

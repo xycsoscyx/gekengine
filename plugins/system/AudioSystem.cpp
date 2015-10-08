@@ -18,7 +18,8 @@ namespace Gek
     {
         namespace Sample
         {
-            class Base
+            class Base : public Unknown::Mixin
+                , public Sample::Interface
             {
             protected:
                 CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSoundBuffer;
@@ -34,8 +35,12 @@ namespace Gek
                 {
                 }
 
+                BEGIN_INTERFACE_LIST(Base)
+                    INTERFACE_LIST_ENTRY_COM(Audio::Sample::Interface)
+                END_INTERFACE_LIST_UNKNOWN
+
                 // Sample::Interface
-                virtual STDMETHODIMP_(LPVOID) getBuffer(void)
+                STDMETHODIMP_(LPVOID) getBuffer(void)
                 {
                     REQUIRE_RETURN(directSoundBuffer, nullptr);
                     return LPVOID(directSoundBuffer);
@@ -64,9 +69,8 @@ namespace Gek
 
         namespace Effect
         {
-            class Class : public Unknown::Mixin
-                , virtual public Sample::Base
-                , virtual public Effect::Interface
+            class Class : public Sample::Base
+                , public Effect::Interface
             {
             public:
                 Class(IDirectSoundBuffer8 *directSoundBuffer)
@@ -76,7 +80,23 @@ namespace Gek
 
                 BEGIN_INTERFACE_LIST(Class)
                     INTERFACE_LIST_ENTRY_COM(Audio::Effect::Interface)
-                END_INTERFACE_LIST_UNKNOWN
+                END_INTERFACE_LIST_BASE(Sample::Base)
+
+                // Sample::Interface
+                STDMETHODIMP_(LPVOID) getBuffer(void)
+                {
+                    return Base::getBuffer();
+                }
+
+                STDMETHODIMP_(void) setFrequency(UINT32 frequency)
+                {
+                    Base::setFrequency(frequency);
+                }
+
+                STDMETHODIMP_(void) setVolume(float volume)
+                {
+                    Base::setVolume(volume);
+                }
 
                 // Effect::Interface
                 STDMETHODIMP_(void) setPan(float pan)
@@ -100,8 +120,7 @@ namespace Gek
 
         namespace Sound
         {
-            class Class : public Unknown::Mixin
-                , public Sample::Base
+            class Class: public Sample::Base
                 , public Sound::Interface
             {
             private:
@@ -116,7 +135,23 @@ namespace Gek
 
                 BEGIN_INTERFACE_LIST(Class)
                     INTERFACE_LIST_ENTRY_COM(Audio::Sound::Interface)
-                END_INTERFACE_LIST_UNKNOWN
+                END_INTERFACE_LIST_BASE(Sample::Base)
+
+                // Sample::Interface
+                STDMETHODIMP_(LPVOID) getBuffer(void)
+                {
+                    return Base::getBuffer();
+                }
+
+                STDMETHODIMP_(void) setFrequency(UINT32 frequency)
+                {
+                    Base::setFrequency(frequency);
+                }
+
+                STDMETHODIMP_(void) setVolume(float volume)
+                {
+                    Base::setVolume(volume);
+                }
 
                 // Sound::Interface
                 STDMETHODIMP_(void) setDistance(float minimum, float maximum)

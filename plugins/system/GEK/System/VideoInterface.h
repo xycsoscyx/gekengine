@@ -451,7 +451,7 @@ namespace Gek
             };
         };
 
-        DECLARE_INTERFACE_IID(Interface, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6") : virtual public Context::Interface
+        DECLARE_INTERFACE_IID(Interface, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6") : virtual public IUnknown
         {
             STDMETHOD(initialize)                               (THIS_ HWND window, bool windowed, UINT32 width, UINT32 height, Format depthBufferFormat = Format::Invalid) PURE;
             STDMETHOD(resize)                                   (THIS_ bool windowed, UINT32 width, UINT32 height, Format depthBufferFormat = Format::Invalid) PURE;

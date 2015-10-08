@@ -934,7 +934,7 @@ namespace Gek
                     INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DeviceContext, d3dDeviceContext)
                 END_INTERFACE_LIST_USER
 
-                // ContextInterface
+                // Context::Interface
                 STDMETHODIMP_(Video::Context::System::Interface *) computeSystem(void)
                 {
                     REQUIRE_RETURN(computeSystemHandler, nullptr);

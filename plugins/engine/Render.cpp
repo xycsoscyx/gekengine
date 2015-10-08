@@ -736,10 +736,12 @@ namespace Gek
                         cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
                         video->updateBuffer(this->cameraConstantBuffer, &cameraConstantData);
 
-                        video->defaultContext()->geometrySystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
-                        video->defaultContext()->vertexSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
-                        video->defaultContext()->pixelSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
-                        video->defaultContext()->computeSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
+                        Video::Context::Interface *defaultContext = dynamic_cast<Video::Context::Interface *>(video);
+
+                        defaultContext->geometrySystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
+                        defaultContext->vertexSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
+                        defaultContext->pixelSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
+                        defaultContext->computeSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
 
                         const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
@@ -800,46 +802,46 @@ namespace Gek
                             }
                         }
 
-                        video->defaultContext()->pixelSystem()->setSamplerStates(pointSamplerStates, 0);
-                        video->defaultContext()->pixelSystem()->setSamplerStates(linearSamplerStates, 1);
-                        video->defaultContext()->setPrimitiveType(Video::PrimitiveType::TriangleList);
+                        defaultContext->pixelSystem()->setSamplerStates(pointSamplerStates, 0);
+                        defaultContext->pixelSystem()->setSamplerStates(linearSamplerStates, 1);
+                        defaultContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
                         for (auto &shaderPair : sortedDrawQueue)
                         {
-                            shaderPair.first->draw(video->defaultContext(),
+                            shaderPair.first->draw(defaultContext,
                                 [&](LPCVOID passData, bool lighting) -> void // drawForward
                             {
                                 if (lighting)
                                 {
-                                    video->defaultContext()->pixelSystem()->setConstantBuffer(lightingConstantBuffer, 2);
-                                    video->defaultContext()->pixelSystem()->setResource(lightingBuffer, 0);
+                                    defaultContext->pixelSystem()->setConstantBuffer(lightingConstantBuffer, 2);
+                                    defaultContext->pixelSystem()->setResource(lightingBuffer, 0);
                                 }
 
                                 for (auto &pluginPair : shaderPair.second)
                                 {
-                                    pluginPair.first->enable(video->defaultContext());
+                                    pluginPair.first->enable(defaultContext);
                                     for (auto &materialPair : pluginPair.second)
                                     {
-                                        materialPair.first->enable(video->defaultContext(), passData);
+                                        materialPair.first->enable(defaultContext, passData);
                                         for (auto &drawCommand : (*materialPair.second))
                                         {
-                                            video->defaultContext()->setIndexBuffer(drawCommand.indexBuffer, 0);
-                                            video->defaultContext()->setVertexBufferList(0, drawCommand.vertexBufferList, drawCommand.offsetList);
+                                            defaultContext->setIndexBuffer(drawCommand.indexBuffer, 0);
+                                            defaultContext->setVertexBufferList(0, drawCommand.vertexBufferList, drawCommand.offsetList);
                                             switch (drawCommand.drawType)
                                             {
                                             case DrawType::DrawPrimitive:
-                                                video->defaultContext()->drawPrimitive(drawCommand.vertexCount, drawCommand.firstVertex);
+                                                defaultContext->drawPrimitive(drawCommand.vertexCount, drawCommand.firstVertex);
                                                 break;
 
                                             case DrawType::DrawIndexedPrimitive:
-                                                video->defaultContext()->drawIndexedPrimitive(drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                                defaultContext->drawIndexedPrimitive(drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
                                                 break;
 
                                             case DrawType::DrawInstancedPrimitive:
-                                                video->defaultContext()->drawInstancedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.vertexCount, drawCommand.firstVertex);
+                                                defaultContext->drawInstancedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.vertexCount, drawCommand.firstVertex);
                                                 break;
 
                                             case DrawType::DrawInstancedIndexedPrimitive:
-                                                video->defaultContext()->drawInstancedIndexedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                                defaultContext->drawInstancedIndexedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
                                                 break;
                                             };
                                         }
@@ -850,20 +852,20 @@ namespace Gek
                             {
                                 if (lighting)
                                 {
-                                    video->defaultContext()->pixelSystem()->setConstantBuffer(lightingConstantBuffer, 2);
-                                    video->defaultContext()->pixelSystem()->setResource(lightingBuffer, 0);
+                                    defaultContext->pixelSystem()->setConstantBuffer(lightingConstantBuffer, 2);
+                                    defaultContext->pixelSystem()->setResource(lightingBuffer, 0);
                                 }
 
-                                video->defaultContext()->setVertexBuffer(0, deferredVertexBuffer, 0);
-                                video->defaultContext()->vertexSystem()->setProgram(deferredVertexProgram);
-                                video->defaultContext()->drawPrimitive(6, 0);
+                                defaultContext->setVertexBuffer(0, deferredVertexBuffer, 0);
+                                defaultContext->vertexSystem()->setProgram(deferredVertexProgram);
+                                defaultContext->drawPrimitive(6, 0);
                             },
                                 [&](LPCVOID passData, bool lighting) -> void // drawCompute
                             {
                                 if (lighting)
                                 {
-                                    video->defaultContext()->computeSystem()->setConstantBuffer(lightingConstantBuffer, 2);
-                                    video->defaultContext()->computeSystem()->setResource(lightingBuffer, 0);
+                                    defaultContext->computeSystem()->setConstantBuffer(lightingConstantBuffer, 2);
+                                    defaultContext->computeSystem()->setResource(lightingBuffer, 0);
                                 }
                             });
                         }

@@ -108,8 +108,8 @@ namespace Gek
                 BEGIN_INTERFACE_LIST(System)
                     INTERFACE_LIST_ENTRY_COM(Engine::Core::Interface)
                     INTERFACE_LIST_ENTRY_COM(Engine::Render::Observer)
-                    INTERFACE_LIST_ENTRY_MEMBER_COM(Video2D::Interface, video)
                     INTERFACE_LIST_ENTRY_MEMBER_COM(Video::Interface, video)
+                    INTERFACE_LIST_ENTRY_MEMBER_COM(Video::Overlay::Interface, video)
                     INTERFACE_LIST_ENTRY_MEMBER_COM(Engine::Population::Interface, population)
                     INTERFACE_LIST_ENTRY_MEMBER_COM(Engine::Render::Interface, render)
                 END_INTERFACE_LIST_USER
@@ -181,45 +181,46 @@ namespace Gek
                         float height = float(video->getHeight());
                         float consoleHeight = (height * 0.5f);
 
-                        resultValue = video->video2D()->createBrush(&backgroundBrush, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 0.5f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 0.5f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                        Video::Overlay::Interface *overlay = dynamic_cast<Video::Overlay::Interface *>((IUnknown *)video);
+                        resultValue = overlay->createBrush(&backgroundBrush, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 0.5f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 0.5f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->video2D()->createBrush(&foregroundBrush, { { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 0.75f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 0.75f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                            resultValue = overlay->createBrush(&foregroundBrush, { { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 0.75f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 0.75f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
                         }
 
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->video2D()->createBrush(&textBrush, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+                            resultValue = overlay->createBrush(&textBrush, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
                         }
 
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->video2D()->createFont(&font, L"Tahoma", 400, Video2D::FontStyle::Normal, 15.0f);
+                            resultValue = overlay->createFont(&font, L"Tahoma", 400, Video::Overlay::FontStyle::Normal, 15.0f);
                         }
 
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->video2D()->loadBitmap(&bitmap, L"%root%\\data\\console.bmp");
+                            resultValue = overlay->loadBitmap(&bitmap, L"%root%\\data\\console.bmp");
                         }
 
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->video2D()->createBrush(&logTypeBrushList[0], Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+                            resultValue = overlay->createBrush(&logTypeBrushList[0], Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
                         }
 
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->video2D()->createBrush(&logTypeBrushList[1], Math::Float4(1.0f, 1.0f, 0.0f, 1.0f));
+                            resultValue = overlay->createBrush(&logTypeBrushList[1], Math::Float4(1.0f, 1.0f, 0.0f, 1.0f));
                         }
                         
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->video2D()->createBrush(&logTypeBrushList[2], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                            resultValue = overlay->createBrush(&logTypeBrushList[2], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
                         }
                         
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->video2D()->createBrush(&logTypeBrushList[3], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                            resultValue = overlay->createBrush(&logTypeBrushList[3], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
                         }
                     }
 
@@ -464,35 +465,37 @@ namespace Gek
                 {
                     if (consolePosition > 0.0f)
                     {
-                        video->video2D()->beginDraw();
+                        Video::Overlay::Interface *overlay = dynamic_cast<Video::Overlay::Interface *>((IUnknown *)video);
+
+                        overlay->beginDraw();
 
                         float width = float(video->getWidth());
                         float height = float(video->getHeight());
                         float consoleHeight = (height * 0.5f);
 
-                        video->video2D()->setTransform(Math::Float3x2());
+                        overlay->setTransform(Math::Float3x2());
 
                         float nTop = -((1.0f - consolePosition) * consoleHeight);
 
                         Math::Float3x2 transformMatrix;
                         transformMatrix.translation = Math::Float2(0.0f, nTop);
-                        video->video2D()->setTransform(transformMatrix);
+                        overlay->setTransform(transformMatrix);
 
-                        video->video2D()->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrush, true);
-                        video->video2D()->drawBitmap(bitmap, { 0.0f, 0.0f, width, consoleHeight }, Video2D::InterpolationMode::Linear, 1.0f);
-                        video->video2D()->drawRectangle({ 10.0f, 10.0f, (width - 10.0f), (consoleHeight - 40.0f) }, foregroundBrush, true);
-                        video->video2D()->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrush, true);
-                        video->video2D()->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, font, textBrush, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
+                        overlay->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrush, true);
+                        overlay->drawBitmap(bitmap, { 0.0f, 0.0f, width, consoleHeight }, Video::Overlay::InterpolationMode::Linear, 1.0f);
+                        overlay->drawRectangle({ 10.0f, 10.0f, (width - 10.0f), (consoleHeight - 40.0f) }, foregroundBrush, true);
+                        overlay->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrush, true);
+                        overlay->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, font, textBrush, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
 
                         float nPosition = (consoleHeight - 40.0f);
                         /*
                         for (auto &kMessage : m_aConsoleLog)
                         {
-                        video->video2D()->drawText({ 15.0f, (nPosition - 20.0f), (width - 15.0f), nPosition }, font, logTypeBrushList[kMessage.first], kMessage.second);
+                        overlay->drawText({ 15.0f, (nPosition - 20.0f), (width - 15.0f), nPosition }, font, logTypeBrushList[kMessage.first], kMessage.second);
                         nPosition -= 20.0f;
                         }
                         */
-                        video->video2D()->endDraw();
+                        overlay->endDraw();
                     }
                 }
             };
