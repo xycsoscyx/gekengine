@@ -36,8 +36,8 @@ namespace Gek
             : position(position)
             , normal(position.getNormal())
         {
-            texCoord.u = std::acos(position.x / position.getLength());
-            texCoord.v = std::atan(position.y / position.z);
+            texCoord.u = std::acos(position.y / position.getLength());
+            texCoord.v = std::atan(position.x / position.z);
         }
     };
 

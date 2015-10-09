@@ -178,7 +178,7 @@ namespace Gek
                     strafeSpeed -= actionMap[L"strafe_right"];
 
                     jumpSpeed += actionMap[L"rise"];
-                    //jumpSpeed -= actionMap[L"fall"];
+                    jumpSpeed -= actionMap[L"fall"];
                 };
 
                 checkActions(singleActionList);

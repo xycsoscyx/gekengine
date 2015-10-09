@@ -9,13 +9,8 @@ bool getBRDF(in float3 albedoTerm, in float3 pixelNormal, in float3 lightNormal,
 {
     float angleCenterLight = saturate(dot(pixelNormal, lightNormal));
 
-    [branch]
-    if (angleCenterLight <= 0.0f)
-    {
-        return false;
-    }
-
-    float materialRoughness = (pixelInfo.x * pixelInfo.x * 4);
+    float materialRoughness = ((pixelInfo.x * 0.9) + 0.1);
+    materialRoughness = (materialRoughness * materialRoughness * 2);
     float materialRoughnessSquared = (materialRoughness * materialRoughness);
     float materialSpecular = pixelInfo.y;
     float materialMetalness = pixelInfo.z;
