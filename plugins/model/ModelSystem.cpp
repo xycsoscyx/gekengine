@@ -26,6 +26,21 @@
 
 namespace Gek
 {
+    struct Vertex
+    {
+        Math::Float3 position;
+        Math::Float2 texCoord;
+        Math::Float3 normal;
+
+        Vertex(const Math::Float3 &position)
+            : position(position)
+            , normal(position.getNormal())
+        {
+            texCoord.u = std::acos(position.x / position.getLength());
+            texCoord.v = std::atan(position.y / position.z);
+        }
+    };
+
     class GeoSphere
     {
     private:
@@ -65,7 +80,7 @@ namespace Gek
             }
         };
 
-        std::vector <Math::Float3> vertices;
+        std::vector <Vertex> vertices;
         std::vector <Edge> edges;
         std::vector <Edge> newEdges;
         std::vector <Triangle> triangles;
@@ -82,7 +97,7 @@ namespace Gek
             }
 
             e.splitVertex = vertices.size();
-            vertices.push_back((Math::Float3(0.5f) * (vertices[e.vertices[0]] + vertices[e.vertices[1]])).getNormal());
+            vertices.push_back(Vertex((Math::Float3(0.5f) * (vertices[e.vertices[0]].position + vertices[e.vertices[1]].position)).getNormal()));
             e.splitEdges = { newEdges.size(), newEdges.size() + 1 };
             newEdges.push_back(Edge(e.vertices[0], e.splitVertex));
             newEdges.push_back(Edge(e.splitVertex, e.vertices[1]));
@@ -160,7 +175,7 @@ namespace Gek
             // multiply, so we return the reciprocal.
             // 1/3 times the sum of the three vertices
             static const Math::Float3 oneThird(1.0f / 3.0f);
-            Math::Float3 centroid = oneThird * (vertices[triangles[0].vertices[0]] + vertices[triangles[0].vertices[1]] + vertices[triangles[0].vertices[2]]);
+            Math::Float3 centroid = oneThird * (vertices[triangles[0].vertices[0]].position + vertices[triangles[0].vertices[1]].position + vertices[triangles[0].vertices[2]].position);
             return 1.0f / centroid.getLength();
         }
 
@@ -173,20 +188,20 @@ namespace Gek
         {
             static const float PHI = 1.618033988749894848204586834365638f;
 
-            static const Math::Float3 initialVertices[] =
+            static const Vertex initialVertices[] =
             {
-                Math::Float3(-1.0f,  0.0f,   PHI).getNormal(),  // 0
-                Math::Float3( 1.0f,  0.0f,   PHI).getNormal(),  // 1
-                Math::Float3( 0.0f,   PHI,  1.0f).getNormal(),  // 2
-                Math::Float3( -PHI,  1.0f,  0.0f).getNormal(),  // 3
-                Math::Float3( -PHI, -1.0f,  0.0f).getNormal(),  // 4
-                Math::Float3( 0.0f,  -PHI,  1.0f).getNormal(),  // 5
-                Math::Float3(  PHI, -1.0f,  0.0f).getNormal(),  // 6
-                Math::Float3(  PHI,  1.0f,  0.0f).getNormal(),  // 7
-                Math::Float3( 0.0f,   PHI, -1.0f).getNormal(),  // 8
-                Math::Float3(-1.0f,  0.0f,  -PHI).getNormal(),  // 9
-                Math::Float3( 0.0f,  -PHI, -1.0f).getNormal(),  // 10
-                Math::Float3( 1.0f,  0.0f,  -PHI).getNormal(),  // 11
+                Vertex(Math::Float3(-1.0f,  0.0f,   PHI).getNormal()),  // 0
+                Vertex(Math::Float3( 1.0f,  0.0f,   PHI).getNormal()),  // 1
+                Vertex(Math::Float3( 0.0f,   PHI,  1.0f).getNormal()),  // 2
+                Vertex(Math::Float3( -PHI,  1.0f,  0.0f).getNormal()),  // 3
+                Vertex(Math::Float3( -PHI, -1.0f,  0.0f).getNormal()),  // 4
+                Vertex(Math::Float3( 0.0f,  -PHI,  1.0f).getNormal()),  // 5
+                Vertex(Math::Float3(  PHI, -1.0f,  0.0f).getNormal()),  // 6
+                Vertex(Math::Float3(  PHI,  1.0f,  0.0f).getNormal()),  // 7
+                Vertex(Math::Float3( 0.0f,   PHI, -1.0f).getNormal()),  // 8
+                Vertex(Math::Float3(-1.0f,  0.0f,  -PHI).getNormal()),  // 9
+                Vertex(Math::Float3( 0.0f,  -PHI, -1.0f).getNormal()),  // 10
+                Vertex(Math::Float3( 1.0f,  0.0f,  -PHI).getNormal()),  // 11
             };
 
             static const Edge initialEdges[] =
@@ -298,7 +313,7 @@ namespace Gek
             triangles.shrink_to_fit();
         }
 
-        const std::vector <Math::Float3> & getVertices() const
+        const std::vector <Vertex> & getVertices() const
         {
             return vertices;
         }
@@ -325,13 +340,6 @@ namespace Gek
             , public Engine::System::Interface
         {
         public:
-            struct Vertex
-            {
-                Math::Float3 position;
-                Math::Float2 texCoord;
-                Math::Float3 normal;
-            };
-
             struct MaterialInfo
             {
                 CComPtr<IUnknown> material;
