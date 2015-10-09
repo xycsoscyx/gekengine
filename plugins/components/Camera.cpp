@@ -22,19 +22,19 @@ namespace Gek
 
                 HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
-                    componentParameterList[L"field_of_view"] = String::setFloat(fieldOfView);
-                    componentParameterList[L"minimum_distance"] = String::setFloat(minimumDistance);
-                    componentParameterList[L"maximum_distance"] = String::setFloat(maximumDistance);
-                    componentParameterList[L"viewport"] = String::setFloat4(viewPort);
+                    componentParameterList[L"field_of_view"] = String::from(fieldOfView);
+                    componentParameterList[L"minimum_distance"] = String::from(minimumDistance);
+                    componentParameterList[L"maximum_distance"] = String::from(maximumDistance);
+                    componentParameterList[L"viewport"] = String::from(viewPort);
                     return S_OK;
                 }
 
                 HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
-                    setParameter(componentParameterList, L"field_of_view", fieldOfView, String::getFloat);
-                    setParameter(componentParameterList, L"minimum_distance", minimumDistance, String::getFloat);
-                    setParameter(componentParameterList, L"maximum_distance", maximumDistance, String::getFloat);
-                    setParameter(componentParameterList, L"viewport", viewPort, String::getFloat4);
+                    setParameter(componentParameterList, L"field_of_view", fieldOfView, String::toFloat);
+                    setParameter(componentParameterList, L"minimum_distance", minimumDistance, String::toFloat);
+                    setParameter(componentParameterList, L"maximum_distance", maximumDistance, String::toFloat);
+                    setParameter(componentParameterList, L"viewport", viewPort, String::toFloat4);
                     return S_OK;
                 }
 

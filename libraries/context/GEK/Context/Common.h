@@ -2,6 +2,7 @@
 
 #include "GEK\Context\Interface.h"
 #include "GEK\Context\UserInterface.h"
+#include "GEK\Utility\String.h"
 #include <assert.h>
 #include <Windows.h>
 #include <atlbase.h>
@@ -17,26 +18,91 @@
 
 namespace Gek
 {
+    class Exception
+    {
+    private:
+        LPCSTR file;
+        LPCSTR function;
+        UINT32 line;
+        CStringW error;
+
+    public:
+        Exception(LPCSTR file, LPCSTR function, UINT32 line, LPCWSTR format, ...)
+            : file(file)
+            , function(function)
+            , line(line)
+        {
+            if (format)
+            {
+                va_list variableList;
+                va_start(variableList, format);
+                error.FormatV(format, variableList);
+                va_end(variableList);
+            }
+        }
+
+        LPCSTR getFile(void)
+        {
+            return file;
+        }
+
+        LPCSTR getFunction(void)
+        {
+            return function;
+        }
+
+        UINT32 getLine(void)
+        {
+            return line;
+        }
+
+        LPCWSTR getError(void)
+        {
+            return error.GetString();
+        }
+    };
+
     class LoggingScope
     {
     private:
         Context::Interface *context;
         LPCSTR file;
-        LPCSTR function;
         UINT32 line;
+        CStringW call;
 
     public:
-        LoggingScope(Context::Interface *context, LPCSTR file, LPCSTR function, UINT32 line);
+        LoggingScope(Context::Interface *context, LPCSTR file, UINT32 line, const CStringW &call);
         ~LoggingScope(void);
     };
+
+    CStringW inline compileParameters(void)
+    {
+        return L"";
+    }
+
+    template<typename VALUE>
+    CStringW compileParameters(VALUE& value)
+    {
+        return String::from(value);
+    }
+
+    template<typename VALUE, typename... Args>
+    CStringW compileParameters(VALUE& value, Args&... args)
+    {
+        return String::from(value) + L", " + compileParameters(args...);
+    }
+
+    template<typename... ARGS>
+    CStringW compileFunction(LPCSTR function, ARGS... args)
+    {
+        return String::format(L"%S(%s)", function, compileParameters(args...).GetString());
+    }
 };
 
-extern HRESULT gekCheckResultInternal(Gek::Context::Interface *, LPCSTR, UINT, LPCSTR, HRESULT);
-#define gekLogScope(FUNCTION)                           Gek::LoggingScope scope##FUNCTION##(getContext(), __FILE__, FUNCTION, __LINE__);
-#define gekLogParameter(FORMAT, PARAMETER)              getContext()->logMessage(__FILE__, __LINE__, L"[input] %S: " FORMAT, #PARAMETER, PARAMETER)
-#define gekLogTypedParameter(FORMAT, PARAMETER, TYPE)   getContext()->logMessage(__FILE__, __LINE__, L"[input] %S: " FORMAT, #PARAMETER, TYPE(PARAMETER))
-#define gekLogMessage(FORMAT, ...)                      getContext()->logMessage(__FILE__, __LINE__, FORMAT, __VA_ARGS__)
-#define gekCheckResult(FUNCTION)                        gekCheckResultInternal(getContext(), __FILE__, __LINE__, #FUNCTION, FUNCTION)
+#define gekLogScope(...)                            Gek::LoggingScope functionScope(getContext(), __FILE__, __LINE__, Gek::compileFunction(__FUNCTION__, __VA_ARGS__));
+#define gekLogMessage(FORMAT, ...)                  getContext()->logMessage(__FILE__, __LINE__, 0, FORMAT, __VA_ARGS__)
+#define gekCheckResult(FUNCTION)                    (FUNCTION)
+#define gekException(FORMAT, ...)                   Gek::Exception(__FILE__, __FUNCTION__, __LINE__, FORMAT, __VA_ARGS__)
 
 namespace std
 {

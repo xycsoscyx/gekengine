@@ -312,7 +312,7 @@ namespace Gek
                         if (xmlDepthStatesNode.hasChildElement(L"clear"))
                         {
                             pass.depthClearFlags |= Video::ClearMask::Depth;
-                            pass.depthClearValue = String::getFloat(xmlDepthStatesNode.firstChildElement(L"clear").getText());
+                            pass.depthClearValue = String::toFloat(xmlDepthStatesNode.firstChildElement(L"clear").getText());
                         }
 
                         depthStates.comparisonFunction = getComparisonFunction(xmlDepthStatesNode.firstChildElement(L"comparison").getText());
@@ -326,7 +326,7 @@ namespace Gek
                             if (xmlStencilNode.hasChildElement(L"clear"))
                             {
                                 pass.depthClearFlags |= Video::ClearMask::Stencil;
-                                pass.stencilClearValue = String::getUINT32(xmlStencilNode.firstChildElement(L"clear").getText());
+                                pass.stencilClearValue = String::toUINT32(xmlStencilNode.firstChildElement(L"clear").getText());
                             }
 
                             if (xmlStencilNode.hasChildElement(L"front"))
@@ -348,12 +348,12 @@ namespace Gek
                         Video::RenderStates renderStates;
                         renderStates.fillMode = getFillMode(xmlRenderStatesNode.firstChildElement(L"fillmode").getText());
                         renderStates.cullMode = getCullMode(xmlRenderStatesNode.firstChildElement(L"comparison").getText());
-                        renderStates.frontCounterClockwise = String::getBoolean(xmlRenderStatesNode.firstChildElement(L"frontcounterclockwise").getText());
-                        renderStates.depthBias = String::getUINT32(xmlRenderStatesNode.firstChildElement(L"depthbias").getText());
-                        renderStates.depthBiasClamp = String::getFloat(xmlRenderStatesNode.firstChildElement(L"depthbiasclamp").getText());
-                        renderStates.slopeScaledDepthBias = String::getFloat(xmlRenderStatesNode.firstChildElement(L"slopescaleddepthbias").getText());
-                        renderStates.depthClipEnable = String::getBoolean(xmlRenderStatesNode.firstChildElement(L"depthclip").getText());
-                        renderStates.multisampleEnable = String::getBoolean(xmlRenderStatesNode.firstChildElement(L"multisample").getText());
+                        renderStates.frontCounterClockwise = String::toBoolean(xmlRenderStatesNode.firstChildElement(L"frontcounterclockwise").getText());
+                        renderStates.depthBias = String::toUINT32(xmlRenderStatesNode.firstChildElement(L"depthbias").getText());
+                        renderStates.depthBiasClamp = String::toFloat(xmlRenderStatesNode.firstChildElement(L"depthbiasclamp").getText());
+                        renderStates.slopeScaledDepthBias = String::toFloat(xmlRenderStatesNode.firstChildElement(L"slopescaleddepthbias").getText());
+                        renderStates.depthClipEnable = String::toBoolean(xmlRenderStatesNode.firstChildElement(L"depthclip").getText());
+                        renderStates.multisampleEnable = String::toBoolean(xmlRenderStatesNode.firstChildElement(L"multisample").getText());
                         return render->createRenderStates(&pass.renderStates, renderStates);
                     }
 
@@ -361,7 +361,7 @@ namespace Gek
                     {
                         if (xmlBlendStatesNode.hasChildElement(L"target"))
                         {
-                            bool alphaToCoverage = String::getBoolean(xmlBlendStatesNode.firstChildElement(L"alphatocoverage").getText());
+                            bool alphaToCoverage = String::toBoolean(xmlBlendStatesNode.firstChildElement(L"alphatocoverage").getText());
 
                             Gek::Xml::Node xmlTargetNode = xmlBlendStatesNode.firstChildElement(L"target");
                             if (xmlTargetNode.hasSiblingElement(L"target"))
@@ -468,8 +468,7 @@ namespace Gek
                     // Shader::Interface
                     STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
                     {
-                        gekLogScope(__FUNCTION__);
-                        gekLogParameter("%s", fileName);
+                        gekLogScope(fileName);
 
                         REQUIRE_RETURN(initializerContext, E_INVALIDARG);
                         REQUIRE_RETURN(fileName, E_INVALIDARG);
@@ -498,12 +497,12 @@ namespace Gek
                                 {
                                     if (xmlShaderNode.hasAttribute(L"width"))
                                     {
-                                        width = String::getUINT32(xmlShaderNode.getAttribute(L"width"));
+                                        width = String::toUINT32(xmlShaderNode.getAttribute(L"width"));
                                     }
 
                                     if (xmlShaderNode.hasAttribute(L"height"))
                                     {
-                                        height = String::getUINT32(xmlShaderNode.getAttribute(L"height"));
+                                        height = String::toUINT32(xmlShaderNode.getAttribute(L"height"));
                                     }
 
                                     std::unordered_map<CStringW, std::pair<MapType, BindType>> resourceList;
@@ -572,7 +571,7 @@ namespace Gek
                                             CStringW value(xmlDefineNode.getText());
                                             defineList[name] = value;
 
-                                            globalDefines[LPCSTR(CW2A(name))].Format("%f", String::getFloat(replaceDefines(value)));
+                                            globalDefines[LPCSTR(CW2A(name))].Format("%f", String::toFloat(replaceDefines(value)));
 
                                             xmlDefineNode = xmlDefineNode.nextSiblingElement();
                                         };
@@ -610,7 +609,7 @@ namespace Gek
                                         {
                                             CStringW name(xmlBufferNode.getType());
                                             Video::Format format = getFormat(xmlBufferNode.getText());
-                                            UINT32 size = String::getUINT32(replaceDefines(xmlBufferNode.getAttribute(L"size")));
+                                            UINT32 size = String::toUINT32(replaceDefines(xmlBufferNode.getAttribute(L"size")));
                                             resultValue = render->createBuffer(&bufferMap[name], format, size, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                                             switch (format)
                                             {
@@ -694,7 +693,7 @@ namespace Gek
                                             }
                                         }
 
-                                        pass.lighting = String::getBoolean(xmlPassNode.getAttribute(L"lighting"));
+                                        pass.lighting = String::toBoolean(xmlPassNode.getAttribute(L"lighting"));
 
                                         pass.renderTargetList = loadChildList(xmlPassNode, L"targets");
                                         if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"depthstates"))
@@ -866,9 +865,9 @@ namespace Gek
                                                 Gek::Xml::Node xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
                                                 if (xmlComputeNode)
                                                 {
-                                                    pass.dispatchWidth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
-                                                    pass.dispatchHeight = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
-                                                    pass.dispatchDepth = std::max(String::getUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
+                                                    pass.dispatchWidth = std::max(String::toUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
+                                                    pass.dispatchHeight = std::max(String::toUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
+                                                    pass.dispatchDepth = std::max(String::toUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
                                                 }
 
                                                 if (pass.mode == PassMode::Compute)
@@ -1002,7 +1001,7 @@ namespace Gek
                             case BindType::Float:
                                 if (true)
                                 {
-                                    float value = String::getFloat(property);
+                                    float value = String::toFloat(property);
                                     materialPropertyList.push_back(*(UINT32 *)&value);
                                 }
 
@@ -1012,7 +1011,7 @@ namespace Gek
                             case BindType::Float2:
                                 if (true)
                                 {
-                                    Math::Float2 value = String::getFloat2(property);
+                                    Math::Float2 value = String::toFloat2(property);
                                     materialPropertyList.push_back(*(UINT32 *)&value.x);
                                     materialPropertyList.push_back(*(UINT32 *)&value.y);
                                 }
@@ -1022,7 +1021,7 @@ namespace Gek
                             case BindType::Float3:
                                 if (true)
                                 {
-                                    Math::Float3 value = String::getFloat3(property);
+                                    Math::Float3 value = String::toFloat3(property);
                                     materialPropertyList.push_back(*(UINT32 *)&value.x);
                                     materialPropertyList.push_back(*(UINT32 *)&value.y);
                                     materialPropertyList.push_back(*(UINT32 *)&value.z);
@@ -1034,7 +1033,7 @@ namespace Gek
                             case BindType::Float4:
                                 if (true)
                                 {
-                                    Math::Float4 value = String::getFloat4(property);
+                                    Math::Float4 value = String::toFloat4(property);
                                     materialPropertyList.push_back(*(UINT32 *)&value.x);
                                     materialPropertyList.push_back(*(UINT32 *)&value.y);
                                     materialPropertyList.push_back(*(UINT32 *)&value.z);
@@ -1044,13 +1043,13 @@ namespace Gek
                                 break;
 
                             case BindType::Int:
-                                materialPropertyList.push_back(String::getUINT32(property));
+                                materialPropertyList.push_back(String::toUINT32(property));
                                 break;
 
                             case BindType::Int2:
                                 if (true)
                                 {
-                                    Math::Float2 value = String::getFloat2(property);
+                                    Math::Float2 value = String::toFloat2(property);
                                     materialPropertyList.push_back(UINT32(value.x));
                                     materialPropertyList.push_back(UINT32(value.y));
                                 }
@@ -1060,7 +1059,7 @@ namespace Gek
                             case BindType::Int3:
                                 if (true)
                                 {
-                                    Math::Float3 value = String::getFloat3(property);
+                                    Math::Float3 value = String::toFloat3(property);
                                     materialPropertyList.push_back(UINT32(value.x));
                                     materialPropertyList.push_back(UINT32(value.y));
                                     materialPropertyList.push_back(UINT32(value.z));
@@ -1071,7 +1070,7 @@ namespace Gek
                             case BindType::Int4:
                                 if (true)
                                 {
-                                    Math::Float4 value = String::getFloat4(property);
+                                    Math::Float4 value = String::toFloat4(property);
                                     materialPropertyList.push_back(UINT32(value.x));
                                     materialPropertyList.push_back(UINT32(value.y));
                                     materialPropertyList.push_back(UINT32(value.z));
@@ -1081,7 +1080,7 @@ namespace Gek
                                 break;
 
                             case BindType::Boolean:
-                                materialPropertyList.push_back(String::getBoolean(property));
+                                materialPropertyList.push_back(String::toBoolean(property));
                                 break;
                             };
                         }

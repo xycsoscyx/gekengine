@@ -18,13 +18,13 @@ namespace Gek
 
                 HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
-                    componentParameterList[L""] = String::setFloat4(value);
+                    componentParameterList[L""] = String::from(value);
                     return S_OK;
                 }
 
                 HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
-                    setParameter(componentParameterList, L"", value, String::getFloat4);
+                    setParameter(componentParameterList, L"", value, String::toFloat4);
                     return S_OK;
                 }
 

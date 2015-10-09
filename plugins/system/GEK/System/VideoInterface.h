@@ -427,7 +427,7 @@ namespace Gek
                 STDMETHOD_(void, setScissorRect)                    (THIS_ const std::vector<Shape::Rectangle<UINT32>> &rectangleList) PURE;
 
                 STDMETHOD_(void, clearRenderTarget)                 (THIS_ Texture::Interface *renderTarget, const Math::Float4 &colorClear) PURE;
-                STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ IUnknown *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear) PURE;
+                STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ IUnknown *depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
                 STDMETHOD_(void, setRenderTargets)                  (THIS_ const std::vector<Texture::Interface *> &renderTargetList, IUnknown *depthBuffer) PURE;
 
                 STDMETHOD_(void, setRenderStates)                   (THIS_ IUnknown *renderStates) PURE;
@@ -475,8 +475,8 @@ namespace Gek
             STDMETHOD(createRenderTarget)                       (THIS_ Texture::Interface **returnObject, UINT32 width, UINT32 height, Format format) PURE;
             STDMETHOD(createDepthTarget)                        (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Format format) PURE;
 
-            STDMETHOD(createBuffer)                             (THIS_ Buffer::Interface **returnObject, UINT32 stride, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
-            STDMETHOD(createBuffer)                             (THIS_ Buffer::Interface **returnObject, Format format, UINT32 count, UINT32 flags, LPCVOID staticData = nullptr) PURE;
+            STDMETHOD(createBuffer)                             (THIS_ Buffer::Interface **returnObject, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
+            STDMETHOD(createBuffer)                             (THIS_ Buffer::Interface **returnObject, Format format, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
             STDMETHOD_(void, updateBuffer)                      (THIS_ Buffer::Interface *buffer, LPCVOID data) PURE;
             STDMETHOD(mapBuffer)                                (THIS_ Buffer::Interface *buffer, LPVOID *data) PURE;
             STDMETHOD_(void, unmapBuffer)                       (THIS_ Buffer::Interface *buffer) PURE;
@@ -491,12 +491,12 @@ namespace Gek
             STDMETHOD(loadGeometryProgram)                      (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
             STDMETHOD(loadPixelProgram)                         (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-            STDMETHOD(createTexture)                            (THIS_ Texture::Interface **returnObject, UINT32 width, UINT32 height, UINT32 depth, Format format, UINT32 flags) PURE;
-            STDMETHOD(loadTexture)                              (THIS_ Texture::Interface **returnObject, LPCWSTR fileName, UINT32 flags) PURE;
+            STDMETHOD(createTexture)                            (THIS_ Texture::Interface **returnObject, UINT32 width, UINT32 height, UINT32 depth, Format format, DWORD flags) PURE;
+            STDMETHOD(loadTexture)                              (THIS_ Texture::Interface **returnObject, LPCWSTR fileName, DWORD flags) PURE;
             STDMETHOD_(void, updateTexture)                     (THIS_ Texture::Interface *texture, LPCVOID data, UINT32 pitch, Shape::Rectangle<UINT32> *rectangle = nullptr) PURE;
 
             STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Float4 &colorClear) PURE;
-            STDMETHOD_(void, clearDefaultDepthStencilTarget)    (THIS_ UINT32 flags, float depthClear, UINT32 stencilClear) PURE;
+            STDMETHOD_(void, clearDefaultDepthStencilTarget)    (THIS_ DWORD flags, float depthClear, UINT32 stencilClear) PURE;
             STDMETHOD_(void, setDefaultTargets)                 (THIS_ Context::Interface *context = nullptr, IUnknown *depthBuffer = nullptr) PURE;
 
             STDMETHOD_(void, executeCommandList)                (THIS_ IUnknown *commandList) PURE;

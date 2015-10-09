@@ -17,15 +17,15 @@ namespace Gek
 
                 HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
-                    componentParameterList[L"position"] = String::setFloat3(position);
-                    componentParameterList[L"rotation"] = String::setQuaternion(rotation);
+                    componentParameterList[L"position"] = String::from(position);
+                    componentParameterList[L"rotation"] = String::from(rotation);
                     return S_OK;
                 }
 
                 HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
-                    setParameter(componentParameterList, L"position", position, String::getFloat3);
-                    setParameter(componentParameterList, L"rotation", rotation, String::getQuaternion);
+                    setParameter(componentParameterList, L"position", position, String::toFloat3);
+                    setParameter(componentParameterList, L"rotation", rotation, String::toQuaternion);
                     return S_OK;
                 }
 

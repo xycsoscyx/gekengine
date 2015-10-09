@@ -13,33 +13,20 @@
 
 namespace Gek
 {
-    LoggingScope::LoggingScope(Context::Interface *context, LPCSTR file, LPCSTR function, UINT32 line)
+    LoggingScope::LoggingScope(Context::Interface *context, LPCSTR file, UINT32 line, const CStringW &call)
         : context(context)
         , file(file)
-        , function(function)
         , line(line)
+        , call(call)
     {
-        context->logMessage(file, line, L"[entering] %S...", function);
-        context->logEnterScope();
+        context->logMessage(file, line, 1, L"[entering] %s", call.GetString());
     }
 
     LoggingScope::~LoggingScope(void)
     {
-        context->logExitScope();
-        context->logMessage(file, line, L"[leaving] %S", function);
+        context->logMessage(file, line, -1, L"[leaving] %s", call.GetString());
     }
 };
-
-HRESULT gekCheckResultInternal(Gek::Context::Interface *context, LPCSTR file, UINT line, LPCSTR function, HRESULT resultValue)
-{
-    if (FAILED(resultValue))
-    {
-        context->logMessage(file, line, L"[failed 0x%08X] %S", resultValue, function);
-        _ASSERTE(!"Check Result Failed");
-    }
-
-    return resultValue;
-}
 
 namespace Gek
 {
@@ -56,7 +43,7 @@ namespace Gek
             std::unordered_map<CLSID, std::function<HRESULT(User::Interface **)>> classList;
             std::unordered_map<CLSID, std::vector<CLSID>> typedClassList;
 
-            UINT32 loggingIndent;
+            long loggingIndent;
 
         public:
             Context(void)
@@ -88,8 +75,7 @@ namespace Gek
 
             STDMETHODIMP_(void) initialize(void)
             {
-                logMessage(__FILE__, __LINE__, L"[entering] %S...", __FUNCTION__);
-                logEnterScope();
+                logMessage(__FILE__, __LINE__, 1, L"[entering] %S...", __FUNCTION__);
 
                 searchPathList.push_back(L"%root%");
                 for (auto &searchPath : searchPathList)
@@ -103,7 +89,7 @@ namespace Gek
                             GEKGETMODULECLASSES getModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(module, "GEKGetModuleClasses");
                             if (getModuleClasses)
                             {
-                                logMessage(__FILE__, __LINE__, L"GEK Plugin Found: %s", fileName);
+                                logMessage(__FILE__, __LINE__, 0, L"GEK Plugin Found: %s", fileName);
 
                                 moduleList.push_back(module);
                                 std::unordered_map<CLSID, std::function<HRESULT(User::Interface **)>> moduleClassList;
@@ -116,11 +102,11 @@ namespace Gek
                                         if (classList.find(moduleClass.first) == classList.end())
                                         {
                                             classList[moduleClass.first] = moduleClass.second;
-                                            logMessage(__FILE__, __LINE__, L"Adding class from plugin: %s", CStringW(CComBSTR(moduleClass.first)).GetString());
+                                            logMessage(__FILE__, __LINE__, 0, L"Adding class from plugin: %s", CStringW(CComBSTR(moduleClass.first)).GetString());
                                         }
                                         else
                                         {
-                                            logMessage(__FILE__, __LINE__, L"[error] Duplicate class found: %s", CStringW(CComBSTR(moduleClass.first)).GetString());
+                                            logMessage(__FILE__, __LINE__, 0, L"[error] Duplicate class found: %s", CStringW(CComBSTR(moduleClass.first)).GetString());
                                         }
                                     }
 
@@ -131,7 +117,7 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    logMessage(__FILE__, __LINE__, L"[error] Unable to get class list from module");
+                                    logMessage(__FILE__, __LINE__, 0, L"[error] Unable to get class list from module");
                                 }
                             }
                         }
@@ -140,8 +126,7 @@ namespace Gek
                     });
                 }
 
-                logExitScope();
-                logMessage(__FILE__, __LINE__, L"[leaving] %S", __FUNCTION__);
+                logMessage(__FILE__, __LINE__, -1, L"[leaving] %S", __FUNCTION__);
             }
 
             STDMETHODIMP createInstance(REFGUID className, REFIID interfaceType, LPVOID FAR *returnObject)
@@ -160,17 +145,17 @@ namespace Gek
                         resultValue = classInstance->QueryInterface(interfaceType, returnObject);
                         if (FAILED(resultValue))
                         {
-                            logMessage(__FILE__, __LINE__, L"Class doesn't support interface: %s (%s)", CStringW(CComBSTR(className)).GetString(), CStringW(CComBSTR(interfaceType)).GetString());
+                            logMessage(__FILE__, __LINE__, 0, L"Class doesn't support interface: %s (%s)", CStringW(CComBSTR(className)).GetString(), CStringW(CComBSTR(interfaceType)).GetString());
                         }
                     }
                     else
                     {
-                        logMessage(__FILE__, __LINE__, L"Unable to create class: %s (0x%08X)", CStringW(CComBSTR(className)).GetString(), resultValue);
+                        logMessage(__FILE__, __LINE__, 0, L"Unable to create class: %s (0x%08X)", CStringW(CComBSTR(className)).GetString(), resultValue);
                     }
                 }
                 else
                 {
-                    logMessage(__FILE__, __LINE__, L"Unable to locate class: %s", CStringW(CComBSTR(className)).GetString());
+                    logMessage(__FILE__, __LINE__, 0, L"Unable to locate class: %s", CStringW(CComBSTR(className)).GetString());
                 }
 
                 return resultValue;
@@ -198,13 +183,13 @@ namespace Gek
                 }
                 else
                 {
-                    logMessage(__FILE__, __LINE__, L"Unable to locate class type: %s", CStringW(CComBSTR(typeName)).GetString());
+                    logMessage(__FILE__, __LINE__, 0, L"Unable to locate class type: %s", CStringW(CComBSTR(typeName)).GetString());
                 }
 
                 return resultValue;
             }
 
-            STDMETHODIMP_(void) logMessage(LPCSTR file, UINT32 line, LPCWSTR format, ...)
+            STDMETHODIMP_(void) logMessage(LPCSTR file, UINT32 line, INT32 changeIndent, LPCWSTR format, ...)
             {
                 if (format != nullptr)
                 {
@@ -215,25 +200,39 @@ namespace Gek
                     message.FormatV(format, variableList);
                     va_end(variableList);
 
-                    std::vector<wchar_t> indent(loggingIndent * 2, L'-');
-                    indent.push_back(L'>');
-                    indent.push_back(L' ');
+                    std::vector<wchar_t> indent;
+                    if (changeIndent < 0)
+                    {
+                        InterlockedAdd(&loggingIndent, changeIndent);
+
+                        indent.push_back(L'<');
+                        std::vector<wchar_t> bar(loggingIndent * 2, L'-');
+                        indent.insert(indent.end(), bar.begin(), bar.end());
+                        indent.push_back(L'<');
+                        indent.push_back(L' ');
+                    }
+                    else if (changeIndent > 0)
+                    {
+                        indent.push_back(L'>');
+                        std::vector<wchar_t> bar(loggingIndent * 2, L'-');
+                        indent.insert(indent.end(), bar.begin(), bar.end());
+                        indent.push_back(L'>');
+                        indent.push_back(L' ');
+
+                        InterlockedAdd(&loggingIndent, changeIndent);
+                    }
+                    else if (changeIndent == 0)
+                    {
+                        std::vector<wchar_t> bar(loggingIndent * 2, L' ');
+                        indent.insert(indent.end(), bar.begin(), bar.end());
+                    }
+
                     indent.push_back(L'\0');
 
                     message = (indent.data() + message);
                     OutputDebugString(Gek::String::format(L"% 30S (%05d)%s\r\n", file, line, message.GetString()));
                     Observable::Mixin::sendEvent(Event<Observer>(std::bind(&Observer::onLogMessage, std::placeholders::_1, file, line, message.GetString())));
                 }
-            }
-
-            STDMETHODIMP_(void) logEnterScope(void)
-            {
-                InterlockedIncrement(&loggingIndent);
-            }
-
-            STDMETHODIMP_(void) logExitScope(void)
-            {
-                InterlockedDecrement(&loggingIndent);
             }
         };
 

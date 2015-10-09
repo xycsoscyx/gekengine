@@ -107,7 +107,7 @@ namespace Gek
                         resultValue = device->SetDataFormat(&c_dfDIKeyboard);
                         if (SUCCEEDED(resultValue))
                         {
-                            UINT32 flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
+                            DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
                             resultValue = device->SetCooperativeLevel(window, flags);
                             if (SUCCEEDED(resultValue))
                             {
@@ -186,7 +186,7 @@ namespace Gek
                         resultValue = device->SetDataFormat(&c_dfDIMouse2);
                         if (SUCCEEDED(resultValue))
                         {
-                            UINT32 flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
+                            DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
                             resultValue = device->SetCooperativeLevel(window, flags);
                             if (SUCCEEDED(resultValue))
                             {
@@ -279,7 +279,7 @@ namespace Gek
                         resultValue = device->SetDataFormat(&c_dfDIJoystick2);
                         if (SUCCEEDED(resultValue))
                         {
-                            UINT32 flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
+                            DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
                             resultValue = device->SetCooperativeLevel(window, flags);
                             if (SUCCEEDED(resultValue))
                             {
@@ -391,7 +391,7 @@ namespace Gek
 
             void addJoystick(LPCDIDEVICEINSTANCE deviceObjectInstance)
             {
-                gekLogScope(__FUNCTION__);
+                gekLogScope();
 
                 CComPtr<Device::Joystick> joystick = new Device::Joystick();
                 if (joystick != nullptr)
@@ -426,8 +426,7 @@ namespace Gek
             // Interface
             STDMETHODIMP initialize(HWND window)
             {
-                gekLogScope(__FUNCTION__);
-                gekLogParameter("0x%p", window);
+                gekLogScope(LPCVOID(window));
 
                 this->window = window;
                 HRESULT resultValue = E_FAIL;

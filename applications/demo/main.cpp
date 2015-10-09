@@ -36,17 +36,17 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                     {
                         if (xmlDisplayNode.hasAttribute(L"width"))
                         {
-                            width = Gek::String::getUINT32(xmlDisplayNode.getAttribute(L"width"));
+                            width = Gek::String::toUINT32(xmlDisplayNode.getAttribute(L"width"));
                         }
                         
                         if (xmlDisplayNode.hasAttribute(L"height"))
                         {
-                            height = Gek::String::getUINT32(xmlDisplayNode.getAttribute(L"height"));
+                            height = Gek::String::toUINT32(xmlDisplayNode.getAttribute(L"height"));
                         }
                         
                         if (xmlDisplayNode.hasAttribute(L"windowed"))
                         {
-                            windowed = Gek::String::getBoolean(xmlDisplayNode.getAttribute(L"windowed"));
+                            windowed = Gek::String::toBoolean(xmlDisplayNode.getAttribute(L"windowed"));
                         }
                     }
                 }
@@ -245,17 +245,17 @@ L"    </entity>\r\n";
                             {
                                 if (xmlDisplayNode.hasAttribute(L"width"))
                                 {
-                                    width = Gek::String::getUINT32(xmlDisplayNode.getAttribute(L"width"));
+                                    width = Gek::String::toUINT32(xmlDisplayNode.getAttribute(L"width"));
                                 }
 
                                 if (xmlDisplayNode.hasAttribute(L"height"))
                                 {
-                                    height = Gek::String::getUINT32(xmlDisplayNode.getAttribute(L"height"));
+                                    height = Gek::String::toUINT32(xmlDisplayNode.getAttribute(L"height"));
                                 }
 
                                 if (xmlDisplayNode.hasAttribute(L"windowed"))
                                 {
-                                    windowed = Gek::String::getBoolean(xmlDisplayNode.getAttribute(L"windowed"));
+                                    windowed = Gek::String::toBoolean(xmlDisplayNode.getAttribute(L"windowed"));
                                 }
                             }
                         }
@@ -280,8 +280,7 @@ L"    </entity>\r\n";
                             ShowWindow(window, SW_SHOW);
                             UpdateWindow(window);
 
-                            context->logMessage(__FILE__, __LINE__, L"[entering] Game Loop");
-                            context->logEnterScope();
+                            context->logMessage(__FILE__, __LINE__, 1, L"[entering] Game Loop");
 
                             MSG message = { 0 };
                             while (message.message != WM_QUIT)
@@ -298,8 +297,7 @@ L"    </entity>\r\n";
                                 }
                             };
 
-                            context->logExitScope();
-                            context->logMessage(__FILE__, __LINE__, L"[entering] Game Loop");
+                            context->logMessage(__FILE__, __LINE__, -1, L"[entering] Game Loop");
 
                             SetWindowLongPtr(window, GWLP_USERDATA, 0);
                             engineCore.Release();
@@ -308,12 +306,12 @@ L"    </entity>\r\n";
                     }
                     else
                     {
-                        context->logMessage(__FILE__, __LINE__, L"Unable to create window: %d", GetLastError());
+                        context->logMessage(__FILE__, __LINE__, 0, L"Unable to create window: %d", GetLastError());
                     }
                 }
                 else
                 {
-                    context->logMessage(__FILE__, __LINE__, L"Unable to register window class: %d", GetLastError());
+                    context->logMessage(__FILE__, __LINE__, 0, L"Unable to register window class: %d", GetLastError());
                 }
             }
         }

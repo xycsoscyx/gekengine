@@ -15,12 +15,10 @@ namespace Gek
             STDMETHOD(createInstance)           (THIS_ REFCLSID className, REFIID interfaceType, LPVOID FAR *returnObject) PURE;
             STDMETHOD(createEachType)           (THIS_ REFCLSID typeName, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance) PURE;
 
-            STDMETHOD_(void, logMessage)        (THIS_ LPCSTR file, UINT32 line, LPCWSTR format, ...) PURE;
-            STDMETHOD_(void, logEnterScope)     (THIS) PURE;
-            STDMETHOD_(void, logExitScope)      (THIS) PURE;
+            STDMETHOD_(void, logMessage)        (THIS_ LPCSTR file, UINT32 line, INT32 changeIndent, LPCWSTR format, ...) PURE;
         };
 
-        DECLARE_INTERFACE_IID(Observer, "4678440B-94FC-4671-9622-0D4030F8CE94") : virtual public Observer::Interface
+        DECLARE_INTERFACE_IID(Observer, "4678440B-94FC-4671-9622-0D4030F8CE94") : virtual public Gek::Observer::Interface
         {
             STDMETHOD_(void, onLogMessage)      (THIS_ LPCSTR file, UINT32 line, LPCWSTR message) PURE;
         };

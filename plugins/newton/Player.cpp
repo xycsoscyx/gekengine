@@ -20,19 +20,19 @@ namespace Gek
 
             HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
             {
-                componentParameterList[L"outer_radius"] = String::setFloat(outerRadius);
-                componentParameterList[L"inner_radius"] = String::setFloat(innerRadius);
-                componentParameterList[L"height"] = String::setFloat(height);
-                componentParameterList[L"stair_step"] = String::setFloat(stairStep);
+                componentParameterList[L"outer_radius"] = String::from(outerRadius);
+                componentParameterList[L"inner_radius"] = String::from(innerRadius);
+                componentParameterList[L"height"] = String::from(height);
+                componentParameterList[L"stair_step"] = String::from(stairStep);
                 return S_OK;
             }
 
             HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
-                Engine::setParameter(componentParameterList, L"outer_radius", outerRadius, String::getFloat);
-                Engine::setParameter(componentParameterList, L"inner_radius", innerRadius, String::getFloat);
-                Engine::setParameter(componentParameterList, L"height", height, String::getFloat);
-                Engine::setParameter(componentParameterList, L"stair_step", stairStep, String::getFloat);
+                Engine::setParameter(componentParameterList, L"outer_radius", outerRadius, String::toFloat);
+                Engine::setParameter(componentParameterList, L"inner_radius", innerRadius, String::toFloat);
+                Engine::setParameter(componentParameterList, L"height", height, String::toFloat);
+                Engine::setParameter(componentParameterList, L"stair_step", stairStep, String::toFloat);
                 return S_OK;
             }
 

@@ -344,8 +344,7 @@ namespace Gek
                 }
                 else
                 {
-                    gekLogScope(__FUNCTION__);
-                    gekLogParameter("%s", fileName);
+                    gekLogScope(fileName);
 
                     surfaceIndexList[fileName] = -1;
 
@@ -361,22 +360,22 @@ namespace Gek
                             {
                                 if (xmlSurfaceNode.hasAttribute(L"staticfriction"))
                                 {
-                                    surface.staticFriction = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"staticfriction"));
+                                    surface.staticFriction = Gek::String::toFloat(xmlSurfaceNode.getAttribute(L"staticfriction"));
                                 }
 
                                 if (xmlSurfaceNode.hasAttribute(L"kineticfriction"))
                                 {
-                                    surface.kineticFriction = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"kineticfriction"));
+                                    surface.kineticFriction = Gek::String::toFloat(xmlSurfaceNode.getAttribute(L"kineticfriction"));
                                 }
 
                                 if (xmlSurfaceNode.hasAttribute(L"elasticity"))
                                 {
-                                    surface.elasticity = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"elasticity"));
+                                    surface.elasticity = Gek::String::toFloat(xmlSurfaceNode.getAttribute(L"elasticity"));
                                 }
 
                                 if (xmlSurfaceNode.hasAttribute(L"softness"))
                                 {
-                                    surface.softness = Gek::String::getFloat(xmlSurfaceNode.getAttribute(L"softness"));
+                                    surface.softness = Gek::String::toFloat(xmlSurfaceNode.getAttribute(L"softness"));
                                 }
 
                                 surfaceIndex = surfaceList.size();
@@ -413,7 +412,7 @@ namespace Gek
                 }
                 else
                 {
-                    gekLogScope(__FUNCTION__);
+                    gekLogScope();
 
                     collisionList[shape].reset();
                     if (dynamicBodyComponent.shape.CompareNoCase(L"*cube") == 0)
@@ -477,8 +476,7 @@ namespace Gek
                     }
                     else
                     {
-                        gekLogScope(__FUNCTION__);
-                        gekLogParameter("%s", dynamicBodyComponent.shape.GetString());
+                        gekLogScope(dynamicBodyComponent.shape);
 
                         collisionList[dynamicBodyComponent.shape].reset();
 
@@ -585,7 +583,7 @@ namespace Gek
             // System::Interface
             STDMETHODIMP initialize(IUnknown *initializerContext)
             {
-                gekLogScope(__FUNCTION__);
+                gekLogScope();
 
                 REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
@@ -667,7 +665,6 @@ namespace Gek
 
             STDMETHODIMP_(void) onFree(void)
             {
-                NewtonSerializeToFile(GetNewton(), "d:\\newton.dat", nullptr, nullptr);
                 collisionList.clear();
                 bodyList.clear();
                 surfaceList.clear();

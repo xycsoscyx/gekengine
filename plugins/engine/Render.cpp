@@ -567,7 +567,7 @@ namespace Gek
                     return returnValue;
                 }
 
-                STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, Video::Format format, UINT32 count, UINT32 flags, LPCVOID staticData)
+                STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData)
                 {
                     REQUIRE_RETURN(video, E_FAIL);
 
@@ -594,7 +594,7 @@ namespace Gek
 									returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
 									if (texture)
 									{
-										Math::Float4 color(String::getFloat4(fileName + 7));
+										Math::Float4 color(String::toFloat4(fileName + 7));
 										UINT32 colorValue = UINT32(UINT8(color.r * 255.0f)) |
 															UINT32(UINT8(color.g * 255.0f) << 8) |
 															UINT32(UINT8(color.b * 255.0f) << 16) |
@@ -609,7 +609,7 @@ namespace Gek
 									returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
 									if (texture)
 									{
-										Math::Float3 normal((String::getFloat3(fileName + 8) + 1.0f) * 0.5f);
+										Math::Float3 normal((String::toFloat3(fileName + 8) + 1.0f) * 0.5f);
 										UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
 															 UINT32(UINT8(normal.y * 255.0f) << 8) |
 															 UINT32(UINT8(normal.z * 255.0f) << 16);

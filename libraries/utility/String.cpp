@@ -5,21 +5,21 @@ namespace Gek
 {
     namespace String
     {
-        double getDouble(LPCWSTR expression)
+        double toDouble(LPCWSTR expression)
         {
             double value = 0.0;
             Evaluator::getDouble(expression, value);
             return value;
         }
 
-        float getFloat(LPCWSTR expression)
+        float toFloat(LPCWSTR expression)
         {
             float value = 0.0f;
             Evaluator::getFloat(expression, value);
             return value;
         }
 
-        Gek::Math::Float2 getFloat2(LPCWSTR expression)
+        Gek::Math::Float2 toFloat2(LPCWSTR expression)
         {
             Gek::Math::Float2 vector;
             if (!Evaluator::getFloat2(expression, vector))
@@ -33,7 +33,7 @@ namespace Gek
             return vector;
         }
 
-        Gek::Math::Float3 getFloat3(LPCWSTR expression)
+        Gek::Math::Float3 toFloat3(LPCWSTR expression)
         {
             Gek::Math::Float3 vector;
             if (!Evaluator::getFloat3(expression, vector))
@@ -47,7 +47,7 @@ namespace Gek
             return vector;
         }
 
-        Gek::Math::Float4 getFloat4(LPCWSTR expression)
+        Gek::Math::Float4 toFloat4(LPCWSTR expression)
         {
             Gek::Math::Float4 vector;
             if (!Evaluator::getFloat4(expression, vector))
@@ -68,7 +68,7 @@ namespace Gek
             return vector;
         }
 
-        Gek::Math::Quaternion getQuaternion(LPCWSTR expression)
+        Gek::Math::Quaternion toQuaternion(LPCWSTR expression)
         {
             Gek::Math::Quaternion rotation;
             if (!Evaluator::getQuaternion(expression, rotation))
@@ -83,114 +83,166 @@ namespace Gek
             return rotation;
         }
 
-        INT32 getINT32(LPCWSTR expression)
+        INT32 toINT32(LPCWSTR expression)
         {
             INT32 value = 0;
             Evaluator::getINT32(expression, value);
             return value;
         }
 
-        UINT32 getUINT32(LPCWSTR expression)
+        UINT32 toUINT32(LPCWSTR expression)
         {
             UINT32 value = 0;
             Evaluator::getUINT32(expression, value);
             return value;
         }
 
-        INT64 getINT64(LPCWSTR expression)
+        INT64 toINT64(LPCWSTR expression)
         {
             INT64 value = 0;
             Evaluator::getINT64(expression, value);
             return value;
         }
 
-        UINT64 getUINT64(LPCWSTR expression)
+        UINT64 toUINT64(LPCWSTR expression)
         {
             UINT64 value = 0;
             Evaluator::getUINT64(expression, value);
             return value;
         }
 
-        bool getBoolean(LPCWSTR expression)
+        bool toBoolean(LPCWSTR expression)
         {
             bool value = false;
             Evaluator::getBoolean(expression, value);
             return value;
         }
 
-        CStringW setDouble(double value)
+        CStringW from(double value)
         {
             CStringW strValue;
             strValue.Format(L"%f", value);
             return strValue;
         }
 
-        CStringW setFloat(float value)
+        CStringW from(float value)
         {
             CStringW strValue;
             strValue.Format(L"%f", value);
             return strValue;
         }
 
-        CStringW setFloat2(const Gek::Math::Float2 &value)
+        CStringW from(const Gek::Math::Float2 &value)
         {
             CStringW strValue;
             strValue.Format(L"%f,%f", value.x, value.y);
             return strValue;
         }
 
-        CStringW setFloat3(const Gek::Math::Float3 &value)
+        CStringW from(const Gek::Math::Float3 &value)
         {
             CStringW strValue;
             strValue.Format(L"%f,%f,%f", value.x, value.y, value.z);
             return strValue;
         }
 
-        CStringW setFloat4(const Gek::Math::Float4 &value)
+        CStringW from(const Gek::Math::Float4 &value)
         {
             CStringW strValue;
             strValue.Format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);
             return strValue;
         }
 
-        CStringW setQuaternion(const Gek::Math::Quaternion &value)
+        CStringW from(const Gek::Math::Quaternion &value)
         {
             CStringW strValue;
             strValue.Format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);
             return strValue;
         }
 
-        CStringW setINT32(INT32 value)
+        CStringW from(INT8 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%hhd", value);
+            return strValue;
+        }
+
+        CStringW from(UINT8 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%hhu", value);
+            return strValue;
+        }
+
+        CStringW from(INT16 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%hd", value);
+            return strValue;
+        }
+
+        CStringW from(UINT16 value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%hu", value);
+            return strValue;
+        }
+
+        CStringW from(INT32 value)
         {
             CStringW strValue;
             strValue.Format(L"%d", value);
             return strValue;
         }
 
-        CStringW setUINT32(UINT32 value)
+        CStringW from(UINT32 value)
         {
             CStringW strValue;
             strValue.Format(L"%u", value);
             return strValue;
         }
 
-        CStringW setINT64(INT64 value)
+        CStringW from(DWORD value)
+        {
+            CStringW strValue;
+            strValue.Format(L"0x%08X", value);
+            return strValue;
+        }
+
+        CStringW from(LPCVOID value)
+        {
+            CStringW strValue;
+            strValue.Format(L"%p", value);
+            return strValue;
+        }
+
+        CStringW from(INT64 value)
         {
             CStringW strValue;
             strValue.Format(L"%lld", value);
             return strValue;
         }
 
-        CStringW setUINT64(UINT64 value)
+        CStringW from(UINT64 value)
         {
             CStringW strValue;
             strValue.Format(L"%llu", value);
             return strValue;
         }
 
-        CStringW setBoolean(bool value)
+        CStringW from(bool value)
         {
             return (value ? L"true" : L"false");
+        }
+
+        CStringW from(LPCSTR value, bool fromUTF8)
+        {
+            return LPCWSTR(CA2W(value, fromUTF8 ? CP_UTF8 : CP_ACP));
+        }
+
+        CStringW from(LPCWSTR value)
+        {
+            return value;
         }
 
         CStringA format(LPCSTR format, ...)

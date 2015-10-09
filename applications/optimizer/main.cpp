@@ -203,7 +203,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             enableSmoothing = true;
             if (++argumentIndex < argumentCount)
             {
-                smoothingAngle = Gek::String::getFloat(argumentList[argumentIndex]);
+                smoothingAngle = Gek::String::toFloat(argumentList[argumentIndex]);
             }
         }
     }

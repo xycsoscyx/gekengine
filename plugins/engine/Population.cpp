@@ -48,10 +48,11 @@ namespace Gek
                 // Engine::Population::Interface
                 STDMETHODIMP initialize(IUnknown *initializerContext)
                 {
+                    gekLogScope();
+                    gekLogMessage(L"Loading Components...");
+
                     REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
-                    gekLogScope(__FUNCTION__);
-                    gekLogMessage(L"Loading Components...");
                     HRESULT resultValue = getContext()->createEachType(__uuidof(Component::Type), [&](REFCLSID className, IUnknown *object) -> HRESULT
                     {
                         CComQIPtr<Component::Interface> component(object);
@@ -129,10 +130,9 @@ namespace Gek
 
                 STDMETHODIMP load(LPCWSTR fileName)
                 {
-                    REQUIRE_RETURN(fileName, E_INVALIDARG);
+                    gekLogScope(fileName);
 
-                    gekLogScope(__FUNCTION__);
-                    gekLogMessage(L"Loading Population (%s)...", fileName);
+                    REQUIRE_RETURN(fileName, E_INVALIDARG);
 
                     free();
                     Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onLoadBegin, std::placeholders::_1)));
@@ -256,8 +256,7 @@ namespace Gek
 
                 STDMETHODIMP_(Entity) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
                 {
-                    gekLogScope(__FUNCTION__);
-                    gekLogMessage(L"Creating Entity...");
+                    gekLogScope();
 
                     Entity entity = InterlockedIncrement(&nextEntity);
                     if (name != nullptr)

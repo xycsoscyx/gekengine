@@ -193,8 +193,7 @@ namespace Gek
             // Interface
             STDMETHODIMP initialize(HWND window)
             {
-                gekLogScope(__FUNCTION__);
-                gekLogParameter("0x%p", window);
+                gekLogScope(LPCVOID(window));
 
                 REQUIRE_RETURN(window, E_INVALIDARG);
 
@@ -283,7 +282,7 @@ namespace Gek
 
             STDMETHODIMP copyEffect(Effect::Interface **returnObject, Effect::Interface *source)
             {
-                gekLogScope(__FUNCTION__);
+                gekLogScope();
 
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(source, E_INVALIDARG);
@@ -316,7 +315,7 @@ namespace Gek
 
             STDMETHODIMP copySound(Sound::Interface **returnObject, Sound::Interface *source)
             {
-                gekLogScope(__FUNCTION__);
+                gekLogScope();
 
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(source, E_INVALIDARG);
@@ -353,9 +352,7 @@ namespace Gek
 
             HRESULT loadFromFile(IDirectSoundBuffer **returnObject, LPCWSTR fileName, DWORD flags, GUID soundAlgorithm)
             {
-                gekLogScope(__FUNCTION__);
-                gekLogParameter("%s", fileName);
-                gekLogParameter("%d", flags);
+                gekLogScope(fileName, flags);
 
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -418,8 +415,7 @@ namespace Gek
 
             STDMETHODIMP loadEffect(Effect::Interface **returnObject, LPCWSTR fileName)
             {
-                gekLogScope(__FUNCTION__);
-                gekLogParameter("%s", fileName);
+                gekLogScope(fileName);
 
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -445,8 +441,7 @@ namespace Gek
 
             STDMETHODIMP loadSound(Sound::Interface **returnObject, LPCWSTR fileName)
             {
-                gekLogScope(__FUNCTION__);
-                gekLogParameter("%s", fileName);
+                gekLogScope(fileName);
 
                 REQUIRE_RETURN(directSound, E_FAIL);
                 REQUIRE_RETURN(returnObject, E_INVALIDARG);
