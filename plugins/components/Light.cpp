@@ -15,13 +15,13 @@ namespace Gek
                 {
                 }
 
-                HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+                HRESULT Data::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
                     componentParameterList[L"radius"] = String::from(radius);
                     return S_OK;
                 }
 
-                HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+                HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
                     setParameter(componentParameterList, L"radius", radius, String::toFloat);
                     return S_OK;

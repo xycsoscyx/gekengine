@@ -219,7 +219,7 @@ namespace Gek
                         for (auto &component : componentList)
                         {
                             std::unordered_map<CStringW, CStringW> componentParameterList;
-                            if (SUCCEEDED(component.second->getData(entity, componentParameterList)))
+                            if (SUCCEEDED(component.second->save(entity, componentParameterList)))
                             {
                                 Gek::Xml::Node xmlParameterNode = xmlEntityNode.createChildElement(component.second->getName());
                                 for (auto &componentParameter : componentParameterList)
@@ -285,7 +285,7 @@ namespace Gek
                             else
                             {
                                 (*pIterator).second->addComponent(entity);
-                                (*pIterator).second->setData(entity, componentParameterList.second);
+                                (*pIterator).second->load(entity, componentParameterList.second);
                             }
                         }
                     }

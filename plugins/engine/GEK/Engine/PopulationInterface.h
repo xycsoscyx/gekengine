@@ -33,15 +33,8 @@ namespace Gek
                 STDMETHOD_(void, killEntity)                (THIS_ const Entity &entity) PURE;
                 STDMETHOD_(Entity, getNamedEntity)          (THIS_ LPCWSTR name) PURE;
 
-                STDMETHOD_(void, listEntities)              (THIS_ std::function<void(const Entity &)> onEntity, bool runInParallel = false) PURE;
-
                 STDMETHOD_(bool, hasComponent)              (THIS_ const Entity &entity, std::type_index component) PURE;
                 STDMETHOD_(LPVOID, getComponent)            (THIS_ const Entity &entity, std::type_index component) PURE;
-
-                template<typename... ARGS>
-                void listEntities(std::function<void(const Entity &, const ARGS&...)> onEntity)
-                {
-                }
 
                 template <typename CLASS>
                 bool hasComponent(const Entity &entity)

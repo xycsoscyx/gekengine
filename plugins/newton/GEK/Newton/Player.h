@@ -19,8 +19,8 @@ namespace Gek
                 float stairStep;
 
                 Data(void);
-                HRESULT getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                HRESULT setData(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+                HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+                HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
             };
         }; // namespace Player
     }; // namespace Newton

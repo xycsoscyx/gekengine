@@ -215,51 +215,27 @@ namespace Gek
                 dataList.clear();
             }
 
-            STDMETHODIMP_(void) getIntersectingSet(std::set<Population::Entity> &entityList)
-            {
-                if (entityList.empty())
-                {
-                    for (auto &entityIndex : entityIndexList)
-                    {
-                        entityList.insert(entityIndex.first);
-                    }
-                }
-                else
-                {
-                    std::set<Population::Entity> intersectingList;
-                    for (auto &entityIndex : entityIndexList)
-                    {
-                        if (entityList.count(entityIndex.first) > 0)
-                        {
-                            intersectingList.insert(entityIndex.first);
-                        }
-                    }
-
-                    entityList = std::move(intersectingList);
-                }
-            }
-
-            STDMETHODIMP getData(const Population::Entity &entity, std::unordered_map<CStringW, CStringW> &componentParameterList)
+            STDMETHODIMP save(const Population::Entity &entity, std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
                 HRESULT resultValue = E_FAIL;
                 auto indexIterator = entityIndexList.find(entity);
                 if (indexIterator != entityIndexList.end())
                 {
                     const DATA &data = dataList[(*indexIterator).second];
-                    resultValue = data.getData(componentParameterList);
+                    resultValue = data.save(componentParameterList);
                 }
 
                 return resultValue;
             }
 
-            STDMETHODIMP setData(const Population::Entity &entity, const std::unordered_map<CStringW, CStringW> &componentParameterList)
+            STDMETHODIMP load(const Population::Entity &entity, const std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
                 HRESULT resultValue = E_FAIL;
                 auto indexIterator = entityIndexList.find(entity);
                 if (indexIterator != entityIndexList.end())
                 {
                     DATA &data = dataList[(*indexIterator).second];
-                    resultValue = data.setData(componentParameterList);
+                    resultValue = data.load(componentParameterList);
                 }
 
                 return resultValue;

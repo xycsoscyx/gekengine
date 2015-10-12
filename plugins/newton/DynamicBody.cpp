@@ -14,14 +14,14 @@ namespace Gek
             {
             }
 
-            HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+            HRESULT Data::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
             {
                 componentParameterList[L""] = shape;
                 componentParameterList[L"surface"] = surface;
                 return S_OK;
             }
 
-            HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+            HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
                 Engine::setParameter(componentParameterList, L"", shape, [](LPCWSTR value) -> LPCWSTR { return value; });
                 Engine::setParameter(componentParameterList, L"surface", surface, [](LPCWSTR value) -> LPCWSTR { return value; });

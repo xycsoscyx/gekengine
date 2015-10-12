@@ -20,7 +20,7 @@ namespace Gek
                 {
                 }
 
-                HRESULT Data::getData(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+                HRESULT Data::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
                 {
                     componentParameterList[L"field_of_view"] = String::from(fieldOfView);
                     componentParameterList[L"minimum_distance"] = String::from(minimumDistance);
@@ -29,7 +29,7 @@ namespace Gek
                     return S_OK;
                 }
 
-                HRESULT Data::setData(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+                HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
                     setParameter(componentParameterList, L"field_of_view", fieldOfView, String::toFloat);
                     setParameter(componentParameterList, L"minimum_distance", minimumDistance, String::toFloat);
