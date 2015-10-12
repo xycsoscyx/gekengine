@@ -718,10 +718,10 @@ namespace Gek
 
                 STDMETHODIMP_(void) onUpdateEnd(float frameTime)
                 {
-                    population->listEntities({ Components::Transform::identifier, Components::Camera::identifier }, [&](const Engine::Population::Entity &cameraEntity) -> void
+                    population->listEntities<Components::Transform::Data, Components::Camera::Data>([&](const Engine::Population::Entity &cameraEntity, 
+                        const Components::Transform::Data &transformComponent, 
+                        const Components::Camera::Data &cameraComponent) -> void
                     {
-                        auto &transformComponent = population->getComponent<Components::Transform::Data>(cameraEntity, Components::Transform::identifier);
-                        auto &cameraComponent = population->getComponent<Components::Camera::Data>(cameraEntity, Components::Camera::identifier);
                         Math::Float4x4 cameraMatrix(transformComponent.rotation, transformComponent.position);
 
                         CameraConstantData cameraConstantData;
@@ -746,21 +746,20 @@ namespace Gek
                         const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
                         concurrency::concurrent_vector<Light> concurrentVisibleLightList;
-                        population->listEntities({ Components::Transform::identifier, Components::PointLight::identifier, Components::Color::identifier }, [&](const Engine::Population::Entity &lightEntity) -> void
+                        population->listEntities<Components::Transform::Data, Components::PointLight::Data, Components::Color::Data>([&](const Engine::Population::Entity &lightEntity, 
+                            const Components::Transform::Data &lightTransformComponent, 
+                            const Components::PointLight::Data &pointLightComponent, 
+                            const Components::Color::Data &lightColorComponent) -> void
                         {
-                            auto &transformComponent = population->getComponent<Components::Transform::Data>(lightEntity, Components::Transform::identifier);
-                            auto &pointLightComponent = population->getComponent<Components::PointLight::Data>(lightEntity, Components::PointLight::identifier);
-                            if (viewFrustum.isVisible(Shape::Sphere(transformComponent.position, pointLightComponent.radius)))
+                            if (viewFrustum.isVisible(Shape::Sphere(lightTransformComponent.position, pointLightComponent.radius)))
                             {
-                                auto lightColor = population->getComponent<Components::Color::Data>(lightEntity, Components::Color::identifier).value;
-
                                 auto lightIterator = concurrentVisibleLightList.grow_by(1);
-                                (*lightIterator).position = (cameraConstantData.viewMatrix * transformComponent.position);
+                                (*lightIterator).position = (cameraConstantData.viewMatrix * lightTransformComponent.position);
                                 (*lightIterator).distance = (*lightIterator).position.getLengthSquared();
                                 (*lightIterator).range = pointLightComponent.radius;
-                                (*lightIterator).color.set(lightColor.x, lightColor.y, lightColor.z);
+                                (*lightIterator).color.set(lightColorComponent.value.xyz);
                             }
-                        }, true);
+                        });
 
                         concurrency::parallel_sort(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end(), [](const Light &leftLight, const Light &rightLight) -> bool
                         {

@@ -12,7 +12,6 @@ namespace Gek
         {
             namespace PointLight
             {
-                static const UINT32 identifier = 0x00000004;
                 struct Data
                 {
                     float radius;

@@ -23,8 +23,8 @@ namespace Gek
             {
             private:
                 Entity nextEntity;
-                std::unordered_map<CStringW, Entity> componentNameList;
-                std::unordered_map<UINT32, CComPtr<Component::Interface>> componentList;
+                std::unordered_map<CStringW, std::type_index> componentNameList;
+                std::unordered_map<std::type_index, CComPtr<Component::Interface>> componentList;
                 concurrency::concurrent_vector<Entity> entityList;
                 concurrency::concurrent_unordered_map<CStringW, Entity> namedEntityList;
                 concurrency::concurrent_vector<Entity> killEntityList;
@@ -332,42 +332,7 @@ namespace Gek
                     }
                 }
 
-                STDMETHODIMP_(void) listEntities(const std::vector<UINT32> &requiredComponentList, std::function<void(const Entity &)> onEntity, bool runInParallel)
-                {
-                    std::set<Entity> entityList;
-                    for (auto &requiredComponent : requiredComponentList)
-                    {
-                        auto pIterator = componentList.find(requiredComponent);
-                        if (pIterator != componentList.end())
-                        {
-                            (*pIterator).second->getIntersectingSet(entityList);
-                            if (entityList.empty())
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!entityList.empty())
-                    {
-                        if (runInParallel)
-                        {
-                            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const Entity &entity) -> void
-                            {
-                                onEntity(entity);
-                            });
-                        }
-                        else
-                        {
-                            for (auto &entity : entityList)
-                            {
-                                onEntity(entity);
-                            }
-                        }
-                    }
-                }
-
-                STDMETHODIMP_(bool) hasComponent(const Entity &entity, UINT32 component)
+                STDMETHODIMP_(bool) hasComponent(const Entity &entity, std::type_index component)
                 {
                     bool bReturn = false;
                     auto pIterator = componentList.find(component);
@@ -379,7 +344,7 @@ namespace Gek
                     return bReturn;
                 }
 
-                STDMETHODIMP_(LPVOID) getComponent(const Entity &entity, UINT32 component)
+                STDMETHODIMP_(LPVOID) getComponent(const Entity &entity, std::type_index component)
                 {
                     auto pIterator = componentList.find(component);
                     if (pIterator != componentList.end())

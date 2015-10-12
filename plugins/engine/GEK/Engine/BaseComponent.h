@@ -142,6 +142,11 @@ namespace Gek
             }
 
             // Component::Interface
+            STDMETHODIMP_(std::type_index) getIdentifier(void) const
+            {
+                return typeid(DATA);
+            }
+
             STDMETHODIMP_(void) addComponent(const Population::Entity &entity)
             {
                 if (emptyIndex < dataList.size())

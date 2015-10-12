@@ -105,6 +105,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="GEK\Engine\ActionInterface.h" />
+    <ClInclude Include="GEK\Engine\BaseComponent.h" />
     <ClInclude Include="GEK\Engine\ComponentInterface.h" />
     <ClInclude Include="GEK\Engine\CoreInterface.h" />
     <ClInclude Include="GEK\Engine\MaterialInterface.h" />

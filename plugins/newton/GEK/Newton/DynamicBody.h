@@ -11,7 +11,6 @@ namespace Gek
     {
         namespace DynamicBody
         {
-            static const UINT32 identifier = 0x00000100;
             struct Data
             {
                 CStringW shape;

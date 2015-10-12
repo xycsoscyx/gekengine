@@ -5,6 +5,7 @@
 #include <concurrent_vector.h>
 #include <concurrent_queue.h>
 #include <unordered_map>
+#include <typeindex>
 #include <set>
 
 #pragma warning(disable:4503)
@@ -20,7 +21,7 @@ namespace Gek
             DECLARE_INTERFACE_IID(Interface, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E") : virtual public IUnknown
             {
                 STDMETHOD_(LPCWSTR, getName)                (THIS) const PURE;
-                STDMETHOD_(UINT32, getIdentifier)           (THIS) const PURE;
+                STDMETHOD_(std::type_index, getIdentifier)           (THIS) const PURE;
 
                 STDMETHOD_(void, addComponent)              (THIS_ const Engine::Population::Entity &entity) PURE;
                 STDMETHOD_(void, removeComponent)           (THIS_ const Engine::Population::Entity &entity) PURE;

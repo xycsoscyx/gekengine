@@ -11,7 +11,6 @@ namespace Gek
     {
         namespace Mass
         {
-            static const UINT32 identifier = 0x00000101;
             struct Data
             {
                 float value;

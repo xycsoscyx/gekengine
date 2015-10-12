@@ -4,6 +4,7 @@
 #include <atlbase.h>
 #include <atlstr.h>
 #include <functional>
+#include <typeindex>
 #include <unordered_map>
 #include <vector>
 
@@ -33,15 +34,25 @@ namespace Gek
                 STDMETHOD_(Entity, getNamedEntity)          (THIS_ LPCWSTR name) PURE;
 
                 STDMETHOD_(void, listEntities)              (THIS_ std::function<void(const Entity &)> onEntity, bool runInParallel = false) PURE;
-                STDMETHOD_(void, listEntities)              (THIS_ const std::vector<UINT32> &requiredComponentList, std::function<void(const Entity &)> onEntity, bool runInParallel = false) PURE;
 
-                STDMETHOD_(bool, hasComponent)              (THIS_ const Entity &entity, UINT32 component) PURE;
-                STDMETHOD_(LPVOID, getComponent)            (THIS_ const Entity &entity, UINT32 component) PURE;
+                STDMETHOD_(bool, hasComponent)              (THIS_ const Entity &entity, std::type_index component) PURE;
+                STDMETHOD_(LPVOID, getComponent)            (THIS_ const Entity &entity, std::type_index component) PURE;
+
+                template<typename... ARGS>
+                void listEntities(std::function<void(const Entity &, const ARGS&...)> onEntity)
+                {
+                }
 
                 template <typename CLASS>
-                CLASS &getComponent(const Entity &entity, UINT32 component)
+                bool hasComponent(const Entity &entity)
                 {
-                    return *(CLASS *)getComponent(entity, component);
+                    return hasComponent(entity, typeid(CLASS));
+                }
+
+                template <typename CLASS>
+                typename CLASS &getComponent(const Entity &entity)
+                {
+                    return *(CLASS *)getComponent(entity, typeid(CLASS));
                 }
             };
 

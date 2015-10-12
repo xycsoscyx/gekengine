@@ -46,11 +46,6 @@ namespace Gek
                     {
                         return L"transform";
                     }
-
-                    STDMETHODIMP_(UINT32) getIdentifier(void) const
-                    {
-                        return identifier;
-                    }
                 };
 
                 REGISTER_CLASS(Component)

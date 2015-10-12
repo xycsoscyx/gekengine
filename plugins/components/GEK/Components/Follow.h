@@ -16,7 +16,6 @@ namespace Gek
         {
             namespace Follow
             {
-                static const UINT32 identifier = 0x00000003;
                 struct Data
                 {
                     CStringW target;

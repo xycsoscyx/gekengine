@@ -14,7 +14,6 @@ namespace Gek
         {
             namespace Transform
             {
-                static const UINT32 identifier = 0x00000006;
                 struct Data
                 {
                     Gek::Math::Float3 position;

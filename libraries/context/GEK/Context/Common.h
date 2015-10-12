@@ -86,8 +86,8 @@ namespace Gek
         return String::from(value);
     }
 
-    template<typename VALUE, typename... Args>
-    CStringW compileParameters(VALUE& value, Args&... args)
+    template<typename VALUE, typename... ARGS>
+    CStringW compileParameters(VALUE& value, ARGS&... args)
     {
         return String::from(value) + L", " + compileParameters(args...);
     }

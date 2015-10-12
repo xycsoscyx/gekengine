@@ -14,7 +14,6 @@ namespace Gek
         {
             namespace Camera
             {
-                static const UINT32 identifier = 0x00000001;
                 struct Data
                 {
                     float fieldOfView;

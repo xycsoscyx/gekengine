@@ -688,11 +688,11 @@ namespace Gek
             {
                 REQUIRE_VOID_RETURN(population);
 
-                if (population->hasComponent(entity, Model::identifier) &&
-                    population->hasComponent(entity, Engine::Components::Transform::identifier))
+                if (population->hasComponent<Model::Data>(entity) &&
+                    population->hasComponent<Engine::Components::Transform::Data>(entity))
                 {
-                    auto &modelComponent = population->getComponent<Model::Data>(entity, Model::identifier);
-                    auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(entity, Engine::Components::Transform::identifier);
+                    auto &modelComponent = population->getComponent<Model::Data>(entity);
+                    auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(entity);
                     auto dataNameIterator = dataMap.find(modelComponent);
                     if (dataNameIterator != dataMap.end())
                     {
@@ -722,30 +722,30 @@ namespace Gek
                 REQUIRE_VOID_RETURN(population);
                 REQUIRE_VOID_RETURN(viewFrustum);
 
-                const auto &cameraTransform = population->getComponent<Engine::Components::Transform::Data>(cameraEntity, Engine::Components::Transform::identifier);
+                const auto &cameraTransform = population->getComponent<Engine::Components::Transform::Data>(cameraEntity);
 
                 concurrency::concurrent_unordered_map<ModelData *, concurrency::concurrent_vector<InstanceData>> visibleList;
                 concurrency::parallel_for_each(dataEntityList.begin(), dataEntityList.end(), [&](const std::pair<const Engine::Population::Entity, ModelData *> &dataEntity) -> void
                 {
                     ModelData &data = *(dataEntity.second);
                     Gek::Math::Float3 size(1.0f, 1.0f, 1.0f);
-                    if (population->hasComponent(dataEntity.first, Engine::Components::Size::identifier))
+                    if (population->hasComponent<Engine::Components::Size::Data>(dataEntity.first))
                     {
-                        size.set(population->getComponent<Engine::Components::Size::Data>(dataEntity.first, Engine::Components::Size::identifier));
+                        size.set(population->getComponent<Engine::Components::Size::Data>(dataEntity.first));
                     }
 
                     Gek::Shape::AlignedBox alignedBox(data.alignedBox);
                     alignedBox.minimum *= size;
                     alignedBox.maximum *= size;
 
-                    const auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(dataEntity.first, Engine::Components::Transform::identifier);
+                    const auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(dataEntity.first);
                     Shape::OrientedBox orientedBox(alignedBox, transformComponent.rotation, transformComponent.position);
                     if (viewFrustum->isVisible(orientedBox))
                     {
                         Gek::Math::Float4 color(1.0f, 1.0f, 1.0f, 1.0f);
-                        if (population->hasComponent(dataEntity.first, Engine::Components::Color::identifier))
+                        if (population->hasComponent<Engine::Components::Color::Data>(dataEntity.first))
                         {
-                            color = population->getComponent<Engine::Components::Color::Data>(dataEntity.first, Engine::Components::Color::identifier);
+                            color = population->getComponent<Engine::Components::Color::Data>(dataEntity.first);
                         }
 
                         visibleList[dataEntity.second].push_back(InstanceData(Math::Float4x4(transformComponent.rotation, transformComponent.position), color, size, cameraTransform.position.getDistance(transformComponent.position)));

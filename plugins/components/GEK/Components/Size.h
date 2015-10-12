@@ -13,7 +13,6 @@ namespace Gek
         {
             namespace Size
             {
-                static const UINT32 identifier = 0x00000005;
                 struct Data
                 {
                     float value;

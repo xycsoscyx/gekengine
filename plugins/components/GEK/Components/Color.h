@@ -13,7 +13,6 @@ namespace Gek
         {
             namespace Color
             {
-                static const UINT32 identifier = 0x00000002;
                 struct Data
                 {
                     Gek::Math::Float4 value;

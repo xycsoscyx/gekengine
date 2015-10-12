@@ -9,7 +9,6 @@ namespace Gek
 {
     namespace Model
     {
-        static const UINT32 identifier = 0x00000010;
         struct Data
         {
             CStringW value;

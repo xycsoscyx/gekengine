@@ -11,7 +11,6 @@ namespace Gek
     {
         namespace Player
         {
-            static const UINT32 identifier = 0x00000103;
             struct Data
             {
                 float outerRadius;

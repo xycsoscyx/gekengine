@@ -44,11 +44,6 @@ namespace Gek
                     {
                         return L"point_light";
                     }
-
-                    STDMETHODIMP_(UINT32) getIdentifier(void) const
-                    {
-                        return identifier;
-                    }
                 };
 
                 REGISTER_CLASS(Component)

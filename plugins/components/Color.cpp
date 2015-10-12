@@ -45,11 +45,6 @@ namespace Gek
                     {
                         return L"color";
                     }
-
-                    STDMETHODIMP_(UINT32) getIdentifier(void) const
-                    {
-                        return identifier;
-                    }
                 };
 
                 REGISTER_CLASS(Component)
