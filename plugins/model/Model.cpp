@@ -24,7 +24,7 @@ namespace Gek
         }
 
         class Component : public Context::User::Mixin
-            , public Engine::BaseComponent< Data >
+            , public Engine::BaseComponent<Data>
         {
         public:
             Component(void)

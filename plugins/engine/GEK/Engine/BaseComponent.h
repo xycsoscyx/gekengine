@@ -17,123 +17,11 @@ namespace Gek
             }
         }
 
-        template <class DATA, std::size_t ALIGNMENT>
-        class AlignedAllocator
-        {
-        public:
-            typedef DATA* pointer;
-            typedef const DATA* const_pointer;
-            typedef DATA& reference;
-            typedef const DATA& const_reference;
-            typedef DATA value_type;
-            typedef std::size_t size_type;
-            typedef ptrdiff_t difference_type;
-
-        public:
-            AlignedAllocator(void)
-            {
-            }
-
-            AlignedAllocator(const AlignedAllocator&)
-            {
-            }
-
-            template <typename NEWTYPE>
-            AlignedAllocator(const AlignedAllocator<NEWTYPE, ALIGNMENT>&)
-            {
-            }
-
-            ~AlignedAllocator()
-            {
-            }
-
-            DATA* address(DATA& value) const
-            {
-                return &value;
-            }
-
-            const DATA* address(const DATA& value) const
-            {
-                return &value;
-            }
-
-            std::size_t max_size() const
-            {
-                return (static_cast<std::size_t>(0) - static_cast<std::size_t>(1)) / sizeof(DATA);
-            }
-
-            template <typename NEWTYPE>
-            struct rebind
-            {
-                typedef AlignedAllocator<NEWTYPE, ALIGNMENT> other;
-            };
-
-            bool operator != (const AlignedAllocator& allocator) const
-            {
-                return !(*this == allocator);
-            }
-
-            void construct(DATA* const pointer, const DATA& value) const
-            {
-                void * const voidPointer = static_cast<void *>(pointer);
-
-                new (voidPointer) DATA(value);
-            }
-
-            void destroy(DATA* const pointer) const
-            {
-                pointer->~DATA();
-            }
-
-            bool operator == (const AlignedAllocator& allocator) const
-            {
-                return true;
-            }
-
-            DATA* allocate(const std::size_t count) const
-            {
-                if (count == 0)
-                {
-                    return NULL;
-                }
-
-                if (count > max_size())
-                {
-                    throw std::length_error("AlignedAllocator<DATA>::allocate() - Integer overflow.");
-                }
-
-                void * const voidPointer = _mm_malloc(count * sizeof(DATA), ALIGNMENT);
-                if (voidPointer == NULL)
-                {
-                    throw std::bad_alloc();
-                }
-
-                return static_cast<DATA *>(voidPointer);
-            }
-
-            void deallocate(DATA* const pointer, const std::size_t count) const
-            {
-                _mm_free(pointer);
-            }
-
-            template <typename NEWTYPE>
-            DATA* allocate(const std::size_t count, const NEWTYPE *) const
-            {
-                return allocate(count);
-            }
-        };
-
-        template <class DATA, class ALLOCATOR = std::allocator<DATA>>
+        template <class DATA>
         class BaseComponent : public Component::Interface
         {
-        private:
-            UINT32 emptyIndex;
-            std::unordered_map<Population::Entity, UINT32> entityIndexList;
-            std::vector<DATA, ALLOCATOR> dataList;
-
         public:
             BaseComponent(void)
-                : emptyIndex(0)
             {
             }
 
@@ -147,98 +35,21 @@ namespace Gek
                 return typeid(DATA);
             }
 
-            STDMETHODIMP_(void) addComponent(const Population::Entity &entity)
+            STDMETHODIMP_(LPVOID) create(const std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
-                if (emptyIndex < dataList.size())
+                DATA *data = new DATA();
+                if (data)
                 {
-                    entityIndexList[entity] = emptyIndex;
-                    dataList[emptyIndex] = DATA();
-                    emptyIndex++;
+                    data->load(componentParameterList);
                 }
-                else
-                {
-                    entityIndexList[entity] = emptyIndex;
-                    dataList.push_back(DATA());
-                    emptyIndex = dataList.size();
-                }
+
+                return data;
             }
 
-            STDMETHODIMP_(void) removeComponent(const Population::Entity &entity)
+            STDMETHODIMP_(void) destroy(LPVOID voidData)
             {
-                if (entityIndexList.size() == 1)
-                {
-                    entityIndexList.clear();
-                    emptyIndex = 0;
-                }
-                else
-                {
-                    auto destroyIterator = entityIndexList.find(entity);
-                    if (destroyIterator != entityIndexList.end())
-                    {
-                        emptyIndex--;
-                        auto moveIterator = std::find_if(entityIndexList.begin(), entityIndexList.end(), [&](std::pair<const Population::Entity, UINT32> &entityIndex) -> bool
-                        {
-                            return (entityIndex.second == emptyIndex);
-                        });
-
-                        if (moveIterator != entityIndexList.end())
-                        {
-                            dataList[(*destroyIterator).second] = std::move(dataList.back());
-                            entityIndexList[(*moveIterator).first] = (*destroyIterator).second;
-                        }
-
-                        entityIndexList.erase(destroyIterator);
-                    }
-                }
-            }
-
-            STDMETHODIMP_(bool) hasComponent(const Population::Entity &entity) const
-            {
-                return (entityIndexList.count(entity) > 0);
-            }
-
-            STDMETHODIMP_(LPVOID) getComponent(const Population::Entity &entity)
-            {
-                auto indexIterator = entityIndexList.find(entity);
-                if (indexIterator != entityIndexList.end())
-                {
-                    return LPVOID(&dataList[(*indexIterator).second]);
-                }
-
-                return nullptr;
-            }
-
-            STDMETHODIMP_(void) clear(void)
-            {
-                emptyIndex = 0;
-                entityIndexList.clear();
-                dataList.clear();
-            }
-
-            STDMETHODIMP save(const Population::Entity &entity, std::unordered_map<CStringW, CStringW> &componentParameterList)
-            {
-                HRESULT resultValue = E_FAIL;
-                auto indexIterator = entityIndexList.find(entity);
-                if (indexIterator != entityIndexList.end())
-                {
-                    const DATA &data = dataList[(*indexIterator).second];
-                    resultValue = data.save(componentParameterList);
-                }
-
-                return resultValue;
-            }
-
-            STDMETHODIMP load(const Population::Entity &entity, const std::unordered_map<CStringW, CStringW> &componentParameterList)
-            {
-                HRESULT resultValue = E_FAIL;
-                auto indexIterator = entityIndexList.find(entity);
-                if (indexIterator != entityIndexList.end())
-                {
-                    DATA &data = dataList[(*indexIterator).second];
-                    resultValue = data.load(componentParameterList);
-                }
-
-                return resultValue;
+                DATA *data = static_cast<DATA *>(voidData);
+                delete data;
             }
         };
     }; // namespace Engine

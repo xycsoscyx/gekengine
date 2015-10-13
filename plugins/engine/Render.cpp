@@ -718,21 +718,23 @@ namespace Gek
 
                 STDMETHODIMP_(void) onUpdateEnd(float frameTime)
                 {
-                    population->listEntities<Components::Transform::Data, Components::Camera::Data>([&](const Engine::Population::Entity &cameraEntity, 
-                        const Components::Transform::Data &transformComponent, 
-                        const Components::Camera::Data &cameraComponent) -> void
+                    return;
+                    population->listEntities<Components::Transform::Data, Components::Camera::Data>([&](Engine::Population::Entity *cameraEntity) -> void
                     {
-                        Math::Float4x4 cameraMatrix(transformComponent.rotation, transformComponent.position);
+                        auto &cameraTransform = cameraEntity->getComponent<Components::Transform::Data>();
+                        Math::Float4x4 cameraMatrix(cameraTransform.rotation, cameraTransform.position);
+
+                        auto &cameraData = cameraEntity->getComponent<Components::Camera::Data>();
 
                         CameraConstantData cameraConstantData;
                         float displayAspectRatio = 1.0f;
-                        float fieldOfView = Math::convertDegreesToRadians(cameraComponent.fieldOfView);
+                        float fieldOfView = Math::convertDegreesToRadians(cameraData.fieldOfView);
                         cameraConstantData.fieldOfView.x = tan(fieldOfView * 0.5f);
                         cameraConstantData.fieldOfView.y = (cameraConstantData.fieldOfView.x / displayAspectRatio);
-                        cameraConstantData.minimumDistance = cameraComponent.minimumDistance;
-                        cameraConstantData.maximumDistance = cameraComponent.maximumDistance;
+                        cameraConstantData.minimumDistance = cameraData.minimumDistance;
+                        cameraConstantData.maximumDistance = cameraData.maximumDistance;
                         cameraConstantData.viewMatrix = cameraMatrix.getInverse();
-                        cameraConstantData.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraComponent.minimumDistance, cameraComponent.maximumDistance);
+                        cameraConstantData.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraData.minimumDistance, cameraData.maximumDistance);
                         cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
                         video->updateBuffer(this->cameraConstantBuffer, &cameraConstantData);
 
@@ -746,13 +748,14 @@ namespace Gek
                         const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
                         concurrency::concurrent_vector<Light> concurrentVisibleLightList;
-                        population->listEntities<Components::Transform::Data, Components::PointLight::Data, Components::Color::Data>([&](const Engine::Population::Entity &lightEntity, 
-                            const Components::Transform::Data &lightTransformComponent, 
-                            const Components::PointLight::Data &pointLightComponent, 
-                            const Components::Color::Data &lightColorComponent) -> void
+                        population->listEntities<Components::Transform::Data, Components::PointLight::Data, Components::Color::Data>([&](Engine::Population::Entity *lightEntity) -> void
                         {
+                            auto &lightTransformComponent = lightEntity->getComponent<Components::Transform::Data>();
+                            auto &pointLightComponent = lightEntity->getComponent<Components::PointLight::Data>();
                             if (viewFrustum.isVisible(Shape::Sphere(lightTransformComponent.position, pointLightComponent.radius)))
                             {
+                                auto &lightColorComponent = lightEntity->getComponent<Components::Color::Data>();
+
                                 auto lightIterator = concurrentVisibleLightList.grow_by(1);
                                 (*lightIterator).position = (cameraConstantData.viewMatrix * lightTransformComponent.position);
                                 (*lightIterator).distance = (*lightIterator).position.getLengthSquared();

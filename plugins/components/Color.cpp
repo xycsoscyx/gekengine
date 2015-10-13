@@ -29,7 +29,7 @@ namespace Gek
                 }
 
                 class Component : public Context::User::Mixin
-                    , public BaseComponent< Data, AlignedAllocator<Data, 16> >
+                    , public BaseComponent<Data>
                 {
                 public:
                     Component(void)

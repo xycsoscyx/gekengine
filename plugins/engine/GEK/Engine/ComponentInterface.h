@@ -21,22 +21,10 @@ namespace Gek
             DECLARE_INTERFACE_IID(Interface, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E") : virtual public IUnknown
             {
                 STDMETHOD_(LPCWSTR, getName)                (THIS) const PURE;
-                STDMETHOD_(std::type_index, getIdentifier)           (THIS) const PURE;
+                STDMETHOD_(std::type_index, getIdentifier)  (THIS) const PURE;
 
-                STDMETHOD_(void, addComponent)              (THIS_ const Engine::Population::Entity &entity) PURE;
-                STDMETHOD_(void, removeComponent)           (THIS_ const Engine::Population::Entity &entity) PURE;
-                STDMETHOD_(bool, hasComponent)              (THIS_ const Engine::Population::Entity &entity) const PURE;
-                STDMETHOD_(LPVOID, getComponent)            (THIS_ const Engine::Population::Entity &entity) PURE;
-                STDMETHOD_(void, clear)                     (THIS) PURE;
-
-                STDMETHOD(save)                          (THIS_ const Engine::Population::Entity &entity, std::unordered_map<CStringW, CStringW> &componentParameterList) PURE;
-                STDMETHOD(load)                          (THIS_ const Engine::Population::Entity &entity, const std::unordered_map<CStringW, CStringW> &componentParameterList) PURE;
-
-                template <typename CLASS>
-                CLASS &getComponent(const Engine::Population::Entity &entity)
-                {
-                    return *(CLASS *)getComponent(nEntityID);
-                }
+                STDMETHOD_(LPVOID, create)                  (const std::unordered_map<CStringW, CStringW> &componentParameterList) PURE;
+                STDMETHOD_(void, destroy)                   (LPVOID voidData) PURE;
             };
         }; // namespace Component
     }; // namespace Engine

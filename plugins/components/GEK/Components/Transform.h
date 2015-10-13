@@ -20,6 +20,17 @@ namespace Gek
                     Gek::Math::Quaternion rotation;
 
                     Data(void);
+
+                    LPVOID operator new(size_t size)
+                    {
+                        return _mm_malloc(size * sizeof(Data), 16);
+                    }
+
+                    void operator delete(LPVOID data)
+                    {
+                        _mm_free(data);
+                    }
+
                     HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
                     HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
                 };

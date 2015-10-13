@@ -14,8 +14,33 @@ namespace Gek
     {
         namespace Population
         {
-            typedef UINT32 Entity;
-            static const Entity InvalidEntity = -1;
+            DECLARE_INTERFACE_IID(Entity, "F5F5D5D3-E409-437D-BF3B-801DFA230C6C") : virtual public IUnknown
+            {
+                STDMETHOD_(bool, hasComponent)              (THIS_ const std::type_index &type) PURE;
+                STDMETHOD_(LPVOID, getComponent)            (THIS_ const std::type_index &type) PURE;
+
+                template <typename CLASS>
+                bool hasComponent(void)
+                {
+                    return hasComponent(typeid(CLASS));
+                }
+
+                template<typename... ARGS>
+                bool hasComponents(void)
+                {
+                    std::vector<bool> hasComponents({ hasComponent<ARGS>()... });
+                    return std::find_if(hasComponents.begin(), hasComponents.end(), [&](bool hasComponent) -> bool
+                    {
+                        return !hasComponent;
+                    }) == hasComponents.end();
+                }
+
+                template <typename CLASS>
+                CLASS &getComponent(void)
+                {
+                    return *static_cast<CLASS *>(getComponent(typeid(CLASS)));
+                }
+            };
 
             DECLARE_INTERFACE_IID(Class, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5");
 
@@ -29,23 +54,22 @@ namespace Gek
                 STDMETHOD(save)                             (THIS_ LPCWSTR fileName) PURE;
                 STDMETHOD_(void, free)                      (THIS) PURE;
 
-                STDMETHOD_(Entity, createEntity)            (THIS_ const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name = nullptr) PURE;
-                STDMETHOD_(void, killEntity)                (THIS_ const Entity &entity) PURE;
-                STDMETHOD_(Entity, getNamedEntity)          (THIS_ LPCWSTR name) PURE;
+                STDMETHOD_(Entity *, createEntity)          (THIS_ const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name = nullptr) PURE;
+                STDMETHOD_(void, killEntity)                (THIS_ Entity *entity) PURE;
+                STDMETHOD_(Entity *, getNamedEntity)        (THIS_ LPCWSTR name) PURE;
 
-                STDMETHOD_(bool, hasComponent)              (THIS_ const Entity &entity, std::type_index component) PURE;
-                STDMETHOD_(LPVOID, getComponent)            (THIS_ const Entity &entity, std::type_index component) PURE;
+                STDMETHOD_(void, listEntities)              (THIS_ std::function<void(Entity *)> onEntity, bool runInParallel = false) PURE;
 
-                template <typename CLASS>
-                bool hasComponent(const Entity &entity)
+                template<typename... ARGS>
+                void listEntities(std::function<void(Entity *)> onEntity)
                 {
-                    return hasComponent(entity, typeid(CLASS));
-                }
-
-                template <typename CLASS>
-                typename CLASS &getComponent(const Entity &entity)
-                {
-                    return *(CLASS *)getComponent(entity, typeid(CLASS));
+                    listEntities([&](Entity *entity) -> void
+                    {
+                        if (entity->hasComponents<ARGS...>())
+                        {
+                            onEntity(entity);
+                        }
+                    });
                 }
             };
 
@@ -55,8 +79,8 @@ namespace Gek
                 STDMETHOD_(void, onLoadEnd)                 (THIS_ HRESULT resultValue) { };
                 STDMETHOD_(void, onFree)                    (THIS) { };
 
-                STDMETHOD_(void, onEntityCreated)           (THIS_ const Entity &entity) { };
-                STDMETHOD_(void, onEntityDestroyed)         (THIS_ const Entity &entity) { };
+                STDMETHOD_(void, onEntityCreated)           (THIS_ Entity *entity) { };
+                STDMETHOD_(void, onEntityDestroyed)         (THIS_ Entity *entity) { };
 
                 STDMETHOD_(void, onUpdateBegin)             (THIS_ float frameTime) { };
                 STDMETHOD_(void, onUpdate)                  (THIS_ float frameTime) { };

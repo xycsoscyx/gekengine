@@ -40,10 +40,10 @@ namespace Gek
         {
         private:
             Engine::Population::Interface *population;
-            Engine::Population::Entity entity;
+            Engine::Population::Entity *entity;
 
         public:
-            NewtonBodyMixin(Engine::Population::Interface *population, const Engine::Population::Entity &entity)
+            NewtonBodyMixin(Engine::Population::Interface *population, Engine::Population::Entity *entity)
                 : population(population)
                 , entity(entity)
             {
@@ -59,7 +59,7 @@ namespace Gek
                 return population;
             }
 
-            const Engine::Population::Entity &getEntityHandle(void) const
+            Engine::Population::Entity *getEntityHandle(void) const
             {
                 return entity;
             }
@@ -72,7 +72,7 @@ namespace Gek
             , public dNewtonDynamicBody
         {
         public:
-            DynamicNewtonBody(Engine::Population::Interface *population, dNewton *newton, const dNewtonCollision* const newtonCollision, const Engine::Population::Entity &entity,
+            DynamicNewtonBody(Engine::Population::Interface *population, dNewton *newton, const dNewtonCollision* const newtonCollision, Engine::Population::Entity *entity,
                 const Engine::Components::Transform::Data &transformComponent,
                 const Mass::Data &massComponent)
                 : NewtonBodyMixin(population, entity)
@@ -94,7 +94,7 @@ namespace Gek
             void OnBodyTransform(const dFloat* const newtonMatrix, int threadHandle)
             {
                 const Math::Float4x4 &matrix = *reinterpret_cast<const Math::Float4x4 *>(newtonMatrix);
-                auto &transformComponent = getPopulationSystem()->getComponent<Engine::Components::Transform::Data>(getEntityHandle());
+                auto &transformComponent = getEntityHandle()->getComponent<Engine::Components::Transform::Data>();
                 transformComponent.position = matrix.translation;
                 transformComponent.rotation = matrix;
             }
@@ -102,7 +102,7 @@ namespace Gek
             // dNewtonDynamicBody
             void OnForceAndTorque(dFloat frameTime, int threadHandle)
             {
-                auto &massComponent = getPopulationSystem()->getComponent<Mass::Data>(getEntityHandle());
+                auto &massComponent = getEntityHandle()->getComponent<Mass::Data>();
                 AddForce(Math::Float4(0.0f, (-9.81f * massComponent), 0.0f, 0.0f).data);
             }
         };
@@ -121,7 +121,7 @@ namespace Gek
             concurrency::concurrent_unordered_map<CStringW, float> singleActionList;
 
         public:
-            PlayerNewtonBody(IUnknown *action, Engine::Population::Interface *population, dNewtonPlayerManager *newtonPlayerManager, const Engine::Population::Entity &entity,
+            PlayerNewtonBody(IUnknown *action, Engine::Population::Interface *population, dNewtonPlayerManager *newtonPlayerManager, Engine::Population::Entity *entity,
                 const Engine::Components::Transform::Data &transformComponent,
                 const Mass::Data &massComponent,
                 const Player::Data &playerComponent)
@@ -155,7 +155,7 @@ namespace Gek
             void OnBodyTransform(const dFloat* const newtonMatrix, int threadHandle)
             {
                 const Math::Float4x4 &matrix = *reinterpret_cast<const Math::Float4x4 *>(newtonMatrix);
-                auto &transformComponent = getPopulationSystem()->getComponent<Engine::Components::Transform::Data>(getEntityHandle());
+                auto &transformComponent = getEntityHandle()->getComponent<Engine::Components::Transform::Data>();
                 transformComponent.position = matrix.translation;
 				transformComponent.position.y += height;
                 transformComponent.rotation = matrix;
@@ -261,7 +261,7 @@ namespace Gek
             Math::Float3 gravity;
             std::vector<Surface> surfaceList;
             std::map<CStringW, INT32> surfaceIndexList;
-            concurrency::concurrent_unordered_map<Engine::Population::Entity, CComPtr<IUnknown>> bodyList;
+            concurrency::concurrent_unordered_map<Engine::Population::Entity *, CComPtr<IUnknown>> bodyList;
             std::unordered_map<CStringW, std::unique_ptr<dNewtonCollision>> collisionList;
 
         public:
@@ -302,13 +302,13 @@ namespace Gek
                 }
             }
 
-            INT32 getContactSurface(const Engine::Population::Entity &entity, NewtonBody *newtonBody, NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
+            INT32 getContactSurface(Engine::Population::Entity *entity, NewtonBody *newtonBody, NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
             {
                 REQUIRE_RETURN(population, -1);
 
-                if (population->hasComponent<DynamicBody::Data>(entity))
+                if (entity->hasComponent<DynamicBody::Data>())
                 {
-                    auto &dynamicBodyComponent = population->getComponent<DynamicBody::Data>(entity);
+                    auto &dynamicBodyComponent = entity->getComponent<DynamicBody::Data>();
                     if (dynamicBodyComponent.surface.IsEmpty())
                     {
                         NewtonCollision *newtonCollision = NewtonMaterialGetBodyCollidingShape(newtonMaterial, newtonBody);
@@ -389,14 +389,14 @@ namespace Gek
                 return surfaceIndex;
             }
 
-            dNewtonCollision *createCollision(const Engine::Population::Entity &entity, const DynamicBody::Data &dynamicBodyComponent)
+            dNewtonCollision *createCollision(Engine::Population::Entity *entity, const DynamicBody::Data &dynamicBodyComponent)
             {
                 REQUIRE_RETURN(population, nullptr);
 
                 Math::Float3 size(1.0f, 1.0f, 1.0f);
-                if (population->hasComponent<Engine::Components::Size::Data>(entity))
+                if (entity->hasComponent<Engine::Components::Size::Data>())
                 {
-                    size.set(population->getComponent<Engine::Components::Size::Data>(entity));
+                    size.set(entity->getComponent<Engine::Components::Size::Data>());
                 }
 
                 CStringW shape(Gek::String::format(L"%s:%f,%f,%f", dynamicBodyComponent.shape.GetString(), size.x, size.y, size.z));
@@ -457,7 +457,7 @@ namespace Gek
                 return newtonCollision;
             }
 
-            dNewtonCollision *loadCollision(const Engine::Population::Entity &entity, const DynamicBody::Data &dynamicBodyComponent)
+            dNewtonCollision *loadCollision(Engine::Population::Entity *entity, const DynamicBody::Data &dynamicBodyComponent)
             {
                 dNewtonCollision *newtonCollision = nullptr;
                 if (dynamicBodyComponent.shape.GetAt(0) == L'*')
@@ -672,18 +672,17 @@ namespace Gek
                 DestroyAllBodies();
             }
 
-            STDMETHODIMP_(void) onEntityCreated(const Engine::Population::Entity &entity)
+            STDMETHODIMP_(void) onEntityCreated(Engine::Population::Entity *entity)
             {
                 REQUIRE_VOID_RETURN(population);
 
-                if (population->hasComponent<Engine::Components::Transform::Data>(entity) &&
-                    population->hasComponent<Mass::Data>(entity))
+                if (entity->hasComponents<Engine::Components::Transform::Data, Mass::Data>())
                 {
-                    auto &massComponent = population->getComponent<Mass::Data>(entity);
-                    auto &transformComponent = population->getComponent<Engine::Components::Transform::Data>(entity);
-                    if (population->hasComponent<DynamicBody::Data>(entity))
+                    auto &massComponent = entity->getComponent<Mass::Data>();
+                    auto &transformComponent = entity->getComponent<Engine::Components::Transform::Data>();
+                    if (entity->hasComponent<DynamicBody::Data>())
                     {
-                        auto &dynamicBodyComponent = population->getComponent<DynamicBody::Data>(entity);
+                        auto &dynamicBodyComponent = entity->getComponent<DynamicBody::Data>();
                         dNewtonCollision *newtonCollision = loadCollision(entity, dynamicBodyComponent);
                         if (newtonCollision != nullptr)
                         {
@@ -695,9 +694,9 @@ namespace Gek
                             }
                         }
                     }
-                    else if (population->hasComponent<Player::Data>(entity))
+                    else if (entity->hasComponent<Player::Data>())
                     {
-                        auto &playerComponent = population->getComponent<Player::Data>(entity);
+                        auto &playerComponent = entity->getComponent<Player::Data>();
                         CComPtr<PlayerNewtonBody> player = new PlayerNewtonBody(action, population, newtonPlayerManager, entity, transformComponent, massComponent, playerComponent);
                         if (player)
                         {
@@ -708,7 +707,7 @@ namespace Gek
                 }
             }
 
-            STDMETHODIMP_(void) onEntityDestroyed(const Engine::Population::Entity &entity)
+            STDMETHODIMP_(void) onEntityDestroyed(Engine::Population::Entity *entity)
             {
                 auto bodyIterator = bodyList.find(entity);
                 if (bodyIterator != bodyList.end())

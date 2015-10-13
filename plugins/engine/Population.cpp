@@ -17,21 +17,70 @@ namespace Gek
     {
         namespace Population
         {
+            class EntityClass : public Unknown::Mixin
+                , public Entity
+            {
+            private:
+                std::unordered_map<std::type_index, std::pair<Component::Interface *, LPVOID>> componentList;
+
+            public:
+                EntityClass(void)
+                {
+                }
+
+                ~EntityClass(void)
+                {
+                    for (auto componentPair : componentList)
+                    {
+                        componentPair.second.first->destroy(componentPair.second.second);
+                    }
+                }
+
+                BEGIN_INTERFACE_LIST(EntityClass)
+                    INTERFACE_LIST_ENTRY_COM(Entity)
+                END_INTERFACE_LIST_UNKNOWN
+
+                void addComponent(Component::Interface *component, LPVOID data)
+                {
+                    componentList[component->getIdentifier()] = std::make_pair(component, data);
+                }
+
+                void removeComponent(const std::type_index &type)
+                {
+                    auto componentPair = componentList.find(type);
+                    if (componentPair != componentList.end())
+                    {
+                        componentPair->second.first->destroy(componentPair->second.second);
+                        componentList.erase(componentPair);
+                    }
+                }
+
+                // Entity
+                STDMETHODIMP_(bool) hasComponent(const std::type_index &type)
+                {
+                    return (componentList.count(type) > 0);
+                }
+
+                STDMETHODIMP_(LPVOID) getComponent(const std::type_index &type)
+                {
+                    return componentList[type].second;
+                }
+            };
+
             class System : public Context::User::Mixin
                 , public Observable::Mixin
                 , public Engine::Population::Interface
             {
             private:
-                Entity nextEntity;
                 std::unordered_map<CStringW, std::type_index> componentNameList;
                 std::unordered_map<std::type_index, CComPtr<Component::Interface>> componentList;
-                concurrency::concurrent_vector<Entity> entityList;
-                concurrency::concurrent_unordered_map<CStringW, Entity> namedEntityList;
-                concurrency::concurrent_vector<Entity> killEntityList;
+
+                concurrency::concurrent_vector<CAdapt<CComPtr<Entity>>> entityList;
+                concurrency::concurrent_unordered_map<CStringW, Entity *> namedEntityList;
+                concurrency::concurrent_vector<Entity *> killEntityList;
 
             public:
                 System(void)
-                    : nextEntity(InvalidEntity)
                 {
                 }
 
@@ -88,9 +137,9 @@ namespace Gek
                     Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onUpdateBegin, std::placeholders::_1, frameTime)));
                     Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onUpdate, std::placeholders::_1, frameTime)));
                     Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onUpdateEnd, std::placeholders::_1, frameTime)));
-                    for (auto killEntity : killEntityList)
+                    for (auto const killEntity : killEntityList)
                     {
-                        auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity> &namedEntity) -> bool
+                        auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity *> &namedEntity) -> bool
                         {
                             return (namedEntity.second == killEntity);
                         });
@@ -102,16 +151,7 @@ namespace Gek
 
                         if (entityList.size() > 1)
                         {
-                            for (auto component : componentList)
-                            {
-                                component.second->removeComponent(killEntity);
-                            }
-
-                            auto entityIterator = std::find_if(entityList.begin(), entityList.end(), [&](Entity entity) -> bool
-                            {
-                                return (entity == killEntity);
-                            });
-
+                            auto entityIterator = std::find(entityList.begin(), entityList.end(), killEntity);
                             if (entityIterator != entityList.end())
                             {
                                 (*entityIterator) = entityList.back();
@@ -203,38 +243,9 @@ namespace Gek
                     xmlDocument.create(L"world");
                     Gek::Xml::Node xmlWorldNode = xmlDocument.getRoot();
                     Gek::Xml::Node xmlPopulationNode = xmlWorldNode.createChildElement(L"population");
+
                     for (auto &entity : entityList)
                     {
-                        Gek::Xml::Node xmlEntityNode = xmlPopulationNode.createChildElement(L"entity");
-                        auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity> &namedEntity) -> bool
-                        {
-                            return (namedEntity.second == entity);
-                        });
-
-                        if (namedEntityIterator != namedEntityList.end())
-                        {
-                            xmlEntityNode.setAttribute(L"name", (*namedEntityIterator).first);
-                        }
-
-                        for (auto &component : componentList)
-                        {
-                            std::unordered_map<CStringW, CStringW> componentParameterList;
-                            if (SUCCEEDED(component.second->save(entity, componentParameterList)))
-                            {
-                                Gek::Xml::Node xmlParameterNode = xmlEntityNode.createChildElement(component.second->getName());
-                                for (auto &componentParameter : componentParameterList)
-                                {
-                                    if (componentParameter.first.IsEmpty())
-                                    {
-                                        xmlParameterNode.setText(componentParameter.second);
-                                    }
-                                    else
-                                    {
-                                        xmlParameterNode.setAttribute(componentParameter.first, componentParameter.second);
-                                    }
-                                }
-                            }
-                        }
                     }
 
                     xmlDocument.save(Gek::String::format(L"%%root%%\\data\\saves\\%s.xml", fileName));
@@ -246,114 +257,88 @@ namespace Gek
                     killEntityList.clear();
                     entityList.clear();
                     namedEntityList.clear();
-                    for (auto component : componentList)
-                    {
-                        component.second->clear();
-                    }
-
                     Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onFree, std::placeholders::_1)));
                 }
 
-                STDMETHODIMP_(Entity) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
+                STDMETHODIMP_(Entity *) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
                 {
                     gekLogScope();
 
-                    Entity entity = InterlockedIncrement(&nextEntity);
-                    if (name != nullptr)
+                    CComPtr<EntityClass> entity = new EntityClass();
+                    if (entity)
                     {
-                        if (!namedEntityList.insert(std::make_pair(name, entity)).second)
+                        entityList.push_back(CComPtr<Entity>(entity->getClass<Entity>()));
+                        for (auto componentParameterPair : entityParameterList)
                         {
-                            return InvalidEntity;
-                        }
-                    }
-
-                    entityList.push_back(entity);
-                    for (auto componentParameterList : entityParameterList)
-                    {
-                        auto component = componentNameList.find(componentParameterList.first);
-                        if (component == componentNameList.end())
-                        {
-                            gekLogMessage(L"Unable to find component name: %s", componentParameterList.first.GetString());
-                        }
-                        else
-                        {
-                            auto pIterator = componentList.find(component->second);
-                            if (pIterator == componentList.end())
+                            auto &componentName = componentParameterPair.first;
+                            auto &componentParameterList = componentParameterPair.second;
+                            auto componentIdentifierPair = componentNameList.find(componentName);
+                            if (componentIdentifierPair == componentNameList.end())
                             {
-                                gekLogMessage(L"Unable to find component ID: 0x%08X", component->second);
+                                gekLogMessage(L"Unable to find component name: %s", componentName.GetString());
                             }
                             else
                             {
-                                (*pIterator).second->addComponent(entity);
-                                (*pIterator).second->load(entity, componentParameterList.second);
+                                std::type_index componentIdentifier = componentIdentifierPair->second;
+                                auto componentPair = componentList.find(componentIdentifier);
+                                if (componentPair == componentList.end())
+                                {
+                                    gekLogMessage(L"Unable to find component identifier: 0x%08X", componentIdentifier.hash_code());
+                                }
+                                else
+                                {
+                                    Component::Interface *component = componentPair->second;
+                                    LPVOID componentData = component->create(componentParameterList);
+                                    if (componentData)
+                                    {
+                                        entity->addComponent(component, componentData);
+                                    }
+                                }
                             }
                         }
+
+                        Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onEntityCreated, std::placeholders::_1, entity)));
                     }
 
-                    Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onEntityCreated, std::placeholders::_1, entity)));
                     return entity;
                 }
 
-                STDMETHODIMP_(void) killEntity(const Entity &entity)
+                STDMETHODIMP_(void) killEntity(Entity *entity)
                 {
                     Observable::Mixin::sendEvent(Event<Engine::Population::Observer>(std::bind(&Engine::Population::Observer::onEntityDestroyed, std::placeholders::_1, entity)));
                     killEntityList.push_back(entity);
                 }
 
-                STDMETHODIMP_(Entity) getNamedEntity(LPCWSTR name)
+                STDMETHODIMP_(Entity *) getNamedEntity(LPCWSTR name)
                 {
-                    REQUIRE_RETURN(name, InvalidEntity);
+                    REQUIRE_RETURN(name, nullptr);
 
-                    Entity entity = InvalidEntity;
-                    auto pIterator = namedEntityList.find(name);
-                    if (pIterator != namedEntityList.end())
+                    Entity* entity = nullptr;
+                    auto namedEntity = namedEntityList.find(name);
+                    if (namedEntity != namedEntityList.end())
                     {
-                        entity = (*pIterator).second;
+                        entity = (*namedEntity).second;
                     }
 
                     return entity;
                 }
 
-                STDMETHODIMP_(void) listEntities(std::function<void(const Entity &)> onEntity, bool runInParallel)
+                STDMETHODIMP_(void) listEntities(std::function<void(Entity *)> onEntity, bool runInParallel)
                 {
                     if (runInParallel)
                     {
-                        concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const Entity &entity) -> void
+                        concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const CComPtr<Entity> &entity) -> void
                         {
                             onEntity(entity);
                         });
                     }
                     else
                     {
-                        for (auto &entity : entityList)
+                        std::for_each(entityList.begin(), entityList.end(), [&](const CComPtr<Entity> &entity) -> void
                         {
                             onEntity(entity);
-                        }
+                        });
                     }
-                }
-
-                STDMETHODIMP_(bool) hasComponent(const Entity &entity, std::type_index component)
-                {
-                    bool bReturn = false;
-                    auto pIterator = componentList.find(component);
-                    if (pIterator != componentList.end())
-                    {
-                        bReturn = (*pIterator).second->hasComponent(entity);
-                    }
-
-                    return bReturn;
-                }
-
-                STDMETHODIMP_(LPVOID) getComponent(const Entity &entity, std::type_index component)
-                {
-                    auto pIterator = componentList.find(component);
-                    if (pIterator != componentList.end())
-                    {
-                        return (*pIterator).second->getComponent(entity);
-                    }
-
-                    _ASSERTE(!"Invalid Entity Component Found");
-                    return nullptr;
                 }
             };
 
