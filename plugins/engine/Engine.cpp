@@ -241,12 +241,12 @@ namespace Gek
 						{
 						case 'W':
 						case VK_UP:
-							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"forward", state)));
+							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"move_forward", state)));
 							break;
 
 						case 'S':
 						case VK_DOWN:
-							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"backward", state)));
+							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"move_backward", state)));
 							break;
 
 						case 'A':
@@ -259,12 +259,12 @@ namespace Gek
 							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"strafe_right", state)));
 							break;
 
-						case 'Q':
-							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"rise", state)));
+						case VK_SPACE:
+                            Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"jump", state)));
 							break;
 
-						case 'Z':
-							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"fall", state)));
+						case VK_LCONTROL:
+							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"crouch", state)));
 							break;
 						};
 					};
@@ -356,7 +356,7 @@ namespace Gek
                     case WM_KEYDOWN:
                         if (!consoleActive)
                         {
-                            onState(wParam, false);
+                            onState(wParam, true);
                         }
 
 						return 1;
@@ -368,7 +368,7 @@ namespace Gek
                         }
                         else if (!consoleActive)
                         {
-							onState(wParam, true);
+							onState(wParam, false);
                         }
 
                         return 1;

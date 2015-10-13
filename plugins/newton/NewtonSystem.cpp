@@ -115,10 +115,17 @@ namespace Gek
 			IUnknown *action;
 
             float height;
+            float jumpHeight;
+            float moveSpeed;
 
             float viewAngle;
-            concurrency::concurrent_unordered_map<CStringW, float> constantActionList;
-            concurrency::concurrent_unordered_map<CStringW, float> singleActionList;
+            bool moveForward;
+            bool moveBackward;
+            bool strafeLeft;
+            bool strafeRight;
+            float jumpCharge;
+            DWORD jumpStart;
+            bool crouching;
 
         public:
             PlayerNewtonBody(IUnknown *action, Engine::Population::Interface *population, dNewtonPlayerManager *newtonPlayerManager, Engine::Population::Entity *entity,
@@ -126,11 +133,18 @@ namespace Gek
                 const Mass::Data &massComponent,
                 const Player::Data &playerComponent)
                 : NewtonBodyMixin(population, entity)
-				, action(action)
+                , action(action)
                 , dNewtonPlayerManager::dNewtonPlayer(newtonPlayerManager, nullptr, massComponent, playerComponent.outerRadius, playerComponent.innerRadius,
                     playerComponent.height, playerComponent.stairStep, Math::Float4(0.0f, 1.0f, 0.0f, 0.0f).data, Math::Float4(0.0f, 0.0f, -1.0f, 0.0f).data, 1)
                 , height(playerComponent.height)
-                , viewAngle(0.0f)
+                , jumpHeight(height * 0.75f)
+                , moveSpeed(5.0f)
+                , moveForward(false)
+                , moveBackward(false)
+                , strafeLeft(false)
+                , strafeRight(false)
+                , jumpCharge(0.0f)
+                , crouching(false)
             {
                 SetMatrix(Math::Float4x4(transformComponent.rotation, transformComponent.position).data);
             }
@@ -164,54 +178,65 @@ namespace Gek
             // dNewtonPlayerManager::dNewtonPlayer
             void OnPlayerMove(dFloat frameTime)
             {
-                float moveSpeed = 0.0f;
-                float strafeSpeed = 0.0f;
-                float jumpSpeed = 0.0f;
-                static auto checkActions = [&](concurrency::concurrent_unordered_map<CStringW, float> &actionMap) -> void
-                {
-                    viewAngle += (actionMap[L"turn"] * 0.01f);
-
-                    moveSpeed += actionMap[L"forward"];
-                    moveSpeed -= actionMap[L"backward"];
-
-                    strafeSpeed += actionMap[L"strafe_left"];
-                    strafeSpeed -= actionMap[L"strafe_right"];
-
-                    jumpSpeed += actionMap[L"rise"];
-                    jumpSpeed -= actionMap[L"fall"];
-                };
-
-                checkActions(singleActionList);
-                singleActionList.clear();
-                checkActions(constantActionList);
-
-                float magnitude = ((moveSpeed * moveSpeed) + (strafeSpeed * strafeSpeed));
+                float lateralSpeed = ((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * moveSpeed;
+                float strafeSpeed = ((strafeLeft ? 1.0f : 0.0f) + (strafeRight ? -1.0f : 0.0f)) * (moveSpeed * 0.5f);
+                float magnitude = ((lateralSpeed * lateralSpeed) + (strafeSpeed * strafeSpeed));
                 if (magnitude > 0.0f)
                 {
                     float inverseMagnitude = 5.0f / std::sqrt(magnitude);
-                    moveSpeed *= inverseMagnitude;
+                    lateralSpeed *= inverseMagnitude;
                     strafeSpeed *= inverseMagnitude;
                 }
 
-                SetPlayerVelocity(moveSpeed, strafeSpeed, jumpSpeed, viewAngle, Math::Float4(0.0f, -9.81f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.data, frameTime);
+                SetPlayerVelocity(lateralSpeed, strafeSpeed, jumpCharge, viewAngle, Math::Float4(0.0f, -9.81f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.data, frameTime);
+                if (jumpCharge > 0.0f)
+                {
+                    jumpCharge = 0.0f;
+                }
             }
 
             // Action::Observer::Interface
             STDMETHODIMP_(void) onState(LPCWSTR name, bool state)
             {
-                if (state)
+                if (_wcsicmp(name, L"crouch") == 0)
                 {
-                    constantActionList[name] = 5.0f;
+                    crouching = state;
                 }
-                else
+                else if (_wcsicmp(name, L"move_forward") == 0)
                 {
-                    constantActionList[name] = 0.0f;
+                    moveForward = state;
+                }
+                else if (_wcsicmp(name, L"move_backward") == 0)
+                {
+                    moveBackward = state;
+                }
+                else if (_wcsicmp(name, L"strafe_left") == 0)
+                {
+                    strafeLeft = state;
+                }
+                else if (_wcsicmp(name, L"strafe_right") == 0)
+                {
+                    strafeRight = state;
+                }
+                else if (_wcsicmp(name, L"jump") == 0)
+                {
+                    if (state)
+                    {
+                        jumpStart = GetTickCount();
+                    }
+                    else
+                    {
+                        jumpCharge = ((float(GetTickCount() - jumpStart) / 1000.0f) * jumpHeight);
+                    }
                 }
             }
 
             STDMETHODIMP_(void) onValue(LPCWSTR name, float value)
             {
-                singleActionList[name] = value;
+                if (_wcsicmp(name, L"turn") == 0)
+                {
+                    viewAngle += (value * 0.01f);
+                }
             }
         };
 
