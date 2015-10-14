@@ -718,7 +718,6 @@ namespace Gek
 
                 STDMETHODIMP_(void) onUpdateEnd(float frameTime)
                 {
-                    return;
                     population->listEntities<Components::Transform::Data, Components::Camera::Data>([&](Engine::Population::Entity *cameraEntity) -> void
                     {
                         auto &cameraTransform = cameraEntity->getComponent<Components::Transform::Data>();

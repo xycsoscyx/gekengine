@@ -178,16 +178,8 @@ namespace Gek
             // dNewtonPlayerManager::dNewtonPlayer
             void OnPlayerMove(dFloat frameTime)
             {
-                float lateralSpeed = ((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * moveSpeed;
-                float strafeSpeed = ((strafeLeft ? 1.0f : 0.0f) + (strafeRight ? -1.0f : 0.0f)) * (moveSpeed * 0.5f);
-                float magnitude = ((lateralSpeed * lateralSpeed) + (strafeSpeed * strafeSpeed));
-                if (magnitude > 0.0f)
-                {
-                    float inverseMagnitude = 5.0f / std::sqrt(magnitude);
-                    lateralSpeed *= inverseMagnitude;
-                    strafeSpeed *= inverseMagnitude;
-                }
-
+                float lateralSpeed = ((moveForward ? -1.0f : 0.0f) + (moveBackward ? 1.0f : 0.0f)) * moveSpeed;
+                float strafeSpeed = ((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * moveSpeed;
                 SetPlayerVelocity(lateralSpeed, strafeSpeed, jumpCharge, viewAngle, Math::Float4(0.0f, -9.81f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.data, frameTime);
                 if (jumpCharge > 0.0f)
                 {
