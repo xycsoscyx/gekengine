@@ -681,22 +681,22 @@ namespace Gek
 
                 STDMETHODIMP_(void) drawPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 vertexCount, UINT32 firstVertex)
                 {
-                    drawQueue[reinterpret_cast<Material::Interface *>(material)->getShader()][reinterpret_cast<Plugin::Interface *>(plugin)][reinterpret_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, vertexCount, firstVertex));
+                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, vertexCount, firstVertex));
                 }
 
                 STDMETHODIMP_(void) drawIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
-                    drawQueue[reinterpret_cast<Material::Interface *>(material)->getShader()][reinterpret_cast<Plugin::Interface *>(plugin)][reinterpret_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, firstVertex, indexBuffer, indexCount, firstIndex));
+                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
                 STDMETHODIMP_(void) drawInstancedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
                 {
-                    drawQueue[reinterpret_cast<Material::Interface *>(material)->getShader()][reinterpret_cast<Plugin::Interface *>(plugin)][reinterpret_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, vertexCount, firstVertex));
+                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, vertexCount, firstVertex));
                 }
 
                 STDMETHODIMP_(void) drawInstancedIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
-                    drawQueue[reinterpret_cast<Material::Interface *>(material)->getShader()][reinterpret_cast<Plugin::Interface *>(plugin)][reinterpret_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, firstVertex, indexBuffer, indexCount, firstIndex));
+                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
                 // Engine::Population::Observer

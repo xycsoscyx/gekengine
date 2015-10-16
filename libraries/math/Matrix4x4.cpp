@@ -387,10 +387,11 @@ namespace Gek
 
         Float4x4 Float4x4::getRotation(void) const
         {
-            return Float4x4({ _11, _12, _13, 0,
-                              _21, _22, _23, 0,
-                              _31, _32, _33, 0,
-                              0,   0,   0, 1 });
+            // Sets row/column 4 to identity
+            return Float4x4({ rows[0].xyz.w(0.0f).simd,
+                              rows[1].xyz.w(0.0f).simd,
+                              rows[2].xyz.w(0.0f).simd,
+                   Float4(0.0f, 0.0f, 0.0f, 1.0f).simd });
         }
 
         void Float4x4::transpose(void)
