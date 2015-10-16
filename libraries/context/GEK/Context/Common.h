@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include <atlbase.h>
 #include <atlstr.h>
+#include <varargs.h>
 #include <unordered_map>
 #include <algorithm>
 #include <functional>
@@ -69,6 +70,8 @@ namespace Gek
         LPCSTR file;
         UINT32 line;
         CStringW call;
+
+        UINT32 startTime;
 
     public:
         LoggingScope(Context::Interface *context, LPCSTR file, UINT32 line, const CStringW &call);

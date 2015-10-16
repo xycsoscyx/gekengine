@@ -94,17 +94,9 @@ namespace Gek
                         return resultValue;
                     }
 
-                    STDMETHODIMP getShader(IUnknown **returnObject)
+                    STDMETHODIMP_(Shader::Interface *) getShader(void)
                     {
-                        REQUIRE_RETURN(returnObject, E_INVALIDARG);
-
-                        HRESULT resultValue = E_FAIL;
-                        if (shader)
-                        {
-                            resultValue = shader->QueryInterface(IID_PPV_ARGS(returnObject));
-                        }
-
-                        return resultValue;
+                        return shader;
                     }
 
                     STDMETHODIMP_(void) enable(Video::Context::Interface *context, LPCVOID passData)

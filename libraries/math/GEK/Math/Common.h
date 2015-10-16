@@ -1,16 +1,13 @@
 #pragma once
 
+#include <cfloat>
+
 namespace Gek
 {
     namespace Math
     {
-        static union
-        {
-            unsigned char data[4];
-            float value;
-        } const HugeConstant = { { 0, 0, 0x80, 0x7f } };
-        const float Infinity = HugeConstant.value;
-        const float Epsilon = 1.0e-5f;
+        const float Infinity = FLT_MAX;
+        const float Epsilon = FLT_EPSILON;
         const float Pi = 3.14159265358979323846f;
 
         template <typename TYPE>

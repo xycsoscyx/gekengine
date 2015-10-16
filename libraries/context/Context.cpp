@@ -18,13 +18,15 @@ namespace Gek
         , file(file)
         , line(line)
         , call(call)
+        , startTime(GetTickCount())
     {
         context->logMessage(file, line, 1, L"[entering] %s", call.GetString());
     }
 
     LoggingScope::~LoggingScope(void)
     {
-        context->logMessage(file, line, -1, L"[leaving] %s", call.GetString());
+        UINT32 totalTime(GetTickCount() - startTime);
+        context->logMessage(file, line, -1, L"[leaving] %s (%ums)", call.GetString(), totalTime);
     }
 };
 

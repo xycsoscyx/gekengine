@@ -1346,7 +1346,7 @@ namespace Gek
 
                 D3D_FEATURE_LEVEL featureLevelList[] =
                 {
-                    D3D_FEATURE_LEVEL_11_0,
+                    D3D_FEATURE_LEVEL_9_3,
                 };
 
                 D3D_FEATURE_LEVEL featureLevel;
@@ -1753,20 +1753,6 @@ namespace Gek
                     UINT32(samplerStates.filterMode));
 
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
-
-                std::size_t hash = std::hash<UINT8>()(static_cast<UINT8>(samplerStates.addressModeU)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(samplerStates.addressModeV)) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(samplerStates.addressModeW)) ^
-                    std::hash<float>()(samplerStates.mipLevelBias) ^
-                    std::hash<UINT32>()(samplerStates.maximumAnisotropy) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(samplerStates.comparisonFunction)) ^
-                    std::hash<float>()(samplerStates.borderColor.r) ^
-                    std::hash<float>()(samplerStates.borderColor.g) ^
-                    std::hash<float>()(samplerStates.borderColor.b) ^
-                    std::hash<float>()(samplerStates.borderColor.a) ^
-                    std::hash<float>()(samplerStates.minimumMipLevel) ^
-                    std::hash<float>()(samplerStates.maximumMipLevel) ^
-                    std::hash<UINT8>()(static_cast<UINT8>(samplerStates.filterMode));
 
                 D3D11_SAMPLER_DESC samplerDescription;
                 samplerDescription.AddressU = DirectX::AddressModeList[static_cast<UINT8>(samplerStates.addressModeU)];

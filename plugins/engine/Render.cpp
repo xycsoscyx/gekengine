@@ -210,9 +210,10 @@ namespace Gek
                 CComPtr<Video::Buffer::Interface> deferredIndexBuffer;
 
                 concurrency::concurrent_unordered_map<std::size_t, CComPtr<IUnknown>> resourceMap;
-                concurrency::concurrent_unordered_map<CComQIPtr<Plugin::Interface>, // plugin
-                    concurrency::concurrent_unordered_map<CComQIPtr<Material::Interface>, // material
-                    concurrency::concurrent_vector<DrawCommand>>> drawQueue; // command
+                concurrency::concurrent_unordered_map<Shader::Interface *, // shader
+                    concurrency::concurrent_unordered_map<Plugin::Interface *, // plugin
+                    concurrency::concurrent_unordered_map<Material::Interface *, // material
+                    concurrency::concurrent_vector<DrawCommand>>>> drawQueue; // command
 
             public:
                 System(void)
@@ -680,34 +681,22 @@ namespace Gek
 
                 STDMETHODIMP_(void) drawPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 vertexCount, UINT32 firstVertex)
                 {
-                    if (plugin && material)
-                    {
-                        drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, vertexCount, firstVertex));
-                    }
+                    drawQueue[reinterpret_cast<Material::Interface *>(material)->getShader()][reinterpret_cast<Plugin::Interface *>(plugin)][reinterpret_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, vertexCount, firstVertex));
                 }
 
                 STDMETHODIMP_(void) drawIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
-                    if (plugin && material)
-                    {
-                        drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, firstVertex, indexBuffer, indexCount, firstIndex));
-                    }
+                    drawQueue[reinterpret_cast<Material::Interface *>(material)->getShader()][reinterpret_cast<Plugin::Interface *>(plugin)][reinterpret_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
                 STDMETHODIMP_(void) drawInstancedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
                 {
-                    if (plugin && material)
-                    {
-                        drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, vertexCount, firstVertex));
-                    }
+                    drawQueue[reinterpret_cast<Material::Interface *>(material)->getShader()][reinterpret_cast<Plugin::Interface *>(plugin)][reinterpret_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, vertexCount, firstVertex));
                 }
 
                 STDMETHODIMP_(void) drawInstancedIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
-                    if (plugin && material)
-                    {
-                        drawQueue[plugin][material].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, firstVertex, indexBuffer, indexCount, firstIndex));
-                    }
+                    drawQueue[reinterpret_cast<Material::Interface *>(material)->getShader()][reinterpret_cast<Plugin::Interface *>(plugin)][reinterpret_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
                 // Engine::Population::Observer
@@ -798,28 +787,16 @@ namespace Gek
                         drawQueue.clear();
                         Observable::Mixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
 
-                        concurrency::concurrent_unordered_map<CComQIPtr<Shader::Interface>, // shader
-                            concurrency::concurrent_unordered_map<Plugin::Interface *, // plugin
-                            concurrency::concurrent_unordered_map<Material::Interface *, // material
-                            concurrency::concurrent_vector<DrawCommand> *>>> sortedDrawQueue; // command
-                        for (auto &pluginPair : drawQueue)
-                        {
-                            for (auto &materialPair : pluginPair.second)
-                            {
-                                CComPtr<IUnknown> shader;
-                                materialPair.first->getShader(&shader);
-                                if (shader)
-                                {
-                                    sortedDrawQueue[(IUnknown *)shader][pluginPair.first][materialPair.first] = &materialPair.second;
-                                }
-                            }
-                        }
-
                         defaultContext->pixelSystem()->setSamplerStates(pointSamplerStates, 0);
                         defaultContext->pixelSystem()->setSamplerStates(linearSamplerStates, 1);
                         defaultContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
-                        for (auto &shaderPair : sortedDrawQueue)
+                        for (auto &shaderPair : drawQueue)
                         {
+                            if (shaderPair.first == nullptr)
+                            {
+                                continue;
+                            }
+
                             shaderPair.first->draw(defaultContext,
                                 [&](LPCVOID passData, bool lighting) -> void // drawForward
                             {
@@ -831,11 +808,21 @@ namespace Gek
 
                                 for (auto &pluginPair : shaderPair.second)
                                 {
+                                    if (pluginPair.first == nullptr)
+                                    {
+                                        continue;
+                                    }
+
                                     pluginPair.first->enable(defaultContext);
                                     for (auto &materialPair : pluginPair.second)
                                     {
+                                        if (materialPair.first == nullptr)
+                                        {
+                                            continue;
+                                        }
+
                                         materialPair.first->enable(defaultContext, passData);
-                                        for (auto &drawCommand : (*materialPair.second))
+                                        for (auto &drawCommand : materialPair.second)
                                         {
                                             defaultContext->setIndexBuffer(drawCommand.indexBuffer, 0);
                                             defaultContext->setVertexBufferList(0, drawCommand.vertexBufferList, drawCommand.offsetList);
