@@ -241,13 +241,15 @@ namespace Gek
         public:
             struct Surface
             {
+                bool ghost;
                 float staticFriction;
                 float kineticFriction;
                 float elasticity;
                 float softness;
 
                 Surface(void)
-                    : staticFriction(0.9f)
+                    : ghost(false)
+                    , staticFriction(0.9f)
                     , kineticFriction(0.5f)
                     , elasticity(0.4f)
                     , softness(1.0f)
@@ -370,11 +372,12 @@ namespace Gek
                     {
                         Surface surface;
                         Gek::Xml::Node xmlMaterialNode = xmlDocument.getRoot();
-                        if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"surface") == 0)
+                        if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
                         {
                             Gek::Xml::Node xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
                             if (xmlSurfaceNode)
                             {
+                                surface.ghost = String::toBoolean(xmlSurfaceNode.getAttribute(L"ghost"));
                                 if (xmlSurfaceNode.hasAttribute(L"staticfriction"))
                                 {
                                     surface.staticFriction = Gek::String::toFloat(xmlSurfaceNode.getAttribute(L"staticfriction"));
@@ -567,16 +570,20 @@ namespace Gek
                                         {
                                             Material &material = materialPair.second;
                                             INT32 surfaceIndex = loadSurface(CA2W(materialPair.first, CP_UTF8));
-                                            for (UINT32 index = 0; index < material.indexCount; index += 3)
+                                            const Surface &surface = getSurface(surfaceIndex);
+                                            if (!surface.ghost)
                                             {
-                                                Math::Float3 face[3] =
+                                                for (UINT32 index = 0; index < material.indexCount; index += 3)
                                                 {
-                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 0]].position,
-                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 1]].position,
-                                                    vertexList[material.firstVertex + indexList[material.firstIndex + index + 2]].position,
-                                                };
+                                                    Math::Float3 face[3] =
+                                                    {
+                                                        vertexList[material.firstVertex + indexList[material.firstIndex + index + 0]].position,
+                                                        vertexList[material.firstVertex + indexList[material.firstIndex + index + 1]].position,
+                                                        vertexList[material.firstVertex + indexList[material.firstIndex + index + 2]].position,
+                                                    };
 
-                                                newtonCollisionMesh->AddFace(3, face[0].data, sizeof(Math::Float3), surfaceIndex);
+                                                    newtonCollisionMesh->AddFace(3, face[0].data, sizeof(Math::Float3), surfaceIndex);
+                                                }
                                             }
                                         }
 

@@ -57,7 +57,7 @@ void GetMeshes(const aiScene *scene, const aiNode *node, const Gek::Math::Float4
     localTransformation.transpose();
 
     Gek::Math::Float4x4 transformation(localTransformation * parentTransformation);
-    Gek::Math::Float4x4 inverseRotation(Gek::Math::Quaternion(transformation).getInverse());
+    Gek::Math::Float4x4 inverseRotation(transformation.getRotation().getInverse());
     if (node->mNumMeshes > 0)
     {
         if (node->mMeshes == nullptr)
@@ -127,9 +127,9 @@ void GetMeshes(const aiScene *scene, const aiNode *node, const Gek::Math::Float4
                 for (UINT32 vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
                 {
                     Vertex vertex;
-                    vertex.position = (transformation * Gek::Math::Float3(mesh->mVertices[vertexIndex].x,
+                    vertex.position = (transformation * Gek::Math::Float4(mesh->mVertices[vertexIndex].x,
                                                                           mesh->mVertices[vertexIndex].y,
-                                                                          mesh->mVertices[vertexIndex].z));
+                                                                          mesh->mVertices[vertexIndex].z, 1.0f).xyz);
                     alignedBox.extend(vertex.position);
 
                     vertex.texCoord.x = mesh->mTextureCoords[0][vertexIndex].x;

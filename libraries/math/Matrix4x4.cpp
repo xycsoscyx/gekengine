@@ -480,9 +480,9 @@ namespace Gek
 
         Float3 Float4x4::operator * (const Float3 &vector) const
         {
-            return Float3({ ((vector.x * _11) + (vector.y * _21) + (vector.z * _31)) + _41,
-                            ((vector.x * _12) + (vector.y * _22) + (vector.z * _32)) + _42,
-                            ((vector.x * _13) + (vector.y * _23) + (vector.z * _33)) + _43 });
+            return Float3({ ((vector.x * _11) + (vector.y * _21) + (vector.z * _31)),
+                            ((vector.x * _12) + (vector.y * _22) + (vector.z * _32)),
+                            ((vector.x * _13) + (vector.y * _23) + (vector.z * _33)) });
         }
 
         Float4 Float4x4::operator * (const Float4 &vector) const

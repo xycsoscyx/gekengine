@@ -347,8 +347,12 @@ namespace Gek
                     {
                         Video::RenderStates renderStates;
                         renderStates.fillMode = getFillMode(xmlRenderStatesNode.firstChildElement(L"fillmode").getText());
-                        renderStates.cullMode = getCullMode(xmlRenderStatesNode.firstChildElement(L"comparison").getText());
-                        renderStates.frontCounterClockwise = String::toBoolean(xmlRenderStatesNode.firstChildElement(L"frontcounterclockwise").getText());
+                        renderStates.cullMode = getCullMode(xmlRenderStatesNode.firstChildElement(L"cullmode").getText());
+                        if (xmlRenderStatesNode.hasChildElement(L"frontcounterclockwise"))
+                        {
+                            renderStates.frontCounterClockwise = String::toBoolean(xmlRenderStatesNode.firstChildElement(L"frontcounterclockwise").getText());
+                        }
+
                         renderStates.depthBias = String::toUINT32(xmlRenderStatesNode.firstChildElement(L"depthbias").getText());
                         renderStates.depthBiasClamp = String::toFloat(xmlRenderStatesNode.firstChildElement(L"depthbiasclamp").getText());
                         renderStates.slopeScaledDepthBias = String::toFloat(xmlRenderStatesNode.firstChildElement(L"slopescaleddepthbias").getText());
