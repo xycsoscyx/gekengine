@@ -135,11 +135,9 @@ void GetMeshes(const aiScene *scene, const aiNode *node, const Gek::Math::Float4
                     vertex.texCoord.x = mesh->mTextureCoords[0][vertexIndex].x;
                     vertex.texCoord.y = mesh->mTextureCoords[0][vertexIndex].y;
 
-                    Gek::Math::Float3 normal;
-                    vertex.normal.x = mesh->mNormals[vertexIndex].x;
-                    vertex.normal.y = mesh->mNormals[vertexIndex].y;
-                    vertex.normal.z = mesh->mNormals[vertexIndex].z;
-                    vertex.normal = (inverseRotation * normal);
+                    vertex.normal = (inverseRotation * Gek::Math::Float3(mesh->mNormals[vertexIndex].x,
+                                                                         mesh->mNormals[vertexIndex].y,
+                                                                         mesh->mNormals[vertexIndex].z));
 
                     model.vertexList.push_back(vertex);
                 }
@@ -175,7 +173,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
 
     bool flip = false;
     bool enableSmoothing = false;
-    float smoothingAngle = 80.0f;
+    float smoothingAngle = 90.0f;
     for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
     {
         if (_wcsicmp(argumentList[argumentIndex], L"-input") == 0 && ++argumentIndex < argumentCount)
@@ -212,7 +210,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     try
     {
         aiPropertyStore *propertyStore = aiCreatePropertyStore();
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_TANGENTS_AND_BITANGENTS | (enableSmoothing ? aiComponent_NORMALS : 0));
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_TANGENTS_AND_BITANGENTS | aiComponent_NORMALS);
         if (enableSmoothing)
         {
             aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
@@ -229,9 +227,25 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             throw OptimizerException(__LINE__, L"No meshes found in scene: %s", fileNameInput.GetString());
         }
 
-        aiApplyPostProcessing(scene, aiProcess_FindInvalidData | aiProcess_Triangulate | aiProcess_RemoveRedundantMaterials | (flip ? aiProcess_FlipWindingOrder : 0));
-        aiApplyPostProcessing(scene, enableSmoothing ? aiProcess_GenSmoothNormals : aiProcess_GenNormals);
-        aiApplyPostProcessing(scene, aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices);
+        aiApplyPostProcessing(scene, aiProcess_Triangulate);
+        if(flip)
+        {
+            aiApplyPostProcessing(scene, aiProcess_FlipWindingOrder);
+        }
+
+        aiApplyPostProcessing(scene, aiProcess_FindInvalidData);
+        aiApplyPostProcessing(scene, aiProcess_RemoveRedundantMaterials);
+        if (enableSmoothing)
+        {
+            aiApplyPostProcessing(scene, aiProcess_GenSmoothNormals);
+        }
+        else
+        {
+            aiApplyPostProcessing(scene, aiProcess_GenNormals);
+        }
+
+        aiApplyPostProcessing(scene, aiProcess_JoinIdenticalVertices);
+        aiApplyPostProcessing(scene, aiProcess_ImproveCacheLocality);
         aiReleasePropertyStore(propertyStore);
 
         Gek::Shape::AlignedBox alignedBox;

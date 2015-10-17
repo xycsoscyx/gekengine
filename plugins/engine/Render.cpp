@@ -757,7 +757,7 @@ namespace Gek
                                 auto &lightColorComponent = lightEntity->getComponent<Components::Color::Data>();
 
                                 auto lightIterator = concurrentVisibleLightList.grow_by(1);
-                                (*lightIterator).position = (cameraConstantData.viewMatrix * lightTransformComponent.position);
+                                (*lightIterator).position = (cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz;
                                 (*lightIterator).distance = (*lightIterator).position.getLengthSquared();
                                 (*lightIterator).range = pointLightComponent.radius;
                                 (*lightIterator).color.set(lightColorComponent.value.xyz);
