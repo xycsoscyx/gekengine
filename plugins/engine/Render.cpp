@@ -114,9 +114,9 @@ namespace Gek
                 {
                     Math::Float3 position;
                     float range;
-					Math::Float3 color;
-					float distance;
-				};
+                    Math::Float3 color;
+                    float distance;
+                };
 
                 enum class DrawType : UINT8
                 {
@@ -210,10 +210,10 @@ namespace Gek
                 CComPtr<Video::Buffer::Interface> deferredIndexBuffer;
 
                 concurrency::concurrent_unordered_map<std::size_t, CComPtr<IUnknown>> resourceMap;
-                concurrency::concurrent_unordered_map<Shader::Interface *, // shader
-                    concurrency::concurrent_unordered_map<Plugin::Interface *, // plugin
-                    concurrency::concurrent_unordered_map<Material::Interface *, // material
-                    concurrency::concurrent_vector<DrawCommand>>>> drawQueue; // command
+                concurrency::concurrent_unordered_map < Shader::Interface *, // shader
+                    concurrency::concurrent_unordered_map < Plugin::Interface *, // plugin
+                    concurrency::concurrent_unordered_map < Material::Interface *, // material
+                    concurrency::concurrent_vector < DrawCommand >> >> drawQueue; // command
 
             public:
                 System(void)
@@ -232,7 +232,7 @@ namespace Gek
                     INTERFACE_LIST_ENTRY_COM(Observable::Interface)
                     INTERFACE_LIST_ENTRY_COM(Engine::Population::Observer)
                     INTERFACE_LIST_ENTRY_COM(Engine::Render::Interface)
-                END_INTERFACE_LIST_USER
+                    END_INTERFACE_LIST_USER
 
                 template <typename CLASS>
                 HRESULT getResource(CLASS **returnObject, std::size_t hash, std::function<HRESULT(CLASS **)> onResourceMissing)
@@ -293,7 +293,7 @@ namespace Gek
                     if (SUCCEEDED(resultValue))
                     {
                         Video::SamplerStates samplerStates;
-						samplerStates.maximumAnisotropy = 8;
+                        samplerStates.maximumAnisotropy = 8;
                         samplerStates.filterMode = Video::FilterMode::Anisotropic;
                         samplerStates.addressModeU = Video::AddressMode::Wrap;
                         samplerStates.addressModeV = Video::AddressMode::Wrap;
@@ -302,17 +302,17 @@ namespace Gek
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantData), 1, Video::BufferFlags::ConstantBuffer);
+                        resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
                     }
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&lightingConstantBuffer, sizeof(LightingConstantData), 1, Video::BufferFlags::ConstantBuffer);
+                        resultValue = video->createBuffer(&lightingConstantBuffer, sizeof(LightingConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Dynamic);
                     }
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 1024, Video::BufferFlags::Dynamic | Video::BufferFlags::StructuredBuffer | Video::BufferFlags::Resource);
+                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 1024, Video::BufferType::Structured, Video::BufferFlags::Dynamic | Video::BufferFlags::Resource);
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -353,15 +353,15 @@ namespace Gek
                         static const Math::Float2 vertexList[] =
                         {
                             Math::Float2(-1.0f, 1.0f), Math::Float2(0.0f, 0.0f),
-                            Math::Float2( 1.0f, 1.0f), Math::Float2(1.0f, 0.0f),
-                            Math::Float2( 1.0f,-1.0f), Math::Float2(1.0f, 1.0f),
+                            Math::Float2(1.0f, 1.0f), Math::Float2(1.0f, 0.0f),
+                            Math::Float2(1.0f,-1.0f), Math::Float2(1.0f, 1.0f),
 
                             Math::Float2(-1.0f, 1.0f), Math::Float2(0.0f, 0.0f),
-                            Math::Float2( 1.0f,-1.0f), Math::Float2(1.0f, 1.0f),
+                            Math::Float2(1.0f,-1.0f), Math::Float2(1.0f, 1.0f),
                             Math::Float2(-1.0f,-1.0f), Math::Float2(0.0f, 1.0f),
                         };
 
-                        resultValue = video->createBuffer(&deferredVertexBuffer, sizeof(Math::Float4), 6, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, vertexList);
+                        resultValue = video->createBuffer(&deferredVertexBuffer, sizeof(Math::Float4), 6, Video::BufferType::Vertex, Video::BufferFlags::Static, vertexList);
                     }
 
                     return resultValue;
@@ -568,12 +568,12 @@ namespace Gek
                     return returnValue;
                 }
 
-                STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData)
+                STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
                 {
                     REQUIRE_RETURN(video, E_FAIL);
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = video->createBuffer(returnObject, format, count, flags, staticData);
+                    returnValue = video->createBuffer(returnObject, format, count, type, flags, staticData);
                     return returnValue;
                 }
 
@@ -589,35 +589,35 @@ namespace Gek
                         {
                             if ((*fileName) == L'*')
                             {
-								if (_wcsnicmp(fileName, L"*color:", 7) == 0)
-								{
-									CComPtr<Video::Texture::Interface> texture;
-									returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
-									if (texture)
-									{
-										Math::Float4 color(String::toFloat4(fileName + 7));
-										UINT32 colorValue = UINT32(UINT8(color.r * 255.0f)) |
-															UINT32(UINT8(color.g * 255.0f) << 8) |
-															UINT32(UINT8(color.b * 255.0f) << 16) |
-															UINT32(UINT8(color.a * 255.0f) << 24);
-										video->updateTexture(texture, &colorValue, 4);
-										returnValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-									}
-								}
-								else if (_wcsnicmp(fileName, L"*normal:", 8) == 0)
-								{
-									CComPtr<Video::Texture::Interface> texture;
-									returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
-									if (texture)
-									{
-										Math::Float3 normal((String::toFloat3(fileName + 8) + 1.0f) * 0.5f);
-										UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
-															 UINT32(UINT8(normal.y * 255.0f) << 8) |
-															 UINT32(UINT8(normal.z * 255.0f) << 16);
-										video->updateTexture(texture, &normalValue, 4);
-										returnValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-									}
-								}
+                                if (_wcsnicmp(fileName, L"*color:", 7) == 0)
+                                {
+                                    CComPtr<Video::Texture::Interface> texture;
+                                    returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
+                                    if (texture)
+                                    {
+                                        Math::Float4 color(String::toFloat4(fileName + 7));
+                                        UINT32 colorValue = UINT32(UINT8(color.r * 255.0f)) |
+                                            UINT32(UINT8(color.g * 255.0f) << 8) |
+                                            UINT32(UINT8(color.b * 255.0f) << 16) |
+                                            UINT32(UINT8(color.a * 255.0f) << 24);
+                                        video->updateTexture(texture, &colorValue, 4);
+                                        returnValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
+                                    }
+                                }
+                                else if (_wcsnicmp(fileName, L"*normal:", 8) == 0)
+                                {
+                                    CComPtr<Video::Texture::Interface> texture;
+                                    returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
+                                    if (texture)
+                                    {
+                                        Math::Float3 normal((String::toFloat3(fileName + 8) + 1.0f) * 0.5f);
+                                        UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
+                                            UINT32(UINT8(normal.y * 255.0f) << 8) |
+                                            UINT32(UINT8(normal.z * 255.0f) << 16);
+                                        video->updateTexture(texture, &normalValue, 4);
+                                        returnValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
+                                    }
+                                }
                             }
                             else
                             {
@@ -771,103 +771,100 @@ namespace Gek
 
                         std::vector<Light> visibleLightList(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end());
                         concurrentVisibleLightList.clear();
-                        
-                        LPVOID lightingData = nullptr;
-                        if (SUCCEEDED(video->mapBuffer(lightingBuffer, &lightingData)))
+
+                        UINT8 *lightingData = nullptr;
+                        if (SUCCEEDED(video->mapBuffer(lightingBuffer, (LPVOID *)&lightingData)))
                         {
-                            UINT32 lightCount = std::min(visibleLightList.size(), size_t(1024));
-                            memcpy(lightingData, visibleLightList.data(), (sizeof(Light) * lightCount));
+                            UINT32 lightCount = std::min(visibleLightList.size(), size_t(1023));
+
+                            Light lightCountData;
+                            lightCountData.range = lightCount;
+                            memcpy(lightingData, &lightCountData, sizeof(Light));
+                            memcpy((lightingData + sizeof(Light)), visibleLightList.data(), (sizeof(Light) * lightCount));
                             video->unmapBuffer(lightingBuffer);
 
-                            LightingConstantData lightingConstantData;
-                            lightingConstantData.count = lightCount;
-                            video->updateBuffer(lightingConstantBuffer, &lightingConstantData);
-                        }
+                            drawQueue.clear();
+                            Observable::Mixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
 
-                        drawQueue.clear();
-                        Observable::Mixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
-
-                        defaultContext->pixelSystem()->setSamplerStates(pointSamplerStates, 0);
-                        defaultContext->pixelSystem()->setSamplerStates(linearSamplerStates, 1);
-                        defaultContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
-                        for (auto &shaderPair : drawQueue)
-                        {
-                            if (shaderPair.first == nullptr)
+                            defaultContext->pixelSystem()->setSamplerStates(pointSamplerStates, 0);
+                            defaultContext->pixelSystem()->setSamplerStates(linearSamplerStates, 1);
+                            defaultContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+                            for (auto &shaderPair : drawQueue)
                             {
-                                continue;
-                            }
-
-                            shaderPair.first->draw(defaultContext,
-                                [&](LPCVOID passData, bool lighting) -> void // drawForward
-                            {
-                                if (lighting)
+                                if (shaderPair.first == nullptr)
                                 {
-                                    defaultContext->pixelSystem()->setConstantBuffer(lightingConstantBuffer, 2);
-                                    defaultContext->pixelSystem()->setResource(lightingBuffer, 0);
+                                    continue;
                                 }
 
-                                for (auto &pluginPair : shaderPair.second)
+                                shaderPair.first->draw(defaultContext,
+                                    [&](LPCVOID passData, bool lighting) -> void // drawForward
                                 {
-                                    if (pluginPair.first == nullptr)
+                                    if (lighting)
                                     {
-                                        continue;
+                                        defaultContext->pixelSystem()->setUnorderedAccess(lightingBuffer, 0, &lightCount);
                                     }
 
-                                    pluginPair.first->enable(defaultContext);
-                                    for (auto &materialPair : pluginPair.second)
+                                    for (auto &pluginPair : shaderPair.second)
                                     {
-                                        if (materialPair.first == nullptr)
+                                        if (pluginPair.first == nullptr)
                                         {
                                             continue;
                                         }
 
-                                        materialPair.first->enable(defaultContext, passData);
-                                        for (auto &drawCommand : materialPair.second)
+                                        pluginPair.first->enable(defaultContext);
+                                        for (auto &materialPair : pluginPair.second)
                                         {
-                                            defaultContext->setIndexBuffer(drawCommand.indexBuffer, 0);
-                                            defaultContext->setVertexBufferList(0, drawCommand.vertexBufferList, drawCommand.offsetList);
-                                            switch (drawCommand.drawType)
+                                            if (materialPair.first == nullptr)
                                             {
-                                            case DrawType::DrawPrimitive:
-                                                defaultContext->drawPrimitive(drawCommand.vertexCount, drawCommand.firstVertex);
-                                                break;
+                                                continue;
+                                            }
 
-                                            case DrawType::DrawIndexedPrimitive:
-                                                defaultContext->drawIndexedPrimitive(drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
-                                                break;
+                                            materialPair.first->enable(defaultContext, passData);
+                                            for (auto &drawCommand : materialPair.second)
+                                            {
+                                                defaultContext->setIndexBuffer(drawCommand.indexBuffer, 0);
+                                                defaultContext->setVertexBufferList(0, drawCommand.vertexBufferList, drawCommand.offsetList);
+                                                switch (drawCommand.drawType)
+                                                {
+                                                case DrawType::DrawPrimitive:
+                                                    defaultContext->drawPrimitive(drawCommand.vertexCount, drawCommand.firstVertex);
+                                                    break;
 
-                                            case DrawType::DrawInstancedPrimitive:
-                                                defaultContext->drawInstancedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.vertexCount, drawCommand.firstVertex);
-                                                break;
+                                                case DrawType::DrawIndexedPrimitive:
+                                                    defaultContext->drawIndexedPrimitive(drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                                    break;
 
-                                            case DrawType::DrawInstancedIndexedPrimitive:
-                                                defaultContext->drawInstancedIndexedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
-                                                break;
-                                            };
+                                                case DrawType::DrawInstancedPrimitive:
+                                                    defaultContext->drawInstancedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.vertexCount, drawCommand.firstVertex);
+                                                    break;
+
+                                                case DrawType::DrawInstancedIndexedPrimitive:
+                                                    defaultContext->drawInstancedIndexedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                                    break;
+                                                };
+                                            }
                                         }
                                     }
-                                }
-                            },
-                                [&](LPCVOID passData, bool lighting) -> void // drawDeferred
-                            {
-                                if (lighting)
+                                },
+                                    [&](LPCVOID passData, bool lighting) -> void // drawDeferred
                                 {
-                                    defaultContext->pixelSystem()->setConstantBuffer(lightingConstantBuffer, 2);
-                                    defaultContext->pixelSystem()->setResource(lightingBuffer, 0);
-                                }
+                                    if (lighting)
+                                    {
+                                        defaultContext->pixelSystem()->setResource(lightingBuffer, 0);
+                                    }
 
-                                defaultContext->setVertexBuffer(0, deferredVertexBuffer, 0);
-                                defaultContext->vertexSystem()->setProgram(deferredVertexProgram);
-                                defaultContext->drawPrimitive(6, 0);
-                            },
-                                [&](LPCVOID passData, bool lighting) -> void // drawCompute
-                            {
-                                if (lighting)
+                                    defaultContext->setVertexBuffer(0, deferredVertexBuffer, 0);
+                                    defaultContext->vertexSystem()->setProgram(deferredVertexProgram);
+                                    defaultContext->drawPrimitive(6, 0);
+                                },
+                                    [&](LPCVOID passData, bool lighting) -> void // drawCompute
                                 {
-                                    defaultContext->computeSystem()->setConstantBuffer(lightingConstantBuffer, 2);
-                                    defaultContext->computeSystem()->setResource(lightingBuffer, 0);
-                                }
-                            });
+                                    if (lighting)
+                                    {
+                                        defaultContext->computeSystem()->setResource(lightingBuffer, 0);
+                                    }
+                                });
+                            }
                         }
                     });
 
