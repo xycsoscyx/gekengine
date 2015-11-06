@@ -29,10 +29,10 @@ namespace Gek
 
             HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
             {
-                Engine::setParameter(componentParameterList, L"outer_radius", outerRadius, String::toFloat);
-                Engine::setParameter(componentParameterList, L"inner_radius", innerRadius, String::toFloat);
-                Engine::setParameter(componentParameterList, L"height", height, String::toFloat);
-                Engine::setParameter(componentParameterList, L"stair_step", stairStep, String::toFloat);
+                Engine::setParameter(componentParameterList, L"outer_radius", outerRadius, String::to<float>);
+                Engine::setParameter(componentParameterList, L"inner_radius", innerRadius, String::to<float>);
+                Engine::setParameter(componentParameterList, L"height", height, String::to<float>);
+                Engine::setParameter(componentParameterList, L"stair_step", stairStep, String::to<float>);
                 return S_OK;
             }
 

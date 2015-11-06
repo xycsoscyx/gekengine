@@ -5,117 +5,98 @@ namespace Gek
 {
     namespace String
     {
-        double toDouble(LPCWSTR expression)
+        void to(LPCWSTR expression, double &value)
         {
-            double value = 0.0;
-            Evaluator::getDouble(expression, value);
-            return value;
+            value = 0.0;
+            Evaluator::get(expression, value);
         }
 
-        float toFloat(LPCWSTR expression)
+        void to(LPCWSTR expression, float &value)
         {
-            float value = 0.0f;
-            Evaluator::getFloat(expression, value);
-            return value;
+            value = 0.0f;
+            Evaluator::get(expression, value);
         }
 
-        Gek::Math::Float2 toFloat2(LPCWSTR expression)
+        void to(LPCWSTR expression, Gek::Math::Float2 &value)
         {
-            Gek::Math::Float2 vector;
-            if (!Evaluator::getFloat2(expression, vector))
+            if (!Evaluator::get(expression, value))
             {
-                if (Evaluator::getFloat(expression, vector.x))
+                if (Evaluator::get(expression, value.x))
                 {
-                    vector.y = vector.x;
+                    value.y = value.x;
                 }
             }
-
-            return vector;
         }
 
-        Gek::Math::Float3 toFloat3(LPCWSTR expression)
+        void to(LPCWSTR expression, Gek::Math::Float3 &value)
         {
-            Gek::Math::Float3 vector;
-            if (!Evaluator::getFloat3(expression, vector))
+            if (!Evaluator::get(expression, value))
             {
-                if (Evaluator::getFloat(expression, vector.x))
+                if (Evaluator::get(expression, value.x))
                 {
-                    vector.y = vector.z = vector.x;
+                    value.y = value.z = value.x;
                 }
             }
-
-            return vector;
         }
 
-        Gek::Math::Float4 toFloat4(LPCWSTR expression)
+        void to(LPCWSTR expression, Gek::Math::Float4 &value)
         {
-            Gek::Math::Float4 vector;
-            if (!Evaluator::getFloat4(expression, vector))
+            if (!Evaluator::get(expression, value))
             {
-                if (Evaluator::getFloat3(expression, *(Gek::Math::Float3 *)&vector))
+                if (Evaluator::get(expression, *(Gek::Math::Float3 *)&value))
                 {
-                    vector.w = 1.0f;
+                    value.w = 1.0f;
                 }
                 else
                 {
-                    if (Evaluator::getFloat(expression, vector.x))
+                    if (Evaluator::get(expression, value.x))
                     {
-                        vector.y = vector.z = vector.w = vector.x;
+                        value.y = value.z = value.w = value.x;
                     }
                 }
             }
-
-            return vector;
         }
 
-        Gek::Math::Quaternion toQuaternion(LPCWSTR expression)
+        void to(LPCWSTR expression, Gek::Math::Quaternion &value)
         {
-            Gek::Math::Quaternion rotation;
-            if (!Evaluator::getQuaternion(expression, rotation))
+            if (!Evaluator::get(expression, value))
             {
                 Gek::Math::Float3 euler;
-                if (Evaluator::getFloat3(expression, euler))
+                if (Evaluator::get(expression, euler))
                 {
-                    rotation.setEuler(euler);
+                    value.setEuler(euler);
                 }
             }
-
-            return rotation;
         }
 
-        INT32 toINT32(LPCWSTR expression)
+        void to(LPCWSTR expression, INT32 &value)
         {
-            INT32 value = 0;
-            Evaluator::getINT32(expression, value);
-            return value;
+            value = 0;
+            Evaluator::get(expression, value);
         }
 
-        UINT32 toUINT32(LPCWSTR expression)
+        void to(LPCWSTR expression, UINT32 &value)
         {
-            UINT32 value = 0;
-            Evaluator::getUINT32(expression, value);
-            return value;
+            value = 0;
+            Evaluator::get(expression, value);
         }
 
-        INT64 toINT64(LPCWSTR expression)
+        void to(LPCWSTR expression, INT64 &value)
         {
-            INT64 value = 0;
-            Evaluator::getINT64(expression, value);
-            return value;
+            value = 0;
+            Evaluator::get(expression, value);
         }
 
-        UINT64 toUINT64(LPCWSTR expression)
+        void to(LPCWSTR expression, UINT64 &value)
         {
-            UINT64 value = 0;
-            Evaluator::getUINT64(expression, value);
-            return value;
+            value = 0;
+            Evaluator::get(expression, value);
         }
 
-        bool toBoolean(LPCWSTR expression)
+        void to(LPCWSTR expression, bool &value)
         {
-            bool value = false;
-            Evaluator::getBoolean(expression, value);
-            return value;
+            value = false;
+            Evaluator::get(expression, value);
         }
 
         CStringW from(double value)

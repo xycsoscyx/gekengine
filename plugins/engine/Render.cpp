@@ -601,7 +601,7 @@ namespace Gek
 									returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
 									if (texture)
 									{
-										Math::Float4 color(String::toFloat4(fileName + 7));
+										Math::Float4 color(String::to<Math::Float4>(fileName + 7));
 										UINT32 colorValue = UINT32(UINT8(color.r * 255.0f)) |
 															UINT32(UINT8(color.g * 255.0f) << 8) |
 															UINT32(UINT8(color.b * 255.0f) << 16) |
@@ -616,7 +616,7 @@ namespace Gek
 									returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
 									if (texture)
 									{
-										Math::Float3 normal((String::toFloat3(fileName + 8) + 1.0f) * 0.5f);
+										Math::Float3 normal((String::to<Math::Float3>(fileName + 8) + 1.0f) * 0.5f);
 										UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
 															 UINT32(UINT8(normal.y * 255.0f) << 8) |
 															 UINT32(UINT8(normal.z * 255.0f) << 16);
@@ -685,23 +685,47 @@ namespace Gek
                     return returnValue;
                 }
 
+                STDMETHODIMP_(IUnknown *) findResource(LPCWSTR name)
+                {
+                    REQUIRE_RETURN(name, nullptr);
+
+                    if (_wcsicmp(name, L"ambientLightMap") == 0)
+                    {
+                        return lightingAmbientMap;
+                    }
+
+                    return nullptr;
+                }
+
                 STDMETHODIMP_(void) drawPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 vertexCount, UINT32 firstVertex)
                 {
+                    REQUIRE_VOID_RETURN(material);
+                    REQUIRE_VOID_RETURN(plugin);
+
                     drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, vertexCount, firstVertex));
                 }
 
                 STDMETHODIMP_(void) drawIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
+                    REQUIRE_VOID_RETURN(material);
+                    REQUIRE_VOID_RETURN(plugin);
+
                     drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
                 STDMETHODIMP_(void) drawInstancedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
                 {
+                    REQUIRE_VOID_RETURN(material);
+                    REQUIRE_VOID_RETURN(plugin);
+
                     drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, vertexCount, firstVertex));
                 }
 
                 STDMETHODIMP_(void) drawInstancedIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                 {
+                    REQUIRE_VOID_RETURN(material);
+                    REQUIRE_VOID_RETURN(plugin);
+
                     drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
@@ -860,10 +884,6 @@ namespace Gek
                                 {
                                     defaultContext->pixelSystem()->setConstantBuffer(lightingConstantBuffer, 2);
                                     defaultContext->pixelSystem()->setResource(lightingBuffer, 0);
-                                }
-                                else
-                                {
-                                    defaultContext->pixelSystem()->setResource(lightingAmbientMap, 0);
                                 }
 
                                 defaultContext->setVertexBuffer(0, deferredVertexBuffer, 0);

@@ -26,8 +26,8 @@ namespace Gek
                 HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
                     setParameter(componentParameterList, L"", target, [](LPCWSTR value) -> LPCWSTR { return value; });
-                    setParameter(componentParameterList, L"offset", offset, String::toFloat4);
-                    setParameter(componentParameterList, L"rotation", rotation, String::toQuaternion);
+                    setParameter(componentParameterList, L"offset", offset, String::to<Math::Float4>);
+                    setParameter(componentParameterList, L"rotation", rotation, String::to<Math::Quaternion>);
                     return S_OK;
                 }
 

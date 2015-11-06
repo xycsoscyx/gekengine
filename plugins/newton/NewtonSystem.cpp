@@ -377,25 +377,25 @@ namespace Gek
                             Gek::Xml::Node xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
                             if (xmlSurfaceNode)
                             {
-                                surface.ghost = String::toBoolean(xmlSurfaceNode.getAttribute(L"ghost"));
+                                surface.ghost = String::to<bool>(xmlSurfaceNode.getAttribute(L"ghost"));
                                 if (xmlSurfaceNode.hasAttribute(L"staticfriction"))
                                 {
-                                    surface.staticFriction = Gek::String::toFloat(xmlSurfaceNode.getAttribute(L"staticfriction"));
+                                    surface.staticFriction = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"staticfriction"));
                                 }
 
                                 if (xmlSurfaceNode.hasAttribute(L"kineticfriction"))
                                 {
-                                    surface.kineticFriction = Gek::String::toFloat(xmlSurfaceNode.getAttribute(L"kineticfriction"));
+                                    surface.kineticFriction = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"kineticfriction"));
                                 }
 
                                 if (xmlSurfaceNode.hasAttribute(L"elasticity"))
                                 {
-                                    surface.elasticity = Gek::String::toFloat(xmlSurfaceNode.getAttribute(L"elasticity"));
+                                    surface.elasticity = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"elasticity"));
                                 }
 
                                 if (xmlSurfaceNode.hasAttribute(L"softness"))
                                 {
-                                    surface.softness = Gek::String::toFloat(xmlSurfaceNode.getAttribute(L"softness"));
+                                    surface.softness = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"softness"));
                                 }
 
                                 surfaceIndex = surfaceList.size();

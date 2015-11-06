@@ -30,7 +30,7 @@
         <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %lightListSize%">byte</tileIndexList>
     </buffers>
 
-    <pass mode="forward">
+    <!--pass mode="forward">
         <depthstates>
             <comparison>lessequal</comparison>
             <writemask>all</writemask>
@@ -52,7 +52,7 @@
             <entry>mainPixelProgram</entry>
             <source>Standard\Deferred</source>
         </program>
-    </pass>
+    </pass-->
 
     <pass mode="deferred">
         <resources>
@@ -60,6 +60,7 @@
             <normalBuffer />
             <depthBuffer />
             <infoBuffer />
+            <ambientLightMap>ambientLightMap</ambientLightMap>
         </resources>
 
         <program>
@@ -68,7 +69,7 @@
         </program>
     </pass>
 
-    <pass mode="compute" lighting="true">
+    <!--pass mode="compute" lighting="true">
         <resources>
             <depthBuffer />
         </resources>
@@ -108,5 +109,5 @@
             <entry>mainPixelProgram</entry>
             <source>Standard\Lighting</source>
         </program>
-    </pass>
+    </pass-->
 </shader>

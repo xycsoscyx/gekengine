@@ -31,10 +31,10 @@ namespace Gek
 
                 HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
-                    setParameter(componentParameterList, L"field_of_view", fieldOfView, String::toFloat);
-                    setParameter(componentParameterList, L"minimum_distance", minimumDistance, String::toFloat);
-                    setParameter(componentParameterList, L"maximum_distance", maximumDistance, String::toFloat);
-                    setParameter(componentParameterList, L"viewport", viewPort, String::toFloat4);
+                    setParameter(componentParameterList, L"field_of_view", fieldOfView, String::to<float>);
+                    setParameter(componentParameterList, L"minimum_distance", minimumDistance, String::to<float>);
+                    setParameter(componentParameterList, L"maximum_distance", maximumDistance, String::to<float>);
+                    setParameter(componentParameterList, L"viewport", viewPort, String::to<Math::Float4>);
                     return S_OK;
                 }
 

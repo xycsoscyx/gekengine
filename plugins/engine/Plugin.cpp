@@ -211,12 +211,12 @@ namespace Gek
 
                                                     Video::InputElement element;
                                                     element.semanticName = elementNameList.back().GetString();
-                                                    element.semanticIndex = Gek::String::toINT32(xmlElementNode.getAttribute(L"index"));
+                                                    element.semanticIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"index"));
                                                     if (xmlElementNode.hasAttribute(L"slotclass") &&
                                                         xmlElementNode.hasAttribute(L"slotindex"))
                                                     {
                                                         element.slotClass = getElementType(xmlElementNode.getAttribute(L"slotclass"));
-                                                        element.slotIndex = Gek::String::toINT32(xmlElementNode.getAttribute(L"slotindex"));
+                                                        element.slotIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"slotindex"));
                                                     }
 
                                                     if (format.CompareNoCase(L"float4x4") == 0)

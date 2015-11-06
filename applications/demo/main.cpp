@@ -36,17 +36,17 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                     {
                         if (xmlDisplayNode.hasAttribute(L"width"))
                         {
-                            width = Gek::String::toUINT32(xmlDisplayNode.getAttribute(L"width"));
+                            width = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"width"));
                         }
                         
                         if (xmlDisplayNode.hasAttribute(L"height"))
                         {
-                            height = Gek::String::toUINT32(xmlDisplayNode.getAttribute(L"height"));
+                            height = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
                         }
                         
                         if (xmlDisplayNode.hasAttribute(L"windowed"))
                         {
-                            windowed = Gek::String::toBoolean(xmlDisplayNode.getAttribute(L"windowed"));
+                            windowed = Gek::String::to<bool>(xmlDisplayNode.getAttribute(L"windowed"));
                         }
                     }
                 }
@@ -245,17 +245,17 @@ L"    </entity>\r\n";
                             {
                                 if (xmlDisplayNode.hasAttribute(L"width"))
                                 {
-                                    width = Gek::String::toUINT32(xmlDisplayNode.getAttribute(L"width"));
+                                    width = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"width"));
                                 }
 
                                 if (xmlDisplayNode.hasAttribute(L"height"))
                                 {
-                                    height = Gek::String::toUINT32(xmlDisplayNode.getAttribute(L"height"));
+                                    height = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
                                 }
 
                                 if (xmlDisplayNode.hasAttribute(L"windowed"))
                                 {
-                                    windowed = Gek::String::toBoolean(xmlDisplayNode.getAttribute(L"windowed"));
+                                    windowed = Gek::String::to<bool>(xmlDisplayNode.getAttribute(L"windowed"));
                                 }
                             }
                         }

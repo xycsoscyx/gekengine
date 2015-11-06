@@ -432,11 +432,11 @@ namespace Gek
                 {
                     if (shape.CompareNoCase(L"cube") == 0)
                     {
-                        Math::Float3 size(String::toFloat3(data.parameters.Tokenize(L"|", position)));
+                        Math::Float3 size(String::to<Math::Float3>(data.parameters.Tokenize(L"|", position)));
                     }
                     else if (shape.CompareNoCase(L"sphere") == 0)
                     {
-                        UINT32 divisionCount = String::toUINT32(data.parameters.Tokenize(L"|", position));
+                        UINT32 divisionCount = String::to<UINT32>(data.parameters.Tokenize(L"|", position));
 
                         GeoSphere geoSphere;
                         geoSphere.generate(divisionCount);
@@ -473,13 +473,13 @@ namespace Gek
                 CStringW material = data.parameters.Tokenize(L"|", position);
                 if (shape.CompareNoCase(L"cube") == 0)
                 {
-                    Math::Float3 size(String::toFloat3(data.parameters.Tokenize(L"|", position)));
+                    Math::Float3 size(String::to<Math::Float3>(data.parameters.Tokenize(L"|", position)));
                     data.alignedBox.minimum = -Math::Float3(size * Math::Float3(0.5f));
                     data.alignedBox.maximum =  Math::Float3(size * Math::Float3(0.5f));
                 }
                 else if (shape.CompareNoCase(L"sphere") == 0)
                 {
-                    float radius = String::toFloat(data.parameters.Tokenize(L"|", position));
+                    float radius = String::to<float>(data.parameters.Tokenize(L"|", position));
                     data.alignedBox.minimum = Math::Float3(-radius);
                     data.alignedBox.maximum = Math::Float3(radius);
                 }

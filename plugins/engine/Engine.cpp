@@ -128,9 +128,7 @@ namespace Gek
 
                     if (SUCCEEDED(resultValue))
                     {
-                        RECT clientRectangle;
-                        GetClientRect(window, &clientRectangle);
-                        resultValue = video->initialize(window, true, (clientRectangle.right - clientRectangle.left), (clientRectangle.bottom - clientRectangle.top));
+                        resultValue = video->initialize(window, false);
                     }
 
                     if (SUCCEEDED(resultValue))

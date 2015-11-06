@@ -98,40 +98,40 @@ namespace Gek
         static EquationEvaluator<float> evaluateFloat;
         static EquationEvaluator<double> evaluateDouble;
 
-        bool getDouble(LPCWSTR expression, double &result)
+        bool get(LPCWSTR expression, double &result)
         {
             return evaluateDouble.getValue(expression, result);
         }
 
-        bool getFloat(LPCWSTR expression, float &result)
+        bool get(LPCWSTR expression, float &result)
         {
             return evaluateFloat.getValue(expression, result);
         }
 
-        bool getFloat2(LPCWSTR expression, Gek::Math::Float2 &result)
+        bool get(LPCWSTR expression, Gek::Math::Float2 &result)
         {
             return evaluateFloat.getVector(expression, result.data);
         }
 
-        bool getFloat3(LPCWSTR expression, Gek::Math::Float3 &result)
+        bool get(LPCWSTR expression, Gek::Math::Float3 &result)
         {
             return evaluateFloat.getVector(expression, result.data);
         }
 
-        bool getFloat4(LPCWSTR expression, Gek::Math::Float4 &result)
+        bool get(LPCWSTR expression, Gek::Math::Float4 &result)
         {
             return evaluateFloat.getVector(expression, result.data);
         }
 
-        bool getQuaternion(LPCWSTR expression, Gek::Math::Quaternion &result)
+        bool get(LPCWSTR expression, Gek::Math::Quaternion &result)
         {
             return evaluateFloat.getVector(expression, result.data);
         }
 
-        bool getINT32(LPCWSTR expression, INT32 &result)
+        bool get(LPCWSTR expression, INT32 &result)
         {
             float value = 0.0f;
-            if (getFloat(expression, value))
+            if (get(expression, value))
             {
                 result = INT32(value);
                 return true;
@@ -142,10 +142,10 @@ namespace Gek
             }
         }
 
-        bool getUINT32(LPCWSTR expression, UINT32 &result)
+        bool get(LPCWSTR expression, UINT32 &result)
         {
             float value = 0.0f;
-            if (getFloat(expression, value))
+            if (get(expression, value))
             {
                 result = UINT32(value);
                 return true;
@@ -156,10 +156,10 @@ namespace Gek
             }
         }
 
-        bool getINT64(LPCWSTR expression, INT64 &result)
+        bool get(LPCWSTR expression, INT64 &result)
         {
             double value = 0.0;
-            if (getDouble(expression, value))
+            if (get(expression, value))
             {
                 result = INT64(value);
                 return true;
@@ -170,10 +170,10 @@ namespace Gek
             }
         }
 
-        bool getUINT64(LPCWSTR expression, UINT64 &result)
+        bool get(LPCWSTR expression, UINT64 &result)
         {
             double value = 0.0;
-            if (getDouble(expression, value))
+            if (get(expression, value))
             {
                 result = UINT64(value);
                 return true;
@@ -184,7 +184,7 @@ namespace Gek
             }
         }
 
-        bool getBoolean(LPCWSTR expression, bool &result)
+        bool get(LPCWSTR expression, bool &result)
         {
             if (_wcsicmp(expression, L"true") == 0 ||
                 _wcsicmp(expression, L"yes") == 0)
@@ -194,7 +194,7 @@ namespace Gek
             }
 
             INT32 value = 0;
-            if (getINT32(expression, value))
+            if (get(expression, value))
             {
                 result = (value == 0 ? false : true);
                 return true;

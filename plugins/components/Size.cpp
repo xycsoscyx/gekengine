@@ -24,7 +24,7 @@ namespace Gek
 
                 HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
                 {
-                    setParameter(componentParameterList, L"", value, String::toFloat);
+                    setParameter(componentParameterList, L"", value, String::to<float>);
                     return S_OK;
                 }
 

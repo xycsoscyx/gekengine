@@ -109,6 +109,7 @@ namespace Gek
                     {
                         Texture1D = 0,
                         Texture2D,
+                        TextureCube,
                         Texture3D,
                         Buffer,
                     };
@@ -225,6 +226,7 @@ namespace Gek
                         {
                         case MapType::Texture1D:    return L"Texture1D";
                         case MapType::Texture2D:    return L"Texture2D";
+                        case MapType::TextureCube:  return L"TextureCube";
                         case MapType::Texture3D:    return L"Texture3D";
                         case MapType::Buffer:       return L"Buffer";
                         };
@@ -278,32 +280,6 @@ namespace Gek
                         stencilStates.comparisonFunction = getComparisonFunction(xmlStencilNode.firstChildElement(L"comparison").getText());
                     }
 
-                    void loadBlendStates(Video::TargetBlendStates &blendStates, Gek::Xml::Node &xmlTargetNode)
-                    {
-                        blendStates.writeMask = 0;
-                        CStringW writeMask(xmlTargetNode.firstChildElement(L"writemask").getText());
-                        if (writeMask.Find(L"r") >= 0) blendStates.writeMask |= Video::ColorMask::R;
-                        if (writeMask.Find(L"g") >= 0) blendStates.writeMask |= Video::ColorMask::G;
-                        if (writeMask.Find(L"b") >= 0) blendStates.writeMask |= Video::ColorMask::B;
-                        if (writeMask.Find(L"a") >= 0) blendStates.writeMask |= Video::ColorMask::A;
-
-                        if (xmlTargetNode.hasChildElement(L"color"))
-                        {
-                            Gek::Xml::Node&xmlColorNode = xmlTargetNode.firstChildElement(L"color");
-                            blendStates.colorSource = getBlendSource(xmlColorNode.getAttribute(L"source"));
-                            blendStates.colorDestination = getBlendSource(xmlColorNode.getAttribute(L"destination"));
-                            blendStates.colorOperation = getBlendOperation(xmlColorNode.getAttribute(L"operation"));
-                        }
-
-                        if (xmlTargetNode.hasChildElement(L"alpha"))
-                        {
-                            Gek::Xml::Node xmlAlphaNode = xmlTargetNode.firstChildElement(L"alpha");
-                            blendStates.alphaSource = getBlendSource(xmlAlphaNode.getAttribute(L"source"));
-                            blendStates.alphaDestination = getBlendSource(xmlAlphaNode.getAttribute(L"destination"));
-                            blendStates.alphaOperation = getBlendOperation(xmlAlphaNode.getAttribute(L"operation"));
-                        }
-                    }
-
                     HRESULT loadDepthStates(Pass &pass, Gek::Xml::Node &xmlDepthStatesNode)
                     {
                         Video::DepthStates depthStates;
@@ -312,7 +288,7 @@ namespace Gek
                         if (xmlDepthStatesNode.hasChildElement(L"clear"))
                         {
                             pass.depthClearFlags |= Video::ClearMask::Depth;
-                            pass.depthClearValue = String::toFloat(xmlDepthStatesNode.firstChildElement(L"clear").getText());
+                            pass.depthClearValue = String::to<float>(xmlDepthStatesNode.firstChildElement(L"clear").getText());
                         }
 
                         depthStates.comparisonFunction = getComparisonFunction(xmlDepthStatesNode.firstChildElement(L"comparison").getText());
@@ -326,7 +302,7 @@ namespace Gek
                             if (xmlStencilNode.hasChildElement(L"clear"))
                             {
                                 pass.depthClearFlags |= Video::ClearMask::Stencil;
-                                pass.stencilClearValue = String::toUINT32(xmlStencilNode.firstChildElement(L"clear").getText());
+                                pass.stencilClearValue = String::to<UINT32>(xmlStencilNode.firstChildElement(L"clear").getText());
                             }
 
                             if (xmlStencilNode.hasChildElement(L"front"))
@@ -350,49 +326,73 @@ namespace Gek
                         renderStates.cullMode = getCullMode(xmlRenderStatesNode.firstChildElement(L"cullmode").getText());
                         if (xmlRenderStatesNode.hasChildElement(L"frontcounterclockwise"))
                         {
-                            renderStates.frontCounterClockwise = String::toBoolean(xmlRenderStatesNode.firstChildElement(L"frontcounterclockwise").getText());
+                            renderStates.frontCounterClockwise = String::to<bool>(xmlRenderStatesNode.firstChildElement(L"frontcounterclockwise").getText());
                         }
 
-                        renderStates.depthBias = String::toUINT32(xmlRenderStatesNode.firstChildElement(L"depthbias").getText());
-                        renderStates.depthBiasClamp = String::toFloat(xmlRenderStatesNode.firstChildElement(L"depthbiasclamp").getText());
-                        renderStates.slopeScaledDepthBias = String::toFloat(xmlRenderStatesNode.firstChildElement(L"slopescaleddepthbias").getText());
-                        renderStates.depthClipEnable = String::toBoolean(xmlRenderStatesNode.firstChildElement(L"depthclip").getText());
-                        renderStates.multisampleEnable = String::toBoolean(xmlRenderStatesNode.firstChildElement(L"multisample").getText());
+                        renderStates.depthBias = String::to<UINT32>(xmlRenderStatesNode.firstChildElement(L"depthbias").getText());
+                        renderStates.depthBiasClamp = String::to<float>(xmlRenderStatesNode.firstChildElement(L"depthbiasclamp").getText());
+                        renderStates.slopeScaledDepthBias = String::to<float>(xmlRenderStatesNode.firstChildElement(L"slopescaleddepthbias").getText());
+                        renderStates.depthClipEnable = String::to<bool>(xmlRenderStatesNode.firstChildElement(L"depthclip").getText());
+                        renderStates.multisampleEnable = String::to<bool>(xmlRenderStatesNode.firstChildElement(L"multisample").getText());
                         return render->createRenderStates(&pass.renderStates, renderStates);
+                    }
+
+                    void loadBlendTargetStates(Video::TargetBlendStates &blendStates, Gek::Xml::Node &xmlBlendStatesNode)
+                    {
+                        blendStates.writeMask = Video::ColorMask::RGBA;
+                        CStringW writeMask(xmlBlendStatesNode.firstChildElement(L"writemask").getText());
+                        if (writeMask.Find(L"r") >= 0) blendStates.writeMask |= Video::ColorMask::R;
+                        if (writeMask.Find(L"g") >= 0) blendStates.writeMask |= Video::ColorMask::G;
+                        if (writeMask.Find(L"b") >= 0) blendStates.writeMask |= Video::ColorMask::B;
+                        if (writeMask.Find(L"a") >= 0) blendStates.writeMask |= Video::ColorMask::A;
+
+                        if (xmlBlendStatesNode.hasChildElement(L"color"))
+                        {
+                            Gek::Xml::Node&xmlColorNode = xmlBlendStatesNode.firstChildElement(L"color");
+                            blendStates.colorSource = getBlendSource(xmlColorNode.getAttribute(L"source"));
+                            blendStates.colorDestination = getBlendSource(xmlColorNode.getAttribute(L"destination"));
+                            blendStates.colorOperation = getBlendOperation(xmlColorNode.getAttribute(L"operation"));
+                        }
+
+                        if (xmlBlendStatesNode.hasChildElement(L"alpha"))
+                        {
+                            Gek::Xml::Node xmlAlphaNode = xmlBlendStatesNode.firstChildElement(L"alpha");
+                            blendStates.alphaSource = getBlendSource(xmlAlphaNode.getAttribute(L"source"));
+                            blendStates.alphaDestination = getBlendSource(xmlAlphaNode.getAttribute(L"destination"));
+                            blendStates.alphaOperation = getBlendOperation(xmlAlphaNode.getAttribute(L"operation"));
+                        }
                     }
 
                     HRESULT loadBlendStates(Pass &pass, Gek::Xml::Node &xmlBlendStatesNode)
                     {
+                        bool alphaToCoverage = String::to<bool>(xmlBlendStatesNode.firstChildElement(L"alphatocoverage").getText());
                         if (xmlBlendStatesNode.hasChildElement(L"target"))
                         {
-                            bool alphaToCoverage = String::toBoolean(xmlBlendStatesNode.firstChildElement(L"alphatocoverage").getText());
-
+                            UINT32 targetIndex = 0;
+                            Video::IndependentBlendStates blendStates;
+                            blendStates.alphaToCoverage = alphaToCoverage;
                             Gek::Xml::Node xmlTargetNode = xmlBlendStatesNode.firstChildElement(L"target");
-                            if (xmlTargetNode.hasSiblingElement(L"target"))
+                            while (xmlTargetNode)
                             {
-                                UINT32 targetIndex = 0;
-                                Video::IndependentBlendStates blendStates;
-                                blendStates.alphaToCoverage = alphaToCoverage;
-                                while (xmlTargetNode)
-                                {
-                                    blendStates.targetStates[targetIndex++].enable = true;
-                                    loadBlendStates(blendStates.targetStates[targetIndex++], xmlTargetNode);
-                                    xmlTargetNode = xmlTargetNode.nextSiblingElement(L"target");
-                                };
+                                blendStates.targetStates[targetIndex++].enable = true;
+                                loadBlendTargetStates(blendStates.targetStates[targetIndex++], xmlTargetNode);
+                                xmlTargetNode = xmlTargetNode.nextSiblingElement(L"target");
+                            };
 
-                                return render->createBlendStates(&pass.blendStates, blendStates);
-                            }
-                            else
+                            return render->createBlendStates(&pass.blendStates, blendStates);
+                        }
+                        else
+                        {
+                            Video::UnifiedBlendStates blendStates;
+                            if (xmlBlendStatesNode)
                             {
-                                Video::UnifiedBlendStates blendStates;
                                 blendStates.enable = true;
                                 blendStates.alphaToCoverage = alphaToCoverage;
-                                loadBlendStates(blendStates, xmlTargetNode);
-                                return render->createBlendStates(&pass.blendStates, blendStates);
+                                loadBlendTargetStates(blendStates, xmlBlendStatesNode);
                             }
-                        }
 
-                        return E_INVALIDARG;
+                            return render->createBlendStates(&pass.blendStates, blendStates);
+                        }
                     }
 
                     std::vector<CStringW> loadChildList(Gek::Xml::Node &xmlProgramNode, LPCWSTR name)
@@ -440,16 +440,14 @@ namespace Gek
                         {
                             return (*bufferIterator).second;
                         }
-                        else
+
+                        auto renderTargetIterator = renderTargetMap.find(name);
+                        if (renderTargetIterator != renderTargetMap.end())
                         {
-                            auto renderTargetIterator = renderTargetMap.find(name);
-                            if (renderTargetIterator != renderTargetMap.end())
-                            {
-                                return (*renderTargetIterator).second;
-                            }
+                            return (*renderTargetIterator).second;
                         }
 
-                        return nullptr;
+                        return render->findResource(name);
                     }
 
                 public:
@@ -501,15 +499,16 @@ namespace Gek
                                 {
                                     if (xmlShaderNode.hasAttribute(L"width"))
                                     {
-                                        width = String::toUINT32(xmlShaderNode.getAttribute(L"width"));
+                                        width = String::to<UINT32>(xmlShaderNode.getAttribute(L"width"));
                                     }
 
                                     if (xmlShaderNode.hasAttribute(L"height"))
                                     {
-                                        height = String::toUINT32(xmlShaderNode.getAttribute(L"height"));
+                                        height = String::to<UINT32>(xmlShaderNode.getAttribute(L"height"));
                                     }
 
                                     std::unordered_map<CStringW, std::pair<MapType, BindType>> resourceList;
+                                    resourceList[L"ambientLightMap"] = std::make_pair(MapType::TextureCube, BindType::Float3);
                                     Gek::Xml::Node xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
                                     if (xmlMaterialNode)
                                     {
@@ -575,7 +574,7 @@ namespace Gek
                                             CStringW value(xmlDefineNode.getText());
                                             defineList[name] = value;
 
-                                            globalDefines[LPCSTR(CW2A(name))].Format("%f", String::toFloat(replaceDefines(value)));
+                                            globalDefines[LPCSTR(CW2A(name))].Format("%f", String::to<float>(replaceDefines(value)));
 
                                             xmlDefineNode = xmlDefineNode.nextSiblingElement();
                                         };
@@ -613,7 +612,7 @@ namespace Gek
                                         {
                                             CStringW name(xmlBufferNode.getType());
                                             Video::Format format = getFormat(xmlBufferNode.getText());
-                                            UINT32 size = String::toUINT32(replaceDefines(xmlBufferNode.getAttribute(L"size")));
+                                            UINT32 size = String::to<UINT32>(replaceDefines(xmlBufferNode.getAttribute(L"size")));
                                             resultValue = render->createBuffer(&bufferMap[name], format, size, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                                             switch (format)
                                             {
@@ -697,20 +696,20 @@ namespace Gek
                                             }
                                         }
 
-                                        pass.lighting = String::toBoolean(xmlPassNode.getAttribute(L"lighting"));
+                                        pass.lighting = String::to<bool>(xmlPassNode.getAttribute(L"lighting"));
 
                                         pass.renderTargetList = loadChildList(xmlPassNode, L"targets");
-                                        if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"depthstates"))
+                                        if (SUCCEEDED(resultValue))
                                         {
                                             resultValue = loadDepthStates(pass, xmlPassNode.firstChildElement(L"depthstates"));
                                         }
 
-                                        if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"renderstates"))
+                                        if (SUCCEEDED(resultValue))
                                         {
                                             resultValue = loadRenderStates(pass, xmlPassNode.firstChildElement(L"renderstates"));
                                         }
 
-                                        if (SUCCEEDED(resultValue) && xmlPassNode.hasChildElement(L"blendstates"))
+                                        if (SUCCEEDED(resultValue))
                                         {
                                             resultValue = loadBlendStates(pass, xmlPassNode.firstChildElement(L"blendstates"));
                                         }
@@ -793,11 +792,6 @@ namespace Gek
                                                     "};                                                     \r\n"\
                                                     "                                                       \r\n";
                                             }
-                                            else
-                                            {
-                                                engineData +=
-                                                    "   TextureCube<float3> ambientMap : register(t0);      \r\n";
-                                            }
 
                                             engineData +=
                                                 "struct OutputPixel                                         \r\n"\
@@ -818,7 +812,7 @@ namespace Gek
                                                 "namespace Resources                                        \r\n"\
                                                 "{                                                          \r\n";
 
-                                            UINT32 resourceStage = 1;//(pass.lighting ? 1 : 0);
+                                            UINT32 resourceStage (pass.lighting ? 1 : 0);
                                             if (pass.mode == PassMode::Forward)
                                             {
                                                 for (auto &map : mapList)
@@ -874,9 +868,9 @@ namespace Gek
                                                 Gek::Xml::Node xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
                                                 if (xmlComputeNode)
                                                 {
-                                                    pass.dispatchWidth = std::max(String::toUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
-                                                    pass.dispatchHeight = std::max(String::toUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
-                                                    pass.dispatchDepth = std::max(String::toUINT32(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
+                                                    pass.dispatchWidth = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
+                                                    pass.dispatchHeight = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
+                                                    pass.dispatchDepth = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
                                                 }
 
                                                 if (pass.mode == PassMode::Compute)
@@ -1010,7 +1004,7 @@ namespace Gek
                             case BindType::Float:
                                 if (true)
                                 {
-                                    float value = String::toFloat(property);
+                                    float value = String::to<float>(property);
                                     materialPropertyList.push_back(*(UINT32 *)&value);
                                 }
 
@@ -1020,7 +1014,7 @@ namespace Gek
                             case BindType::Float2:
                                 if (true)
                                 {
-                                    Math::Float2 value = String::toFloat2(property);
+                                    Math::Float2 value = String::to<Math::Float2>(property);
                                     materialPropertyList.push_back(*(UINT32 *)&value.x);
                                     materialPropertyList.push_back(*(UINT32 *)&value.y);
                                 }
@@ -1030,7 +1024,7 @@ namespace Gek
                             case BindType::Float3:
                                 if (true)
                                 {
-                                    Math::Float3 value = String::toFloat3(property);
+                                    Math::Float3 value = String::to<Math::Float3>(property);
                                     materialPropertyList.push_back(*(UINT32 *)&value.x);
                                     materialPropertyList.push_back(*(UINT32 *)&value.y);
                                     materialPropertyList.push_back(*(UINT32 *)&value.z);
@@ -1042,7 +1036,7 @@ namespace Gek
                             case BindType::Float4:
                                 if (true)
                                 {
-                                    Math::Float4 value = String::toFloat4(property);
+                                    Math::Float4 value = String::to<Math::Float4>(property);
                                     materialPropertyList.push_back(*(UINT32 *)&value.x);
                                     materialPropertyList.push_back(*(UINT32 *)&value.y);
                                     materialPropertyList.push_back(*(UINT32 *)&value.z);
@@ -1052,13 +1046,13 @@ namespace Gek
                                 break;
 
                             case BindType::Int:
-                                materialPropertyList.push_back(String::toUINT32(property));
+                                materialPropertyList.push_back(String::to<UINT32>(property));
                                 break;
 
                             case BindType::Int2:
                                 if (true)
                                 {
-                                    Math::Float2 value = String::toFloat2(property);
+                                    Math::Float2 value = String::to<Math::Float2>(property);
                                     materialPropertyList.push_back(UINT32(value.x));
                                     materialPropertyList.push_back(UINT32(value.y));
                                 }
@@ -1068,7 +1062,7 @@ namespace Gek
                             case BindType::Int3:
                                 if (true)
                                 {
-                                    Math::Float3 value = String::toFloat3(property);
+                                    Math::Float3 value = String::to<Math::Float3>(property);
                                     materialPropertyList.push_back(UINT32(value.x));
                                     materialPropertyList.push_back(UINT32(value.y));
                                     materialPropertyList.push_back(UINT32(value.z));
@@ -1079,7 +1073,7 @@ namespace Gek
                             case BindType::Int4:
                                 if (true)
                                 {
-                                    Math::Float4 value = String::toFloat4(property);
+                                    Math::Float4 value = String::to<Math::Float4>(property);
                                     materialPropertyList.push_back(UINT32(value.x));
                                     materialPropertyList.push_back(UINT32(value.y));
                                     materialPropertyList.push_back(UINT32(value.z));
@@ -1089,7 +1083,7 @@ namespace Gek
                                 break;
 
                             case BindType::Boolean:
-                                materialPropertyList.push_back(String::toBoolean(property));
+                                materialPropertyList.push_back(String::to<bool>(property));
                                 break;
                             };
                         }
@@ -1108,7 +1102,7 @@ namespace Gek
                             resourceList.push_back(resource);
                         }
 
-                        UINT32 firstStage = 1;
+                        UINT32 firstStage = 0;
                         if (pass.lighting)
                         {
                             firstStage = 1;

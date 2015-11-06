@@ -1183,8 +1183,9 @@ namespace Gek
                      , public Overlay::Interface
         {
         private:
+            HWND window;
             bool isChildWindow;
-            bool windowed;
+            bool fullScreen;
             UINT32 width;
             UINT32 height;
             DXGI_FORMAT depthFormat;
@@ -1200,8 +1201,9 @@ namespace Gek
 
         public:
             System(void)
-                : isChildWindow(false)
-                , windowed(false)
+                : window(nullptr)
+                , isChildWindow(false)
+                , fullScreen(false)
                 , width(0)
                 , height(0)
                 , depthFormat(DXGI_FORMAT_UNKNOWN)
@@ -1226,11 +1228,9 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Device, d3dDevice)
             END_INTERFACE_LIST_USER
 
-            HRESULT createDefaultTargets(Format depthFormat)
+            HRESULT createDefaultTargets(void)
             {
-                gekLogScope(UINT32(depthFormat));
-
-                this->depthFormat = DXGI_FORMAT_UNKNOWN;
+                gekLogScope();
 
                 HRESULT resultValue = E_FAIL;
                 CComPtr<IDXGISurface> dxSurface;
@@ -1267,7 +1267,7 @@ namespace Gek
                     }
                 }
 
-                if (SUCCEEDED(resultValue) && depthFormat != Gek::Video::Format::Invalid)
+                if (SUCCEEDED(resultValue) && depthFormat != DXGI_FORMAT_UNKNOWN)
                 {
                     D3D11_TEXTURE2D_DESC depthDescription;
                     depthDescription.Format = DXGI_FORMAT_UNKNOWN;
@@ -1281,7 +1281,7 @@ namespace Gek
                     depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
                     depthDescription.CPUAccessFlags = 0;
                     depthDescription.MiscFlags = 0;
-                    depthDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(depthFormat)];
+                    depthDescription.Format = depthFormat;
                     if (depthDescription.Format != DXGI_FORMAT_UNKNOWN)
                     {
                         CComPtr<ID3D11Texture2D> d3dDepthTarget;
@@ -1296,7 +1296,6 @@ namespace Gek
                             gekCheckResult(resultValue = d3dDevice->CreateDepthStencilView(d3dDepthTarget, &depthStencilDescription, &d3dDefaultDepthStencilView));
                             if (d3dDefaultDepthStencilView)
                             {
-                                this->depthFormat = depthDescription.Format;
                                 ID3D11RenderTargetView *d3dRenderTargetViewList[1] = { d3dDefaultRenderTargetView };
                                 d3dDeviceContext->OMSetRenderTargets(1, d3dRenderTargetViewList, d3dDefaultDepthStencilView);
                             }
@@ -1308,20 +1307,23 @@ namespace Gek
             }
 
             // Video::Interface
-            STDMETHODIMP initialize(HWND window, bool windowed, UINT32 width, UINT32 height, Format depthFormat)
+            STDMETHODIMP initialize(HWND window, bool fullScreen, Format depthFormat)
             {
-                gekLogScope(LPCVOID(window), windowed, width, height, UINT32(depthFormat));
+                gekLogScope(LPCVOID(window), fullScreen, UINT32(depthFormat));
 
                 REQUIRE_RETURN(window, E_INVALIDARG);
-                REQUIRE_RETURN(width > 0, E_INVALIDARG);
-                REQUIRE_RETURN(height > 0, E_INVALIDARG);
 
                 HRESULT resultValue = E_FAIL;
 
-                this->width = width;
-                this->height = height;
-                this->windowed = windowed;
-                isChildWindow = (GetParent(window) != nullptr);
+                RECT clientRect;
+                GetClientRect(window, &clientRect);
+                this->width = (clientRect.right - clientRect.left);
+                this->height = (clientRect.bottom - clientRect.top);
+                this->isChildWindow = (GetParent(window) != nullptr);
+                this->fullScreen = (isChildWindow ? false : fullScreen);
+                this->window = window;
+                this->depthFormat = DirectX::TextureFormatList[static_cast<UINT8>(depthFormat)];
+
                 DXGI_SWAP_CHAIN_DESC swapChainDescription;
                 swapChainDescription.BufferDesc.Width = width;
                 swapChainDescription.BufferDesc.Height = height;
@@ -1335,7 +1337,7 @@ namespace Gek
                 swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
                 swapChainDescription.BufferCount = 1;
                 swapChainDescription.OutputWindow = window;
-                swapChainDescription.Windowed = true;
+                swapChainDescription.Windowed = !fullScreen;
                 swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
                 swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
@@ -1350,7 +1352,7 @@ namespace Gek
                 };
 
                 D3D_FEATURE_LEVEL featureLevel;
-                gekCheckResult(resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext));
+                gekCheckResult(resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_REFERENCE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext));
                 if (d3dDevice && d3dDeviceContext && dxSwapChain)
                 {
                     gekCheckResult(resultValue = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&d2dFactory)));
@@ -1390,7 +1392,7 @@ namespace Gek
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = createDefaultTargets(depthFormat);
+                        resultValue = createDefaultTargets();
                     }
                 }
 
@@ -1402,7 +1404,7 @@ namespace Gek
                     pixelSystemHandler.reset(new Context::System::Pixel::Class(d3dDeviceContext));
                 }
 
-                if (SUCCEEDED(resultValue) && !windowed && !isChildWindow)
+                if (SUCCEEDED(resultValue) && fullScreen && !isChildWindow)
                 {
                     resultValue = dxSwapChain->SetFullscreenState(true, nullptr);
                 }
@@ -1410,45 +1412,52 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP resize(bool windowed, UINT32 width, UINT32 height, Format depthFormat)
+            STDMETHODIMP setFullScreen(bool fullScreen)
             {
-                gekLogScope(windowed, width, height, UINT32(depthFormat));
+                gekLogScope(fullScreen);
+
+                HRESULT resultValue = E_FAIL;
+                if (!isChildWindow)
+                {
+                    this->fullScreen = fullScreen;
+                    resultValue = dxSwapChain->SetFullscreenState(fullScreen, nullptr);
+                }
+
+                return resultValue;
+            }
+
+            STDMETHODIMP resize(void)
+            {
+                gekLogScope();
 
                 REQUIRE_RETURN(d3dDevice, E_FAIL);
                 REQUIRE_RETURN(d3dDeviceContext, E_FAIL);
                 REQUIRE_RETURN(dxSwapChain, E_FAIL);
-                REQUIRE_RETURN(width > 0, E_INVALIDARG);
-                REQUIRE_RETURN(height > 0, E_INVALIDARG);
 
-                this->width = width;
-                this->height = height;
-                this->windowed = windowed;
+                RECT clientRect;
+                GetClientRect(this->window, &clientRect);
+                this->width = (clientRect.right - clientRect.left);
+                this->height = (clientRect.bottom - clientRect.top);
+
                 d2dDeviceContext->SetTarget(nullptr);
                 d3dDefaultRenderTargetView.Release();
                 d3dDefaultDepthStencilView.Release();
 
                 HRESULT resultValue = S_OK;
-                if (!isChildWindow)
-                {
-                    gekCheckResult(resultValue = dxSwapChain->SetFullscreenState(!windowed, nullptr));
-                }
 
-                if (SUCCEEDED(resultValue))
+                DXGI_MODE_DESC description;
+                description.Width = width;
+                description.Height = height;
+                description.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                description.RefreshRate.Numerator = 60;
+                description.RefreshRate.Denominator = 1;
+                description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+                description.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+                if (SUCCEEDED(gekCheckResult(resultValue = dxSwapChain->ResizeTarget(&description))))
                 {
-                    DXGI_MODE_DESC description;
-                    description.Width = width;
-                    description.Height = height;
-                    description.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                    description.RefreshRate.Numerator = 60;
-                    description.RefreshRate.Denominator = 1;
-                    description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-                    description.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-                    if (SUCCEEDED(gekCheckResult(resultValue = dxSwapChain->ResizeTarget(&description))))
+                    if (SUCCEEDED(gekCheckResult(resultValue = dxSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0))))
                     {
-                        if (SUCCEEDED(gekCheckResult(resultValue = dxSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0))))
-                        {
-                            resultValue = createDefaultTargets(depthFormat);
-                        }
+                        resultValue = createDefaultTargets();
                     }
                 }
 
@@ -1465,9 +1474,9 @@ namespace Gek
                 return height;
             }
 
-            STDMETHODIMP_(bool) isWindowed(void)
+            STDMETHODIMP_(bool) isFullScreen(void)
             {
-                return windowed;
+                return fullScreen;
             }
 
             STDMETHODIMP createDeferredContext(Video::Context::Interface **returnObject)
@@ -2668,10 +2677,10 @@ namespace Gek
                     gekCheckResult(resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), textureMetaData, &d3dShaderResourceView));
                     if (d3dShaderResourceView)
                     {
-                        CComPtr<Texture::Class> texture2D(new Texture::Class(textureMetaData.width, textureMetaData.height, textureMetaData.depth, d3dShaderResourceView, nullptr));
-                        if (texture2D)
+                        CComPtr<Texture::Class> texture(new Texture::Class(textureMetaData.width, textureMetaData.height, textureMetaData.depth, d3dShaderResourceView, nullptr));
+                        if (texture)
                         {
-                            gekCheckResult(resultValue = texture2D->QueryInterface(IID_PPV_ARGS(returnObject)));
+                            gekCheckResult(resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject)));
                         }
                     }
                 }
