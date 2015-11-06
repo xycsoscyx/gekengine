@@ -163,23 +163,18 @@ namespace Gek
             Border,
         };
 
-        enum class BufferType : UINT8
-        {
-            Vertex = 0,
-            Index,
-            Constant,
-            Structured,
-        };
-
         namespace BufferFlags
         {
             enum
             {
+                VertexBuffer = 1 << 0,
+                IndexBuffer = 1 << 1,
+                ConstantBuffer = 1 << 2,
+                StructuredBuffer = 1 << 3,
                 Resource = 1 << 4,
                 UnorderedAccess = 1 << 5,
                 Static = 1 << 6,
                 Dynamic = 1 << 7,
-                Append = 1 << 8,
             };
         }; // BufferFlags
 
@@ -413,9 +408,9 @@ namespace Gek
                     STDMETHOD_(void, setConstantBuffer)             (THIS_ Buffer::Interface *constantBuffer, UINT32 stage) PURE;
                     STDMETHOD_(void, setSamplerStates)              (THIS_ IUnknown *samplerStates, UINT32 stage) PURE;
                     STDMETHOD_(void, setResource)                   (THIS_ IUnknown *resource, UINT32 stage) PURE;
-                    STDMETHOD_(void, setUnorderedAccess)            (THIS_ IUnknown *unorderedAccess, UINT32 stage, UINT32 *initialCount = nullptr) { };
+                    STDMETHOD_(void, setUnorderedAccess)            (THIS_ IUnknown *unorderedAccess, UINT32 stage) { };
                     STDMETHOD_(void, setResourceList)               (THIS_ const std::vector<IUnknown *> resourceList, UINT32 firstStage) PURE;
-                    STDMETHOD_(void, setUnorderedAccessList)        (THIS_ const std::vector<IUnknown *> unorderedAccessList, UINT32 firstStage, std::vector<UINT32> *initialCountList = nullptr) { };
+                    STDMETHOD_(void, setUnorderedAccessList)        (THIS_ const std::vector<IUnknown *> unorderedAccessList, UINT32 firstStage) { };
                 };
             }; // namespace SubSystem
 
@@ -480,8 +475,8 @@ namespace Gek
             STDMETHOD(createRenderTarget)                       (THIS_ Texture::Interface **returnObject, UINT32 width, UINT32 height, Format format) PURE;
             STDMETHOD(createDepthTarget)                        (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Format format) PURE;
 
-            STDMETHOD(createBuffer)                             (THIS_ Buffer::Interface **returnObject, UINT32 stride, UINT32 count, BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
-            STDMETHOD(createBuffer)                             (THIS_ Buffer::Interface **returnObject, Format format, UINT32 count, BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
+            STDMETHOD(createBuffer)                             (THIS_ Buffer::Interface **returnObject, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
+            STDMETHOD(createBuffer)                             (THIS_ Buffer::Interface **returnObject, Format format, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
             STDMETHOD_(void, updateBuffer)                      (THIS_ Buffer::Interface *buffer, LPCVOID data) PURE;
             STDMETHOD(mapBuffer)                                (THIS_ Buffer::Interface *buffer, LPVOID *data) PURE;
             STDMETHOD_(void, unmapBuffer)                       (THIS_ Buffer::Interface *buffer) PURE;

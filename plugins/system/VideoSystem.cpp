@@ -633,7 +633,7 @@ namespace Gek
                             d3dDeviceContext->CSSetShaderResources(stage, 1, d3dShaderResourceViewList);
                         }
 
-                        STDMETHODIMP_(void) setUnorderedAccess(IUnknown *unorderedAccess, UINT32 stage, UINT32 *initialCount)
+                        STDMETHODIMP_(void) setUnorderedAccess(IUnknown *unorderedAccess, UINT32 stage)
                         {
                             REQUIRE_VOID_RETURN(d3dDeviceContext);
                             ID3D11UnorderedAccessView *d3dUnorderedAccessViewList[1] = { nullptr };
@@ -643,7 +643,7 @@ namespace Gek
                                 d3dUnorderedAccessViewList[0] = d3dUnorderedAccessView;
                             }
 
-                            d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, d3dUnorderedAccessViewList, initialCount);
+                            d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, d3dUnorderedAccessViewList, nullptr);
                         }
 
                         STDMETHODIMP_(void) setResourceList(const std::vector<IUnknown *> resourceList, UINT32 firstStage)
@@ -659,7 +659,7 @@ namespace Gek
                             d3dDeviceContext->CSSetShaderResources(firstStage, d3dShaderResourceViewList.size(), d3dShaderResourceViewList.data());
                         }
 
-                        STDMETHODIMP_(void) setUnorderedAccessList(const std::vector<IUnknown *> unorderedAccessList, UINT32 firstStage, std::vector<UINT32> *initialCountList)
+                        STDMETHODIMP_(void) setUnorderedAccessList(const std::vector<IUnknown *> unorderedAccessList, UINT32 firstStage)
                         {
                             REQUIRE_VOID_RETURN(d3dDeviceContext);
                             std::vector<ID3D11UnorderedAccessView *> d3dUnorderedAccessViewList;
@@ -669,7 +669,7 @@ namespace Gek
                                 d3dUnorderedAccessViewList.push_back(d3dUnorderedAccessView);
                             }
 
-                            d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, d3dUnorderedAccessViewList.size(), d3dUnorderedAccessViewList.data(), (initialCountList ? initialCountList->data() : nullptr));
+                            d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, d3dUnorderedAccessViewList.size(), d3dUnorderedAccessViewList.data(), nullptr);
                         }
                     };
                 }; // namespace Compute
@@ -1350,7 +1350,7 @@ namespace Gek
                 };
 
                 D3D_FEATURE_LEVEL featureLevel;
-                gekCheckResult(resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_REFERENCE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext));
+                gekCheckResult(resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext));
                 if (d3dDevice && d3dDeviceContext && dxSwapChain)
                 {
                     gekCheckResult(resultValue = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&d2dFactory)));
@@ -1890,7 +1890,7 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, UINT32 stride, UINT32 count, BufferType type, DWORD flags, LPCVOID data)
+            STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, UINT32 stride, UINT32 count, DWORD flags, LPCVOID data)
             {
                 gekLogScope(stride,
                     count,
@@ -1921,24 +1921,22 @@ namespace Gek
                     bufferDescription.Usage = D3D11_USAGE_DEFAULT;
                 }
 
-                switch (type)
+                if (flags & Gek::Video::BufferFlags::VertexBuffer)
                 {
-                case BufferType::Vertex:
                     bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-                    break;
-
-                case BufferType::Index:
+                }
+                else if (flags & Gek::Video::BufferFlags::IndexBuffer)
+                {
                     bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
-                    break;
-
-                case BufferType::Constant:
+                }
+                else if (flags & Gek::Video::BufferFlags::ConstantBuffer)
+                {
                     bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-                    break;
-
-                default:
+                }
+                else
+                {
                     bufferDescription.BindFlags = 0;
-                    break;
-                };
+                }
 
                 if (flags & Gek::Video::BufferFlags::Resource)
                 {
@@ -1959,7 +1957,7 @@ namespace Gek
                     bufferDescription.CPUAccessFlags = 0;
                 }
 
-                if (type == BufferType::Structured)
+                if (flags & Gek::Video::BufferFlags::StructuredBuffer)
                 {
                     bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
                     bufferDescription.StructureByteStride = stride;
@@ -2008,10 +2006,6 @@ namespace Gek
                         viewDescription.Buffer.FirstElement = 0;
                         viewDescription.Buffer.NumElements = count;
                         viewDescription.Buffer.Flags = 0;
-                        if (flags & BufferFlags::Append)
-                        {
-                            viewDescription.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_APPEND;
-                        }
 
                         gekCheckResult(resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView));
                     }
@@ -2027,7 +2021,7 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, Format format, UINT32 count, BufferType type, DWORD flags, LPCVOID data)
+            STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, Format format, UINT32 count, DWORD flags, LPCVOID data)
             {
                 gekLogScope(UINT32(format),
                     count,
@@ -2055,24 +2049,22 @@ namespace Gek
                     bufferDescription.Usage = D3D11_USAGE_DEFAULT;
                 }
 
-                switch (type)
+                if (flags & Gek::Video::BufferFlags::VertexBuffer)
                 {
-                case BufferType::Vertex:
                     bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-                    break;
-
-                case BufferType::Index:
+                }
+                else if (flags & Gek::Video::BufferFlags::IndexBuffer)
+                {
                     bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
-                    break;
-
-                case BufferType::Constant:
+                }
+                else if (flags & Gek::Video::BufferFlags::ConstantBuffer)
+                {
                     bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-                    break;
-
-                default:
+                }
+                else
+                {
                     bufferDescription.BindFlags = 0;
-                    break;
-                };
+                }
 
                 if (flags & Gek::Video::BufferFlags::Resource)
                 {
@@ -2085,7 +2077,7 @@ namespace Gek
                 }
 
                 bufferDescription.CPUAccessFlags = 0;
-                if (type == BufferType::Structured)
+                if (flags & Gek::Video::BufferFlags::StructuredBuffer)
                 {
                     bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
                     bufferDescription.StructureByteStride = stride;

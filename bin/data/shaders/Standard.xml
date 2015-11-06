@@ -54,6 +54,20 @@
         </program>
     </pass>
 
+    <pass mode="deferred">
+        <resources>
+            <albedoBuffer />
+            <normalBuffer />
+            <depthBuffer />
+            <infoBuffer />
+        </resources>
+
+        <program>
+            <entry>mainPixelProgram</entry>
+            <source>Standard\Ambient</source>
+        </program>
+    </pass>
+
     <pass mode="compute" lighting="true">
         <resources>
             <depthBuffer />
@@ -74,13 +88,13 @@
         </program>
     </pass>
 
-    <pass mode="deferred" lighting="true">
-        <!--blendstates>
+    <pass mode="deferred" lighting="true"> 
+        <blendstates>
             <target>
                 <color source="one" destination="one" operation="add" />
                 <alpha source="one" destination="one" operation="add" />
             </target>
-        </blendstates-->
+        </blendstates>
 
         <resources>
             <tileIndexList />

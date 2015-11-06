@@ -55,10 +55,8 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
 
     GroupMemoryBarrierWithGroupSync();
 
-    uint lightCount = uint(Lighting::list[0].range);
-
     [loop]
-    for (uint lightIndex = pixelIndex; lightIndex < lightCount; lightIndex += (lightTileSize * lightTileSize))
+    for (uint lightIndex = pixelIndex; lightIndex < Lighting::count; lightIndex += (lightTileSize * lightTileSize))
     {
         bool isLightVisible = true;
 

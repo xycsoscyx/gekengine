@@ -559,7 +559,7 @@ namespace Gek
 
                                             if (propertyBufferSize > 0)
                                             {
-                                                resultValue = video->createBuffer(&propertyConstantBuffer, propertyBufferSize, 1, Video::BufferType::Constant, Video::BufferFlags::Dynamic);
+                                                resultValue = video->createBuffer(&propertyConstantBuffer, propertyBufferSize, 1, Video::BufferFlags::ConstantBuffer | Video::BufferFlags::Dynamic);
                                             }
                                         }
                                     }
@@ -614,7 +614,7 @@ namespace Gek
                                             CStringW name(xmlBufferNode.getType());
                                             Video::Format format = getFormat(xmlBufferNode.getText());
                                             UINT32 size = String::toUINT32(replaceDefines(xmlBufferNode.getAttribute(L"size")));
-                                            resultValue = render->createBuffer(&bufferMap[name], format, size, Video::BufferType::Structured, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
+                                            resultValue = render->createBuffer(&bufferMap[name], format, size, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                                             switch (format)
                                             {
                                             case Video::Format::Byte:
@@ -782,10 +782,21 @@ namespace Gek
 													"        float   distance;                              \r\n"\
                                                     "    };                                                 \r\n"\
                                                     "                                                       \r\n"\
+                                                    "    cbuffer Data : register(b2)                        \r\n"\
+                                                    "    {                                                  \r\n"\
+                                                    "        uint    count   : packoffset(c0);              \r\n"\
+                                                    "        uint3   padding : packoffset(c0.y);            \r\n"\
+                                                    "    };                                                 \r\n"\
+                                                    "                                                       \r\n"\
                                                     "    StructuredBuffer<Point> list : register(t0);       \r\n"\
                                                     "    static const uint listSize = 1024;                 \r\n"\
                                                     "};                                                     \r\n"\
                                                     "                                                       \r\n";
+                                            }
+                                            else
+                                            {
+                                                engineData +=
+                                                    "   TextureCube<float3> ambientMap : register(t0);      \r\n";
                                             }
 
                                             engineData +=
@@ -807,7 +818,7 @@ namespace Gek
                                                 "namespace Resources                                        \r\n"\
                                                 "{                                                          \r\n";
 
-                                            UINT32 resourceStage = (pass.lighting ? 1 : 0);
+                                            UINT32 resourceStage = 1;//(pass.lighting ? 1 : 0);
                                             if (pass.mode == PassMode::Forward)
                                             {
                                                 for (auto &map : mapList)
@@ -1097,7 +1108,7 @@ namespace Gek
                             resourceList.push_back(resource);
                         }
 
-                        UINT32 firstStage = 0;
+                        UINT32 firstStage = 1;
                         if (pass.lighting)
                         {
                             firstStage = 1;
@@ -1142,7 +1153,7 @@ namespace Gek
                                         renderTarget = (*renderTargetIterator).second;
                                     }
 
-                                    viewPortList.emplace_back(Video::ViewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(renderTarget->getWidth()), float(renderTarget->getHeight())), 0.0f, 1.0f));
+                                    viewPortList.emplace_back(Video::ViewPort(Math::Float2(0.0f, 0.0f), Math::Float2(renderTarget->getWidth(), renderTarget->getHeight()), 0.0f, 1.0f));
                                     renderTargetList.push_back(renderTarget);
                                 }
 

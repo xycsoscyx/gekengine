@@ -1,17 +1,34 @@
+#include "GEKEngine"
+
 #include "GEKGlobal.h"
-#include "GEKTypes.h"
+#include "GEKUtility.h"
 
-Texture2D gs_pAlbedoBuffer : register(t1);
+#include "BRDF.h"
 
-float4 MainPixelProgram(in INPUT kInput) : SV_TARGET0
+float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-	float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+    float4 albedoTerm = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+    return albedoTerm;
+
+    float3 lightingContribution = 0.0f;
 
     [branch]
-    if (nAlbedo.a < 1.0f)
+    if (albedoTerm.a < 1.0f)
     {
-		nAlbedo *= gs_nAmbientLight;
+        float4 pixelInfo = Resources::infoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+
+        float pixelDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+        float3 pixelPosition = getViewPosition(inputPixel.texcoord, pixelDepth);
+        float3 pixelNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texcoord));
+
+        float3 viewNormal = -normalize(pixelPosition);
+
+        float3 lightColor = ambientMap.Sample(Global::pointSampler, pixelNormal);
+        float3 diffuseContribution = 0.0f;
+        float3 specularContribution = 0.0f;
+        getBRDF(albedoTerm, pixelNormal, -pixelNormal, viewNormal, pixelInfo, diffuseContribution, specularContribution);
+        lightingContribution = saturate(lightColor * diffuseContribution) + saturate(lightColor * specularContribution);
     }
 
-    return nAlbedo;
+    return float4(lightingContribution, albedoTerm.a);
 }
