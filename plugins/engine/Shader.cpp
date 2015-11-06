@@ -1176,7 +1176,7 @@ namespace Gek
 
                             Video::Context::System::Interface *system = (pass.mode == PassMode::Compute ? context->computeSystem() : context->pixelSystem());
 
-                            UINT32 firstStage = mapList.size();
+                            UINT32 firstStage = 0;
                             if (pass.lighting)
                             {
                                 firstStage = 1;

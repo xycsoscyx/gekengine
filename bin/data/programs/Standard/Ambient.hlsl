@@ -11,6 +11,7 @@ float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
     viewVector.xy = inputPixel.texcoord.xy / float2(1280, 800);
     viewVector.z = 1.0f;
     return Resources::ambientLightMap.Sample(Global::pointSampler, viewVector).xyzz;
+
     float4 albedoTerm = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
 
     float3 lightingContribution = 0.0f;
