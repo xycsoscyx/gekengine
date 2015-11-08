@@ -123,6 +123,11 @@ namespace Gek
                                 }
                             }
                         }
+						else
+						{
+							DWORD errorCode = GetLastError();
+							logMessage(__FILE__, __LINE__, 0, L"[error] Unable to load library: 0x%08X", errorCode);
+						}
 
                         return S_OK;
                     });

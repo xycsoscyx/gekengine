@@ -30,7 +30,7 @@
         <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %lightListSize%">byte</tileIndexList>
     </buffers>
 
-    <!--pass mode="forward">
+    <pass mode="forward">
         <depthstates>
             <comparison>lessequal</comparison>
             <writemask>all</writemask>
@@ -52,7 +52,7 @@
             <entry>mainPixelProgram</entry>
             <source>Standard\Deferred</source>
         </program>
-    </pass-->
+    </pass>
 
     <pass mode="deferred">
         <resources>

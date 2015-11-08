@@ -7,11 +7,6 @@
 
 float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-    float3 viewVector;
-    viewVector.xy = inputPixel.texcoord.xy / float2(1280, 800);
-    viewVector.z = 1.0f;
-    return Resources::ambientLightMap.Sample(Global::pointSampler, viewVector).xyzz;
-
     float4 albedoTerm = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
 
     float3 lightingContribution = 0.0f;
@@ -24,10 +19,12 @@ float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
         float pixelDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
         float3 pixelPosition = getViewPosition(inputPixel.texcoord, pixelDepth);
         float3 pixelNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texcoord));
+		return pixelNormal.xyzz;
 
         float3 viewNormal = -normalize(pixelPosition);
 
         float3 lightColor = Resources::ambientLightMap.Sample(Global::pointSampler, pixelNormal);
+		return lightColor.xyzz;
         float3 diffuseContribution = 0.0f;
         float3 specularContribution = 0.0f;
         getBRDF(albedoTerm, pixelNormal, -pixelNormal, viewNormal, pixelInfo, diffuseContribution, specularContribution);

@@ -57,7 +57,6 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 albedoTerm)
 float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
     float4 albedoTerm = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
-    return albedoTerm;
 
     float3 lightingContribution = 0.0f;
 
