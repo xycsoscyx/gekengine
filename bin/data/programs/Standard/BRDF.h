@@ -1,14 +1,14 @@
 // Diffuse & Specular Term
 // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
-void getBRDF(in float3 albedoTerm, in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal, in float4 pixelInfo, out float3 diffuseContribution, out float3 specularContribution)
+void getBRDF(in float3 materialAlbedo, in float2 materialInfo, in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal, out float3 diffuseContribution, out float3 specularContribution)
 {
-    float materialRoughness = clamp(pixelInfo.x, 0.1, 1.0);
+    float materialRoughness = clamp(materialInfo.x, 0.1, 1.0);
     float materialRoughnessSquared = (materialRoughness * materialRoughness);
-    float materialSpecular = pixelInfo.y;
-    float materialMetalness = pixelInfo.z;
+    float materialSpecular = 0.3;
+    float materialMetalness = materialInfo.y;
 
-    float3 Ks = lerp(materialSpecular, albedoTerm, materialMetalness);
-    float3 Kd = lerp(albedoTerm, 0, materialMetalness);
+    float3 Ks = lerp(materialSpecular, materialAlbedo, materialMetalness);
+    float3 Kd = lerp(materialAlbedo, 0, materialMetalness);
     float3 Fd = 1.0 - Ks;
 
     float angleCenterView = dot(pixelNormal, viewNormal);

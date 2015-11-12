@@ -171,30 +171,28 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         L"    <maps>\r\n" \
         L"        <albedo>%%directory%%\\rock.ColorMap.dds</albedo>\r\n" \
         L"        <normal>%%directory%%\\rock.NormalMap.dds</normal>\r\n" \
-        L"        <info>*color:%f,%f,%f,0</info>\r\n" \
+        L"        <roughness>*color:%f</roughness>\r\n" \
+        L"        <metalness>*color:%f</metalness>\r\n" \
         L"    </maps>\r\n" \
         L"</material>";
 
     static const LPCWSTR entityFormat = \
 L"    <entity>\r\n" \
-L"      <transform position=\"%d,%d,%d\" />\r\n" \
+L"      <transform position=\"0,%d,%d\" />\r\n" \
 /*L"      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>\r\n" \*/
-L"      <model>*sphere|debug_%d_%d_%d|2</model>\r\n" \
+L"      <model>*sphere|debug_%d_%d|1</model>\r\n" \
 L"    </entity>\r\n";
 
     CStringW entities;
-    for (UINT32 roughness = 0; roughness < 5; roughness++)
+    for (UINT32 roughness = 0; roughness < 11; roughness++)
     {
-        for (UINT32 specular = 0; specular < 5; specular++)
+        for (UINT32 metalness = 0; metalness < 11; metalness++)
         {
-            for (UINT32 metalness = 0; metalness < 5; metalness++)
-            {
-                CStringW material(Gek::String::format(materialFormat, (float(roughness) / 4.0f), (float(specular) / 4.0f), (float(metalness) / 4.0f)));
-                CStringW fileName(Gek::String::format(L"debug_%d_%d_%d.xml", roughness, specular, metalness));
-                Gek::FileSystem::save((L"%root%\\data\\materials\\" + fileName), material);
+            CStringW material(Gek::String::format(materialFormat, (float(roughness) / 10.0f), (float(metalness) / 10.0f)));
+            CStringW fileName(Gek::String::format(L"debug_%d_%d.xml", roughness, metalness));
+            Gek::FileSystem::save((L"%root%\\data\\materials\\" + fileName), material);
 
-                entities += Gek::String::format(entityFormat, ((roughness - 2) * 2), ((specular + 2) * 2), ((metalness - 2) * 2), roughness, specular, metalness);
-            }
+            entities += Gek::String::format(entityFormat, ((roughness - 5) * 2) + 12, ((metalness - 5) * 2) - 2, roughness, metalness);
         }
     }
 

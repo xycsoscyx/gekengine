@@ -12,6 +12,7 @@
 #include "GEK\Context\Common.h"
 #include "GEK\Context\UserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Shape\Sphere.h"
@@ -597,16 +598,40 @@ namespace Gek
                             {
 								if (_wcsnicmp(fileName, L"*color:", 7) == 0)
 								{
-									CComPtr<Video::Texture::Interface> texture;
-									returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
-									if (texture)
+                                    CComPtr<Video::Texture::Interface> texture;
+
+                                    UINT8 colorData[4] = { 0, 0, 0, 0 };
+                                    UINT32 colorPitch = 0;
+
+                                    float color1;
+                                    Math::Float2 color2;
+                                    Math::Float4 color4;
+                                    if (Evaluator::get((fileName + 7), color1))
+                                    {
+                                        returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte, Video::TextureFlags::Resource);
+                                        colorData[0] = UINT8(color1 * 255.0f);
+                                        colorPitch = 1;
+                                    }
+                                    else if (Evaluator::get((fileName + 7), color2))
+                                    {
+                                        returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte2, Video::TextureFlags::Resource);
+                                        colorData[0] = UINT8(color2.x * 255.0f);
+                                        colorData[1] = UINT8(color2.y * 255.0f);
+                                        colorPitch = 2;
+                                    }
+                                    else if (Evaluator::get((fileName + 7), color4))
+                                    {
+                                        returnValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
+                                        colorData[0] = UINT8(color4.x * 255.0f);
+                                        colorData[1] = UINT8(color4.y * 255.0f);
+                                        colorData[2] = UINT8(color4.z * 255.0f);
+                                        colorData[3] = UINT8(color4.w * 255.0f);
+                                        colorPitch = 4;
+                                    }
+
+									if (texture && colorPitch > 0)
 									{
-										Math::Float4 color(String::to<Math::Float4>(fileName + 7));
-										UINT32 colorValue = UINT32(UINT8(color.r * 255.0f)) |
-															UINT32(UINT8(color.g * 255.0f) << 8) |
-															UINT32(UINT8(color.b * 255.0f) << 16) |
-															UINT32(UINT8(color.a * 255.0f) << 24);
-										video->updateTexture(texture, &colorValue, 4);
+                                        video->updateTexture(texture, colorData, colorPitch);
 										returnValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
 									}
 								}

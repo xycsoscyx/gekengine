@@ -5,9 +5,9 @@
 
 #include "BRDF.h"
 
-float3 getLightingContribution(in InputPixel inputPixel, in float3 albedoTerm)
+float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbedo)
 {
-    float4 pixelInfo = Resources::infoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+    float2 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
 
     float pixelDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
     float3 pixelPosition = getViewPosition(inputPixel.texcoord, pixelDepth);
@@ -45,7 +45,7 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 albedoTerm)
             float3 diffuseContribution = 0.0f;
             float3 specularContribution = 0.0f;
 
-            getBRDF(albedoTerm, pixelNormal, lightNormal, viewNormal, pixelInfo, diffuseContribution, specularContribution);
+            getBRDF(materialAlbedo, materialInfo, pixelNormal, lightNormal, viewNormal, diffuseContribution, specularContribution);
             totalDiffuseContribution += saturate(Lighting::list[lightIndex].color * diffuseContribution * attenuation);
             totalSpecularContribution += saturate(Lighting::list[lightIndex].color * specularContribution * attenuation);
         }
@@ -56,15 +56,15 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 albedoTerm)
 
 float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-    float4 albedoTerm = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+    float4 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
 
     float3 lightingContribution = 0.0f;
 
     [branch]
-    if (albedoTerm.a < 1.0f)
+    if (materialAlbedo.a < 1.0f)
     {
-        lightingContribution = getLightingContribution(inputPixel, albedoTerm.xyz);
+        lightingContribution = getLightingContribution(inputPixel, materialAlbedo.xyz);
     }
 
-    return float4(lightingContribution, albedoTerm.a);
+    return float4(lightingContribution, materialAlbedo.a);
 }
