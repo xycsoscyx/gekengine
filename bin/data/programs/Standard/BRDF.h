@@ -2,9 +2,9 @@
 // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
 void getBRDF(in float3 materialAlbedo, in float2 materialInfo, in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal, out float3 diffuseContribution, out float3 specularContribution)
 {
-    float materialRoughness = clamp(materialInfo.x, 0.1, 1.0);
-    float materialRoughnessSquared = (materialRoughness * materialRoughness);
     float materialSpecular = 0.3;
+    float materialRoughness = materialInfo.x;
+    float materialRoughnessSquared = (materialRoughness * materialRoughness);
     float materialMetalness = materialInfo.y;
 
     float3 Ks = lerp(materialSpecular, materialAlbedo, materialMetalness);
