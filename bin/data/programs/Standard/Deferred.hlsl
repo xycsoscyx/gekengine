@@ -18,7 +18,7 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
 
     float3 normal;
     // Normals stored as 3Dc format, so [0,1] XY components only
-    normal.xy = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texcoord).yx * 2.0) - 1.0);
+    normal.xy = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texcoord) * 2.0) - 1.0);
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
 
     float3x3 coTangentFrame = getCoTangentFrame(-inputPixel.viewposition.xyz, viewNormal, inputPixel.texcoord);

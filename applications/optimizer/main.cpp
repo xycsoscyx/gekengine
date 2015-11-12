@@ -300,6 +300,11 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                     material = material.Left(material.GetLength() - 9);
                 }
 
+                if (material.Right(7).CompareNoCase(".albedo") == 0)
+                {
+                    material = material.Left(material.GetLength() - 7);
+                }
+
                 fwrite(material.GetString(), (material.GetLength() + 1), 1, file);
 
                 printf("-< Material: %s\r\n", material.GetString());

@@ -44,7 +44,6 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
         {
             float3 diffuseContribution = 0.0f;
             float3 specularContribution = 0.0f;
-
             getBRDF(materialAlbedo, materialInfo, pixelNormal, lightNormal, viewNormal, diffuseContribution, specularContribution);
             totalDiffuseContribution += saturate(Lighting::list[lightIndex].color * diffuseContribution * attenuation);
             totalSpecularContribution += saturate(Lighting::list[lightIndex].color * specularContribution * attenuation);
@@ -57,7 +56,6 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
 float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
     float4 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
-    return materialAlbedo;
 
     float3 lightingContribution = 0.0f;
 
