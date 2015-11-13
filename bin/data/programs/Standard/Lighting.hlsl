@@ -19,8 +19,7 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
     const uint bufferIndex = (tileIndex * Lighting::listSize);
 
-    float3 totalDiffuseContribution = 0.0f;
-    float3 totalSpecularContribution = 0.0f;
+    float3 surfaceColor = 0.0f;
 
     [loop]
     for (uint lightIndexIndex = 0; lightIndexIndex < Lighting::count; lightIndexIndex++)
@@ -37,20 +36,24 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
         float lightDistance = length(lightVector);
         float3 lightNormal = normalize(lightVector);
 
-        float attenuation = (1.0f - saturate(lightDistance / Lighting::list[lightIndex].range));
+        float attenuation = (lightDistance / Lighting::list[lightIndex].range);
+
+        #ifdef _INVERSE_SQUARE
+            attenuation = saturate(1.0 - (attenuation * attenuation * attenuation * attenuation));
+            attenuation = (attenuation * attenuation);
+            attenuation = attenuation / ((lightDistance * lightDistance) + 1);
+        #else
+            attenuation = (1.0f - saturate(attenuation));
+        #endif
 
         [branch]
         if (attenuation > 0.0f)
         {
-            float3 diffuseContribution = 0.0f;
-            float3 specularContribution = 0.0f;
-            getBRDF(materialAlbedo, materialInfo, pixelNormal, lightNormal, viewNormal, diffuseContribution, specularContribution);
-            totalDiffuseContribution += saturate(Lighting::list[lightIndex].color * diffuseContribution * attenuation);
-            totalSpecularContribution += saturate(Lighting::list[lightIndex].color * specularContribution * attenuation);
+            surfaceColor += getBRDF(materialAlbedo, materialInfo, pixelNormal, lightNormal, viewNormal) * Lighting::list[lightIndex].color * attenuation;
         }
     }
 
-    return (saturate(totalDiffuseContribution) + saturate(totalSpecularContribution));
+    return surfaceColor;
 }
 
 float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0

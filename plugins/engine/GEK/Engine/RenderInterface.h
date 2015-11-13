@@ -27,7 +27,8 @@ namespace Gek
                 STDMETHOD(createBlendStates)                    (THIS_ IUnknown **returnObject, const Video::IndependentBlendStates &blendStates) PURE;
                 STDMETHOD(createRenderTarget)                   (THIS_ Video::Texture::Interface **returnObject, UINT32 width, UINT32 height, Video::Format format) PURE;
                 STDMETHOD(createDepthTarget)                    (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Video::Format format) PURE;
-                STDMETHOD(createBuffer)                         (THIS_ Video::Buffer::Interface **returnObject, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
+                STDMETHOD(createBuffer)                         (THIS_ Video::Buffer::Interface **returnObject, LPCWSTR name, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
+                STDMETHOD(createBuffer)                         (THIS_ Video::Buffer::Interface **returnObject, LPCWSTR name, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
                 STDMETHOD(loadTexture)                          (THIS_ Video::Texture::Interface **returnObject, LPCWSTR fileName) PURE;
                 STDMETHOD(loadComputeProgram)                   (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
                 STDMETHOD(loadPixelProgram)                     (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;

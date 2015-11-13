@@ -558,7 +558,7 @@ namespace Gek
 
                                             if (propertyBufferSize > 0)
                                             {
-                                                resultValue = video->createBuffer(&propertyConstantBuffer, propertyBufferSize, 1, Video::BufferFlags::ConstantBuffer | Video::BufferFlags::Dynamic);
+                                                resultValue = render->createBuffer(&propertyConstantBuffer, String::format(L"%s:properties", fileName), propertyBufferSize, 1, Video::BufferFlags::ConstantBuffer | Video::BufferFlags::Dynamic);
                                             }
                                         }
                                     }
@@ -613,7 +613,7 @@ namespace Gek
                                             CStringW name(xmlBufferNode.getType());
                                             Video::Format format = getFormat(xmlBufferNode.getText());
                                             UINT32 size = String::to<UINT32>(replaceDefines(xmlBufferNode.getAttribute(L"size")));
-                                            resultValue = render->createBuffer(&bufferMap[name], format, size, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
+                                            resultValue = render->createBuffer(&bufferMap[name], String::format(L"%s:buffer:%s", fileName, name.GetString()), format, size, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                                             switch (format)
                                             {
                                             case Video::Format::Byte:

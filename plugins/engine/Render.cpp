@@ -575,12 +575,31 @@ namespace Gek
                     return returnValue;
                 }
 
-                STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData)
+                STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, LPCWSTR name, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData)
                 {
                     REQUIRE_RETURN(video, E_FAIL);
 
-                    HRESULT returnValue = E_FAIL;
-                    returnValue = video->createBuffer(returnObject, format, count, flags, staticData);
+                    HRESULT returnValue = getResource<Video::Buffer::Interface>(returnObject, std::hash<LPCWSTR>()(name), [&](Video::Buffer::Interface **returnObject) -> HRESULT
+                    {
+                        HRESULT returnValue = E_FAIL;
+                        returnValue = video->createBuffer(returnObject, stride, count, flags, staticData);
+                        return returnValue;
+                    });
+
+                    return returnValue;
+                }
+
+                STDMETHODIMP createBuffer(Video::Buffer::Interface **returnObject, LPCWSTR name, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData)
+                {
+                    REQUIRE_RETURN(video, E_FAIL);
+
+                    HRESULT returnValue = getResource<Video::Buffer::Interface>(returnObject, std::hash<LPCWSTR>()(name), [&](Video::Buffer::Interface **returnObject) -> HRESULT
+                    {
+                        HRESULT returnValue = E_FAIL;
+                        returnValue = video->createBuffer(returnObject, format, count, flags, staticData);
+                        return returnValue;
+                    });
+
                     return returnValue;
                 }
 
