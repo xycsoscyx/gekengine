@@ -3,7 +3,7 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-#include "BRDF.h"
+#include "BRDF.Hodgeman.h"
 
 float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbedo)
 {
@@ -53,7 +53,7 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
         }
     }
 
-    return surfaceColor;
+    return saturate(surfaceColor);
 }
 
 float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
