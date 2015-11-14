@@ -357,15 +357,14 @@ namespace Gek
 
             struct ModelData
             {
-                CStringW parameters;
+                bool loaded;
                 Shape::AlignedBox alignedBox;
                 CComPtr<Video::Buffer::Interface> vertexBuffer;
                 CComPtr<Video::Buffer::Interface> indexBuffer;
                 std::vector<MaterialInfo> materialInfoList;
 
-                std::function<HRESULT(ModelData &)> load;
-
                 ModelData(void)
+                    : loaded(false)
                 {
                 }
             };
@@ -393,6 +392,7 @@ namespace Gek
 
             CComPtr<IUnknown> plugin;
 
+            concurrency::concurrent_unordered_map<ModelData *, std::function<HRESULT(void)>> dataLoadQueue;
             concurrency::concurrent_unordered_map<CStringW, ModelData> dataMap;
             concurrency::concurrent_unordered_map<Engine::Population::Entity *, ModelData *> dataEntityList;
             CComPtr<Video::Buffer::Interface> instanceBuffer;
@@ -418,13 +418,11 @@ namespace Gek
                 INTERFACE_LIST_ENTRY_COM(Engine::System::Interface)
             END_INTERFACE_LIST_USER
 
-            HRESULT loadShape(ModelData &data)
+            HRESULT loadShape(ModelData *data, CStringW parameters)
             {
-                data.load = nullptr;
-
                 int position = 0;
-                CStringW shape = data.parameters.Tokenize(L"|", position);
-                CStringW materialName = data.parameters.Tokenize(L"|", position);
+                CStringW shape = parameters.Tokenize(L"|", position);
+                CStringW materialName = parameters.Tokenize(L"|", position);
 
                 CComPtr<IUnknown> material;
                 HRESULT resultValue = render->loadMaterial(&material, materialName);
@@ -432,11 +430,11 @@ namespace Gek
                 {
                     if (shape.CompareNoCase(L"cube") == 0)
                     {
-                        Math::Float3 size(String::to<Math::Float3>(data.parameters.Tokenize(L"|", position)));
+                        Math::Float3 size(String::to<Math::Float3>(parameters.Tokenize(L"|", position)));
                     }
                     else if (shape.CompareNoCase(L"sphere") == 0)
                     {
-                        UINT32 divisionCount = String::to<UINT32>(data.parameters.Tokenize(L"|", position));
+                        UINT32 divisionCount = String::to<UINT32>(parameters.Tokenize(L"|", position));
 
                         GeoSphere geoSphere;
                         geoSphere.generate(divisionCount);
@@ -447,12 +445,12 @@ namespace Gek
                         materialInfo.indexCount = geoSphere.getIndices().size();
                         materialInfo.material = material;
 
-                        data.materialInfoList.push_back(materialInfo);
+                        data->materialInfoList.push_back(materialInfo);
 
-                        resultValue = render->createBuffer(&data.vertexBuffer, String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, geoSphere.getVertices().data());
+                        resultValue = render->createBuffer(&data->vertexBuffer, String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, geoSphere.getVertices().data());
                         if (SUCCEEDED(resultValue))
                         {
-                            resultValue = render->createBuffer(&data.indexBuffer, String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, geoSphere.getIndices().data());
+                            resultValue = render->createBuffer(&data->indexBuffer, String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, geoSphere.getIndices().data());
                         }
                     }
                     else
@@ -461,27 +459,32 @@ namespace Gek
                     }
                 }
 
+                if (SUCCEEDED(resultValue))
+                {
+                    data->loaded = true;
+                }
+
                 return resultValue;
             }
 
-            HRESULT preLoadShape(ModelData &data)
+            HRESULT preLoadShape(ModelData *data, const CStringW &parameters)
             {
                 HRESULT resultValue = S_OK;
 
                 int position = 0;
-                CStringW shape = data.parameters.Tokenize(L"|", position);
-                CStringW material = data.parameters.Tokenize(L"|", position);
+                CStringW shape = parameters.Tokenize(L"|", position);
+                CStringW material = parameters.Tokenize(L"|", position);
                 if (shape.CompareNoCase(L"cube") == 0)
                 {
-                    Math::Float3 size(String::to<Math::Float3>(data.parameters.Tokenize(L"|", position)));
-                    data.alignedBox.minimum = -Math::Float3(size * Math::Float3(0.5f));
-                    data.alignedBox.maximum =  Math::Float3(size * Math::Float3(0.5f));
+                    Math::Float3 size(String::to<Math::Float3>(parameters.Tokenize(L"|", position)));
+                    data->alignedBox.minimum = -Math::Float3(size * Math::Float3(0.5f));
+                    data->alignedBox.maximum =  Math::Float3(size * Math::Float3(0.5f));
                 }
                 else if (shape.CompareNoCase(L"sphere") == 0)
                 {
-                    float radius = String::to<float>(data.parameters.Tokenize(L"|", position));
-                    data.alignedBox.minimum = Math::Float3(-radius);
-                    data.alignedBox.maximum = Math::Float3(radius);
+                    float radius = String::to<float>(parameters.Tokenize(L"|", position));
+                    data->alignedBox.minimum = Math::Float3(-radius);
+                    data->alignedBox.maximum = Math::Float3(radius);
                 }
                 else
                 {
@@ -490,18 +493,20 @@ namespace Gek
 
                 if (SUCCEEDED(resultValue))
                 {
-                    data.load = std::bind(&System::loadShape, this, std::placeholders::_1);
+                    auto loadIterator = dataLoadQueue.find(data);
+                    if (loadIterator == dataLoadQueue.end())
+                    {
+                        dataLoadQueue[data] = std::bind(&System::loadShape, this, data, CStringW(parameters));
+                    }
                 }
 
                 return resultValue;
             }
 
-            HRESULT loadModel(ModelData &data)
+            HRESULT loadModel(ModelData *data, CStringW fileName, CStringW name)
             {
-                data.load = nullptr;
-
                 std::vector<UINT8> fileData;
-                HRESULT resultValue = Gek::FileSystem::load(data.parameters, fileData);
+                HRESULT resultValue = Gek::FileSystem::load(fileName, fileData);
                 if (SUCCEEDED(resultValue))
                 {
                     UINT8 *rawFileData = fileData.data();
@@ -517,20 +522,20 @@ namespace Gek
                     resultValue = E_INVALIDARG;
                     if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 2)
                     {
-                        data.alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
+                        data->alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
                         rawFileData += sizeof(Gek::Shape::AlignedBox);
 
                         UINT32 materialCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
                         resultValue = S_OK;
-                        data.materialInfoList.resize(materialCount);
+                        data->materialInfoList.resize(materialCount);
                         for (UINT32 materialIndex = 0; materialIndex < materialCount; ++materialIndex)
                         {
                             CStringA materialNameUtf8(rawFileData);
                             rawFileData += (materialNameUtf8.GetLength() + 1);
 
-                            MaterialInfo &materialInfo = data.materialInfoList[materialIndex];
+                            MaterialInfo &materialInfo = data->materialInfoList[materialIndex];
                             resultValue = render->loadMaterial(&materialInfo.material, CA2W(materialNameUtf8, CP_UTF8));
                             if (!materialInfo.material)
                             {
@@ -553,7 +558,7 @@ namespace Gek
                             UINT32 vertexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            resultValue = render->createBuffer(&data.vertexBuffer, String::format(L"model:vertex:%s", data.parameters.GetString()), sizeof(Vertex), vertexCount, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, rawFileData);
+                            resultValue = render->createBuffer(&data->vertexBuffer, String::format(L"model:vertex:%s", name.GetString()), sizeof(Vertex), vertexCount, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, rawFileData);
                             rawFileData += (sizeof(Vertex) * vertexCount);
                         }
 
@@ -562,21 +567,28 @@ namespace Gek
                             UINT32 indexCount = *((UINT32 *)rawFileData);
                             rawFileData += sizeof(UINT32);
 
-                            resultValue = render->createBuffer(&data.indexBuffer, String::format(L"model:index:%s", data.parameters.GetString()), Video::Format::Short, indexCount, Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, rawFileData);
+                            resultValue = render->createBuffer(&data->indexBuffer, String::format(L"model:index:%s", name.GetString()), Video::Format::Short, indexCount, Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, rawFileData);
                             rawFileData += (sizeof(UINT16) * indexCount);
                         }
                     }
                 }
 
+                if (SUCCEEDED(resultValue))
+                {
+                    data->loaded = true;
+                }
+
                 return resultValue;
             }
 
-            HRESULT preLoadModel(ModelData &data)
+            HRESULT preLoadModel(ModelData *data, LPCWSTR fileName, LPCWSTR name)
             {
-                static const UINT32 nPreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shape::AlignedBox));
+                REQUIRE_RETURN(fileName, E_INVALIDARG);
+
+                static const UINT32 PreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shape::AlignedBox));
 
                 std::vector<UINT8> fileData;
-                HRESULT resultValue = Gek::FileSystem::load(data.parameters, fileData, nPreReadSize);
+                HRESULT resultValue = Gek::FileSystem::load(fileName, fileData, PreReadSize);
                 if (SUCCEEDED(resultValue))
                 {
                     UINT8 *rawFileData = fileData.data();
@@ -592,20 +604,24 @@ namespace Gek
                     resultValue = E_INVALIDARG;
                     if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 2)
                     {
-                        data.alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
+                        data->alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
                         resultValue = S_OK;
                     }
                 }
 
                 if (SUCCEEDED(resultValue))
                 {
-                    data.load = std::bind(&System::loadModel, this, std::placeholders::_1);
+                    auto loadIterator = dataLoadQueue.find(data);
+                    if (loadIterator == dataLoadQueue.end())
+                    {
+                        dataLoadQueue[data] = std::bind(&System::loadModel, this, data, CStringW(fileName), CStringW(name));
+                    }
                 }
 
                 return resultValue;
             }
 
-            HRESULT preLoadData(LPCWSTR model, ModelData &data)
+            HRESULT preLoadData(ModelData *data, LPCWSTR model)
             {
                 gekLogScope(model);
 
@@ -614,13 +630,13 @@ namespace Gek
                 HRESULT resultValue = E_FAIL;
                 if (*model == L'*')
                 {
-                    data.parameters = (model + 1);
-                    resultValue = preLoadShape(data);
+                    resultValue = preLoadShape(data, (model + 1));
                 }
                 else
                 {
-                    data.parameters.Format(L"%%root%%\\data\\models\\%s.gek", model);
-                    resultValue = preLoadModel(data);
+                    CStringW fileName;
+                    fileName.Format(L"%%root%%\\data\\models\\%s.gek", model);
+                    resultValue = preLoadModel(data, fileName, model);
                 }
 
                 return resultValue;
@@ -700,7 +716,7 @@ namespace Gek
                     else
                     {
                         ModelData &data = dataMap[modelComponent];
-                        preLoadData(modelComponent, data);
+                        preLoadData(&data, modelComponent);
                         dataEntityList[entity] = &data;
                     }
                 }
@@ -727,7 +743,7 @@ namespace Gek
                 concurrency::parallel_for_each(dataEntityList.begin(), dataEntityList.end(), [&](const std::pair<Engine::Population::Entity *, ModelData *> &dataEntity) -> void
                 {
                     Engine::Population::Entity *entity = dataEntity.first;
-                    ModelData &data = *(dataEntity.second);
+                    ModelData *data = dataEntity.second;
 
                     Gek::Math::Float3 size(1.0f, 1.0f, 1.0f);
                     if (entity->hasComponent<Engine::Components::Size::Data>())
@@ -735,7 +751,7 @@ namespace Gek
                         size.set(entity->getComponent<Engine::Components::Size::Data>());
                     }
 
-                    Gek::Shape::AlignedBox alignedBox(data.alignedBox);
+                    Gek::Shape::AlignedBox alignedBox(data->alignedBox);
                     alignedBox.minimum *= size;
                     alignedBox.maximum *= size;
 
@@ -749,7 +765,7 @@ namespace Gek
                             color = entity->getComponent<Engine::Components::Color::Data>();
                         }
 
-                        visibleList[dataEntity.second].push_back(InstanceData(Math::Float4x4(transformComponent.rotation, transformComponent.position), color, size, cameraTransform.position.getDistance(transformComponent.position)));
+                        visibleList[data].push_back(InstanceData(Math::Float4x4(transformComponent.rotation, transformComponent.position), color, size, cameraTransform.position.getDistance(transformComponent.position)));
                     }
                 });
 
@@ -757,8 +773,16 @@ namespace Gek
                 std::map<ModelData *, std::pair<UINT32, UINT32>> instanceMap;
                 for (auto instancePair : visibleList)
                 {
-                    ModelData &data = *(instancePair.first);
-                    if (!data.load || SUCCEEDED(data.load(data)))
+                    ModelData *data = (instancePair.first);
+                    auto loadIterator = dataLoadQueue.find(data);
+                    if (loadIterator != dataLoadQueue.end())
+                    {
+                        auto load = (*loadIterator).second;
+                        dataLoadQueue.unsafe_erase(loadIterator);
+                        load();
+                    }
+
+                    if(data->loaded)
                     {
                         auto &instanceList = instancePair.second;
                         concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [&](const InstanceData &leftInstance, const InstanceData &rightInstance) -> bool
@@ -766,7 +790,7 @@ namespace Gek
                             return (leftInstance.distance < rightInstance.distance);
                         });
 
-                        instanceMap[&data] = std::make_pair(instanceList.size(), instanceArray.size());
+                        instanceMap[data] = std::make_pair(instanceList.size(), instanceArray.size());
                         instanceArray.insert(instanceArray.end(), instanceList.begin(), instanceList.end());
                     }
                 }
@@ -780,10 +804,10 @@ namespace Gek
 
                     for (auto &instancePair : instanceMap)
                     {
-                        auto &data = *instancePair.first;
-                        for (auto &materialInfo : data.materialInfoList)
+                        auto data = instancePair.first;
+                        for (auto &materialInfo : data->materialInfoList)
                         {
-                            render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, { data.vertexBuffer, instanceBuffer }, instancePair.second.first, instancePair.second.second, materialInfo.firstVertex, data.indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
+                            render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, { data->vertexBuffer, instanceBuffer }, instancePair.second.first, instancePair.second.second, materialInfo.firstVertex, data->indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
                         }
                     }
                 }

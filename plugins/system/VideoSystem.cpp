@@ -30,6 +30,8 @@ namespace Gek
     {        
         namespace DirectX
         {
+            // Both these lists must match, since the same GEK Format can be used for either textures or buffers
+            // The size list must also match
             static const DXGI_FORMAT TextureFormatList[] =
             {
                 DXGI_FORMAT_UNKNOWN,
@@ -37,6 +39,7 @@ namespace Gek
                 DXGI_FORMAT_R8G8_UNORM,
                 DXGI_FORMAT_R8G8B8A8_UNORM,
                 DXGI_FORMAT_B8G8R8A8_UNORM,
+                DXGI_FORMAT_B5G6R5_UNORM,
                 DXGI_FORMAT_R16_UINT,
                 DXGI_FORMAT_R16G16_UINT,
                 DXGI_FORMAT_R16G16B16A16_UINT,
@@ -56,12 +59,15 @@ namespace Gek
                 DXGI_FORMAT_D32_FLOAT,
             };
 
+            static_assert(ARRAYSIZE(TextureFormatList) == static_cast<UINT8>(Format::NumFormats), "New format added without adding to all TextureFormatList.");
+
             static const DXGI_FORMAT BufferFormatList[] =
             {
                 DXGI_FORMAT_UNKNOWN,
                 DXGI_FORMAT_R8_UINT,
                 DXGI_FORMAT_R8G8_UINT,
                 DXGI_FORMAT_R8G8B8A8_UINT,
+                DXGI_FORMAT_UNKNOWN,
                 DXGI_FORMAT_UNKNOWN,
                 DXGI_FORMAT_R16_UINT,
                 DXGI_FORMAT_R16G16_UINT,
@@ -82,6 +88,8 @@ namespace Gek
                 DXGI_FORMAT_UNKNOWN,
             };
 
+            static_assert(ARRAYSIZE(BufferFormatList) == static_cast<UINT8>(Format::NumFormats), "New format added without adding to all BufferFormatList.");
+
             static const UINT32 FormatStrideList[] =
             {
                 0,
@@ -89,6 +97,7 @@ namespace Gek
                 (sizeof(UINT8) * 2),
                 (sizeof(UINT8) * 4),
                 (sizeof(UINT8) * 4),
+                sizeof(UINT16),
                 sizeof(UINT16),
                 (sizeof(UINT16) * 2),
                 (sizeof(UINT16) * 4),
@@ -107,6 +116,8 @@ namespace Gek
                 sizeof(UINT32),
                 sizeof(UINT32),
             };
+
+            static_assert(ARRAYSIZE(FormatStrideList) == static_cast<UINT8>(Format::NumFormats), "New format added without adding to all FormatStrideList.");
 
             static const D3D11_DEPTH_WRITE_MASK DepthWriteMaskList[] =
             {
@@ -1352,7 +1363,7 @@ namespace Gek
                 };
 
                 D3D_FEATURE_LEVEL featureLevel;
-                gekCheckResult(resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext));
+                gekCheckResult(resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_REFERENCE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext));
                 if (d3dDevice && d3dDeviceContext && dxSwapChain)
                 {
                     gekCheckResult(resultValue = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&d2dFactory)));

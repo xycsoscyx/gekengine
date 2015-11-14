@@ -3,7 +3,7 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-#include "BRDF.Hodgeman.h"
+#include "BRDF.UE4.h"
 
 float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbedo)
 {
@@ -19,7 +19,7 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
     const uint bufferIndex = (tileIndex * Lighting::listSize);
 
-    float3 surfaceColor = 0.0f;
+    float surfaceColor = 0.0f;
 
     [loop]
     for (uint lightIndexIndex = 0; lightIndexIndex < Lighting::count; lightIndexIndex++)
@@ -49,7 +49,7 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
         [branch]
         if (attenuation > 0.0f)
         {
-            surfaceColor += getBRDF(materialAlbedo, materialInfo, pixelNormal, lightNormal, viewNormal) * Lighting::list[lightIndex].color * attenuation;
+            surfaceColor = (getBRDF(materialAlbedo, materialInfo, pixelNormal, lightNormal, viewNormal) * Lighting::list[lightIndex].color * attenuation);
         }
     }
 
@@ -58,9 +58,10 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
 
 float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-    float4 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+    float4 materialAlbedo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texcoord).xyzz;
+    return materialAlbedo;
 
-    float3 lightingContribution = 0.0f;
+    float3 lightingContribution = 0;
 
     [branch]
     if (materialAlbedo.a < 1.0f)

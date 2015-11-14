@@ -4,7 +4,7 @@
         <maps>
             <albedo bind="float4">Texture2D</albedo>
             <normal bind="float2">Texture2D</normal>
-            <roughness bind="float">Texture2D</roughness>
+            <roughness bind="float2">Texture2D</roughness>
             <metalness bind="float">Texture2D</metalness>
         </maps>
         <properties>
@@ -22,7 +22,7 @@
 
     <targets>
         <albedoBuffer bind="float4">byte4</albedoBuffer>
-        <materialBuffer bind="half2">byte2</materialBuffer>
+        <materialBuffer bind="float3">RGB16</materialBuffer>
         <normalBuffer bind="half2">float2</normalBuffer>
         <depthBuffer bind="float">float</depthBuffer> 
     </targets>

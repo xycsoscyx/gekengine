@@ -21,6 +21,7 @@ namespace Gek
             Byte2,
             Byte4,
             BGRA,
+            RGB16,
             Short,
             Short2,
             Short4,
@@ -38,6 +39,7 @@ namespace Gek
             Depth16,
             Depth24Stencil8,
             Depth32,
+            NumFormats
         };
 
         enum class ElementType : UINT8
