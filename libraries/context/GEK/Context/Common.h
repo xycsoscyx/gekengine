@@ -102,9 +102,22 @@ namespace Gek
     }
 };
 
+inline bool gekCheckResultDirectly(Gek::Context::Interface *context, HRESULT resultValue, LPCSTR call, LPCSTR file, UINT32 line)
+{
+    if (FAILED(resultValue))
+    {
+        context->logMessage(file, line, 0, L"Call Failed: 0x%08X, %S", resultValue, call);
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
 #define gekLogScope(...)                            Gek::LoggingScope functionScope(getContext(), __FILE__, __LINE__, Gek::compileFunction(__FUNCTION__, __VA_ARGS__));
 #define gekLogMessage(FORMAT, ...)                  getContext()->logMessage(__FILE__, __LINE__, 0, FORMAT, __VA_ARGS__)
-#define gekCheckResult(FUNCTION)                    (FUNCTION)
+#define gekCheckResult(FUNCTION)                    gekCheckResultDirectly(getContext(), FUNCTION, #FUNCTION, __FILE__, __LINE__)
 #define gekException(FORMAT, ...)                   Gek::Exception(__FILE__, __FUNCTION__, __LINE__, FORMAT, __VA_ARGS__)
 
 namespace std

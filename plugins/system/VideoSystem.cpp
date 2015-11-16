@@ -1464,9 +1464,9 @@ namespace Gek
                 description.RefreshRate.Denominator = 1;
                 description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
                 description.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-                if (SUCCEEDED(gekCheckResult(resultValue = dxSwapChain->ResizeTarget(&description))))
+                if (gekCheckResult(resultValue = dxSwapChain->ResizeTarget(&description)))
                 {
-                    if (SUCCEEDED(gekCheckResult(resultValue = dxSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0))))
+                    if (gekCheckResult(resultValue = dxSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0)))
                     {
                         resultValue = createDefaultTargets();
                     }

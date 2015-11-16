@@ -198,14 +198,14 @@ namespace Gek
                 REQUIRE_RETURN(window, E_INVALIDARG);
 
                 HRESULT resultValue = E_FAIL;
-                if (SUCCEEDED(gekCheckResult(resultValue = DirectSoundCreate8(nullptr, &directSound, nullptr))))
+                if (gekCheckResult(resultValue = DirectSoundCreate8(nullptr, &directSound, nullptr)))
                 {
-                    if (SUCCEEDED(gekCheckResult(resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY))))
+                    if (gekCheckResult(resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY)))
                     {
                         DSBUFFERDESC primaryBufferDescription = { 0 };
                         primaryBufferDescription.dwSize = sizeof(DSBUFFERDESC);
                         primaryBufferDescription.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
-                        if (SUCCEEDED(gekCheckResult(resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr))))
+                        if (gekCheckResult(resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr)))
                         {
                             WAVEFORMATEX primaryBufferFormat;
                             ZeroMemory(&primaryBufferFormat, sizeof(WAVEFORMATEX));
@@ -215,7 +215,7 @@ namespace Gek
                             primaryBufferFormat.nSamplesPerSec = 48000;
                             primaryBufferFormat.nBlockAlign = (primaryBufferFormat.wBitsPerSample / 8 * primaryBufferFormat.nChannels);
                             primaryBufferFormat.nAvgBytesPerSec = (primaryBufferFormat.nSamplesPerSec * primaryBufferFormat.nBlockAlign);
-                            if (SUCCEEDED(gekCheckResult(resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat))))
+                            if (gekCheckResult(resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat)))
                             {
                                 resultValue = E_FAIL;
                                 directSoundListener = primarySoundBuffer;

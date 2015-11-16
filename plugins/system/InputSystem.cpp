@@ -396,7 +396,7 @@ namespace Gek
                 CComPtr<Device::Joystick> joystick = new Device::Joystick();
                 if (joystick != nullptr)
                 {
-                    if (SUCCEEDED(gekCheckResult(joystick->initialize(directInput, window, deviceObjectInstance->guidInstance))))
+                    if (gekCheckResult(joystick->initialize(directInput, window, deviceObjectInstance->guidInstance)))
                     {
                         CComPtr<Device::Interface> joystickDevice;
                         joystickDevice->QueryInterface(IID_PPV_ARGS(&joystickDevice));
@@ -437,7 +437,7 @@ namespace Gek
                     CComPtr<Device::Keyboard> keyboard = new Device::Keyboard();
                     if (keyboard != nullptr)
                     {
-                        if (SUCCEEDED(gekCheckResult(resultValue = keyboard->initialize(directInput, window))))
+                        if (gekCheckResult(resultValue = keyboard->initialize(directInput, window)))
                         {
                             resultValue = keyboard->QueryInterface(IID_PPV_ARGS(&keyboardDevice));
                         }
@@ -449,7 +449,7 @@ namespace Gek
                         CComPtr<Device::Mouse> mouse = new Device::Mouse();
                         if (mouse != nullptr)
                         {
-                            if (SUCCEEDED(gekCheckResult(resultValue = mouse->initialize(directInput, window))))
+                            if (gekCheckResult(resultValue = mouse->initialize(directInput, window)))
                             {
                                 resultValue = mouse->QueryInterface(IID_PPV_ARGS(&mouseDevice));
                             }
