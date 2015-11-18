@@ -10,7 +10,7 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
     [branch]
     if(albedo.a < 0.5f)
     {
-        discard;
+        //discard;
     }
 
     // Viewspace vertex normal
