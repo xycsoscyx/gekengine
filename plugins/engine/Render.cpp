@@ -89,6 +89,8 @@ namespace Gek
     {
         namespace Render
         {
+            static const UINT32 MaxLightCount = 2048;
+
             class System : public Context::User::Mixin
                 , public Observable::Mixin
                 , public Engine::Population::Observer
@@ -319,7 +321,7 @@ namespace Gek
 
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), 1024, Video::BufferFlags::Dynamic | Video::BufferFlags::StructuredBuffer | Video::BufferFlags::Resource);
+                        resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), MaxLightCount, Video::BufferFlags::Dynamic | Video::BufferFlags::StructuredBuffer | Video::BufferFlags::Resource);
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -849,7 +851,7 @@ namespace Gek
                         LPVOID lightingData = nullptr;
                         if (SUCCEEDED(video->mapBuffer(lightingBuffer, &lightingData)))
                         {
-                            UINT32 lightCount = std::min(visibleLightList.size(), size_t(1024));
+                            UINT32 lightCount = std::min(visibleLightList.size(), size_t(MaxLightCount));
                             memcpy(lightingData, visibleLightList.data(), (sizeof(Light) * lightCount));
                             video->unmapBuffer(lightingBuffer);
 

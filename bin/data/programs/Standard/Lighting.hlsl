@@ -3,11 +3,11 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-#include "BRDF.UE4.h"
+#include "BRDF.Disney.h"
 
 float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbedo)
 {
-    float2 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+    float3 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
 
     float pixelDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
     float3 pixelPosition = getViewPosition(inputPixel.texcoord, pixelDepth);
@@ -19,7 +19,7 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
     const uint bufferIndex = (tileIndex * Lighting::listSize);
 
-    float surfaceColor = 0.0f;
+    float3 surfaceColor = 0.0f;
 
     [loop]
     for (uint lightIndexIndex = 0; lightIndexIndex < Lighting::count; lightIndexIndex++)
@@ -49,7 +49,7 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
         [branch]
         if (attenuation > 0.0f)
         {
-            surfaceColor = (getBRDF(materialAlbedo, materialInfo, pixelNormal, lightNormal, viewNormal) * Lighting::list[lightIndex].color * attenuation);
+            surfaceColor += (getBRDF(materialAlbedo, materialInfo, pixelNormal, lightNormal, viewNormal) * Lighting::list[lightIndex].color * attenuation);
         }
     }
 
