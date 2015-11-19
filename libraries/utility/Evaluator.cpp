@@ -81,9 +81,12 @@ namespace Gek
             template <std::size_t SIZE>
             bool getVector(LPCWSTR equation, TYPE(&vector)[SIZE])
             {
+                CStringA value;
+                value.Format("var vector[%d] := {%S}; value <=> vector;", SIZE, equation);
+
                 symbolTable.remove_vector("value");
                 symbolTable.add_vector("value", vector);
-                if (parser.compile(String::format("var vector[%d] := {%S}; value := vector;", SIZE, equation).GetString(), expression))
+                if (parser.compile(value.GetString(), expression))
                 {
                     expression.value();
                     return true;

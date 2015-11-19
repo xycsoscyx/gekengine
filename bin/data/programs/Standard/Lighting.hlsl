@@ -58,8 +58,7 @@ float3 getLightingContribution(in InputPixel inputPixel, in float3 materialAlbed
 
 float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-    float4 materialAlbedo = Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texcoord).xyxy;
-    return materialAlbedo;
+    float4 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
 
     float3 lightingContribution = 0;
 
