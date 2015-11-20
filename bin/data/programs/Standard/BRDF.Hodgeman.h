@@ -8,12 +8,11 @@ static const bool performHelmholtzTest = false;
 static const float3 X = 0.5f;
 static const float3 Y = 0.5f;
 
-float3 getBRDF(in float3 materialAlbedo, in float3 materialInfo, in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal)
+float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal)
 {
     static const float materialSpecular = 0.3f;
-    float materialRoughnessX = materialInfo.x;
-    float materialRoughnessY = materialInfo.y;
-    float materialMetalness = materialInfo.z;
+    float materialRoughnessX = materialRoughness;
+    float materialRoughnessY = materialRoughness;
 
     if (performHelmholtzTest)
     {
@@ -119,6 +118,5 @@ float3 getBRDF(in float3 materialAlbedo, in float3 materialInfo, in float3 pixel
 
     float3 Rs = Fs * D * G;
 
-    return Rd;
     return (Rd + Rs);
 }

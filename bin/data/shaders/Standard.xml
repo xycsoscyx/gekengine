@@ -4,7 +4,7 @@
         <maps>
             <albedo bind="float4">Texture2D</albedo>
             <normal bind="float2">Texture2D</normal>
-            <roughness bind="float2">Texture2D</roughness>
+            <roughness bind="float">Texture2D</roughness>
             <metalness bind="float">Texture2D</metalness>
         </maps>
         <properties>
@@ -21,10 +21,11 @@
     <depth>D32</depth>
 
     <targets>
-        <albedoBuffer bind="float4">byte4</albedoBuffer>
-        <materialBuffer bind="float3">RGB16</materialBuffer>
+        <albedoBuffer bind="float3">RGB16</albedoBuffer>
+        <materialBuffer bind="float2">byte2</materialBuffer>
         <normalBuffer bind="half2">float2</normalBuffer>
-        <depthBuffer bind="float">float</depthBuffer> 
+        <depthBuffer bind="float">float</depthBuffer>
+        <lightingBuffer bind="float3">float4</lightingBuffer>
     </targets>
 
     <buffers>
@@ -75,13 +76,10 @@
         </program>
     </pass>
 
-    <pass mode="deferred" lighting="true"> 
-        <blendstates>
-            <target>
-                <color source="one" destination="one" operation="add" />
-                <alpha source="one" destination="one" operation="add" />
-            </target>
-        </blendstates>
+    <pass mode="deferred" lighting="true">
+        <targets>
+            <lightingBuffer />
+        </targets>
 
         <resources>
             <tileIndexList />
@@ -94,6 +92,21 @@
         <program>
             <entry>mainPixelProgram</entry>
             <source>Standard\Lighting</source>
+        </program>
+    </pass>
+
+    <pass mode="deferred">
+        <resources>
+            <lightingBuffer />
+            <albedoBuffer />
+            <materialBuffer />
+            <normalBuffer />
+            <depthBuffer />
+        </resources>
+
+        <program>
+            <entry>mainPixelProgram</entry>
+            <source>Standard\Final</source>
         </program>
     </pass>
 </shader>
