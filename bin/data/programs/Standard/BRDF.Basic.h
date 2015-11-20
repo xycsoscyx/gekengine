@@ -1,46 +1,29 @@
 // Simple Lighting Equation
 
-static const float specularPower = 100;
+static const float specularPower = 1000;
 
-float getLambert(in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal)
+float3 reflect(float3 incidentNormal, float3 surfaceNormal)
 {
-    return dot(lightNormal, pixelNormal);
+    return 2 * dot(incidentNormal, surfaceNormal) * surfaceNormal - incidentNormal;
 }
 
-float3 reflect(float3 incidentNormal, float3 pixelNormal)
+float getPhong(in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
 {
-    return 2 * dot(incidentNormal, pixelNormal) * pixelNormal - incidentNormal;
+    float3 reflectNormal = reflect(lightDirection, surfaceNormal);
+    return pow(max(0, dot(reflectNormal, viewDirection)), specularPower);
 }
 
-float getPhong(in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal)
+float getGaussian(in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
 {
-    float3 reflectNormal = reflect(lightNormal, pixelNormal);
-    float specular = pow(max(0, dot(reflectNormal, viewNormal)), specularPower);
-    if (true)
-    {
-        specular = specular / dot(pixelNormal, lightNormal);
-    }
-
-    return specular;
-}
-
-float getGaussian(in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal)
-{
-    float3 halfAngle = normalize(lightNormal + viewNormal);
-    float NdotH = clamp(dot(pixelNormal, halfAngle), 0, 1);
+    float3 halfAngle = normalize(lightDirection + viewDirection);
+    float NdotH = clamp(dot(surfaceNormal, halfAngle), 0, 1);
     float Threshold = 0.04;
     float CosAngle = pow(Threshold, 1 / specularPower);
     float NormAngle = (NdotH - 1) / (CosAngle - 1);
-    float specular = exp(-NormAngle * NormAngle);
-    if (true)
-    {
-        specular *= 0.17287429 + 0.01388682 * specularPower;
-    }
-
-    return specular;
+    return exp(-NormAngle * NormAngle);
 }
 
-float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal)
+float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL, in float NdotV)
 {
-    return ((materialAlbedo * getLambert(pixelNormal, lightNormal, viewNormal)) + getGaussian(pixelNormal, lightNormal, viewNormal));
+    return (materialAlbedo + getPhong(surfaceNormal, lightDirection, viewDirection, NdotL));
 }

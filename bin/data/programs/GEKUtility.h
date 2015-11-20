@@ -19,18 +19,16 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
 
 half2 encodeNormal(half3 normal)
 {
-    half2 encodedNormal = (normalize(normal.xy) * (sqrt((-normal.z * 0.5) + 0.5)));
-    encodedNormal = ((encodedNormal * 0.5) + 0.5);
-    return encodedNormal;
+    half f = sqrt(8 * normal.z + 8);
+    return normal.xy / f + 0.5;
 }
 
 half3 decodeNormal(half2 encodedNormal)
 {
-    half4 normal = half4((encodedNormal * 2 - 1), 1, -1);
-    half length = dot(normal.xyz, -normal.xyw);
-    normal.z = length;
-    normal.xy *= sqrt(length);
-    return ((normal.xyz * 2.0f) + half3(0, 0, -1));
+    half2 fixedNormal = encodedNormal * 4 - 2;
+    half f = dot(fixedNormal, fixedNormal);
+    half g = sqrt(1 - f / 4);
+    return half3(fixedNormal*g, 1 - f / 2);
 }
 
 float3 getViewPosition(float2 texCoord, float nDepth)

@@ -116,7 +116,7 @@ namespace Gek
                 struct Light
                 {
                     Math::Float3 position;
-                    float range;
+                    float radius;
 					Math::Float3 color;
 					float distance;
 				};
@@ -674,6 +674,22 @@ namespace Gek
                             else
                             {
                                 returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s", fileName), 0);
+                                if (FAILED(returnValue))
+                                {
+                                    returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".dds"), 0);
+                                    if (FAILED(returnValue))
+                                    {
+                                        returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".tga"), 0);
+                                        if (FAILED(returnValue))
+                                        {
+                                            returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".png"), 0);
+                                            if (FAILED(returnValue))
+                                            {
+                                                returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".jpg"), 0);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -803,7 +819,7 @@ namespace Gek
                         auto &cameraData = cameraEntity->getComponent<Components::Camera::Data>();
 
                         CameraConstantData cameraConstantData;
-                        float displayAspectRatio = 1.0f;
+                        float displayAspectRatio = (1280.0f / 800.0f);
                         float fieldOfView = Math::convertDegreesToRadians(cameraData.fieldOfView);
                         cameraConstantData.fieldOfView.x = tan(fieldOfView * 0.5f);
                         cameraConstantData.fieldOfView.y = (cameraConstantData.fieldOfView.x / displayAspectRatio);
@@ -835,7 +851,7 @@ namespace Gek
                                 auto lightIterator = concurrentVisibleLightList.grow_by(1);
                                 (*lightIterator).position = (cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz;
                                 (*lightIterator).distance = (*lightIterator).position.getLengthSquared();
-                                (*lightIterator).range = pointLightComponent.radius;
+                                (*lightIterator).radius = pointLightComponent.radius;
                                 (*lightIterator).color.set(lightColorComponent.value.xyz);
                             }
                         });

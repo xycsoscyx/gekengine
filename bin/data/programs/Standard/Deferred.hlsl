@@ -10,19 +10,16 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
     [branch]
     if(albedo.a < 0.5f)
     {
-        //discard;
+        discard;
     }
 
-    // Viewspace vertex normal
-    float3 viewNormal = (normalize(inputPixel.viewnormal) * (inputPixel.frontface ? 1 : -1));
+    float3x3 coTangentFrame = getCoTangentFrame(inputPixel.viewposition.xyz, (normalize(inputPixel.viewnormal) * (inputPixel.frontface ? 1 : -1)), inputPixel.texcoord);
 
     float3 normal;
     // Normals stored as 3Dc format, so [0,1] XY components only
     normal.xy = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texcoord) * 2.0) - 1.0);
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
-
-    float3x3 coTangentFrame = getCoTangentFrame(-inputPixel.viewposition.xyz, viewNormal, inputPixel.texcoord);
-    normal = mul(normal, coTangentFrame);
+    normal = mul(normalize(normal), coTangentFrame);
 
     OutputPixel outputPixel;
     outputPixel.albedoBuffer = albedo.xyz;

@@ -5,6 +5,9 @@ static const float materialSpecular = 0;
 static const float materialSpecularTint = 0;
 static const float materialAnisotropic = 0;
 
+static const float3 X = 0.0f;
+static const float3 Y = 0.0f;
+
 float sqrt(float x)
 {
     return x * x;
@@ -49,18 +52,11 @@ float3 mon2lin(float3 x)
     return float3(pow(x[0], 2.2), pow(x[1], 2.2), pow(x[2], 2.2));
 }
 
-float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal)
+float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL, in float NdotV)
 {
-    float3 X = 0;
-    float3 Y = 0;
-
-    float NdotL = dot(pixelNormal, lightNormal);
-    float NdotV = dot(pixelNormal, viewNormal);
-    if (NdotL < 0 || NdotV < 0) return 0;
-
-    float3 H = normalize(lightNormal + viewNormal);
-    float NdotH = dot(pixelNormal, H);
-    float LdotH = dot(lightNormal, H);
+    float3 halfNormal = normalize(lightDirection + viewDirection);
+    float NdotH = dot(surfaceNormal, halfNormal);
+    float LdotH = dot(lightDirection, halfNormal);
 
     float3 Cdlin = mon2lin(materialAlbedo);
     float Cdlum = .3 * Cdlin[0] + .6 * Cdlin[1] + .1 * Cdlin[2]; // luminance approx.
@@ -85,7 +81,7 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
     float aspect = sqrt(1 - materialAnisotropic * .9);
     float ax = max(.001, sqrt(materialRoughness) / aspect);
     float ay = max(.001, sqrt(materialRoughness) * aspect);
-    float Ds = GTR2_aniso(NdotH, dot(H, X), dot(H, Y), ax, ay);
+    float Ds = GTR2_aniso(NdotH, dot(halfNormal, X), dot(halfNormal, Y), ax, ay);
     float FH = SchlickFresnel(LdotH);
     float3 Fs = lerp(Cspec0, 1, FH);
     float roughg = sqrt(materialRoughness * .5 + .5);

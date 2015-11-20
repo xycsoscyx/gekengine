@@ -122,6 +122,7 @@ namespace Gek
                         Float4,
                         Half,
                         Half2,
+                        Half3,
                         Half4,
                         Int,
                         Int2,
@@ -242,6 +243,7 @@ namespace Gek
                         else if (_wcsicmp(bindType, L"Float4") == 0) return BindType::Float4;
                         else if (_wcsicmp(bindType, L"Half") == 0) return BindType::Half;
                         else if (_wcsicmp(bindType, L"Half2") == 0) return BindType::Half2;
+                        else if (_wcsicmp(bindType, L"Half3") == 0) return BindType::Half3;
                         else if (_wcsicmp(bindType, L"Half4") == 0) return BindType::Half4;
                         else if (_wcsicmp(bindType, L"Int") == 0) return BindType::Int;
                         else if (_wcsicmp(bindType, L"Int2") == 0) return BindType::Int2;
@@ -261,6 +263,7 @@ namespace Gek
                         case BindType::Float4:      return L"float4";
                         case BindType::Half:        return L"half";
                         case BindType::Half2:       return L"half2";
+                        case BindType::Half3:       return L"half3";
                         case BindType::Half4:       return L"half4";
                         case BindType::Int:        return L"uint";
                         case BindType::Int2:       return L"uint2";
@@ -776,7 +779,7 @@ namespace Gek
                                                     "    struct Point                                       \r\n"\
                                                     "    {                                                  \r\n"\
                                                     "        float3  position;                              \r\n"\
-                                                    "        float   range;                                 \r\n"\
+                                                    "        float   radius;                                \r\n"\
 													"        float3  color;                                 \r\n"\
 													"        float   distance;                              \r\n"\
                                                     "    };                                                 \r\n"\

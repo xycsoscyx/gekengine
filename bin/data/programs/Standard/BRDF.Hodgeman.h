@@ -3,12 +3,13 @@
 
 static const float materialFacetAngle = 0.0f;
 static const float materialRetroreflective = 0.0f;
-static const bool materialIsotropic = false;
+static const bool materialIsotropic = true;
 static const bool performHelmholtzTest = false;
-static const float3 X = 0.5f;
-static const float3 Y = 0.5f;
 
-float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal)
+static const float3 X = 0.0f;
+static const float3 Y = 0.0f;
+
+float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL, in float NdotV)
 {
     static const float materialSpecular = 0.3f;
     float materialRoughnessX = materialRoughness;
@@ -16,7 +17,7 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
 
     if (performHelmholtzTest)
     {
-        float3 temp = lightNormal; lightNormal = viewNormal; viewNormal = temp;
+        float3 temp = lightDirection; lightDirection = viewDirection; viewDirection = temp;
     }
 
     float sina = sin(materialFacetAngle);
@@ -28,7 +29,6 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
     float3 Kd = lerp(materialAlbedo, 0, materialMetalness);
     float3 Fd = 1.0 - Ks;
 
-    float NdotV = dot(pixelNormal, viewNormal);
     float NdotV_2 = NdotV * NdotV;
     float OneMinusNdotV_2 = 1.0 - NdotV_2;
 
@@ -42,14 +42,13 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
     M_2 = (Mx_2 + My_2) / 2;
     M = materialIsotropic ? MX : sqrt(M_2);
 
-    float3 H = normalize(lightNormal + viewNormal);
-    float NdotL = saturate(dot(pixelNormal, lightNormal));
-    float NdotH = saturate(dot(pixelNormal, H));
-    float VdotH = dot(viewNormal, H);
-    float LdotH = saturate(dot(lightNormal, H));
+    float3 halfNormal = normalize(lightDirection + viewDirection);
+    float NdotH = dot(surfaceNormal, halfNormal);
+    float VdotH = dot(viewDirection, halfNormal);
+    float LdotH = dot(lightDirection, halfNormal);
 
-    float LdotV = dot(lightNormal, viewNormal);
-    NdotH = lerp(NdotH, LdotV, saturate(materialRetroreflective));
+    float LdotV = dot(lightDirection, viewDirection);
+    NdotH = lerp(NdotH, LdotV, materialRetroreflective);
 
     float NdotL_2 = NdotL * NdotL;
     float NdotH_2 = NdotH * NdotH;
@@ -64,23 +63,23 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
     }
     else
     {
-        float HdotX = dot(H, rX);
-        float HdotY = dot(H, rY);
+        float HdotX = dot(halfNormal, rX);
+        float HdotY = dot(halfNormal, rY);
         float HdotX_2 = HdotX * HdotX;
         float HdotY_2 = HdotY * HdotY;
         if (materialRetroreflective > 0)
         {
-            float3 LX = normalize(cross(rY, lightNormal));
-            float3 LY = normalize(cross(lightNormal, LX));
-            float VdotLX = dot(viewNormal, LX);
-            float VdotLY = dot(viewNormal, LY);
+            float3 LX = normalize(cross(rY, lightDirection));
+            float3 LY = normalize(cross(lightDirection, LX));
+            float VdotLX = dot(viewDirection, LX);
+            float VdotLY = dot(viewDirection, LY);
             float VdotLX_2 = VdotLX * VdotLX;
             float VdotLY_2 = VdotLY * VdotLY;
 
-            float3 VX = normalize(cross(rY, viewNormal));
-            float3 VY = normalize(cross(viewNormal, VX));
-            float LdotVX = dot(lightNormal, VX);
-            float LdotVY = dot(lightNormal, VY);
+            float3 VX = normalize(cross(rY, viewDirection));
+            float3 VY = normalize(cross(viewDirection, VX));
+            float LdotVX = dot(lightDirection, VX);
+            float LdotVY = dot(lightDirection, VY);
             float LdotVX_2 = LdotVX * LdotVX;
             float LdotVY_2 = LdotVY * LdotVY;
 

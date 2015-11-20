@@ -169,8 +169,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         L"<material>\r\n" \
         L"    <shader>standard</shader>\r\n" \
         L"    <maps>\r\n" \
-        L"        <albedo>%%directory%%\\rock.albedo.dds</albedo>\r\n" \
-        L"        <normal>%%directory%%\\rock.normal.dds</normal>\r\n" \
+        L"        <albedo>%%directory%%\\rock.albedo</albedo>\r\n" \
+        L"        <normal>%%directory%%\\rock.normal</normal>\r\n" \
         L"        <roughness>*color:%f</roughness>\r\n" \
         L"        <metalness>*color:%f</metalness>\r\n" \
         L"    </maps>\r\n" \

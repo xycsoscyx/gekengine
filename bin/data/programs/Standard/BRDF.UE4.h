@@ -25,23 +25,20 @@ float getGGX(float alpha, float NdotH)
     return Math::ReciprocalPi * alpha2 / (t * t);
 }
 
-float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 pixelNormal, in float3 lightNormal, in float3 viewNormal)
+float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL, in float NdotV)
 {
     float3 diffuseColor = lerp(materialAlbedo, 0.0, materialMetalness);
 
-    float NdotV = dot(pixelNormal, viewNormal);
-    float NdotL = dot(pixelNormal, lightNormal);
-
-    float3 H = normalize(lightNormal + viewNormal);
+    float3 halfNormal = normalize(lightDirection + viewDirection);
     float3 specularColor = lerp(materialAlbedo, 1.0, (1.0 - materialMetalness));
-    float VdotH = dot(viewNormal, H);
+    float VdotH = dot(viewDirection, halfNormal);
     float fresnel = getFresnelSchlick(VdotH);
     float3 F0 = lerp(materialAlbedo, 1.0, (1.0 - materialMetalness));
     specularColor = lerp(F0, 1.0, fresnel);
 
     float alpha = saturate(materialRoughness * materialRoughness);
 
-    float NdotH = dot(pixelNormal, H);
+    float NdotH = dot(surfaceNormal, halfNormal);
     float D = getGGX(alpha, NdotH);
 
     float G = getSchlickGGX(alpha, NdotV);
