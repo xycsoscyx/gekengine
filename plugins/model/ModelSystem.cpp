@@ -32,12 +32,16 @@ namespace Gek
         Math::Float2 texCoord;
         Math::Float3 normal;
 
+        Vertex(void)
+        {
+        }
+
         Vertex(const Math::Float3 &position)
             : position(position)
-            , normal(position.getNormal())
+            , normal(position)
         {
-            texCoord.u = std::acos(position.y / position.getLength());
-            texCoord.v = std::atan(position.x / position.z);
+            texCoord.u = 0.5f * (1.0f + atan2(normal.z, normal.x) * (1 / Math::Pi));
+            texCoord.v = acos(normal.y) * (1 / Math::Pi);
         }
     };
 

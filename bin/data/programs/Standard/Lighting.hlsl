@@ -3,7 +3,7 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-#include "BRDF.Disney.h"
+#include "BRDF.Basic.h"
 
 float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
@@ -17,6 +17,18 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texcoord));
 
     float3 viewDirection = normalize(surfacePosition);
+
+    if (inputPixel.texcoord.x > 0.5)
+    {
+        if (inputPixel.texcoord.y > 0.5)
+        {
+            return surfaceNormal;
+        }
+        else
+        {
+            return materialAlbedo;
+        }
+    }
 
     const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(lightTileSize).xx));
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
@@ -52,8 +64,6 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
         {
             float NdotL = dot(surfaceNormal, lightDirection);
             float NdotV = dot(surfaceNormal, viewDirection);
-            surfaceColor += (NdotL * Lighting::list[lightIndex].color * attenuation);
-            continue;
 
             [branch]
             if (NdotL > 0.0f && NdotV > 0.0f)

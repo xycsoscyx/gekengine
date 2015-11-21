@@ -17,18 +17,15 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     return float3x3(normalize(tangent * reciprocal), normalize(biTangent * reciprocal), normal);
 }
 
-half2 encodeNormal(half3 normal)
+half2 encodeNormal(half3 n)
 {
-    half f = sqrt(8 * normal.z + 8);
-    return normal.xy / f + 0.5;
+    return (normalize(n.xy) * sqrt(n.z * 0.5 + 0.5));
 }
 
-half3 decodeNormal(half2 encodedNormal)
+half3 decodeNormal(half2 enc)
 {
-    half2 fixedNormal = encodedNormal * 4 - 2;
-    half f = dot(fixedNormal, fixedNormal);
-    half g = sqrt(1 - f / 4);
-    return half3(fixedNormal*g, 1 - f / 2);
+    half z = dot(enc.xy, enc.xy) * 2 - 1;
+    return half3(normalize(enc.xy) * sqrt(1 - z * z), z);
 }
 
 float3 getViewPosition(float2 texCoord, float nDepth)

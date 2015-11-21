@@ -21,9 +21,9 @@ namespace Gek
         {
             if (_wcsicmp(formatString, L"BYTE") == 0) return Video::Format::Byte;
             else if (_wcsicmp(formatString, L"BYTE2") == 0) return Video::Format::Byte2;
+            else if (_wcsicmp(formatString, L"BYTE3") == 0) return Video::Format::Byte3;
             else if (_wcsicmp(formatString, L"BYTE4") == 0) return Video::Format::Byte4;
             else if (_wcsicmp(formatString, L"BGRA") == 0) return Video::Format::BGRA;
-            else if (_wcsicmp(formatString, L"RGB16") == 0) return Video::Format::RGB16;
             else if (_wcsicmp(formatString, L"SHORT") == 0) return Video::Format::Short;
             else if (_wcsicmp(formatString, L"SHORT2") == 0) return Video::Format::Short2;
             else if (_wcsicmp(formatString, L"SHORT4") == 0) return Video::Format::Short4;
