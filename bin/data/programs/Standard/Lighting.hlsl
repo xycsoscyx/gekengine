@@ -16,7 +16,7 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
     float3 surfacePosition = getViewPosition(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
-    float3 viewDirection = -normalize(surfacePosition);
+    float3 viewDirection = normalize(surfacePosition);
 
     const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(lightTileSize).xx));
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
@@ -50,6 +50,7 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
         if (attenuation > 0.0f)
         {
             float NdotL = dot(surfaceNormal, lightDirection);
+            return NdotL;
             float NdotV = dot(surfaceNormal, viewDirection);
 
             [branch]

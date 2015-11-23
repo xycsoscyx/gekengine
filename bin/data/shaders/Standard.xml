@@ -3,7 +3,7 @@
     <material>
         <maps>
             <albedo bind="float4">Texture2D</albedo>
-            <normal bind="float2">Texture2D</normal>
+            <normal bind="float3">Texture2D</normal>
             <roughness bind="float">Texture2D</roughness>
             <metalness bind="float">Texture2D</metalness>
         </maps>
@@ -23,7 +23,7 @@
     <targets>
         <albedoBuffer bind="float3">float4</albedoBuffer>
         <materialBuffer bind="float2">float2</materialBuffer>
-        <normalBuffer bind="float2">float2</normalBuffer>
+        <normalBuffer bind="float3">float4</normalBuffer>
         <depthBuffer bind="float">float</depthBuffer>
         <surfaceBuffer bind="float3">float4</surfaceBuffer>
     </targets>

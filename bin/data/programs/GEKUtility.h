@@ -43,16 +43,44 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     return float3x3(tangent, biTangent, normal);
 }
 
-half2 encodeNormal(half3 normal)
-{
-    return (normalize(normal.xy) * sqrt(normal.z * 0.5f + 0.5f));
-}
+#ifdef _ENCODE_SPHEREMAP
+    float2 encodeNormal(float3 normal)
+    {
+        return (normalize(normal.xy) * sqrt(normal.z * 0.5f + 0.5f));
+    }
 
-half3 decodeNormal(half2 encoded)
-{
-    half z = dot(encoded.xy, encoded.xy) * 2.0f - 1.0f;
-    return half3(normalize(encoded.xy) * sqrt(1 - z * z), z);
-}
+    float3 decodeNormal(float2 encoded)
+    {
+        float z = dot(encoded, encoded) * 2.0f - 1.0f;
+        return float3(normalize(encoded) * sqrt(1 - z * z), z);
+    }
+#elif _ENCODE_OCTAHEDRON
+    float2 octahedronWrap(float2 value)
+    {
+        return (1.0 - abs(value)) * (value >= 0.0 ? 1.0 : -1.0);
+    }
+
+    float2 encodeNormal(float3 normal)
+    {
+        normal /= (abs(normal.x) + abs(normal.y) + abs(normal.z));
+        normal.xy = normal.z >= 0.0 ? normal.xy : OctWrap(normal.xy);
+        normal.xy = normal.xy * 0.5 + 0.5;
+        return normal.xy;
+    }
+
+    float3 encodeNormal(float2 encoded)
+    {
+        encoded = encoded * 2.0 - 1.0;
+
+        float3 normal;
+        normal.z = 1.0 - abs(encoded.x) - abs(encoded.y);
+        normal.xy = normal.z >= 0.0 ? encoded.xy : OctWrap(encoded.xy);
+        return normalize(normal);
+    }
+#else
+    float3 encodeNormal(float3 normal) { return normal; };
+    float3 decodeNormal(float3 normal) { return normal; };
+#endif
 
 float3 getViewPosition(float2 texCoord, float depth)
 {

@@ -1,4 +1,4 @@
-.\debug\optimizer.debug -input data\models\sponza.dae -output data\models\sponza.gek -normals -smooth:75
+.\debug\optimizer.debug -input data\models\sponza.dae -output data\models\sponza.gek -flipCoords -generateNormals -smoothNormals:75
 
 pause
 

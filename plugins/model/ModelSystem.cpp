@@ -26,6 +26,34 @@
 
 namespace Gek
 {
+#ifdef _ENCODE_SPHEREMAP
+    Math::Float2 encodeNormal(Math::Float3 normal)
+    {
+        Math::Float2 encoded(normal.x, normal.y);
+        return encoded.getNormal() * sqrt(normal.z * 0.5f + 0.5f);
+    }
+#elif _ENCODE_OCTAHEDRON
+    Math::Float2 octahedronWrap(Math::Float2 value)
+    {
+        return (1.0 - abs(value)) * (value >= 0.0 ? 1.0 : -1.0);
+    }
+
+    Math::Float2 encodeNormal((Math::Float3 normal)
+    {
+        normal /= (abs(normal.x) + abs(normal.y) + abs(normal.z));
+
+        Math::Float2 encoded(normal.x, normal.y);
+        encoded = normal.z >= 0.0 ? encoded : OctWrap(encoded);
+        encoded = encoded * 0.5 + 0.5;
+        return encoded;
+    }
+#else
+    Math::Float2 encodeNormal(Math::Float3 normal)
+    {
+        return Math::Float2(normal.x, normal.y);
+    }
+#endif
+
     struct Vertex
     {
         Math::Float3 position;
@@ -39,9 +67,8 @@ namespace Gek
         Vertex(const Math::Float3 &position)
             : position(position)
             , normal(position)
+            , texCoord(encodeNormal(position))
         {
-            texCoord.u = 0.5f * (1.0f + atan2(normal.z, normal.x) * (1 / Math::Pi));
-            texCoord.v = acos(normal.y) * (1 / Math::Pi);
         }
     };
 
@@ -307,14 +334,6 @@ namespace Gek
                 indices.push_back((UINT16)triangles[i].vertices[1]);
                 indices.push_back((UINT16)triangles[i].vertices[2]);
             }
-
-            // clear out all the extra memory
-            edges.clear();
-            edges.shrink_to_fit();
-            newEdges.clear();
-            newEdges.shrink_to_fit();
-            triangles.clear();
-            triangles.shrink_to_fit();
         }
 
         const std::vector <Vertex> & getVertices() const

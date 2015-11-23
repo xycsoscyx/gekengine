@@ -17,9 +17,9 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
     float3x3 coTangentFrame = getCoTangentFrame(inputPixel.viewPosition.xyz, viewNormal, inputPixel.texCoord);
 
     float3 normal;
-    normal.xy = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texCoord) * 2.0) - 1.0);
-    normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
-    normal = normalize(mul(normalize(normal), coTangentFrame));
+    normal = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texCoord) * 2.0) - 1.0);
+    //normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
+    normal = normalize(mul(normal, coTangentFrame));
 
     OutputPixel outputPixel;
     outputPixel.albedoBuffer = albedo.xyz;

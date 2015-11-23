@@ -170,7 +170,8 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     CStringW fileNameInput;
     CStringW fileNameOutput;
 
-    bool flip = false;
+    bool flipCoords = false;
+    bool flipWinding = false;
     bool generateNormals = false;
     bool smoothNormals = false;
     float smoothingAngle = 80.0f;
@@ -188,15 +189,19 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         {
             fileNameOutput = argumentList[argumentIndex];
         }
-        else if (operation.CompareNoCase(L"-flip") == 0)
+        else if (operation.CompareNoCase(L"-flipCoords") == 0)
         {
-            flip = true;
+            flipCoords = true;
         }
-        else if (operation.CompareNoCase(L"-normals") == 0)
+        else if (operation.CompareNoCase(L"-flipWinding") == 0)
+        {
+            flipWinding = true;
+        }
+        else if (operation.CompareNoCase(L"-generateNormals") == 0)
         {
             generateNormals = true;
         }
-        else if (operation.CompareNoCase(L"-smooth") == 0)
+        else if (operation.CompareNoCase(L"-smoothNormals") == 0)
         {
             smoothNormals = true;
             smoothingAngle = Gek::String::to<float>(argument.Tokenize(L":", position));
@@ -224,7 +229,8 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             aiProcess_SplitLargeMeshes | // split large, unrenderable meshes into submeshes
             aiProcess_Triangulate | // triangulate polygons with more than 3 edges
             //aiProcess_ConvertToLeftHanded | // convert everything to D3D left handed space
-            (flip ? aiProcess_FlipUVs | aiProcess_FlipWindingOrder : 0) |
+            (flipCoords ? aiProcess_FlipUVs : 0) |
+            (flipWinding ? aiProcess_FlipWindingOrder : 0) |
             aiProcess_SortByPType | // make ‘clean’ meshes which consist of a single typ of primitives
             aiProcess_ValidateDataStructure | // perform a full validation of the loader’s output
             aiProcess_ImproveCacheLocality | // improve the cache locality of the output vertices
