@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-  <display width="1280" height="800" windowed="true"/>
+  <display width="800" height="600" windowed="true"/>
 </config>

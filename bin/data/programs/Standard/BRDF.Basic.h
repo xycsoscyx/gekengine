@@ -1,6 +1,6 @@
 // Simple Lighting Equation
 
-static const float specularPower = 1000;
+static const float specularPower = 100;
 
 float3 reflect(float3 incidentNormal, float3 surfaceNormal)
 {
@@ -25,5 +25,5 @@ float getGaussian(in float3 surfaceNormal, in float3 lightDirection, in float3 v
 
 float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL, in float NdotV)
 {
-    return (materialAlbedo + getPhong(surfaceNormal, lightDirection, viewDirection, NdotL));
+    return getPhong(surfaceNormal, lightDirection, viewDirection, NdotL);
 }

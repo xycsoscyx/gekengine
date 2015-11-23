@@ -19,8 +19,8 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
     gs_pOutputBuffer.GetDimensions(nPixelSize.x, nPixelSize.y);
     nPixelSize = rcp(nPixelSize);                
 
-	float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-	float4 nCenterColor = gs_pOutputBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+	float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texCoord);
+	float4 nCenterColor = gs_pOutputBuffer.Sample(gs_pPointSampler, kInput.texCoord);
 
 	float nTotalWeight = gs_aGuassian[gs_nGuassianDeviation][0];
 	float nAmbientOcclusion = nCenterColor.a * nTotalWeight;
@@ -31,7 +31,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 		// We already handled the zero case above.  This loop should be unrolled and the branch discarded
 		if (nSample != 0)
 		{
-			float2 nSampleCoord = kInput.texcoord + gs_nAxis * (nSample * nPixelSize * gs_nScale);
+			float2 nSampleCoord = kInput.texCoord + gs_nAxis * (nSample * nPixelSize * gs_nScale);
 			float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nSampleCoord);
 			float nSampleAmbient = gs_pOutputBuffer.Sample(gs_pPointSampler, nSampleCoord).a;
 
@@ -49,7 +49,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
     nAmbientOcclusion = (nAmbientOcclusion / (nTotalWeight + gs_nEpsilon));
     if(gs_bCombine)
     {
-        float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+        float4 nAlbedo = gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texCoord);
                     
         [branch]
         if(nAlbedo.a == 1)

@@ -17,21 +17,21 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     return float3x3(normalize(tangent * reciprocal), normalize(biTangent * reciprocal), normal);
 }
 
-half2 encodeNormal(half3 n)
+half2 encodeNormal(half3 normal)
 {
-    return (normalize(n.xy) * sqrt(n.z * 0.5 + 0.5));
+    return (normalize(normal.xy) * sqrt(normal.z * 0.5f + 0.5f));
 }
 
-half3 decodeNormal(half2 enc)
+half3 decodeNormal(half2 encoded)
 {
-    half z = dot(enc.xy, enc.xy) * 2 - 1;
-    return half3(normalize(enc.xy) * sqrt(1 - z * z), z);
+    half z = dot(encoded.xy, encoded.xy) * 2.0f - 1.0f;
+    return half3(normalize(encoded.xy) * sqrt(1 - z * z), z);
 }
 
-float3 getViewPosition(float2 texCoord, float nDepth)
+float3 getViewPosition(float2 texCoord, float depth)
 {
-    texCoord.y = 1 - texCoord.y;
-    texCoord = (texCoord * 2 - 1);
-    float3 viewVector = float3((texCoord * Camera::fieldOfView), 1.0);
-    return (viewVector * nDepth * Camera::maximumDistance);
+    float2 adjustedCoord = texCoord;
+    adjustedCoord.y = (1.0f - adjustedCoord.y);
+    adjustedCoord.xy = (adjustedCoord.xy * 2.0f - 1.0f);
+    return (float3((adjustedCoord * Camera::fieldOfView), 1.0f) * depth * Camera::maximumDistance);
 }

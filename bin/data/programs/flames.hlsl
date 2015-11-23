@@ -16,7 +16,7 @@ Texture1D                  gs_pGradient     : register(t1);
 struct SOURCEVERTEX
 {
 	float2 position                         : POSITION;
-	float2 texcoord                         : TEXCOORD0;
+	float2 texCoord                         : TEXCOORD0;
     uint instance                           : SV_InstanceId;
 };
 
@@ -38,7 +38,7 @@ WORLDVERTEX GetWorldVertex(in SOURCEVERTEX kSource)
 	kVertex.position      = float4(kInstance.m_nPosition, 1.0f);
 	kVertex.position.xyz += (kXOffSet * kSource.position.x);
 	kVertex.position.xyz += (kYOffSet * kSource.position.y);
-	kVertex.texcoord      = kSource.texcoord;
+	kVertex.texCoord      = kSource.texCoord;
     kVertex.normal        = mul(float3(0,0,-1), (float3x3)Camera::viewMatrix);
     kVertex.color         = (gs_pGradient.SampleLevel(gs_pLinearSampler, kInstance.m_nAge, 0) * kInstance.m_nColor);
 	return kVertex;

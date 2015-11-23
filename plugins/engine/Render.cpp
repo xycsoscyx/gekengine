@@ -330,20 +330,20 @@ namespace Gek
                             "struct Vertex                                                                      \r\n" \
                             "{                                                                                  \r\n" \
                             "    float2 position : POSITION;                                                    \r\n" \
-                            "    float2 texcoord : TEXCOORD0;                                                   \r\n" \
+                            "    float2 texCoord : TEXCOORD0;                                                   \r\n" \
                             "};                                                                                 \r\n" \
                             "                                                                                   \r\n" \
                             "struct Pixel                                                                       \r\n" \
                             "{                                                                                  \r\n" \
                             "    float4 position : SV_POSITION;                                                 \r\n" \
-                            "    float2 texcoord : TEXCOORD0;                                                   \r\n" \
+                            "    float2 texCoord : TEXCOORD0;                                                   \r\n" \
                             "};                                                                                 \r\n" \
                             "                                                                                   \r\n" \
                             "Pixel mainVertexProgram(in Vertex vertex)                                          \r\n" \
                             "{                                                                                  \r\n" \
                             "    Pixel pixel;                                                                   \r\n" \
                             "    pixel.position = float4(vertex.position, 0.0f, 1.0f);                          \r\n" \
-                            "    pixel.texcoord = vertex.texcoord;                                              \r\n" \
+                            "    pixel.texCoord = vertex.texCoord;                                              \r\n" \
                             "    return pixel;                                                                  \r\n" \
                             "}                                                                                  \r\n" \
                             "                                                                                   \r\n";

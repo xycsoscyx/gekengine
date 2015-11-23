@@ -15,7 +15,7 @@ struct OUTPUT
 
 OUTPUT MainPixelProgram(in INPUT kInput)
 {
-    float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texcoord) * kInput.color);
+    float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texCoord) * kInput.color);
 
     [branch]
     if(nAlbedo.a < 0.5f)
@@ -24,20 +24,20 @@ OUTPUT MainPixelProgram(in INPUT kInput)
     }
 
     // Viewspace vertex normal
-    float3 nViewNormal = (normalize(kInput.viewnormal) * (kInput.frontface ? 1 : -1));
+    float3 nViewNormal = (normalize(kInput.viewNormal) * (kInput.frontFacing ? 1 : -1));
                 
     float3 nNormal;
     // Normals stored as 3Dc format, so [0,1] XY components only
-    nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texcoord).yx * 2.0) - 1.0);
+    nNormal.xy = ((gs_pNormalMap.Sample(gs_pLinearSampler, kInput.texCoord).yx * 2.0) - 1.0);
     nNormal.z = sqrt(1.0 - dot(nNormal.xy, nNormal.xy));
 
-    float3x3 nCoTangentFrame = GetCoTangentFrame(-kInput.viewposition.xyz, nViewNormal, kInput.texcoord);
+    float3x3 nCoTangentFrame = GetCoTangentFrame(-kInput.viewPosition.xyz, nViewNormal, kInput.texCoord);
     nNormal = mul(nNormal, nCoTangentFrame);
 
     OUTPUT kOutput;
     kOutput.albedo.xyz = nAlbedo.xyz;
     kOutput.albedo.a   = 0;//gs_bMaterialFullBright;
     kOutput.normal     = EncodeNormal(nNormal);
-    kOutput.depth      = (kInput.viewposition.z / Camera::maximumDistance);
+    kOutput.depth      = (kInput.viewPosition.z / Camera::maximumDistance);
     return kOutput;
 }

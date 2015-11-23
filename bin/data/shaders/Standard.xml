@@ -21,9 +21,9 @@
     <depth>D32</depth>
 
     <targets>
-        <albedoBuffer bind="half3">byte3</albedoBuffer>
-        <materialBuffer bind="half2">byte2</materialBuffer>
-        <normalBuffer bind="half2">half2</normalBuffer>
+        <albedoBuffer bind="half3">float4</albedoBuffer>
+        <materialBuffer bind="half2">float2</materialBuffer>
+        <normalBuffer bind="half2">float2</normalBuffer>
         <depthBuffer bind="float">float</depthBuffer>
         <surfaceBuffer bind="float3">float4</surfaceBuffer>
     </targets>

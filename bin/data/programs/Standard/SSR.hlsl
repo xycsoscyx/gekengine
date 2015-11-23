@@ -10,16 +10,16 @@ Texture2D           gs_pOutputBuffer        : register(t5);
 
 float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 {
-    float4 nScreen = gs_pOutputBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-    if (gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texcoord).w < 1.0f)
+    float4 nScreen = gs_pOutputBuffer.Sample(gs_pPointSampler, kInput.texCoord);
+    if (gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texCoord).w < 1.0f)
     {
-        float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+        float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texCoord);
         float nReflectivity = nCenterInfo.w;
         if (nReflectivity > 0.0f)
         {
-            float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-            float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
-            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
+            float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texCoord);
+            float3 nCenterPosition = GetViewPosition(kInput.texCoord, nCenterDepth);
+            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texCoord));
 
             float3 nViewNormal = normalize(nCenterPosition);
             float3 nReflection = reflect(nViewNormal, nCenterNormal);

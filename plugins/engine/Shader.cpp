@@ -733,17 +733,17 @@ namespace Gek
                                                 case PassMode::Deferred:
                                                     engineData +=
                                                         "    float4 position     : SV_POSITION;                 \r\n"\
-                                                        "    float2 texcoord     : TEXCOORD0;                   \r\n";
+                                                        "    float2 texCoord     : TEXCOORD0;                   \r\n";
                                                     break;
 
                                                 case PassMode::Forward:
                                                     engineData +=
                                                         "    float4 position     : SV_POSITION;                 \r\n"\
-                                                        "    float2 texcoord     : TEXCOORD0;                   \r\n"\
-                                                        "    float4 viewposition : TEXCOORD1;                   \r\n"\
-                                                        "    float3 viewnormal   : NORMAL0;                     \r\n"\
+                                                        "    float2 texCoord     : TEXCOORD0;                   \r\n"\
+                                                        "    float4 viewPosition : TEXCOORD1;                   \r\n"\
+                                                        "    float3 viewNormal   : NORMAL0;                     \r\n"\
                                                         "    float4 color        : COLOR0;                      \r\n"\
-                                                        "    bool   frontface    : SV_ISFRONTFACE;              \r\n";
+                                                        "    bool   frontFacing  : SV_ISFRONTFACE;              \r\n";
                                                     break;
 
                                                 default:

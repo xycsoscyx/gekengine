@@ -7,18 +7,18 @@
 
 float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-    float4 albedoTerm = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+    float4 albedoTerm = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
     float3 lightingContribution = 0.0f;
 
     [branch]
     if (albedoTerm.a < 1.0f)
     {
-        float4 pixelInfo = Resources::infoBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
+        float4 pixelInfo = Resources::infoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
-        float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texcoord);
-        float3 surfacePosition = getViewPosition(inputPixel.texcoord, surfaceDepth);
-        float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texcoord));
+        float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+        float3 surfacePosition = getViewPosition(inputPixel.texCoord, surfaceDepth);
+        float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
         float3 viewDirection = -normalize(surfacePosition);
 

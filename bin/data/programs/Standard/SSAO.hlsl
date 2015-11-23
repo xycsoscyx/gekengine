@@ -15,9 +15,9 @@ float2 TapLocation(float nSample, float nRandomAngle)
 
 float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 {
-    float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texcoord);
-    float3 nCenterPosition = GetViewPosition(kInput.texcoord, nCenterDepth);
-    float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texcoord));
+    float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texCoord);
+    float3 nCenterPosition = GetViewPosition(kInput.texCoord, nCenterDepth);
+    float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texCoord));
 
     int2 nPixelCoord = kInput.position.xy;
     float nRandomAngle = (3 * nPixelCoord.x ^ nPixelCoord.y + nPixelCoord.x * nPixelCoord.y) * 10;
@@ -29,7 +29,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
     for (int nSample = 0; nSample < gs_nNumSamples; nSample++)
     {
         float2 nSampleOffset = TapLocation(nSample, nRandomAngle);
-        float2 nSampleCoord = kInput.texcoord + (nSampleOffset * nSampleRadius);
+        float2 nSampleCoord = kInput.texCoord + (nSampleOffset * nSampleRadius);
         float nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nSampleCoord);
         float3 nSamplePosition = GetViewPosition(nSampleCoord, nSampleDepth);
 

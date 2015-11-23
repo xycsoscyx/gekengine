@@ -13,14 +13,14 @@ struct VERTEX
 struct PIXEL
 {
     float4 position                     : SV_POSITION;
-    float2 texcoord                     : TEXCOORD0;
+    float2 texCoord                     : TEXCOORD0;
 };
 
 PIXEL MainVertexProgram(in VERTEX kVertex)
 {
     PIXEL kPixel;
     kPixel.position = mul(gs_nOrthoMatrix, float4(kVertex.position, 0.0f, 1.0f));
-    kPixel.texcoord = kVertex.position.xy;
+    kPixel.texCoord = kVertex.position.xy;
     return kPixel;
 }
 
@@ -28,6 +28,6 @@ Texture2D     gs_pBuffer                : register(t0);
 
 float4 MainPixelProgram(PIXEL kInput) : SV_TARGET
 {
-    return gs_pBuffer.Sample(gs_pPointSampler, kInput.texcoord);
+    return gs_pBuffer.Sample(gs_pPointSampler, kInput.texCoord);
 }
 

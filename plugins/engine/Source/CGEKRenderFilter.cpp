@@ -621,7 +621,7 @@ STDMETHODIMP CGEKRenderFilter::Reload(void)
                     {
                         m_nVertexAttributes |= GEK_VERTEX_POSITION;
                     }
-                    else if (strAttribute.CompareNoCase(L"texcoord") == 0)
+                    else if (strAttribute.CompareNoCase(L"texCoord") == 0)
                     {
                         m_nVertexAttributes |= GEK_VERTEX_TEXCOORD;
                     }

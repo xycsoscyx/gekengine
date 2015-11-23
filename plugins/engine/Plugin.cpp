@@ -171,7 +171,7 @@ namespace Gek
                                                 "struct WorldVertex                                                                 \r\n" \
                                                 "{                                                                                  \r\n" \
                                                 "    float4 position;                                                               \r\n" \
-                                                "    float2 texcoord;                                                               \r\n" \
+                                                "    float2 texCoord;                                                               \r\n" \
                                                 "    float3 normal;                                                                 \r\n" \
                                                 "    float4 color;                                                                  \r\n" \
                                                 "};                                                                                 \r\n" \
@@ -179,9 +179,9 @@ namespace Gek
                                                 "struct ViewVertex                                                                  \r\n" \
                                                 "{                                                                                  \r\n" \
                                                 "    float4 position : SV_POSITION;                                                 \r\n" \
-                                                "    float2 texcoord : TEXCOORD0;                                                   \r\n" \
-                                                "    float4 viewposition : TEXCOORD1;                                               \r\n" \
-                                                "    float3 viewnormal : NORMAL0;                                                   \r\n" \
+                                                "    float2 texCoord : TEXCOORD0;                                                   \r\n" \
+                                                "    float4 viewPosition : TEXCOORD1;                                               \r\n" \
+                                                "    float3 viewNormal : NORMAL0;                                                   \r\n" \
                                                 "    float4 color : COLOR0;                                                         \r\n" \
                                                 "};                                                                                 \r\n" \
                                                 "                                                                                   \r\n" \
@@ -266,10 +266,10 @@ namespace Gek
                                                 "    WorldVertex worldVertex = getWorldVertex(pluginVertex);                        \r\n" \
                                                 "                                                                                   \r\n" \
                                                 "    ViewVertex viewVertex;                                                         \r\n" \
-                                                "    viewVertex.viewnormal = mul((float3x3)Camera::viewMatrix, worldVertex.normal); \r\n" \
-                                                "    viewVertex.viewposition = mul(Camera::viewMatrix, worldVertex.position);       \r\n" \
-                                                "    viewVertex.position = mul(Camera::projectionMatrix, viewVertex.viewposition);  \r\n" \
-                                                "    viewVertex.texcoord = worldVertex.texcoord;                                    \r\n" \
+                                                "    viewVertex.viewNormal = mul((float3x3)Camera::viewMatrix, worldVertex.normal); \r\n" \
+                                                "    viewVertex.viewPosition = mul(Camera::viewMatrix, worldVertex.position);       \r\n" \
+                                                "    viewVertex.position = mul(Camera::projectionMatrix, viewVertex.viewPosition);  \r\n" \
+                                                "    viewVertex.texCoord = worldVertex.texCoord;                                    \r\n" \
                                                 "    viewVertex.color = worldVertex.color;                                          \r\n" \
                                                 "    return viewVertex;                                                             \r\n" \
                                                 "}                                                                                  \r\n" \
