@@ -19,7 +19,7 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
     float3 normal;
     normal.xy = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texCoord) * 2.0) - 1.0);
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
-    normal = normalize(mul(normal, coTangentFrame));
+    normal = normalize(mul(normalize(normal), coTangentFrame));
 
     OutputPixel outputPixel;
     outputPixel.albedoBuffer = albedo.xyz;

@@ -46,18 +46,13 @@ public:
     }
 };
 
-void GetMeshes(const aiScene *scene, const aiNode *node, const Gek::Math::Float4x4 &parentTransformation, std::multimap<CStringA, Model> &modelList, Gek::Shape::AlignedBox &alignedBox)
+void GetMeshes(const aiScene *scene, const aiNode *node, std::multimap<CStringA, Model> &modelList, Gek::Shape::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
         throw OptimizerException(__LINE__, L"Invalid node encountered");
     }
 
-    Gek::Math::Float4x4 localTransformation(*(Gek::Math::Float4x4 *)&node->mTransformation);
-    localTransformation.transpose();
-
-    Gek::Math::Float4x4 transformation(localTransformation * parentTransformation);
-    Gek::Math::Float4x4 inverseRotation(transformation.getRotation().getInverse());
     if (node->mNumMeshes > 0)
     {
         if (node->mMeshes == nullptr)
@@ -122,22 +117,26 @@ void GetMeshes(const aiScene *scene, const aiNode *node, const Gek::Math::Float4
                         model.indexList.push_back(face.mIndices[1]);
                         model.indexList.push_back(face.mIndices[2]);
                     }
+                    else
+                    {
+                        printf("(Mesh %d) Invalid Face Found: %d (%d vertices)\r\n", meshIndex, faceIndex, face.mNumIndices);
+                    }
                 }
 
                 for (UINT32 vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
                 {
                     Vertex vertex;
-                    vertex.position = (transformation * Gek::Math::Float4(mesh->mVertices[vertexIndex].x,
-                                                                          mesh->mVertices[vertexIndex].y,
-                                                                          mesh->mVertices[vertexIndex].z, 1.0f).xyz);
-                    alignedBox.extend(vertex.position);
+                    vertex.position.set(mesh->mVertices[vertexIndex].x,
+                                        mesh->mVertices[vertexIndex].y,
+                                        mesh->mVertices[vertexIndex].z);
+                    boundingBox.extend(vertex.position);
 
-                    vertex.texCoord.x = mesh->mTextureCoords[0][vertexIndex].x;
-                    vertex.texCoord.y = mesh->mTextureCoords[0][vertexIndex].y;
+                    vertex.texCoord.set(mesh->mTextureCoords[0][vertexIndex].x,
+                                        mesh->mTextureCoords[0][vertexIndex].y);
 
-                    vertex.normal = (inverseRotation * Gek::Math::Float3(mesh->mNormals[vertexIndex].x,
-                                                                         mesh->mNormals[vertexIndex].y,
-                                                                         mesh->mNormals[vertexIndex].z));
+                    vertex.normal.set(mesh->mNormals[vertexIndex].x,
+                                      mesh->mNormals[vertexIndex].y,
+                                      mesh->mNormals[vertexIndex].z);
 
                     model.vertexList.push_back(vertex);
                 }
@@ -159,7 +158,7 @@ void GetMeshes(const aiScene *scene, const aiNode *node, const Gek::Math::Float4
 
         for (UINT32 childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            GetMeshes(scene, node->mChildren[childIndex], transformation, modelList, alignedBox);
+            GetMeshes(scene, node->mChildren[childIndex], modelList, boundingBox);
         }
     }
 }
@@ -172,51 +171,83 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     CStringW fileNameOutput;
 
     bool flip = false;
-    bool enableSmoothing = false;
-    float smoothingAngle = 90.0f;
+    bool generateNormals = false;
+    bool smoothNormals = false;
+    float smoothingAngle = 80.0f;
     for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
     {
-        if (_wcsicmp(argumentList[argumentIndex], L"-input") == 0 && ++argumentIndex < argumentCount)
+        CStringW argument(argumentList[argumentIndex]);
+
+        int position = 0;
+        CStringW operation(argument.Tokenize(L":", position));
+        if (operation.CompareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
         {
             fileNameInput = argumentList[argumentIndex];
         }
-        else if (_wcsicmp(argumentList[argumentIndex], L"-output") == 0 && ++argumentIndex < argumentCount)
+        else if (operation.CompareNoCase(L"-output") == 0 && ++argumentIndex < argumentCount)
         {
             fileNameOutput = argumentList[argumentIndex];
         }
-        else if (_wcsicmp(argumentList[argumentIndex], L"-flip") == 0)
+        else if (operation.CompareNoCase(L"-flip") == 0)
         {
             flip = true;
         }
-        else if (_wcsicmp(argumentList[argumentIndex], L"-smooth") == 0)
+        else if (operation.CompareNoCase(L"-normals") == 0)
         {
-            enableSmoothing = true;
-            if (++argumentIndex < argumentCount)
-            {
-                smoothingAngle = Gek::String::to<float>(argumentList[argumentIndex]);
-            }
+            generateNormals = true;
         }
-    }
-
-    if (enableSmoothing)
-    {
-        printf(" Smoothing Angle: %f\r\n", smoothingAngle);
-    }
-    else
-    {
-        printf(" Smoothing Disabled\r\n");
+        else if (operation.CompareNoCase(L"-smooth") == 0)
+        {
+            smoothNormals = true;
+            smoothingAngle = Gek::String::to<float>(argument.Tokenize(L":", position));
+        }
     }
 
     try
     {
         aiPropertyStore *propertyStore = aiCreatePropertyStore();
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_COLORS | aiComponent_TANGENTS_AND_BITANGENTS | aiComponent_NORMALS);
-        if (enableSmoothing)
+        if (generateNormals)
         {
-            aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
+            aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
+            if (smoothNormals)
+            {
+                aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
+            }
         }
 
-        const aiScene *scene = aiImportFileExWithProperties(CW2A(fileNameInput, CP_UTF8), aiProcess_RemoveComponent | aiProcess_FlipUVs | aiProcess_TransformUVCoords, nullptr, propertyStore);
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
+
+        const aiScene* scene = aiImportFileExWithProperties(CW2A(fileNameInput, CP_UTF8),
+            (generateNormals ? aiProcess_RemoveComponent : 0) | // remove normals if we are generating them
+            aiProcess_SplitLargeMeshes | // split large, unrenderable meshes into submeshes
+            aiProcess_Triangulate | // triangulate polygons with more than 3 edges
+            //aiProcess_ConvertToLeftHanded | // convert everything to D3D left handed space
+            (flip ? aiProcess_FlipUVs | aiProcess_FlipWindingOrder : 0) |
+            aiProcess_SortByPType | // make ‘clean’ meshes which consist of a single typ of primitives
+            aiProcess_ValidateDataStructure | // perform a full validation of the loader’s output
+            aiProcess_ImproveCacheLocality | // improve the cache locality of the output vertices
+            aiProcess_RemoveRedundantMaterials | // remove redundant materials
+            aiProcess_FindDegenerates | // remove degenerated polygons from the import
+            aiProcess_GenUVCoords | // convert spherical, cylindrical, box and planar mapping to proper UVs
+            aiProcess_TransformUVCoords | // preprocess UV transformations (scaling, translation …)
+            aiProcess_FindInstances | // search for instanced meshes and remove them by references to one master
+            aiProcess_LimitBoneWeights | // limit bone weights to 4 per vertex
+            aiProcess_OptimizeMeshes | // join small meshes, if possible;
+            aiProcess_SplitByBoneCount | // split meshes with too many bones. Necessary for our (limited) hardware skinning shader
+            0, NULL, propertyStore);
+
+        aiApplyPostProcessing(scene,
+            (generateNormals ? (smoothNormals ? aiProcess_GenSmoothNormals : aiProcess_GenNormals) : 0) | // generate normal vectors, smoothing if specified
+            aiProcess_PreTransformVertices |
+            //aiProcess_CalcTangentSpace | // calculate tangents and bitangents if possible
+            aiProcess_JoinIdenticalVertices | // join identical vertices/ optimize indexing
+            aiProcess_ValidateDataStructure | // perform a full validation of the loader’s output
+            aiProcess_FindInvalidData | // detect invalid model data, such as invalid normal vectors
+            0);
+
+        aiReleasePropertyStore(propertyStore);
         if (scene == nullptr)
         {
             throw OptimizerException(__LINE__, L"Unable to Load Input: %s", fileNameInput.GetString());
@@ -227,30 +258,9 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             throw OptimizerException(__LINE__, L"No meshes found in scene: %s", fileNameInput.GetString());
         }
 
-        aiApplyPostProcessing(scene, aiProcess_Triangulate);
-        if(flip)
-        {
-            aiApplyPostProcessing(scene, aiProcess_FlipWindingOrder);
-        }
-
-        aiApplyPostProcessing(scene, aiProcess_FindInvalidData);
-        aiApplyPostProcessing(scene, aiProcess_RemoveRedundantMaterials);
-        if (enableSmoothing)
-        {
-            aiApplyPostProcessing(scene, aiProcess_GenSmoothNormals);
-        }
-        else
-        {
-            aiApplyPostProcessing(scene, aiProcess_GenNormals);
-        }
-
-        aiApplyPostProcessing(scene, aiProcess_JoinIdenticalVertices);
-        aiApplyPostProcessing(scene, aiProcess_ImproveCacheLocality);
-        aiReleasePropertyStore(propertyStore);
-
-        Gek::Shape::AlignedBox alignedBox;
+        Gek::Shape::AlignedBox boundingBox;
         std::multimap<CStringA, Model> modelList;
-        GetMeshes(scene, scene->mRootNode, Gek::Math::Float4x4(), modelList, alignedBox);
+        GetMeshes(scene, scene->mRootNode, modelList, boundingBox);
         printf("< Num. Materials: %d\r\n", modelList.size());
 
         std::unordered_map<CStringA, Model> materialModelList;
@@ -276,7 +286,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             fwrite(&nGEKX, sizeof(UINT32), 1, file);
             fwrite(&nType, sizeof(UINT16), 1, file);
             fwrite(&nVersion, sizeof(UINT16), 1, file);
-            fwrite(&alignedBox, sizeof(Gek::Shape::AlignedBox), 1, file);
+            fwrite(&boundingBox, sizeof(Gek::Shape::AlignedBox), 1, file);
             fwrite(&materialCount, sizeof(UINT32), 1, file);
 
             Model finalModelData;

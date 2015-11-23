@@ -1,20 +1,46 @@
-float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
+float3x3 getCoTangentFrame1(float3 position, float3 normal, float2 texCoord)
 {
     // get edge vectors of the pixel triangle
-    float3 positionDX = ddx(position);
-    float3 positionDY = ddy(position);
-    float2 texCoordDX = ddx(texCoord);
-    float2 texCoordDY = ddy(texCoord);
+    float3 positionDDX = ddx(position);
+    float3 positionDDY = ddy(position);
+    float2 texCoordDDX = ddx(texCoord);
+    float2 texCoordDDY = ddy(texCoord);
 
     // solve the linear system
-    float3 perpendicularDX = cross(normal, positionDX);
-    float3 perpendicularDY = cross(positionDY, normal);
-    float3 tangent = perpendicularDY * texCoordDX.x + perpendicularDX * texCoordDY.x;
-    float3 biTangent = perpendicularDY * texCoordDX.y + perpendicularDX * texCoordDY.y;
+    float3 perpendicularDX = cross(normal, positionDDX);
+    float3 perpendicularDY = cross(positionDDY, normal);
+    float3 tangent =   perpendicularDY * texCoordDDX.x + perpendicularDX * texCoordDDY.x;
+    float3 biTangent = perpendicularDY * texCoordDDX.y + perpendicularDX * texCoordDDY.y;
 
     // construct a scale-invariant frame 
     float reciprocal = rsqrt(max(dot(tangent, tangent), dot(biTangent, biTangent)));
     return float3x3(normalize(tangent * reciprocal), normalize(biTangent * reciprocal), normal);
+}
+
+float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
+{
+    // compute derivations of the world position
+    float3 positionDDX = ddx(position);
+    float3 positionDDY = ddy(position);
+
+    // compute derivations of the texture coordinate
+    float2 texCoordDDX = ddx(texCoord);
+    float2 texCoordDDY = ddy(texCoord);
+
+    // compute initial tangent and bi-tangent
+    float3 tangent =   normalize(texCoordDDY.y * positionDDX - texCoordDDX.y * positionDDY);
+    float3 biTangent = normalize(texCoordDDY.x * positionDDX - texCoordDDX.x * positionDDY); // sign inversion
+
+    // get new tangent from a given mesh normal
+    float3 factor = cross(normal, tangent);
+    tangent = cross(factor, normal);
+    tangent = normalize(tangent);
+
+    // get updated bi-tangent
+    factor = cross(biTangent, normal);
+    biTangent = cross(normal, factor);
+    biTangent = normalize(biTangent);
+    return float3x3(tangent, biTangent, normal);
 }
 
 half2 encodeNormal(half3 normal)
