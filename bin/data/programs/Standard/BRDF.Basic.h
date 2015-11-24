@@ -19,7 +19,7 @@ float getGaussian(in float3 surfaceNormal, in float3 lightDirection, in float3 v
     return exp(-normalAngle * normalAngle);
 }
 
-float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL, in float NdotV)
+float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
 {
-    return (Math::ReciprocalPi * materialAlbedo) + getGaussian(surfaceNormal, lightDirection, viewDirection, NdotL);
+    return (Math::ReciprocalPi * materialAlbedo) + getGaussian(surfaceNormal, lightDirection, viewDirection, NdotL) * materialRoughness;
 }

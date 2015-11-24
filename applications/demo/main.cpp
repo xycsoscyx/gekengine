@@ -207,11 +207,11 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         L"</material>";
 
     static const LPCWSTR entityFormat = \
-L"    <entity>\r\n" \
-L"      <transform position=\"0,%d,%d\" />\r\n" \
-/*L"      <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>\r\n" \*/
-L"      <model>*sphere|debug_%d_%d|1</model>\r\n" \
-L"    </entity>\r\n";
+L"        <entity>\r\n" \
+L"            <transform position=\"0,%d,%d\" />\r\n" \
+/*L"            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>\r\n" \*/
+L"            <model>*sphere|debug_%d_%d|1</model>\r\n" \
+L"        </entity>\r\n";
 
     CStringW entities;
     for (UINT32 roughness = 0; roughness < 11; roughness++)
@@ -222,7 +222,7 @@ L"    </entity>\r\n";
             CStringW fileName(Gek::String::format(L"debug_%d_%d.xml", roughness, metalness));
             Gek::FileSystem::save((L"%root%\\data\\materials\\" + fileName), material);
 
-            entities += Gek::String::format(entityFormat, ((roughness - 5) * 2) + 12, ((metalness - 5) * 2) - 2, roughness, metalness);
+            entities += Gek::String::format(entityFormat, ((roughness - 5) * 2) + 12, ((metalness - 5) * 2), roughness, metalness);
         }
     }
 

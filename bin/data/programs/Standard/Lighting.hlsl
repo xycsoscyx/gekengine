@@ -50,14 +50,8 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
         if (attenuation > 0.0f)
         {
             float NdotL = dot(surfaceNormal, lightDirection);
-            float NdotV = dot(surfaceNormal, viewDirection);
-
-            [branch]
-            if (NdotL > 0.0f && NdotV > 0.0f)
-            {
-                float3 lightContribution = getBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL, NdotV);
-                surfaceColor += (NdotL * lightContribution * attenuation * Lighting::list[lightIndex].color);
-            }
+            float3 lightContribution = getBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL);
+            surfaceColor += (NdotL * lightContribution * attenuation * Lighting::list[lightIndex].color);
         }
     }
 

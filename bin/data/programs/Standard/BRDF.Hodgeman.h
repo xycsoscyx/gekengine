@@ -10,7 +10,7 @@ static const bool performHelmholtzTest = false;
 static const float3 X = 0.0f;
 static const float3 Y = 0.0f;
 
-float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL, in float NdotV)
+float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
 {
     float materialRoughnessX = materialRoughness;
     float materialRoughnessY = materialRoughness;
@@ -29,6 +29,7 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
     float3 Kd = lerp(materialAlbedo, 0, materialMetalness);
     float3 Fd = 1.0 - Ks;
 
+    float NdotV = dot(surfaceNormal, viewDirection);
     float NdotVSquared = NdotV * NdotV;
     float OneMinusNdotVSquared = 1.0 - NdotVSquared;
 
