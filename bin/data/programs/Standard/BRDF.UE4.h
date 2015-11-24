@@ -29,16 +29,16 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
 {
     float3 diffuseColor = lerp(materialAlbedo, 0.0, materialMetalness);
 
-    float3 halfNormal = normalize(lightDirection + viewDirection);
+    float3 halfAngle = normalize(lightDirection + viewDirection);
     float3 specularColor = lerp(materialAlbedo, 1.0, (1.0 - materialMetalness));
-    float VdotH = dot(viewDirection, halfNormal);
+    float VdotH = dot(viewDirection, halfAngle);
     float fresnel = getFresnelSchlick(VdotH);
     float3 F0 = lerp(materialAlbedo, 1.0, (1.0 - materialMetalness));
     specularColor = lerp(F0, 1.0, fresnel);
 
     float alpha = saturate(materialRoughness * materialRoughness);
 
-    float NdotH = dot(surfaceNormal, halfNormal);
+    float NdotH = dot(surfaceNormal, halfAngle);
     float D = getGGX(alpha, NdotH);
 
     float G = getSchlickGGX(alpha, NdotV);

@@ -3,11 +3,11 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-#include "BRDF.Basic.h"
+#include "BRDF.Disney.h"
 
 float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-    float3 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+    float3 materialAlbedo = 1;//Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float2 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float materialRoughness = materialInfo.x;
     float materialMetalness = materialInfo.y;
@@ -16,7 +16,7 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
     float3 surfacePosition = getViewPosition(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
-    float3 viewDirection = normalize(surfacePosition);
+    float3 viewDirection = -normalize(surfacePosition);
 
     const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(lightTileSize).xx));
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
@@ -35,7 +35,7 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
             break;
         }
 
-        float3 lightRay = (surfacePosition - Lighting::list[lightIndex].position);
+        float3 lightRay = -(surfacePosition - Lighting::list[lightIndex].position);
         float lightDistance = length(lightRay);
         float3 lightDirection = (lightRay / lightDistance);
         float attenuation = (lightDistance / Lighting::list[lightIndex].radius);
@@ -50,14 +50,13 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
         if (attenuation > 0.0f)
         {
             float NdotL = dot(surfaceNormal, lightDirection);
-            return NdotL;
             float NdotV = dot(surfaceNormal, viewDirection);
 
             [branch]
-            //if (NdotL > 0.0f && NdotV > 0.0f)
+            if (NdotL > 0.0f && NdotV > 0.0f)
             {
                 float3 lightContribution = getBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL, NdotV);
-                surfaceColor += (lightContribution * NdotL * Lighting::list[lightIndex].color * attenuation);
+                surfaceColor += (NdotL * lightContribution * attenuation * Lighting::list[lightIndex].color);
             }
         }
     }

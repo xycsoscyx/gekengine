@@ -1,6 +1,7 @@
 // http://www.gamedev.net/topic/639226-your-preferred-or-desired-brdf/
 // http://pastebin.com/m7NLvtWk
 
+static const float materialSpecular = 0.3f;
 static const float materialFacetAngle = 0.0f;
 static const float materialRetroreflective = 0.0f;
 static const bool materialIsotropic = true;
@@ -11,7 +12,6 @@ static const float3 Y = 0.0f;
 
 float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL, in float NdotV)
 {
-    static const float materialSpecular = 0.3f;
     float materialRoughnessX = materialRoughness;
     float materialRoughnessY = materialRoughness;
 
@@ -20,102 +20,101 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
         float3 temp = lightDirection; lightDirection = viewDirection; viewDirection = temp;
     }
 
-    float sina = sin(materialFacetAngle);
-    float cosa = cos(materialFacetAngle);
-    float3 rX = materialIsotropic ? 0 : X * cosa + Y * -sina;
-    float3 rY = materialIsotropic ? 0 : X * sina + Y *  cosa;
+    float sinFacetAngle = sin(materialFacetAngle);
+    float cosFacetAngle = cos(materialFacetAngle);
+    float3 rX = materialIsotropic ? 0 : X * cosFacetAngle + Y * -sinFacetAngle;
+    float3 rY = materialIsotropic ? 0 : X * sinFacetAngle + Y *  cosFacetAngle;
 
     float3 Ks = lerp(materialSpecular, materialAlbedo, materialMetalness);
     float3 Kd = lerp(materialAlbedo, 0, materialMetalness);
     float3 Fd = 1.0 - Ks;
 
-    float NdotV_2 = NdotV * NdotV;
-    float OneMinusNdotV_2 = 1.0 - NdotV_2;
+    float NdotVSquared = NdotV * NdotV;
+    float OneMinusNdotVSquared = 1.0 - NdotVSquared;
 
-    float M, M_2, Mx_2, My_2;
-    float MX = materialRoughnessX;
-    float MY = materialRoughnessY;
-    MX = MX*MX * 4;
-    MY = MY*MY * 4;
-    Mx_2 = MX * MX;
-    My_2 = materialIsotropic ? Mx_2 : MY * MY;
-    M_2 = (Mx_2 + My_2) / 2;
-    M = materialIsotropic ? MX : sqrt(M_2);
+    materialRoughnessX = materialRoughnessX*materialRoughnessX * 4;
+    materialRoughnessY = materialRoughnessY*materialRoughnessY * 4;
+    float materialRoughnessXSquared = materialRoughnessX * materialRoughnessX;
+    float materialRoughnessYSquared = materialIsotropic ? materialRoughnessXSquared : materialRoughnessY * materialRoughnessY;
+    float materialRoughnessSquared = (materialRoughnessXSquared + materialRoughnessYSquared) / 2;
+    materialRoughness = materialIsotropic ? materialRoughnessX : sqrt(materialRoughnessSquared);
 
-    float3 halfNormal = normalize(lightDirection + viewDirection);
-    float NdotH = dot(surfaceNormal, halfNormal);
-    float VdotH = dot(viewDirection, halfNormal);
-    float LdotH = dot(lightDirection, halfNormal);
+    float3 halfAngle = normalize(lightDirection + viewDirection);
+    float NdotH = dot(surfaceNormal, halfAngle);
+    float VdotH = dot(viewDirection, halfAngle);
+    float LdotH = dot(lightDirection, halfAngle);
 
     float LdotV = dot(lightDirection, viewDirection);
     NdotH = lerp(NdotH, LdotV, materialRetroreflective);
 
-    float NdotL_2 = NdotL * NdotL;
-    float NdotH_2 = NdotH * NdotH;
-    float OneMinusNdotL_2 = 1.0 - NdotL_2;
+    float NdotLSquared = NdotL * NdotL;
+    float NdotHSquared = NdotH * NdotH;
+    float OneMinusNdotLSquared = 1.0 - NdotLSquared;
 
-    float3 Rd = Kd * Fd * Math::ReciprocalPi * saturate((1 - M)*0.5 + 0.5 + M_2*(8 - M)*0.023);
+    float3 Rd = Kd * Fd * Math::ReciprocalPi * saturate((1 - materialRoughness)*0.5 + 0.5 + materialRoughnessSquared*(8 - materialRoughness)*0.023);
 
     float D;
     if (materialIsotropic)
     {
-        D = pow(M / (NdotH_2 * (M_2 + (1 - NdotH_2) / NdotH_2)), 2) / Math::Pi;
+        D = pow(materialRoughness / (NdotHSquared * (materialRoughnessSquared + (1 - NdotHSquared) / NdotHSquared)), 2) / Math::Pi;
     }
     else
     {
-        float HdotX = dot(halfNormal, rX);
-        float HdotY = dot(halfNormal, rY);
-        float HdotX_2 = HdotX * HdotX;
-        float HdotY_2 = HdotY * HdotY;
+        float HdotX = dot(halfAngle, rX);
+        float HdotY = dot(halfAngle, rY);
+        float HdotXSquared = HdotX * HdotX;
+        float HdotYSquared = HdotY * HdotY;
         if (materialRetroreflective > 0)
         {
             float3 LX = normalize(cross(rY, lightDirection));
             float3 LY = normalize(cross(lightDirection, LX));
             float VdotLX = dot(viewDirection, LX);
             float VdotLY = dot(viewDirection, LY);
-            float VdotLX_2 = VdotLX * VdotLX;
-            float VdotLY_2 = VdotLY * VdotLY;
+            float VdotLXSquared = VdotLX * VdotLX;
+            float VdotLYSquared = VdotLY * VdotLY;
 
             float3 VX = normalize(cross(rY, viewDirection));
             float3 VY = normalize(cross(viewDirection, VX));
             float LdotVX = dot(lightDirection, VX);
             float LdotVY = dot(lightDirection, VY);
-            float LdotVX_2 = LdotVX * LdotVX;
-            float LdotVY_2 = LdotVY * LdotVY;
+            float LdotVXSquared = LdotVX * LdotVX;
+            float LdotVYSquared = LdotVY * LdotVY;
 
-            float RX_2 = (LdotVX_2 + VdotLX_2)*0.5;
-            float RY_2 = (LdotVY_2 + VdotLY_2)*0.5;
+            float RXSquared = (LdotVXSquared + VdotLXSquared)*0.5;
+            float RYSquared = (LdotVYSquared + VdotLYSquared)*0.5;
 
-            HdotX_2 = lerp(HdotX_2, RX_2, materialRetroreflective);
-            HdotY_2 = lerp(HdotY_2, RY_2, materialRetroreflective);
+            HdotXSquared = lerp(HdotXSquared, RXSquared, materialRetroreflective);
+            HdotYSquared = lerp(HdotYSquared, RYSquared, materialRetroreflective);
         }
-        D = 1.0 / (Math::Pi * MX * MY * pow(HdotX_2 / Mx_2 + HdotY_2 / My_2 + NdotH_2, 2));
+
+        D = 1.0 / (Math::Pi * materialRoughnessX * materialRoughnessY * pow(HdotXSquared / materialRoughnessXSquared + HdotYSquared / materialRoughnessYSquared + NdotHSquared, 2));
     }
 
     NdotV = NdotV*0.5 + 0.5;
     NdotL = NdotL*0.5 + 0.5;
-    NdotL_2 = NdotL * NdotL;
-    NdotV_2 = NdotV * NdotV;
-    OneMinusNdotL_2 = 1.0 - NdotL_2;
-    OneMinusNdotV_2 = 1.0 - NdotV_2;
+    NdotLSquared = NdotL * NdotL;
+    NdotVSquared = NdotV * NdotV;
+    OneMinusNdotLSquared = 1.0 - NdotLSquared;
+    OneMinusNdotVSquared = 1.0 - NdotVSquared;
 
     float diffuseF1 = pow(1 - NdotL, 4);
     float diffuseF2 = pow(1 - NdotV, 4);
-    float dd = lerp((1 / (0.1 + M)), -M_2 * 2, saturate(M));
+    float dd = lerp((1 / (0.1 + materialRoughness)), -materialRoughnessSquared * 2, saturate(materialRoughness));
     diffuseF1 = 1 - (diffuseF1 * dd);
     diffuseF2 = 1 - (diffuseF2 * dd);
     Rd *= diffuseF1 * diffuseF2;
 
     float3 Fs = Ks + Fd * pow(1 - LdotH, 5);
 
-    float G1_1 = 1.0 + sqrt(1.0 + M_2 * (OneMinusNdotL_2 / NdotL_2));
-    float G1_2 = 1.0 + sqrt(1.0 + M_2 * (OneMinusNdotV_2 / NdotV_2));
-    float G = ((2 / G1_1) * (2 / G1_2)) / (4 * NdotV * NdotL + 0.1);
+    float G1L = 1.0 + sqrt(1.0 + materialRoughnessSquared * (OneMinusNdotLSquared / NdotLSquared));
+    float G1V = 1.0 + sqrt(1.0 + materialRoughnessSquared * (OneMinusNdotVSquared / NdotVSquared));
+    float G = ((2 / G1L) * (2 / G1V)) / (4 * NdotV * NdotL + 0.1);
 
-    float G_Retro = NdotV_2 * NdotL;
-    G = lerp(G, G_Retro, materialRetroreflective);
+    float retroreflective = NdotVSquared * NdotL;
+    G = lerp(G, retroreflective, materialRetroreflective);
 
     float3 Rs = Fs * D * G;
 
+    return Rd;
     return (Rd + Rs);
 }

@@ -1,29 +1,25 @@
 // Simple Lighting Equation
 
-static const float specularPower = 100;
-
-float3 reflect(float3 incidentNormal, float3 surfaceNormal)
-{
-    return 2 * dot(incidentNormal, surfaceNormal) * surfaceNormal - incidentNormal;
-}
+static const float specularPower = 1000;
+static const float gaussianThreshold = 0.04;
 
 float getPhong(in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
 {
-    float3 reflectNormal = reflect(lightDirection, surfaceNormal);
-    return pow(max(0, dot(reflectNormal, viewDirection)), specularPower);
+    // Using Blinn half angle modification for performance over correctness
+    float3 halfAngle = normalize(viewDirection + lightDirection);
+    return pow(saturate(dot(halfAngle, surfaceNormal)), specularPower);
 }
 
 float getGaussian(in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
 {
-    float3 halfAngle = normalize(lightDirection + viewDirection);
-    float NdotH = clamp(dot(surfaceNormal, halfAngle), 0, 1);
-    float Threshold = 0.04;
-    float CosAngle = pow(Threshold, 1 / specularPower);
-    float NormAngle = (NdotH - 1) / (CosAngle - 1);
-    return exp(-NormAngle * NormAngle);
+    float3 halfAngle = normalize(viewDirection + lightDirection);
+    float NdotH = saturate(dot(surfaceNormal, halfAngle));
+    float cosAngle = pow(gaussianThreshold, 1 / specularPower);
+    float normalAngle = (NdotH - 1) / (cosAngle - 1);
+    return exp(-normalAngle * normalAngle);
 }
 
 float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL, in float NdotV)
 {
-    return getPhong(surfaceNormal, lightDirection, viewDirection, NdotL);
+    return (Math::ReciprocalPi * materialAlbedo) + getGaussian(surfaceNormal, lightDirection, viewDirection, NdotL);
 }

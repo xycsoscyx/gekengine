@@ -25,7 +25,7 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
     outputPixel.albedoBuffer = albedo.xyz;
     outputPixel.materialBuffer.x = Resources::roughness.Sample(Global::linearSampler, inputPixel.texCoord);
     outputPixel.materialBuffer.y = Resources::metalness.Sample(Global::linearSampler, inputPixel.texCoord);
-    outputPixel.normalBuffer = encodeNormal(normal);
+    outputPixel.normalBuffer = encodeNormal(viewNormal);
     outputPixel.depthBuffer  = (inputPixel.viewPosition.z / Camera::maximumDistance);
     return outputPixel;
 }
