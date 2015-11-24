@@ -3,11 +3,11 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-#include "BRDF.Disney.h"
+#include "BRDF.UE4.h"
 
 float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-    float3 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+    float3 materialAlbedo = 1;// Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float2 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float materialRoughness = materialInfo.x;
     float materialMetalness = materialInfo.y;
@@ -38,11 +38,14 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
         float3 lightRay = -(surfacePosition - Lighting::list[lightIndex].position);
         float lightDistance = length(lightRay);
         float3 lightDirection = (lightRay / lightDistance);
-        float attenuation = (lightDistance / Lighting::list[lightIndex].radius);
 
-#ifdef _INVERSE_SQUARE
-        attenuation = ???
+#define _INVERSE_SQUARE 1
+
+#if _INVERSE_SQUARE
+        float attenuation = clamp(1.0 - lightDistance * lightDistance / (Lighting::list[lightIndex].radius * Lighting::list[lightIndex].radius), 0.0, 1.0);
+        attenuation *= attenuation;
 #else
+        float attenuation = (lightDistance / Lighting::list[lightIndex].radius);
         attenuation = (1.0f - saturate(attenuation));
 #endif
 

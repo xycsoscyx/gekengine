@@ -85,7 +85,7 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
     float ss = 1.25 * (Fss * (1 / (NdotL + NdotV) - .5) + .5);
 
     // specular
-#ifdef _ANISOTROPIC
+#if _ANISOTROPIC
     float aspect = sqrt(1 - anisotropic*.9);
     float ax = max(.001, sqr(materialRoughness) / aspect);
     float ay = max(.001, sqr(materialRoughness) * aspect);

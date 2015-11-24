@@ -43,7 +43,9 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     return float3x3(tangent, biTangent, normal);
 }
 
-#ifdef _ENCODE_SPHEREMAP
+#define _ENCODE_SPHEREMAP 1
+
+#if _ENCODE_SPHEREMAP
     float2 encodeNormal(float3 normal)
     {
         return (normalize(normal.xy) * sqrt(normal.z * 0.5f + 0.5f));
@@ -63,18 +65,18 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     float2 encodeNormal(float3 normal)
     {
         normal /= (abs(normal.x) + abs(normal.y) + abs(normal.z));
-        normal.xy = normal.z >= 0.0 ? normal.xy : OctWrap(normal.xy);
+        normal.xy = normal.z >= 0.0 ? normal.xy : octahedronWrap(normal.xy);
         normal.xy = normal.xy * 0.5 + 0.5;
         return normal.xy;
     }
 
-    float3 encodeNormal(float2 encoded)
+    float3 decodeNormal(float2 encoded)
     {
         encoded = encoded * 2.0 - 1.0;
 
         float3 normal;
         normal.z = 1.0 - abs(encoded.x) - abs(encoded.y);
-        normal.xy = normal.z >= 0.0 ? encoded.xy : OctWrap(encoded.xy);
+        normal.xy = normal.z >= 0.0 ? encoded.xy : octahedronWrap(encoded.xy);
         return normalize(normal);
     }
 #else
