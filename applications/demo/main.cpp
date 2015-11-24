@@ -164,36 +164,6 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
 {
-    Gek::Math::Float3 normal[] = 
-    {
-        { 0, 0, 1 },
-        { 0, 0, -1 },
-    };
-
-    float dot[] = 
-    {
-        normal[0].dot(normal[0]),
-        normal[0].dot(normal[1]),
-        normal[1].dot(normal[0]),
-        normal[1].dot(normal[1]),
-    };
-
-    dot[0] = dot[0];
-    dot[0] = dot[1];
-    dot[0] = dot[2];
-    dot[0] = dot[3];
-    dot[1] = dot[0];
-    dot[1] = dot[1];
-    dot[1] = dot[2];
-    dot[1] = dot[3];
-    dot[2] = dot[0];
-    dot[2] = dot[1];
-    dot[2] = dot[2];
-    dot[2] = dot[3];
-    dot[3] = dot[0];
-    dot[3] = dot[1];
-    dot[3] = dot[2];
-    dot[3] = dot[3];
     static const LPCWSTR materialFormat = \
         L"<?xml version=\"1.0\"?>\r\n" \
         L"<material>\r\n" \
