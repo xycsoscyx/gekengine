@@ -13,19 +13,18 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
         discard;
     }
 
-    float3 viewNormal = (normalize(inputPixel.viewNormal) * (inputPixel.frontFacing ? 1 : -1));
-    float3x3 coTangentFrame = getCoTangentFrame(inputPixel.viewPosition.xyz, viewNormal, inputPixel.texCoord);
+    float3x3 viewBasis = getCoTangentFrame(inputPixel.viewPosition, inputPixel.viewNormal, inputPixel.texCoord);
 
     float3 normal;
-    normal = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texCoord) * 2.0) - 1.0);
+    normal = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texCoord) * 255.0 / 127.0) - 128.0 / 127.0);
     //normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
-    normal = normalize(mul(normal, coTangentFrame));
+    normal = normalize(mul(normal, viewBasis)) * (inputPixel.frontFacing ? 1 : -1);
 
     OutputPixel outputPixel;
-    outputPixel.albedoBuffer = pow(albedo.xyz, 1 / 2.2);
+    outputPixel.albedoBuffer = albedo.xyz;
     outputPixel.materialBuffer.x = Resources::roughness.Sample(Global::linearSampler, inputPixel.texCoord);
     outputPixel.materialBuffer.y = Resources::metalness.Sample(Global::linearSampler, inputPixel.texCoord);
-    outputPixel.normalBuffer = encodeNormal(viewNormal);
+    outputPixel.normalBuffer = encodeNormal(normal);
     outputPixel.depthBuffer  = (inputPixel.viewPosition.z / Camera::maximumDistance);
     return outputPixel;
 }

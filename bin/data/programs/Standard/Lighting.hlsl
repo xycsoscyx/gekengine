@@ -9,7 +9,7 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
     float3 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float2 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
-    float materialRoughness = materialInfo.x;
+    float materialRoughness = materialInfo.x * 0.8f + 0.1f;
     float materialMetalness = materialInfo.y;
 
     float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texCoord);

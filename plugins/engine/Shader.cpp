@@ -747,23 +747,23 @@ namespace Gek
                                             if (pass.mode != PassMode::Compute)
                                             {
                                                 engineData += 
-                                                    "struct InputPixel                                          \r\n"\
+                                                    "struct InputPixel                                          \r\n" \
                                                     "{                                                          \r\n";
                                                 switch (pass.mode)
                                                 {
                                                 case PassMode::Deferred:
                                                     engineData +=
-                                                        "    float4 position     : SV_POSITION;                 \r\n"\
+                                                        "    float4 position     : SV_POSITION;                 \r\n" \
                                                         "    float2 texCoord     : TEXCOORD0;                   \r\n";
                                                     break;
 
                                                 case PassMode::Forward:
                                                     engineData +=
-                                                        "    float4 position     : SV_POSITION;                 \r\n"\
-                                                        "    float2 texCoord     : TEXCOORD0;                   \r\n"\
-                                                        "    float4 viewPosition : TEXCOORD1;                   \r\n"\
-                                                        "    float3 viewNormal   : NORMAL0;                     \r\n"\
-                                                        "    float4 color        : COLOR0;                      \r\n"\
+                                                        "    float4 position     : SV_POSITION;                 \r\n" \
+                                                        "    float2 texCoord     : TEXCOORD0;                   \r\n" \
+                                                        "    float4 viewPosition : TEXCOORD1;                   \r\n" \
+                                                        "    float3 viewNormal   : NORMAL0;                     \r\n" \
+                                                        "    float4 color        : COLOR0;                      \r\n" \
                                                         "    bool   frontFacing  : SV_ISFRONTFACE;              \r\n";
                                                     break;
 
@@ -773,7 +773,7 @@ namespace Gek
                                                 };
 
                                                 engineData +=
-                                                    "};                                                         \r\n"\
+                                                    "};                                                         \r\n" \
                                                     "                                                           \r\n";
                                             }
 
@@ -787,38 +787,38 @@ namespace Gek
                                             if (!propertyData.IsEmpty())
                                             {
                                                 engineData +=
-                                                    "namespace Material                                         \r\n"\
-                                                    "{                                                          \r\n"\
-                                                    "    cbuffer Data : register(b1)                            \r\n"\
+                                                    "namespace Material                                         \r\n" \
+                                                    "{                                                          \r\n" \
+                                                    "    cbuffer Data : register(b1)                            \r\n" \
                                                     "    {                                                      \r\n";
                                                 engineData += propertyData;
                                                 engineData +=
-                                                    "    };                                                     \r\n"\
-                                                    "};                                                         \r\n"\
+                                                    "    };                                                     \r\n" \
+                                                    "};                                                         \r\n" \
                                                     "                                                           \r\n";
                                             }
                                             if (pass.lighting)
                                             {
                                                 engineData +=
-                                                    "namespace Lighting                                     \r\n"\
-                                                    "{                                                      \r\n"\
-                                                    "    struct Point                                       \r\n"\
-                                                    "    {                                                  \r\n"\
-                                                    "        float3  position;                              \r\n"\
-                                                    "        float   radius;                                \r\n"\
-													"        float3  color;                                 \r\n"\
-													"        float   distance;                              \r\n"\
-                                                    "    };                                                 \r\n"\
-                                                    "                                                       \r\n"\
-                                                    "    cbuffer Data : register(b2)                        \r\n"\
-                                                    "    {                                                  \r\n"\
-                                                    "        uint    count   : packoffset(c0);              \r\n"\
-                                                    "        uint3   padding : packoffset(c0.y);            \r\n"\
-                                                    "    };                                                 \r\n"\
-                                                    "                                                       \r\n"\
-                                                    "    StructuredBuffer<Point> list : register(t0);       \r\n"\
-                                                    "    static const uint listSize = 1024;                 \r\n"\
-                                                    "};                                                     \r\n"\
+                                                    "namespace Lighting                                     \r\n" \
+                                                    "{                                                      \r\n" \
+                                                    "    struct Point                                       \r\n" \
+                                                    "    {                                                  \r\n" \
+                                                    "        float3  position;                              \r\n" \
+                                                    "        float   radius;                                \r\n" \
+													"        float3  color;                                 \r\n" \
+													"        float   distance;                              \r\n" \
+                                                    "    };                                                 \r\n" \
+                                                    "                                                       \r\n" \
+                                                    "    cbuffer Data : register(b2)                        \r\n" \
+                                                    "    {                                                  \r\n" \
+                                                    "        uint    count   : packoffset(c0);              \r\n" \
+                                                    "        uint3   padding : packoffset(c0.y);            \r\n" \
+                                                    "    };                                                 \r\n" \
+                                                    "                                                       \r\n" \
+                                                    "    StructuredBuffer<Point> list : register(t0);       \r\n" \
+                                                    "    static const uint listSize = 1024;                 \r\n" \
+                                                    "};                                                     \r\n" \
                                                     "                                                       \r\n";
                                             }
 
@@ -836,11 +836,11 @@ namespace Gek
                                             if (!outputData.IsEmpty())
                                             {
                                                 engineData +=
-                                                    "struct OutputPixel                                         \r\n"\
+                                                    "struct OutputPixel                                         \r\n" \
                                                     "{                                                          \r\n";
                                                 engineData += outputData;
                                                 engineData +=
-                                                    "};                                                         \r\n"\
+                                                    "};                                                         \r\n" \
                                                     "                                                           \r\n";
                                             }
 
@@ -867,11 +867,11 @@ namespace Gek
                                             if (!resourceData.IsEmpty())
                                             {
                                                 engineData +=
-                                                    "namespace Resources                                        \r\n"\
+                                                    "namespace Resources                                        \r\n" \
                                                     "{                                                          \r\n";
                                                 engineData += resourceData;
                                                 engineData +=
-                                                    "};                                                         \r\n"\
+                                                    "};                                                         \r\n" \
                                                     "                                                           \r\n";
                                             }
 
@@ -929,11 +929,11 @@ namespace Gek
                                                     if (!unorderedAccessData.IsEmpty())
                                                     {
                                                         engineData +=
-                                                            "namespace UnorderedAccess                              \r\n"\
+                                                            "namespace UnorderedAccess                              \r\n" \
                                                             "{                                                      \r\n";
                                                         engineData += unorderedAccessData;
                                                         engineData +=
-                                                            "};                                                     \r\n"\
+                                                            "};                                                     \r\n" \
                                                             "                                                       \r\n";
                                                     }
 
@@ -955,11 +955,11 @@ namespace Gek
                                                     if (!unorderedAccessData.IsEmpty())
                                                     {
                                                         engineData +=
-                                                            "namespace UnorderedAccess                              \r\n"\
+                                                            "namespace UnorderedAccess                              \r\n" \
                                                             "{                                                      \r\n";
                                                         engineData += unorderedAccessData;
                                                         engineData +=
-                                                            "};                                                     \r\n"\
+                                                            "};                                                     \r\n" \
                                                             "                                                       \r\n";
                                                     }
 

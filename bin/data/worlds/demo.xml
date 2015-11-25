@@ -14,13 +14,13 @@
             <player_body outer_radius="1" inner_radius=".25" height="1.9" stair_step=".25" />
             <mass>250</mass>
             <point_light radius="50" />
-            <color>0,0,1</color>
+            <color>0,1,1</color>
         </entity>
 
         <entity>
-            <transform position="0,10,0" />
+            <transform position="10,20,0" />
             <point_light radius="50" />
-            <color>0,1,0</color>
+            <color>1,1,0</color>
         </entity>
 
         <entity>
