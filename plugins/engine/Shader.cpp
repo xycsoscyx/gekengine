@@ -756,21 +756,26 @@ namespace Gek
                                                     "                                                           \r\n";
                                             }
 
-                                            engineData +=
-                                                "namespace Material                                         \r\n"\
-                                                "{                                                          \r\n"\
-                                                "    cbuffer Data : register(b1)                            \r\n"\
-                                                "    {                                                      \r\n";
+                                            CStringA propertyData;
                                             for (auto &propertyPair : propertyList)
 
                                             {
-                                                engineData.AppendFormat("        %S %S;              \r\n", getBindType(propertyPair.bindType), propertyPair.name.GetString());
+                                                propertyData.AppendFormat("        %S %S;              \r\n", getBindType(propertyPair.bindType), propertyPair.name.GetString());
                                             }
 
-                                            engineData +=
-                                                "    };                                                     \r\n"\
-                                                "};                                                         \r\n"\
-                                                "                                                           \r\n";
+                                            if (!propertyData.IsEmpty())
+                                            {
+                                                engineData +=
+                                                    "namespace Material                                         \r\n"\
+                                                    "{                                                          \r\n"\
+                                                    "    cbuffer Data : register(b1)                            \r\n"\
+                                                    "    {                                                      \r\n";
+                                                engineData += propertyData;
+                                                engineData +=
+                                                    "    };                                                     \r\n"\
+                                                    "};                                                         \r\n"\
+                                                    "                                                           \r\n";
+                                            }
                                             if (pass.lighting)
                                             {
                                                 engineData +=
@@ -796,31 +801,35 @@ namespace Gek
                                                     "                                                       \r\n";
                                             }
 
-                                            engineData +=
-                                                "struct OutputPixel                                         \r\n"\
-                                                "{                                                          \r\n";
+                                            CStringA outputData;
                                             for (UINT32 index = 0; index < pass.renderTargetList.size(); index++)
                                             {
                                                 CStringW resource(pass.renderTargetList[index]);
                                                 auto resourceIterator = resourceList.find(resource);
                                                 if (resourceIterator != resourceList.end())
                                                 {
-                                                    engineData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resource.GetString(), index);
+                                                    outputData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resource.GetString(), index);
                                                 }
                                             }
 
-                                            engineData +=
-                                                "};                                                         \r\n"\
-                                                "                                                           \r\n"\
-                                                "namespace Resources                                        \r\n"\
-                                                "{                                                          \r\n";
+                                            if (!outputData.IsEmpty())
+                                            {
+                                                engineData +=
+                                                    "struct OutputPixel                                         \r\n"\
+                                                    "{                                                          \r\n";
+                                                engineData += outputData;
+                                                engineData +=
+                                                    "};                                                         \r\n"\
+                                                    "                                                           \r\n";
+                                            }
 
+                                            CStringA resourceData;
                                             UINT32 resourceStage (pass.lighting ? 1 : 0);
                                             if (pass.mode == PassMode::Forward)
                                             {
                                                 for (auto &map : mapList)
                                                 {
-                                                    engineData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(map.mapType), getBindType(map.bindType), map.name.GetString(), resourceStage++);
+                                                    resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(map.mapType), getBindType(map.bindType), map.name.GetString(), resourceStage++);
                                                 }
                                             }
 
@@ -830,13 +839,20 @@ namespace Gek
                                                 if (resourceIterator != resourceList.end())
                                                 {
                                                     auto &resource = (*resourceIterator).second;
-                                                    engineData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName.GetString(), resourceStage++);
+                                                    resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName.GetString(), resourceStage++);
                                                 }
                                             }
 
-                                            engineData +=
-                                                "};                                                         \r\n"\
-                                                "                                                           \r\n";
+                                            if (!resourceData.IsEmpty())
+                                            {
+                                                engineData +=
+                                                    "namespace Resources                                        \r\n"\
+                                                    "{                                                          \r\n";
+                                                engineData += resourceData;
+                                                engineData +=
+                                                    "};                                                         \r\n"\
+                                                    "                                                           \r\n";
+                                            }
 
                                             Gek::Xml::Node xmlProgramNode = xmlPassNode.firstChildElement(L"program");
                                             if (xmlProgramNode.hasChildElement(L"source") && xmlProgramNode.hasChildElement(L"entry"))
@@ -878,42 +894,54 @@ namespace Gek
 
                                                 if (pass.mode == PassMode::Compute)
                                                 {
-                                                    engineData +=
-                                                        "namespace UnorderedAccess                              \r\n"\
-                                                        "{                                                      \r\n";
+                                                    CStringA unorderedAccessData;
                                                     for (UINT32 index = 0; index < pass.unorderedAccessList.size(); index++)
                                                     {
                                                         CStringW unorderedAccess(pass.unorderedAccessList[index]);
                                                         auto resourceIterator = resourceList.find(unorderedAccess);
                                                         if (resourceIterator != resourceList.end())
                                                         {
-                                                            engineData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
+                                                            unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
                                                         }
                                                     }
 
-                                                    engineData +=
-                                                        "};                                                     \r\n"\
-                                                        "                                                       \r\n";
+                                                    if (!unorderedAccessData.IsEmpty())
+                                                    {
+                                                        engineData +=
+                                                            "namespace UnorderedAccess                              \r\n"\
+                                                            "{                                                      \r\n";
+                                                        engineData += unorderedAccessData;
+                                                        engineData +=
+                                                            "};                                                     \r\n"\
+                                                            "                                                       \r\n";
+                                                    }
+
                                                     resultValue = render->loadComputeProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
                                                 }
                                                 else
                                                 {
-                                                    engineData +=
-                                                        "namespace UnorderedAccess                              \r\n"\
-                                                        "{                                                      \r\n";
+                                                    CStringA unorderedAccessData;
                                                     for (UINT32 index = 0; index < pass.unorderedAccessList.size(); index++)
                                                     {
                                                         CStringW unorderedAccess(pass.unorderedAccessList[index]);
                                                         auto resourceIterator = resourceList.find(unorderedAccess);
                                                         if (resourceIterator != resourceList.end())
                                                         {
-                                                            engineData.AppendFormat("    %S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
+                                                            unorderedAccessData.AppendFormat("    %S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
                                                         }
                                                     }
 
-                                                    engineData +=
-                                                        "};                                                     \r\n"\
-                                                        "                                                       \r\n";
+                                                    if (!unorderedAccessData.IsEmpty())
+                                                    {
+                                                        engineData +=
+                                                            "namespace UnorderedAccess                              \r\n"\
+                                                            "{                                                      \r\n";
+                                                        engineData += unorderedAccessData;
+                                                        engineData +=
+                                                            "};                                                     \r\n"\
+                                                            "                                                       \r\n";
+                                                    }
+
                                                     resultValue = render->loadPixelProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
                                                 }
                                             }

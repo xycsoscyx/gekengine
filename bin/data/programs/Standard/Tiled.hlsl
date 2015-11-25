@@ -9,7 +9,7 @@ groupshared uint    tileLightCount;
 groupshared uint    tileLightList[Lighting::listSize];
 groupshared float4  tileFrustum[6];
 
-[numthreads(uint(lightTileSize), uint(lightTileSize), 1)]
+[numthreads(uint(tileSize), uint(tileSize), 1)]
 void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePosition : SV_GroupID, uint pixelIndex : SV_GroupIndex)
 {
     [branch]
@@ -38,7 +38,7 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
     {
         float2 depthBufferSize;
         Resources::depthBuffer.GetDimensions(depthBufferSize.x, depthBufferSize.y);
-        float2 tileScale = depthBufferSize * rcp(float(2 * lightTileSize));
+        float2 tileScale = depthBufferSize * rcp(float(2 * tileSize));
         float2 tileBias = tileScale - float2(tilePosition.xy);
 
         float3 frustumXPlane = float3(Camera::projectionMatrix[0][0] * tileScale.x, 0.0f, tileBias.x);
@@ -56,7 +56,7 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
     GroupMemoryBarrierWithGroupSync();
 
     [loop]
-    for (uint lightIndex = pixelIndex; lightIndex < Lighting::count; lightIndex += (lightTileSize * lightTileSize))
+    for (uint lightIndex = pixelIndex; lightIndex < Lighting::count; lightIndex += (tileSize * tileSize))
     {
         bool isLightVisible = true;
 

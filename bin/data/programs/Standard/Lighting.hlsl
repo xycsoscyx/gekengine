@@ -18,7 +18,7 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 
     float3 viewDirection = -normalize(surfacePosition);
 
-    const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(lightTileSize).xx));
+    const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(tileSize).xx));
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
     const uint bufferOffset = (tileIndex * Lighting::listSize);
 

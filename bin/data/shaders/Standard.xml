@@ -13,9 +13,9 @@
     </material>
 
     <defines>
-        <lightTileSize>32</lightTileSize>
-        <dispatchWidth>ceil(%displayWidth% / %lightTileSize%)</dispatchWidth>
-		<dispatchHeight>ceil(%displayHeight% / %lightTileSize%)</dispatchHeight>
+        <tileSize>32</tileSize>
+        <dispatchWidth>ceil(%displayWidth% / %tileSize%)</dispatchWidth>
+		<dispatchHeight>ceil(%displayHeight% / %tileSize%)</dispatchHeight>
     </defines>
 
     <depth>D32</depth>
@@ -25,11 +25,12 @@
         <materialBuffer bind="float2">byte2</materialBuffer>
         <normalBuffer bind="float2">half2</normalBuffer>
         <depthBuffer bind="float">float</depthBuffer>
-        <surfaceBuffer bind="float3">float4</surfaceBuffer>
+        <compositeBuffer bind="float3">float4</compositeBuffer>
     </targets>
 
     <buffers>
         <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %lightListSize%">byte</tileIndexList>
+        <exposureBuffer size="1">float</exposureBuffer>
     </buffers>
 
     <pass mode="forward">
@@ -78,7 +79,7 @@
 
     <pass mode="deferred" lighting="true">
         <targets>
-            <surfaceBuffer />
+            <compositeBuffer />
         </targets>
 
         <resources>
@@ -95,9 +96,30 @@
         </program>
     </pass>
 
+    <pass mode="compute">
+        <resources>
+            <compositeBuffer />
+        </resources>
+
+        <unorderedaccess>
+            <exposureBuffer />
+        </unorderedaccess>
+
+        <program>
+            <compute>
+                <width>%dispatchWidth%</width>
+                <height>%dispatchHeight%</height>
+                <depth>1</depth>
+            </compute>
+            <entry>mainComputeProgram</entry>
+            <source>Standard\Exposure</source>
+        </program>
+    </pass>
+
     <pass mode="deferred">
         <resources>
-            <surfaceBuffer />
+            <exposureBuffer />
+            <compositeBuffer />
             <albedoBuffer />
             <materialBuffer />
             <normalBuffer />
