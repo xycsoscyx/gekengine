@@ -2649,9 +2649,6 @@ namespace Gek
 
             STDMETHODIMP loadTexture(Video::Texture::Interface **returnObject, LPCWSTR fileName, DWORD flags)
             {
-                gekLogScope(fileName,
-                    flags);
-
                 REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
                 REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -2684,14 +2681,40 @@ namespace Gek
                         }
                     }
 
+                    if (flags && TextureLoadFlags::sRGB)
+                    {
+                        switch (textureMetaData.format)
+                        {
+                        case DXGI_FORMAT_R8G8B8A8_UNORM:
+                            scratchImage.OverrideFormat(textureMetaData.format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+                            break;
+
+                        case DXGI_FORMAT_BC1_UNORM:
+                            scratchImage.OverrideFormat(textureMetaData.format = DXGI_FORMAT_BC1_UNORM_SRGB);
+                            break;
+
+                        case DXGI_FORMAT_BC2_UNORM:
+                            scratchImage.OverrideFormat(textureMetaData.format = DXGI_FORMAT_BC2_UNORM_SRGB);
+                            break;
+
+                        case DXGI_FORMAT_BC3_UNORM:
+                            scratchImage.OverrideFormat(textureMetaData.format = DXGI_FORMAT_BC3_UNORM_SRGB);
+                            break;
+
+                        case DXGI_FORMAT_BC7_UNORM:
+                            scratchImage.OverrideFormat(textureMetaData.format = DXGI_FORMAT_BC7_UNORM_SRGB);
+                            break;
+                        };
+                    }
+
                     CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                    gekCheckResult(resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), textureMetaData, &d3dShaderResourceView));
+                    resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), textureMetaData, &d3dShaderResourceView);
                     if (d3dShaderResourceView)
                     {
                         CComPtr<Texture::Class> texture(new Texture::Class(textureMetaData.width, textureMetaData.height, textureMetaData.depth, d3dShaderResourceView, nullptr));
                         if (texture)
                         {
-                            gekCheckResult(resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject)));
+                            resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
                         }
                     }
                 }

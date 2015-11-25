@@ -136,11 +136,13 @@ namespace Gek
                         CStringW name;
                         MapType mapType;
                         BindType bindType;
+                        UINT32 flags;
 
-                        Map(LPCWSTR name, MapType mapType, BindType bindType)
+                        Map(LPCWSTR name, MapType mapType, BindType bindType, UINT32 flags)
                             : name(name)
                             , mapType(mapType)
                             , bindType(bindType)
+                            , flags(flags)
                         {
                         }
                     };
@@ -273,6 +275,24 @@ namespace Gek
                         };
 
                         return L"float4";
+                    }
+
+                    static UINT32 getLoadFlags(const CStringW &loadFlags)
+                    {
+                        UINT32 flags = 0;
+                        int position = 0;
+                        CStringW flag(loadFlags.Tokenize(L"|", position));
+                        while (!flag.IsEmpty())
+                        {
+                            if (flag.CompareNoCase(L"sRGB") == 0)
+                            {
+                                flags |= Video::TextureLoadFlags::sRGB;
+                            }
+
+                            flag = loadFlags.Tokenize(L"|", position);
+                        };
+
+                        return flags;
                     }
 
                     void loadStencilStates(Video::DepthStates::StencilStates &stencilStates, Gek::Xml::Node &xmlStencilNode)
@@ -524,7 +544,8 @@ namespace Gek
                                                 CStringW name(xmlMapNode.getType());
                                                 MapType mapType = getMapType(xmlMapNode.getText());
                                                 BindType bindType = getBindType(xmlMapNode.getAttribute(L"bind"));
-                                                mapList.push_back(Map(name, mapType, bindType));
+                                                UINT32 flags = getLoadFlags(xmlMapNode.getAttribute(L"loadFlags"));
+                                                mapList.push_back(Map(name, mapType, bindType, flags));
 
                                                 xmlMapNode = xmlMapNode.nextSiblingElement();
                                             };
@@ -998,8 +1019,9 @@ namespace Gek
                                 CStringW materialFileName = (*materialMapIterator).second;
                                 materialFileName.MakeLower();
                                 materialFileName.Replace(L"%directory%", LPCWSTR(filePath));
+                                materialFileName.Replace(L"%filename%", LPCWSTR(fileSpec));
                                 materialFileName.Replace(L"%material%", fileName);
-                                render->loadTexture(&map, materialFileName);
+                                render->loadTexture(&map, materialFileName, mapValue.flags);
                             }
 
                             materialMapList.push_back(map);

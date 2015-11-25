@@ -169,8 +169,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         L"<material>\r\n" \
         L"    <shader>standard</shader>\r\n" \
         L"    <maps>\r\n" \
-        L"        <albedo>%%directory%%\\rock.albedo</albedo>\r\n" \
-        L"        <normal>%%directory%%\\rock.normal</normal>\r\n" \
+        L"        <albedo>schulz/old_tiles/old_tiles_a</albedo>\r\n" \
+        L"        <normal>schulz/old_tiles/old_tiles_n</normal>\r\n" \
         L"        <roughness>*color:%f</roughness>\r\n" \
         L"        <metalness>*color:%f</metalness>\r\n" \
         L"    </maps>\r\n" \
@@ -180,7 +180,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 L"        <entity>\r\n" \
 L"            <transform position=\"0,%d,%d\" />\r\n" \
 /*L"            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>\r\n" \*/
-L"            <model>*sphere|debug_%d_%d|1</model>\r\n" \
+L"            <model>*sphere|debug//r%d_m%d|1</model>\r\n" \
 L"        </entity>\r\n";
 
     CStringW entities;
@@ -189,10 +189,10 @@ L"        </entity>\r\n";
         for (UINT32 metalness = 0; metalness < 11; metalness++)
         {
             CStringW material(Gek::String::format(materialFormat, (float(roughness) / 10.0f), (float(metalness) / 10.0f)));
-            CStringW fileName(Gek::String::format(L"debug_%d_%d.xml", roughness, metalness));
-            Gek::FileSystem::save((L"%root%\\data\\materials\\" + fileName), material);
+            CStringW fileName(Gek::String::format(L"r%d_m%d.xml", roughness, metalness));
+            Gek::FileSystem::save((L"%root%\\data\\materials\\debug\\" + fileName), material);
 
-            entities += Gek::String::format(entityFormat, ((roughness - 5) * 2) + 12, ((metalness - 5) * 2), roughness, metalness);
+            entities += Gek::String::format(entityFormat, ((roughness - 5) * 2) + 10, ((metalness - 5) * 2), roughness, metalness);
         }
     }
 

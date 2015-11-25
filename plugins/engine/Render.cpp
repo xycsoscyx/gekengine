@@ -605,8 +605,11 @@ namespace Gek
                     return returnValue;
                 }
 
-                STDMETHODIMP loadTexture(Video::Texture::Interface **returnObject, LPCWSTR fileName)
+                STDMETHODIMP loadTexture(Video::Texture::Interface **returnObject, LPCWSTR fileName, UINT32 flags)
                 {
+                    gekLogScope(fileName,
+                        flags);
+
                     REQUIRE_RETURN(video, E_FAIL);
 
                     HRESULT returnValue = E_FAIL;
@@ -673,19 +676,19 @@ namespace Gek
                             }
                             else
                             {
-                                returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s", fileName), 0);
+                                returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s", fileName), flags);
                                 if (FAILED(returnValue))
                                 {
-                                    returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".dds"), 0);
+                                    returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".dds"), flags);
                                     if (FAILED(returnValue))
                                     {
-                                        returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".tga"), 0);
+                                        returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".tga"), flags);
                                         if (FAILED(returnValue))
                                         {
-                                            returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".png"), 0);
+                                            returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".png"), flags);
                                             if (FAILED(returnValue))
                                             {
-                                                returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".jpg"), 0);
+                                                returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".jpg"), flags);
                                             }
                                         }
                                     }

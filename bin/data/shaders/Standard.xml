@@ -2,7 +2,7 @@
 <shader>
     <material>
         <maps>
-            <albedo bind="float4">Texture2D</albedo>
+            <albedo bind="float4" loadFlags="">Texture2D</albedo>
             <normal bind="float3">Texture2D</normal>
             <roughness bind="float">Texture2D</roughness>
             <metalness bind="float">Texture2D</metalness>

@@ -50,7 +50,7 @@ namespace Gek
 #else
     Math::Float2 encodeNormal(Math::Float3 normal)
     {
-        return Math::Float2(normal.x, normal.y);
+        return Math::Float2(normal.y, normal.z);
     }
 #endif
 

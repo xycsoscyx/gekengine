@@ -25,494 +25,494 @@
 
         <entity>
             <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <!--point_light radius="lerp(15, 30, arand(1))" /-->
+            <point_light radius="lerp(15, 30, arand(1))" />
             <color>lerp(0.1, 0.25, arand(1)), lerp(0.1, 0.25, arand(1)), lerp(0.1, 0.25, arand(1))</color>
         </entity>
 
         <entity>
+            <transform position="0,0,-10" />
+            <model>*sphere|debug//r0_m0|1</model>
+        </entity>
+        <entity>
+            <transform position="0,0,-8" />
+            <model>*sphere|debug//r0_m1|1</model>
+        </entity>
+        <entity>
+            <transform position="0,0,-6" />
+            <model>*sphere|debug//r0_m2|1</model>
+        </entity>
+        <entity>
+            <transform position="0,0,-4" />
+            <model>*sphere|debug//r0_m3|1</model>
+        </entity>
+        <entity>
+            <transform position="0,0,-2" />
+            <model>*sphere|debug//r0_m4|1</model>
+        </entity>
+        <entity>
+            <transform position="0,0,0" />
+            <model>*sphere|debug//r0_m5|1</model>
+        </entity>
+        <entity>
+            <transform position="0,0,2" />
+            <model>*sphere|debug//r0_m6|1</model>
+        </entity>
+        <entity>
+            <transform position="0,0,4" />
+            <model>*sphere|debug//r0_m7|1</model>
+        </entity>
+        <entity>
+            <transform position="0,0,6" />
+            <model>*sphere|debug//r0_m8|1</model>
+        </entity>
+        <entity>
+            <transform position="0,0,8" />
+            <model>*sphere|debug//r0_m9|1</model>
+        </entity>
+        <entity>
+            <transform position="0,0,10" />
+            <model>*sphere|debug//r0_m10|1</model>
+        </entity>
+        <entity>
             <transform position="0,2,-10" />
-            <model>*sphere|debug_0_0|1</model>
+            <model>*sphere|debug//r1_m0|1</model>
         </entity>
         <entity>
             <transform position="0,2,-8" />
-            <model>*sphere|debug_0_1|1</model>
+            <model>*sphere|debug//r1_m1|1</model>
         </entity>
         <entity>
             <transform position="0,2,-6" />
-            <model>*sphere|debug_0_2|1</model>
+            <model>*sphere|debug//r1_m2|1</model>
         </entity>
         <entity>
             <transform position="0,2,-4" />
-            <model>*sphere|debug_0_3|1</model>
+            <model>*sphere|debug//r1_m3|1</model>
         </entity>
         <entity>
             <transform position="0,2,-2" />
-            <model>*sphere|debug_0_4|1</model>
+            <model>*sphere|debug//r1_m4|1</model>
         </entity>
         <entity>
             <transform position="0,2,0" />
-            <model>*sphere|debug_0_5|1</model>
+            <model>*sphere|debug//r1_m5|1</model>
         </entity>
         <entity>
             <transform position="0,2,2" />
-            <model>*sphere|debug_0_6|1</model>
+            <model>*sphere|debug//r1_m6|1</model>
         </entity>
         <entity>
             <transform position="0,2,4" />
-            <model>*sphere|debug_0_7|1</model>
+            <model>*sphere|debug//r1_m7|1</model>
         </entity>
         <entity>
             <transform position="0,2,6" />
-            <model>*sphere|debug_0_8|1</model>
+            <model>*sphere|debug//r1_m8|1</model>
         </entity>
         <entity>
             <transform position="0,2,8" />
-            <model>*sphere|debug_0_9|1</model>
+            <model>*sphere|debug//r1_m9|1</model>
         </entity>
         <entity>
             <transform position="0,2,10" />
-            <model>*sphere|debug_0_10|1</model>
+            <model>*sphere|debug//r1_m10|1</model>
         </entity>
         <entity>
             <transform position="0,4,-10" />
-            <model>*sphere|debug_1_0|1</model>
+            <model>*sphere|debug//r2_m0|1</model>
         </entity>
         <entity>
             <transform position="0,4,-8" />
-            <model>*sphere|debug_1_1|1</model>
+            <model>*sphere|debug//r2_m1|1</model>
         </entity>
         <entity>
             <transform position="0,4,-6" />
-            <model>*sphere|debug_1_2|1</model>
+            <model>*sphere|debug//r2_m2|1</model>
         </entity>
         <entity>
             <transform position="0,4,-4" />
-            <model>*sphere|debug_1_3|1</model>
+            <model>*sphere|debug//r2_m3|1</model>
         </entity>
         <entity>
             <transform position="0,4,-2" />
-            <model>*sphere|debug_1_4|1</model>
+            <model>*sphere|debug//r2_m4|1</model>
         </entity>
         <entity>
             <transform position="0,4,0" />
-            <model>*sphere|debug_1_5|1</model>
+            <model>*sphere|debug//r2_m5|1</model>
         </entity>
         <entity>
             <transform position="0,4,2" />
-            <model>*sphere|debug_1_6|1</model>
+            <model>*sphere|debug//r2_m6|1</model>
         </entity>
         <entity>
             <transform position="0,4,4" />
-            <model>*sphere|debug_1_7|1</model>
+            <model>*sphere|debug//r2_m7|1</model>
         </entity>
         <entity>
             <transform position="0,4,6" />
-            <model>*sphere|debug_1_8|1</model>
+            <model>*sphere|debug//r2_m8|1</model>
         </entity>
         <entity>
             <transform position="0,4,8" />
-            <model>*sphere|debug_1_9|1</model>
+            <model>*sphere|debug//r2_m9|1</model>
         </entity>
         <entity>
             <transform position="0,4,10" />
-            <model>*sphere|debug_1_10|1</model>
+            <model>*sphere|debug//r2_m10|1</model>
         </entity>
         <entity>
             <transform position="0,6,-10" />
-            <model>*sphere|debug_2_0|1</model>
+            <model>*sphere|debug//r3_m0|1</model>
         </entity>
         <entity>
             <transform position="0,6,-8" />
-            <model>*sphere|debug_2_1|1</model>
+            <model>*sphere|debug//r3_m1|1</model>
         </entity>
         <entity>
             <transform position="0,6,-6" />
-            <model>*sphere|debug_2_2|1</model>
+            <model>*sphere|debug//r3_m2|1</model>
         </entity>
         <entity>
             <transform position="0,6,-4" />
-            <model>*sphere|debug_2_3|1</model>
+            <model>*sphere|debug//r3_m3|1</model>
         </entity>
         <entity>
             <transform position="0,6,-2" />
-            <model>*sphere|debug_2_4|1</model>
+            <model>*sphere|debug//r3_m4|1</model>
         </entity>
         <entity>
             <transform position="0,6,0" />
-            <model>*sphere|debug_2_5|1</model>
+            <model>*sphere|debug//r3_m5|1</model>
         </entity>
         <entity>
             <transform position="0,6,2" />
-            <model>*sphere|debug_2_6|1</model>
+            <model>*sphere|debug//r3_m6|1</model>
         </entity>
         <entity>
             <transform position="0,6,4" />
-            <model>*sphere|debug_2_7|1</model>
+            <model>*sphere|debug//r3_m7|1</model>
         </entity>
         <entity>
             <transform position="0,6,6" />
-            <model>*sphere|debug_2_8|1</model>
+            <model>*sphere|debug//r3_m8|1</model>
         </entity>
         <entity>
             <transform position="0,6,8" />
-            <model>*sphere|debug_2_9|1</model>
+            <model>*sphere|debug//r3_m9|1</model>
         </entity>
         <entity>
             <transform position="0,6,10" />
-            <model>*sphere|debug_2_10|1</model>
+            <model>*sphere|debug//r3_m10|1</model>
         </entity>
         <entity>
             <transform position="0,8,-10" />
-            <model>*sphere|debug_3_0|1</model>
+            <model>*sphere|debug//r4_m0|1</model>
         </entity>
         <entity>
             <transform position="0,8,-8" />
-            <model>*sphere|debug_3_1|1</model>
+            <model>*sphere|debug//r4_m1|1</model>
         </entity>
         <entity>
             <transform position="0,8,-6" />
-            <model>*sphere|debug_3_2|1</model>
+            <model>*sphere|debug//r4_m2|1</model>
         </entity>
         <entity>
             <transform position="0,8,-4" />
-            <model>*sphere|debug_3_3|1</model>
+            <model>*sphere|debug//r4_m3|1</model>
         </entity>
         <entity>
             <transform position="0,8,-2" />
-            <model>*sphere|debug_3_4|1</model>
+            <model>*sphere|debug//r4_m4|1</model>
         </entity>
         <entity>
             <transform position="0,8,0" />
-            <model>*sphere|debug_3_5|1</model>
+            <model>*sphere|debug//r4_m5|1</model>
         </entity>
         <entity>
             <transform position="0,8,2" />
-            <model>*sphere|debug_3_6|1</model>
+            <model>*sphere|debug//r4_m6|1</model>
         </entity>
         <entity>
             <transform position="0,8,4" />
-            <model>*sphere|debug_3_7|1</model>
+            <model>*sphere|debug//r4_m7|1</model>
         </entity>
         <entity>
             <transform position="0,8,6" />
-            <model>*sphere|debug_3_8|1</model>
+            <model>*sphere|debug//r4_m8|1</model>
         </entity>
         <entity>
             <transform position="0,8,8" />
-            <model>*sphere|debug_3_9|1</model>
+            <model>*sphere|debug//r4_m9|1</model>
         </entity>
         <entity>
             <transform position="0,8,10" />
-            <model>*sphere|debug_3_10|1</model>
+            <model>*sphere|debug//r4_m10|1</model>
         </entity>
         <entity>
             <transform position="0,10,-10" />
-            <model>*sphere|debug_4_0|1</model>
+            <model>*sphere|debug//r5_m0|1</model>
         </entity>
         <entity>
             <transform position="0,10,-8" />
-            <model>*sphere|debug_4_1|1</model>
+            <model>*sphere|debug//r5_m1|1</model>
         </entity>
         <entity>
             <transform position="0,10,-6" />
-            <model>*sphere|debug_4_2|1</model>
+            <model>*sphere|debug//r5_m2|1</model>
         </entity>
         <entity>
             <transform position="0,10,-4" />
-            <model>*sphere|debug_4_3|1</model>
+            <model>*sphere|debug//r5_m3|1</model>
         </entity>
         <entity>
             <transform position="0,10,-2" />
-            <model>*sphere|debug_4_4|1</model>
+            <model>*sphere|debug//r5_m4|1</model>
         </entity>
         <entity>
             <transform position="0,10,0" />
-            <model>*sphere|debug_4_5|1</model>
+            <model>*sphere|debug//r5_m5|1</model>
         </entity>
         <entity>
             <transform position="0,10,2" />
-            <model>*sphere|debug_4_6|1</model>
+            <model>*sphere|debug//r5_m6|1</model>
         </entity>
         <entity>
             <transform position="0,10,4" />
-            <model>*sphere|debug_4_7|1</model>
+            <model>*sphere|debug//r5_m7|1</model>
         </entity>
         <entity>
             <transform position="0,10,6" />
-            <model>*sphere|debug_4_8|1</model>
+            <model>*sphere|debug//r5_m8|1</model>
         </entity>
         <entity>
             <transform position="0,10,8" />
-            <model>*sphere|debug_4_9|1</model>
+            <model>*sphere|debug//r5_m9|1</model>
         </entity>
         <entity>
             <transform position="0,10,10" />
-            <model>*sphere|debug_4_10|1</model>
+            <model>*sphere|debug//r5_m10|1</model>
         </entity>
         <entity>
             <transform position="0,12,-10" />
-            <model>*sphere|debug_5_0|1</model>
+            <model>*sphere|debug//r6_m0|1</model>
         </entity>
         <entity>
             <transform position="0,12,-8" />
-            <model>*sphere|debug_5_1|1</model>
+            <model>*sphere|debug//r6_m1|1</model>
         </entity>
         <entity>
             <transform position="0,12,-6" />
-            <model>*sphere|debug_5_2|1</model>
+            <model>*sphere|debug//r6_m2|1</model>
         </entity>
         <entity>
             <transform position="0,12,-4" />
-            <model>*sphere|debug_5_3|1</model>
+            <model>*sphere|debug//r6_m3|1</model>
         </entity>
         <entity>
             <transform position="0,12,-2" />
-            <model>*sphere|debug_5_4|1</model>
+            <model>*sphere|debug//r6_m4|1</model>
         </entity>
         <entity>
             <transform position="0,12,0" />
-            <model>*sphere|debug_5_5|1</model>
+            <model>*sphere|debug//r6_m5|1</model>
         </entity>
         <entity>
             <transform position="0,12,2" />
-            <model>*sphere|debug_5_6|1</model>
+            <model>*sphere|debug//r6_m6|1</model>
         </entity>
         <entity>
             <transform position="0,12,4" />
-            <model>*sphere|debug_5_7|1</model>
+            <model>*sphere|debug//r6_m7|1</model>
         </entity>
         <entity>
             <transform position="0,12,6" />
-            <model>*sphere|debug_5_8|1</model>
+            <model>*sphere|debug//r6_m8|1</model>
         </entity>
         <entity>
             <transform position="0,12,8" />
-            <model>*sphere|debug_5_9|1</model>
+            <model>*sphere|debug//r6_m9|1</model>
         </entity>
         <entity>
             <transform position="0,12,10" />
-            <model>*sphere|debug_5_10|1</model>
+            <model>*sphere|debug//r6_m10|1</model>
         </entity>
         <entity>
             <transform position="0,14,-10" />
-            <model>*sphere|debug_6_0|1</model>
+            <model>*sphere|debug//r7_m0|1</model>
         </entity>
         <entity>
             <transform position="0,14,-8" />
-            <model>*sphere|debug_6_1|1</model>
+            <model>*sphere|debug//r7_m1|1</model>
         </entity>
         <entity>
             <transform position="0,14,-6" />
-            <model>*sphere|debug_6_2|1</model>
+            <model>*sphere|debug//r7_m2|1</model>
         </entity>
         <entity>
             <transform position="0,14,-4" />
-            <model>*sphere|debug_6_3|1</model>
+            <model>*sphere|debug//r7_m3|1</model>
         </entity>
         <entity>
             <transform position="0,14,-2" />
-            <model>*sphere|debug_6_4|1</model>
+            <model>*sphere|debug//r7_m4|1</model>
         </entity>
         <entity>
             <transform position="0,14,0" />
-            <model>*sphere|debug_6_5|1</model>
+            <model>*sphere|debug//r7_m5|1</model>
         </entity>
         <entity>
             <transform position="0,14,2" />
-            <model>*sphere|debug_6_6|1</model>
+            <model>*sphere|debug//r7_m6|1</model>
         </entity>
         <entity>
             <transform position="0,14,4" />
-            <model>*sphere|debug_6_7|1</model>
+            <model>*sphere|debug//r7_m7|1</model>
         </entity>
         <entity>
             <transform position="0,14,6" />
-            <model>*sphere|debug_6_8|1</model>
+            <model>*sphere|debug//r7_m8|1</model>
         </entity>
         <entity>
             <transform position="0,14,8" />
-            <model>*sphere|debug_6_9|1</model>
+            <model>*sphere|debug//r7_m9|1</model>
         </entity>
         <entity>
             <transform position="0,14,10" />
-            <model>*sphere|debug_6_10|1</model>
+            <model>*sphere|debug//r7_m10|1</model>
         </entity>
         <entity>
             <transform position="0,16,-10" />
-            <model>*sphere|debug_7_0|1</model>
+            <model>*sphere|debug//r8_m0|1</model>
         </entity>
         <entity>
             <transform position="0,16,-8" />
-            <model>*sphere|debug_7_1|1</model>
+            <model>*sphere|debug//r8_m1|1</model>
         </entity>
         <entity>
             <transform position="0,16,-6" />
-            <model>*sphere|debug_7_2|1</model>
+            <model>*sphere|debug//r8_m2|1</model>
         </entity>
         <entity>
             <transform position="0,16,-4" />
-            <model>*sphere|debug_7_3|1</model>
+            <model>*sphere|debug//r8_m3|1</model>
         </entity>
         <entity>
             <transform position="0,16,-2" />
-            <model>*sphere|debug_7_4|1</model>
+            <model>*sphere|debug//r8_m4|1</model>
         </entity>
         <entity>
             <transform position="0,16,0" />
-            <model>*sphere|debug_7_5|1</model>
+            <model>*sphere|debug//r8_m5|1</model>
         </entity>
         <entity>
             <transform position="0,16,2" />
-            <model>*sphere|debug_7_6|1</model>
+            <model>*sphere|debug//r8_m6|1</model>
         </entity>
         <entity>
             <transform position="0,16,4" />
-            <model>*sphere|debug_7_7|1</model>
+            <model>*sphere|debug//r8_m7|1</model>
         </entity>
         <entity>
             <transform position="0,16,6" />
-            <model>*sphere|debug_7_8|1</model>
+            <model>*sphere|debug//r8_m8|1</model>
         </entity>
         <entity>
             <transform position="0,16,8" />
-            <model>*sphere|debug_7_9|1</model>
+            <model>*sphere|debug//r8_m9|1</model>
         </entity>
         <entity>
             <transform position="0,16,10" />
-            <model>*sphere|debug_7_10|1</model>
+            <model>*sphere|debug//r8_m10|1</model>
         </entity>
         <entity>
             <transform position="0,18,-10" />
-            <model>*sphere|debug_8_0|1</model>
+            <model>*sphere|debug//r9_m0|1</model>
         </entity>
         <entity>
             <transform position="0,18,-8" />
-            <model>*sphere|debug_8_1|1</model>
+            <model>*sphere|debug//r9_m1|1</model>
         </entity>
         <entity>
             <transform position="0,18,-6" />
-            <model>*sphere|debug_8_2|1</model>
+            <model>*sphere|debug//r9_m2|1</model>
         </entity>
         <entity>
             <transform position="0,18,-4" />
-            <model>*sphere|debug_8_3|1</model>
+            <model>*sphere|debug//r9_m3|1</model>
         </entity>
         <entity>
             <transform position="0,18,-2" />
-            <model>*sphere|debug_8_4|1</model>
+            <model>*sphere|debug//r9_m4|1</model>
         </entity>
         <entity>
             <transform position="0,18,0" />
-            <model>*sphere|debug_8_5|1</model>
+            <model>*sphere|debug//r9_m5|1</model>
         </entity>
         <entity>
             <transform position="0,18,2" />
-            <model>*sphere|debug_8_6|1</model>
+            <model>*sphere|debug//r9_m6|1</model>
         </entity>
         <entity>
             <transform position="0,18,4" />
-            <model>*sphere|debug_8_7|1</model>
+            <model>*sphere|debug//r9_m7|1</model>
         </entity>
         <entity>
             <transform position="0,18,6" />
-            <model>*sphere|debug_8_8|1</model>
+            <model>*sphere|debug//r9_m8|1</model>
         </entity>
         <entity>
             <transform position="0,18,8" />
-            <model>*sphere|debug_8_9|1</model>
+            <model>*sphere|debug//r9_m9|1</model>
         </entity>
         <entity>
             <transform position="0,18,10" />
-            <model>*sphere|debug_8_10|1</model>
+            <model>*sphere|debug//r9_m10|1</model>
         </entity>
         <entity>
             <transform position="0,20,-10" />
-            <model>*sphere|debug_9_0|1</model>
+            <model>*sphere|debug//r10_m0|1</model>
         </entity>
         <entity>
             <transform position="0,20,-8" />
-            <model>*sphere|debug_9_1|1</model>
+            <model>*sphere|debug//r10_m1|1</model>
         </entity>
         <entity>
             <transform position="0,20,-6" />
-            <model>*sphere|debug_9_2|1</model>
+            <model>*sphere|debug//r10_m2|1</model>
         </entity>
         <entity>
             <transform position="0,20,-4" />
-            <model>*sphere|debug_9_3|1</model>
+            <model>*sphere|debug//r10_m3|1</model>
         </entity>
         <entity>
             <transform position="0,20,-2" />
-            <model>*sphere|debug_9_4|1</model>
+            <model>*sphere|debug//r10_m4|1</model>
         </entity>
         <entity>
             <transform position="0,20,0" />
-            <model>*sphere|debug_9_5|1</model>
+            <model>*sphere|debug//r10_m5|1</model>
         </entity>
         <entity>
             <transform position="0,20,2" />
-            <model>*sphere|debug_9_6|1</model>
+            <model>*sphere|debug//r10_m6|1</model>
         </entity>
         <entity>
             <transform position="0,20,4" />
-            <model>*sphere|debug_9_7|1</model>
+            <model>*sphere|debug//r10_m7|1</model>
         </entity>
         <entity>
             <transform position="0,20,6" />
-            <model>*sphere|debug_9_8|1</model>
+            <model>*sphere|debug//r10_m8|1</model>
         </entity>
         <entity>
             <transform position="0,20,8" />
-            <model>*sphere|debug_9_9|1</model>
+            <model>*sphere|debug//r10_m9|1</model>
         </entity>
         <entity>
             <transform position="0,20,10" />
-            <model>*sphere|debug_9_10|1</model>
+            <model>*sphere|debug//r10_m10|1</model>
         </entity>
-        <entity>
-            <transform position="0,22,-10" />
-            <model>*sphere|debug_10_0|1</model>
-        </entity>
-        <entity>
-            <transform position="0,22,-8" />
-            <model>*sphere|debug_10_1|1</model>
-        </entity>
-        <entity>
-            <transform position="0,22,-6" />
-            <model>*sphere|debug_10_2|1</model>
-        </entity>
-        <entity>
-            <transform position="0,22,-4" />
-            <model>*sphere|debug_10_3|1</model>
-        </entity>
-        <entity>
-            <transform position="0,22,-2" />
-            <model>*sphere|debug_10_4|1</model>
-        </entity>
-        <entity>
-            <transform position="0,22,0" />
-            <model>*sphere|debug_10_5|1</model>
-        </entity>
-        <entity>
-            <transform position="0,22,2" />
-            <model>*sphere|debug_10_6|1</model>
-        </entity>
-        <entity>
-            <transform position="0,22,4" />
-            <model>*sphere|debug_10_7|1</model>
-        </entity>
-        <entity>
-            <transform position="0,22,6" />
-            <model>*sphere|debug_10_8|1</model>
-        </entity>
-        <entity>
-            <transform position="0,22,8" />
-            <model>*sphere|debug_10_9|1</model>
-        </entity>
-        <entity>
-            <transform position="0,22,10" />
-            <model>*sphere|debug_10_10|1</model>
-        </entity>
-
+    
     </population>
 </world>

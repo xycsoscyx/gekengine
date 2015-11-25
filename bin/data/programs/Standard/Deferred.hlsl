@@ -22,7 +22,7 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
     normal = normalize(mul(normal, coTangentFrame));
 
     OutputPixel outputPixel;
-    outputPixel.albedoBuffer = albedo.xyz;
+    outputPixel.albedoBuffer = pow(albedo.xyz, 1 / 2.2);
     outputPixel.materialBuffer.x = Resources::roughness.Sample(Global::linearSampler, inputPixel.texCoord);
     outputPixel.materialBuffer.y = Resources::metalness.Sample(Global::linearSampler, inputPixel.texCoord);
     outputPixel.normalBuffer = encodeNormal(viewNormal);

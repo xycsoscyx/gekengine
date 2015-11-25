@@ -189,6 +189,14 @@ namespace Gek
             };
         }; // TextureFlags
 
+        namespace TextureLoadFlags
+        {
+            enum
+            {
+                sRGB = 1 << 0,
+            };
+        }; // TextureLoadFlags
+
         namespace ClearMask
         {
             enum
