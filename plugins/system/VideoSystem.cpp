@@ -2287,9 +2287,10 @@ namespace Gek
                     gekCheckResult(resultValue = d3dDevice->CreateVertexShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader));
                     if (d3dShader)
                     {
+                        UINT32 elementLayoutCount = elementLayout.size();
                         ElementType lastElementType = Gek::Video::ElementType::Vertex;
-                        std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList(elementLayout.size());
-                        for (UINT32 inputElement = 0; inputElement < elementLayout.size(); ++inputElement)
+                        std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList(elementLayoutCount);
+                        for (UINT32 inputElement = 0; inputElement < elementLayoutCount; ++inputElement)
                         {
                             if (lastElementType != elementLayout[inputElement].slotClass)
                             {
@@ -2655,7 +2656,7 @@ namespace Gek
                 HRESULT resultValue = E_FAIL;
 
                 std::vector<UINT8> fileData;
-                gekCheckResult(resultValue = Gek::FileSystem::load(fileName, fileData));
+                resultValue = Gek::FileSystem::load(fileName, fileData);
                 if(SUCCEEDED(resultValue))
                 {
                     ::DirectX::ScratchImage scratchImage;

@@ -173,6 +173,8 @@ namespace Gek
                         UINT32 depthClearFlags;
                         float depthClearValue;
                         UINT32 stencilClearValue;
+                        bool clearRenderTargets;
+                        Math::Float4 renderTargetsClearColor;
                         CComPtr<IUnknown> depthStates;
                         CComPtr<IUnknown> renderStates;
                         Math::Float4 blendFactor;
@@ -418,18 +420,26 @@ namespace Gek
                         }
                     }
 
+                    std::vector<CStringW> loadChildList(Gek::Xml::Node &xmlChildNode)
+                    {
+                        std::vector<CStringW> childList;
+                        Gek::Xml::Node xmlResourceNode = xmlChildNode.firstChildElement();
+                        while (xmlResourceNode)
+                        {
+                            childList.push_back(xmlResourceNode.getType());
+                            xmlResourceNode = xmlResourceNode.nextSiblingElement();
+                        };
+
+                        return childList;
+                    }
+
                     std::vector<CStringW> loadChildList(Gek::Xml::Node &xmlProgramNode, LPCWSTR name)
                     {
                         std::vector<CStringW> childList;
                         if (xmlProgramNode.hasChildElement(name))
                         {
-                            Gek::Xml::Node xmlResourcesNode = xmlProgramNode.firstChildElement(name);
-                            Gek::Xml::Node xmlResourceNode = xmlResourcesNode.firstChildElement();
-                            while (xmlResourceNode)
-                            {
-                                childList.push_back(xmlResourceNode.getType());
-                                xmlResourceNode = xmlResourceNode.nextSiblingElement();
-                            };
+                            Gek::Xml::Node xmlChildNode = xmlProgramNode.firstChildElement(name);
+                            childList = loadChildList(xmlChildNode);
                         }
 
                         return childList;
@@ -722,7 +732,18 @@ namespace Gek
 
                                         pass.lighting = String::to<bool>(xmlPassNode.getAttribute(L"lighting"));
 
-                                        pass.renderTargetList = loadChildList(xmlPassNode, L"targets");
+                                        if (xmlPassNode.hasChildElement(L"targets"))
+                                        {
+                                            Gek::Xml::Node xmlTargetsNode = xmlPassNode.firstChildElement(L"targets");
+                                            if (xmlTargetsNode.hasAttribute(L"clear"))
+                                            {
+                                                pass.clearRenderTargets = true;
+                                                pass.renderTargetsClearColor = String::to<Math::Float4>(xmlTargetsNode.getAttribute(L"clear"));
+                                            }
+
+                                            pass.renderTargetList = loadChildList(xmlTargetsNode);
+                                        }
+
                                         if (SUCCEEDED(resultValue))
                                         {
                                             resultValue = loadDepthStates(pass, xmlPassNode.firstChildElement(L"depthstates"));
@@ -823,7 +844,8 @@ namespace Gek
                                             }
 
                                             CStringA outputData;
-                                            for (UINT32 index = 0; index < pass.renderTargetList.size(); index++)
+                                            UINT32 renderTargetCount = pass.renderTargetList.size();
+                                            for (UINT32 index = 0; index < renderTargetCount; index++)
                                             {
                                                 CStringW resource(pass.renderTargetList[index]);
                                                 auto resourceIterator = resourceList.find(resource);
@@ -916,7 +938,8 @@ namespace Gek
                                                 if (pass.mode == PassMode::Compute)
                                                 {
                                                     CStringA unorderedAccessData;
-                                                    for (UINT32 index = 0; index < pass.unorderedAccessList.size(); index++)
+                                                    UINT32 unorderedAccessListCount = pass.unorderedAccessList.size();
+                                                    for (UINT32 index = 0; index < unorderedAccessListCount; index++)
                                                     {
                                                         CStringW unorderedAccess(pass.unorderedAccessList[index]);
                                                         auto resourceIterator = resourceList.find(unorderedAccess);
@@ -942,7 +965,8 @@ namespace Gek
                                                 else
                                                 {
                                                     CStringA unorderedAccessData;
-                                                    for (UINT32 index = 0; index < pass.unorderedAccessList.size(); index++)
+                                                    UINT32 unorderedAccessListCount = pass.unorderedAccessList.size();
+                                                    for (UINT32 index = 0; index < unorderedAccessListCount; index++)
                                                     {
                                                         CStringW unorderedAccess(pass.unorderedAccessList[index]);
                                                         auto resourceIterator = resourceList.find(unorderedAccess);
@@ -1175,7 +1199,7 @@ namespace Gek
                     STDMETHODIMP_(void) draw(Video::Context::Interface *context,
                         std::function<void(LPCVOID passData, bool lighting)> drawForward, 
                         std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
-                        std::function<void(LPCVOID passData, bool lighting)> drawCompute)
+                        std::function<void(LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> drawCompute)
                     {
                         for (auto &pass : passList)
                         {
@@ -1186,6 +1210,10 @@ namespace Gek
                             if (pass.renderTargetList.empty())
                             {
                                 video->setDefaultTargets(context, depthBuffer);
+                                if (pass.clearRenderTargets)
+                                {
+                                    video->clearDefaultRenderTarget(pass.renderTargetsClearColor);
+                                }
                             }
                             else
                             {
@@ -1198,6 +1226,10 @@ namespace Gek
                                     if (renderTargetIterator != renderTargetMap.end())
                                     {
                                         renderTarget = (*renderTargetIterator).second;
+                                        if (renderTarget && pass.clearRenderTargets)
+                                        {
+                                            context->clearRenderTarget(renderTarget, pass.renderTargetsClearColor);
+                                        }
                                     }
 
                                     viewPortList.emplace_back(Video::ViewPort(Math::Float2(0.0f, 0.0f), Math::Float2(renderTarget->getWidth(), renderTarget->getHeight()), 0.0f, 1.0f));
@@ -1251,8 +1283,7 @@ namespace Gek
                                 break;
 
                             case PassMode::Compute:
-                                drawCompute(&pass, pass.lighting);
-                                context->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
+                                drawCompute(&pass, pass.lighting, pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
                                 break;
                             };
 

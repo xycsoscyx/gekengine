@@ -89,7 +89,7 @@ namespace Gek
     {
         namespace Render
         {
-            static const UINT32 MaxLightCount = 2048;
+            static const UINT32 MaxLightCount = 500;
 
             class System : public Context::User::Mixin
                 , public Observable::Mixin
@@ -207,7 +207,6 @@ namespace Gek
                 CComPtr<Video::Buffer::Interface> cameraConstantBuffer;
                 CComPtr<Video::Buffer::Interface> lightingConstantBuffer;
                 CComPtr<Video::Buffer::Interface> lightingBuffer;
-                CComPtr<Video::Texture::Interface> lightingAmbientMap;
 
                 CComPtr<IUnknown> deferredVertexProgram;
                 CComPtr<Video::Buffer::Interface> deferredVertexBuffer;
@@ -302,11 +301,6 @@ namespace Gek
                         samplerStates.addressModeU = Video::AddressMode::Wrap;
                         samplerStates.addressModeV = Video::AddressMode::Wrap;
                         resultValue = video->createSamplerStates(&linearSamplerStates, samplerStates);
-                    }
-
-                    if (SUCCEEDED(resultValue))
-                    {
-                        resultValue = video->loadTexture(&lightingAmbientMap, L"%root%\\data\\textures\\ambient\\grass.dds", 0);
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -754,11 +748,6 @@ namespace Gek
                 {
                     REQUIRE_RETURN(name, nullptr);
 
-                    if (_wcsicmp(name, L"ambientLightMap") == 0)
-                    {
-                        return lightingAmbientMap;
-                    }
-
                     return nullptr;
                 }
 
@@ -870,12 +859,12 @@ namespace Gek
                         LPVOID lightingData = nullptr;
                         if (SUCCEEDED(video->mapBuffer(lightingBuffer, &lightingData)))
                         {
-                            UINT32 lightCount = std::min(visibleLightList.size(), size_t(MaxLightCount));
-                            memcpy(lightingData, visibleLightList.data(), (sizeof(Light) * lightCount));
+                            UINT32 passLightCount = std::min(visibleLightList.size(), MaxLightCount);
+                            memcpy(lightingData, visibleLightList.data(), (sizeof(Light) * passLightCount));
                             video->unmapBuffer(lightingBuffer);
 
                             LightingConstantData lightingConstantData;
-                            lightingConstantData.count = lightCount;
+                            lightingConstantData.count = passLightCount;
                             video->updateBuffer(lightingConstantBuffer, &lightingConstantData);
                         }
 
@@ -955,13 +944,15 @@ namespace Gek
                                 defaultContext->vertexSystem()->setProgram(deferredVertexProgram);
                                 defaultContext->drawPrimitive(6, 0);
                             },
-                                [&](LPCVOID passData, bool lighting) -> void // drawCompute
+                                [&](LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth) -> void // drawCompute
                             {
                                 if (lighting)
                                 {
                                     defaultContext->computeSystem()->setConstantBuffer(lightingConstantBuffer, 2);
                                     defaultContext->computeSystem()->setResource(lightingBuffer, 0);
                                 }
+
+                                defaultContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
                             });
                         }
                     });

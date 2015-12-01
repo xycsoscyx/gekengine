@@ -2,19 +2,23 @@ echo off
 For /R "data/textures" %%# in (*.png,*.tga,*.jpg) Do (
     Echo %%~nx# | FIND /I "albedo" 1>NUL && (
         del "%%~dpn#.dds"
-        nvdxt -file "%%~#" -output "%%~dpn#.dds" -quality_production -rescale lo -RescaleSinc -dxt5 -Sinc
-    )
-    Echo %%~nx# | FIND /I "metalness" 1>NUL && (
-        del "%%~dpn#.dds"
-        nvdxt -file "%%~#" -output "%%~dpn#.dds" -quality_production -rescale lo -RescaleSinc -a8 -Sinc
+        echo %%~#
+        nvcompress -fast -color -alpha -bc7 -dds10 "%%~#" "%%~dpn#.dds"
     )
     Echo %%~nx# | FIND /I "roughness" 1>NUL && (
         del "%%~dpn#.dds"
-        nvdxt -file "%%~#" -output "%%~dpn#.dds" -quality_production -rescale lo -RescaleSinc -a8 -Sinc
+        echo %%~#
+        nvcompress -fast -bc4 -dds10 "%%~#" "%%~dpn#.dds"
+    )
+    Echo %%~nx# | FIND /I "metalness" 1>NUL && (
+        del "%%~dpn#.dds"
+        echo %%~#
+        nvcompress -fast -bc4 -dds10 "%%~#" "%%~dpn#.dds"
     )
     Echo %%~nx# | FIND /I "normal" 1>NUL && (
         del "%%~dpn#.dds"
-        nvdxt -file "%%~#" -output "%%~dpn#.dds" -quality_production -rescale lo -RescaleSinc -3Dc -Sinc
+        echo %%~#
+        nvcompress -fast -normal -bc5 -dds10 "%%~#" "%%~dpn#.dds"
     )
 )
 

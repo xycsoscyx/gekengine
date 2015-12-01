@@ -26,7 +26,7 @@ namespace Gek
                     STDMETHOD_(void, draw)                      (THIS_ Video::Context::Interface *context,
                         std::function<void(LPCVOID passData, bool lighting)> drawForward,
                         std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
-                        std::function<void(LPCVOID passData, bool lighting)> drawCompute) PURE;
+                        std::function<void(LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> drawCompute) PURE;
                 };
             }; // namespace Shader
         }; // namespace Render

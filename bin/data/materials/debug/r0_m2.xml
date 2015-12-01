@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<material>
+    <shader>standard</shader>
+    <maps>
+        <albedo>schulz/old_tiles/old_tiles_a</albedo>
+        <normal>schulz/old_tiles/old_tiles_n</normal>
+        <roughness>*color:0.000000</roughness>
+        <metalness>*color:0.200000</metalness>
+    </maps>
+</material>

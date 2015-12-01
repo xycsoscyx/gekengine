@@ -171,7 +171,8 @@ namespace Gek
 
         void subdivide()
         {
-            for (size_t i = 0; i < triangles.size(); ++i)
+            size_t trianglesCount = triangles.size();
+            for (size_t i = 0; i < trianglesCount; ++i)
             {
                 subdivideTriangle(triangles[i]);
             }
@@ -327,8 +328,9 @@ namespace Gek
             inscriptionRadiusMultiplier = computeInscriptionRadiusMultiplier();
 
             // now we create the array of indices
-            indices.reserve(triangles.size() * 3);
-            for (size_t i = 0; i < triangles.size(); ++i)
+            size_t trianglesCount = triangles.size();
+            indices.reserve(trianglesCount * 3);
+            for (size_t i = 0; i < trianglesCount; ++i)
             {
                 indices.push_back((UINT16)triangles[i].vertices[0]);
                 indices.push_back((UINT16)triangles[i].vertices[1]);
