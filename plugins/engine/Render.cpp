@@ -679,7 +679,7 @@ namespace Gek
                                 returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s", fileName), flags);
                                 if (FAILED(returnValue))
                                 {
-                                    returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".dds"), flags);
+                                    //returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".dds"), flags);
                                     if (FAILED(returnValue))
                                     {
                                         returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".tga"), flags);

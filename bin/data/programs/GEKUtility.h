@@ -1,3 +1,8 @@
+float sqr(float x)
+{
+    return x*x;
+}
+
 float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
 {
     normal = normalize(normal);
@@ -19,7 +24,7 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     return float3x3(normalize(tangent * reciprocal), normalize(-biTangent * reciprocal), normal);
 }
 
-#define _ENCODE_SPHEREMAP 1
+#define _ENCODE_OCTAHEDRON 1
 
 #if _ENCODE_SPHEREMAP
     float2 encodeNormal(float3 normal)

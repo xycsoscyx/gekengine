@@ -3,13 +3,13 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-#include "BRDF.UE4.h"
+#include "BRDF.Custom.h"
 
 float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
     float3 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float2 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
-    float materialRoughness = materialInfo.x * 0.8f + 0.1f;
+    float materialRoughness = materialInfo.x;
     float materialMetalness = materialInfo.y;
 
     float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
@@ -55,7 +55,7 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
         {
             float NdotL = dot(surfaceNormal, lightDirection);
             float3 lightContribution = getBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL);
-            surfaceColor += (NdotL * lightContribution * attenuation * Lighting::list[lightIndex].color);
+            surfaceColor += (saturate(NdotL) * lightContribution * attenuation * Lighting::list[lightIndex].color);
         }
     }
 

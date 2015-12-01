@@ -12,11 +12,6 @@ static const float clearcoatGloss = 0;
 static const float3 X = 0;
 static const float3 Y = 0;
 
-float sqr(float x)
-{
-    return x*x;
-}
-
 float SchlickFresnel(float u)
 {
     float m = clamp(1 - u, 0, 1);
@@ -24,19 +19,19 @@ float SchlickFresnel(float u)
     return m2*m2*m; // pow(m,5)
 }
 
-float GTR1(float NdotH, float a)
+float GTR1(float NdotH, float alpha)
 {
-    if (a >= 1) return 1 / Math::Pi;
-    float a2 = a*a;
-    float t = 1 + (a2 - 1)*NdotH*NdotH;
-    return (a2 - 1) / (Math::Pi*log(a2)*t);
+    if (alpha >= 1) return 1 / Math::Pi;
+    float alphaSquared = alpha*alpha;
+    float t = 1 + (alphaSquared - 1)*NdotH*NdotH;
+    return (alphaSquared - 1) / (Math::Pi*log(alphaSquared)*t);
 }
 
-float GTR2(float NdotH, float a)
+float GTR2(float NdotH, float alpha)
 {
-    float a2 = a*a;
-    float t = 1 + (a2 - 1)*NdotH*NdotH;
-    return a2 / (Math::Pi * t*t);
+    float alphaSquared = alpha*alpha;
+    float t = 1 + (alphaSquared - 1)*NdotH*NdotH;
+    return alphaSquared / (Math::Pi * t*t);
 }
 
 float GTR2_aniso(float NdotH, float HdotX, float HdotY, float ax, float ay)
@@ -44,28 +39,26 @@ float GTR2_aniso(float NdotH, float HdotX, float HdotY, float ax, float ay)
     return 1 / (Math::Pi * ax*ay * sqr(sqr(HdotX / ax) + sqr(HdotY / ay) + NdotH*NdotH));
 }
 
-float smithG_GGX(float Ndotv, float alphaG)
+float smithG_GGX(float angle, float alpha)
 {
-    float a = alphaG*alphaG;
-    float b = Ndotv*Ndotv;
-    return 1 / (Ndotv + sqrt(a + b - a*b));
-}
-
-float3 mon2lin(float3 x)
-{
-    return float3(pow(x[0], 2.2), pow(x[1], 2.2), pow(x[2], 2.2));
+    float alphaSquared = alpha*alpha;
+    float angleSquared = angle*angle;
+    return 1 / (angle + sqrt(alphaSquared + angleSquared - alphaSquared*angleSquared));
 }
 
 float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
 {
+    materialRoughness = (materialRoughness * 0.9f + 0.1f);
+
     float NdotV = dot(surfaceNormal, viewDirection);
 
     float3 halfAngle = normalize(lightDirection + viewDirection);
     float NdotH = dot(surfaceNormal, halfAngle);
     float LdotH = dot(lightDirection, halfAngle);
 
-    float3 Cdlin = mon2lin(materialAlbedo);
-    float Cdlum = .3*Cdlin[0] + .6*Cdlin[1] + .1*Cdlin[2]; // luminance approx.
+    float3 Cdlin = materialAlbedo;
+    static const float3 luminance = float3(0.299f, 0.587f, 0.114f);
+    float Cdlum = dot(Cdlin, luminance);
 
     float3 Ctint = Cdlum > 0 ? Cdlin / Cdlum : 1; // normalize lum. to isolate hue+sat
     float3 Cspec0 = lerp(specular*.08*lerp(1, Ctint, specularTint), Cdlin, materialMetalness);
@@ -84,6 +77,8 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
     float Fss = lerp(1, Fss90, FL) * lerp(1, Fss90, FV);
     float ss = 1.25 * (Fss * (1 / (NdotL + NdotV) - .5) + .5);
 
+#define _GTR2 1
+
     // specular
 #if _ANISOTROPIC
     float aspect = sqrt(1 - anisotropic*.9);
@@ -95,10 +90,12 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
 #else
     float Ds = GTR1(NdotH, sqr(materialRoughness));
 #endif
+
     float FH = SchlickFresnel(LdotH);
     float3 Fs = lerp(Cspec0, 1, FH);
-    float roughg = sqr(materialRoughness*.5 + .5);
-    float Gs = smithG_GGX(NdotL, roughg) * smithG_GGX(NdotV, roughg);
+
+    float alpha = sqr(materialRoughness);
+    float Gs = smithG_GGX(NdotL, alpha) * smithG_GGX(NdotV, alpha);
 
     // sheen
     float3 Fsheen = FH * sheen * Csheen;
