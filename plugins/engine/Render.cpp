@@ -132,6 +132,8 @@ namespace Gek
                 struct DrawCommand
                 {
                     DrawType drawType;
+                    Plugin::Interface *plugin;
+                    Material::Interface *material;
                     std::vector<Video::Buffer::Interface *> vertexBufferList;
                     std::vector<UINT32> offsetList;
                     UINT32 instanceCount;
@@ -142,8 +144,10 @@ namespace Gek
                     UINT32 indexCount;
                     UINT32 firstIndex;
 
-                    DrawCommand(const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 vertexCount, UINT32 firstVertex)
+                    DrawCommand(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 vertexCount, UINT32 firstVertex)
                         : drawType(DrawType::DrawPrimitive)
+                        , plugin(dynamic_cast<Plugin::Interface *>(plugin))
+                        , material(dynamic_cast<Material::Interface *>(material))
                         , vertexBufferList(vertexBufferList)
                         , offsetList(vertexBufferList.size(), 0)
                         , vertexCount(vertexCount)
@@ -155,8 +159,10 @@ namespace Gek
                     {
                     }
 
-                    DrawCommand(const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
+                    DrawCommand(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                         : drawType(DrawType::DrawIndexedPrimitive)
+                        , plugin(dynamic_cast<Plugin::Interface *>(plugin))
+                        , material(dynamic_cast<Material::Interface *>(material))
                         , vertexBufferList(vertexBufferList)
                         , offsetList(vertexBufferList.size(), 0)
                         , firstVertex(firstVertex)
@@ -169,8 +175,10 @@ namespace Gek
                     {
                     }
 
-                    DrawCommand(const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
+                    DrawCommand(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
                         : drawType(DrawType::DrawInstancedPrimitive)
+                        , plugin(dynamic_cast<Plugin::Interface *>(plugin))
+                        , material(dynamic_cast<Material::Interface *>(material))
                         , vertexBufferList(vertexBufferList)
                         , offsetList(vertexBufferList.size(), 0)
                         , instanceCount(instanceCount)
@@ -182,8 +190,10 @@ namespace Gek
                     {
                     }
 
-                    DrawCommand(const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
+                    DrawCommand(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
                         : drawType(DrawType::DrawInstancedIndexedPrimitive)
+                        , plugin(dynamic_cast<Plugin::Interface *>(plugin))
+                        , material(dynamic_cast<Material::Interface *>(material))
                         , vertexBufferList(vertexBufferList)
                         , offsetList(vertexBufferList.size(), 0)
                         , instanceCount(instanceCount)
@@ -213,10 +223,7 @@ namespace Gek
                 CComPtr<Video::Buffer::Interface> deferredIndexBuffer;
 
                 concurrency::concurrent_unordered_map<std::size_t, CComPtr<IUnknown>> resourceMap;
-                concurrency::concurrent_unordered_map<Shader::Interface *, // shader
-                    concurrency::concurrent_unordered_map<Plugin::Interface *, // plugin
-                    concurrency::concurrent_unordered_map<Material::Interface *, // material
-                    concurrency::concurrent_vector<DrawCommand>>>> drawQueue; // command
+                concurrency::concurrent_unordered_map<Shader::Interface *, concurrency::concurrent_vector<DrawCommand>> drawQueue;
 
             public:
                 System(void)
@@ -756,7 +763,7 @@ namespace Gek
                     REQUIRE_VOID_RETURN(material);
                     REQUIRE_VOID_RETURN(plugin);
 
-                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, vertexCount, firstVertex));
+                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()].push_back(DrawCommand(plugin, material, vertexBufferList, vertexCount, firstVertex));
                 }
 
                 STDMETHODIMP_(void) drawIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
@@ -764,7 +771,7 @@ namespace Gek
                     REQUIRE_VOID_RETURN(material);
                     REQUIRE_VOID_RETURN(plugin);
 
-                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, firstVertex, indexBuffer, indexCount, firstIndex));
+                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()].push_back(DrawCommand(plugin, material, vertexBufferList, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
                 STDMETHODIMP_(void) drawInstancedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
@@ -772,7 +779,7 @@ namespace Gek
                     REQUIRE_VOID_RETURN(material);
                     REQUIRE_VOID_RETURN(plugin);
 
-                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, vertexCount, firstVertex));
+                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()].push_back(DrawCommand(plugin, material, vertexBufferList, instanceCount, firstInstance, vertexCount, firstVertex));
                 }
 
                 STDMETHODIMP_(void) drawInstancedIndexedPrimitive(IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex)
@@ -780,7 +787,7 @@ namespace Gek
                     REQUIRE_VOID_RETURN(material);
                     REQUIRE_VOID_RETURN(plugin);
 
-                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()][dynamic_cast<Plugin::Interface *>(plugin)][dynamic_cast<Material::Interface *>(material)].push_back(DrawCommand(vertexBufferList, instanceCount, firstInstance, firstVertex, indexBuffer, indexCount, firstIndex));
+                    drawQueue[dynamic_cast<Material::Interface *>(material)->getShader()].push_back(DrawCommand(plugin, material, vertexBufferList, instanceCount, firstInstance, firstVertex, indexBuffer, indexCount, firstIndex));
                 }
 
                 // Engine::Population::Observer
@@ -868,7 +875,6 @@ namespace Gek
                             video->updateBuffer(lightingConstantBuffer, &lightingConstantData);
                         }
 
-                        drawQueue.clear();
                         Observable::Mixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
 
                         defaultContext->pixelSystem()->setSamplerStates(pointSamplerStates, 0);
@@ -890,46 +896,30 @@ namespace Gek
                                     defaultContext->pixelSystem()->setResource(lightingBuffer, 0);
                                 }
 
-                                for (auto &pluginPair : shaderPair.second)
+                                for (auto &drawCommand : shaderPair.second)
                                 {
-                                    if (pluginPair.first == nullptr)
+                                    drawCommand.plugin->enable(defaultContext);
+                                    drawCommand.material->enable(defaultContext, passData);
+                                    defaultContext->setIndexBuffer(drawCommand.indexBuffer, 0);
+                                    defaultContext->setVertexBufferList(0, drawCommand.vertexBufferList, drawCommand.offsetList);
+                                    switch (drawCommand.drawType)
                                     {
-                                        continue;
-                                    }
+                                    case DrawType::DrawPrimitive:
+                                        defaultContext->drawPrimitive(drawCommand.vertexCount, drawCommand.firstVertex);
+                                        break;
 
-                                    pluginPair.first->enable(defaultContext);
-                                    for (auto &materialPair : pluginPair.second)
-                                    {
-                                        if (materialPair.first == nullptr)
-                                        {
-                                            continue;
-                                        }
+                                    case DrawType::DrawIndexedPrimitive:
+                                        defaultContext->drawIndexedPrimitive(drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                        break;
 
-                                        materialPair.first->enable(defaultContext, passData);
-                                        for (auto &drawCommand : materialPair.second)
-                                        {
-                                            defaultContext->setIndexBuffer(drawCommand.indexBuffer, 0);
-                                            defaultContext->setVertexBufferList(0, drawCommand.vertexBufferList, drawCommand.offsetList);
-                                            switch (drawCommand.drawType)
-                                            {
-                                            case DrawType::DrawPrimitive:
-                                                defaultContext->drawPrimitive(drawCommand.vertexCount, drawCommand.firstVertex);
-                                                break;
+                                    case DrawType::DrawInstancedPrimitive:
+                                        defaultContext->drawInstancedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.vertexCount, drawCommand.firstVertex);
+                                        break;
 
-                                            case DrawType::DrawIndexedPrimitive:
-                                                defaultContext->drawIndexedPrimitive(drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
-                                                break;
-
-                                            case DrawType::DrawInstancedPrimitive:
-                                                defaultContext->drawInstancedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.vertexCount, drawCommand.firstVertex);
-                                                break;
-
-                                            case DrawType::DrawInstancedIndexedPrimitive:
-                                                defaultContext->drawInstancedIndexedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
-                                                break;
-                                            };
-                                        }
-                                    }
+                                    case DrawType::DrawInstancedIndexedPrimitive:
+                                        defaultContext->drawInstancedIndexedPrimitive(drawCommand.instanceCount, drawCommand.firstInstance, drawCommand.indexCount, drawCommand.firstIndex, drawCommand.firstVertex);
+                                        break;
+                                    };
                                 }
                             },
                                 [&](LPCVOID passData, bool lighting) -> void // drawDeferred
@@ -954,6 +944,8 @@ namespace Gek
 
                                 defaultContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
                             });
+
+                            shaderPair.second.clear();
                         }
                     });
 
