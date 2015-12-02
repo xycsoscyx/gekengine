@@ -5,7 +5,7 @@
 
 OutputPixel mainPixelProgram(in InputPixel inputPixel)
 {
-    float4 albedo = (Resources::albedo.Sample(Global::linearSampler, inputPixel.texCoord) * inputPixel.color);
+    float4 albedo = (Resources::albedo.Sample(Global::linearSampler, inputPixel.texCoord) * inputPixel.color * Material::color);
     
     [branch]
     if(albedo.a < 0.5f)

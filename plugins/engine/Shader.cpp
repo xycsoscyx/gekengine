@@ -151,10 +151,12 @@ namespace Gek
                     {
                         CStringW name;
                         BindType bindType;
+                        CStringW default;
 
-                        Property(LPCWSTR name, BindType bindType)
+                        Property(LPCWSTR name, BindType bindType, LPCWSTR default)
                             : name(name)
                             , bindType(bindType)
+                            , default(default)
                         {
                         }
                     };
@@ -570,7 +572,16 @@ namespace Gek
                                             {
                                                 CStringW name(xmlPropertyNode.getType());
                                                 BindType bindType = getBindType(xmlPropertyNode.getText());
-                                                propertyList.push_back(Property(name, bindType));
+                                                if (xmlPropertyNode.hasAttribute(L"default"))
+                                                {
+                                                    CStringW default(xmlPropertyNode.getAttribute(L"default"));
+                                                    propertyList.push_back(Property(name, bindType, default));
+                                                }
+                                                else
+                                                {
+                                                    propertyList.push_back(Property(name, bindType, nullptr));
+                                                }
+
                                                 switch (bindType)
                                                 {
                                                 case BindType::Float:   propertyBufferSize += sizeof(float);        break;
@@ -1053,14 +1064,14 @@ namespace Gek
 
                         std::unordered_map<CStringW, CStringW> materialPropertyDefineList;
                         Gek::Xml::Node xmlPropertiesNode = xmlMaterialNode.firstChildElement(L"properties");
-                        if (xmlMapsNode)
+                        if (xmlPropertiesNode)
                         {
-                            Gek::Xml::Node xmlPropertyNode = xmlMapsNode.firstChildElement();
+                            Gek::Xml::Node xmlPropertyNode = xmlPropertiesNode.firstChildElement();
                             while (xmlPropertyNode)
                             {
                                 CStringW name(xmlPropertyNode.getType());
-                                CStringW source(xmlPropertyNode.getText());
-                                materialPropertyDefineList[name] = source;
+                                CStringW value(xmlPropertyNode.getText());
+                                materialPropertyDefineList[name] = value;
 
                                 xmlPropertyNode = xmlPropertyNode.nextSiblingElement();
                             };
@@ -1068,7 +1079,7 @@ namespace Gek
                         
                         for (auto &propertyValue : propertyList)
                         {
-                            CStringW property;
+                            CStringW property(propertyValue.default);
                             auto materialPropertyIterator = materialPropertyDefineList.find(propertyValue.name);
                             if (materialPropertyIterator != materialPropertyDefineList.end())
                             {

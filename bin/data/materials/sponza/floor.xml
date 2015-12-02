@@ -7,4 +7,7 @@
         <roughness>%material%.Roughness</roughness>
         <metalness>*color:0</metalness>
     </maps>
+    <properties>
+        <color>1,0,0,1</color>
+    </properties>
 </material>
