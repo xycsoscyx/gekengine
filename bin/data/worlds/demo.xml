@@ -18,8 +18,8 @@
         </entity>
 
         <entity>
-            <transform position="10,20,0" />
-            <point_light radius="50" />
+            <transform position="15,1,0" />
+            <point_light radius="100" />
             <color>1,1,0</color>
         </entity>
 

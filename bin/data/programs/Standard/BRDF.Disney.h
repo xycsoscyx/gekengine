@@ -21,7 +21,7 @@ float SchlickFresnel(float u)
 
 float GTR1(float NdotH, float alpha)
 {
-    if (alpha >= 1) return 1 / Math::Pi;
+    if (alpha >= 1) return Math::ReciprocalPi;
     float alphaSquared = alpha * alpha;
     float t = 1 + (alphaSquared - 1) * NdotH * NdotH;
     return (alphaSquared - 1) / (Math::Pi * log(alphaSquared) * t);
@@ -48,8 +48,6 @@ float smithG_GGX(float angle, float alpha)
 
 float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
-    materialRoughness = (materialRoughness * 0.9f + 0.1f);
-
     float NdotV = dot(surfaceNormal, viewDirection);
 
     float3 halfAngle = normalize(lightDirection + viewDirection);
@@ -105,7 +103,7 @@ float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMet
     float Fr = lerp(.04, 1, FH);
     float Gr = smithG_GGX(NdotL, .25) * smithG_GGX(NdotV, .25);
 
-    return ((1 / Math::Pi) * lerp(Fd, ss, subsurface) * Cdlin +  Fsheen) * (1 - materialMetalness)
+    return (Math::ReciprocalPi * lerp(Fd, ss, subsurface) * Cdlin +  Fsheen) * (1 - materialMetalness)
         + Gs * Fs * Ds
         + .25 * clearcoat * Gr * Fr * Dr;
 }

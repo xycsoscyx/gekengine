@@ -45,7 +45,6 @@ float3 getG(float3 materialAlbedo, float materialRoughness, float materialMetaln
 
 float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
-    materialRoughness = (materialRoughness * 0.9f + 0.1f);
     float alpha = (materialRoughness * materialRoughness);
 
     float3 diffuseColor = lerp(materialAlbedo, 0.0, materialMetalness);

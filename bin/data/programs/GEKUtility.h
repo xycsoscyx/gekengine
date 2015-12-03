@@ -27,6 +27,8 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
 #define _ENCODE_NORMALS 1
 
 #if _ENCODE_NORMALS
+    // using stereograpgic projection
+    // http://aras-p.info/texts/CompactNormalStorage.html
     half2 encodeNormal(float3 n)
     {
         half scale = 1.7777;
