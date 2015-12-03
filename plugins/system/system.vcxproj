@@ -127,10 +127,10 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\System\AudioInterface.h" />
-    <ClInclude Include="GEK\System\InputInterface.h" />
-    <ClInclude Include="GEK\System\OverlayInterface.h" />
-    <ClInclude Include="GEK\System\VideoInterface.h" />
+    <ClInclude Include="GEK\System\AudioSystem.h" />
+    <ClInclude Include="GEK\System\InputSystem.h" />
+    <ClInclude Include="GEK\System\OverlaySystem.h" />
+    <ClInclude Include="GEK\System\VideoSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -5,9 +5,9 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\Common.h"
-#include "GEK\Context\UserMixin.h"
+#include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
-#include "GEK\System\VideoInterface.h"
+#include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\SystemInterface.h"
 #include "GEK\Engine\PopulationInterface.h"
 #include "GEK\Engine\RenderInterface.h"
@@ -358,8 +358,8 @@ namespace Gek
     {
         static const UINT32 MaxInstanceCount = 500;
 
-        class System : public Context::User::Mixin
-            , public Observable::Mixin
+        class System : public ContextUserMixin
+            , public ObservableMixin
             , public Engine::Population::Observer
             , public Engine::Render::Observer
             , public Engine::System::Interface
@@ -432,8 +432,8 @@ namespace Gek
 
             ~System(void)
             {
-                Observable::Mixin::removeObserver(render, getClass<Engine::Render::Observer>());
-                Observable::Mixin::removeObserver(population, getClass<Engine::Population::Observer>());
+                ObservableMixin::removeObserver(render, getClass<Engine::Render::Observer>());
+                ObservableMixin::removeObserver(population, getClass<Engine::Population::Observer>());
             }
 
             BEGIN_INTERFACE_LIST(System)
@@ -683,12 +683,12 @@ namespace Gek
                     this->video = video;
                     this->render = render;
                     this->population = population;
-                    resultValue = Observable::Mixin::addObserver(population, getClass<Engine::Population::Observer>());
+                    resultValue = ObservableMixin::addObserver(population, getClass<Engine::Population::Observer>());
                 }
 
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = Observable::Mixin::addObserver(render, getClass<Engine::Render::Observer>());
+                    resultValue = ObservableMixin::addObserver(render, getClass<Engine::Render::Observer>());
                 }
 
                 if (SUCCEEDED(resultValue))

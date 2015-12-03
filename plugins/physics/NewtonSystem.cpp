@@ -1,5 +1,5 @@
 #include "GEK\Context\Common.h"
-#include "GEK\Context\UserMixin.h"
+#include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
@@ -37,7 +37,7 @@ namespace Gek
 {
     namespace Newton
     {
-        class NewtonBodyMixin : virtual public Unknown::Mixin
+        class NewtonBodyMixin : virtual public UnknownMixin
         {
         private:
             Engine::Population::Interface *population;
@@ -152,7 +152,7 @@ namespace Gek
 
             ~PlayerNewtonBody(void)
             {
-                Observable::Mixin::removeObserver(action, getClass<Engine::Action::Observer>());
+                ObservableMixin::removeObserver(action, getClass<Engine::Action::Observer>());
             }
 
 			// IUnknown
@@ -188,7 +188,7 @@ namespace Gek
                 }
             }
 
-            // Action::Observer::Interface
+            // Action::Observer
             STDMETHODIMP_(void) onState(LPCWSTR name, bool state)
             {
                 if (_wcsicmp(name, L"crouch") == 0)
@@ -233,8 +233,8 @@ namespace Gek
             }
         };
 
-        class System : public Context::User::Mixin
-            , public Observable::Mixin
+        class System : public ContextUserMixin
+            , public ObservableMixin
             , public Engine::Population::Observer
             , public Engine::System::Interface
             , public dNewton
@@ -294,7 +294,7 @@ namespace Gek
 
             ~System(void)
             {
-                Observable::Mixin::removeObserver(population, getClass<Engine::Population::Observer>());
+                ObservableMixin::removeObserver(population, getClass<Engine::Population::Observer>());
 
                 bodyList.clear();
                 collisionList.clear();
@@ -619,7 +619,7 @@ namespace Gek
 					this->action = initializerContext;
 					this->population = population;
 
-                    resultValue = Observable::Mixin::addObserver(population, getClass<Engine::Population::Observer>());
+                    resultValue = ObservableMixin::addObserver(population, getClass<Engine::Population::Observer>());
                 }
 
                 if (SUCCEEDED(resultValue))
@@ -671,7 +671,7 @@ namespace Gek
                 NewtonWorldCriticalSectionUnlock(GetNewton());
             }
 
-            // Engine::Population::Observer::Interface
+            // Engine::Population::Observer
             STDMETHODIMP_(void) onLoadBegin(void)
             {
             }
@@ -725,7 +725,7 @@ namespace Gek
                         CComPtr<PlayerNewtonBody> player = new PlayerNewtonBody(action, population, newtonPlayerManager, entity, transformComponent, massComponent, playerComponent);
                         if (player)
                         {
-                            Observable::Mixin::addObserver(action, player->getClass<Engine::Action::Observer>());
+                            ObservableMixin::addObserver(action, player->getClass<Engine::Action::Observer>());
                             HRESULT resultValue = player.QueryInterface(&bodyList[entity]);
                         }
                     }

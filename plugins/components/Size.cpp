@@ -1,5 +1,5 @@
 #include "GEK\Components\Size.h"
-#include "GEK\Context\UserMixin.h"
+#include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Engine\BaseComponent.h"
 #include "GEK\Utility\String.h"
 
@@ -28,7 +28,7 @@ namespace Gek
                     return S_OK;
                 }
 
-                class Component : public Context::User::Mixin
+                class Component : public ContextUserMixin
                     , public BaseComponent<Data>
                 {
                 public:

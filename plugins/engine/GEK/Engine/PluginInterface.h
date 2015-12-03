@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GEK\Context\ObserverInterface.h"
-#include "GEK\System\VideoInterface.h"
+#include "GEK\System\VideoSystem.h"
 #include "GEK\Shape\Frustum.h"
 
 namespace Gek

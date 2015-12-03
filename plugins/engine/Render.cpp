@@ -10,7 +10,7 @@
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
 #include "GEK\Context\Common.h"
-#include "GEK\Context\UserMixin.h"
+#include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
@@ -91,8 +91,8 @@ namespace Gek
         {
             static const UINT32 MaxLightCount = 500;
 
-            class System : public Context::User::Mixin
-                , public Observable::Mixin
+            class System : public ContextUserMixin
+                , public ObservableMixin
                 , public Engine::Population::Observer
                 , public Render::Interface
             {
@@ -235,7 +235,7 @@ namespace Gek
 
                 ~System(void)
                 {
-                    Observable::Mixin::removeObserver(population, getClass<Engine::Population::Observer>());
+                    ObservableMixin::removeObserver(population, getClass<Engine::Population::Observer>());
                 }
 
                 BEGIN_INTERFACE_LIST(System)
@@ -288,7 +288,7 @@ namespace Gek
                         this->video = video;
                         this->population = population;
                         this->initializerContext = initializerContext;
-                        resultValue = Observable::Mixin::addObserver(population, getClass<Engine::Population::Observer>());
+                        resultValue = ObservableMixin::addObserver(population, getClass<Engine::Population::Observer>());
                     }
 
                     if (SUCCEEDED(resultValue))
@@ -875,7 +875,7 @@ namespace Gek
                             video->updateBuffer(lightingConstantBuffer, &lightingConstantData);
                         }
 
-                        Observable::Mixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
+                        ObservableMixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
 
                         defaultContext->pixelSystem()->setSamplerStates(pointSamplerStates, 0);
                         defaultContext->pixelSystem()->setSamplerStates(linearSamplerStates, 1);
@@ -949,7 +949,7 @@ namespace Gek
                         }
                     });
 
-                    Observable::Mixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderOverlay, std::placeholders::_1)));
+                    ObservableMixin::sendEvent(Event<Render::Observer>(std::bind(&Render::Observer::onRenderOverlay, std::placeholders::_1)));
 
                     video->present(true);
                 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GEK\Context\ObserverInterface.h"
-#include "GEK\System\VideoInterface.h"
+#include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\PopulationInterface.h"
 #include "GEK\Shape\Frustum.h"
 
@@ -42,7 +42,7 @@ namespace Gek
                 STDMETHOD_(void, drawInstancedIndexedPrimitive) (THIS_ IUnknown *plugin, IUnknown *material, const std::vector<Video::Buffer::Interface *> &vertexBufferList, UINT32 instanceCount, UINT32 firstInstance, UINT32 firstVertex, Video::Buffer::Interface *indexBuffer, UINT32 indexCount, UINT32 firstIndex) PURE;
             };
 
-            DECLARE_INTERFACE_IID(Observer, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Gek::Observer::Interface
+            DECLARE_INTERFACE_IID(Observer, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Observer
             {
                 STDMETHOD_(void, OnRenderScene)                 (THIS_ Engine::Population::Entity *cameraEntity, const Gek::Shape::Frustum *viewFrustum) { };
                 STDMETHOD_(void, onRenderOverlay)               (THIS) { };

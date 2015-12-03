@@ -3,7 +3,7 @@
 #include "GEK\Engine\ActionInterface.h"
 #include "GEK\Engine\RenderInterface.h"
 #include "GEK\Engine\SystemInterface.h"
-#include "GEK\Context\UserMixin.h"
+#include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
@@ -47,8 +47,8 @@ namespace Gek
 
         namespace Core
         {
-            class System : public Context::User::Mixin
-				, public Observable::Mixin
+            class System : public ContextUserMixin
+				, public ObservableMixin
 				, public Engine::Core::Interface
                 , public Render::Observer
             {
@@ -99,7 +99,7 @@ namespace Gek
                     logTypeBrushList[3].Release();
 
                     systemList.clear();
-                    Observable::Mixin::removeObserver(render, getClass<Render::Observer>());
+                    ObservableMixin::removeObserver(render, getClass<Render::Observer>());
                     render.Release();
                     population.Release();
                     video.Release();
@@ -150,7 +150,7 @@ namespace Gek
                             resultValue = render->initialize(this);
                             if (SUCCEEDED(resultValue))
                             {
-                                resultValue = Observable::Mixin::addObserver(render, getClass<Render::Observer>());
+                                resultValue = ObservableMixin::addObserver(render, getClass<Render::Observer>());
                             }
                         }
                     }
@@ -241,30 +241,30 @@ namespace Gek
 						{
 						case 'W':
 						case VK_UP:
-							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"move_forward", state)));
+							ObservableMixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"move_forward", state)));
 							break;
 
 						case 'S':
 						case VK_DOWN:
-							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"move_backward", state)));
+							ObservableMixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"move_backward", state)));
 							break;
 
 						case 'A':
 						case VK_LEFT:
-							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"strafe_left", state)));
+							ObservableMixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"strafe_left", state)));
 							break;
 
 						case 'D':
 						case VK_RIGHT:
-							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"strafe_right", state)));
+							ObservableMixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"strafe_right", state)));
 							break;
 
 						case VK_SPACE:
-                            Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"jump", state)));
+                            ObservableMixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"jump", state)));
 							break;
 
 						case VK_LCONTROL:
-							Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"crouch", state)));
+							ObservableMixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onState, std::placeholders::_1, L"crouch", state)));
 							break;
 						};
 					};
@@ -432,8 +432,8 @@ namespace Gek
                             INT32 cursorMovementY = ((cursorPosition.y - clientCenterY) / 2);
                             if (cursorMovementX != 0 || cursorMovementY != 0)
                             {
-                                Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onValue, std::placeholders::_1, L"turn", float(cursorMovementX))));
-                                Observable::Mixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onValue, std::placeholders::_1, L"tilt", float(cursorMovementY))));
+                                ObservableMixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onValue, std::placeholders::_1, L"turn", float(cursorMovementX))));
+                                ObservableMixin::sendEvent(Event<Action::Observer>(std::bind(&Action::Observer::onValue, std::placeholders::_1, L"tilt", float(cursorMovementY))));
                             }
 
                             UINT32 frameCount = 3;

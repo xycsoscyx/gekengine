@@ -1,6 +1,6 @@
 #include "GEK\Engine\PluginInterface.h"
-#include "GEK\Context\UserMixin.h"
-#include "GEK\System\VideoInterface.h"
+#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\System\VideoSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\FileSystem.h"
@@ -95,7 +95,7 @@ namespace Gek
 
             namespace Plugin
             {
-                class System : public Context::User::Mixin
+                class System : public ContextUserMixin
                     , public Interface
                 {
                 private:

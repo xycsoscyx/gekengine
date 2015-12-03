@@ -11,20 +11,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Context.cpp" />
+    <ClCompile Include="ContextImplementation.cpp" />
+    <ClCompile Include="ContextUserMixin.cpp" />
     <ClCompile Include="ObservableMixin.cpp" />
     <ClCompile Include="UnknownMixin.cpp" />
-    <ClCompile Include="UserMixin.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEK\Context\Common.h" />
-    <ClInclude Include="GEK\Context\Interface.h" />
-    <ClInclude Include="GEK\Context\ObservableInterface.h" />
+    <ClInclude Include="GEK\Context\Context.h" />
+    <ClInclude Include="GEK\Context\ContextUser.h" />
+    <ClInclude Include="GEK\Context\ContextUserMixin.h" />
+    <ClInclude Include="GEK\Context\Observable.h" />
     <ClInclude Include="GEK\Context\ObservableMixin.h" />
-    <ClInclude Include="GEK\Context\ObserverInterface.h" />
+    <ClInclude Include="GEK\Context\Observer.h" />
     <ClInclude Include="GEK\Context\UnknownMixin.h" />
-    <ClInclude Include="GEK\Context\UserInterface.h" />
-    <ClInclude Include="GEK\Context\UserMixin.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E4015F2B-C176-414F-8733-1C2D88EF3FB5}</ProjectGuid>

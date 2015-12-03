@@ -1,16 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="AudioSystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="VideoSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="InputSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="VideoSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
@@ -24,16 +24,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\System\AudioInterface.h">
+    <ClInclude Include="GEK\System\InputSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\System\InputInterface.h">
+    <ClInclude Include="GEK\System\OverlaySystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\System\VideoInterface.h">
+    <ClInclude Include="GEK\System\VideoSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\System\OverlayInterface.h">
+    <ClInclude Include="GEK\System\AudioSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,69 +2,66 @@
 
 namespace Gek
 {
-    namespace Observable
+    ObservableMixin::~ObservableMixin(void)
     {
-        Mixin::~Mixin(void)
+    }
+
+    void ObservableMixin::sendEvent(const BaseEvent &event) const
+    {
+        for (auto &observer : observerList)
         {
+            event(observer);
+        }
+    }
+
+    HRESULT ObservableMixin::addObserver(IUnknown *observableUnknown, Observer *observer)
+    {
+        HRESULT resultValue = E_FAIL;
+        Observable *observable = dynamic_cast<Observable *>(observableUnknown);
+        if (observable)
+        {
+            resultValue = observable->addObserver(observer);
         }
 
-        void Mixin::sendEvent(const BaseEvent &event) const
+        return resultValue;
+    }
+
+    HRESULT ObservableMixin::removeObserver(IUnknown *observableUnknown, Observer *observer)
+    {
+        HRESULT resultValue = E_FAIL;
+        Observable *observable = dynamic_cast<Observable *>(observableUnknown);
+        if (observable)
         {
-            for (auto &observer : observerList)
-            {
-                event(observer);
-            }
+            resultValue = observable->removeObserver(observer);
         }
 
-        HRESULT Mixin::addObserver(IUnknown *observableUnknown, Observer::Interface *observer)
-        {
-            HRESULT resultValue = E_FAIL;
-            Interface *observable = dynamic_cast<Interface *>(observableUnknown);
-            if (observable)
-            {
-                resultValue = observable->addObserver(observer);
-            }
+        return resultValue;
+    }
 
-            return resultValue;
+    // Interface
+    STDMETHODIMP ObservableMixin::addObserver(Observer *observer)
+    {
+        HRESULT resultValue = E_FAIL;
+        auto observerIterator = observerList.find(observer);
+        if (observerIterator == observerList.end())
+        {
+            observerList.insert(observer);
+            resultValue = S_OK;
         }
 
-        HRESULT Mixin::removeObserver(IUnknown *observableUnknown, Observer::Interface *observer)
-        {
-            HRESULT resultValue = E_FAIL;
-            Interface *observable = dynamic_cast<Interface *>(observableUnknown);
-            if (observable)
-            {
-                resultValue = observable->removeObserver(observer);
-            }
+        return resultValue;
+    }
 
-            return resultValue;
+    STDMETHODIMP ObservableMixin::removeObserver(Observer *observer)
+    {
+        HRESULT resultValue = E_FAIL;
+        auto observerIterator = observerList.find(observer);
+        if (observerIterator != observerList.end())
+        {
+            observerList.unsafe_erase(observerIterator);
+            resultValue = S_OK;
         }
 
-        // Interface
-        STDMETHODIMP Mixin::addObserver(Observer::Interface *observer)
-        {
-            HRESULT resultValue = E_FAIL;
-            auto observerIterator = observerList.find(observer);
-            if (observerIterator == observerList.end())
-            {
-                observerList.insert(observer);
-                resultValue = S_OK;
-            }
-
-            return resultValue;
-        }
-
-        STDMETHODIMP Mixin::removeObserver(Observer::Interface *observer)
-        {
-            HRESULT resultValue = E_FAIL;
-            auto observerIterator = observerList.find(observer);
-            if (observerIterator != observerList.end())
-            {
-                observerList.unsafe_erase(observerIterator);
-                resultValue = S_OK;
-            }
-
-            return resultValue;
-        }
-    }; // namespace Observable
+        return resultValue;
+    }
 }; // namespace Gek

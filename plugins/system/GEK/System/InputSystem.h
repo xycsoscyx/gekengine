@@ -7,8 +7,6 @@ namespace Gek
 {
     namespace Input
     {
-        DECLARE_INTERFACE_IID(Class, "3A8EA46C-573A-40E6-8741-71ACCA90BAB4");
-
         enum class Key
         {
             Escape              = 0x01,
@@ -167,33 +165,32 @@ namespace Gek
                 Pressed         = 1 << 3,
             };
         }; // namespace State
-
-        namespace Device
-        {
-            DECLARE_INTERFACE_IID(Interface, "58BF03BB-69A2-45FC-B124-6DA702E949F9") : virtual public IUnknown
-            {
-                STDMETHOD(update)                           (THIS) PURE;
-
-                STDMETHOD_(UINT32, getButtonCount)          (THIS) const PURE;
-                STDMETHOD_(UINT8, getButtonState)           (THIS_ UINT32 buttonIndex) const PURE;
-
-                STDMETHOD_(Math::Float3, getAxis)           (THIS) const PURE;
-                STDMETHOD_(Math::Float3, getRotation)       (THIS) const PURE;
-                STDMETHOD_(float, getPointOfView)           (THIS) const PURE;
-            };
-        }; // namespace Device
-
-        DECLARE_INTERFACE_IID(Interface, "1F96303C-C8CD-4FE8-944F-C2B1B55747F2") : virtual public IUnknown
-        {
-            STDMETHOD(initialize)                           (THIS_ HWND hWindow) PURE;
-
-            STDMETHOD_(Device::Interface *, getKeyboard)    (THIS) PURE;
-            STDMETHOD_(Device::Interface *, getMouse)       (THIS) PURE;
-
-            STDMETHOD_(UINT32, getJoystickCount)            (THIS) PURE;
-            STDMETHOD_(Device::Interface *, getJoystick)    (THIS_ UINT32 deviceIndex) PURE;
-
-            STDMETHOD(update)                               (THIS) PURE;
-        };
     }; // namespace Input
+
+    DECLARE_INTERFACE_IID(InputDevice, "58BF03BB-69A2-45FC-B124-6DA702E949F9") : virtual public IUnknown
+    {
+        STDMETHOD(update)                           (THIS) PURE;
+
+        STDMETHOD_(UINT32, getButtonCount)          (THIS) const PURE;
+        STDMETHOD_(UINT8, getButtonState)           (THIS_ UINT32 buttonIndex) const PURE;
+
+        STDMETHOD_(Math::Float3, getAxis)           (THIS) const PURE;
+        STDMETHOD_(Math::Float3, getRotation)       (THIS) const PURE;
+        STDMETHOD_(float, getPointOfView)           (THIS) const PURE;
+    };
+
+    DECLARE_INTERFACE_IID(InputSystem, "1F96303C-C8CD-4FE8-944F-C2B1B55747F2") : virtual public IUnknown
+    {
+        STDMETHOD(initialize)                           (THIS_ HWND hWindow) PURE;
+
+        STDMETHOD_(InputDevice *, getKeyboard)          (THIS) PURE;
+        STDMETHOD_(InputDevice *, getMouse)             (THIS) PURE;
+
+        STDMETHOD_(UINT32, getJoystickCount)            (THIS) PURE;
+        STDMETHOD_(InputDevice *, getJoystick)          (THIS_ UINT32 deviceIndex) PURE;
+
+        STDMETHOD(update)                               (THIS) PURE;
+    };
+
+    DECLARE_INTERFACE_IID(InputSystemClass, "3A8EA46C-573A-40E6-8741-71ACCA90BAB4");
 }; // namespace Gek

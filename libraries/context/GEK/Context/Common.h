@@ -1,7 +1,7 @@
 #pragma once
 
-#include "GEK\Context\Interface.h"
-#include "GEK\Context\UserInterface.h"
+#include "GEK\Context\Context.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\Utility\String.h"
 #include <assert.h>
 #include <Windows.h>
@@ -66,7 +66,7 @@ namespace Gek
     class LoggingScope
     {
     private:
-        Context::Interface *context;
+        Context *context;
         LPCSTR file;
         UINT32 line;
         CStringW call;
@@ -74,7 +74,7 @@ namespace Gek
         UINT32 startTime;
 
     public:
-        LoggingScope(Context::Interface *context, LPCSTR file, UINT32 line, const CStringW &call);
+        LoggingScope(Context *context, LPCSTR file, UINT32 line, const CStringW &call);
         ~LoggingScope(void);
     };
 
@@ -102,7 +102,7 @@ namespace Gek
     }
 };
 
-inline bool gekCheckResultDirectly(Gek::Context::Interface *context, HRESULT resultValue, LPCSTR call, LPCSTR file, UINT32 line)
+inline bool gekCheckResultDirectly(Gek::Context *context, HRESULT resultValue, LPCSTR call, LPCSTR file, UINT32 line)
 {
     if (FAILED(resultValue))
     {
@@ -176,12 +176,12 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
 #define BEGIN_INTERFACE_LIST(CLASS)                                                                 \
     STDMETHODIMP_(ULONG) CLASS::AddRef(THIS)                                                        \
     {                                                                                               \
-        return Gek::Unknown::Mixin::AddRef();                                                       \
+        return Gek::UnknownMixin::AddRef();                                                         \
     }                                                                                               \
                                                                                                     \
     STDMETHODIMP_(ULONG) CLASS::Release(THIS)                                                       \
     {                                                                                               \
-        return Gek::Unknown::Mixin::Release();                                                      \
+        return Gek::UnknownMixin::Release();                                                        \
     }                                                                                               \
                                                                                                     \
     STDMETHODIMP CLASS::QueryInterface(THIS_ REFIID interfaceType, LPVOID FAR *returnObject)        \
@@ -242,11 +242,11 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
     }
 
 #define END_INTERFACE_LIST_UNKNOWN                                                                  \
-        return Gek::Unknown::Mixin::QueryInterface(interfaceType, returnObject);                    \
+        return Gek::UnknownMixin::QueryInterface(interfaceType, returnObject);                      \
         }
 
 #define END_INTERFACE_LIST_USER                                                                     \
-        return Gek::Context::User::Mixin::QueryInterface(interfaceType, returnObject);              \
+        return Gek::ContextUserMixin::QueryInterface(interfaceType, returnObject);                \
         }
 
 #define END_INTERFACE_LIST_BASE(BASE_CLASS)                                                         \
@@ -258,7 +258,7 @@ bool operator < (REFGUID leftGuid, REFGUID rightGuid)
     }
 
 #define REGISTER_CLASS(CLASS)                                                                       \
-HRESULT CLASS##CreateInstance(Gek::Context::User::Interface **returnObject)                         \
+HRESULT CLASS##CreateInstance(Gek::ContextUser **returnObject)                                      \
 {                                                                                                   \
     REQUIRE_RETURN(returnObject, E_INVALIDARG);                                                     \
                                                                                                     \
@@ -273,12 +273,12 @@ HRESULT CLASS##CreateInstance(Gek::Context::User::Interface **returnObject)     
 }
 
 #define DECLARE_REGISTERED_CLASS(CLASS)                                                             \
-extern HRESULT CLASS##CreateInstance(Gek::Context::User::Interface **returnObject);
+extern HRESULT CLASS##CreateInstance(Gek::ContextUser **returnObject);
 
 #define DECLARE_CONTEXT_SOURCE(SOURCENAME)                                                          \
 extern "C" __declspec(dllexport)                                                                    \
 HRESULT GEKGetModuleClasses(                                                                        \
-    std::unordered_map<CLSID, std::function<HRESULT (Gek::Context::User::Interface **)>> &classList,\
+    std::unordered_map<CLSID, std::function<HRESULT (Gek::ContextUser **)>> &classList,             \
     std::unordered_map<CLSID, std::vector<CLSID>> &typedClassList)                                  \
 {                                                                                                   \
     CLSID lastClassName = GUID_NULL;
