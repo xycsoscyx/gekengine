@@ -22,6 +22,7 @@ namespace Gek
             Byte3,
             Byte4,
             BGRA,
+            sRGBA,
             Short,
             Short2,
             Short4,
@@ -186,6 +187,7 @@ namespace Gek
             {
                 Resource = 1 << 0,
                 UnorderedAccess = 1 << 1,
+                MipMaps = 1 << 2,
             };
         }; // TextureFlags
 
@@ -431,6 +433,8 @@ namespace Gek
                 STDMETHOD_(System::Interface *, geometrySystem)     (THIS) PURE;
                 STDMETHOD_(System::Interface *, pixelSystem)        (THIS) PURE;
 
+                STDMETHOD_(void, generateMipMaps)                   (THIS_ Texture::Interface *texture) PURE;
+
                 STDMETHOD_(void, clearResources)                    (THIS) PURE;
 
                 STDMETHOD_(void, setViewports)                      (THIS_ const std::vector<ViewPort> &viewPortList) PURE;
@@ -467,6 +471,9 @@ namespace Gek
             STDMETHOD(setFullScreen)                            (THIS_ bool fullScreen) PURE;
             STDMETHOD(resize)                                   (THIS) PURE;
 
+            STDMETHOD_(Context::Interface *, getDefaultContext) (THIS) PURE;
+            STDMETHOD_(Overlay::Interface *, getOverlay)        (THIS) PURE;
+
             STDMETHOD_(UINT32, getWidth)                        (THIS) PURE;
             STDMETHOD_(UINT32, getHeight)                       (THIS) PURE;
             STDMETHOD_(bool, isFullScreen)                      (THIS) PURE;
@@ -483,8 +490,8 @@ namespace Gek
             STDMETHOD(createBlendStates)                        (THIS_ IUnknown **returnObject, const IndependentBlendStates &blendStates) PURE;
             STDMETHOD(createSamplerStates)                      (THIS_ IUnknown **returnObject, const SamplerStates &samplerStates) PURE;
 
-            STDMETHOD(createRenderTarget)                       (THIS_ Texture::Interface **returnObject, UINT32 width, UINT32 height, Format format) PURE;
-            STDMETHOD(createDepthTarget)                        (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Format format) PURE;
+            STDMETHOD(createRenderTarget)                       (THIS_ Texture::Interface **returnObject, UINT32 width, UINT32 height, Format format, UINT32 flags) PURE;
+            STDMETHOD(createDepthTarget)                        (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Format format, UINT32 flags) PURE;
 
             STDMETHOD(createBuffer)                             (THIS_ Buffer::Interface **returnObject, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
             STDMETHOD(createBuffer)                             (THIS_ Buffer::Interface **returnObject, Format format, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;

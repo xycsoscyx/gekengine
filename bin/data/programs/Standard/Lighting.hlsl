@@ -3,9 +3,9 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-#include "BRDF.Custom.h"
+#include "BRDF.Disney.h"
 
-float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
+float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float3 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float2 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
@@ -54,10 +54,17 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
         if (attenuation > 0.0f)
         {
             float NdotL = dot(surfaceNormal, lightDirection);
-            float3 lightContribution = getBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL);
-            surfaceColor += (saturate(NdotL) * lightContribution * attenuation * Lighting::list[lightIndex].color);
+
+            [branch]
+            if (NdotL > 0.0f)
+            {
+                float3 lightContribution = getBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL);
+                surfaceColor += (NdotL * lightContribution * attenuation * Lighting::list[lightIndex].color);
+            }
         }
     }
 
-    return surfaceColor;
+    static const float3 luminance = float3(0.299f, 0.587f, 0.114f);
+    float surfaceLuminance = dot(surfaceColor, luminance);
+    return float4(surfaceColor, log2(surfaceLuminance));
 }

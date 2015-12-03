@@ -24,45 +24,31 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     return float3x3(normalize(tangent * reciprocal), normalize(-biTangent * reciprocal), normal);
 }
 
-#define _ENCODE_OCTAHEDRON 1
+#define _ENCODE_NORMALS 1
 
-#if _ENCODE_SPHEREMAP
-    float2 encodeNormal(float3 normal)
+#if _ENCODE_NORMALS
+    half2 encodeNormal(float3 n)
     {
-        return (normalize(normal.xy) * sqrt(normal.z * 0.5f + 0.5f));
+        half scale = 1.7777;
+        half2 enc = n.xy / (n.z + 1);
+        enc /= scale;
+        enc = enc*0.5 + 0.5;
+        return half4(enc, 0, 0);
     }
 
-    float3 decodeNormal(float2 encoded)
+    float3 decodeNormal(half2 enc)
     {
-        float z = dot(encoded, encoded) * 2.0f - 1.0f;
-        return float3(normalize(encoded) * sqrt(1 - z * z), z);
-    }
-#elif _ENCODE_OCTAHEDRON
-    float2 octahedronWrap(float2 value)
-    {
-        return (1.0 - abs(value)) * (value >= 0.0 ? 1.0 : -1.0);
-    }
-
-    float2 encodeNormal(float3 normal)
-    {
-        normal /= (abs(normal.x) + abs(normal.y) + abs(normal.z));
-        normal.xy = normal.z >= 0.0 ? normal.xy : octahedronWrap(normal.xy);
-        normal.xy = normal.xy * 0.5 + 0.5;
-        return normal.xy;
-    }
-
-    float3 decodeNormal(float2 encoded)
-    {
-        encoded = encoded * 2.0 - 1.0;
-
-        float3 normal;
-        normal.z = 1.0 - abs(encoded.x) - abs(encoded.y);
-        normal.xy = normal.z >= 0.0 ? encoded.xy : octahedronWrap(encoded.xy);
-        return normalize(normal);
+        half scale = 1.7777;
+        half3 nn = half3(enc * 2 * scale - scale, 1.0f);
+        half g = 2.0 / dot(nn.xyz, nn.xyz);
+        half3 n;
+        n.xy = g*nn.xy;
+        n.z = g - 1;
+        return n;
     }
 #else
-    float3 encodeNormal(float3 normal) { return normal; };
-    float3 decodeNormal(float3 normal) { return normal; };
+    half3 encodeNormal(float3 normal) { return normal; };
+    float3 decodeNormal(half3 normal) { return normal; };
 #endif
 
 float3 getViewPosition(float2 texCoord, float depth)

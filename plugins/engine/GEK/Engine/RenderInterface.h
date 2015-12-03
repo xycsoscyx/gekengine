@@ -25,8 +25,8 @@ namespace Gek
                 STDMETHOD(createDepthStates)                    (THIS_ IUnknown **returnObject, const Video::DepthStates &depthStates) PURE;
                 STDMETHOD(createBlendStates)                    (THIS_ IUnknown **returnObject, const Video::UnifiedBlendStates &blendStates) PURE;
                 STDMETHOD(createBlendStates)                    (THIS_ IUnknown **returnObject, const Video::IndependentBlendStates &blendStates) PURE;
-                STDMETHOD(createRenderTarget)                   (THIS_ Video::Texture::Interface **returnObject, UINT32 width, UINT32 height, Video::Format format) PURE;
-                STDMETHOD(createDepthTarget)                    (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Video::Format format) PURE;
+                STDMETHOD(createRenderTarget)                   (THIS_ Video::Texture::Interface **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
+                STDMETHOD(createDepthTarget)                    (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
                 STDMETHOD(createBuffer)                         (THIS_ Video::Buffer::Interface **returnObject, LPCWSTR name, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
                 STDMETHOD(createBuffer)                         (THIS_ Video::Buffer::Interface **returnObject, LPCWSTR name, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
                 STDMETHOD(loadTexture)                          (THIS_ Video::Texture::Interface **returnObject, LPCWSTR fileName, UINT32 flags) PURE;

@@ -25,7 +25,6 @@ namespace Gek
                     Video::Interface *video;
                     Render::Interface *render;
                     std::vector<CComPtr<Video::Texture::Interface>> mapList;
-                    std::vector<UINT32> propertyList;
                     CComPtr<Shader::Interface> shader;
 
                 public:
@@ -83,7 +82,7 @@ namespace Gek
                                             resultValue = shader->QueryInterface(IID_PPV_ARGS(&this->shader));
                                             if (this->shader)
                                             {
-                                                resultValue = this->shader->getMaterialValues(fileName, xmlMaterialNode, mapList, propertyList);
+                                                resultValue = this->shader->getMaterialValues(fileName, xmlMaterialNode, mapList);
                                             }
                                         }
                                     }
@@ -102,7 +101,7 @@ namespace Gek
                     STDMETHODIMP_(void) enable(Video::Context::Interface *context, LPCVOID passData)
                     {
                         REQUIRE_VOID_RETURN(shader);
-                        shader->setMaterialValues(context, passData, mapList, propertyList);
+                        shader->setMaterialValues(context, passData, mapList);
                     }
                 };
 

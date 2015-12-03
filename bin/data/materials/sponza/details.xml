@@ -5,6 +5,6 @@
         <albedo>%material%.Albedo</albedo>
         <normal>%material%.Normal</normal>
         <roughness>%material%.Roughness</roughness>
-        <metalness>*color:1</metalness>
+        <metalness>%material%.Metalness</metalness>
     </maps>
 </material>

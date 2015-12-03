@@ -22,13 +22,13 @@ struct SOURCEVERTEX
 
 #include "gekplugin.h"
 
-WORLDVERTEX GetWorldVertex(in SOURCEVERTEX kSource)
+WORLDVERTEX GetWorldVertex(SOURCEVERTEX kSource)
 {
     INSTANCE kInstance = gs_aInstances[kSource.instance];
                 
     float nSin, nCos;
     sincos(kInstance.m_nSpin, nSin, nCos);
-    nSin *= kInstance.m_nSize;
+    nS*= kInstance.m_nSize;
     nCos *= kInstance.m_nSize;
                 
 	float3 kXOffSet = mul(float3(nSin, nCos, 0.0f), (float3x3)Camera::viewMatrix);

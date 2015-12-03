@@ -560,21 +560,21 @@ namespace Gek
                     return returnValue;
                 }
 
-                STDMETHODIMP createRenderTarget(Video::Texture::Interface **returnObject, UINT32 width, UINT32 height, Video::Format format)
+                STDMETHODIMP createRenderTarget(Video::Texture::Interface **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags)
                 {
                     REQUIRE_RETURN(video, E_FAIL);
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = video->createRenderTarget(returnObject, width, height, format);
+                    returnValue = video->createRenderTarget(returnObject, width, height, format, flags);
                     return returnValue;
                 }
 
-                STDMETHODIMP createDepthTarget(IUnknown **returnObject, UINT32 width, UINT32 height, Video::Format format)
+                STDMETHODIMP createDepthTarget(IUnknown **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags)
                 {
                     REQUIRE_RETURN(video, E_FAIL);
 
                     HRESULT returnValue = E_FAIL;
-                    returnValue = video->createDepthTarget(returnObject, width, height, format);
+                    returnValue = video->createDepthTarget(returnObject, width, height, format, flags);
                     return returnValue;
                 }
 
@@ -680,7 +680,7 @@ namespace Gek
                                 returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s", fileName), flags);
                                 if (FAILED(returnValue))
                                 {
-                                    //returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".dds"), flags);
+                                    returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".dds"), flags);
                                     if (FAILED(returnValue))
                                     {
                                         returnValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".tga"), flags);
@@ -829,7 +829,7 @@ namespace Gek
                         cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
                         video->updateBuffer(this->cameraConstantBuffer, &cameraConstantData);
 
-                        Video::Context::Interface *defaultContext = dynamic_cast<Video::Context::Interface *>(video);
+                        Video::Context::Interface *defaultContext = video->getDefaultContext();
 
                         defaultContext->geometrySystem()->setConstantBuffer(this->cameraConstantBuffer, 0);
                         defaultContext->vertexSystem()->setConstantBuffer(this->cameraConstantBuffer, 0);

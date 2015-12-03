@@ -183,6 +183,7 @@ namespace Gek
                         CComPtr<IUnknown> blendStates;
                         std::vector<CStringW> renderTargetList;
                         std::vector<CStringW> resourceList;
+                        std::set<CStringW> generateMipMaps;
                         std::vector<CStringW> unorderedAccessList;
                         CComPtr<IUnknown> program;
                         UINT32 dispatchWidth;
@@ -209,13 +210,11 @@ namespace Gek
                     UINT32 width;
                     UINT32 height;
                     std::vector<Map> mapList;
-                    std::vector<Property> propertyList;
                     std::unordered_map<CStringW, CStringW> defineList;
                     CComPtr<IUnknown> depthBuffer;
                     std::unordered_map<CStringW, CComPtr<Video::Texture::Interface>> renderTargetMap;
                     std::unordered_map<CStringW, CComPtr<Video::Buffer::Interface>> bufferMap;
                     std::vector<Pass> passList;
-                    CComPtr<Video::Buffer::Interface> propertyConstantBuffer;
 
                 private:
                     static MapType getMapType(LPCWSTR mapType)
@@ -281,7 +280,7 @@ namespace Gek
                         return L"float4";
                     }
 
-                    static UINT32 getLoadFlags(const CStringW &loadFlags)
+                    static UINT32 getTextureLoadFlags(const CStringW &loadFlags)
                     {
                         UINT32 flags = 0;
                         int position = 0;
@@ -294,6 +293,24 @@ namespace Gek
                             }
 
                             flag = loadFlags.Tokenize(L"|", position);
+                        };
+
+                        return flags;
+                    }
+
+                    static UINT32 getTextureCreateFlags(const CStringW &createFlags)
+                    {
+                        UINT32 flags = 0;
+                        int position = 0;
+                        CStringW flag(createFlags.Tokenize(L"|", position));
+                        while (!flag.IsEmpty())
+                        {
+                            if (flag.CompareNoCase(L"mipmaps") == 0)
+                            {
+                                flags |= Video::TextureFlags::MipMaps;
+                            }
+
+                            flag = createFlags.Tokenize(L"|", position);
                         };
 
                         return flags;
@@ -543,7 +560,6 @@ namespace Gek
                                     }
 
                                     std::unordered_map<CStringW, std::pair<MapType, BindType>> resourceList;
-                                    resourceList[L"ambientLightMap"] = std::make_pair(MapType::TextureCube, BindType::Float3);
                                     Gek::Xml::Node xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
                                     if (xmlMaterialNode)
                                     {
@@ -556,55 +572,11 @@ namespace Gek
                                                 CStringW name(xmlMapNode.getType());
                                                 MapType mapType = getMapType(xmlMapNode.getText());
                                                 BindType bindType = getBindType(xmlMapNode.getAttribute(L"bind"));
-                                                UINT32 flags = getLoadFlags(xmlMapNode.getAttribute(L"loadFlags"));
+                                                UINT32 flags = getTextureLoadFlags(xmlMapNode.getAttribute(L"flags"));
                                                 mapList.push_back(Map(name, mapType, bindType, flags));
 
                                                 xmlMapNode = xmlMapNode.nextSiblingElement();
                                             };
-                                        }
-
-                                        Gek::Xml::Node xmlPropertiesNode = xmlMaterialNode.firstChildElement(L"properties");
-                                        if (xmlPropertiesNode)
-                                        {
-                                            UINT32 propertyBufferSize = 0;
-                                            Gek::Xml::Node xmlPropertyNode = xmlPropertiesNode.firstChildElement();
-                                            while (xmlPropertyNode)
-                                            {
-                                                CStringW name(xmlPropertyNode.getType());
-                                                BindType bindType = getBindType(xmlPropertyNode.getText());
-                                                if (xmlPropertyNode.hasAttribute(L"default"))
-                                                {
-                                                    CStringW default(xmlPropertyNode.getAttribute(L"default"));
-                                                    propertyList.push_back(Property(name, bindType, default));
-                                                }
-                                                else
-                                                {
-                                                    propertyList.push_back(Property(name, bindType, nullptr));
-                                                }
-
-                                                switch (bindType)
-                                                {
-                                                case BindType::Float:   propertyBufferSize += sizeof(float);        break;
-                                                case BindType::Float2:  propertyBufferSize += sizeof(float) * 2;    break;
-                                                case BindType::Float3:  propertyBufferSize += sizeof(float) * 3;    break;
-                                                case BindType::Float4:  propertyBufferSize += sizeof(float) * 4;    break;
-                                                case BindType::Half:    propertyBufferSize += sizeof(float);        break;
-                                                case BindType::Half2:   propertyBufferSize += sizeof(float) * 2;    break;
-                                                case BindType::Half4:   propertyBufferSize += sizeof(float) * 4;    break;
-                                                case BindType::Int:     propertyBufferSize += sizeof(UINT32);       break;
-                                                case BindType::Int2:    propertyBufferSize += sizeof(UINT32) * 2;   break;
-                                                case BindType::Int3:    propertyBufferSize += sizeof(UINT32) * 3;   break;
-                                                case BindType::Int4:    propertyBufferSize += sizeof(UINT32) * 4;   break;
-                                                case BindType::Boolean: propertyBufferSize += sizeof(UINT32);       break;
-                                                };
-
-                                                xmlPropertyNode = xmlPropertyNode.nextSiblingElement();
-                                            };
-
-                                            if (propertyBufferSize > 0)
-                                            {
-                                                resultValue = render->createBuffer(&propertyConstantBuffer, String::format(L"%s:properties", fileName), propertyBufferSize, 1, Video::BufferFlags::ConstantBuffer | Video::BufferFlags::Dynamic);
-                                            }
                                         }
                                     }
 
@@ -629,7 +601,7 @@ namespace Gek
                                     if (xmlDepthNode)
                                     {
                                         Video::Format format = getFormat(xmlDepthNode.getText());
-                                        resultValue = render->createDepthTarget(&depthBuffer, width, height, format);
+                                        resultValue = render->createDepthTarget(&depthBuffer, width, height, format, 0);
                                     }
 
                                     Gek::Xml::Node xmlTargetsNode = xmlShaderNode.firstChildElement(L"targets");
@@ -641,7 +613,8 @@ namespace Gek
                                             CStringW name(xmlTargetNode.getType());
                                             Video::Format format = getFormat(xmlTargetNode.getText());
                                             BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
-                                            resultValue = render->createRenderTarget(&renderTargetMap[name], width, height, format);
+                                            UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
+                                            resultValue = render->createRenderTarget(&renderTargetMap[name], width, height, format, flags);
 
                                             resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
@@ -772,7 +745,23 @@ namespace Gek
 
                                         if (SUCCEEDED(resultValue))
                                         {
-                                            pass.resourceList = loadChildList(xmlPassNode, L"resources");
+                                            std::vector<CStringW> childList;
+                                            if (xmlPassNode.hasChildElement(L"resources"))
+                                            {
+                                                Gek::Xml::Node xmlResourcesNode = xmlPassNode.firstChildElement(L"resources");
+                                                Gek::Xml::Node xmlResourceNode = xmlResourcesNode.firstChildElement();
+                                                while (xmlResourceNode)
+                                                {
+                                                    pass.resourceList.push_back(xmlResourceNode.getType());
+                                                    if (String::to<bool>(xmlResourceNode.getAttribute(L"generateMipMaps")))
+                                                    {
+                                                        pass.generateMipMaps.insert(xmlResourceNode.getType());
+                                                    }
+
+                                                    xmlResourceNode = xmlResourceNode.nextSiblingElement();
+                                                };
+                                            }
+
                                             pass.unorderedAccessList = loadChildList(xmlPassNode, L"unorderedaccess");
 
                                             CStringA engineData;
@@ -809,26 +798,6 @@ namespace Gek
                                                     "                                                           \r\n";
                                             }
 
-                                            CStringA propertyData;
-                                            for (auto &propertyPair : propertyList)
-
-                                            {
-                                                propertyData.AppendFormat("        %S %S;              \r\n", getBindType(propertyPair.bindType), propertyPair.name.GetString());
-                                            }
-
-                                            if (!propertyData.IsEmpty())
-                                            {
-                                                engineData +=
-                                                    "namespace Material                                         \r\n" \
-                                                    "{                                                          \r\n" \
-                                                    "    cbuffer Data : register(b1)                            \r\n" \
-                                                    "    {                                                      \r\n";
-                                                engineData += propertyData;
-                                                engineData +=
-                                                    "    };                                                     \r\n" \
-                                                    "};                                                         \r\n" \
-                                                    "                                                           \r\n";
-                                            }
                                             if (pass.lighting)
                                             {
                                                 engineData +=
@@ -1021,7 +990,7 @@ namespace Gek
                         return resultValue;
                     }
 
-                    STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video::Texture::Interface>> &materialMapList, std::vector<UINT32> &materialPropertyList)
+                    STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<Video::Texture::Interface>> &materialMapList)
                     {
                         std::unordered_map<CStringW, CStringW> materialMapDefineList;
                         Gek::Xml::Node xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
@@ -1062,124 +1031,10 @@ namespace Gek
                             materialMapList.push_back(map);
                         }
 
-                        std::unordered_map<CStringW, CStringW> materialPropertyDefineList;
-                        Gek::Xml::Node xmlPropertiesNode = xmlMaterialNode.firstChildElement(L"properties");
-                        if (xmlPropertiesNode)
-                        {
-                            Gek::Xml::Node xmlPropertyNode = xmlPropertiesNode.firstChildElement();
-                            while (xmlPropertyNode)
-                            {
-                                CStringW name(xmlPropertyNode.getType());
-                                CStringW value(xmlPropertyNode.getText());
-                                materialPropertyDefineList[name] = value;
-
-                                xmlPropertyNode = xmlPropertyNode.nextSiblingElement();
-                            };
-                        }
-                        
-                        for (auto &propertyValue : propertyList)
-                        {
-                            CStringW property(propertyValue.default);
-                            auto materialPropertyIterator = materialPropertyDefineList.find(propertyValue.name);
-                            if (materialPropertyIterator != materialPropertyDefineList.end())
-                            {
-                                property = replaceDefines((*materialPropertyIterator).second);
-                            }
-
-                            switch (propertyValue.bindType)
-                            {
-                            case BindType::Half:
-                            case BindType::Float:
-                                if (true)
-                                {
-                                    float value = String::to<float>(property);
-                                    materialPropertyList.push_back(*(UINT32 *)&value);
-                                }
-
-                                break;
-
-                            case BindType::Half2:
-                            case BindType::Float2:
-                                if (true)
-                                {
-                                    Math::Float2 value = String::to<Math::Float2>(property);
-                                    materialPropertyList.push_back(*(UINT32 *)&value.x);
-                                    materialPropertyList.push_back(*(UINT32 *)&value.y);
-                                }
-
-                                break;
-
-                            case BindType::Float3:
-                                if (true)
-                                {
-                                    Math::Float3 value = String::to<Math::Float3>(property);
-                                    materialPropertyList.push_back(*(UINT32 *)&value.x);
-                                    materialPropertyList.push_back(*(UINT32 *)&value.y);
-                                    materialPropertyList.push_back(*(UINT32 *)&value.z);
-                                }
-
-                                break;
-
-                            case BindType::Half4:
-                            case BindType::Float4:
-                                if (true)
-                                {
-                                    Math::Float4 value = String::to<Math::Float4>(property);
-                                    materialPropertyList.push_back(*(UINT32 *)&value.x);
-                                    materialPropertyList.push_back(*(UINT32 *)&value.y);
-                                    materialPropertyList.push_back(*(UINT32 *)&value.z);
-                                    materialPropertyList.push_back(*(UINT32 *)&value.w);
-                                }
-
-                                break;
-
-                            case BindType::Int:
-                                materialPropertyList.push_back(String::to<UINT32>(property));
-                                break;
-
-                            case BindType::Int2:
-                                if (true)
-                                {
-                                    Math::Float2 value = String::to<Math::Float2>(property);
-                                    materialPropertyList.push_back(UINT32(value.x));
-                                    materialPropertyList.push_back(UINT32(value.y));
-                                }
-
-                                break;
-
-                            case BindType::Int3:
-                                if (true)
-                                {
-                                    Math::Float3 value = String::to<Math::Float3>(property);
-                                    materialPropertyList.push_back(UINT32(value.x));
-                                    materialPropertyList.push_back(UINT32(value.y));
-                                    materialPropertyList.push_back(UINT32(value.z));
-                                }
-
-                                break;
-
-                            case BindType::Int4:
-                                if (true)
-                                {
-                                    Math::Float4 value = String::to<Math::Float4>(property);
-                                    materialPropertyList.push_back(UINT32(value.x));
-                                    materialPropertyList.push_back(UINT32(value.y));
-                                    materialPropertyList.push_back(UINT32(value.z));
-                                    materialPropertyList.push_back(UINT32(value.w));
-                                }
-
-                                break;
-
-                            case BindType::Boolean:
-                                materialPropertyList.push_back(String::to<bool>(property));
-                                break;
-                            };
-                        }
-
                         return S_OK;
                     }
 
-                    STDMETHODIMP_(void) setMaterialValues(Video::Context::Interface *context, LPCVOID passData, const std::vector<CComPtr<Video::Texture::Interface>> &materialMapList, const std::vector<UINT32> &materialPropertyList)
+                    STDMETHODIMP_(void) setMaterialValues(Video::Context::Interface *context, LPCVOID passData, const std::vector<CComPtr<Video::Texture::Interface>> &materialMapList)
                     {
                         const Pass &pass = *(const Pass *)passData;
 
@@ -1198,13 +1053,6 @@ namespace Gek
 
                         Video::Context::System::Interface *system = (pass.mode == PassMode::Compute ? context->computeSystem() : context->pixelSystem());
                         system->setResourceList(resourceList, firstStage);
-
-                        LPVOID materialData = nullptr;
-                        if (SUCCEEDED(video->mapBuffer(propertyConstantBuffer, &materialData)))
-                        {
-                            memcpy(materialData, materialPropertyList.data(), (sizeof(UINT32) * materialPropertyList.size()));
-                            video->unmapBuffer(propertyConstantBuffer);
-                        }
                     }
 
                     STDMETHODIMP_(void) draw(Video::Context::Interface *context,
@@ -1260,6 +1108,19 @@ namespace Gek
                             resourceList.reserve(pass.resourceList.size());
                             for (auto &resourceName : pass.resourceList)
                             {
+                                IUnknown *resource = findResource(resourceName);
+                                if (resource)
+                                {
+                                    if (pass.generateMipMaps.count(resourceName) > 0)
+                                    {
+                                        CComQIPtr<Gek::Video::Texture::Interface> texture(resource);
+                                        if (texture)
+                                        {
+                                            context->generateMipMaps(texture);
+                                        }
+                                    }
+                                }
+
                                 resourceList.push_back(findResource(resourceName));
                             }
 
@@ -1285,7 +1146,6 @@ namespace Gek
                             switch (pass.mode)
                             {
                             case PassMode::Forward:
-                                system->setConstantBuffer(propertyConstantBuffer, 1);
                                 drawForward(&pass, pass.lighting);
                                 break;
 

@@ -3,14 +3,14 @@
 static const float specularPower = 1000;
 static const float gaussianThreshold = 0.04;
 
-float getPhong(in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
+float getPhong(float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
     // Using Blinn half angle modification for performance over correctness
     float3 halfAngle = normalize(viewDirection + lightDirection);
     return pow(saturate(dot(halfAngle, surfaceNormal)), specularPower);
 }
 
-float getGaussian(in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
+float getGaussian(float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
     float3 halfAngle = normalize(viewDirection + lightDirection);
     float NdotH = saturate(dot(surfaceNormal, halfAngle));
@@ -19,7 +19,7 @@ float getGaussian(in float3 surfaceNormal, in float3 lightDirection, in float3 v
     return exp(-normalAngle * normalAngle);
 }
 
-float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
+float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
     return (Math::ReciprocalPi * materialAlbedo) + getGaussian(surfaceNormal, lightDirection, viewDirection, NdotL);
 }

@@ -3,9 +3,9 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-OutputPixel mainPixelProgram(in InputPixel inputPixel)
+OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
-    float4 albedo = (Resources::albedo.Sample(Global::linearSampler, inputPixel.texCoord) * inputPixel.color * Material::color);
+    float4 albedo = (Resources::albedo.Sample(Global::linearSampler, inputPixel.texCoord) * inputPixel.color);
     
     [branch]
     if(albedo.a < 0.5f)
@@ -16,9 +16,9 @@ OutputPixel mainPixelProgram(in InputPixel inputPixel)
     float3x3 viewBasis = getCoTangentFrame(inputPixel.viewPosition, inputPixel.viewNormal, inputPixel.texCoord);
 
     float3 normal;
-    normal = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texCoord) * 255.0 / 127.0) - 128.0 / 127.0);
-    //normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
-    normal = (mul(normalize(normal), viewBasis)) * (inputPixel.frontFacing ? 1 : -1);
+    normal.xy = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texCoord) * 2.0f) - 1.0f);
+    normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
+    normal = (mul(normal, viewBasis)) * (inputPixel.frontFacing ? 1 : -1);
 
     OutputPixel outputPixel;
     outputPixel.albedoBuffer = albedo.xyz;

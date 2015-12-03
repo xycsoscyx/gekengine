@@ -18,7 +18,7 @@ struct SOURCEVERTEX
 
 #include "gekplugin.h"
 
-WORLDVERTEX GetWorldVertex(in SOURCEVERTEX kSource)
+WORLDVERTEX GetWorldVertex(SOURCEVERTEX kSource)
 {
     INSTANCE kInstance = gs_aInstances[kSource.instance];
 	float3 kXOffSet = mul(float3(kInstance.m_nHalfSize, 0.0, 0.0f), (float3x3)Camera::viewMatrix);

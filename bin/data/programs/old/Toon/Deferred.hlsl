@@ -13,7 +13,7 @@ struct OUTPUT
     float  depth                        : SV_TARGET2;
 };
 
-OUTPUT MainPixelProgram(in INPUT kInput)
+OUTPUT MainPixelProgram(INPUT kInput)
 {
     float4 nAlbedo = (gs_pAlbedoMap.Sample(gs_pLinearSampler, kInput.texCoord) * kInput.color);
 

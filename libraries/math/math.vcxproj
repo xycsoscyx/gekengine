@@ -31,6 +31,7 @@
     <ProjectGuid>{80C85026-E106-47BF-91FA-43220B44141B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>math</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -60,7 +61,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ExecutablePath>Z:\GEKvX Engine\math;$(ExecutablePath)</ExecutablePath>
-    <TargetName>$(ProjectName).debug</TargetName>
+    <TargetName>$(ProjectName)</TargetName>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\</OutDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>

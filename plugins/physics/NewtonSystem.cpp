@@ -14,6 +14,7 @@
 #include "GEK\Newton\Player.h"
 #include "GEK\Math\Matrix4x4.h"
 #include "GEK\Shape\AlignedBox.h"
+#include <Newton.h>
 #include <dNewton.h>
 #include <dNewtonPlayerManager.h>
 #include <dNewtonCollision.h>
@@ -23,13 +24,13 @@
 #include <map>
 
 #ifdef _DEBUG
-#pragma comment(lib, "newton.lib")
-#pragma comment(lib, "dNewton.lib")
-#pragma comment(lib, "dContainers.lib")
+    #pragma comment(lib, "newton.lib")
+    #pragma comment(lib, "dNewton.lib")
+    #pragma comment(lib, "dContainers.lib")
 #else
-#pragma comment(lib, "newton.lib")
-#pragma comment(lib, "dNewton.lib")
-#pragma comment(lib, "dContainers.lib")
+    #pragma comment(lib, "newton.lib")
+    #pragma comment(lib, "dNewton.lib")
+    #pragma comment(lib, "dContainers.lib")
 #endif
 
 namespace Gek

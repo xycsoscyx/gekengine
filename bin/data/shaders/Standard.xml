@@ -3,7 +3,7 @@
     <material>
         <maps>
             <albedo bind="float4" loadFlags="">Texture2D</albedo>
-            <normal bind="float3">Texture2D</normal>
+            <normal bind="float2">Texture2D</normal>
             <roughness bind="float">Texture2D</roughness>
             <metalness bind="float">Texture2D</metalness>
         </maps>
@@ -23,14 +23,13 @@
     <targets>
         <albedoBuffer bind="float3">byte4</albedoBuffer>
         <materialBuffer bind="float2">byte2</materialBuffer>
-        <normalBuffer bind="float2">half2</normalBuffer>
+        <normalBuffer bind="half2">half2</normalBuffer>
         <depthBuffer bind="float">float</depthBuffer>
-        <compositeBuffer bind="float3">float4</compositeBuffer>
+        <compositeBuffer bind="float4" flags="mipmaps">float4</compositeBuffer>
     </targets>
 
     <buffers>
         <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %lightListSize%">byte</tileIndexList>
-        <exposureBuffer size="1">float</exposureBuffer>
     </buffers>
 
     <pass mode="forward">
@@ -101,30 +100,9 @@
         </program>
     </pass>
 
-    <pass mode="compute">
-        <resources>
-            <compositeBuffer />
-        </resources>
-
-        <unorderedaccess>
-            <exposureBuffer />
-        </unorderedaccess>
-
-        <program>
-            <compute>
-                <width>%dispatchWidth%</width>
-                <height>%dispatchHeight%</height>
-                <depth>1</depth>
-            </compute>
-            <entry>mainComputeProgram</entry>
-            <source>Standard\Exposure</source>
-        </program>
-    </pass>
-
     <pass mode="deferred">
         <resources>
-            <exposureBuffer />
-            <compositeBuffer />
+            <compositeBuffer generateMipMaps="true" />
             <albedoBuffer />
             <materialBuffer />
             <normalBuffer />
@@ -133,7 +111,7 @@
 
         <program>
             <entry>mainPixelProgram</entry>
-            <source>Standard\Final</source>
+            <source>Standard\ToneMap</source>
         </program>
     </pass>
 </shader>

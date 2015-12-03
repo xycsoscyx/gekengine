@@ -43,7 +43,7 @@ float3 getG(float3 materialAlbedo, float materialRoughness, float materialMetaln
     return getSchlickSmith(materialRoughness, NdotL, NdotV);
 }
 
-float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
+float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
     materialRoughness = (materialRoughness * 0.9f + 0.1f);
     float alpha = (materialRoughness * materialRoughness);

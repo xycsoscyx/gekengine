@@ -24,6 +24,7 @@ namespace Gek
             else if (_wcsicmp(formatString, L"BYTE3") == 0) return Video::Format::Byte3;
             else if (_wcsicmp(formatString, L"BYTE4") == 0) return Video::Format::Byte4;
             else if (_wcsicmp(formatString, L"BGRA") == 0) return Video::Format::BGRA;
+            else if (_wcsicmp(formatString, L"sRGBA") == 0) return Video::Format::sRGBA;
             else if (_wcsicmp(formatString, L"SHORT") == 0) return Video::Format::Short;
             else if (_wcsicmp(formatString, L"SHORT2") == 0) return Video::Format::Short2;
             else if (_wcsicmp(formatString, L"SHORT4") == 0) return Video::Format::Short4;
@@ -180,7 +181,7 @@ namespace Gek
                         float height = float(video->getHeight());
                         float consoleHeight = (height * 0.5f);
 
-                        Video::Overlay::Interface *overlay = dynamic_cast<Video::Overlay::Interface *>((IUnknown *)video);
+                        Video::Overlay::Interface *overlay = video->getOverlay();
                         resultValue = overlay->createBrush(&backgroundBrush, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 0.5f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 0.5f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
                         if (SUCCEEDED(resultValue))
                         {
@@ -464,7 +465,7 @@ namespace Gek
                 {
                     if (consolePosition > 0.0f)
                     {
-                        Video::Overlay::Interface *overlay = dynamic_cast<Video::Overlay::Interface *>((IUnknown *)video);
+                        Video::Overlay::Interface *overlay = video->getOverlay();
 
                         overlay->beginDraw();
 

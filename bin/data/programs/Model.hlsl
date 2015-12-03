@@ -1,6 +1,6 @@
 #include "GEKGlobal.h"
 
-WorldVertex getWorldVertex(in PluginVertex pluginVertex)
+WorldVertex getWorldVertex(PluginVertex pluginVertex)
 {
     WorldVertex worldVertex;
 	worldVertex.position = mul(pluginVertex.transform, float4(pluginVertex.position * pluginVertex.scale, 1.0f));

@@ -38,7 +38,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 			// spatial domain: offset gaussian tap
 			float nWeight = gs_aGuassian[gs_nGuassianDeviation][abs(nSample)];
 
-			// range domain (the "bilateral" weight). As depth difference increases, decrease weight.
+			// range doma(the "bilateral" weight). As depth difference increases, decrease weight.
 			nWeight *= rcp(gs_nEpsilon + gs_nEdgeSharpness * abs(nCenterDepth - nSampleDepth));
 
 			nAmbientOcclusion += nSampleAmbient * nWeight;

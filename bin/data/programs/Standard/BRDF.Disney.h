@@ -15,38 +15,38 @@ static const float3 Y = 0;
 float SchlickFresnel(float u)
 {
     float m = clamp(1 - u, 0, 1);
-    float m2 = m*m;
-    return m2*m2*m; // pow(m,5)
+    float m2 = m * m;
+    return m2 * m2 * m; // pow(m,5)
 }
 
 float GTR1(float NdotH, float alpha)
 {
     if (alpha >= 1) return 1 / Math::Pi;
-    float alphaSquared = alpha*alpha;
-    float t = 1 + (alphaSquared - 1)*NdotH*NdotH;
-    return (alphaSquared - 1) / (Math::Pi*log(alphaSquared)*t);
+    float alphaSquared = alpha * alpha;
+    float t = 1 + (alphaSquared - 1) * NdotH * NdotH;
+    return (alphaSquared - 1) / (Math::Pi * log(alphaSquared) * t);
 }
 
 float GTR2(float NdotH, float alpha)
 {
-    float alphaSquared = alpha*alpha;
-    float t = 1 + (alphaSquared - 1)*NdotH*NdotH;
-    return alphaSquared / (Math::Pi * t*t);
+    float alphaSquared = alpha * alpha;
+    float t = 1 + (alphaSquared - 1) * NdotH * NdotH;
+    return alphaSquared / (Math::Pi * t * t);
 }
 
 float GTR2_aniso(float NdotH, float HdotX, float HdotY, float ax, float ay)
 {
-    return 1 / (Math::Pi * ax*ay * sqr(sqr(HdotX / ax) + sqr(HdotY / ay) + NdotH*NdotH));
+    return 1 / (Math::Pi * ax * ay * sqr(sqr(HdotX / ax) + sqr(HdotY / ay) + NdotH * NdotH));
 }
 
 float smithG_GGX(float angle, float alpha)
 {
-    float alphaSquared = alpha*alpha;
-    float angleSquared = angle*angle;
-    return 1 / (angle + sqrt(alphaSquared + angleSquared - alphaSquared*angleSquared));
+    float alphaSquared = alpha * alpha;
+    float angleSquared = angle * angle;
+    return 1 / (angle + sqrt(alphaSquared + angleSquared - alphaSquared * angleSquared));
 }
 
-float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float materialMetalness, in float3 surfaceNormal, in float3 lightDirection, in float3 viewDirection, in float NdotL)
+float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
     materialRoughness = (materialRoughness * 0.9f + 0.1f);
 
@@ -60,20 +60,20 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
     static const float3 luminance = float3(0.299f, 0.587f, 0.114f);
     float Cdlum = dot(Cdlin, luminance);
 
-    float3 Ctint = Cdlum > 0 ? Cdlin / Cdlum : 1; // normalize lum. to isolate hue+sat
-    float3 Cspec0 = lerp(specular*.08*lerp(1, Ctint, specularTint), Cdlin, materialMetalness);
+    float3 Ctint = Cdlum > 0 ? Cdlin / Cdlum : 1; // normalize lum. to isolate hue + sat
+    float3 Cspec0 = lerp(specular * .08 * lerp(1, Ctint, specularTint), Cdlin, materialMetalness);
     float3 Csheen = lerp(1, Ctint, sheenTint);
 
     // Diffuse fresnel - go from 1 at normal incidence to .5 at grazing
-    // and lerp in diffuse retro-reflection based on materialRoughness
+    // and lerp diffuse retro-reflection based on materialRoughness
     float FL = SchlickFresnel(NdotL), FV = SchlickFresnel(NdotV);
-    float Fd90 = 0.5 + 2 * LdotH*LdotH * materialRoughness;
+    float Fd90 = 0.5 + 2 * LdotH * LdotH * materialRoughness;
     float Fd = lerp(1, Fd90, FL) * lerp(1, Fd90, FV);
 
     // Based on Hanrahan-Krueger brdf approximation of isotropic bssrdf
     // 1.25 scale is used to (roughly) preserve albedo
     // Fss90 used to "flatten" retroreflection based on materialRoughness
-    float Fss90 = LdotH*LdotH*materialRoughness;
+    float Fss90 = LdotH * LdotH * materialRoughness;
     float Fss = lerp(1, Fss90, FL) * lerp(1, Fss90, FV);
     float ss = 1.25 * (Fss * (1 / (NdotL + NdotV) - .5) + .5);
 
@@ -81,7 +81,7 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
 
     // specular
 #if _ANISOTROPIC
-    float aspect = sqrt(1 - anisotropic*.9);
+    float aspect = sqrt(1 - anisotropic * .9);
     float ax = max(.001, sqr(materialRoughness) / aspect);
     float ay = max(.001, sqr(materialRoughness) * aspect);
     float Ds = GTR2_aniso(NdotH, dot(halfAngle, X), dot(halfAngle, Y), ax, ay);
@@ -105,7 +105,7 @@ float3 getBRDF(in float3 materialAlbedo, in float materialRoughness, in float ma
     float Fr = lerp(.04, 1, FH);
     float Gr = smithG_GGX(NdotL, .25) * smithG_GGX(NdotV, .25);
 
-    return ((1 / Math::Pi) * lerp(Fd, ss, subsurface)*Cdlin + Fsheen) * (1 - materialMetalness)
-        + Gs*Fs*Ds
-        + .25*clearcoat*Gr*Fr*Dr;
+    return ((1 / Math::Pi) * lerp(Fd, ss, subsurface) * Cdlin +  Fsheen) * (1 - materialMetalness)
+        + Gs * Fs * Ds
+        + .25 * clearcoat * Gr * Fr * Dr;
 }

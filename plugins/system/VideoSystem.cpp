@@ -40,6 +40,7 @@ namespace Gek
                 DXGI_FORMAT_R10G10B10A2_UNORM,
                 DXGI_FORMAT_R8G8B8A8_UNORM,
                 DXGI_FORMAT_B8G8R8A8_UNORM,
+                DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
                 DXGI_FORMAT_R16_UINT,
                 DXGI_FORMAT_R16G16_UINT,
                 DXGI_FORMAT_R16G16B16A16_UINT,
@@ -69,6 +70,7 @@ namespace Gek
                 DXGI_FORMAT_UNKNOWN,
                 DXGI_FORMAT_R8G8B8A8_UINT,
                 DXGI_FORMAT_UNKNOWN,
+                DXGI_FORMAT_UNKNOWN,
                 DXGI_FORMAT_R16_UINT,
                 DXGI_FORMAT_R16G16_UINT,
                 DXGI_FORMAT_R16G16B16A16_UINT,
@@ -95,6 +97,7 @@ namespace Gek
                 0,
                 sizeof(UINT8),
                 (sizeof(UINT8) * 2),
+                (sizeof(UINT8) * 4),
                 (sizeof(UINT8) * 4),
                 (sizeof(UINT8) * 4),
                 (sizeof(UINT8) * 4),
@@ -970,6 +973,18 @@ namespace Gek
                     return pixelSystemHandler.get();
                 }
 
+                STDMETHODIMP_(void) generateMipMaps(Texture::Interface *texture)
+                {
+                    REQUIRE_VOID_RETURN(d3dDeviceContext);
+                    REQUIRE_VOID_RETURN(texture);
+
+                    CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(texture);
+                    if (d3dShaderResourceView)
+                    {
+                        d3dDeviceContext->GenerateMips(d3dShaderResourceView);
+                    }
+                }
+
                 STDMETHODIMP_(void) clearResources(void)
                 {
                     static ID3D11ShaderResourceView *const d3dShaderResourceViewList[] =
@@ -1475,6 +1490,16 @@ namespace Gek
                 return resultValue;
             }
 
+            STDMETHODIMP_(Context::Interface *) getDefaultContext(void)
+            {
+                return static_cast<Context::Interface *>(this);
+            }
+
+            STDMETHODIMP_(Overlay::Interface *) getOverlay(void)
+            {
+                return static_cast<Overlay::Interface *>(this);
+            }
+
             STDMETHODIMP_(UINT32) getWidth(void)
             {
                 return width;
@@ -1801,7 +1826,7 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP createRenderTarget(Video::Texture::Interface **returnObject, UINT32 width, UINT32 height, Format format)
+            STDMETHODIMP createRenderTarget(Video::Texture::Interface **returnObject, UINT32 width, UINT32 height, Format format, UINT32 flags)
             {
                 gekLogScope(width,
                     height,
@@ -1817,14 +1842,14 @@ namespace Gek
                 textureDescription.Format = DXGI_FORMAT_UNKNOWN;
                 textureDescription.Width = width;
                 textureDescription.Height = height;
-                textureDescription.MipLevels = 1;
+                textureDescription.MipLevels = ((flags & Gek::Video::TextureFlags::MipMaps) ? 0 : 1);
                 textureDescription.ArraySize = 1;
                 textureDescription.SampleDesc.Count = 1;
                 textureDescription.SampleDesc.Quality = 0;
                 textureDescription.Usage = D3D11_USAGE_DEFAULT;
                 textureDescription.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
                 textureDescription.CPUAccessFlags = 0;
-                textureDescription.MiscFlags = 0;
+                textureDescription.MiscFlags = ((flags & Gek::Video::TextureFlags::MipMaps) ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
                 textureDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
 
                 CComPtr<ID3D11Texture2D> texture2D;
@@ -1844,7 +1869,7 @@ namespace Gek
                         shaderViewDescription.Format = textureDescription.Format;
                         shaderViewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
                         shaderViewDescription.Texture2D.MostDetailedMip = 0;
-                        shaderViewDescription.Texture2D.MipLevels = 1;
+                        shaderViewDescription.Texture2D.MipLevels = ((flags & Gek::Video::TextureFlags::MipMaps) ? -1 : 1);
 
                         CComPtr<ID3D11ShaderResourceView> shaderView;
                         gekCheckResult(resultValue = d3dDevice->CreateShaderResourceView(texture2D, &shaderViewDescription, &shaderView));
@@ -1863,7 +1888,7 @@ namespace Gek
                 return resultValue;
             }
 
-            STDMETHODIMP createDepthTarget(IUnknown **returnObject, UINT32 width, UINT32 height, Format format)
+            STDMETHODIMP createDepthTarget(IUnknown **returnObject, UINT32 width, UINT32 height, Format format, UINT32 flags)
             {
                 gekLogScope(width,
                     height,
@@ -1879,14 +1904,14 @@ namespace Gek
                 depthDescription.Format = DXGI_FORMAT_UNKNOWN;
                 depthDescription.Width = width;
                 depthDescription.Height = height;
-                depthDescription.MipLevels = 1;
+                depthDescription.MipLevels = ((flags & Gek::Video::TextureFlags::MipMaps) ? 0 : 1);
                 depthDescription.ArraySize = 1;
                 depthDescription.SampleDesc.Count = 1;
                 depthDescription.SampleDesc.Quality = 0;
                 depthDescription.Usage = D3D11_USAGE_DEFAULT;
                 depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
                 depthDescription.CPUAccessFlags = 0;
-                depthDescription.MiscFlags = 0;
+                depthDescription.MiscFlags = ((flags & Gek::Video::TextureFlags::MipMaps) ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
                 depthDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
 
                 CComPtr<ID3D11Texture2D> texture2D;
@@ -2571,7 +2596,7 @@ namespace Gek
                     D3D11_TEXTURE2D_DESC textureDescription;
                     textureDescription.Width = width;
                     textureDescription.Height = height;
-                    textureDescription.MipLevels = 1;
+                    textureDescription.MipLevels = ((flags & Gek::Video::TextureFlags::MipMaps) ? 0 : 1);
                     textureDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
                     textureDescription.ArraySize = 1;
                     textureDescription.SampleDesc.Count = 1;
@@ -2579,7 +2604,7 @@ namespace Gek
                     textureDescription.Usage = D3D11_USAGE_DEFAULT;
                     textureDescription.BindFlags = bindFlags;
                     textureDescription.CPUAccessFlags = 0;
-                    textureDescription.MiscFlags = 0;
+                    textureDescription.MiscFlags = ((flags & Gek::Video::TextureFlags::MipMaps) ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
 
                     CComPtr<ID3D11Texture2D> texture2D;
                     gekCheckResult(resultValue = d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D));
@@ -2594,12 +2619,12 @@ namespace Gek
                     textureDescription.Width = width;
                     textureDescription.Height = height;
                     textureDescription.Depth = depth;
-                    textureDescription.MipLevels = 1;
+                    textureDescription.MipLevels = ((flags & Gek::Video::TextureFlags::MipMaps) ? 0 : 1);
                     textureDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
                     textureDescription.Usage = D3D11_USAGE_DEFAULT;
                     textureDescription.BindFlags = bindFlags;
                     textureDescription.CPUAccessFlags = 0;
-                    textureDescription.MiscFlags = 0;
+                    textureDescription.MiscFlags = ((flags & Gek::Video::TextureFlags::MipMaps) ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
 
                     CComPtr<ID3D11Texture3D> texture2D;
                     gekCheckResult(resultValue = d3dDevice->CreateTexture3D(&textureDescription, nullptr, &texture2D));

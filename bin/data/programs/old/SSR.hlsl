@@ -89,7 +89,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             nReflectivity *= saturate(tAtt.x * 10.0);
             nReflectivity *= saturate(tAtt.y * 10.0);
 
-            // AVOIDING REFLECTION OF OBJECTS IN FOREGROUND 
+            // AVOIDING REFLECTION OF OBJECTS FOREGROUND 
             nReflectivity = (nReflectivity * 1.0 / (1.0 + (abs(nSamplePosition.z - nRayPosition.z) * 20)));
 
             // COMBINING REFLECTION TO THE ORIGINAL PIXEL COLOR

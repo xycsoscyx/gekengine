@@ -365,6 +365,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     }
     catch (...)
     {
+        printf("[error] Unhandled Exception Occurred!");
     }
 
     printf("\r\n");
