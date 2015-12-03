@@ -56,15 +56,15 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                Gek::Xml::Document xmlDocument;
+                Gek::XmlDocument xmlDocument;
                 resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = E_INVALIDARG;
-                    Gek::Xml::Node xmlMaterialNode = xmlDocument.getRoot();
+                    Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
                     if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
                     {
-                        Gek::Xml::Node xmlShaderNode = xmlMaterialNode.firstChildElement(L"shader");
+                        Gek::XmlNode xmlShaderNode = xmlMaterialNode.firstChildElement(L"shader");
                         if (xmlShaderNode)
                         {
                             CStringW shaderFileName = xmlShaderNode.getText();

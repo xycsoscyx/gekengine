@@ -174,21 +174,21 @@ namespace Gek
             free();
             ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
-            Gek::Xml::Document xmlDocument;
+            Gek::XmlDocument xmlDocument;
             HRESULT resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\worlds\\%s.xml", fileName));
             if (SUCCEEDED(resultValue))
             {
-                Gek::Xml::Node xmlWorldNode = xmlDocument.getRoot();
+                Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
                 if (xmlWorldNode && xmlWorldNode.getType().CompareNoCase(L"world") == 0)
                 {
-                    Gek::Xml::Node xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
+                    Gek::XmlNode xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
                     if (xmlPopulationNode)
                     {
-                        Gek::Xml::Node xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
+                        Gek::XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
                         while (xmlEntityNode)
                         {
                             std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> entityParameterList;
-                            Gek::Xml::Node xmlComponentNode = xmlEntityNode.firstChildElement();
+                            Gek::XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
                             while (xmlComponentNode)
                             {
                                 std::unordered_map<CStringW, CStringW> &componentParameterList = entityParameterList[xmlComponentNode.getType()];
@@ -236,10 +236,10 @@ namespace Gek
 
         STDMETHODIMP save(LPCWSTR fileName)
         {
-            Gek::Xml::Document xmlDocument;
+            Gek::XmlDocument xmlDocument;
             xmlDocument.create(L"world");
-            Gek::Xml::Node xmlWorldNode = xmlDocument.getRoot();
-            Gek::Xml::Node xmlPopulationNode = xmlWorldNode.createChildElement(L"population");
+            Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
+            Gek::XmlNode xmlPopulationNode = xmlWorldNode.createChildElement(L"population");
 
             for (auto &entity : entityList)
             {

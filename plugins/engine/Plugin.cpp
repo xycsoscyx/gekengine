@@ -129,22 +129,22 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                Gek::Xml::Document xmlDocument;
+                Gek::XmlDocument xmlDocument;
                 gekCheckResult(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\plugins\\%s.xml", fileName)));
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = E_INVALIDARG;
-                    Gek::Xml::Node xmlPluginNode = xmlDocument.getRoot();
+                    Gek::XmlNode xmlPluginNode = xmlDocument.getRoot();
                     if (xmlPluginNode && xmlPluginNode.getType().CompareNoCase(L"plugin") == 0)
                     {
-                        Gek::Xml::Node xmlLayoutNode = xmlPluginNode.firstChildElement(L"layout");
+                        Gek::XmlNode xmlLayoutNode = xmlPluginNode.firstChildElement(L"layout");
                         if (xmlLayoutNode)
                         {
                             resultValue = S_OK;
-                            Gek::Xml::Node xmlGeometryNode = xmlPluginNode.firstChildElement(L"geometry");
+                            Gek::XmlNode xmlGeometryNode = xmlPluginNode.firstChildElement(L"geometry");
                             if (xmlGeometryNode)
                             {
-                                Gek::Xml::Node xmlProgramNode = xmlGeometryNode.firstChildElement(L"program");
+                                Gek::XmlNode xmlProgramNode = xmlGeometryNode.firstChildElement(L"program");
                                 if (xmlProgramNode && xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
                                 {
                                     CStringW programFileName = xmlProgramNode.getAttribute(L"source");
@@ -184,7 +184,7 @@ namespace Gek
 
                                 std::vector<CStringA> elementNameList;
                                 std::vector<Video::InputElement> elementList;
-                                Gek::Xml::Node xmlElementNode = xmlLayoutNode.firstChildElement();
+                                Gek::XmlNode xmlElementNode = xmlLayoutNode.firstChildElement();
                                 while (xmlElementNode)
                                 {
                                     if (xmlElementNode.getType().CompareNoCase(L"instanceIndex") == 0)
@@ -270,10 +270,10 @@ namespace Gek
                                     "                                                                                                   \r\n";
 
                                 resultValue = E_INVALIDARG;
-                                Gek::Xml::Node xmlVertexNode = xmlPluginNode.firstChildElement(L"vertex");
+                                Gek::XmlNode xmlVertexNode = xmlPluginNode.firstChildElement(L"vertex");
                                 if (xmlVertexNode)
                                 {
-                                    Gek::Xml::Node xmlProgramNode = xmlVertexNode.firstChildElement(L"program");
+                                    Gek::XmlNode xmlProgramNode = xmlVertexNode.firstChildElement(L"program");
                                     if (xmlProgramNode)
                                     {
                                         CStringW programPath(L"%root%\\data\\programs\\" + xmlProgramNode.getText() + L".hlsl");

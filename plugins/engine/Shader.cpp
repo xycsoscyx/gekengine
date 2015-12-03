@@ -310,7 +310,7 @@ namespace Gek
             return flags;
         }
 
-        void loadStencilStates(Video::DepthStates::StencilStates &stencilStates, Gek::Xml::Node &xmlStencilNode)
+        void loadStencilStates(Video::DepthStates::StencilStates &stencilStates, Gek::XmlNode &xmlStencilNode)
         {
             stencilStates.passOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"pass").getText());
             stencilStates.failOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"fail").getText());
@@ -318,7 +318,7 @@ namespace Gek
             stencilStates.comparisonFunction = getComparisonFunction(xmlStencilNode.firstChildElement(L"comparison").getText());
         }
 
-        HRESULT loadDepthStates(Pass &pass, Gek::Xml::Node &xmlDepthStatesNode)
+        HRESULT loadDepthStates(Pass &pass, Gek::XmlNode &xmlDepthStatesNode)
         {
             Video::DepthStates depthStates;
             depthStates.enable = true;
@@ -334,7 +334,7 @@ namespace Gek
 
             if (xmlDepthStatesNode.hasChildElement(L"stencil"))
             {
-                Gek::Xml::Node xmlStencilNode = xmlDepthStatesNode.firstChildElement(L"stencil");
+                Gek::XmlNode xmlStencilNode = xmlDepthStatesNode.firstChildElement(L"stencil");
                 depthStates.stencilEnable = true;
 
                 if (xmlStencilNode.hasChildElement(L"clear"))
@@ -357,7 +357,7 @@ namespace Gek
             return render->createDepthStates(&pass.depthStates, depthStates);
         }
 
-        HRESULT loadRenderStates(Pass &pass, Gek::Xml::Node &xmlRenderStatesNode)
+        HRESULT loadRenderStates(Pass &pass, Gek::XmlNode &xmlRenderStatesNode)
         {
             Video::RenderStates renderStates;
             renderStates.fillMode = getFillMode(xmlRenderStatesNode.firstChildElement(L"fillmode").getText());
@@ -375,7 +375,7 @@ namespace Gek
             return render->createRenderStates(&pass.renderStates, renderStates);
         }
 
-        void loadBlendTargetStates(Video::TargetBlendStates &blendStates, Gek::Xml::Node &xmlBlendStatesNode)
+        void loadBlendTargetStates(Video::TargetBlendStates &blendStates, Gek::XmlNode &xmlBlendStatesNode)
         {
             blendStates.writeMask = Video::ColorMask::RGBA;
             CStringW writeMask(xmlBlendStatesNode.firstChildElement(L"writemask").getText());
@@ -386,7 +386,7 @@ namespace Gek
 
             if (xmlBlendStatesNode.hasChildElement(L"color"))
             {
-                Gek::Xml::Node&xmlColorNode = xmlBlendStatesNode.firstChildElement(L"color");
+                Gek::XmlNode&xmlColorNode = xmlBlendStatesNode.firstChildElement(L"color");
                 blendStates.colorSource = getBlendSource(xmlColorNode.getAttribute(L"source"));
                 blendStates.colorDestination = getBlendSource(xmlColorNode.getAttribute(L"destination"));
                 blendStates.colorOperation = getBlendOperation(xmlColorNode.getAttribute(L"operation"));
@@ -394,14 +394,14 @@ namespace Gek
 
             if (xmlBlendStatesNode.hasChildElement(L"alpha"))
             {
-                Gek::Xml::Node xmlAlphaNode = xmlBlendStatesNode.firstChildElement(L"alpha");
+                Gek::XmlNode xmlAlphaNode = xmlBlendStatesNode.firstChildElement(L"alpha");
                 blendStates.alphaSource = getBlendSource(xmlAlphaNode.getAttribute(L"source"));
                 blendStates.alphaDestination = getBlendSource(xmlAlphaNode.getAttribute(L"destination"));
                 blendStates.alphaOperation = getBlendOperation(xmlAlphaNode.getAttribute(L"operation"));
             }
         }
 
-        HRESULT loadBlendStates(Pass &pass, Gek::Xml::Node &xmlBlendStatesNode)
+        HRESULT loadBlendStates(Pass &pass, Gek::XmlNode &xmlBlendStatesNode)
         {
             bool alphaToCoverage = String::to<bool>(xmlBlendStatesNode.firstChildElement(L"alphatocoverage").getText());
             if (xmlBlendStatesNode.hasChildElement(L"target"))
@@ -409,7 +409,7 @@ namespace Gek
                 UINT32 targetIndex = 0;
                 Video::IndependentBlendStates blendStates;
                 blendStates.alphaToCoverage = alphaToCoverage;
-                Gek::Xml::Node xmlTargetNode = xmlBlendStatesNode.firstChildElement(L"target");
+                Gek::XmlNode xmlTargetNode = xmlBlendStatesNode.firstChildElement(L"target");
                 while (xmlTargetNode)
                 {
                     blendStates.targetStates[targetIndex++].enable = true;
@@ -433,10 +433,10 @@ namespace Gek
             }
         }
 
-        std::vector<CStringW> loadChildList(Gek::Xml::Node &xmlChildNode)
+        std::vector<CStringW> loadChildList(Gek::XmlNode &xmlChildNode)
         {
             std::vector<CStringW> childList;
-            Gek::Xml::Node xmlResourceNode = xmlChildNode.firstChildElement();
+            Gek::XmlNode xmlResourceNode = xmlChildNode.firstChildElement();
             while (xmlResourceNode)
             {
                 childList.push_back(xmlResourceNode.getType());
@@ -446,12 +446,12 @@ namespace Gek
             return childList;
         }
 
-        std::vector<CStringW> loadChildList(Gek::Xml::Node &xmlProgramNode, LPCWSTR name)
+        std::vector<CStringW> loadChildList(Gek::XmlNode &xmlProgramNode, LPCWSTR name)
         {
             std::vector<CStringW> childList;
             if (xmlProgramNode.hasChildElement(name))
             {
-                Gek::Xml::Node xmlChildNode = xmlProgramNode.firstChildElement(name);
+                Gek::XmlNode xmlChildNode = xmlProgramNode.firstChildElement(name);
                 childList = loadChildList(xmlChildNode);
             }
 
@@ -535,12 +535,12 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                Gek::Xml::Document xmlDocument;
+                Gek::XmlDocument xmlDocument;
                 gekCheckResult(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\shaders\\%s.xml", fileName)));
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = E_INVALIDARG;
-                    Gek::Xml::Node xmlShaderNode = xmlDocument.getRoot();
+                    Gek::XmlNode xmlShaderNode = xmlDocument.getRoot();
                     if (xmlShaderNode && xmlShaderNode.getType().CompareNoCase(L"shader") == 0)
                     {
                         if (xmlShaderNode.hasAttribute(L"width"))
@@ -554,13 +554,13 @@ namespace Gek
                         }
 
                         std::unordered_map<CStringW, std::pair<MapType, BindType>> resourceList;
-                        Gek::Xml::Node xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
+                        Gek::XmlNode xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
                         if (xmlMaterialNode)
                         {
-                            Gek::Xml::Node xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
+                            Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
                             if (xmlMapsNode)
                             {
-                                Gek::Xml::Node xmlMapNode = xmlMapsNode.firstChildElement();
+                                Gek::XmlNode xmlMapNode = xmlMapsNode.firstChildElement();
                                 while (xmlMapNode)
                                 {
                                     CStringW name(xmlMapNode.getType());
@@ -575,10 +575,10 @@ namespace Gek
                         }
 
                         std::unordered_map<CStringA, CStringA> globalDefines;
-                        Gek::Xml::Node xmlDefinesNode = xmlShaderNode.firstChildElement(L"defines");
+                        Gek::XmlNode xmlDefinesNode = xmlShaderNode.firstChildElement(L"defines");
                         if (xmlDefinesNode)
                         {
-                            Gek::Xml::Node xmlDefineNode = xmlDefinesNode.firstChildElement();
+                            Gek::XmlNode xmlDefineNode = xmlDefinesNode.firstChildElement();
                             while (xmlDefineNode)
                             {
                                 CStringW name(xmlDefineNode.getType());
@@ -591,17 +591,17 @@ namespace Gek
                             };
                         }
 
-                        Gek::Xml::Node xmlDepthNode = xmlShaderNode.firstChildElement(L"depth");
+                        Gek::XmlNode xmlDepthNode = xmlShaderNode.firstChildElement(L"depth");
                         if (xmlDepthNode)
                         {
                             Video::Format format = getFormat(xmlDepthNode.getText());
                             resultValue = render->createDepthTarget(&depthBuffer, width, height, format, 0);
                         }
 
-                        Gek::Xml::Node xmlTargetsNode = xmlShaderNode.firstChildElement(L"targets");
+                        Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"targets");
                         if (xmlTargetsNode)
                         {
-                            Gek::Xml::Node xmlTargetNode = xmlTargetsNode.firstChildElement();
+                            Gek::XmlNode xmlTargetNode = xmlTargetsNode.firstChildElement();
                             while (xmlTargetNode)
                             {
                                 CStringW name(xmlTargetNode.getType());
@@ -616,10 +616,10 @@ namespace Gek
                             };
                         }
 
-                        Gek::Xml::Node xmlBuffersNode = xmlShaderNode.firstChildElement(L"buffers");
+                        Gek::XmlNode xmlBuffersNode = xmlShaderNode.firstChildElement(L"buffers");
                         if (xmlBuffersNode)
                         {
-                            Gek::Xml::Node xmlBufferNode = xmlBuffersNode.firstChildElement();
+                            Gek::XmlNode xmlBufferNode = xmlBuffersNode.firstChildElement();
                             while (xmlBufferNode && xmlBufferNode.hasAttribute(L"size"))
                             {
                                 CStringW name(xmlBufferNode.getType());
@@ -676,7 +676,7 @@ namespace Gek
                         }
 
                         resultValue = S_OK;
-                        Gek::Xml::Node xmlPassNode = xmlShaderNode.firstChildElement(L"pass");
+                        Gek::XmlNode xmlPassNode = xmlShaderNode.firstChildElement(L"pass");
                         while (xmlPassNode && SUCCEEDED(resultValue))
                         {
                             if (!xmlPassNode.hasChildElement(L"program"))
@@ -712,7 +712,7 @@ namespace Gek
 
                             if (xmlPassNode.hasChildElement(L"targets"))
                             {
-                                Gek::Xml::Node xmlTargetsNode = xmlPassNode.firstChildElement(L"targets");
+                                Gek::XmlNode xmlTargetsNode = xmlPassNode.firstChildElement(L"targets");
                                 if (xmlTargetsNode.hasAttribute(L"clear"))
                                 {
                                     pass.clearRenderTargets = true;
@@ -742,8 +742,8 @@ namespace Gek
                                 std::vector<CStringW> childList;
                                 if (xmlPassNode.hasChildElement(L"resources"))
                                 {
-                                    Gek::Xml::Node xmlResourcesNode = xmlPassNode.firstChildElement(L"resources");
-                                    Gek::Xml::Node xmlResourceNode = xmlResourcesNode.firstChildElement();
+                                    Gek::XmlNode xmlResourcesNode = xmlPassNode.firstChildElement(L"resources");
+                                    Gek::XmlNode xmlResourceNode = xmlResourcesNode.firstChildElement();
                                     while (xmlResourceNode)
                                     {
                                         pass.resourceList.push_back(xmlResourceNode.getType());
@@ -871,7 +871,7 @@ namespace Gek
                                         "                                                           \r\n";
                                 }
 
-                                Gek::Xml::Node xmlProgramNode = xmlPassNode.firstChildElement(L"program");
+                                Gek::XmlNode xmlProgramNode = xmlPassNode.firstChildElement(L"program");
                                 if (xmlProgramNode.hasChildElement(L"source") && xmlProgramNode.hasChildElement(L"entry"))
                                 {
                                     std::unordered_map<CStringA, CStringA> defines(globalDefines);
@@ -901,7 +901,7 @@ namespace Gek
                                         return resultValue;
                                     };
 
-                                    Gek::Xml::Node xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
+                                    Gek::XmlNode xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
                                     if (xmlComputeNode)
                                     {
                                         pass.dispatchWidth = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
@@ -984,13 +984,13 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::Xml::Node &xmlMaterialNode, std::vector<CComPtr<VideoTexture>> &materialMapList)
+        STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::XmlNode &xmlMaterialNode, std::vector<CComPtr<VideoTexture>> &materialMapList)
         {
             std::unordered_map<CStringW, CStringW> materialMapDefineList;
-            Gek::Xml::Node xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
+            Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
             if (xmlMapsNode)
             {
-                Gek::Xml::Node xmlMapNode = xmlMapsNode.firstChildElement();
+                Gek::XmlNode xmlMapNode = xmlMapsNode.firstChildElement();
                 while (xmlMapNode)
                 {
                     CStringW name(xmlMapNode.getType());
@@ -1085,7 +1085,7 @@ namespace Gek
                             }
                         }
 
-                        viewPortList.emplace_back(Video::ViewPort(Math::Float2(0.0f, 0.0f), Math::Float2(renderTarget->getWidth(), renderTarget->getHeight()), 0.0f, 1.0f));
+                        viewPortList.emplace_back(Video::ViewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(renderTarget->getWidth()), float(renderTarget->getHeight())), 0.0f, 1.0f));
                         renderTargetList.push_back(renderTarget);
                     }
 

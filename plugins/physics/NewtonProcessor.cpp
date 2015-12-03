@@ -367,14 +367,14 @@ namespace Gek
 
                 surfaceIndexList[fileName] = -1;
 
-                Gek::Xml::Document xmlDocument;
+                Gek::XmlDocument xmlDocument;
                 if (SUCCEEDED(xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName))))
                 {
                     Surface surface;
-                    Gek::Xml::Node xmlMaterialNode = xmlDocument.getRoot();
+                    Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
                     if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
                     {
-                        Gek::Xml::Node xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
+                        Gek::XmlNode xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
                         if (xmlSurfaceNode)
                         {
                             surface.ghost = String::to<bool>(xmlSurfaceNode.getAttribute(L"ghost"));

@@ -25,13 +25,13 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             UINT32 height = 600;
             bool windowed = true;
 
-            Gek::Xml::Document xmlDocument;
+            Gek::XmlDocument xmlDocument;
             if (SUCCEEDED(xmlDocument.load(L"%root%\\config.xml")))
             {
-                Gek::Xml::Node xmlConfigNode = xmlDocument.getRoot();
+                Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
                 if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
                 {
-                    Gek::Xml::Node xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
+                    Gek::XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
                     if (xmlDisplayNode)
                     {
                         if (xmlDisplayNode.hasAttribute(L"width"))
@@ -54,21 +54,21 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 
             UINT32 selectIndex = 0;
             SendDlgItemMessage(dialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
-            std::vector<Gek::Display::Mode> modeList = Gek::Display::getModes()[32];
+            std::vector<Gek::DisplayMode> modeList = Gek::getDisplayModes()[32];
             for(auto &mode : modeList)
             {
                 CStringW aspectRatio(L"");
                 switch (mode.aspectRatio)
                 {
-                case Gek::Display::AspectRatio::_4x3:
+                case Gek::AspectRatio::_4x3:
                     aspectRatio = L", (4x3)";
                     break;
 
-                case Gek::Display::AspectRatio::_16x9:
+                case Gek::AspectRatio::_16x9:
                     aspectRatio = L", (16x9)";
                     break;
 
-                case Gek::Display::AspectRatio::_16x10:
+                case Gek::AspectRatio::_16x10:
                     aspectRatio = L", (16x10)";
                     break;
                 };
@@ -95,20 +95,20 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         {
         case IDOK:
             {
-                std::vector<Gek::Display::Mode> modeList = Gek::Display::getModes()[32];
+                std::vector<Gek::DisplayMode> modeList = Gek::getDisplayModes()[32];
                 UINT32 selectIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_GETCURSEL, 0, 0);
                 auto &mode = modeList[selectIndex];
 
-                Gek::Xml::Document xmlDocument;
+                Gek::XmlDocument xmlDocument;
                 xmlDocument.load(L"%root%\\config.xml");
-                Gek::Xml::Node xmlConfigNode = xmlDocument.getRoot();
+                Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
                 if (!xmlConfigNode || xmlConfigNode.getType().CompareNoCase(L"config") != 0)
                 {
                     xmlDocument.create(L"config");
                     xmlConfigNode = xmlDocument.getRoot();
                 }
 
-                Gek::Xml::Node xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
+                Gek::XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
                 if (!xmlDisplayNode)
                 {
                     xmlDisplayNode = xmlConfigNode.createChildElement(L"display");
@@ -232,13 +232,13 @@ L"        </entity>\r\n";
                     UINT32 height = 600;
                     bool windowed = true;
 
-                    Gek::Xml::Document xmlDocument;
+                    Gek::XmlDocument xmlDocument;
                     if (SUCCEEDED(xmlDocument.load(L"%root%\\config.xml")))
                     {
-                        Gek::Xml::Node xmlConfigNode = xmlDocument.getRoot();
+                        Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
                         if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
                         {
-                            Gek::Xml::Node xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
+                            Gek::XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
                             if (xmlDisplayNode)
                             {
                                 if (xmlDisplayNode.hasAttribute(L"width"))
