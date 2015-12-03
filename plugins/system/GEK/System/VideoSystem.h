@@ -510,5 +510,5 @@ namespace Gek
         STDMETHOD_(void, present)                           (THIS_ bool waitForVerticalSync) PURE;
     };
 
-    DECLARE_INTERFACE_IID(VideoSystemClass, "6B94910F-0D37-487E-92C3-B7C391108B44");
+    DECLARE_INTERFACE_IID(VideoSystemRegistration, "6B94910F-0D37-487E-92C3-B7C391108B44");
 }; // namespace Gek

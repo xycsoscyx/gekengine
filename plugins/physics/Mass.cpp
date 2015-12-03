@@ -1,52 +1,46 @@
 #include "GEK\Newton\Mass.h"
 #include "GEK\Context\ContextUserMixin.h"
-#include "GEK\Engine\BaseComponent.h"
+#include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Math\Common.h"
 
 namespace Gek
 {
-    namespace Newton
+    MassComponent::MassComponent(void)
+        : value(0.0f)
     {
-        namespace Mass
+    }
+
+    HRESULT MassComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    {
+        componentParameterList[L""] = String::from(value);
+        return S_OK;
+    }
+
+    HRESULT MassComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    {
+        setParameter(componentParameterList, L"", value, String::to<float>);
+        return S_OK;
+    }
+
+    class MassImplementation : public ContextUserMixin
+        , public ComponentMixin<MassComponent>
+    {
+    public:
+        MassImplementation(void)
         {
-            Data::Data(void)
-                : value(0.0f)
-            {
-            }
+        }
 
-            HRESULT Data::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-            {
-                componentParameterList[L""] = String::from(value);
-                return S_OK;
-            }
+        BEGIN_INTERFACE_LIST(MassImplementation)
+            INTERFACE_LIST_ENTRY_COM(Component)
+            END_INTERFACE_LIST_USER
 
-            HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-            {
-                Engine::setParameter(componentParameterList, L"", value, String::to<float>);
-                return S_OK;
-            }
+        // Component::Interface
+        STDMETHODIMP_(LPCWSTR) getName(void) const
+        {
+            return L"mass";
+        }
+    };
 
-            class Component : public ContextUserMixin
-                , public Engine::BaseComponent<Data>
-            {
-            public:
-                Component(void)
-                {
-                }
-
-                BEGIN_INTERFACE_LIST(Component)
-                    INTERFACE_LIST_ENTRY_COM(Engine::Component::Interface)
-                END_INTERFACE_LIST_USER
-
-                // Component::Interface
-                STDMETHODIMP_(LPCWSTR) getName(void) const
-                {
-                    return L"mass";
-                }
-            };
-
-            REGISTER_CLASS(Component)
-        }; // namespace Mass
-    }; // namespace Newton
+    REGISTER_CLASS(MassImplementation)
 }; // namespace Gek

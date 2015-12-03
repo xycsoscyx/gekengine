@@ -14,7 +14,7 @@ namespace Gek
 }; // namespace Gek
 
 DECLARE_CONTEXT_SOURCE(System)
-    ADD_CONTEXT_CLASS(Gek::InputSystemClass, Gek::InputSystemImplementation)
-    ADD_CONTEXT_CLASS(Gek::AudioSystemClass, Gek::AudioSystemImplementation)
-    ADD_CONTEXT_CLASS(Gek::VideoSystemClass, Gek::VideoSystemImplementation)
+    ADD_CONTEXT_CLASS(Gek::InputSystemRegistration, Gek::InputSystemImplementation)
+    ADD_CONTEXT_CLASS(Gek::AudioSystemRegistration, Gek::AudioSystemImplementation)
+    ADD_CONTEXT_CLASS(Gek::VideoSystemRegistration, Gek::VideoSystemImplementation)
 END_CONTEXT_SOURCE

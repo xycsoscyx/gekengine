@@ -8,33 +8,23 @@
 
 namespace Gek
 {
-    namespace Engine
+    struct TransformComponent
     {
-        namespace Components
+        LPVOID operator new(size_t size)
         {
-            namespace Transform
-            {
-                struct Data
-                {
-                    Gek::Math::Float3 position;
-                    Gek::Math::Quaternion rotation;
+            return _mm_malloc(size * sizeof(TransformComponent), 16);
+        }
 
-                    Data(void);
+            void operator delete(LPVOID data)
+        {
+            _mm_free(data);
+        }
 
-                    LPVOID operator new(size_t size)
-                    {
-                        return _mm_malloc(size * sizeof(Data), 16);
-                    }
+        Gek::Math::Float3 position;
+        Gek::Math::Quaternion rotation;
 
-                    void operator delete(LPVOID data)
-                    {
-                        _mm_free(data);
-                    }
-
-                    HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                    HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-                };
-            }; // namespace Transform
-        }; // namespace Components
-    }; // namespace Engine
+        TransformComponent(void);
+        HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+        HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+    };
 }; // namespace Gek

@@ -6,8 +6,8 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\Common.h"
-#include "GEK\Context\Interface.h"
-#include "GEK\Engine\CoreInterface.h"
+#include "GEK\Context\Context.h"
+#include "GEK\Engine\Engine.h"
 #include <CommCtrl.h>
 #include "resource.h"
 
@@ -137,7 +137,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT resultValue = 0;
-    Gek::Engine::Core::Interface *engineCore = (Gek::Engine::Core::Interface *)GetWindowLongPtr(window, GWLP_USERDATA);
+    Gek::Engine *engineCore = (Gek::Engine *)GetWindowLongPtr(window, GWLP_USERDATA);
     switch (message)
     {
     case WM_CLOSE:
@@ -198,7 +198,7 @@ L"        </entity>\r\n";
 
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
-        CComPtr<Gek::Context::Interface> context;
+        CComPtr<Gek::Context> context;
         Gek::Context::create(&context);
         if (context)
         {
@@ -211,8 +211,8 @@ L"        </entity>\r\n";
 #endif
 
             context->initialize();
-            CComPtr<Gek::Engine::Core::Interface> engineCore;
-            context->createInstance(CLSID_IID_PPV_ARGS(Gek::Engine::Core::Class, &engineCore));
+            CComPtr<Gek::Engine> engineCore;
+            context->createInstance(CLSID_IID_PPV_ARGS(Gek::EngineRegistration, &engineCore));
             if (engineCore)
             {
                 WNDCLASS kClass;
@@ -274,7 +274,7 @@ L"        </entity>\r\n";
                     {
                         if (SUCCEEDED(engineCore->initialize(window)))
                         {
-                            SetWindowLongPtr(window, GWLP_USERDATA, LONG((Gek::Engine::Core::Interface *)engineCore));
+                            SetWindowLongPtr(window, GWLP_USERDATA, LONG((Gek::Engine *)engineCore));
                             ShowWindow(window, SW_SHOW);
                             UpdateWindow(window);
 

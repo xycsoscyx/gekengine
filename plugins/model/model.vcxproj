@@ -101,7 +101,7 @@
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Model.cpp" />
-    <ClCompile Include="ModelSystem.cpp" />
+    <ClCompile Include="ModelProcessor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

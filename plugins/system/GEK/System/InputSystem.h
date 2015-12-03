@@ -192,5 +192,5 @@ namespace Gek
         STDMETHOD(update)                               (THIS) PURE;
     };
 
-    DECLARE_INTERFACE_IID(InputSystemClass, "3A8EA46C-573A-40E6-8741-71ACCA90BAB4");
+    DECLARE_INTERFACE_IID(InputSystemRegistration, "3A8EA46C-573A-40E6-8741-71ACCA90BAB4");
 }; // namespace Gek

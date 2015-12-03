@@ -7,31 +7,28 @@
 
 namespace Gek
 {
-    namespace Model
+    struct ModelComponent
     {
-        struct Data
+        CStringW value;
+
+        ModelComponent(void);
+        HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+        HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+
+        inline operator LPCWSTR () const
         {
-            CStringW value;
+            return value.GetString();
+        }
 
-            Data(void);
-            HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-            HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+        inline operator CStringW () const
+        {
+            return value;
+        }
 
-            inline operator LPCWSTR () const
-            {
-                return value.GetString();
-            }
-
-            inline operator CStringW () const
-            {
-                return value;
-            }
-
-            inline CStringW &operator = (LPCWSTR value)
-            {
-                this->value = value;
-                return this->value;
-            }
-        };
-    }; // namespace Model
+        inline CStringW &operator = (LPCWSTR value)
+        {
+            this->value = value;
+            return this->value;
+        }
+    };
 }; // namespace Gek

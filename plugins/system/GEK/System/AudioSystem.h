@@ -45,5 +45,5 @@ namespace Gek
         STDMETHOD(loadSound)                (THIS_ AudioSound **returnObject, LPCWSTR fileName) PURE;
     };
 
-    DECLARE_INTERFACE_IID(AudioSystemClass, "525E4F27-8A87-409C-A25F-8740393A4B7B");
+    DECLARE_INTERFACE_IID(AudioSystemRegistration, "525E4F27-8A87-409C-A25F-8740393A4B7B");
 }; // namespace Gek

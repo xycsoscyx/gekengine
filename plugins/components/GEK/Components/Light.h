@@ -6,21 +6,12 @@
 
 namespace Gek
 {
-    namespace Engine
+    struct PointLightComponent
     {
-        namespace Components
-        {
-            namespace PointLight
-            {
-                struct Data
-                {
-                    float radius;
+        float radius;
 
-                    Data(void);
-                    HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                    HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-                };
-            }; // namespace PointLight
-        }; // namespace Components
-    }; // namespace Engine
+        PointLightComponent(void);
+        HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+        HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+    };
 }; // namespace Gek

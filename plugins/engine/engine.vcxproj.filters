@@ -22,35 +22,38 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Engine\ActionInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Engine\ComponentInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Engine\PopulationInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Engine\RenderInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Engine\SystemInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h" />
-    <ClInclude Include="GEK\Engine\CoreInterface.h">
+    <ClInclude Include="GEK\Engine\ComponentMixin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\PluginInterface.h">
+    <ClInclude Include="GEK\Engine\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\ShaderInterface.h">
+    <ClInclude Include="GEK\Engine\Entity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\MaterialInterface.h">
+    <ClInclude Include="GEK\Engine\Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\BaseComponent.h">
+    <ClInclude Include="GEK\Engine\Plugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\Population.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\Processor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\Render.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\Action.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\Component.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

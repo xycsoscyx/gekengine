@@ -1,47 +1,44 @@
 ﻿#include "GEK\Engine\Model.h"
 #include "GEK\Context\ContextUserMixin.h"
-#include "GEK\Engine\BaseComponent.h"
+#include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
 
 namespace Gek
 {
-    namespace Model
+    ModelComponent::ModelComponent(void)
     {
-        Data::Data(void)
+    }
+
+    HRESULT ModelComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    {
+        componentParameterList[L""] = value;
+        return S_OK;
+    }
+
+    HRESULT ModelComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    {
+        setParameter(componentParameterList, L"", value, [](LPCWSTR value) -> LPCWSTR { return value; });
+        return S_OK;
+    }
+
+    class ModelImplementation : public ContextUserMixin
+        , public ComponentMixin<ModelComponent>
+    {
+    public:
+        ModelImplementation(void)
         {
         }
 
-        HRESULT Data::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+        BEGIN_INTERFACE_LIST(ModelImplementation)
+            INTERFACE_LIST_ENTRY_COM(Component)
+        END_INTERFACE_LIST_USER
+
+        // Component::Interface
+        STDMETHODIMP_(LPCWSTR) getName(void) const
         {
-            componentParameterList[L""] = value;
-            return S_OK;
+            return L"model";
         }
+    };
 
-        HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-        {
-            Engine::setParameter(componentParameterList, L"", value, [](LPCWSTR value) -> LPCWSTR { return value; });
-            return S_OK;
-        }
-
-        class Component : public ContextUserMixin
-            , public Engine::BaseComponent<Data>
-        {
-        public:
-            Component(void)
-            {
-            }
-
-            BEGIN_INTERFACE_LIST(Component)
-                INTERFACE_LIST_ENTRY_COM(Engine::Component::Interface)
-            END_INTERFACE_LIST_USER
-
-            // Component::Interface
-            STDMETHODIMP_(LPCWSTR) getName(void) const
-            {
-                return L"model";
-            }
-        };
-
-        REGISTER_CLASS(Component)
-    }; // namespace Model
+    REGISTER_CLASS(ModelImplementation)
 }; // namespace Gek

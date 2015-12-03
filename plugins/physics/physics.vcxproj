@@ -121,7 +121,7 @@
     <ClCompile Include="DynamicBody.cpp" />
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Mass.cpp" />
-    <ClCompile Include="NewtonSystem.cpp" />
+    <ClCompile Include="NewtonProcessor.cpp" />
     <ClCompile Include="Player.cpp" />
   </ItemGroup>
   <ItemGroup>

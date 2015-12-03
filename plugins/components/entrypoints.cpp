@@ -2,69 +2,42 @@
 #include <cguid.h>
 
 #include "GEK\Context\Common.h"
-#include "GEK\Engine\ComponentInterface.h"
+#include "GEK\Engine\Component.h"
 
 namespace Gek
 {
-    namespace Engine
-    {
-        namespace Components
-        {
-            namespace Camera
-            {
-                DECLARE_REGISTERED_CLASS(Component);
-                DECLARE_INTERFACE_IID(Class, "4C33007B-108F-4C05-8A36-024888884AB7");
-            }; // namespace Camera
+    DECLARE_REGISTERED_CLASS(CameraImplementation);
+    DECLARE_INTERFACE_IID(CameraRegistration, "4C33007B-108F-4C05-8A36-024888884AB7");
 
-            namespace Color
-            {
-                DECLARE_REGISTERED_CLASS(Component);
-                DECLARE_INTERFACE_IID(Class, "A46EA40F-6325-4B4A-A20E-DD8B904D9EC3");
-            }; // namespace Color
+    DECLARE_REGISTERED_CLASS(ColorImplementation);
+    DECLARE_INTERFACE_IID(ColorRegistration, "A46EA40F-6325-4B4A-A20E-DD8B904D9EC3");
 
-            namespace Follow
-            {
-                DECLARE_REGISTERED_CLASS(Component);
-                DECLARE_INTERFACE_IID(Class, "E9B44929-02E1-4093-B22B-414D1E5DA1FD");
-            }; // namespace Follow
+    DECLARE_REGISTERED_CLASS(FollowImplementation);
+    DECLARE_INTERFACE_IID(FollowRegistration, "E9B44929-02E1-4093-B22B-414D1E5DA1FD");
 
-            namespace PointLight
-            {
-                DECLARE_REGISTERED_CLASS(Component);
-                DECLARE_INTERFACE_IID(Class, "E4D8A791-319B-4324-8DBE-F99A7AAA6DB9");
-            }; // namespace PointLight
+    DECLARE_REGISTERED_CLASS(PointLightImplementation);
+    DECLARE_INTERFACE_IID(PointLightRegistration, "E4D8A791-319B-4324-8DBE-F99A7AAA6DB9");
 
-            namespace Size
-            {
-                DECLARE_REGISTERED_CLASS(Component);
-                DECLARE_INTERFACE_IID(Class, "EA3E463D-2A25-4886-B4A2-C035C641D4B8");
-            }; // namespace Size
+    DECLARE_REGISTERED_CLASS(SizeImplementation);
+    DECLARE_INTERFACE_IID(SizeRegistration, "EA3E463D-2A25-4886-B4A2-C035C641D4B8");
 
-            namespace Transform
-            {
-                DECLARE_REGISTERED_CLASS(Component);
-                DECLARE_INTERFACE_IID(Class, "62BAFD17-E5CB-4CA0-84B2-963836AE9836");
-            }; // namespace Transform
-        }; // namespace Components
-    }; // namespace Engine
+    DECLARE_REGISTERED_CLASS(TransformImplementation);
+    DECLARE_INTERFACE_IID(TransformRegistration, "62BAFD17-E5CB-4CA0-84B2-963836AE9836");
 }; // namespace Gek
 
 DECLARE_CONTEXT_SOURCE(Components)
-    ADD_CONTEXT_CLASS(Gek::Engine::Components::Camera::Class, Gek::Engine::Components::Camera::Component)
-        ADD_CLASS_TYPE(Gek::Engine::Component::Type)
+    ADD_CONTEXT_CLASS(Gek::CameraRegistration, Gek::CameraImplementation)
+        ADD_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::Engine::Components::Color::Class, Gek::Engine::Components::Color::Component)
-        ADD_CLASS_TYPE(Gek::Engine::Component::Type)
+    ADD_CONTEXT_CLASS(Gek::ColorRegistration, Gek::ColorImplementation)
+        ADD_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::Engine::Components::Follow::Class, Gek::Engine::Components::Follow::Component)
-        ADD_CLASS_TYPE(Gek::Engine::Component::Type)
+    ADD_CONTEXT_CLASS(Gek::PointLightRegistration, Gek::PointLightImplementation)
+        ADD_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::Engine::Components::PointLight::Class, Gek::Engine::Components::PointLight::Component)
-        ADD_CLASS_TYPE(Gek::Engine::Component::Type)
+    ADD_CONTEXT_CLASS(Gek::SizeRegistration, Gek::SizeImplementation)
+        ADD_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::Engine::Components::Size::Class, Gek::Engine::Components::Size::Component)
-        ADD_CLASS_TYPE(Gek::Engine::Component::Type)
-
-    ADD_CONTEXT_CLASS(Gek::Engine::Components::Transform::Class, Gek::Engine::Components::Transform::Component)
-        ADD_CLASS_TYPE(Gek::Engine::Component::Type)
+    ADD_CONTEXT_CLASS(Gek::TransformRegistration, Gek::TransformImplementation)
+        ADD_CLASS_TYPE(Gek::ComponentType)
 END_CONTEXT_SOURCE

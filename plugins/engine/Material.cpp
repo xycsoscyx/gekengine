@@ -1,6 +1,6 @@
-﻿#include "GEK\Engine\MaterialInterface.h"
-#include "GEK\Engine\ShaderInterface.h"
-#include "GEK\Engine\RenderInterface.h"
+﻿#include "GEK\Engine\Material.h"
+#include "GEK\Engine\Shader.h"
+#include "GEK\Engine\Render.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Utility\String.h"
@@ -12,101 +12,92 @@
 
 namespace Gek
 {
-    namespace Engine
+    class MaterialImplementation : public ContextUserMixin
+        , public Material
     {
-        namespace Render
+    private:
+        VideoSystem *video;
+        Render *render;
+        std::vector<CComPtr<VideoTexture>> mapList;
+        CComPtr<Shader> shader;
+
+    public:
+        MaterialImplementation(void)
+            : video(nullptr)
+            , render(nullptr)
         {
-            namespace Material
+        }
+
+        ~MaterialImplementation(void)
+        {
+        }
+
+        BEGIN_INTERFACE_LIST(MaterialImplementation)
+            INTERFACE_LIST_ENTRY_COM(Material)
+        END_INTERFACE_LIST_USER
+
+        // Interface
+        STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
+        {
+            gekLogScope(fileName);
+
+            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            REQUIRE_RETURN(fileName, E_INVALIDARG);
+
+            HRESULT resultValue = E_FAIL;
+            CComQIPtr<VideoSystem> video(initializerContext);
+            CComQIPtr<Render> render(initializerContext);
+            if (video && render)
             {
-                class System : public ContextUserMixin
-                    , public Interface
+                this->video = video;
+                this->render = render;
+                resultValue = S_OK;
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
+                Gek::Xml::Document xmlDocument;
+                resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName));
+                if (SUCCEEDED(resultValue))
                 {
-                private:
-                    Video::Interface *video;
-                    Render::Interface *render;
-                    std::vector<CComPtr<Video::Texture::Interface>> mapList;
-                    CComPtr<Shader::Interface> shader;
-
-                public:
-                    System(void)
-                        : video(nullptr)
-                        , render(nullptr)
+                    resultValue = E_INVALIDARG;
+                    Gek::Xml::Node xmlMaterialNode = xmlDocument.getRoot();
+                    if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
                     {
-                    }
-
-                    ~System(void)
-                    {
-                    }
-
-                    BEGIN_INTERFACE_LIST(System)
-                        INTERFACE_LIST_ENTRY_COM(Engine::Render::Material::Interface)
-                    END_INTERFACE_LIST_USER
-
-                    // Interface
-                    STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
-                    {
-                        gekLogScope(fileName);
-
-                        REQUIRE_RETURN(initializerContext, E_INVALIDARG);
-                        REQUIRE_RETURN(fileName, E_INVALIDARG);
-
-                        HRESULT resultValue = E_FAIL;
-                        CComQIPtr<Video::Interface> video(initializerContext);
-                        CComQIPtr<Render::Interface> render(initializerContext);
-                        if (video && render)
+                        Gek::Xml::Node xmlShaderNode = xmlMaterialNode.firstChildElement(L"shader");
+                        if (xmlShaderNode)
                         {
-                            this->video = video;
-                            this->render = render;
-                            resultValue = S_OK;
-                        }
+                            CStringW shaderFileName = xmlShaderNode.getText();
 
-                        if (SUCCEEDED(resultValue))
-                        {
-                            Gek::Xml::Document xmlDocument;
-                            resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName));
-                            if (SUCCEEDED(resultValue))
+                            CComPtr<IUnknown> shader;
+                            resultValue = render->loadShader(&shader, shaderFileName);
+                            if (shader)
                             {
-                                resultValue = E_INVALIDARG;
-                                Gek::Xml::Node xmlMaterialNode = xmlDocument.getRoot();
-                                if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
+                                resultValue = shader->QueryInterface(IID_PPV_ARGS(&this->shader));
+                                if (this->shader)
                                 {
-                                    Gek::Xml::Node xmlShaderNode = xmlMaterialNode.firstChildElement(L"shader");
-                                    if (xmlShaderNode)
-                                    {
-                                        CStringW shaderFileName = xmlShaderNode.getText();
-
-                                        CComPtr<IUnknown> shader;
-                                        resultValue = render->loadShader(&shader, shaderFileName);
-                                        if (shader)
-                                        {
-                                            resultValue = shader->QueryInterface(IID_PPV_ARGS(&this->shader));
-                                            if (this->shader)
-                                            {
-                                                resultValue = this->shader->getMaterialValues(fileName, xmlMaterialNode, mapList);
-                                            }
-                                        }
-                                    }
+                                    resultValue = this->shader->getMaterialValues(fileName, xmlMaterialNode, mapList);
                                 }
                             }
                         }
-
-                        return resultValue;
                     }
+                }
+            }
 
-                    STDMETHODIMP_(Shader::Interface *) getShader(void)
-                    {
-                        return shader;
-                    }
+            return resultValue;
+        }
 
-                    STDMETHODIMP_(void) enable(Video::Context::Interface *context, LPCVOID passData)
-                    {
-                        REQUIRE_VOID_RETURN(shader);
-                        shader->setMaterialValues(context, passData, mapList);
-                    }
-                };
+        STDMETHODIMP_(Shader *) getShader(void)
+        {
+            return shader;
+        }
 
-                REGISTER_CLASS(System)
-            }; // namespace Material
-        }; // namespace Render
-    }; // namespace Engine
+        STDMETHODIMP_(void) enable(VideoContext *context, LPCVOID passData)
+        {
+            REQUIRE_VOID_RETURN(shader);
+            shader->setMaterialValues(context, passData, mapList);
+        }
+    };
+
+    REGISTER_CLASS(MaterialImplementation)
 }; // namespace Gek

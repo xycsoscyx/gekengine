@@ -120,7 +120,6 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Follow.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Size.cpp" />
     <ClCompile Include="Transform.cpp" />
@@ -131,7 +130,6 @@
   <ItemGroup>
     <ClInclude Include="GEK\Components\Camera.h" />
     <ClInclude Include="GEK\Components\Color.h" />
-    <ClInclude Include="GEK\Components\Follow.h" />
     <ClInclude Include="GEK\Components\Light.h" />
     <ClInclude Include="GEK\Components\Size.h" />
     <ClInclude Include="GEK\Components\Transform.h" />

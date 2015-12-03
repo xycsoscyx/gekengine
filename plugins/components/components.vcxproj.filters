@@ -13,9 +13,6 @@
     <ClCompile Include="Color.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Follow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Light.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -33,9 +30,6 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Components\Follow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Components\Light.h">
       <Filter>Header Files</Filter>
     </ClInclude>

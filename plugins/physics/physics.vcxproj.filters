@@ -16,10 +16,10 @@
     <ClCompile Include="DynamicBody.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NewtonSystem.cpp">
+    <ClCompile Include="Mass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Mass.cpp">
+    <ClCompile Include="NewtonProcessor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

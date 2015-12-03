@@ -1,53 +1,44 @@
 #include "GEK\Components\Light.h"
 #include "GEK\Context\ContextUserMixin.h"
-#include "GEK\Engine\BaseComponent.h"
+#include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
 
 namespace Gek
 {
-    namespace Engine
+    PointLightComponent::PointLightComponent(void)
     {
-        namespace Components
+    }
+
+    HRESULT PointLightComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    {
+        componentParameterList[L"radius"] = String::from(radius);
+        return S_OK;
+    }
+
+    HRESULT PointLightComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    {
+        setParameter(componentParameterList, L"radius", radius, String::to<float>);
+        return S_OK;
+    }
+
+    class PointLightImplementation : public ContextUserMixin
+        , public ComponentMixin<PointLightComponent>
+    {
+    public:
+        PointLightImplementation(void)
         {
-            namespace PointLight
-            {
-                Data::Data(void)
-                {
-                }
+        }
 
-                HRESULT Data::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-                {
-                    componentParameterList[L"radius"] = String::from(radius);
-                    return S_OK;
-                }
+        BEGIN_INTERFACE_LIST(PointLightImplementation)
+            INTERFACE_LIST_ENTRY_COM(Component)
+        END_INTERFACE_LIST_USER
 
-                HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-                {
-                    setParameter(componentParameterList, L"radius", radius, String::to<float>);
-                    return S_OK;
-                }
+        // Component::Interface
+        STDMETHODIMP_(LPCWSTR) getName(void) const
+        {
+            return L"point_light";
+        }
+    };
 
-                class Component : public ContextUserMixin
-                    , public BaseComponent<Data>
-                {
-                public:
-                    Component(void)
-                    {
-                    }
-
-                    BEGIN_INTERFACE_LIST(Component)
-                        INTERFACE_LIST_ENTRY_COM(Engine::Component::Interface)
-                     END_INTERFACE_LIST_USER
-
-                    // Component::Interface
-                    STDMETHODIMP_(LPCWSTR) getName(void) const
-                    {
-                        return L"point_light";
-                    }
-                };
-
-                REGISTER_CLASS(Component)
-            }; // namespace Light
-        }; // namespace Components
-    }; // namespace Engine
+    REGISTER_CLASS(PointLightImplementation)
 }; // namespace Gek

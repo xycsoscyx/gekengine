@@ -1,54 +1,45 @@
 #include "GEK\Components\Color.h"
 #include "GEK\Context\ContextUserMixin.h"
-#include "GEK\Engine\BaseComponent.h"
+#include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
 
 namespace Gek
 {
-    namespace Engine
+    ColorComponent::ColorComponent(void)
+        : value(1.0f, 1.0f, 1.0f, 1.0f)
     {
-        namespace Components
+    }
+
+    HRESULT ColorComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    {
+        componentParameterList[L""] = String::from(value);
+        return S_OK;
+    }
+
+    HRESULT ColorComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    {
+        setParameter(componentParameterList, L"", value, String::to<Math::Float4>);
+        return S_OK;
+    }
+
+    class ColorImplementation : public ContextUserMixin
+        , public ComponentMixin<ColorComponent>
+    {
+    public:
+        ColorImplementation(void)
         {
-            namespace Color
-            {
-                Data::Data(void)
-                    : value(1.0f, 1.0f, 1.0f, 1.0f)
-                {
-                }
+        }
 
-                HRESULT Data::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-                {
-                    componentParameterList[L""] = String::from(value);
-                    return S_OK;
-                }
+        BEGIN_INTERFACE_LIST(ColorImplementation)
+            INTERFACE_LIST_ENTRY_COM(Component)
+        END_INTERFACE_LIST_USER
 
-                HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-                {
-                    setParameter(componentParameterList, L"", value, String::to<Math::Float4>);
-                    return S_OK;
-                }
+        // Component::Interface
+        STDMETHODIMP_(LPCWSTR) getName(void) const
+        {
+            return L"color";
+        }
+    };
 
-                class Component : public ContextUserMixin
-                    , public BaseComponent<Data>
-                {
-                public:
-                    Component(void)
-                    {
-                    }
-
-                    BEGIN_INTERFACE_LIST(Component)
-                        INTERFACE_LIST_ENTRY_COM(Engine::Component::Interface)
-                    END_INTERFACE_LIST_USER
-
-                    // Component::Interface
-                    STDMETHODIMP_(LPCWSTR) getName(void) const
-                    {
-                        return L"color";
-                    }
-                };
-
-                REGISTER_CLASS(Component)
-            }; // namespace Color
-        }; // namespace Components
-    }; // namespace Engine
+    REGISTER_CLASS(ColorImplementation)
 }; // namespace Gek

@@ -105,16 +105,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Engine\ActionInterface.h" />
-    <ClInclude Include="GEK\Engine\BaseComponent.h" />
-    <ClInclude Include="GEK\Engine\ComponentInterface.h" />
-    <ClInclude Include="GEK\Engine\CoreInterface.h" />
-    <ClInclude Include="GEK\Engine\MaterialInterface.h" />
-    <ClInclude Include="GEK\Engine\PluginInterface.h" />
-    <ClInclude Include="GEK\Engine\PopulationInterface.h" />
-    <ClInclude Include="GEK\Engine\RenderInterface.h" />
-    <ClInclude Include="GEK\Engine\ShaderInterface.h" />
-    <ClInclude Include="GEK\Engine\SystemInterface.h" />
+    <ClInclude Include="GEK\Engine\Action.h" />
+    <ClInclude Include="GEK\Engine\Component.h" />
+    <ClInclude Include="GEK\Engine\ComponentMixin.h" />
+    <ClInclude Include="GEK\Engine\Engine.h" />
+    <ClInclude Include="GEK\Engine\Entity.h" />
+    <ClInclude Include="GEK\Engine\Material.h" />
+    <ClInclude Include="GEK\Engine\Plugin.h" />
+    <ClInclude Include="GEK\Engine\Population.h" />
+    <ClInclude Include="GEK\Engine\Processor.h" />
+    <ClInclude Include="GEK\Engine\Render.h" />
+    <ClInclude Include="GEK\Engine\Shader.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

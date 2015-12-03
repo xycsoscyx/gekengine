@@ -7,21 +7,15 @@
 
 namespace Gek
 {
-    namespace Newton
+    struct PlayerComponent
     {
-        namespace Player
-        {
-            struct Data
-            {
-                float outerRadius;
-                float innerRadius;
-                float height;
-                float stairStep;
+        float outerRadius;
+        float innerRadius;
+        float height;
+        float stairStep;
 
-                Data(void);
-                HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-                HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
-            };
-        }; // namespace Player
-    }; // namespace Newton
+        PlayerComponent(void);
+        HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
+        HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+    };
 }; // namespace Gek
