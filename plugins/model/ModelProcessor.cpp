@@ -384,6 +384,7 @@ namespace Gek
             bool loaded;
             Shape::AlignedBox alignedBox;
             CComPtr<VideoBuffer> vertexBuffer;
+            std::vector<VideoBuffer *> vertexBufferList;
             CComPtr<VideoBuffer> indexBuffer;
             std::vector<MaterialInfo> materialInfoList;
 
@@ -803,7 +804,11 @@ namespace Gek
                 {
                     auto load = (*loadIterator).second;
                     dataLoadQueue.unsafe_erase(loadIterator);
-                    load();
+                    if (SUCCEEDED(load()))
+                    {
+                        data->vertexBufferList.push_back(data->vertexBuffer);
+                        data->vertexBufferList.push_back(instanceBuffer);
+                    }
                 }
 
                 if (data->loaded)
@@ -831,7 +836,7 @@ namespace Gek
                     auto data = instancePair.first;
                     for (auto &materialInfo : data->materialInfoList)
                     {
-                        render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, { data->vertexBuffer, instanceBuffer }, instancePair.second.first, instancePair.second.second, materialInfo.firstVertex, data->indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
+                        render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, data->vertexBufferList, instancePair.second.first, instancePair.second.second, materialInfo.firstVertex, data->indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
                     }
                 }
             }
