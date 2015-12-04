@@ -12,6 +12,7 @@
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\Render.h"
+#include "GEK\Engine\Resources.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Size.h"
 #include "GEK\Components\Color.h"
@@ -366,13 +367,14 @@ namespace Gek
     public:
         struct MaterialInfo
         {
-            CComPtr<IUnknown> material;
+            std::size_t material;
             UINT32 firstVertex;
             UINT32 firstIndex;
             UINT32 indexCount;
 
             MaterialInfo(void)
-                : firstVertex(0)
+                : material(0)
+                , firstVertex(0)
                 , firstIndex(0)
                 , indexCount(0)
             {
@@ -384,7 +386,6 @@ namespace Gek
             bool loaded;
             Shape::AlignedBox alignedBox;
             CComPtr<VideoBuffer> vertexBuffer;
-            std::vector<VideoBuffer *> vertexBufferList;
             CComPtr<VideoBuffer> indexBuffer;
             std::vector<MaterialInfo> materialInfoList;
 
@@ -412,10 +413,11 @@ namespace Gek
 
     private:
         VideoSystem *video;
+        Resources *resources;
         Render *render;
         Population *population;
 
-        CComPtr<IUnknown> plugin;
+        std::size_t plugin;
 
         concurrency::concurrent_unordered_map<ModelData *, std::function<HRESULT(void)>> dataLoadQueue;
         concurrency::concurrent_unordered_map<CStringW, ModelData> dataMap;
@@ -424,9 +426,11 @@ namespace Gek
 
     public:
         ModelProcessorImplementation(void)
-            : render(nullptr)
+            : resources(nullptr)
+            , render(nullptr)
             , video(nullptr)
             , population(nullptr)
+            , plugin(0)
         {
         }
 
@@ -449,8 +453,8 @@ namespace Gek
             CStringW shape = parameters.Tokenize(L"|", position);
             CStringW materialName = parameters.Tokenize(L"|", position);
 
-            CComPtr<IUnknown> material;
-            HRESULT resultValue = render->loadMaterial(&material, materialName);
+            HRESULT resultValue = E_FAIL;
+            std::size_t material = resources->loadMaterial(materialName);
             if (material)
             {
                 if (shape.CompareNoCase(L"cube") == 0)
@@ -472,10 +476,10 @@ namespace Gek
 
                     data->materialInfoList.push_back(materialInfo);
 
-                    resultValue = render->createBuffer(&data->vertexBuffer, String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, geoSphere.getVertices().data());
+                    resultValue = resources->createBuffer(&data->vertexBuffer, String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, geoSphere.getVertices().data());
                     if (SUCCEEDED(resultValue))
                     {
-                        resultValue = render->createBuffer(&data->indexBuffer, String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, geoSphere.getIndices().data());
+                        resultValue = resources->createBuffer(&data->indexBuffer, String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, geoSphere.getIndices().data());
                     }
                 }
                 else
@@ -561,7 +565,7 @@ namespace Gek
                         rawFileData += (materialNameUtf8.GetLength() + 1);
 
                         MaterialInfo &materialInfo = data->materialInfoList[materialIndex];
-                        resultValue = render->loadMaterial(&materialInfo.material, CA2W(materialNameUtf8, CP_UTF8));
+                        materialInfo.material = resources->loadMaterial(CA2W(materialNameUtf8, CP_UTF8));
                         if (!materialInfo.material)
                         {
                             resultValue = E_FAIL;
@@ -583,7 +587,7 @@ namespace Gek
                         UINT32 vertexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
-                        resultValue = render->createBuffer(&data->vertexBuffer, String::format(L"model:vertex:%s", name.GetString()), sizeof(Vertex), vertexCount, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, rawFileData);
+                        resultValue = resources->createBuffer(&data->vertexBuffer, String::format(L"model:vertex:%s", name.GetString()), sizeof(Vertex), vertexCount, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, rawFileData);
                         rawFileData += (sizeof(Vertex) * vertexCount);
                     }
 
@@ -592,7 +596,7 @@ namespace Gek
                         UINT32 indexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
-                        resultValue = render->createBuffer(&data->indexBuffer, String::format(L"model:index:%s", name.GetString()), Video::Format::Short, indexCount, Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, rawFileData);
+                        resultValue = resources->createBuffer(&data->indexBuffer, String::format(L"model:index:%s", name.GetString()), Video::Format::Short, indexCount, Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, rawFileData);
                         rawFileData += (sizeof(UINT16) * indexCount);
                     }
                 }
@@ -676,11 +680,13 @@ namespace Gek
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<VideoSystem> video(initializerContext);
+            CComQIPtr<Resources> resources(initializerContext);
             CComQIPtr<Render> render(initializerContext);
             CComQIPtr<Population> population(initializerContext);
-            if (render && video && population)
+            if (resources && render && video && population)
             {
                 this->video = video;
+                this->resources = resources;
                 this->render = render;
                 this->population = population;
                 resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
@@ -693,12 +699,16 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = render->loadPlugin(&plugin, L"model");
+                plugin = resources->loadPlugin(L"model");
+                if (!plugin)
+                {
+                    resultValue = E_FAIL;
+                }
             }
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = render->createBuffer(&instanceBuffer, L"model:instances", sizeof(InstanceData), 1024, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Dynamic);
+                resultValue = resources->createBuffer(&instanceBuffer, L"model:instances", sizeof(InstanceData), 1024, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Dynamic);
             }
 
             return resultValue;
@@ -804,11 +814,7 @@ namespace Gek
                 {
                     auto load = (*loadIterator).second;
                     dataLoadQueue.unsafe_erase(loadIterator);
-                    if (SUCCEEDED(load()))
-                    {
-                        data->vertexBufferList.push_back(data->vertexBuffer);
-                        data->vertexBufferList.push_back(instanceBuffer);
-                    }
+                    load();
                 }
 
                 if (data->loaded)
@@ -836,7 +842,15 @@ namespace Gek
                     auto data = instancePair.first;
                     for (auto &materialInfo : data->materialInfoList)
                     {
-                        render->drawInstancedIndexedPrimitive(plugin, materialInfo.material, data->vertexBufferList, instancePair.second.first, instancePair.second.second, materialInfo.firstVertex, data->indexBuffer, materialInfo.indexCount, materialInfo.firstIndex);
+                        static auto drawCall = [](VideoContext *videoContext, VideoBuffer *vertexBuffer, VideoBuffer *instanceBuffer, VideoBuffer *indexBuffer, UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) -> void
+                        {
+                            videoContext->setVertexBuffer(0, vertexBuffer, 0);
+                            videoContext->setVertexBuffer(1, instanceBuffer, 0);
+                            videoContext->setIndexBuffer(indexBuffer, 0);
+                            videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
+                        };
+
+                        render->queueDrawCall(plugin, materialInfo.material, std::bind(drawCall, std::placeholders::_1, data->vertexBuffer, instanceBuffer, data->indexBuffer, instancePair.second.first, instancePair.second.second, materialInfo.indexCount, materialInfo.firstIndex, materialInfo.firstVertex));
                     }
                 }
             }

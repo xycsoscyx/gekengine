@@ -1,6 +1,7 @@
 ﻿#include "GEK\Engine\Engine.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Action.h"
+#include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Render.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Context\ContextUserMixin.h"
@@ -81,6 +82,7 @@ namespace Gek
             INTERFACE_LIST_ENTRY_MEMBER_COM(VideoSystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(OverlaySystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
+            INTERFACE_LIST_ENTRY_MEMBER_COM(Resources, render)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Render, render)
         END_INTERFACE_LIST_USER
 

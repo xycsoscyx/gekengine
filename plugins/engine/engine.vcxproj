@@ -115,6 +115,7 @@
     <ClInclude Include="GEK\Engine\Population.h" />
     <ClInclude Include="GEK\Engine\Processor.h" />
     <ClInclude Include="GEK\Engine\Render.h" />
+    <ClInclude Include="GEK\Engine\Resources.h" />
     <ClInclude Include="GEK\Engine\Shader.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

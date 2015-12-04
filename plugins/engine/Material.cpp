@@ -1,6 +1,6 @@
 ﻿#include "GEK\Engine\Material.h"
 #include "GEK\Engine\Shader.h"
-#include "GEK\Engine\Render.h"
+#include "GEK\Engine\Resources.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Utility\String.h"
@@ -17,14 +17,14 @@ namespace Gek
     {
     private:
         VideoSystem *video;
-        Render *render;
+        Resources *resources;
         std::vector<CComPtr<VideoTexture>> mapList;
         CComPtr<Shader> shader;
 
     public:
         MaterialImplementation(void)
             : video(nullptr)
-            , render(nullptr)
+            , resources(nullptr)
         {
         }
 
@@ -46,11 +46,11 @@ namespace Gek
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<VideoSystem> video(initializerContext);
-            CComQIPtr<Render> render(initializerContext);
-            if (video && render)
+            CComQIPtr<Resources> resources(initializerContext);
+            if (video && resources)
             {
                 this->video = video;
-                this->render = render;
+                this->resources = resources;
                 resultValue = S_OK;
             }
 
@@ -70,7 +70,7 @@ namespace Gek
                             CStringW shaderFileName = xmlShaderNode.getText();
 
                             CComPtr<IUnknown> shader;
-                            resultValue = render->loadShader(&shader, shaderFileName);
+                            resultValue = resources->loadShader(&shader, shaderFileName);
                             if (shader)
                             {
                                 resultValue = shader->QueryInterface(IID_PPV_ARGS(&this->shader));
