@@ -586,88 +586,35 @@ namespace Gek
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11ComputeShader> d3dComputeShader(program);
-            if (d3dComputeShader)
-            {
-                d3dDeviceContext->CSSetShader(d3dComputeShader, nullptr, 0);
-            }
-            else
-            {
-                d3dDeviceContext->CSSetShader(nullptr, nullptr, 0);
-            }
+            d3dDeviceContext->CSSetShader(d3dComputeShader.p, nullptr, 0);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            if (d3dBuffer)
-            {
-                ID3D11Buffer *d3dBufferList[1] = { d3dBuffer };
-                d3dDeviceContext->CSSetConstantBuffers(stage, 1, d3dBufferList);
-            }
+            d3dDeviceContext->CSSetConstantBuffers(stage, 1, &d3dBuffer.p);
         }
 
         STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
-            if (d3dSamplerState)
-            {
-                ID3D11SamplerState *d3dSamplerStateList[1] = { d3dSamplerState };
-                d3dDeviceContext->CSSetSamplers(stage, 1, d3dSamplerStateList);
-            }
+            d3dDeviceContext->CSSetSamplers(stage, 1, &d3dSamplerState.p);
         }
 
         STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
-            ID3D11ShaderResourceView *d3dShaderResourceViewList[1] = { nullptr };
             CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-            if (d3dShaderResourceView)
-            {
-                d3dShaderResourceViewList[0] = d3dShaderResourceView;
-            }
-
-            d3dDeviceContext->CSSetShaderResources(stage, 1, d3dShaderResourceViewList);
+            d3dDeviceContext->CSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
         }
 
         STDMETHODIMP_(void) setUnorderedAccess(IUnknown *unorderedAccess, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
-            ID3D11UnorderedAccessView *d3dUnorderedAccessViewList[1] = { nullptr };
             CComQIPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView(unorderedAccess);
-            if (d3dUnorderedAccessView)
-            {
-                d3dUnorderedAccessViewList[0] = d3dUnorderedAccessView;
-            }
-
-            d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, d3dUnorderedAccessViewList, nullptr);
-        }
-
-        STDMETHODIMP_(void) setResourceList(const std::vector<IUnknown *> resourceList, UINT32 firstStage)
-        {
-            REQUIRE_VOID_RETURN(d3dDeviceContext);
-            std::vector<ID3D11ShaderResourceView *> d3dShaderResourceViewList;
-            for (auto &resource : resourceList)
-            {
-                CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-                d3dShaderResourceViewList.push_back(d3dShaderResourceView);
-            }
-
-            d3dDeviceContext->CSSetShaderResources(firstStage, d3dShaderResourceViewList.size(), d3dShaderResourceViewList.data());
-        }
-
-        STDMETHODIMP_(void) setUnorderedAccessList(const std::vector<IUnknown *> unorderedAccessList, UINT32 firstStage)
-        {
-            REQUIRE_VOID_RETURN(d3dDeviceContext);
-            std::vector<ID3D11UnorderedAccessView *> d3dUnorderedAccessViewList;
-            for (auto &unorderedAccess : unorderedAccessList)
-            {
-                CComQIPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView(unorderedAccess);
-                d3dUnorderedAccessViewList.push_back(d3dUnorderedAccessView);
-            }
-
-            d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, d3dUnorderedAccessViewList.size(), d3dUnorderedAccessViewList.data(), nullptr);
+            d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, &d3dUnorderedAccessView.p, nullptr);
         }
     };
 
@@ -684,65 +631,33 @@ namespace Gek
         STDMETHODIMP_(void) setProgram(IUnknown *program)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
+
             CComQIPtr<ID3D11VertexShader> d3dVertexShader(program);
+            d3dDeviceContext->VSSetShader(d3dVertexShader.p, nullptr, 0);
+
             CComQIPtr<ID3D11InputLayout> d3dInputLayout(program);
-            if (d3dVertexShader && d3dInputLayout)
-            {
-                d3dDeviceContext->VSSetShader(d3dVertexShader, nullptr, 0);
-                d3dDeviceContext->IASetInputLayout(d3dInputLayout);
-            }
-            else
-            {
-                d3dDeviceContext->VSSetShader(nullptr, nullptr, 0);
-            }
+            d3dDeviceContext->IASetInputLayout(d3dInputLayout.p);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            if (d3dBuffer)
-            {
-                ID3D11Buffer *d3dBufferList[1] = { d3dBuffer };
-                d3dDeviceContext->VSSetConstantBuffers(stage, 1, d3dBufferList);
-            }
+            d3dDeviceContext->VSSetConstantBuffers(stage, 1, &d3dBuffer.p);
         }
 
         STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
-            if (d3dSamplerState)
-            {
-                ID3D11SamplerState *d3dSamplerStateList[1] = { d3dSamplerState };
-                d3dDeviceContext->VSSetSamplers(stage, 1, d3dSamplerStateList);
-            }
+            d3dDeviceContext->VSSetSamplers(stage, 1, &d3dSamplerState.p);
         }
 
         STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
-            ID3D11ShaderResourceView *d3dShaderResourceViewList[1] = { nullptr };
             CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-            if (d3dShaderResourceView)
-            {
-                d3dShaderResourceViewList[0] = d3dShaderResourceView;
-            }
-
-            d3dDeviceContext->VSSetShaderResources(stage, 1, d3dShaderResourceViewList);
-        }
-
-        STDMETHODIMP_(void) setResourceList(const std::vector<IUnknown *> resourceList, UINT32 firstStage)
-        {
-            REQUIRE_VOID_RETURN(d3dDeviceContext);
-            std::vector<ID3D11ShaderResourceView *> d3dShaderResourceViewList;
-            for (auto &resource : resourceList)
-            {
-                CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-                d3dShaderResourceViewList.push_back(d3dShaderResourceView);
-            }
-
-            d3dDeviceContext->VSSetShaderResources(firstStage, d3dShaderResourceViewList.size(), d3dShaderResourceViewList.data());
+            d3dDeviceContext->VSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
         }
     };
 
@@ -760,62 +675,28 @@ namespace Gek
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11GeometryShader> d3dGeometryShader(program);
-            if (d3dGeometryShader)
-            {
-                d3dDeviceContext->GSSetShader(d3dGeometryShader, nullptr, 0);
-            }
-            else
-            {
-                d3dDeviceContext->GSSetShader(nullptr, nullptr, 0);
-            }
+            d3dDeviceContext->GSSetShader(d3dGeometryShader.p, nullptr, 0);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            if (d3dBuffer)
-            {
-                ID3D11Buffer *d3dBufferList[1] = { d3dBuffer };
-                d3dDeviceContext->GSSetConstantBuffers(stage, 1, d3dBufferList);
-            }
+            d3dDeviceContext->GSSetConstantBuffers(stage, 1, &d3dBuffer.p);
         }
 
         STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
-            if (d3dSamplerState)
-            {
-                ID3D11SamplerState *d3dSamplerStateList[1] = { d3dSamplerState };
-                d3dDeviceContext->GSSetSamplers(stage, 1, d3dSamplerStateList);
-            }
+            d3dDeviceContext->GSSetSamplers(stage, 1, &d3dSamplerState.p);
         }
 
         STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
-            ID3D11ShaderResourceView *d3dShaderResourceViewList[1] = { nullptr };
             CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-            if (d3dShaderResourceView)
-            {
-                d3dShaderResourceViewList[0] = d3dShaderResourceView;
-            }
-
-            d3dDeviceContext->GSSetShaderResources(stage, 1, d3dShaderResourceViewList);
-        }
-
-        STDMETHODIMP_(void) setResourceList(const std::vector<IUnknown *> resourceList, UINT32 firstStage)
-        {
-            REQUIRE_VOID_RETURN(d3dDeviceContext);
-            std::vector<ID3D11ShaderResourceView *> d3dShaderResourceViewList;
-            for (auto &resource : resourceList)
-            {
-                CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-                d3dShaderResourceViewList.push_back(d3dShaderResourceView);
-            }
-
-            d3dDeviceContext->GSSetShaderResources(firstStage, d3dShaderResourceViewList.size(), d3dShaderResourceViewList.data());
+            d3dDeviceContext->GSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
         }
     };
 
@@ -833,62 +714,28 @@ namespace Gek
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11PixelShader> d3dPixelShader(program);
-            if (d3dPixelShader)
-            {
-                d3dDeviceContext->PSSetShader(d3dPixelShader, nullptr, 0);
-            }
-            else
-            {
-                d3dDeviceContext->PSSetShader(nullptr, nullptr, 0);
-            }
+            d3dDeviceContext->PSSetShader(d3dPixelShader.p, nullptr, 0);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            if (d3dBuffer)
-            {
-                ID3D11Buffer *d3dBufferList[1] = { d3dBuffer };
-                d3dDeviceContext->PSSetConstantBuffers(stage, 1, d3dBufferList);
-            }
+            d3dDeviceContext->PSSetConstantBuffers(stage, 1, &d3dBuffer.p);
         }
 
         STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
-            if (d3dSamplerState)
-            {
-                ID3D11SamplerState *d3dSamplerStateList[1] = { d3dSamplerState };
-                d3dDeviceContext->PSSetSamplers(stage, 1, d3dSamplerStateList);
-            }
+            d3dDeviceContext->PSSetSamplers(stage, 1, &d3dSamplerState.p);
         }
 
         STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
-            ID3D11ShaderResourceView *d3dShaderResourceViewList[1] = { nullptr };
             CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-            if (d3dShaderResourceView)
-            {
-                d3dShaderResourceViewList[0] = d3dShaderResourceView;
-            }
-
-            d3dDeviceContext->PSSetShaderResources(stage, 1, d3dShaderResourceViewList);
-        }
-
-        STDMETHODIMP_(void) setResourceList(const std::vector<IUnknown *> resourceList, UINT32 firstStage)
-        {
-            REQUIRE_VOID_RETURN(d3dDeviceContext);
-            std::vector<ID3D11ShaderResourceView *> d3dShaderResourceViewList;
-            for (auto &resource : resourceList)
-            {
-                CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-                d3dShaderResourceViewList.push_back(d3dShaderResourceView);
-            }
-
-            d3dDeviceContext->PSSetShaderResources(firstStage, d3dShaderResourceViewList.size(), d3dShaderResourceViewList.data());
+            d3dDeviceContext->PSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
         }
     };
 

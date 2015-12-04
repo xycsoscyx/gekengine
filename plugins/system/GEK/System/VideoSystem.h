@@ -411,8 +411,6 @@ namespace Gek
         STDMETHOD_(void, setSamplerStates)              (THIS_ IUnknown *samplerStates, UINT32 stage) PURE;
         STDMETHOD_(void, setResource)                   (THIS_ IUnknown *resource, UINT32 stage) PURE;
         STDMETHOD_(void, setUnorderedAccess)            (THIS_ IUnknown *unorderedAccess, UINT32 stage) { };
-        STDMETHOD_(void, setResourceList)               (THIS_ const std::vector<IUnknown *> resourceList, UINT32 firstStage) PURE;
-        STDMETHOD_(void, setUnorderedAccessList)        (THIS_ const std::vector<IUnknown *> unorderedAccessList, UINT32 firstStage) { };
     };
 
     DECLARE_INTERFACE_IID(VideoContext, "95262C77-0F56-4447-9337-5819E68B372E") : virtual public IUnknown

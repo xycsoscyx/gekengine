@@ -1031,14 +1031,6 @@ namespace Gek
         STDMETHODIMP_(void) setMaterialValues(VideoContext *context, LPCVOID passData, const std::vector<CComPtr<VideoTexture>> &materialMapList)
         {
             const Pass &pass = *(const Pass *)passData;
-
-            std::vector<IUnknown *> resourceList;
-            resourceList.reserve(materialMapList.size());
-            for (auto &resource : materialMapList)
-            {
-                resourceList.push_back(resource);
-            }
-
             UINT32 firstStage = 0;
             if (pass.lighting)
             {
@@ -1046,7 +1038,10 @@ namespace Gek
             }
 
             VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? context->computePipeline() : context->pixelPipeline());
-            pipeline->setResourceList(resourceList, firstStage);
+            for (auto &resource : materialMapList)
+            {
+                pipeline->setResource(resource, firstStage++);
+            }
         }
 
         STDMETHODIMP_(void) draw(VideoContext *context,
@@ -1098,8 +1093,13 @@ namespace Gek
                     context->clearDepthStencilTarget(depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
                 }
 
-                std::vector<IUnknown *> resourceList;
-                resourceList.reserve(pass.resourceList.size());
+                UINT32 firstStage = 0;
+                if (pass.lighting)
+                {
+                    firstStage = 1;
+                }
+
+                VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? context->computePipeline() : context->pixelPipeline());
                 for (auto &resourceName : pass.resourceList)
                 {
                     IUnknown *resource = findResource(resourceName);
@@ -1115,28 +1115,16 @@ namespace Gek
                         }
                     }
 
-                    resourceList.push_back(findResource(resourceName));
+                    pipeline->setResource(findResource(resourceName), firstStage++);
                 }
 
-                std::vector<IUnknown *> unorderedAccessList;
-                unorderedAccessList.reserve(pass.unorderedAccessList.size());
+                firstStage = 0;
                 for (auto &unorderedAccessName : pass.unorderedAccessList)
                 {
-                    unorderedAccessList.push_back(findResource(unorderedAccessName));
+                    pipeline->setUnorderedAccess(findResource(unorderedAccessName), firstStage++);
                 }
 
-                VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? context->computePipeline() : context->pixelPipeline());
-
-                UINT32 firstStage = 0;
-                if (pass.lighting)
-                {
-                    firstStage = 1;
-                }
-
-                pipeline->setResourceList(resourceList, firstStage);
-                pipeline->setUnorderedAccessList(unorderedAccessList, 0);
                 pipeline->setProgram(pass.program);
-
                 switch (pass.mode)
                 {
                 case PassMode::Forward:
