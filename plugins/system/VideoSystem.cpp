@@ -868,18 +868,25 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) setRenderTargets(const std::vector<VideoTexture *> &renderTargetList, IUnknown *depthBuffer)
+        STDMETHODIMP_(void) setRenderTargets(const std::vector<VideoTexture *> &renderTargetList, IUnknown *depthBuffer, bool setViewPorts)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
+            std::vector<D3D11_VIEWPORT> d3dViewPortList;
             std::vector<ID3D11RenderTargetView *> d3dRenderTargetViewList;
             for (auto &renderTarget : renderTargetList)
             {
                 CComQIPtr<ID3D11RenderTargetView> d3dRenderTargetView(renderTarget);
                 d3dRenderTargetViewList.push_back(d3dRenderTargetView);
+               
+                d3dViewPortList.push_back({ 0.0f, 0.0f, float(renderTarget->getWidth()), float(renderTarget->getHeight()), 0.0f, 1.0f });
             }
 
             CComQIPtr<ID3D11DepthStencilView> d3dDepthStencilView(depthBuffer);
             d3dDeviceContext->OMSetRenderTargets(d3dRenderTargetViewList.size(), d3dRenderTargetViewList.data(), d3dDepthStencilView.p);
+            if (setViewPorts)
+            {
+                d3dDeviceContext->RSSetViewports(d3dViewPortList.size(), d3dViewPortList.data());
+            }
         }
 
         STDMETHODIMP_(void) setRenderStates(IUnknown *renderStates)

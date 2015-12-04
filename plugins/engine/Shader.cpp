@@ -171,15 +171,15 @@ namespace Gek
             UINT32 stencilClearValue;
             bool clearRenderTargets;
             Math::Float4 renderTargetsClearColor;
-            CComPtr<IUnknown> depthStates;
-            CComPtr<IUnknown> renderStates;
+            DepthStatesHandle depthStates;
+            RenderStatesHandle renderStates;
             Math::Float4 blendFactor;
-            CComPtr<IUnknown> blendStates;
+            BlendStatesHandle blendStates;
             std::vector<CStringW> renderTargetList;
             std::vector<CStringW> resourceList;
             std::set<CStringW> generateMipMaps;
             std::vector<CStringW> unorderedAccessList;
-            CComPtr<IUnknown> program;
+            ProgramHandle program;
             UINT32 dispatchWidth;
             UINT32 dispatchHeight;
             UINT32 dispatchDepth;
@@ -205,9 +205,9 @@ namespace Gek
         UINT32 height;
         std::vector<Map> mapList;
         std::unordered_map<CStringW, CStringW> defineList;
-        CComPtr<IUnknown> depthBuffer;
-        std::unordered_map<CStringW, CComPtr<VideoTexture>> renderTargetMap;
-        std::unordered_map<CStringW, CComPtr<VideoBuffer>> bufferMap;
+        TextureHandle depthBuffer;
+        std::unordered_map<CStringW, TextureHandle> renderTargetMap;
+        std::unordered_map<CStringW, BufferHandle> bufferMap;
         std::vector<Pass> passList;
 
     private:
@@ -318,7 +318,7 @@ namespace Gek
             stencilStates.comparisonFunction = getComparisonFunction(xmlStencilNode.firstChildElement(L"comparison").getText());
         }
 
-        HRESULT loadDepthStates(Pass &pass, Gek::XmlNode &xmlDepthStatesNode)
+        void loadDepthStates(Pass &pass, Gek::XmlNode &xmlDepthStatesNode)
         {
             Video::DepthStates depthStates;
             depthStates.enable = true;
@@ -354,10 +354,10 @@ namespace Gek
                 }
             }
 
-            return resources->createDepthStates(&pass.depthStates, depthStates);
+            pass.depthStates = resources->createDepthStates(depthStates);
         }
 
-        HRESULT loadRenderStates(Pass &pass, Gek::XmlNode &xmlRenderStatesNode)
+        void loadRenderStates(Pass &pass, Gek::XmlNode &xmlRenderStatesNode)
         {
             Video::RenderStates renderStates;
             renderStates.fillMode = getFillMode(xmlRenderStatesNode.firstChildElement(L"fillmode").getText());
@@ -372,7 +372,7 @@ namespace Gek
             renderStates.slopeScaledDepthBias = String::to<float>(xmlRenderStatesNode.firstChildElement(L"slopescaleddepthbias").getText());
             renderStates.depthClipEnable = String::to<bool>(xmlRenderStatesNode.firstChildElement(L"depthclip").getText());
             renderStates.multisampleEnable = String::to<bool>(xmlRenderStatesNode.firstChildElement(L"multisample").getText());
-            return resources->createRenderStates(&pass.renderStates, renderStates);
+            pass.renderStates = resources->createRenderStates(renderStates);
         }
 
         void loadBlendTargetStates(Video::TargetBlendStates &blendStates, Gek::XmlNode &xmlBlendStatesNode)
@@ -401,7 +401,7 @@ namespace Gek
             }
         }
 
-        HRESULT loadBlendStates(Pass &pass, Gek::XmlNode &xmlBlendStatesNode)
+        void loadBlendStates(Pass &pass, Gek::XmlNode &xmlBlendStatesNode)
         {
             bool alphaToCoverage = String::to<bool>(xmlBlendStatesNode.firstChildElement(L"alphatocoverage").getText());
             if (xmlBlendStatesNode.hasChildElement(L"target"))
@@ -417,7 +417,7 @@ namespace Gek
                     xmlTargetNode = xmlTargetNode.nextSiblingElement(L"target");
                 };
 
-                return resources->createBlendStates(&pass.blendStates, blendStates);
+                pass.blendStates = resources->createBlendStates(blendStates);
             }
             else
             {
@@ -429,7 +429,7 @@ namespace Gek
                     loadBlendTargetStates(blendStates, xmlBlendStatesNode);
                 }
 
-                return resources->createBlendStates(&pass.blendStates, blendStates);
+                pass.blendStates = resources->createBlendStates(blendStates);
             }
         }
 
@@ -477,23 +477,6 @@ namespace Gek
             fullValue.Replace(L"%lightListSize%", L"1024");
 
             return replaceDefines(fullValue);
-        }
-
-        IUnknown *findResource(LPCWSTR name)
-        {
-            auto bufferIterator = bufferMap.find(name);
-            if (bufferIterator != bufferMap.end())
-            {
-                return (*bufferIterator).second;
-            }
-
-            auto renderTargetIterator = renderTargetMap.find(name);
-            if (renderTargetIterator != renderTargetMap.end())
-            {
-                return (*renderTargetIterator).second;
-            }
-
-            return nullptr;
         }
 
     public:
@@ -595,7 +578,7 @@ namespace Gek
                         if (xmlDepthNode)
                         {
                             Video::Format format = getFormat(xmlDepthNode.getText());
-                            resultValue = resources->createDepthTarget(&depthBuffer, width, height, format, 0);
+                            depthBuffer = resources->createDepthTarget(width, height, format, 0);
                         }
 
                         Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"targets");
@@ -608,7 +591,7 @@ namespace Gek
                                 Video::Format format = getFormat(xmlTargetNode.getText());
                                 BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
                                 UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
-                                resultValue = resources->createRenderTarget(&renderTargetMap[name], width, height, format, flags);
+                                renderTargetMap[name] = resources->createRenderTarget(width, height, format, flags);
 
                                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
@@ -625,7 +608,7 @@ namespace Gek
                                 CStringW name(xmlBufferNode.getType());
                                 Video::Format format = getFormat(xmlBufferNode.getText());
                                 UINT32 size = String::to<UINT32>(replaceDefines(xmlBufferNode.getAttribute(L"size")));
-                                resultValue = resources->createBuffer(&bufferMap[name], String::format(L"%s:buffer:%s", fileName, name.GetString()), format, size, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
+                                bufferMap[name] = resources->createBuffer(String::format(L"%s:buffer:%s", fileName, name.GetString()), format, size, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                                 switch (format)
                                 {
                                 case Video::Format::Byte:
@@ -724,17 +707,17 @@ namespace Gek
 
                             if (SUCCEEDED(resultValue))
                             {
-                                resultValue = loadDepthStates(pass, xmlPassNode.firstChildElement(L"depthstates"));
+                                loadDepthStates(pass, xmlPassNode.firstChildElement(L"depthstates"));
                             }
 
                             if (SUCCEEDED(resultValue))
                             {
-                                resultValue = loadRenderStates(pass, xmlPassNode.firstChildElement(L"renderstates"));
+                                loadRenderStates(pass, xmlPassNode.firstChildElement(L"renderstates"));
                             }
 
                             if (SUCCEEDED(resultValue))
                             {
-                                resultValue = loadBlendStates(pass, xmlPassNode.firstChildElement(L"blendstates"));
+                                loadBlendStates(pass, xmlPassNode.firstChildElement(L"blendstates"));
                             }
 
                             if (SUCCEEDED(resultValue))
@@ -934,7 +917,7 @@ namespace Gek
                                                 "                                                       \r\n";
                                         }
 
-                                        resultValue = resources->loadComputeProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                        pass.program = resources->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
                                     }
                                     else
                                     {
@@ -961,7 +944,7 @@ namespace Gek
                                                 "                                                       \r\n";
                                         }
 
-                                        resultValue = resources->loadPixelProgram(&pass.program, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                        pass.program = resources->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
                                     }
                                 }
                                 else
@@ -984,7 +967,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::XmlNode &xmlMaterialNode, std::vector<CComPtr<VideoTexture>> &materialMapList)
+        STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::XmlNode &xmlMaterialNode, std::vector<TextureHandle> &materialMapList)
         {
             std::unordered_map<CStringW, CStringW> materialMapDefineList;
             Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
@@ -1010,7 +993,7 @@ namespace Gek
 
             for (auto &mapValue : mapList)
             {
-                CComPtr<VideoTexture> map;
+                TextureHandle map;
                 auto materialMapIterator = materialMapDefineList.find(mapValue.name);
                 if (materialMapIterator != materialMapDefineList.end())
                 {
@@ -1019,7 +1002,7 @@ namespace Gek
                     materialFileName.Replace(L"%directory%", LPCWSTR(filePath));
                     materialFileName.Replace(L"%filename%", LPCWSTR(fileSpec));
                     materialFileName.Replace(L"%material%", fileName);
-                    resources->loadTexture(&map, materialFileName, mapValue.flags);
+                    map = resources->loadTexture(materialFileName, mapValue.flags);
                 }
 
                 materialMapList.push_back(map);
@@ -1028,7 +1011,7 @@ namespace Gek
             return S_OK;
         }
 
-        STDMETHODIMP_(void) setMaterialValues(VideoContext *context, LPCVOID passData, const std::vector<CComPtr<VideoTexture>> &materialMapList)
+        STDMETHODIMP_(void) setMaterialValues(VideoContext *context, LPCVOID passData, const std::vector<TextureHandle> &materialMapList)
         {
             const Pass &pass = *(const Pass *)passData;
             UINT32 firstStage = 0;
@@ -1040,7 +1023,7 @@ namespace Gek
             VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? context->computePipeline() : context->pixelPipeline());
             for (auto &resource : materialMapList)
             {
-                pipeline->setResource(resource, firstStage++);
+                resources->setResource(pipeline, resource, firstStage++);
             }
         }
 
@@ -1051,13 +1034,20 @@ namespace Gek
         {
             for (auto &pass : passList)
             {
-                context->setDepthStates(pass.depthStates, 0x0);
-                context->setRenderStates(pass.renderStates);
-                context->setBlendStates(pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
+                resources->setDepthStates(context, pass.depthStates, 0x0);
+                resources->setRenderStates(context, pass.renderStates);
+                resources->setBlendStates(context, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
+
+                if (pass.depthClearFlags > 0)
+                {
+                    // FIX
+                    //context->clearDepthStencilTarget(depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
+                }
 
                 if (pass.renderTargetList.empty())
                 {
-                    video->setDefaultTargets(context, depthBuffer);
+                    // FIX
+                    //video->setDefaultTargets(context, depthBuffer);
                     if (pass.clearRenderTargets)
                     {
                         video->clearDefaultRenderTarget(pass.renderTargetsClearColor);
@@ -1065,66 +1055,75 @@ namespace Gek
                 }
                 else
                 {
-                    std::vector<Video::ViewPort> viewPortList;
-                    std::vector<VideoTexture *> renderTargetList;
+                    std::vector<TextureHandle> renderTargetList;
                     for (auto &renderTargetName : pass.renderTargetList)
                     {
-                        VideoTexture *renderTarget = nullptr;
+                        TextureHandle renderTarget;
                         auto renderTargetIterator = renderTargetMap.find(renderTargetName);
                         if (renderTargetIterator != renderTargetMap.end())
                         {
                             renderTarget = (*renderTargetIterator).second;
-                            if (renderTarget && pass.clearRenderTargets)
+                            if (pass.clearRenderTargets)
                             {
-                                context->clearRenderTarget(renderTarget, pass.renderTargetsClearColor);
+                                resources->clearRenderTarget(context, renderTarget, pass.renderTargetsClearColor);
                             }
                         }
 
-                        viewPortList.emplace_back(Video::ViewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(renderTarget->getWidth()), float(renderTarget->getHeight())), 0.0f, 1.0f));
                         renderTargetList.push_back(renderTarget);
                     }
 
-                    context->setRenderTargets(renderTargetList, depthBuffer);
-                    context->setViewports(viewPortList);
+                    // FIX
+                    //context->setRenderTargets(renderTargetList, depthBuffer);
                 }
 
-                if (pass.depthClearFlags > 0)
-                {
-                    context->clearDepthStencilTarget(depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
-                }
-
-                UINT32 firstStage = 0;
+                UINT32 stage = 0;
                 if (pass.lighting)
                 {
-                    firstStage = 1;
+                    stage = 1;
                 }
 
                 VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? context->computePipeline() : context->pixelPipeline());
                 for (auto &resourceName : pass.resourceList)
                 {
-                    IUnknown *resource = findResource(resourceName);
-                    if (resource)
+                    auto renderTargetIterator = renderTargetMap.find(resourceName);
+                    if (renderTargetIterator != renderTargetMap.end())
                     {
                         if (pass.generateMipMaps.count(resourceName) > 0)
                         {
-                            CComQIPtr<Gek::VideoTexture> texture(resource);
-                            if (texture)
-                            {
-                                context->generateMipMaps(texture);
-                            }
+//                            context->generateMipMaps(texture);
                         }
+
+                        resources->setResource(pipeline, renderTargetIterator->second, stage);
                     }
 
-                    pipeline->setResource(findResource(resourceName), firstStage++);
+                    auto bufferIterator = bufferMap.find(resourceName);
+                    if (bufferIterator != bufferMap.end())
+                    {
+                        resources->setResource(pipeline, bufferIterator->second, stage);
+                    }
+
+                    stage++;
                 }
 
-                firstStage = 0;
+                stage = 0;
                 for (auto &unorderedAccessName : pass.unorderedAccessList)
                 {
-                    pipeline->setUnorderedAccess(findResource(unorderedAccessName), firstStage++);
+                    auto renderTargetIterator = renderTargetMap.find(unorderedAccessName);
+                    if (renderTargetIterator != renderTargetMap.end())
+                    {
+                        resources->setResource(pipeline, renderTargetIterator->second, stage);
+                    }
+
+                    auto bufferIterator = bufferMap.find(unorderedAccessName);
+                    if (bufferIterator != bufferMap.end())
+                    {
+                        resources->setResource(pipeline, bufferIterator->second, stage);
+                    }
+
+                    stage++;
                 }
 
-                pipeline->setProgram(pass.program);
+                resources->setProgram(pipeline, pass.program);
                 switch (pass.mode)
                 {
                 case PassMode::Forward:

@@ -19,7 +19,7 @@ namespace Gek
         VideoSystem *video;
         Resources *resources;
         std::vector<CComPtr<VideoTexture>> mapList;
-        CComPtr<Shader> shader;
+        ShaderHandle shader;
 
     public:
         MaterialImplementation(void)
@@ -69,16 +69,8 @@ namespace Gek
                         {
                             CStringW shaderFileName = xmlShaderNode.getText();
 
-                            CComPtr<IUnknown> shader;
-                            resultValue = resources->loadShader(&shader, shaderFileName);
-                            if (shader)
-                            {
-                                resultValue = shader->QueryInterface(IID_PPV_ARGS(&this->shader));
-                                if (this->shader)
-                                {
-                                    resultValue = this->shader->getMaterialValues(fileName, xmlMaterialNode, mapList);
-                                }
-                            }
+                            shader = resources->loadShader(shaderFileName);
+//                            resultValue = this->shader->getMaterialValues(fileName, xmlMaterialNode, mapList);
                         }
                     }
                 }
@@ -89,13 +81,13 @@ namespace Gek
 
         STDMETHODIMP_(Shader *) getShader(void)
         {
-            return shader;
+            return nullptr;
+            //return shader;
         }
 
         STDMETHODIMP_(void) enable(VideoContext *context, LPCVOID passData)
         {
-            REQUIRE_VOID_RETURN(shader);
-            shader->setMaterialValues(context, passData, mapList);
+            //shader->setMaterialValues(context, passData, mapList);
         }
     };
 

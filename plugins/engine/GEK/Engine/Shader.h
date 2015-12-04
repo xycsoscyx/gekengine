@@ -2,7 +2,7 @@
 
 #include "GEK\Context\Observer.h"
 #include "GEK\System\VideoSystem.h"
-#include "GEK\Shape\Frustum.h"
+#include "GEK\Engine\Resources.h"
 #include "GEK\Utility\XML.h"
 #include <functional>
 
@@ -12,8 +12,8 @@ namespace Gek
     {
         STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
 
-        STDMETHOD(getMaterialValues)                (THIS_ LPCWSTR fileName, Gek::XmlNode &xmlMaterialNode, std::vector<CComPtr<VideoTexture>> &materialMapList) PURE;
-        STDMETHOD_(void, setMaterialValues)         (THIS_ VideoContext *context, LPCVOID passData, const std::vector<CComPtr<VideoTexture>> &materialMapList) PURE;
+        STDMETHOD(getMaterialValues)                (THIS_ LPCWSTR fileName, Gek::XmlNode &xmlMaterialNode, std::vector<TextureHandle> &materialMapList) PURE;
+        STDMETHOD_(void, setMaterialValues)         (THIS_ VideoContext *context, LPCVOID passData, const std::vector<TextureHandle> &materialMapList) PURE;
 
         STDMETHOD_(void, draw)                      (THIS_ VideoContext *context,
             std::function<void(LPCVOID passData, bool lighting)> drawForward,

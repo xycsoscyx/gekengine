@@ -367,14 +367,13 @@ namespace Gek
     public:
         struct MaterialInfo
         {
-            std::size_t material;
+            MaterialHandle material;
             UINT32 firstVertex;
             UINT32 firstIndex;
             UINT32 indexCount;
 
             MaterialInfo(void)
-                : material(0)
-                , firstVertex(0)
+                : firstVertex(0)
                 , firstIndex(0)
                 , indexCount(0)
             {
@@ -385,8 +384,8 @@ namespace Gek
         {
             bool loaded;
             Shape::AlignedBox alignedBox;
-            CComPtr<VideoBuffer> vertexBuffer;
-            CComPtr<VideoBuffer> indexBuffer;
+            BufferHandle vertexBuffer;
+            BufferHandle indexBuffer;
             std::vector<MaterialInfo> materialInfoList;
 
             ModelData(void)
@@ -417,12 +416,12 @@ namespace Gek
         Render *render;
         Population *population;
 
-        std::size_t plugin;
+        PluginHandle plugin;
 
         concurrency::concurrent_unordered_map<ModelData *, std::function<HRESULT(void)>> dataLoadQueue;
         concurrency::concurrent_unordered_map<CStringW, ModelData> dataMap;
         concurrency::concurrent_unordered_map<Entity *, ModelData *> dataEntityList;
-        CComPtr<VideoBuffer> instanceBuffer;
+        BufferHandle instanceBuffer;
 
     public:
         ModelProcessorImplementation(void)
@@ -430,7 +429,6 @@ namespace Gek
             , render(nullptr)
             , video(nullptr)
             , population(nullptr)
-            , plugin(0)
         {
         }
 
@@ -454,7 +452,7 @@ namespace Gek
             CStringW materialName = parameters.Tokenize(L"|", position);
 
             HRESULT resultValue = E_FAIL;
-            std::size_t material = resources->loadMaterial(materialName);
+            MaterialHandle material = resources->loadMaterial(materialName);
             if (material)
             {
                 if (shape.CompareNoCase(L"cube") == 0)
@@ -473,14 +471,10 @@ namespace Gek
                     materialInfo.firstIndex = 0;
                     materialInfo.indexCount = geoSphere.getIndices().size();
                     materialInfo.material = material;
-
                     data->materialInfoList.push_back(materialInfo);
 
-                    resultValue = resources->createBuffer(&data->vertexBuffer, String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, geoSphere.getVertices().data());
-                    if (SUCCEEDED(resultValue))
-                    {
-                        resultValue = resources->createBuffer(&data->indexBuffer, String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, geoSphere.getIndices().data());
-                    }
+                    data->vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, geoSphere.getVertices().data());
+                    data->indexBuffer = resources->createBuffer(String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, geoSphere.getIndices().data());
                 }
                 else
                 {
@@ -587,7 +581,7 @@ namespace Gek
                         UINT32 vertexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
-                        resultValue = resources->createBuffer(&data->vertexBuffer, String::format(L"model:vertex:%s", name.GetString()), sizeof(Vertex), vertexCount, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, rawFileData);
+                        data->vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s", name.GetString()), sizeof(Vertex), vertexCount, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, rawFileData);
                         rawFileData += (sizeof(Vertex) * vertexCount);
                     }
 
@@ -596,7 +590,7 @@ namespace Gek
                         UINT32 indexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
-                        resultValue = resources->createBuffer(&data->indexBuffer, String::format(L"model:index:%s", name.GetString()), Video::Format::Short, indexCount, Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, rawFileData);
+                        data->indexBuffer = resources->createBuffer(String::format(L"model:index:%s", name.GetString()), Video::Format::Short, indexCount, Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, rawFileData);
                         rawFileData += (sizeof(UINT16) * indexCount);
                     }
                 }
@@ -708,7 +702,7 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = resources->createBuffer(&instanceBuffer, L"model:instances", sizeof(InstanceData), 1024, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Dynamic);
+                instanceBuffer = resources->createBuffer(L"model:instances", sizeof(InstanceData), 1024, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Dynamic);
             }
 
             return resultValue;
@@ -830,27 +824,30 @@ namespace Gek
                 }
             }
 
+            // FIX
+/*
             LPVOID instanceData = nullptr;
             if (SUCCEEDED(video->mapBuffer(instanceBuffer, &instanceData)))
             {
                 UINT32 instanceCount = std::min(instanceArray.size(), size_t(1024));
                 memcpy(instanceData, instanceArray.data(), (sizeof(InstanceData) * instanceCount));
                 video->unmapBuffer(instanceBuffer);
-
+*/
+            {
                 for (auto &instancePair : instanceMap)
                 {
                     auto data = instancePair.first;
                     for (auto &materialInfo : data->materialInfoList)
                     {
-                        static auto drawCall = [](VideoContext *videoContext, VideoBuffer *vertexBuffer, VideoBuffer *instanceBuffer, VideoBuffer *indexBuffer, UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) -> void
+                        static auto drawCall = [](Resources *resources, VideoContext *videoContext, BufferHandle vertexBuffer, BufferHandle instanceBuffer, BufferHandle indexBuffer, UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) -> void
                         {
-                            videoContext->setVertexBuffer(0, vertexBuffer, 0);
-                            videoContext->setVertexBuffer(1, instanceBuffer, 0);
-                            videoContext->setIndexBuffer(indexBuffer, 0);
+                            resources->setVertexBuffer(videoContext, 0, vertexBuffer, 0);
+                            resources->setVertexBuffer(videoContext, 1, instanceBuffer, 0);
+                            resources->setIndexBuffer(videoContext, indexBuffer, 0);
                             videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
                         };
 
-                        render->queueDrawCall(plugin, materialInfo.material, std::bind(drawCall, std::placeholders::_1, data->vertexBuffer, instanceBuffer, data->indexBuffer, instancePair.second.first, instancePair.second.second, materialInfo.indexCount, materialInfo.firstIndex, materialInfo.firstVertex));
+                        render->queueDrawCall(plugin, materialInfo.material, std::bind(drawCall, resources, std::placeholders::_1, data->vertexBuffer, instanceBuffer, data->indexBuffer, instancePair.second.first, instancePair.second.second, materialInfo.indexCount, materialInfo.firstIndex, materialInfo.firstVertex));
                     }
                 }
             }

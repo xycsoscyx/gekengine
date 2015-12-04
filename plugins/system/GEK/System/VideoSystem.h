@@ -429,7 +429,7 @@ namespace Gek
 
         STDMETHOD_(void, clearRenderTarget)                 (THIS_ VideoTexture *renderTarget, const Math::Float4 &colorClear) PURE;
         STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ IUnknown *depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
-        STDMETHOD_(void, setRenderTargets)                  (THIS_ const std::vector<VideoTexture *> &renderTargetList, IUnknown *depthBuffer) PURE;
+        STDMETHOD_(void, setRenderTargets)                  (THIS_ const std::vector<VideoTexture *> &renderTargetList, IUnknown *depthBuffer, bool setViewPorts = true) PURE;
 
         STDMETHOD_(void, setRenderStates)                   (THIS_ IUnknown *renderStates) PURE;
         STDMETHOD_(void, setDepthStates)                    (THIS_ IUnknown *depthStates, UINT32 stencilReference) PURE;

@@ -70,7 +70,7 @@ namespace std
     {
         size_t operator()(const CComPtr<CLASS> &value) const
         {
-            return hash<LPCVOID>()((CLASS *)value);
+            return hash<LPCVOID>()(value.p);
         }
     };
 
@@ -79,7 +79,7 @@ namespace std
     {
         size_t operator()(const CComQIPtr<CLASS> &value) const
         {
-            return hash<LPCVOID>()((CLASS *)value);
+            return hash<LPCVOID>()(value.p);
         }
     };
 };
@@ -87,6 +87,85 @@ namespace std
 namespace Gek
 {
     static const UINT32 MaxLightCount = 500;
+
+    template <class HANDLE, typename... ARGS>
+    class ResourceManager
+    {
+    private:
+        std::function<HRESULT(IUnknown **, ARGS... args)> loadResource;
+
+        UINT64 nextIdentifier;
+        concurrency::concurrent_unordered_map<std::size_t, HANDLE> hashMap;
+        concurrency::concurrent_unordered_map<HANDLE, CComPtr<IUnknown>> resourceMap;
+
+    public:
+        ResourceManager(std::function<HRESULT(IUnknown **, ARGS... args)> loadResource)
+            : loadResource(loadResource)
+            , nextIdentifier(0)
+        {
+        }
+
+        ~ResourceManager(void)
+        {
+        }
+
+        BEGIN_INTERFACE_LIST(ResourceManager)
+        END_INTERFACE_LIST_USER
+
+        void clearResources(void)
+        {
+            hashMap.clear();
+            resourceMap.clear();
+        }
+
+        HANDLE getResourceHandle(std::size_t hash, ARGS... args)
+        {
+            HANDLE handle;
+            auto hashIterator = hashMap.find(hash);
+            if (hashIterator == hashMap.end())
+            {
+                handle = HANDLE(InterlockedIncrement(&nextIdentifier));
+                hashMap[hash] = handle;
+                resourceMap[handle] = nullptr;
+
+                CComPtr<IUnknown> resource;
+                if (SUCCEEDED(loadResource(&resource, args...)) && resource)
+                {
+                    resourceMap[handle] = resource;
+                }
+            }
+            else
+            {
+                handle = hashIterator->second;
+            }
+
+            return handle;
+        }
+
+        HANDLE addUniqueResource(IUnknown *resource)
+        {
+            HANDLE handle;
+            if (resource)
+            {
+                handle = HANDLE(InterlockedIncrement(&nextIdentifier));
+                resourceMap[handle] = resource;
+            }
+
+            return handle;
+        }
+
+        template <typename TYPE>
+        TYPE *getResource(HANDLE handle)
+        {
+            auto resourceIterator = resourceMap.find(handle);
+            if (resourceIterator != resourceMap.end())
+            {
+                return dynamic_cast<TYPE *>(resourceIterator->second.p);
+            }
+
+            return nullptr;
+        }
+    };
 
     class RenderImplementation : public ContextUserMixin
         , public ObservableMixin
@@ -142,17 +221,225 @@ namespace Gek
         CComPtr<VideoBuffer> deferredVertexBuffer;
         CComPtr<VideoBuffer> deferredIndexBuffer;
 
-        concurrency::concurrent_unordered_map<std::size_t, CComPtr<IUnknown>> resourceMap;
-        concurrency::concurrent_unordered_map<Shader *, // shader
-            concurrency::concurrent_unordered_map<std::size_t, // plugin
-                concurrency::concurrent_unordered_map<std::size_t, // material
-                    concurrency::concurrent_vector<std::function<void(VideoContext *)>>>>> drawQueue;
+        ResourceManager<ProgramHandle, bool, LPCWSTR, LPCSTR, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)>, std::unordered_map<CStringA, CStringA> *> programManager;
+        ResourceManager<PluginHandle, LPCWSTR> pluginManager;
+        ResourceManager<MaterialHandle, LPCWSTR> materialManager;
+        ResourceManager<ShaderHandle, LPCWSTR> shaderManager;
+        ResourceManager<TextureHandle, LPCWSTR, UINT32> textureManager;
+        ResourceManager<BufferHandle, UINT32, Video::Format, UINT32, DWORD, LPCVOID> bufferManager;
+        ResourceManager<RenderStatesHandle, const Video::RenderStates &> renderStateManager;
+        ResourceManager<DepthStatesHandle, const Video::DepthStates &> depthStateManager;
+        ResourceManager<BlendStatesHandle, const Video::UnifiedBlendStates *, const Video::IndependentBlendStates *> blendStateManager;
+
+        //STDMETHOD(createRenderTarget)                   (THIS_ VideoTexture **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
+        //STDMETHOD(createDepthTarget)                    (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
 
     public:
         RenderImplementation(void)
             : initializerContext(nullptr)
             , video(nullptr)
             , population(nullptr)
+            , pluginManager([&](IUnknown **returnObject, LPCWSTR fileName) -> HRESULT
+                {
+                    HRESULT resultValue = E_FAIL;
+
+                    CComPtr<Plugin> plugin;
+                    resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(PluginRegistration, &plugin));
+                    if (plugin)
+                    {
+                        resultValue = plugin->initialize(initializerContext, fileName);
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = plugin->QueryInterface(returnObject);
+                        }
+                    }
+
+                    return resultValue;
+                })
+            , materialManager([&](IUnknown **returnObject, LPCWSTR fileName) -> HRESULT
+                {
+                    HRESULT resultValue = E_FAIL;
+
+                    CComPtr<Material> material;
+                    resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(MaterialRegistration, &material));
+                    if (material)
+                    {
+                        resultValue = material->initialize(initializerContext, fileName);
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = material->QueryInterface(returnObject);
+                        }
+                    }
+
+                    return resultValue;
+                })
+            , shaderManager([&](IUnknown **returnObject, LPCWSTR fileName) -> HRESULT
+                {
+                    HRESULT resultValue = E_FAIL;
+
+                    CComPtr<Shader> shader;
+                    resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(ShaderRegistration, &shader));
+                    if (shader)
+                    {
+                        resultValue = shader->initialize(initializerContext, fileName);
+                        if (SUCCEEDED(resultValue))
+                        {
+                            resultValue = shader->QueryInterface(returnObject);
+                        }
+                    }
+
+                    return resultValue;
+                })
+            , textureManager([&](IUnknown **returnObject, LPCWSTR fileName, UINT32 flags) -> HRESULT
+                {
+                    REQUIRE_RETURN(fileName, E_INVALIDARG);
+
+                    HRESULT resultValue = E_FAIL;
+                    if ((*fileName) && (*fileName) == L'*')
+                    {
+                        if (_wcsnicmp(fileName, L"*color:", 7) == 0)
+                        {
+                            CComPtr<VideoTexture> texture;
+
+                            UINT8 colorData[4] = { 0, 0, 0, 0 };
+                            UINT32 colorPitch = 0;
+
+                            float color1;
+                            Math::Float2 color2;
+                            Math::Float4 color4;
+                            if (Evaluator::get((fileName + 7), color1))
+                            {
+                                resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte, Video::TextureFlags::Resource);
+                                colorData[0] = UINT8(color1 * 255.0f);
+                                colorPitch = 1;
+                            }
+                            else if (Evaluator::get((fileName + 7), color2))
+                            {
+                                resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte2, Video::TextureFlags::Resource);
+                                colorData[0] = UINT8(color2.x * 255.0f);
+                                colorData[1] = UINT8(color2.y * 255.0f);
+                                colorPitch = 2;
+                            }
+                            else if (Evaluator::get((fileName + 7), color4))
+                            {
+                                resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
+                                colorData[0] = UINT8(color4.x * 255.0f);
+                                colorData[1] = UINT8(color4.y * 255.0f);
+                                colorData[2] = UINT8(color4.z * 255.0f);
+                                colorData[3] = UINT8(color4.w * 255.0f);
+                                colorPitch = 4;
+                            }
+
+                            if (texture && colorPitch > 0)
+                            {
+                                video->updateTexture(texture, colorData, colorPitch);
+                                resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
+                            }
+                        }
+                        else if (_wcsnicmp(fileName, L"*normal:", 8) == 0)
+                        {
+                            CComPtr<VideoTexture> texture;
+                            resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
+                            if (texture)
+                            {
+                                Math::Float3 normal((String::to<Math::Float3>(fileName + 8) + 1.0f) * 0.5f);
+                                UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
+                                    UINT32(UINT8(normal.y * 255.0f) << 8) |
+                                    UINT32(UINT8(normal.z * 255.0f) << 16);
+                                video->updateTexture(texture, &normalValue, 4);
+                                resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        CComPtr<VideoTexture> texture;
+                        resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s", fileName), flags);
+                        if (FAILED(resultValue))
+                        {
+                            resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".dds"), flags);
+                            if (FAILED(resultValue))
+                            {
+                                resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".tga"), flags);
+                                if (FAILED(resultValue))
+                                {
+                                    resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".png"), flags);
+                                    if (FAILED(resultValue))
+                                    {
+                                        resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".jpg"), flags);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (SUCCEEDED(resultValue) && texture)
+                        {
+                            resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
+                        }
+                    }
+
+                    return resultValue;
+                })
+            , bufferManager([&](IUnknown **returnObject, UINT32 stride, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData) -> HRESULT
+                {
+                    HRESULT resultValue = E_FAIL;
+                    CComPtr<VideoBuffer> buffer;
+                    if (stride > 0)
+                    {
+                        resultValue = video->createBuffer(&buffer, stride, count, flags, staticData);
+                    }
+                    else if(format != Video::Format::Invalid)
+                    {
+                        resultValue = video->createBuffer(&buffer, format, count, flags, staticData);
+                    }
+
+                    if (SUCCEEDED(resultValue) && buffer)
+                    {
+                        resultValue = buffer->QueryInterface(returnObject);
+                    }
+
+                    return resultValue;
+                })
+            , renderStateManager([&](IUnknown **returnObject, const Video::RenderStates &renderStates) -> HRESULT
+                {
+                    HRESULT resultValue = E_FAIL;
+                    resultValue = video->createRenderStates(returnObject, renderStates);
+                    return resultValue;
+                })
+            , depthStateManager([&](IUnknown **returnObject, const Video::DepthStates &depthStates) -> HRESULT
+                {
+                    HRESULT resultValue = E_FAIL;
+                    resultValue = video->createDepthStates(returnObject, depthStates);
+                    return resultValue;
+                })
+            , blendStateManager([&](IUnknown **returnObject, const Video::UnifiedBlendStates *unifiedBlendStates, const Video::IndependentBlendStates *independentBlendStates) -> HRESULT
+                {
+                    HRESULT resultValue = E_FAIL;
+                    if (unifiedBlendStates)
+                    {
+                        resultValue = video->createBlendStates(returnObject, *unifiedBlendStates);
+                    }
+                    else if(independentBlendStates)
+                    {
+                        resultValue = video->createBlendStates(returnObject, *independentBlendStates);
+                    }
+
+                    return resultValue;
+                })
+            , programManager([&](IUnknown **returnObject, bool computeProgram, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList) -> HRESULT
+                {
+                    HRESULT resultValue = E_FAIL;
+                    if (computeProgram)
+                    {
+                        resultValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
+                    }
+                    else
+                    {
+                        resultValue = video->loadPixelProgram(returnObject, fileName, entryFunction, onInclude, defineList);
+                    }
+
+                    return resultValue;
+                })
         {
         }
 
@@ -167,49 +454,6 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Resources)
             INTERFACE_LIST_ENTRY_COM(Render)
         END_INTERFACE_LIST_USER
-
-        template <typename CLASS>
-        HRESULT getResource(CLASS **returnObject, std::size_t hash, std::function<HRESULT(CLASS **)> loadResource)
-        {
-            HRESULT resultValue = S_OK;
-            auto resourceIterator = resourceMap.find(hash);
-            if (resourceIterator != resourceMap.end())
-            {
-                if ((*resourceIterator).second && returnObject)
-                {
-                    resultValue = (*resourceIterator).second->QueryInterface(IID_PPV_ARGS(returnObject));
-                }
-            }
-            else
-            {
-                resourceMap[hash] = nullptr;
-
-                CComPtr<CLASS> resource;
-                resultValue = loadResource(&resource);
-                if (SUCCEEDED(resultValue) && resource)
-                {
-                    resourceMap[hash] = resource;
-                    if (returnObject)
-                    {
-                        resultValue = resource->QueryInterface(IID_PPV_ARGS(returnObject));
-                    }
-                }
-            }
-
-            return resultValue;
-        }
-
-        template <typename CLASS>
-        CLASS *getResource(std::size_t hash)
-        {
-            auto resourceIterator = resourceMap.find(hash);
-            if (resourceIterator != resourceMap.end())
-            {
-                return dynamic_cast<CLASS *>((*resourceIterator).second.p);
-            }
-
-            return nullptr;
-        }
 
         // Render/Resources
         STDMETHODIMP initialize(IUnknown *initializerContext)
@@ -316,105 +560,29 @@ namespace Gek
         // Render
         STDMETHODIMP_(void) queueDrawCall(std::size_t plugin, std::size_t material, std::function<void(VideoContext *)> draw)
         {
-            if (material && plugin)
-            {
-                Material *mat = getResource<Material>(material);
-                if(mat && mat->getShader())
-                {
-                    drawQueue[mat->getShader()][plugin][material].push_back(draw);
-                }
-            }
         }
 
         // Resources
-        STDMETHODIMP_(std::size_t) loadPlugin(LPCWSTR fileName)
+        STDMETHODIMP_(PluginHandle) loadPlugin(LPCWSTR fileName)
         {
-            REQUIRE_RETURN(initializerContext, 0);
-
-            std::size_t fileNameHash = std::hash<LPCWSTR>()(fileName);
-            if (SUCCEEDED(getResource<IUnknown>(nullptr, fileNameHash, [&](IUnknown **returnObject) -> HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-
-                CComPtr<Plugin> plugin;
-                resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(PluginRegistration, &plugin));
-                if (plugin)
-                {
-                    resultValue = plugin->initialize(initializerContext, fileName);
-                    if (SUCCEEDED(resultValue))
-                    {
-                        resultValue = plugin->QueryInterface(returnObject);
-                    }
-                }
-
-                return resultValue;
-            })))
-            {
-                return fileNameHash;
-            }
-
-            return 0;
+            std::size_t hash = std::hash<LPCWSTR>()(fileName);
+            return pluginManager.getResourceHandle(hash, fileName);
         }
 
-        STDMETHODIMP_(std::size_t) loadMaterial(LPCWSTR fileName)
+        STDMETHODIMP_(MaterialHandle) loadMaterial(LPCWSTR fileName)
         {
-            REQUIRE_RETURN(initializerContext, 0);
-
-            std::size_t fileNameHash = std::hash<LPCWSTR>()(fileName);
-            if (SUCCEEDED(getResource<IUnknown>(nullptr, fileNameHash, [&](IUnknown **returnObject) -> HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-
-                CComPtr<Material> material;
-                resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(MaterialRegistration, &material));
-                if (material)
-                {
-                    resultValue = material->initialize(initializerContext, fileName);
-                    if (SUCCEEDED(resultValue))
-                    {
-                        resultValue = material->QueryInterface(returnObject);
-                    }
-                }
-
-                return resultValue;
-            })))
-            {
-                return fileNameHash;
-            }
-
-            return 0;
+            std::size_t hash = std::hash<LPCWSTR>()(fileName);
+            return materialManager.getResourceHandle(hash, fileName);
         }
 
-        STDMETHODIMP loadShader(IUnknown **returnObject, LPCWSTR fileName)
+        STDMETHODIMP_(ShaderHandle) loadShader(LPCWSTR fileName)
         {
-            REQUIRE_RETURN(initializerContext, E_FAIL);
-
-            HRESULT resultValue = E_FAIL;
-            resultValue = getResource<IUnknown>(returnObject, std::hash<LPCWSTR>()(fileName), [&](IUnknown **returnObject) -> HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-
-                CComPtr<Shader> shader;
-                resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(ShaderRegistration, &shader));
-                if (shader)
-                {
-                    resultValue = shader->initialize(initializerContext, fileName);
-                    if (SUCCEEDED(resultValue))
-                    {
-                        resultValue = shader->QueryInterface(returnObject);
-                    }
-                }
-
-                return resultValue;
-            });
-
-            return resultValue;
+            std::size_t hash = std::hash<LPCWSTR>()(fileName);
+            return shaderManager.getResourceHandle(hash, fileName);
         }
 
-        STDMETHODIMP createRenderStates(IUnknown **returnObject, const Video::RenderStates &renderStates)
+        STDMETHODIMP_(RenderStatesHandle) createRenderStates(const Video::RenderStates &renderStates)
         {
-            REQUIRE_RETURN(video, E_FAIL);
-
             std::size_t hash = std::hashCombine(static_cast<UINT8>(renderStates.fillMode),
                 static_cast<UINT8>(renderStates.cullMode),
                 renderStates.frontCounterClockwise,
@@ -425,22 +593,11 @@ namespace Gek
                 renderStates.scissorEnable,
                 renderStates.multisampleEnable,
                 renderStates.antialiasedLineEnable);
-
-            HRESULT resultValue = E_FAIL;
-            resultValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->createRenderStates(returnObject, renderStates);
-                return resultValue;
-            });
-
-            return resultValue;
+            return renderStateManager.getResourceHandle(hash, renderStates);
         }
 
-        STDMETHODIMP createDepthStates(IUnknown **returnObject, const Video::DepthStates &depthStates)
+        STDMETHODIMP_(DepthStatesHandle) createDepthStates(const Video::DepthStates &depthStates)
         {
-            REQUIRE_RETURN(video, E_FAIL);
-
             std::size_t hash = std::hashCombine(depthStates.enable,
                 static_cast<UINT8>(depthStates.writeMask),
                 static_cast<UINT8>(depthStates.comparisonFunction),
@@ -455,22 +612,11 @@ namespace Gek
                 static_cast<UINT8>(depthStates.stencilBackStates.depthFailOperation),
                 static_cast<UINT8>(depthStates.stencilBackStates.passOperation),
                 static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction));
-
-            HRESULT resultValue = E_FAIL;
-            resultValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->createDepthStates(returnObject, depthStates);
-                return resultValue;
-            });
-
-            return resultValue;
+            return depthStateManager.getResourceHandle(hash, depthStates);
         }
 
-        STDMETHODIMP createBlendStates(IUnknown **returnObject, const Video::UnifiedBlendStates &blendStates)
+        STDMETHODIMP_(BlendStatesHandle) createBlendStates(const Video::UnifiedBlendStates &blendStates)
         {
-            REQUIRE_RETURN(video, E_FAIL);
-
             std::size_t hash = std::hashCombine(blendStates.enable,
                 static_cast<UINT8>(blendStates.colorSource),
                 static_cast<UINT8>(blendStates.colorDestination),
@@ -479,22 +625,11 @@ namespace Gek
                 static_cast<UINT8>(blendStates.alphaDestination),
                 static_cast<UINT8>(blendStates.alphaOperation),
                 blendStates.writeMask);
-
-            HRESULT resultValue = E_FAIL;
-            resultValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->createBlendStates(returnObject, blendStates);
-                return resultValue;
-            });
-
-            return resultValue;
+            return blendStateManager.getResourceHandle(hash, &blendStates, nullptr);
         }
 
-        STDMETHODIMP createBlendStates(IUnknown **returnObject, const Video::IndependentBlendStates &blendStates)
+        STDMETHODIMP_(BlendStatesHandle) createBlendStates(const Video::IndependentBlendStates &blendStates)
         {
-            REQUIRE_RETURN(video, E_FAIL);
-
             std::size_t hash = 0;
             for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
             {
@@ -508,164 +643,43 @@ namespace Gek
                     blendStates.targetStates[renderTarget].writeMask));
             }
 
-            HRESULT resultValue = E_FAIL;
-            resultValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->createBlendStates(returnObject, blendStates);
-                return resultValue;
-            });
-
-            return resultValue;
+            return blendStateManager.getResourceHandle(hash, nullptr, &blendStates);
         }
 
-        STDMETHODIMP createRenderTarget(VideoTexture **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags)
+        STDMETHODIMP_(TextureHandle) createRenderTarget(UINT32 width, UINT32 height, Video::Format format, UINT32 flags)
         {
-            REQUIRE_RETURN(video, E_FAIL);
-
-            HRESULT resultValue = E_FAIL;
-            resultValue = video->createRenderTarget(returnObject, width, height, format, flags);
-            return resultValue;
+            CComPtr<VideoTexture> renderTarget;
+            video->createRenderTarget(&renderTarget, width, height, format, flags);
+            return textureManager.addUniqueResource(renderTarget);
         }
 
-        STDMETHODIMP createDepthTarget(IUnknown **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags)
+        STDMETHODIMP_(TextureHandle) createDepthTarget(UINT32 width, UINT32 height, Video::Format format, UINT32 flags)
         {
-            REQUIRE_RETURN(video, E_FAIL);
-
-            HRESULT resultValue = E_FAIL;
-            resultValue = video->createDepthTarget(returnObject, width, height, format, flags);
-            return resultValue;
+            CComPtr<IUnknown> depthTarget;
+            video->createDepthTarget(&depthTarget, width, height, format, flags);
+            return textureManager.addUniqueResource(depthTarget);
         }
 
-        STDMETHODIMP createBuffer(VideoBuffer **returnObject, LPCWSTR name, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData)
+        STDMETHODIMP_(BufferHandle) createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData)
         {
-            REQUIRE_RETURN(video, E_FAIL);
-
-            HRESULT resultValue = getResource<VideoBuffer>(returnObject, std::hash<LPCWSTR>()(name), [&](VideoBuffer **returnObject) -> HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->createBuffer(returnObject, stride, count, flags, staticData);
-                return resultValue;
-            });
-
-            return resultValue;
+            std::size_t hash = std::hash<LPCWSTR>()(name);
+            return bufferManager.getResourceHandle(hash, stride, Video::Format::Invalid, count, flags, staticData);
         }
 
-        STDMETHODIMP createBuffer(VideoBuffer **returnObject, LPCWSTR name, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData)
+        STDMETHODIMP_(BufferHandle) createBuffer(LPCWSTR name, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData)
         {
-            REQUIRE_RETURN(video, E_FAIL);
-
-            HRESULT resultValue = getResource<VideoBuffer>(returnObject, std::hash<LPCWSTR>()(name), [&](VideoBuffer **returnObject) -> HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->createBuffer(returnObject, format, count, flags, staticData);
-                return resultValue;
-            });
-
-            return resultValue;
+            std::size_t hash = std::hash<LPCWSTR>()(name);
+            return bufferManager.getResourceHandle(hash, 0, format, count, flags, staticData);
         }
 
-        STDMETHODIMP loadTexture(VideoTexture **returnObject, LPCWSTR fileName, UINT32 flags)
+        STDMETHODIMP_(TextureHandle) loadTexture(LPCWSTR fileName, UINT32 flags)
         {
-            gekLogScope(fileName,
-                flags);
-
-            REQUIRE_RETURN(video, E_FAIL);
-
-            HRESULT resultValue = E_FAIL;
-            resultValue = getResource<VideoTexture>(returnObject, std::hash<LPCWSTR>()(fileName), [&](VideoTexture **returnObject) -> HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-                if (fileName)
-                {
-                    if ((*fileName) == L'*')
-                    {
-                        if (_wcsnicmp(fileName, L"*color:", 7) == 0)
-                        {
-                            CComPtr<VideoTexture> texture;
-
-                            UINT8 colorData[4] = { 0, 0, 0, 0 };
-                            UINT32 colorPitch = 0;
-
-                            float color1;
-                            Math::Float2 color2;
-                            Math::Float4 color4;
-                            if (Evaluator::get((fileName + 7), color1))
-                            {
-                                resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte, Video::TextureFlags::Resource);
-                                colorData[0] = UINT8(color1 * 255.0f);
-                                colorPitch = 1;
-                            }
-                            else if (Evaluator::get((fileName + 7), color2))
-                            {
-                                resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte2, Video::TextureFlags::Resource);
-                                colorData[0] = UINT8(color2.x * 255.0f);
-                                colorData[1] = UINT8(color2.y * 255.0f);
-                                colorPitch = 2;
-                            }
-                            else if (Evaluator::get((fileName + 7), color4))
-                            {
-                                resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
-                                colorData[0] = UINT8(color4.x * 255.0f);
-                                colorData[1] = UINT8(color4.y * 255.0f);
-                                colorData[2] = UINT8(color4.z * 255.0f);
-                                colorData[3] = UINT8(color4.w * 255.0f);
-                                colorPitch = 4;
-                            }
-
-                            if (texture && colorPitch > 0)
-                            {
-                                video->updateTexture(texture, colorData, colorPitch);
-                                resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-                            }
-                        }
-                        else if (_wcsnicmp(fileName, L"*normal:", 8) == 0)
-                        {
-                            CComPtr<VideoTexture> texture;
-                            resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
-                            if (texture)
-                            {
-                                Math::Float3 normal((String::to<Math::Float3>(fileName + 8) + 1.0f) * 0.5f);
-                                UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
-                                    UINT32(UINT8(normal.y * 255.0f) << 8) |
-                                    UINT32(UINT8(normal.z * 255.0f) << 16);
-                                video->updateTexture(texture, &normalValue, 4);
-                                resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        resultValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s", fileName), flags);
-                        if (FAILED(resultValue))
-                        {
-                            resultValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".dds"), flags);
-                            if (FAILED(resultValue))
-                            {
-                                resultValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".tga"), flags);
-                                if (FAILED(resultValue))
-                                {
-                                    resultValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".png"), flags);
-                                    if (FAILED(resultValue))
-                                    {
-                                        resultValue = video->loadTexture(returnObject, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".jpg"), flags);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return resultValue;
-            });
-
-            return resultValue;
+            std::size_t hash = std::hash<LPCWSTR>()(fileName);
+            return textureManager.getResourceHandle(hash, fileName, flags);
         }
 
-        STDMETHODIMP loadComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP_(ProgramHandle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
-            REQUIRE_RETURN(video, E_FAIL);
-
             std::size_t hash = std::hashCombine(fileName, entryFunction);
             if (defineList)
             {
@@ -675,21 +689,11 @@ namespace Gek
                 }
             }
 
-            HRESULT resultValue = E_FAIL;
-            resultValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
-                return resultValue;
-            });
-
-            return resultValue;
+            return programManager.getResourceHandle(hash, true, fileName, entryFunction, onInclude, defineList);
         }
 
-        STDMETHODIMP loadPixelProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP_(ProgramHandle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
-            REQUIRE_RETURN(video, E_FAIL);
-
             std::size_t hash = std::hashCombine(fileName, entryFunction);
             if (defineList)
             {
@@ -699,15 +703,52 @@ namespace Gek
                 }
             }
 
-            HRESULT resultValue = E_FAIL;
-            resultValue = getResource<IUnknown>(returnObject, hash, [&](IUnknown **returnObject)->HRESULT
-            {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->loadPixelProgram(returnObject, fileName, entryFunction, onInclude, defineList);
-                return resultValue;
-            });
+            return programManager.getResourceHandle(hash, false, fileName, entryFunction, onInclude, defineList);
+        }
 
-            return resultValue;
+        STDMETHODIMP_(void) setRenderStates(VideoContext *videoContext, RenderStatesHandle renderStatesHandle)
+        {
+            videoContext->setRenderStates(renderStateManager.getResource<IUnknown>(renderStatesHandle));
+        }
+
+        STDMETHODIMP_(void) setDepthStates(VideoContext *videoContext, DepthStatesHandle depthStatesHandle, UINT32 stencilReference)
+        {
+            videoContext->setDepthStates(depthStateManager.getResource<IUnknown>(depthStatesHandle), stencilReference);
+        }
+
+        STDMETHODIMP_(void) setBlendStates(VideoContext *videoContext, BlendStatesHandle blendStatesHandle, const Math::Float4 &blendFactor, UINT32 sampleMask)
+        {
+            videoContext->setBlendStates(blendStateManager.getResource<IUnknown>(blendStatesHandle), blendFactor, sampleMask);
+        }
+
+        STDMETHODIMP_(void) setResource(VideoPipeline *videoPipeline, TextureHandle textureHandle, UINT32 stage)
+        {
+            videoPipeline->setResource(textureManager.getResource<IUnknown>(textureHandle), stage);
+        }
+
+        STDMETHODIMP_(void) setResource(VideoPipeline *videoPipeline, BufferHandle bufferHandle, UINT32 stage)
+        {
+            videoPipeline->setResource(bufferManager.getResource<IUnknown>(bufferHandle), stage);
+        }
+
+        STDMETHODIMP_(void) setProgram(VideoPipeline *videoPipeline, ProgramHandle programHandle)
+        {
+            videoPipeline->setProgram(programManager.getResource<IUnknown>(programHandle));
+        }
+
+        STDMETHODIMP_(void) setVertexBuffer(VideoContext *videoContext, UINT32 slot, BufferHandle bufferHandle, UINT32 offset)
+        {
+            videoContext->setVertexBuffer(slot, bufferManager.getResource<VideoBuffer>(bufferHandle), offset);
+        }
+
+        STDMETHODIMP_(void) setIndexBuffer(VideoContext *videoContext, BufferHandle bufferHandle, UINT32 offset)
+        {
+            videoContext->setIndexBuffer(bufferManager.getResource<VideoBuffer>(bufferHandle), offset);
+        }
+
+        STDMETHODIMP_(void) clearRenderTarget(VideoContext *videoContext, TextureHandle textureHandle, const Math::Float4 &color)
+        {
+            videoContext->clearRenderTarget(textureManager.getResource<VideoTexture>(textureHandle), color);
         }
 
         // PopulationObserver
@@ -725,7 +766,14 @@ namespace Gek
 
         STDMETHODIMP_(void) onFree(void)
         {
-            //resourceMap.clear();
+            programManager.clearResources();
+            materialManager.clearResources();
+            shaderManager.clearResources();
+            textureManager.clearResources();
+            bufferManager.clearResources();
+            renderStateManager.clearResources();
+            depthStateManager.clearResources();
+            blendStateManager.clearResources();
         }
 
         STDMETHODIMP_(void) onUpdateEnd(float frameTime)
@@ -795,12 +843,12 @@ namespace Gek
                     video->updateBuffer(lightingConstantBuffer, &lightingConstantData);
                 }
 
-                drawQueue.clear();
                 ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
 
                 defaultContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
                 defaultContext->pixelPipeline()->setSamplerStates(linearSamplerStates, 1);
                 defaultContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+/*
                 for (auto &shaderPair : drawQueue)
                 {
                     shaderPair.first->draw(defaultContext,
@@ -858,6 +906,7 @@ namespace Gek
 
                     shaderPair.second.clear();
                 }
+*/
             });
 
             ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderOverlay, std::placeholders::_1)));
