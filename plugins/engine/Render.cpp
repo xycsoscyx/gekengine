@@ -130,13 +130,12 @@ namespace Gek
             DrawType drawType;
             Plugin *plugin;
             Material *material;
-            std::vector<VideoBuffer *> vertexBufferList;
-            std::vector<UINT32> offsetList;
+            const std::vector<VideoBuffer *> &vertexBufferList;
             UINT32 instanceCount;
             UINT32 firstInstance;
             UINT32 vertexCount;
             UINT32 firstVertex;
-            CComPtr<VideoBuffer> indexBuffer;
+            VideoBuffer* indexBuffer;
             UINT32 indexCount;
             UINT32 firstIndex;
 
@@ -145,7 +144,6 @@ namespace Gek
                 , plugin(dynamic_cast<Plugin *>(plugin))
                 , material(dynamic_cast<Material *>(material))
                 , vertexBufferList(vertexBufferList)
-                , offsetList(vertexBufferList.size(), 0)
                 , vertexCount(vertexCount)
                 , firstVertex(firstVertex)
                 , instanceCount(0)
@@ -160,7 +158,6 @@ namespace Gek
                 , plugin(dynamic_cast<Plugin *>(plugin))
                 , material(dynamic_cast<Material *>(material))
                 , vertexBufferList(vertexBufferList)
-                , offsetList(vertexBufferList.size(), 0)
                 , firstVertex(firstVertex)
                 , indexBuffer(indexBuffer)
                 , indexCount(indexCount)
@@ -176,7 +173,6 @@ namespace Gek
                 , plugin(dynamic_cast<Plugin *>(plugin))
                 , material(dynamic_cast<Material *>(material))
                 , vertexBufferList(vertexBufferList)
-                , offsetList(vertexBufferList.size(), 0)
                 , instanceCount(instanceCount)
                 , firstInstance(firstInstance)
                 , vertexCount(vertexCount)
@@ -191,7 +187,6 @@ namespace Gek
                 , plugin(dynamic_cast<Plugin *>(plugin))
                 , material(dynamic_cast<Material *>(material))
                 , vertexBufferList(vertexBufferList)
-                , offsetList(vertexBufferList.size(), 0)
                 , instanceCount(instanceCount)
                 , firstInstance(firstInstance)
                 , firstVertex(firstVertex)
@@ -897,8 +892,14 @@ namespace Gek
                         {
                             drawCommand.plugin->enable(defaultContext);
                             drawCommand.material->enable(defaultContext, passData);
+
+                            UINT32 vertexBufferStage = 0;
+                            for (auto &vertexBuffer : drawCommand.vertexBufferList)
+                            {
+                                defaultContext->setVertexBuffer(vertexBufferStage++, vertexBuffer, 0);
+                            }
+
                             defaultContext->setIndexBuffer(drawCommand.indexBuffer, 0);
-                            defaultContext->setVertexBufferList(0, drawCommand.vertexBufferList, drawCommand.offsetList);
                             switch (drawCommand.drawType)
                             {
                             case DrawType::DrawPrimitive:

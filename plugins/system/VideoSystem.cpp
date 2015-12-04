@@ -879,14 +879,7 @@ namespace Gek
             }
 
             CComQIPtr<ID3D11DepthStencilView> d3dDepthStencilView(depthBuffer);
-            if (d3dDepthStencilView)
-            {
-                d3dDeviceContext->OMSetRenderTargets(d3dRenderTargetViewList.size(), d3dRenderTargetViewList.data(), d3dDepthStencilView);
-            }
-            else
-            {
-                d3dDeviceContext->OMSetRenderTargets(d3dRenderTargetViewList.size(), d3dRenderTargetViewList.data(), nullptr);
-            }
+            d3dDeviceContext->OMSetRenderTargets(d3dRenderTargetViewList.size(), d3dRenderTargetViewList.data(), d3dDepthStencilView.p);
         }
 
         STDMETHODIMP_(void) setRenderStates(IUnknown *renderStates)
@@ -923,55 +916,15 @@ namespace Gek
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(vertexBuffer);
-            if (vertexBuffer && d3dBuffer)
-            {
-                UINT32 stride = vertexBuffer->getStride();
-                ID3D11Buffer *d3dBufferList[1] = { d3dBuffer };
-                d3dDeviceContext->IASetVertexBuffers(slot, 1, d3dBufferList, &stride, &offset);
-            }
-        }
-
-        STDMETHODIMP_(void) setVertexBufferList(UINT32 firstSlot, const std::vector<VideoBuffer *> &vertexBufferList, const std::vector<UINT32> &offsetList)
-        {
-            REQUIRE_VOID_RETURN(d3dDeviceContext);
-            REQUIRE_VOID_RETURN(vertexBufferList.size() == offsetList.size());
-
-            std::vector<UINT32> strideList;
-            std::vector<ID3D11Buffer *> d3dBufferList;
-            for (auto vertexBuffer : vertexBufferList)
-            {
-                CComQIPtr<ID3D11Buffer> d3dBuffer(vertexBuffer);
-                d3dBufferList.push_back(d3dBuffer);
-                if (vertexBuffer)
-                {
-                    strideList.push_back(vertexBuffer->getStride());
-                }
-                else
-                {
-                    strideList.push_back(0);
-                }
-            }
-
-            d3dDeviceContext->IASetVertexBuffers(firstSlot, d3dBufferList.size(), d3dBufferList.data(), strideList.data(), offsetList.data());
+            UINT32 stride = (vertexBuffer ? vertexBuffer->getStride() : 0);
+            d3dDeviceContext->IASetVertexBuffers(slot, 1, &d3dBuffer.p, &stride, &offset);
         }
 
         STDMETHODIMP_(void) setIndexBuffer(VideoBuffer *indexBuffer, UINT32 offset)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(indexBuffer);
-            if (indexBuffer && d3dBuffer)
-            {
-                switch (indexBuffer->getFormat())
-                {
-                case Video::Format::Short:
-                    d3dDeviceContext->IASetIndexBuffer(d3dBuffer, DXGI_FORMAT_R16_UINT, offset);
-                    break;
-
-                case  Video::Format::Int:
-                    d3dDeviceContext->IASetIndexBuffer(d3dBuffer, DXGI_FORMAT_R32_UINT, offset);
-                    break;
-                };
-            }
+            d3dDeviceContext->IASetIndexBuffer(d3dBuffer, indexBuffer ? (indexBuffer->getFormat() == Video::Format::Short ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT) : DXGI_FORMAT_UNKNOWN, offset);
         }
 
         STDMETHODIMP_(void) setPrimitiveType(Video::PrimitiveType primitiveType)

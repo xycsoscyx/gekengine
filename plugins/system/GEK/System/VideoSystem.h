@@ -436,7 +436,6 @@ namespace Gek
         STDMETHOD_(void, setBlendStates)                    (THIS_ IUnknown *blendStates, const Math::Float4 &blendFactor, UINT32 sampleMask) PURE;
 
         STDMETHOD_(void, setVertexBuffer)                   (THIS_ UINT32 slot, VideoBuffer *vertexBuffer, UINT32 offset) PURE;
-        STDMETHOD_(void, setVertexBufferList)               (THIS_ UINT32 firstSlot, const std::vector<VideoBuffer *> &vertexBufferList, const std::vector<UINT32> &offsetList) PURE;
         STDMETHOD_(void, setIndexBuffer)                    (THIS_ VideoBuffer *indexBuffer, UINT32 offset) PURE;
         STDMETHOD_(void, setPrimitiveType)                  (THIS_ Video::PrimitiveType type) PURE;
 
