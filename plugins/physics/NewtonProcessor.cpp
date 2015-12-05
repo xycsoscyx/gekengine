@@ -279,9 +279,9 @@ namespace Gek
 
         Math::Float3 gravity;
         std::vector<Surface> surfaceList;
-        std::map<CStringW, INT32> surfaceIndexList;
+        std::map<std::size_t, INT32> surfaceIndexList;
         concurrency::concurrent_unordered_map<Entity *, CComPtr<IUnknown>> bodyList;
-        std::unordered_map<CStringW, std::unique_ptr<dNewtonCollision>> collisionList;
+        std::unordered_map<std::size_t, std::unique_ptr<dNewtonCollision>> collisionList;
 
     public:
         NewtonProcessorImplementation(void)
@@ -356,7 +356,8 @@ namespace Gek
             REQUIRE_RETURN(fileName, -1);
 
             INT32 surfaceIndex = -1;
-            auto surfaceIterator = surfaceIndexList.find(fileName);
+            std::size_t fileNameHash = std::hash<CStringW>()(fileName);
+            auto surfaceIterator = surfaceIndexList.find(fileNameHash);
             if (surfaceIterator != surfaceIndexList.end())
             {
                 surfaceIndex = (*surfaceIterator).second;
@@ -365,7 +366,7 @@ namespace Gek
             {
                 gekLogScope(fileName);
 
-                surfaceIndexList[fileName] = -1;
+                surfaceIndexList[fileNameHash] = -1;
 
                 Gek::XmlDocument xmlDocument;
                 if (SUCCEEDED(xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName))))
@@ -399,7 +400,7 @@ namespace Gek
                             }
 
                             surfaceIndex = surfaceList.size();
-                            surfaceIndexList[fileName] = surfaceIndex;
+                            surfaceIndexList[fileNameHash] = surfaceIndex;
                             surfaceList.push_back(surface);
                         }
                     }
@@ -420,9 +421,10 @@ namespace Gek
             }
 
             CStringW shape(Gek::String::format(L"%s:%f,%f,%f", dynamicBodyComponent.shape.GetString(), size.x, size.y, size.z));
+            std::size_t shapeHash = std::hash<CStringW>()(shape);
 
             dNewtonCollision *newtonCollision = nullptr;
-            auto collisionIterator = collisionList.find(shape);
+            auto collisionIterator = collisionList.find(shapeHash);
             if (collisionIterator != collisionList.end())
             {
                 if ((*collisionIterator).second)
@@ -434,7 +436,7 @@ namespace Gek
             {
                 gekLogScope();
 
-                collisionList[shape].reset();
+                collisionList[shapeHash].reset();
                 if (dynamicBodyComponent.shape.CompareNoCase(L"*cube") == 0)
                 {
                     newtonCollision = new dNewtonCollisionBox(this, size.x, size.y, size.z, 1);
@@ -470,7 +472,7 @@ namespace Gek
 
                 if (newtonCollision)
                 {
-                    collisionList[shape].reset(newtonCollision);
+                    collisionList[shapeHash].reset(newtonCollision);
                 }
             }
 
@@ -486,7 +488,8 @@ namespace Gek
             }
             else
             {
-                auto collisionIterator = collisionList.find(dynamicBodyComponent.shape);
+                std::size_t shapeHash = std::hash<CStringW>()(dynamicBodyComponent.shape);
+                auto collisionIterator = collisionList.find(shapeHash);
                 if (collisionIterator != collisionList.end())
                 {
                     if ((*collisionIterator).second)
@@ -498,7 +501,7 @@ namespace Gek
                 {
                     gekLogScope(dynamicBodyComponent.shape);
 
-                    collisionList[dynamicBodyComponent.shape].reset();
+                    collisionList[shapeHash].reset();
 
                     std::vector<UINT8> fileData;
                     HRESULT resultValue = Gek::FileSystem::load(Gek::String::format(L"%%root%%\\data\\models\\%s.gek", dynamicBodyComponent.shape.GetString()), fileData);
@@ -596,7 +599,7 @@ namespace Gek
 
                     if (newtonCollision)
                     {
-                        collisionList[dynamicBodyComponent.shape].reset(newtonCollision);
+                        collisionList[shapeHash].reset(newtonCollision);
                     }
                 }
             }

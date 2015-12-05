@@ -205,9 +205,9 @@ namespace Gek
         UINT32 height;
         std::vector<Map> mapList;
         std::unordered_map<CStringW, CStringW> defineList;
-        TextureHandle depthBuffer;
-        std::unordered_map<CStringW, TextureHandle> renderTargetMap;
-        std::unordered_map<CStringW, BufferHandle> bufferMap;
+        ResourceHandle depthBuffer;
+        std::unordered_map<CStringW, ResourceHandle> renderTargetMap;
+        std::unordered_map<CStringW, ResourceHandle> bufferMap;
         std::vector<Pass> passList;
 
     private:
@@ -967,7 +967,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::XmlNode &xmlMaterialNode, std::vector<TextureHandle> &materialMapList)
+        STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::XmlNode &xmlMaterialNode, std::vector<ResourceHandle> &materialMapList)
         {
             std::unordered_map<CStringW, CStringW> materialMapDefineList;
             Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
@@ -993,7 +993,7 @@ namespace Gek
 
             for (auto &mapValue : mapList)
             {
-                TextureHandle map;
+                ResourceHandle map;
                 auto materialMapIterator = materialMapDefineList.find(mapValue.name);
                 if (materialMapIterator != materialMapDefineList.end())
                 {
@@ -1011,7 +1011,7 @@ namespace Gek
             return S_OK;
         }
 
-        STDMETHODIMP_(void) setMaterialValues(VideoContext *context, LPCVOID passData, const std::vector<TextureHandle> &materialMapList)
+        STDMETHODIMP_(void) setMaterialValues(VideoContext *videoContext, LPCVOID passData, const std::vector<ResourceHandle> &materialMapList)
         {
             const Pass &pass = *(const Pass *)passData;
             UINT32 firstStage = 0;
@@ -1020,34 +1020,34 @@ namespace Gek
                 firstStage = 1;
             }
 
-            VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? context->computePipeline() : context->pixelPipeline());
+            VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
             for (auto &resource : materialMapList)
             {
                 resources->setResource(pipeline, resource, firstStage++);
             }
         }
 
-        STDMETHODIMP_(void) draw(VideoContext *context,
+        STDMETHODIMP_(void) draw(VideoContext *videoContext,
             std::function<void(LPCVOID passData, bool lighting)> drawForward,
             std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
             std::function<void(LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> drawCompute)
         {
             for (auto &pass : passList)
             {
-                resources->setDepthStates(context, pass.depthStates, 0x0);
-                resources->setRenderStates(context, pass.renderStates);
-                resources->setBlendStates(context, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
+                resources->setDepthStates(videoContext, pass.depthStates, 0x0);
+                resources->setRenderStates(videoContext, pass.renderStates);
+                resources->setBlendStates(videoContext, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
 
                 if (pass.depthClearFlags > 0)
                 {
                     // FIX
-                    //context->clearDepthStencilTarget(depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
+                    //videoContext->clearDepthStencilTarget(depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
                 }
 
                 if (pass.renderTargetList.empty())
                 {
                     // FIX
-                    //video->setDefaultTargets(context, depthBuffer);
+                    //video->setDefaultTargets(videoContext, depthBuffer);
                     if (pass.clearRenderTargets)
                     {
                         video->clearDefaultRenderTarget(pass.renderTargetsClearColor);
@@ -1055,25 +1055,25 @@ namespace Gek
                 }
                 else
                 {
-                    std::vector<TextureHandle> renderTargetList;
-                    for (auto &renderTargetName : pass.renderTargetList)
+                    static ResourceHandle renderTargetList[8];
+                    UINT32 renderTargetCount = pass.renderTargetList.size();
+                    for (UINT32 renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
                     {
-                        TextureHandle renderTarget;
-                        auto renderTargetIterator = renderTargetMap.find(renderTargetName);
+                        ResourceHandle renderTargetHandle;
+                        auto renderTargetIterator = renderTargetMap.find(pass.renderTargetList[renderTarget]);
                         if (renderTargetIterator != renderTargetMap.end())
                         {
-                            renderTarget = (*renderTargetIterator).second;
+                            renderTargetHandle = (*renderTargetIterator).second;
                             if (pass.clearRenderTargets)
                             {
-                                resources->clearRenderTarget(context, renderTarget, pass.renderTargetsClearColor);
+                                resources->clearRenderTarget(videoContext, renderTargetHandle, pass.renderTargetsClearColor);
                             }
                         }
 
-                        renderTargetList.push_back(renderTarget);
+                        renderTargetList[renderTarget] = renderTargetHandle;
                     }
 
-                    // FIX
-                    //context->setRenderTargets(renderTargetList, depthBuffer);
+                    resources->setRenderTargets(videoContext, renderTargetList, renderTargetCount, depthBuffer);
                 }
 
                 UINT32 stage = 0;
@@ -1082,7 +1082,7 @@ namespace Gek
                     stage = 1;
                 }
 
-                VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? context->computePipeline() : context->pixelPipeline());
+                VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 for (auto &resourceName : pass.resourceList)
                 {
                     auto renderTargetIterator = renderTargetMap.find(resourceName);
@@ -1090,7 +1090,7 @@ namespace Gek
                     {
                         if (pass.generateMipMaps.count(resourceName) > 0)
                         {
-//                            context->generateMipMaps(texture);
+//                            videoContext->generateMipMaps(texture);
                         }
 
                         resources->setResource(pipeline, renderTargetIterator->second, stage);
@@ -1139,7 +1139,7 @@ namespace Gek
                     break;
                 };
 
-                context->clearResources();
+                videoContext->clearResources();
             }
         }
     };

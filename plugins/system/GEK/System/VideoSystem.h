@@ -404,13 +404,18 @@ namespace Gek
         STDMETHOD_(UINT32, getDepth)                        (THIS) PURE;
     };
 
+    DECLARE_INTERFACE_IID(VideoTarget, "1F22B821-6FBF-4747-B913-502A40AA17AF") : virtual public VideoTexture
+    {
+        STDMETHOD_(const Video::ViewPort &, getViewPort)    (THIS) PURE;
+    };
+
     DECLARE_INTERFACE(VideoPipeline)
     {
-        STDMETHOD_(void, setProgram)                    (THIS_ IUnknown *program) PURE;
-        STDMETHOD_(void, setConstantBuffer)             (THIS_ VideoBuffer *constantBuffer, UINT32 stage) PURE;
-        STDMETHOD_(void, setSamplerStates)              (THIS_ IUnknown *samplerStates, UINT32 stage) PURE;
-        STDMETHOD_(void, setResource)                   (THIS_ IUnknown *resource, UINT32 stage) PURE;
-        STDMETHOD_(void, setUnorderedAccess)            (THIS_ IUnknown *unorderedAccess, UINT32 stage) { };
+        STDMETHOD_(void, setProgram)                        (THIS_ IUnknown *program) PURE;
+        STDMETHOD_(void, setConstantBuffer)                 (THIS_ VideoBuffer *constantBuffer, UINT32 stage) PURE;
+        STDMETHOD_(void, setSamplerStates)                  (THIS_ IUnknown *samplerStates, UINT32 stage) PURE;
+        STDMETHOD_(void, setResource)                       (THIS_ IUnknown *resource, UINT32 stage) PURE;
+        STDMETHOD_(void, setUnorderedAccess)                (THIS_ IUnknown *unorderedAccess, UINT32 stage) { };
     };
 
     DECLARE_INTERFACE_IID(VideoContext, "95262C77-0F56-4447-9337-5819E68B372E") : virtual public IUnknown
@@ -424,12 +429,12 @@ namespace Gek
 
         STDMETHOD_(void, clearResources)                    (THIS) PURE;
 
-        STDMETHOD_(void, setViewports)                      (THIS_ const std::vector<Video::ViewPort> &viewPortList) PURE;
-        STDMETHOD_(void, setScissorRect)                    (THIS_ const std::vector<Shape::Rectangle<UINT32>> &rectangleList) PURE;
+        STDMETHOD_(void, setViewports)                      (THIS_ Video::ViewPort *viewPortList, UINT32 viewPortCount) PURE;
+        STDMETHOD_(void, setScissorRect)                    (THIS_ Shape::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount) PURE;
 
-        STDMETHOD_(void, clearRenderTarget)                 (THIS_ VideoTexture *renderTarget, const Math::Float4 &colorClear) PURE;
+        STDMETHOD_(void, clearRenderTarget)                 (THIS_ VideoTarget *renderTarget, const Math::Float4 &colorClear) PURE;
         STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ IUnknown *depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
-        STDMETHOD_(void, setRenderTargets)                  (THIS_ const std::vector<VideoTexture *> &renderTargetList, IUnknown *depthBuffer, bool setViewPorts = true) PURE;
+        STDMETHOD_(void, setRenderTargets)                  (THIS_ VideoTarget **renderTargetList, UINT32 renderTargetCount, IUnknown *depthBuffer) PURE;
 
         STDMETHOD_(void, setRenderStates)                   (THIS_ IUnknown *renderStates) PURE;
         STDMETHOD_(void, setDepthStates)                    (THIS_ IUnknown *depthStates, UINT32 stencilReference) PURE;
@@ -475,7 +480,7 @@ namespace Gek
         STDMETHOD(createBlendStates)                        (THIS_ IUnknown **returnObject, const Video::IndependentBlendStates &blendStates) PURE;
         STDMETHOD(createSamplerStates)                      (THIS_ IUnknown **returnObject, const Video::SamplerStates &samplerStates) PURE;
 
-        STDMETHOD(createRenderTarget)                       (THIS_ VideoTexture **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
+        STDMETHOD(createRenderTarget)                       (THIS_ VideoTarget **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
         STDMETHOD(createDepthTarget)                        (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
 
         STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;

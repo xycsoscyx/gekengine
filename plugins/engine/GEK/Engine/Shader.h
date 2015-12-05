@@ -12,10 +12,10 @@ namespace Gek
     {
         STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
 
-        STDMETHOD(getMaterialValues)                (THIS_ LPCWSTR fileName, Gek::XmlNode &xmlMaterialNode, std::vector<TextureHandle> &materialMapList) PURE;
-        STDMETHOD_(void, setMaterialValues)         (THIS_ VideoContext *context, LPCVOID passData, const std::vector<TextureHandle> &materialMapList) PURE;
+        STDMETHOD(getMaterialValues)                (THIS_ LPCWSTR fileName, Gek::XmlNode &xmlMaterialNode, std::vector<ResourceHandle> &materialMapList) PURE;
+        STDMETHOD_(void, setMaterialValues)         (THIS_ VideoContext *videoContext, LPCVOID passData, const std::vector<ResourceHandle> &materialMapList) PURE;
 
-        STDMETHOD_(void, draw)                      (THIS_ VideoContext *context,
+        STDMETHOD_(void, draw)                      (THIS_ VideoContext *videoContext,
             std::function<void(LPCVOID passData, bool lighting)> drawForward,
             std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
             std::function<void(LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> drawCompute) PURE;

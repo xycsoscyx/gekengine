@@ -16,20 +16,20 @@
 namespace Gek
 {
     template <typename CLASS>
-    class SampleImplementation : public UnknownMixin
+    class SampleMixin : public UnknownMixin
         , public CLASS
     {
     protected:
         CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSoundBuffer;
 
     public:
-        SampleImplementation(IDirectSoundBuffer8 *directSoundBuffer)
+        SampleMixin(IDirectSoundBuffer8 *directSoundBuffer)
             : directSoundBuffer(directSoundBuffer)
         {
             setVolume(1.0f);
         }
 
-        virtual ~SampleImplementation(void)
+        virtual ~SampleMixin(void)
         {
         }
 
@@ -60,11 +60,11 @@ namespace Gek
         }
     };
 
-    class EffectImplementation : public SampleImplementation<AudioEffect>
+    class EffectImplementation : public SampleMixin<AudioEffect>
     {
     public:
         EffectImplementation(IDirectSoundBuffer8 *directSoundBuffer)
-            : SampleImplementation(directSoundBuffer)
+            : SampleMixin(directSoundBuffer)
         {
         }
 
@@ -91,14 +91,14 @@ namespace Gek
         }
     };
 
-    class SoundImplementation : public SampleImplementation<AudioSound>
+    class SoundImplementation : public SampleMixin<AudioSound>
     {
     private:
         CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> directSound8Buffer3D;
 
     public:
         SoundImplementation(IDirectSoundBuffer8 *directSoundBuffer, IDirectSound3DBuffer8 *directSound8Buffer3D)
-            : SampleImplementation(directSoundBuffer)
+            : SampleMixin(directSoundBuffer)
             , directSound8Buffer3D(directSound8Buffer3D)
         {
         }

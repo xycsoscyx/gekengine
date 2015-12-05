@@ -257,7 +257,7 @@ namespace Gek
         BEGIN_INTERFACE_LIST(VertexProgram)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11VertexShader, d3dVertexShader)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11InputLayout, d3dInputLayout)
-            END_INTERFACE_LIST_UNKNOWN
+        END_INTERFACE_LIST_UNKNOWN
     };
 
     class BufferImplementation : public UnknownMixin
@@ -297,7 +297,7 @@ namespace Gek
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Buffer, d3dBuffer)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
-            END_INTERFACE_LIST_UNKNOWN
+        END_INTERFACE_LIST_UNKNOWN
 
         // VideoBuffer
         STDMETHODIMP_(Video::Format) getFormat(void)
@@ -316,8 +316,9 @@ namespace Gek
         }
     };
 
-    class TextureImplementation : public UnknownMixin
-        , public VideoTexture
+    template <typename CLASS>
+    class TextureMixin : public UnknownMixin
+        , public CLASS
     {
     protected:
         CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
@@ -328,7 +329,7 @@ namespace Gek
         UINT32 depth;
 
     public:
-        TextureImplementation(UINT32 width, UINT32 height, UINT32 depth, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView)
+        TextureMixin(UINT32 width, UINT32 height, UINT32 depth, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView)
             : format(Video::Format::Invalid)
             , width(width)
             , height(height)
@@ -337,12 +338,6 @@ namespace Gek
             , d3dUnorderedAccessView(d3dUnorderedAccessView)
         {
         }
-
-        BEGIN_INTERFACE_LIST(TextureImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoTexture)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
-            END_INTERFACE_LIST_UNKNOWN
 
         // VideoTexture
         STDMETHODIMP_(Video::Format) getFormat(void)
@@ -366,21 +361,48 @@ namespace Gek
         }
     };
 
-    class RenderTargetImplementation : public TextureImplementation
+    class TextureImplementation : public TextureMixin<VideoTexture>
+    {
+    public:
+        TextureImplementation(UINT32 width, UINT32 height, UINT32 depth, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView)
+            : TextureMixin(width, height, depth, d3dShaderResourceView, d3dUnorderedAccessView)
+        {
+        }
+
+        BEGIN_INTERFACE_LIST(TextureImplementation)
+            INTERFACE_LIST_ENTRY_COM(VideoTexture)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
+        END_INTERFACE_LIST_UNKNOWN
+    };
+
+    class RenderTargetImplementation : public TextureMixin<VideoTarget>
     {
     private:
         CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+        Video::ViewPort viewPort;
 
     public:
         RenderTargetImplementation(UINT32 width, UINT32 height, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11RenderTargetView *d3dRenderTargetView)
-            : TextureImplementation(width, height, 0, d3dShaderResourceView, nullptr)
+            : TextureMixin(width, height, 0, d3dShaderResourceView, nullptr)
             , d3dRenderTargetView(d3dRenderTargetView)
+            , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
         {
         }
 
         BEGIN_INTERFACE_LIST(RenderTargetImplementation)
+            INTERFACE_LIST_ENTRY_COM(VideoTexture)
+            INTERFACE_LIST_ENTRY_COM(VideoTarget)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11RenderTargetView, d3dRenderTargetView)
-            END_INTERFACE_LIST_BASE(TextureImplementation)
+        END_INTERFACE_LIST_UNKNOWN
+
+        // VideoTarget
+        STDMETHODIMP_(const Video::ViewPort &) getViewPort(void)
+        {
+            return viewPort;
+        }
     };
 
     class GeometryImplementation : public UnknownMixin
@@ -401,7 +423,7 @@ namespace Gek
         BEGIN_INTERFACE_LIST(GeometryImplementation)
             INTERFACE_LIST_ENTRY_COM(OverlayGeometry)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID2D1PathGeometry, d2dPathGeometry)
-            END_INTERFACE_LIST_UNKNOWN
+        END_INTERFACE_LIST_UNKNOWN
 
         // OverlayGeometry
         STDMETHODIMP openShape(void)
@@ -522,7 +544,7 @@ namespace Gek
 
         BEGIN_INTERFACE_LIST(IncludeImplementation)
             INTERFACE_LIST_ENTRY_COM(IUnknown)
-            END_INTERFACE_LIST_UNKNOWN
+        END_INTERFACE_LIST_UNKNOWN
 
         // ID3DInclude
         STDMETHODIMP Open(D3D_INCLUDE_TYPE includeType, LPCSTR fileName, LPCVOID parentData, LPCVOID *data, UINT *dataSize)
@@ -586,7 +608,7 @@ namespace Gek
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11ComputeShader> d3dComputeShader(program);
-            d3dDeviceContext->CSSetShader(d3dComputeShader.p, nullptr, 0);
+            d3dDeviceContext->CSSetShader(d3dComputeShader, nullptr, 0);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
@@ -633,10 +655,10 @@ namespace Gek
             REQUIRE_VOID_RETURN(d3dDeviceContext);
 
             CComQIPtr<ID3D11VertexShader> d3dVertexShader(program);
-            d3dDeviceContext->VSSetShader(d3dVertexShader.p, nullptr, 0);
+            d3dDeviceContext->VSSetShader(d3dVertexShader, nullptr, 0);
 
             CComQIPtr<ID3D11InputLayout> d3dInputLayout(program);
-            d3dDeviceContext->IASetInputLayout(d3dInputLayout.p);
+            d3dDeviceContext->IASetInputLayout(d3dInputLayout);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
@@ -675,7 +697,7 @@ namespace Gek
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11GeometryShader> d3dGeometryShader(program);
-            d3dDeviceContext->GSSetShader(d3dGeometryShader.p, nullptr, 0);
+            d3dDeviceContext->GSSetShader(d3dGeometryShader, nullptr, 0);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
@@ -714,7 +736,7 @@ namespace Gek
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11PixelShader> d3dPixelShader(program);
-            d3dDeviceContext->PSSetShader(d3dPixelShader.p, nullptr, 0);
+            d3dDeviceContext->PSSetShader(d3dPixelShader, nullptr, 0);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
@@ -807,45 +829,36 @@ namespace Gek
 
         STDMETHODIMP_(void) clearResources(void)
         {
-            static ID3D11ShaderResourceView *const d3dShaderResourceViewList[] =
-            {
-                nullptr, nullptr, nullptr, nullptr, nullptr,
-                nullptr, nullptr, nullptr, nullptr, nullptr,
-            };
-
-            static ID3D11UnorderedAccessView *const d3dUnorderedAccessViewList[] =
-            {
-                nullptr, nullptr, nullptr, nullptr, nullptr,
-                nullptr, nullptr, nullptr, nullptr, nullptr,
-            };
-
-            static ID3D11RenderTargetView  *const d3dRenderTargetViewList[] =
-            {
-                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-            };
+            static ID3D11ShaderResourceView *const d3dShaderResourceViewList[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
+            static ID3D11UnorderedAccessView *const d3dUnorderedAccessViewList[D3D11_1_UAV_SLOT_COUNT] = { nullptr };
+            static ID3D11RenderTargetView  *const d3dRenderTargetViewList[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = { nullptr };
 
             REQUIRE_VOID_RETURN(d3dDeviceContext);
-            d3dDeviceContext->CSSetShaderResources(0, 10, d3dShaderResourceViewList);
-            d3dDeviceContext->CSSetUnorderedAccessViews(0, 7, d3dUnorderedAccessViewList, nullptr);
-            d3dDeviceContext->VSSetShaderResources(0, 10, d3dShaderResourceViewList);
-            d3dDeviceContext->GSSetShaderResources(0, 10, d3dShaderResourceViewList);
-            d3dDeviceContext->PSSetShaderResources(0, 10, d3dShaderResourceViewList);
-            d3dDeviceContext->OMSetRenderTargets(6, d3dRenderTargetViewList, nullptr);
+            d3dDeviceContext->CSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, d3dShaderResourceViewList);
+            d3dDeviceContext->CSSetUnorderedAccessViews(0, D3D11_1_UAV_SLOT_COUNT, d3dUnorderedAccessViewList, nullptr);
+            d3dDeviceContext->VSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, d3dShaderResourceViewList);
+            d3dDeviceContext->GSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, d3dShaderResourceViewList);
+            d3dDeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, d3dShaderResourceViewList);
+            d3dDeviceContext->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, d3dRenderTargetViewList, nullptr);
         }
 
-        STDMETHODIMP_(void) setViewports(const std::vector<Video::ViewPort> &viewPortList)
+        STDMETHODIMP_(void) setViewports(Video::ViewPort *viewPortList, UINT32 viewPortCount)
         {
-            REQUIRE_VOID_RETURN(d3dDeviceContext && viewPortList.size() > 0);
-            d3dDeviceContext->RSSetViewports(viewPortList.size(), (D3D11_VIEWPORT *)viewPortList.data());
+            REQUIRE_VOID_RETURN(d3dDeviceContext);
+            REQUIRE_VOID_RETURN(viewPortList);
+            REQUIRE_VOID_RETURN(viewPortCount);
+            d3dDeviceContext->RSSetViewports(viewPortCount, (D3D11_VIEWPORT *)viewPortList);
         }
 
-        STDMETHODIMP_(void) setScissorRect(const std::vector<Shape::Rectangle<UINT32>> &rectangleList)
+        STDMETHODIMP_(void) setScissorRect(Shape::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount)
         {
-            REQUIRE_VOID_RETURN(d3dDeviceContext && rectangleList.size() > 0);
-            d3dDeviceContext->RSSetScissorRects(rectangleList.size(), (D3D11_RECT *)rectangleList.data());
+            REQUIRE_VOID_RETURN(d3dDeviceContext);
+            REQUIRE_VOID_RETURN(rectangleList);
+            REQUIRE_VOID_RETURN(rectangleCount);
+            d3dDeviceContext->RSSetScissorRects(rectangleCount, (D3D11_RECT *)rectangleList);
         }
 
-        STDMETHODIMP_(void) clearRenderTarget(VideoTexture *renderTarget, const Math::Float4 &colorClear)
+        STDMETHODIMP_(void) clearRenderTarget(VideoTarget *renderTarget, const Math::Float4 &colorClear)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11RenderTargetView> d3dRenderTargetView(renderTarget);
@@ -868,55 +881,41 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) setRenderTargets(const std::vector<VideoTexture *> &renderTargetList, IUnknown *depthBuffer, bool setViewPorts)
+        STDMETHODIMP_(void) setRenderTargets(VideoTarget **renderTargetList, UINT32 renderTargetCount, IUnknown *depthBuffer)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
-            std::vector<D3D11_VIEWPORT> d3dViewPortList;
-            std::vector<ID3D11RenderTargetView *> d3dRenderTargetViewList;
-            for (auto &renderTarget : renderTargetList)
+            REQUIRE_VOID_RETURN(renderTargetList);
+
+            static ID3D11RenderTargetView *d3dRenderTargetViewList[8];
+            for (UINT32 renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
             {
-                CComQIPtr<ID3D11RenderTargetView> d3dRenderTargetView(renderTarget);
-                d3dRenderTargetViewList.push_back(d3dRenderTargetView);
-               
-                d3dViewPortList.push_back({ 0.0f, 0.0f, float(renderTarget->getWidth()), float(renderTarget->getHeight()), 0.0f, 1.0f });
+                CComQIPtr<ID3D11RenderTargetView> d3dRenderTarget(renderTargetList[renderTarget]);
+                d3dRenderTargetViewList[renderTarget] = d3dRenderTarget;
             }
 
-            CComQIPtr<ID3D11DepthStencilView> d3dDepthStencilView(depthBuffer);
-            d3dDeviceContext->OMSetRenderTargets(d3dRenderTargetViewList.size(), d3dRenderTargetViewList.data(), d3dDepthStencilView.p);
-            if (setViewPorts)
-            {
-                d3dDeviceContext->RSSetViewports(d3dViewPortList.size(), d3dViewPortList.data());
-            }
+            CComQIPtr<ID3D11DepthStencilView> d3dDepthBuffer(depthBuffer);
+            d3dDeviceContext->OMSetRenderTargets(renderTargetCount, d3dRenderTargetViewList, d3dDepthBuffer);
         }
 
         STDMETHODIMP_(void) setRenderStates(IUnknown *renderStates)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11RasterizerState> d3dRasterizerState(renderStates);
-            if (d3dRasterizerState)
-            {
-                d3dDeviceContext->RSSetState(d3dRasterizerState);
-            }
+            d3dDeviceContext->RSSetState(d3dRasterizerState);
         }
 
         STDMETHODIMP_(void) setDepthStates(IUnknown *depthStates, UINT32 stencilReference)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11DepthStencilState> d3dDepthStencilState(depthStates);
-            if (d3dDepthStencilState)
-            {
-                d3dDeviceContext->OMSetDepthStencilState(d3dDepthStencilState, stencilReference);
-            }
+            d3dDeviceContext->OMSetDepthStencilState(d3dDepthStencilState, stencilReference);
         }
 
         STDMETHODIMP_(void) setBlendStates(IUnknown *blendStates, const Math::Float4 &blendFactor, UINT32 mask)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11BlendState> d3dBlendState(blendStates);
-            if (d3dBlendState)
-            {
-                d3dDeviceContext->OMSetBlendState(d3dBlendState, blendFactor.data, mask);
-            }
+            d3dDeviceContext->OMSetBlendState(d3dBlendState, blendFactor.data, mask);
         }
 
         STDMETHODIMP_(void) setVertexBuffer(UINT32 slot, VideoBuffer *vertexBuffer, UINT32 offset)
@@ -1342,10 +1341,7 @@ namespace Gek
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11Query> d3dQuery(event);
-            if (d3dQuery)
-            {
-                d3dDeviceContext->End(d3dQuery);
-            }
+            d3dDeviceContext->End(d3dQuery);
         }
 
         STDMETHODIMP_(bool) isEventSet(IUnknown *event)
@@ -1605,7 +1601,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP createRenderTarget(VideoTexture **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags)
+        STDMETHODIMP createRenderTarget(VideoTarget **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags)
         {
             gekLogScope(width,
                 height,
@@ -1971,10 +1967,7 @@ namespace Gek
             REQUIRE_VOID_RETURN(data);
 
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            if (d3dBuffer)
-            {
-                d3dDeviceContext->UpdateSubresource(d3dBuffer, 0, nullptr, data, 0, 0);
-            }
+            d3dDeviceContext->UpdateSubresource(d3dBuffer, 0, nullptr, data, 0, 0);
         }
 
         STDMETHODIMP mapBuffer(VideoBuffer *buffer, LPVOID *data)
@@ -2003,11 +1996,10 @@ namespace Gek
         STDMETHODIMP_(void) unmapBuffer(VideoBuffer *buffer)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
+            REQUIRE_VOID_RETURN(buffer);
+
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            if (d3dBuffer)
-            {
-                d3dDeviceContext->Unmap(d3dBuffer, 0);
-            }
+            d3dDeviceContext->Unmap(d3dBuffer, 0);
         }
 
         STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
@@ -2582,38 +2574,34 @@ namespace Gek
             REQUIRE_VOID_RETURN(d3dDeviceContext || context);
             REQUIRE_VOID_RETURN(d3dDefaultRenderTargetView);
 
-            D3D11_VIEWPORT viewPortList[1];
-            viewPortList[0].TopLeftX = 0.0f;
-            viewPortList[0].TopLeftY = 0.0f;
-            viewPortList[0].Width = float(width);
-            viewPortList[0].Height = float(height);
-            viewPortList[0].MinDepth = 0.0f;
-            viewPortList[0].MaxDepth = 1.0f;
+            D3D11_VIEWPORT viewPortList;
+            viewPortList.TopLeftX = 0.0f;
+            viewPortList.TopLeftY = 0.0f;
+            viewPortList.Width = float(width);
+            viewPortList.Height = float(height);
+            viewPortList.MinDepth = 0.0f;
+            viewPortList.MaxDepth = 1.0f;
 
-            ID3D11RenderTargetView *d3dRenderTargetViewList[1] = { d3dDefaultRenderTargetView };
-            CComQIPtr<ID3D11DepthStencilView> d3dDepthStencilView(depthBuffer ? depthBuffer : (IUnknown *)d3dDefaultDepthStencilView);
             CComQIPtr<ID3D11DeviceContext> d3dDeferredContext(context);
             if (d3dDeferredContext)
             {
-                d3dDeferredContext->OMSetRenderTargets(1, d3dRenderTargetViewList, d3dDepthStencilView);
-                d3dDeferredContext->RSSetViewports(1, viewPortList);
+                d3dDeferredContext->OMSetRenderTargets(1, &d3dDefaultRenderTargetView.p, d3dDefaultDepthStencilView);
+                d3dDeferredContext->RSSetViewports(1, &viewPortList);
             }
             else
             {
-                d3dDeviceContext->OMSetRenderTargets(1, d3dRenderTargetViewList, d3dDepthStencilView);
-                d3dDeviceContext->RSSetViewports(1, viewPortList);
+                d3dDeviceContext->OMSetRenderTargets(1, &d3dDefaultRenderTargetView.p, d3dDefaultDepthStencilView);
+                d3dDeviceContext->RSSetViewports(1, &viewPortList);
             }
         }
 
         STDMETHODIMP_(void) executeCommandList(IUnknown *commandList)
         {
-            REQUIRE_VOID_RETURN(d3dDeviceContext && commandList);
+            REQUIRE_VOID_RETURN(d3dDeviceContext);
+            REQUIRE_VOID_RETURN(commandList);
 
             CComQIPtr<ID3D11CommandList> d3dCommandList(commandList);
-            if (d3dCommandList)
-            {
-                d3dDeviceContext->ExecuteCommandList(d3dCommandList, FALSE);
-            }
+            d3dDeviceContext->ExecuteCommandList(d3dCommandList, FALSE);
         }
 
         STDMETHODIMP_(void) present(bool waitForVerticalSync)

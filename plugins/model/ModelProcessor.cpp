@@ -384,8 +384,8 @@ namespace Gek
         {
             bool loaded;
             Shape::AlignedBox alignedBox;
-            BufferHandle vertexBuffer;
-            BufferHandle indexBuffer;
+            ResourceHandle vertexBuffer;
+            ResourceHandle indexBuffer;
             std::vector<MaterialInfo> materialInfoList;
 
             ModelData(void)
@@ -421,7 +421,7 @@ namespace Gek
         concurrency::concurrent_unordered_map<ModelData *, std::function<HRESULT(void)>> dataLoadQueue;
         concurrency::concurrent_unordered_map<CStringW, ModelData> dataMap;
         concurrency::concurrent_unordered_map<Entity *, ModelData *> dataEntityList;
-        BufferHandle instanceBuffer;
+        ResourceHandle instanceBuffer;
 
     public:
         ModelProcessorImplementation(void)
@@ -839,7 +839,7 @@ namespace Gek
                     auto data = instancePair.first;
                     for (auto &materialInfo : data->materialInfoList)
                     {
-                        static auto drawCall = [](Resources *resources, VideoContext *videoContext, BufferHandle vertexBuffer, BufferHandle instanceBuffer, BufferHandle indexBuffer, UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) -> void
+                        static auto drawCall = [](Resources *resources, VideoContext *videoContext, ResourceHandle vertexBuffer, ResourceHandle instanceBuffer, ResourceHandle indexBuffer, UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) -> void
                         {
                             resources->setVertexBuffer(videoContext, 0, vertexBuffer, 0);
                             resources->setVertexBuffer(videoContext, 1, instanceBuffer, 0);
