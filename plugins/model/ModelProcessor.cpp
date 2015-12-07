@@ -755,7 +755,7 @@ namespace Gek
         }
 
         // RenderObserver
-        STDMETHODIMP_(void) OnRenderScene(Entity *cameraEntity, const Gek::Shape::Frustum *viewFrustum)
+        STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Gek::Shape::Frustum *viewFrustum)
         {
             REQUIRE_VOID_RETURN(population);
             REQUIRE_VOID_RETURN(viewFrustum);
