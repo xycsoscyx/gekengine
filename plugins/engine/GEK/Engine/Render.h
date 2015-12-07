@@ -2,6 +2,7 @@
 
 #include "GEK\Context\Observer.h"
 #include "GEK\System\VideoSystem.h"
+#include "GEK\Engine\Resources.h"
 #include "GEK\Shape\Frustum.h"
 
 namespace Gek
@@ -12,7 +13,7 @@ namespace Gek
     {
         STDMETHOD(initialize)                           (THIS_ IUnknown *initializerContext) PURE;
 
-        STDMETHOD_(void, queueDrawCall)                 (THIS_ std::size_t plugin, std::size_t material, std::function<void(VideoContext *)> draw) PURE;
+        STDMETHOD_(void, queueDrawCall)                 (THIS_ PluginHandle plugin, MaterialHandle material, std::function<void(VideoContext *)> draw) PURE;
     };
 
     DECLARE_INTERFACE_IID(RenderObserver, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Observer

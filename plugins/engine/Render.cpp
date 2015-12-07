@@ -195,14 +195,6 @@ namespace Gek
             float distance;
         };
 
-        enum class DrawType : UINT8
-        {
-            DrawPrimitive = 0,
-            DrawIndexedPrimitive,
-            DrawInstancedPrimitive,
-            DrawInstancedIndexedPrimitive,
-        };
-
     private:
         IUnknown *initializerContext;
         VideoSystem *video;
@@ -226,6 +218,12 @@ namespace Gek
         ObjectManager<RenderStatesHandle> renderStateManager;
         ObjectManager<DepthStatesHandle> depthStateManager;
         ObjectManager<BlendStatesHandle> blendStateManager;
+        std::unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
+
+        std::unordered_map < ShaderHandle,
+            std::unordered_map < PluginHandle,
+            std::unordered_map < MaterialHandle,
+            std::vector < std::function<void(VideoContext *)> > > > > queuedDrawCalls;
 
     public:
         RenderImplementation(void)
@@ -243,9 +241,10 @@ namespace Gek
         BEGIN_INTERFACE_LIST(RenderImplementation)
             INTERFACE_LIST_ENTRY_COM(Observable)
             INTERFACE_LIST_ENTRY_COM(PopulationObserver)
+            INTERFACE_LIST_ENTRY_COM(PluginResources)
             INTERFACE_LIST_ENTRY_COM(Resources)
             INTERFACE_LIST_ENTRY_COM(Render)
-        END_INTERFACE_LIST_USER
+            END_INTERFACE_LIST_USER
 
         // Render/Resources
         STDMETHODIMP initialize(IUnknown *initializerContext)
@@ -349,11 +348,6 @@ namespace Gek
             return resultValue;
         }
 
-        // Render
-        STDMETHODIMP_(void) queueDrawCall(std::size_t plugin, std::size_t material, std::function<void(VideoContext *)> draw)
-        {
-        }
-
         // Resources
         STDMETHODIMP_(PluginHandle) loadPlugin(LPCWSTR fileName)
         {
@@ -379,8 +373,9 @@ namespace Gek
 
         STDMETHODIMP_(MaterialHandle) loadMaterial(LPCWSTR fileName)
         {
+            ShaderHandle shader;
             std::size_t hash = std::hash<LPCWSTR>()(fileName);
-            return materialManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            MaterialHandle material = materialManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
@@ -391,12 +386,16 @@ namespace Gek
                     resultValue = material->initialize(initializerContext, fileName);
                     if (SUCCEEDED(resultValue))
                     {
+                        shader = material->getShader();
                         resultValue = material->QueryInterface(returnObject);
                     }
                 }
 
                 return resultValue;
             });
+
+            materialShaderMap[material] = shader;
+            return material;
         }
 
         STDMETHODIMP_(ShaderHandle) loadShader(LPCWSTR fileName)
@@ -419,6 +418,15 @@ namespace Gek
 
                 return resultValue;
             });
+        }
+
+        STDMETHODIMP_(void) loadResourceList(ShaderHandle shaderHandle, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::vector<ResourceHandle> &resourceList)
+        {
+            Shader *shader = shaderManager.getResource<Shader>(shaderHandle);
+            if (shader)
+            {
+                shader->loadResourceList(materialName, resourceMap, resourceList);
+            }
         }
 
         STDMETHODIMP_(RenderStatesHandle) createRenderStates(const Video::RenderStates &renderStates)
@@ -689,6 +697,16 @@ namespace Gek
             });
         }
 
+        STDMETHODIMP mapBuffer(ResourceHandle buffer, LPVOID *data)
+        {
+            return video->mapBuffer(resourceManager.getResource<VideoBuffer>(buffer), data);
+        }
+
+        STDMETHODIMP_(void) unmapBuffer(ResourceHandle buffer)
+        {
+            video->unmapBuffer(resourceManager.getResource<VideoBuffer>(buffer));
+        }
+
         STDMETHODIMP_(void) setRenderStates(VideoContext *videoContext, RenderStatesHandle renderStatesHandle)
         {
             videoContext->setRenderStates(renderStateManager.getResource<IUnknown>(renderStatesHandle));
@@ -745,6 +763,17 @@ namespace Gek
             videoContext->setRenderTargets(renderTargetList, renderTargetHandleCount, resourceManager.getResource<IUnknown>(depthBuffer));
         }
 
+        STDMETHODIMP_(void) setDefaultTargets(VideoContext *videoContext, ResourceHandle depthBuffer)
+        {
+            video->setDefaultTargets(videoContext, resourceManager.getResource<IUnknown>(depthBuffer));
+        }
+
+        // Render
+        STDMETHODIMP_(void) queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(VideoContext *)> draw)
+        {
+            queuedDrawCalls[materialShaderMap[material]][plugin][material].push_back(draw);
+        }
+
         // PopulationObserver
         STDMETHODIMP_(void) onLoadBegin(void)
         {
@@ -763,7 +792,6 @@ namespace Gek
             programManager.clearResources();
             materialManager.clearResources();
             shaderManager.clearResources();
-            resourceManager.clearResources();
             renderStateManager.clearResources();
             depthStateManager.clearResources();
             blendStateManager.clearResources();
@@ -790,12 +818,12 @@ namespace Gek
                 cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
                 video->updateBuffer(this->cameraConstantBuffer, &cameraConstantData);
 
-                VideoContext *defaultContext = video->getDefaultContext();
+                VideoContext *videoContext = video->getDefaultContext();
 
-                defaultContext->geometryPipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
-                defaultContext->vertexPipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
-                defaultContext->pixelPipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
-                defaultContext->computePipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
+                videoContext->geometryPipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
+                videoContext->vertexPipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
+                videoContext->pixelPipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
+                videoContext->computePipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
 
                 const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
@@ -836,40 +864,37 @@ namespace Gek
                     video->updateBuffer(lightingConstantBuffer, &lightingConstantData);
                 }
 
+                queuedDrawCalls.clear();
                 ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::OnRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
 
-                defaultContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
-                defaultContext->pixelPipeline()->setSamplerStates(linearSamplerStates, 1);
-                defaultContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
-/*
-                for (auto &shaderPair : drawQueue)
+                videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
+                videoContext->pixelPipeline()->setSamplerStates(linearSamplerStates, 1);
+                videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+                for (auto &shaderPair : queuedDrawCalls)
                 {
-                    shaderPair.first->draw(defaultContext,
+                    Shader *shader = shaderManager.getResource<Shader>(shaderPair.first);
+                    shader->draw(videoContext,
                         [&](LPCVOID passData, bool lighting) -> void // drawForward
                     {
                         if (lighting)
                         {
-                            defaultContext->pixelPipeline()->setConstantBuffer(lightingConstantBuffer, 2);
-                            defaultContext->pixelPipeline()->setResource(lightingBuffer, 0);
+                            videoContext->pixelPipeline()->setConstantBuffer(lightingConstantBuffer, 2);
+                            videoContext->pixelPipeline()->setResource(lightingBuffer, 0);
                         }
 
                         for (auto &pluginPair : shaderPair.second)
                         {
-                            Plugin *plugin = getResource<Plugin>(pluginPair.first);
-                            if (plugin)
+                            Plugin *plugin = pluginManager.getResource<Plugin>(pluginPair.first);
+                            plugin->enable(videoContext);
+
+                            for (auto &materialPair : pluginPair.second)
                             {
-                                plugin->enable(defaultContext);
-                                for (auto &materialPair : pluginPair.second)
+                                Material *material = materialManager.getResource<Material>(materialPair.first);
+                                shader->setResourceList(videoContext, material->getResourceList());
+
+                                for (auto &onDraw : materialPair.second)
                                 {
-                                    Material *material = getResource<Material>(materialPair.first);
-                                    if (material)
-                                    {
-                                        material->enable(defaultContext, passData);
-                                        for (auto &drawCall : materialPair.second)
-                                        {
-                                            drawCall(defaultContext);
-                                        }
-                                    }
+                                    onDraw(videoContext);
                                 }
                             }
                         }
@@ -878,28 +903,25 @@ namespace Gek
                     {
                         if (lighting)
                         {
-                            defaultContext->pixelPipeline()->setConstantBuffer(lightingConstantBuffer, 2);
-                            defaultContext->pixelPipeline()->setResource(lightingBuffer, 0);
+                            videoContext->pixelPipeline()->setConstantBuffer(lightingConstantBuffer, 2);
+                            videoContext->pixelPipeline()->setResource(lightingBuffer, 0);
                         }
 
-                        defaultContext->setVertexBuffer(0, deferredVertexBuffer, 0);
-                        defaultContext->vertexPipeline()->setProgram(deferredVertexProgram);
-                        defaultContext->drawPrimitive(6, 0);
+                        videoContext->setVertexBuffer(0, deferredVertexBuffer, 0);
+                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+                        videoContext->drawPrimitive(6, 0);
                     },
                         [&](LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth) -> void // drawCompute
                     {
                         if (lighting)
                         {
-                            defaultContext->computePipeline()->setConstantBuffer(lightingConstantBuffer, 2);
-                            defaultContext->computePipeline()->setResource(lightingBuffer, 0);
+                            videoContext->computePipeline()->setConstantBuffer(lightingConstantBuffer, 2);
+                            videoContext->computePipeline()->setResource(lightingBuffer, 0);
                         }
 
-                        defaultContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
+                        videoContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
                     });
-
-                    shaderPair.second.clear();
                 }
-*/
             });
 
             ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderOverlay, std::placeholders::_1)));

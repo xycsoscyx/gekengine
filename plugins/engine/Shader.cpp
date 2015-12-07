@@ -967,61 +967,46 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP getMaterialValues(LPCWSTR fileName, Gek::XmlNode &xmlMaterialNode, std::vector<ResourceHandle> &materialMapList)
+        STDMETHODIMP_(void) loadResourceList(LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &materialDataMap, std::vector<ResourceHandle> &resourceList)
         {
-            std::unordered_map<CStringW, CStringW> materialMapDefineList;
-            Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
-            if (xmlMapsNode)
-            {
-                Gek::XmlNode xmlMapNode = xmlMapsNode.firstChildElement();
-                while (xmlMapNode)
-                {
-                    CStringW name(xmlMapNode.getType());
-                    CStringW source(xmlMapNode.getText());
-                    materialMapDefineList[name] = source;
-
-                    xmlMapNode = xmlMapNode.nextSiblingElement();
-                };
-            }
-
-            CPathW filePath(fileName);
+            CPathW filePath(materialName);
             filePath.RemoveFileSpec();
 
-            CPathW fileSpec(fileName);
+            CPathW fileSpec(materialName);
             fileSpec.StripPath();
             fileSpec.RemoveExtension();
 
             for (auto &mapValue : mapList)
             {
                 ResourceHandle map;
-                auto materialMapIterator = materialMapDefineList.find(mapValue.name);
-                if (materialMapIterator != materialMapDefineList.end())
+                auto materialMapIterator = materialDataMap.find(mapValue.name);
+                if (materialMapIterator != materialDataMap.end())
                 {
                     CStringW materialFileName = (*materialMapIterator).second;
                     materialFileName.MakeLower();
                     materialFileName.Replace(L"%directory%", LPCWSTR(filePath));
                     materialFileName.Replace(L"%filename%", LPCWSTR(fileSpec));
-                    materialFileName.Replace(L"%material%", fileName);
+                    materialFileName.Replace(L"%material%", materialName);
                     map = resources->loadTexture(materialFileName, mapValue.flags);
                 }
 
-                materialMapList.push_back(map);
+                resourceList.push_back(map);
             }
-
-            return S_OK;
         }
 
-        STDMETHODIMP_(void) setMaterialValues(VideoContext *videoContext, LPCVOID passData, const std::vector<ResourceHandle> &materialMapList)
+        Pass *currentPass;
+        STDMETHODIMP_(void) setResourceList(VideoContext *videoContext, const std::vector<ResourceHandle> &resourceList)
         {
-            const Pass &pass = *(const Pass *)passData;
+            REQUIRE_VOID_RETURN(currentPass);
+
             UINT32 firstStage = 0;
-            if (pass.lighting)
+            if (currentPass->lighting)
             {
                 firstStage = 1;
             }
 
-            VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
-            for (auto &resource : materialMapList)
+            VideoPipeline *pipeline = (currentPass->mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
+            for (auto &resource : resourceList)
             {
                 resources->setResource(pipeline, resource, firstStage++);
             }
@@ -1032,22 +1017,22 @@ namespace Gek
             std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
             std::function<void(LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> drawCompute)
         {
+            currentPass = nullptr;
             for (auto &pass : passList)
             {
+                currentPass = &pass;
                 resources->setDepthStates(videoContext, pass.depthStates, 0x0);
                 resources->setRenderStates(videoContext, pass.renderStates);
                 resources->setBlendStates(videoContext, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
 
                 if (pass.depthClearFlags > 0)
                 {
-                    // FIX
-                    //videoContext->clearDepthStencilTarget(depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
+                    resources->clearDepthStencilTarget(videoContext, depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
                 }
 
                 if (pass.renderTargetList.empty())
                 {
-                    // FIX
-                    //video->setDefaultTargets(videoContext, depthBuffer);
+                    resources->setDefaultTargets(videoContext, depthBuffer);
                     if (pass.clearRenderTargets)
                     {
                         video->clearDefaultRenderTarget(pass.renderTargetsClearColor);
@@ -1141,6 +1126,8 @@ namespace Gek
 
                 videoContext->clearResources();
             }
+
+            currentPass = nullptr;
         }
     };
 

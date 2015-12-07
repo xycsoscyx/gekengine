@@ -16,15 +16,13 @@ namespace Gek
         , public Material
     {
     private:
-        VideoSystem *video;
         Resources *resources;
-        std::vector<CComPtr<VideoTexture>> mapList;
+        std::vector<ResourceHandle> resourceList;
         ShaderHandle shader;
 
     public:
         MaterialImplementation(void)
-            : video(nullptr)
-            , resources(nullptr)
+            : resources(nullptr)
         {
         }
 
@@ -45,11 +43,9 @@ namespace Gek
             REQUIRE_RETURN(fileName, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
-            CComQIPtr<VideoSystem> video(initializerContext);
             CComQIPtr<Resources> resources(initializerContext);
-            if (video && resources)
+            if (resources)
             {
-                this->video = video;
                 this->resources = resources;
                 resultValue = S_OK;
             }
@@ -68,10 +64,29 @@ namespace Gek
                         if (xmlShaderNode)
                         {
                             CStringW shaderFileName = xmlShaderNode.getText();
-
                             shader = resources->loadShader(shaderFileName);
-//                            resultValue = this->shader->getMaterialValues(fileName, xmlMaterialNode, mapList);
+                            if (shader)
+                            {
+                                resultValue = S_OK;
+                            }
                         }
+
+                        std::unordered_map<CStringW, CStringW> resourceMap;
+                        Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
+                        if (xmlMapsNode)
+                        {
+                            Gek::XmlNode xmlMapNode = xmlMapsNode.firstChildElement();
+                            while (xmlMapNode)
+                            {
+                                CStringW name(xmlMapNode.getType());
+                                CStringW source(xmlMapNode.getText());
+                                resourceMap[name] = source;
+
+                                xmlMapNode = xmlMapNode.nextSiblingElement();
+                            };
+                        }
+
+                        resources->loadResourceList(shader, fileName, resourceMap, resourceList);
                     }
                 }
             }
@@ -79,15 +94,14 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP_(Shader *) getShader(void)
+        STDMETHODIMP_(ShaderHandle) getShader(void)
         {
-            return nullptr;
-            //return shader;
+            return shader;
         }
 
-        STDMETHODIMP_(void) enable(VideoContext *context, LPCVOID passData)
+        STDMETHODIMP_(const std::vector<ResourceHandle>) getResourceList(void)
         {
-            //shader->setMaterialValues(context, passData, mapList);
+            return resourceList;
         }
     };
 

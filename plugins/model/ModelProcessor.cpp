@@ -411,8 +411,7 @@ namespace Gek
         };
 
     private:
-        VideoSystem *video;
-        Resources *resources;
+        PluginResources *resources;
         Render *render;
         Population *population;
 
@@ -427,7 +426,6 @@ namespace Gek
         ModelProcessorImplementation(void)
             : resources(nullptr)
             , render(nullptr)
-            , video(nullptr)
             , population(nullptr)
         {
         }
@@ -673,13 +671,11 @@ namespace Gek
             REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
-            CComQIPtr<VideoSystem> video(initializerContext);
-            CComQIPtr<Resources> resources(initializerContext);
+            CComQIPtr<PluginResources> resources(initializerContext);
             CComQIPtr<Render> render(initializerContext);
             CComQIPtr<Population> population(initializerContext);
-            if (resources && render && video && population)
+            if (resources && render && population)
             {
-                this->video = video;
                 this->resources = resources;
                 this->render = render;
                 this->population = population;
@@ -723,8 +719,6 @@ namespace Gek
 
         STDMETHODIMP_(void) onFree(void)
         {
-            REQUIRE_VOID_RETURN(video);
-
             dataMap.clear();
             dataEntityList.clear();
         }
@@ -824,22 +818,19 @@ namespace Gek
                 }
             }
 
-            // FIX
-/*
             LPVOID instanceData = nullptr;
-            if (SUCCEEDED(video->mapBuffer(instanceBuffer, &instanceData)))
+            if (SUCCEEDED(resources->mapBuffer(instanceBuffer, &instanceData)))
             {
                 UINT32 instanceCount = std::min(instanceArray.size(), size_t(1024));
                 memcpy(instanceData, instanceArray.data(), (sizeof(InstanceData) * instanceCount));
-                video->unmapBuffer(instanceBuffer);
-*/
-            {
+                resources->unmapBuffer(instanceBuffer);
+
                 for (auto &instancePair : instanceMap)
                 {
                     auto data = instancePair.first;
                     for (auto &materialInfo : data->materialInfoList)
                     {
-                        static auto drawCall = [](Resources *resources, VideoContext *videoContext, ResourceHandle vertexBuffer, ResourceHandle instanceBuffer, ResourceHandle indexBuffer, UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) -> void
+                        static auto drawCall = [](VideoContext *videoContext, PluginResources *resources, ResourceHandle vertexBuffer, ResourceHandle instanceBuffer, ResourceHandle indexBuffer, UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) -> void
                         {
                             resources->setVertexBuffer(videoContext, 0, vertexBuffer, 0);
                             resources->setVertexBuffer(videoContext, 1, instanceBuffer, 0);
@@ -847,7 +838,7 @@ namespace Gek
                             videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
                         };
 
-                        render->queueDrawCall(plugin, materialInfo.material, std::bind(drawCall, resources, std::placeholders::_1, data->vertexBuffer, instanceBuffer, data->indexBuffer, instancePair.second.first, instancePair.second.second, materialInfo.indexCount, materialInfo.firstIndex, materialInfo.firstVertex));
+                        render->queueDrawCall(plugin, materialInfo.material, std::bind(drawCall, std::placeholders::_1, resources, data->vertexBuffer, instanceBuffer, data->indexBuffer, instancePair.second.first, instancePair.second.second, materialInfo.indexCount, materialInfo.firstIndex, materialInfo.firstVertex));
                     }
                 }
             }

@@ -82,6 +82,7 @@ namespace Gek
             INTERFACE_LIST_ENTRY_MEMBER_COM(VideoSystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(OverlaySystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
+            INTERFACE_LIST_ENTRY_MEMBER_COM(PluginResources, render)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Resources, render)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Render, render)
         END_INTERFACE_LIST_USER
