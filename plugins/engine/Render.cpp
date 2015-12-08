@@ -121,7 +121,7 @@ namespace Gek
             auto hashIterator = hashMap.find(hash);
             if (hashIterator == hashMap.end())
             {
-                handle = HANDLE(InterlockedIncrement(&nextIdentifier));
+                handle = InterlockedIncrement(&nextIdentifier);
                 hashMap[hash] = handle;
                 resourceMap[handle] = nullptr;
 
@@ -144,7 +144,7 @@ namespace Gek
             HANDLE handle;
             if (resource)
             {
-                handle = HANDLE(InterlockedIncrement(&nextIdentifier));
+                handle = InterlockedIncrement(&nextIdentifier);
                 resourceMap[handle] = resource;
             }
 
@@ -351,7 +351,7 @@ namespace Gek
         // Resources
         STDMETHODIMP_(PluginHandle) loadPlugin(LPCWSTR fileName)
         {
-            std::size_t hash = std::hash<LPCWSTR>()(fileName);
+            std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
             return pluginManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
@@ -374,7 +374,7 @@ namespace Gek
         STDMETHODIMP_(MaterialHandle) loadMaterial(LPCWSTR fileName)
         {
             ShaderHandle shader;
-            std::size_t hash = std::hash<LPCWSTR>()(fileName);
+            std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
             MaterialHandle material = materialManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
@@ -400,7 +400,7 @@ namespace Gek
 
         STDMETHODIMP_(ShaderHandle) loadShader(LPCWSTR fileName)
         {
-            std::size_t hash = std::hash<LPCWSTR>()(fileName);
+            std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
             return shaderManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
@@ -566,7 +566,7 @@ namespace Gek
 
         STDMETHODIMP_(ResourceHandle) loadTexture(LPCWSTR fileName, UINT32 flags)
         {
-            std::size_t hash = std::hash<LPCWSTR>()(fileName);
+            std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
             return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 REQUIRE_RETURN(fileName, E_INVALIDARG);

@@ -2,22 +2,57 @@
 
 #include "GEK\Utility\XML.h"
 #include "GEK\System\VideoSystem.h"
+#include <type_traits>
 
 namespace Gek
 {
     template <typename TYPE>
     struct Handle
     {
+        typedef TYPE HandleType;
+
         TYPE identifier;
 
-        Handle(UINT64 identifier = 0)
-            : identifier(static_cast<TYPE>(identifier))
+        Handle(void)
+            : identifier(0)
         {
         }
 
-        operator bool() const
+        Handle(UINT64 identifier)
+            : identifier(TYPE(identifier))
+        {
+        }
+
+        Handle(const typename Handle<TYPE> &handle)
+            : identifier(handle.identifier)
+        {
+        }
+
+        bool isValid(void) const
         {
             return (identifier == 0 ? false : true);
+        }
+
+        bool operator == (const typename Handle<TYPE> &handle) const
+        {
+            return (identifier == handle.identifier);
+        }
+
+        template <typename OTHERTYPE>
+        bool operator == (const typename Handle<OTHERTYPE> &handle) const
+        {
+            return false;
+        }
+
+        void operator = (UINT64 identifier)
+        {
+            this->identifier = TYPE(identifier);
+        }
+
+        template <typename OTHERTYPE>
+        void operator = (const typename Handle<OTHERTYPE> handle)
+        {
+            this->identifier = TYPE(handle.identifier)
         }
     };
 

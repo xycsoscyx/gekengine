@@ -451,7 +451,7 @@ namespace Gek
 
             HRESULT resultValue = E_FAIL;
             MaterialHandle material = resources->loadMaterial(materialName);
-            if (material)
+            if (material.isValid())
             {
                 if (shape.CompareNoCase(L"cube") == 0)
                 {
@@ -558,7 +558,7 @@ namespace Gek
 
                         MaterialInfo &materialInfo = data->materialInfoList[materialIndex];
                         materialInfo.material = resources->loadMaterial(CA2W(materialNameUtf8, CP_UTF8));
-                        if (!materialInfo.material)
+                        if (!materialInfo.material.isValid())
                         {
                             resultValue = E_FAIL;
                             break;
@@ -690,7 +690,7 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 plugin = resources->loadPlugin(L"model");
-                if (!plugin)
+                if (!plugin.isValid())
                 {
                     resultValue = E_FAIL;
                 }
