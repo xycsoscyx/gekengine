@@ -453,6 +453,7 @@ namespace Gek
             MaterialHandle material = resources->loadMaterial(materialName);
             if (material.isValid())
             {
+                resultValue = S_OK;
                 if (shape.CompareNoCase(L"cube") == 0)
                 {
                     Math::Float3 size(String::to<Math::Float3>(parameters.Tokenize(L"|", position)));

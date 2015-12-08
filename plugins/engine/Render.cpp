@@ -121,7 +121,7 @@ namespace Gek
             auto hashIterator = hashMap.find(hash);
             if (hashIterator == hashMap.end())
             {
-                handle = InterlockedIncrement(&nextIdentifier);
+                handle.assign(InterlockedIncrement(&nextIdentifier));
                 hashMap[hash] = handle;
                 resourceMap[handle] = nullptr;
 
@@ -144,7 +144,7 @@ namespace Gek
             HANDLE handle;
             if (resource)
             {
-                handle = InterlockedIncrement(&nextIdentifier);
+                handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceMap[handle] = resource;
             }
 

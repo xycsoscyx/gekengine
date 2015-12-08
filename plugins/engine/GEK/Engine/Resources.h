@@ -13,19 +13,9 @@ namespace Gek
 
         TYPE identifier;
 
-        Handle(void)
-            : identifier(0)
+        void assign(UINT64 identifier)
         {
-        }
-
-        Handle(UINT64 identifier)
-            : identifier(TYPE(identifier))
-        {
-        }
-
-        Handle(const typename Handle<TYPE> &handle)
-            : identifier(handle.identifier)
-        {
+            this->identifier = TYPE(identifier);
         }
 
         bool isValid(void) const
@@ -35,24 +25,7 @@ namespace Gek
 
         bool operator == (const typename Handle<TYPE> &handle) const
         {
-            return (identifier == handle.identifier);
-        }
-
-        template <typename OTHERTYPE>
-        bool operator == (const typename Handle<OTHERTYPE> &handle) const
-        {
-            return false;
-        }
-
-        void operator = (UINT64 identifier)
-        {
-            this->identifier = TYPE(identifier);
-        }
-
-        template <typename OTHERTYPE>
-        void operator = (const typename Handle<OTHERTYPE> handle)
-        {
-            this->identifier = TYPE(handle.identifier)
+            return (this->identifier == handle.identifier);
         }
     };
 
@@ -64,6 +37,15 @@ namespace Gek
     typedef Handle<UINT8> RenderStatesHandle;
     typedef Handle<UINT8> DepthStatesHandle;
     typedef Handle<UINT8> BlendStatesHandle;
+
+    static_assert(std::is_trivial<ProgramHandle>::value, "ProgramHandle is not trivial data type");
+    static_assert(std::is_trivial<PluginHandle>::value, "PluginHandle is not trivial data type");
+    static_assert(std::is_trivial<MaterialHandle>::value, "MaterialHandle is not trivial data type");
+    static_assert(std::is_trivial<ShaderHandle>::value, "ShaderHandle is not trivial data type");
+    static_assert(std::is_trivial<ResourceHandle>::value, "ResourceHandle is not trivial data type");
+    static_assert(std::is_trivial<RenderStatesHandle>::value, "RenderStatesHandle is not trivial data type");
+    static_assert(std::is_trivial<DepthStatesHandle>::value, "DepthStatesHandle is not trivial data type");
+    static_assert(std::is_trivial<BlendStatesHandle>::value, "BlendStatesHandle is not trivial data type");
 
     DECLARE_INTERFACE_IID(PluginResources, "5E319AC8-2369-416E-B010-ED3E860405C4") : virtual public IUnknown
     {
