@@ -86,7 +86,7 @@ namespace std
 
 namespace Gek
 {
-    static const UINT32 MaxLightCount = 500;
+    static const UINT32 MaxLightCount = 256;
 
     template <class HANDLE>
     class ObjectManager
@@ -181,18 +181,25 @@ namespace Gek
             Math::Float4x4 inverseProjectionMatrix;
         };
 
-        struct LightingConstantData
+        struct LightConstants
         {
             UINT32 count;
             UINT32 padding[3];
         };
 
-        struct Light
+        struct LightData
         {
             Math::Float3 position;
             float radius;
             Math::Float3 color;
             float distance;
+            LightData(const Math::Float3 &position, float radius, const Math::Float3 &color)
+                : position(position)
+                , radius(radius)
+                , color(color)
+                , distance(position.getLength())
+            {
+            }
         };
 
     private:
@@ -203,8 +210,8 @@ namespace Gek
         CComPtr<IUnknown> pointSamplerStates;
         CComPtr<IUnknown> linearSamplerStates;
         CComPtr<VideoBuffer> cameraConstantBuffer;
-        CComPtr<VideoBuffer> lightingConstantBuffer;
-        CComPtr<VideoBuffer> lightingBuffer;
+        CComPtr<VideoBuffer> lightConstantBuffer;
+        CComPtr<VideoBuffer> lightDataBuffer;
 
         CComPtr<IUnknown> deferredVertexProgram;
         CComPtr<VideoBuffer> deferredVertexBuffer;
@@ -220,6 +227,7 @@ namespace Gek
         ObjectManager<BlendStatesHandle> blendStateManager;
         std::unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
+        std::vector<LightData> lightList;
         std::unordered_map < ShaderHandle,
             std::unordered_map < PluginHandle,
             std::unordered_map < MaterialHandle,
@@ -288,12 +296,12 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&lightingConstantBuffer, sizeof(LightingConstantData), 1, Video::BufferFlags::ConstantBuffer);
+                resultValue = video->createBuffer(&lightConstantBuffer, sizeof(LightConstants), 1, Video::BufferFlags::Dynamic | Video::BufferFlags::ConstantBuffer);
             }
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&lightingBuffer, sizeof(Light), MaxLightCount, Video::BufferFlags::Dynamic | Video::BufferFlags::StructuredBuffer | Video::BufferFlags::Resource);
+                resultValue = video->createBuffer(&lightDataBuffer, sizeof(LightData), MaxLightCount, Video::BufferFlags::Dynamic | Video::BufferFlags::StructuredBuffer | Video::BufferFlags::Resource);
             }
 
             if (SUCCEEDED(resultValue))
@@ -727,6 +735,11 @@ namespace Gek
             videoPipeline->setResource(resourceManager.getResource<IUnknown>(ResourceHandle), stage);
         }
 
+        STDMETHODIMP_(void) setUnorderedAccess(VideoPipeline *videoPipeline, ResourceHandle ResourceHandle, UINT32 stage)
+        {
+            videoPipeline->setUnorderedAccess(resourceManager.getResource<IUnknown>(ResourceHandle), stage);
+        }
+
         STDMETHODIMP_(void) setProgram(VideoPipeline *videoPipeline, ProgramHandle programHandle)
         {
             videoPipeline->setProgram(programManager.getResource<IUnknown>(programHandle));
@@ -754,13 +767,16 @@ namespace Gek
 
         STDMETHODIMP_(void) setRenderTargets(VideoContext *videoContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle depthBuffer)
         {
+            static Video::ViewPort viewPortList[8];
             static VideoTarget *renderTargetList[8];
             for (UINT32 renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
             {
                 renderTargetList[renderTarget] = resourceManager.getResource<VideoTarget>(renderTargetHandleList[renderTarget]);
+                viewPortList[renderTarget] = renderTargetList[renderTarget]->getViewPort();
             }
 
             videoContext->setRenderTargets(renderTargetList, renderTargetHandleCount, resourceManager.getResource<IUnknown>(depthBuffer));
+            videoContext->setViewports(viewPortList, renderTargetHandleCount);
         }
 
         STDMETHODIMP_(void) setDefaultTargets(VideoContext *videoContext, ResourceHandle depthBuffer)
@@ -827,7 +843,7 @@ namespace Gek
 
                 const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
-                concurrency::concurrent_vector<Light> concurrentVisibleLightList;
+                lightList.clear();
                 population->listEntities<TransformComponent, PointLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
                 {
                     auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
@@ -835,91 +851,91 @@ namespace Gek
                     if (viewFrustum.isVisible(Shape::Sphere(lightTransformComponent.position, pointLightComponent.radius)))
                     {
                         auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-
-                        auto lightIterator = concurrentVisibleLightList.grow_by(1);
-                        (*lightIterator).position = (cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz;
-                        (*lightIterator).distance = (*lightIterator).position.getLengthSquared();
-                        (*lightIterator).radius = pointLightComponent.radius;
-                        (*lightIterator).color.set(lightColorComponent.value.xyz);
+                        lightList.emplace_back((cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz, pointLightComponent.radius, lightColorComponent.value.xyz);
                     }
                 });
-
-                concurrency::parallel_sort(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end(), [](const Light &leftLight, const Light &rightLight) -> bool
-                {
-                    return (leftLight.distance < rightLight.distance);
-                });
-
-                std::vector<Light> visibleLightList(concurrentVisibleLightList.begin(), concurrentVisibleLightList.end());
-                concurrentVisibleLightList.clear();
-
-                LPVOID lightingData = nullptr;
-                if (SUCCEEDED(video->mapBuffer(lightingBuffer, &lightingData)))
-                {
-                    UINT32 passLightCount = std::min(visibleLightList.size(), MaxLightCount);
-                    memcpy(lightingData, visibleLightList.data(), (sizeof(Light) * passLightCount));
-                    video->unmapBuffer(lightingBuffer);
-
-                    LightingConstantData lightingConstantData;
-                    lightingConstantData.count = passLightCount;
-                    video->updateBuffer(lightingConstantBuffer, &lightingConstantData);
-                }
 
                 queuedDrawCalls.clear();
                 ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
 
+                UINT32 lightListCount = lightList.size();
                 videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
                 videoContext->pixelPipeline()->setSamplerStates(linearSamplerStates, 1);
                 videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
                 for (auto &shaderPair : queuedDrawCalls)
                 {
+                    auto drawLighting = [&](VideoPipeline *videoPipeline, bool lighting, std::function<void(void)> draw) -> void
+                    {
+                        if (lighting)
+                        {
+                            videoPipeline->setResource(lightDataBuffer, 0);
+                            videoPipeline->setConstantBuffer(lightConstantBuffer, 1);
+                            for (UINT32 lightBase = 0; lightBase < lightListCount; lightBase += MaxLightCount)
+                            {
+                                UINT32 lightCount = std::min((lightListCount - lightBase), MaxLightCount);
+
+                                LightConstants *lightConstants = nullptr;
+                                if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (LPVOID *)&lightConstants)))
+                                {
+                                    lightConstants->count = lightCount;
+                                    video->unmapBuffer(lightConstantBuffer);
+                                }
+
+                                LightData *lightingData = nullptr;
+                                if (SUCCEEDED(video->mapBuffer(lightDataBuffer, (LPVOID *)&lightingData)))
+                                {
+                                    memcpy(lightingData, &lightList[lightBase], (sizeof(LightData) * lightCount));
+                                    video->unmapBuffer(lightDataBuffer);
+                                }
+
+                                draw();
+                            }
+                        }
+                        else
+                        {
+                            draw();
+                        }
+                    };
+
                     Shader *shader = shaderManager.getResource<Shader>(shaderPair.first);
                     shader->draw(videoContext,
                         [&](LPCVOID passData, bool lighting) -> void // drawForward
                     {
-                        if (lighting)
+                        drawLighting(videoContext->pixelPipeline(), lighting, [&](void) -> void
                         {
-                            videoContext->pixelPipeline()->setConstantBuffer(lightingConstantBuffer, 2);
-                            videoContext->pixelPipeline()->setResource(lightingBuffer, 0);
-                        }
-
-                        for (auto &pluginPair : shaderPair.second)
-                        {
-                            Plugin *plugin = pluginManager.getResource<Plugin>(pluginPair.first);
-                            plugin->enable(videoContext);
-
-                            for (auto &materialPair : pluginPair.second)
+                            for (auto &pluginPair : shaderPair.second)
                             {
-                                Material *material = materialManager.getResource<Material>(materialPair.first);
-                                shader->setResourceList(videoContext, material->getResourceList());
+                                Plugin *plugin = pluginManager.getResource<Plugin>(pluginPair.first);
+                                plugin->enable(videoContext);
 
-                                for (auto &onDraw : materialPair.second)
+                                for (auto &materialPair : pluginPair.second)
                                 {
-                                    onDraw(videoContext);
+                                    Material *material = materialManager.getResource<Material>(materialPair.first);
+                                    shader->setResourceList(videoContext, material->getResourceList());
+
+                                    for (auto &onDraw : materialPair.second)
+                                    {
+                                        onDraw(videoContext);
+                                    }
                                 }
                             }
-                        }
+                        });
                     },
                         [&](LPCVOID passData, bool lighting) -> void // drawDeferred
                     {
-                        if (lighting)
-                        {
-                            videoContext->pixelPipeline()->setConstantBuffer(lightingConstantBuffer, 2);
-                            videoContext->pixelPipeline()->setResource(lightingBuffer, 0);
-                        }
-
                         videoContext->setVertexBuffer(0, deferredVertexBuffer, 0);
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-                        videoContext->drawPrimitive(6, 0);
+                        drawLighting(videoContext->pixelPipeline(), lighting, [&](void) -> void
+                        {
+                            videoContext->drawPrimitive(6, 0);
+                        });
                     },
                         [&](LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth) -> void // drawCompute
                     {
-                        if (lighting)
+                        drawLighting(videoContext->computePipeline(), lighting, [&](void) -> void
                         {
-                            videoContext->computePipeline()->setConstantBuffer(lightingConstantBuffer, 2);
-                            videoContext->computePipeline()->setResource(lightingBuffer, 0);
-                        }
-
-                        videoContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
+                            videoContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
+                        });
                     });
                 }
             });

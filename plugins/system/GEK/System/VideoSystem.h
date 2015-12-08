@@ -213,6 +213,12 @@ namespace Gek
             float nearDepth;
             float farDepth;
 
+            ViewPort(void)
+                : nearDepth(0.0f)
+                , farDepth(1.0f)
+            {
+            }
+
             ViewPort(const Math::Float2 &position, const Math::Float2 &size, float nearDepth, float farDepth)
                 : position(position)
                 , size(size)

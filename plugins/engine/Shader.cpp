@@ -474,7 +474,7 @@ namespace Gek
             fullValue.Replace(L"%displayWidth%", String::format(L"%d", video->getWidth()));
             fullValue.Replace(L"%displayHeight%", String::format(L"%d", video->getHeight()));
 
-            fullValue.Replace(L"%lightListSize%", L"1024");
+            fullValue.Replace(L"%lightListSize%", L"256");
 
             return replaceDefines(fullValue);
         }
@@ -788,14 +788,14 @@ namespace Gek
                                         "        float   distance;                              \r\n" \
                                         "    };                                                 \r\n" \
                                         "                                                       \r\n" \
-                                        "    cbuffer Data : register(b2)                        \r\n" \
+                                        "    cbuffer Data : register(b1)                        \r\n" \
                                         "    {                                                  \r\n" \
                                         "        uint    count   : packoffset(c0);              \r\n" \
                                         "        uint3   padding : packoffset(c0.y);            \r\n" \
                                         "    };                                                 \r\n" \
                                         "                                                       \r\n" \
                                         "    StructuredBuffer<Point> list : register(t0);       \r\n" \
-                                        "    static const uint listSize = 1024;                 \r\n" \
+                                        "    static const uint listSize = 256;                  \r\n" \
                                         "};                                                     \r\n" \
                                         "                                                       \r\n";
                                 }
@@ -1005,10 +1005,10 @@ namespace Gek
                 firstStage = 1;
             }
 
-            VideoPipeline *pipeline = (currentPass->mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
+            VideoPipeline *videoPipeline = (currentPass->mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
             for (auto &resource : resourceList)
             {
-                resources->setResource(pipeline, resource, firstStage++);
+                resources->setResource(videoPipeline, resource, firstStage++);
             }
         }
 
@@ -1067,48 +1067,55 @@ namespace Gek
                     stage = 1;
                 }
 
-                VideoPipeline *pipeline = (pass.mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
+                VideoPipeline *videoPipeline = (pass.mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 for (auto &resourceName : pass.resourceList)
                 {
+                    ResourceHandle resource;
                     auto renderTargetIterator = renderTargetMap.find(resourceName);
                     if (renderTargetIterator != renderTargetMap.end())
                     {
+                        resource = renderTargetIterator->second;
                         if (pass.generateMipMaps.count(resourceName) > 0)
                         {
 //                            videoContext->generateMipMaps(texture);
                         }
-
-                        resources->setResource(pipeline, renderTargetIterator->second, stage);
                     }
 
-                    auto bufferIterator = bufferMap.find(resourceName);
-                    if (bufferIterator != bufferMap.end())
+                    if (!resource.isValid())
                     {
-                        resources->setResource(pipeline, bufferIterator->second, stage);
+                        auto bufferIterator = bufferMap.find(resourceName);
+                        if (bufferIterator != bufferMap.end())
+                        {
+                            resource = bufferIterator->second;
+                        }
                     }
 
-                    stage++;
+                    resources->setResource(videoPipeline, resource, stage++);
                 }
 
                 stage = 0;
                 for (auto &unorderedAccessName : pass.unorderedAccessList)
                 {
+                    ResourceHandle resource;
                     auto renderTargetIterator = renderTargetMap.find(unorderedAccessName);
                     if (renderTargetIterator != renderTargetMap.end())
                     {
-                        resources->setResource(pipeline, renderTargetIterator->second, stage);
+                        resource = renderTargetIterator->second;
                     }
 
-                    auto bufferIterator = bufferMap.find(unorderedAccessName);
-                    if (bufferIterator != bufferMap.end())
+                    if (!resource.isValid())
                     {
-                        resources->setResource(pipeline, bufferIterator->second, stage);
+                        auto bufferIterator = bufferMap.find(unorderedAccessName);
+                        if (bufferIterator != bufferMap.end())
+                        {
+                            resource = bufferIterator->second;
+                        }
                     }
 
-                    stage++;
+                    resources->setUnorderedAccess(videoPipeline, resource, stage++);
                 }
 
-                resources->setProgram(pipeline, pass.program);
+                resources->setProgram(videoPipeline, pass.program);
                 switch (pass.mode)
                 {
                 case PassMode::Forward:

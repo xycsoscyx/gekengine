@@ -30,6 +30,8 @@ float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     for (uint lightTileIndex = 0; lightTileIndex < Lighting::count; lightTileIndex++)
     {
         uint lightIndex = Resources::tileIndexList[bufferOffset + lightTileIndex];
+        surfaceColor = lightIndex / 500.0f;
+        break;
 
         [branch]
         if (lightIndex == Lighting::listSize)

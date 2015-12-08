@@ -84,6 +84,6 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
         uint bufferIndex = ((tileIndex * Lighting::listSize) + pixelIndex);
         uint lightIndex = (pixelIndex < tileLightCount ? tileLightList[pixelIndex] : Lighting::listSize);
-        UnorderedAccess::tileIndexList[bufferIndex] = lightIndex;
+        UnorderedAccess::tileIndexList[bufferIndex] = tileLightCount;
     }
 }

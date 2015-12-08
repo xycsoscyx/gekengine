@@ -13,6 +13,11 @@ namespace Gek
 
         TYPE identifier;
 
+        Handle(void)
+            : identifier(0)
+        {
+        }
+
         void assign(UINT64 identifier)
         {
             this->identifier = TYPE(identifier);
@@ -38,15 +43,6 @@ namespace Gek
     typedef Handle<UINT8> DepthStatesHandle;
     typedef Handle<UINT8> BlendStatesHandle;
 
-    static_assert(std::is_trivial<ProgramHandle>::value, "ProgramHandle is not trivial data type");
-    static_assert(std::is_trivial<PluginHandle>::value, "PluginHandle is not trivial data type");
-    static_assert(std::is_trivial<MaterialHandle>::value, "MaterialHandle is not trivial data type");
-    static_assert(std::is_trivial<ShaderHandle>::value, "ShaderHandle is not trivial data type");
-    static_assert(std::is_trivial<ResourceHandle>::value, "ResourceHandle is not trivial data type");
-    static_assert(std::is_trivial<RenderStatesHandle>::value, "RenderStatesHandle is not trivial data type");
-    static_assert(std::is_trivial<DepthStatesHandle>::value, "DepthStatesHandle is not trivial data type");
-    static_assert(std::is_trivial<BlendStatesHandle>::value, "BlendStatesHandle is not trivial data type");
-
     DECLARE_INTERFACE_IID(PluginResources, "5E319AC8-2369-416E-B010-ED3E860405C4") : virtual public IUnknown
     {
         STDMETHOD_(PluginHandle, loadPlugin)                (THIS_ LPCWSTR fileName) PURE;
@@ -60,6 +56,7 @@ namespace Gek
         STDMETHOD_(void, unmapBuffer)                       (THIS_ ResourceHandle buffer) PURE;
 
         STDMETHOD_(void, setResource)                       (THIS_ VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage) PURE;
+        STDMETHOD_(void, setUnorderedAccess)                (THIS_ VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage) PURE;
         STDMETHOD_(void, setVertexBuffer)                   (THIS_ VideoContext *videoContext, UINT32 slot, ResourceHandle resourceHandle, UINT32 offset) PURE;
         STDMETHOD_(void, setIndexBuffer)                    (THIS_ VideoContext *videoContext, ResourceHandle resourceHandle, UINT32 offset) PURE;
     };

@@ -829,16 +829,16 @@ namespace Gek
 
         STDMETHODIMP_(void) clearResources(void)
         {
-            static ID3D11ShaderResourceView *const d3dShaderResourceViewList[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-            static ID3D11UnorderedAccessView *const d3dUnorderedAccessViewList[D3D11_1_UAV_SLOT_COUNT] = { nullptr };
+            static ID3D11ShaderResourceView *const d3dShaderResourceViewList[10] = { nullptr };
+            static ID3D11UnorderedAccessView *const d3dUnorderedAccessViewList[7] = { nullptr };
             static ID3D11RenderTargetView  *const d3dRenderTargetViewList[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = { nullptr };
 
             REQUIRE_VOID_RETURN(d3dDeviceContext);
-            d3dDeviceContext->CSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, d3dShaderResourceViewList);
-            d3dDeviceContext->CSSetUnorderedAccessViews(0, D3D11_1_UAV_SLOT_COUNT, d3dUnorderedAccessViewList, nullptr);
-            d3dDeviceContext->VSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, d3dShaderResourceViewList);
-            d3dDeviceContext->GSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, d3dShaderResourceViewList);
-            d3dDeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, d3dShaderResourceViewList);
+            d3dDeviceContext->CSSetShaderResources(0, 10, d3dShaderResourceViewList);
+            d3dDeviceContext->CSSetUnorderedAccessViews(0, 7, d3dUnorderedAccessViewList, nullptr);
+            d3dDeviceContext->VSSetShaderResources(0, 10, d3dShaderResourceViewList);
+            d3dDeviceContext->GSSetShaderResources(0, 10, d3dShaderResourceViewList);
+            d3dDeviceContext->PSSetShaderResources(0, 10, d3dShaderResourceViewList);
             d3dDeviceContext->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, d3dRenderTargetViewList, nullptr);
         }
 
