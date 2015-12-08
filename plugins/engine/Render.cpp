@@ -202,6 +202,31 @@ namespace Gek
             }
         };
 
+        typedef std::function<void(VideoContext *)> DrawCall;
+        struct DrawCallValue
+        {
+            union
+            {
+                UINT64 value;
+                struct
+                {
+                    ShaderHandle shader;
+                    PluginHandle plugin;
+                    MaterialHandle material;
+                };
+            };
+
+            DrawCall onDraw;
+
+            DrawCallValue(ShaderHandle shader, PluginHandle plugin, MaterialHandle material, DrawCall onDraw)
+                : shader(shader)
+                , plugin(plugin)
+                , material(material)
+                , onDraw(onDraw)
+            {
+            }
+        };
+
     private:
         IUnknown *initializerContext;
         VideoSystem *video;
@@ -228,12 +253,7 @@ namespace Gek
         std::unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
         std::vector<LightData> lightList;
-        typedef std::function<void(VideoContext *)> DrawCall;
-        typedef std::vector<DrawCall> DrawCallList;
-        typedef std::unordered_map<MaterialHandle, DrawCallList> MaterialDrawCallList;
-        typedef std::unordered_map<PluginHandle, MaterialDrawCallList> PluginDrawCallList;
-        typedef std::unordered_map<ShaderHandle, PluginDrawCallList> ShaderDrawCallList;
-        ShaderDrawCallList queuedDrawCalls;
+        std::vector<DrawCallValue> drawCallList;
 
     public:
         RenderImplementation(void)
@@ -794,7 +814,7 @@ namespace Gek
         // Render
         STDMETHODIMP_(void) queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(VideoContext *)> draw)
         {
-            queuedDrawCalls[materialShaderMap[material]][plugin][material].push_back(draw);
+            drawCallList.emplace_back(materialShaderMap[material], plugin, material, draw);
         }
 
         // PopulationObserver
@@ -862,16 +882,26 @@ namespace Gek
                     }
                 });
 
-                queuedDrawCalls.clear();
+                drawCallList.clear();
                 ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
+                concurrency::parallel_sort(drawCallList.begin(), drawCallList.end(), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
+                {
+                    return (leftValue.value < rightValue.value);
+                });
 
                 UINT32 lightListCount = lightList.size();
                 videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
                 videoContext->pixelPipeline()->setSamplerStates(linearSamplerStates, 1);
                 videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
-                for (auto &shaderPair : queuedDrawCalls)
+
+                ShaderHandle currentShader;
+                PluginHandle currentPlugin;
+                MaterialHandle currentMaterial;
+                UINT32 drawCallCount = drawCallList.size();
+                for (UINT32 drawCallIndex = 0; drawCallIndex < drawCallCount; )
                 {
-                    Shader *shader = shaderManager.getResource<Shader>(shaderPair.first);
+                    DrawCallValue &drawCall = drawCallList[drawCallIndex];
+                    Shader *shader = shaderManager.getResource<Shader>(currentShader = drawCall.shader);
                     auto drawLights = [&](std::function<void(void)> drawPasses) -> void
                     {
                         for (UINT32 lightBase = 0; lightBase < lightListCount; lightBase += MaxLightCount)
@@ -895,7 +925,7 @@ namespace Gek
                             drawPasses();
                         }
                     };
-                    
+
                     auto enableLights = [&](VideoPipeline *videoPipeline) -> void
                     {
                         videoPipeline->setResource(lightDataBuffer, 0);
@@ -904,22 +934,23 @@ namespace Gek
 
                     auto drawForward = [&](void) -> void
                     {
-                        for (auto &pluginPair : shaderPair.second)
+                        while (drawCallIndex < drawCallCount)
                         {
-                            Plugin *plugin = pluginManager.getResource<Plugin>(pluginPair.first);
-                            plugin->enable(videoContext);
-
-                            for (auto &materialPair : pluginPair.second)
+                            drawCall = drawCallList[drawCallIndex++];
+                            if (currentPlugin != drawCall.plugin)
                             {
-                                Material *material = materialManager.getResource<Material>(materialPair.first);
-                                shader->setResourceList(videoContext, material->getResourceList());
-
-                                for (auto &onDraw : materialPair.second)
-                                {
-                                    onDraw(videoContext);
-                                }
+                                Plugin *plugin = pluginManager.getResource<Plugin>(currentPlugin = drawCall.plugin);
+                                plugin->enable(videoContext);
                             }
-                        }
+
+                            if (currentMaterial != drawCall.material)
+                            {
+                                Material *material = materialManager.getResource<Material>(currentMaterial = drawCall.material);
+                                shader->setResourceList(videoContext, material->getResourceList());
+                            }
+
+                            drawCall.onDraw(videoContext);
+                        };
                     };
 
                     auto drawDeferred = [&](void) -> void
@@ -928,7 +959,7 @@ namespace Gek
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
                         videoContext->drawPrimitive(6, 0);
                     };
-                    
+
                     auto runCompute = [&](UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth) -> void
                     {
                         videoContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);

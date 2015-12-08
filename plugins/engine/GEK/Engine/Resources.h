@@ -32,6 +32,11 @@ namespace Gek
         {
             return (this->identifier == handle.identifier);
         }
+
+        bool operator != (const typename Handle<TYPE> &handle) const
+        {
+            return (this->identifier != handle.identifier);
+        }
     };
 
     typedef Handle<UINT16> ProgramHandle;
