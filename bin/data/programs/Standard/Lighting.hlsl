@@ -5,6 +5,8 @@
 
 #include "BRDF.Custom.h"
 
+#define _AREA_LIGHT_SIZE 1.0f
+#define _INVERSE_SQUARE 1
 
 float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
@@ -18,7 +20,9 @@ float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
     float3 viewDirection = -normalize(surfacePosition);
-    float3 r = reflect(-viewDirection, surfaceNormal);
+#ifdef _AREA_LIGHT_SIZE
+    float3 reflectNormal = reflect(-viewDirection, surfaceNormal);
+#endif
 
     const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(tileSize).xx));
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
@@ -30,8 +34,6 @@ float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     for (uint lightTileIndex = 0; lightTileIndex < Lighting::count; lightTileIndex++)
     {
         uint lightIndex = Resources::tileIndexList[bufferOffset + lightTileIndex];
-        surfaceColor = lightIndex / 500.0f;
-        break;
 
         [branch]
         if (lightIndex == Lighting::listSize)
@@ -39,21 +41,19 @@ float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
             break;
         }
 
-#ifdef _AREA_LIGHTS
-        float3 L = Lighting::list[lightIndex].position - surfacePosition;
-        float3 centerToRay = dot(L, r) * r - L;
-        float3 closestPoint = L + centerToRay * clamp(5.0f / length(centerToRay), 0.0, 1.0);
+#ifdef _AREA_LIGHT_SIZE
+        float3 lightDirection = Lighting::list[lightIndex].position - surfacePosition;
+        float3 centerToRay = dot(lightDirection, reflectNormal) * reflectNormal - lightDirection;
+        float3 closestPoint = lightDirection + centerToRay * clamp(_AREA_LIGHT_SIZE / length(centerToRay), 0.0, 1.0);
         float lightDistanceSquared = dot(closestPoint, closestPoint);
         float lightDistance = sqrt(lightDistanceSquared);
-        float3 lightDirection = (closestPoint / lightDistance);
+        lightDirection = (closestPoint / lightDistance);
 #else
         float3 lightRay = -(surfacePosition - Lighting::list[lightIndex].position);
         float lightDistanceSquared = dot(lightRay, lightRay);
         float lightDistance = sqrt(lightDistanceSquared);
         float3 lightDirection = (lightRay / lightDistance);
 #endif
-
-#define _INVERSE_SQUARE 1
 
 #if _INVERSE_SQUARE
         float attenuation = (lightDistanceSquared / (Lighting::list[lightIndex].radius * Lighting::list[lightIndex].radius));

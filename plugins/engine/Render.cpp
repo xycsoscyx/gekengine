@@ -86,7 +86,7 @@ namespace std
 
 namespace Gek
 {
-    static const UINT32 MaxLightCount = 256;
+    static const UINT32 MaxLightCount = 128;
 
     template <class HANDLE>
     class ObjectManager
@@ -228,10 +228,12 @@ namespace Gek
         std::unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
         std::vector<LightData> lightList;
-        std::unordered_map < ShaderHandle,
-            std::unordered_map < PluginHandle,
-            std::unordered_map < MaterialHandle,
-            std::vector < std::function<void(VideoContext *)> > > > > queuedDrawCalls;
+        typedef std::function<void(VideoContext *)> DrawCall;
+        typedef std::vector<DrawCall> DrawCallList;
+        typedef std::unordered_map<MaterialHandle, DrawCallList> MaterialDrawCallList;
+        typedef std::unordered_map<PluginHandle, MaterialDrawCallList> PluginDrawCallList;
+        typedef std::unordered_map<ShaderHandle, PluginDrawCallList> ShaderDrawCallList;
+        ShaderDrawCallList queuedDrawCalls;
 
     public:
         RenderImplementation(void)
@@ -715,6 +717,11 @@ namespace Gek
             video->unmapBuffer(resourceManager.getResource<VideoBuffer>(buffer));
         }
 
+        STDMETHODIMP_(void) generateMipMaps(VideoContext *videoContext, ResourceHandle resourceHandle)
+        {
+            videoContext->generateMipMaps(resourceManager.getResource<VideoTexture>(resourceHandle));
+        }
+
         STDMETHODIMP_(void) setRenderStates(VideoContext *videoContext, RenderStatesHandle renderStatesHandle)
         {
             videoContext->setRenderStates(renderStateManager.getResource<IUnknown>(renderStatesHandle));
@@ -864,79 +871,70 @@ namespace Gek
                 videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
                 for (auto &shaderPair : queuedDrawCalls)
                 {
-                    auto drawLighting = [&](VideoPipeline *videoPipeline, bool lighting, std::function<void(void)> draw) -> void
+                    Shader *shader = shaderManager.getResource<Shader>(shaderPair.first);
+                    auto drawLights = [&](std::function<void(void)> drawPasses) -> void
                     {
-                        if (lighting)
+                        for (UINT32 lightBase = 0; lightBase < lightListCount; lightBase += MaxLightCount)
                         {
-                            videoPipeline->setResource(lightDataBuffer, 0);
-                            videoPipeline->setConstantBuffer(lightConstantBuffer, 1);
-                            for (UINT32 lightBase = 0; lightBase < lightListCount; lightBase += MaxLightCount)
+                            UINT32 lightCount = std::min((lightListCount - lightBase), MaxLightCount);
+
+                            LightConstants *lightConstants = nullptr;
+                            if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (LPVOID *)&lightConstants)))
                             {
-                                UINT32 lightCount = std::min((lightListCount - lightBase), MaxLightCount);
-
-                                LightConstants *lightConstants = nullptr;
-                                if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (LPVOID *)&lightConstants)))
-                                {
-                                    lightConstants->count = lightCount;
-                                    video->unmapBuffer(lightConstantBuffer);
-                                }
-
-                                LightData *lightingData = nullptr;
-                                if (SUCCEEDED(video->mapBuffer(lightDataBuffer, (LPVOID *)&lightingData)))
-                                {
-                                    memcpy(lightingData, &lightList[lightBase], (sizeof(LightData) * lightCount));
-                                    video->unmapBuffer(lightDataBuffer);
-                                }
-
-                                draw();
+                                memcpy(lightConstants, &lightCount, sizeof(UINT32));
+                                video->unmapBuffer(lightConstantBuffer);
                             }
+
+                            LightData *lightingData = nullptr;
+                            if (SUCCEEDED(video->mapBuffer(lightDataBuffer, (LPVOID *)&lightingData)))
+                            {
+                                memcpy(lightingData, &lightList[lightBase], (sizeof(LightData) * lightCount));
+                                video->unmapBuffer(lightDataBuffer);
+                            }
+
+                            drawPasses();
                         }
-                        else
+                    };
+                    
+                    auto enableLights = [&](VideoPipeline *videoPipeline) -> void
+                    {
+                        videoPipeline->setResource(lightDataBuffer, 0);
+                        videoPipeline->setConstantBuffer(lightConstantBuffer, 1);
+                    };
+
+                    auto drawForward = [&](void) -> void
+                    {
+                        for (auto &pluginPair : shaderPair.second)
                         {
-                            draw();
+                            Plugin *plugin = pluginManager.getResource<Plugin>(pluginPair.first);
+                            plugin->enable(videoContext);
+
+                            for (auto &materialPair : pluginPair.second)
+                            {
+                                Material *material = materialManager.getResource<Material>(materialPair.first);
+                                shader->setResourceList(videoContext, material->getResourceList());
+
+                                for (auto &onDraw : materialPair.second)
+                                {
+                                    onDraw(videoContext);
+                                }
+                            }
                         }
                     };
 
-                    Shader *shader = shaderManager.getResource<Shader>(shaderPair.first);
-                    shader->draw(videoContext,
-                        [&](LPCVOID passData, bool lighting) -> void // drawForward
-                    {
-                        drawLighting(videoContext->pixelPipeline(), lighting, [&](void) -> void
-                        {
-                            for (auto &pluginPair : shaderPair.second)
-                            {
-                                Plugin *plugin = pluginManager.getResource<Plugin>(pluginPair.first);
-                                plugin->enable(videoContext);
-
-                                for (auto &materialPair : pluginPair.second)
-                                {
-                                    Material *material = materialManager.getResource<Material>(materialPair.first);
-                                    shader->setResourceList(videoContext, material->getResourceList());
-
-                                    for (auto &onDraw : materialPair.second)
-                                    {
-                                        onDraw(videoContext);
-                                    }
-                                }
-                            }
-                        });
-                    },
-                        [&](LPCVOID passData, bool lighting) -> void // drawDeferred
+                    auto drawDeferred = [&](void) -> void
                     {
                         videoContext->setVertexBuffer(0, deferredVertexBuffer, 0);
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-                        drawLighting(videoContext->pixelPipeline(), lighting, [&](void) -> void
-                        {
-                            videoContext->drawPrimitive(6, 0);
-                        });
-                    },
-                        [&](LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth) -> void // drawCompute
+                        videoContext->drawPrimitive(6, 0);
+                    };
+                    
+                    auto runCompute = [&](UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth) -> void
                     {
-                        drawLighting(videoContext->computePipeline(), lighting, [&](void) -> void
-                        {
-                            videoContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
-                        });
-                    });
+                        videoContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
+                    };
+
+                    shader->draw(videoContext, drawLights, enableLights, drawForward, drawDeferred, runCompute);
                 }
             });
 

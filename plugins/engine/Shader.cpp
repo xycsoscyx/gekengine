@@ -165,12 +165,9 @@ namespace Gek
         struct Pass
         {
             PassMode mode;
-            bool lighting;
             UINT32 depthClearFlags;
             float depthClearValue;
             UINT32 stencilClearValue;
-            bool clearRenderTargets;
-            Math::Float4 renderTargetsClearColor;
             DepthStatesHandle depthStates;
             RenderStatesHandle renderStates;
             Math::Float4 blendFactor;
@@ -186,7 +183,6 @@ namespace Gek
 
             Pass(void)
                 : mode(PassMode::Forward)
-                , lighting(false)
                 , depthClearFlags(0)
                 , depthClearValue(1.0f)
                 , stencilClearValue(0)
@@ -194,6 +190,18 @@ namespace Gek
                 , dispatchWidth(0)
                 , dispatchHeight(0)
                 , dispatchDepth(0)
+            {
+            }
+        };
+
+        struct Block
+        {
+            bool lighting;
+            std::unordered_map<CStringW, Math::Float4> renderTargetsClearList;
+            std::vector<Pass> passList;
+
+            Block(void)
+                : lighting(false)
             {
             }
         };
@@ -208,7 +216,7 @@ namespace Gek
         ResourceHandle depthBuffer;
         std::unordered_map<CStringW, ResourceHandle> renderTargetMap;
         std::unordered_map<CStringW, ResourceHandle> bufferMap;
-        std::vector<Pass> passList;
+        std::vector<Block> blockList;
 
     private:
         static MapType getMapType(LPCWSTR mapType)
@@ -474,7 +482,7 @@ namespace Gek
             fullValue.Replace(L"%displayWidth%", String::format(L"%d", video->getWidth()));
             fullValue.Replace(L"%displayHeight%", String::format(L"%d", video->getHeight()));
 
-            fullValue.Replace(L"%lightListSize%", L"256");
+            fullValue.Replace(L"%lightListSize%", L"128");
 
             return replaceDefines(fullValue);
         }
@@ -659,304 +667,319 @@ namespace Gek
                         }
 
                         resultValue = S_OK;
-                        Gek::XmlNode xmlPassNode = xmlShaderNode.firstChildElement(L"pass");
-                        while (xmlPassNode && SUCCEEDED(resultValue))
+                        Gek::XmlNode xmlBlockNode = xmlShaderNode.firstChildElement(L"block");
+                        while (xmlBlockNode && SUCCEEDED(resultValue))
                         {
-                            if (!xmlPassNode.hasChildElement(L"program"))
+                            Block block;
+                            block.lighting = String::to<bool>(xmlBlockNode.getAttribute(L"lighting"));
+
+                            Gek::XmlNode xmlClearNode = xmlBlockNode.firstChildElement(L"clear");
+                            if (xmlClearNode)
                             {
-                                resultValue = E_INVALIDARG;
-                                break;
+                                Gek::XmlNode xmlClearTargetNode = xmlClearNode.firstChildElement();
+                                while (xmlClearTargetNode)
+                                {
+                                    block.renderTargetsClearList[xmlClearTargetNode.getType()] = String::to<Math::Float4>(xmlClearTargetNode.getText());
+                                    xmlClearTargetNode = xmlClearTargetNode.nextSiblingElement();
+                                };
                             }
 
-                            Pass pass;
-                            if (xmlPassNode.hasAttribute(L"mode"))
+                            Gek::XmlNode xmlPassNode = xmlBlockNode.firstChildElement(L"pass");
+                            while (xmlPassNode && SUCCEEDED(resultValue))
                             {
-                                CStringW modeString = xmlPassNode.getAttribute(L"mode");
-                                if (modeString.CompareNoCase(L"forward") == 0)
+                                if (!xmlPassNode.hasChildElement(L"program"))
                                 {
-                                    pass.mode = PassMode::Forward;
-                                }
-                                else if (modeString.CompareNoCase(L"deferred") == 0)
-                                {
-                                    pass.mode = PassMode::Deferred;
-                                }
-                                else if (modeString.CompareNoCase(L"compute") == 0)
-                                {
-                                    pass.mode = PassMode::Compute;
-                                }
-                                else
-                                {
-                                    gekLogMessage(L"Invalid pass mode encountered: %s", modeString.GetString());
                                     resultValue = E_INVALIDARG;
-                                }
-                            }
-
-                            pass.lighting = String::to<bool>(xmlPassNode.getAttribute(L"lighting"));
-
-                            if (xmlPassNode.hasChildElement(L"targets"))
-                            {
-                                Gek::XmlNode xmlTargetsNode = xmlPassNode.firstChildElement(L"targets");
-                                if (xmlTargetsNode.hasAttribute(L"clear"))
-                                {
-                                    pass.clearRenderTargets = true;
-                                    pass.renderTargetsClearColor = String::to<Math::Float4>(xmlTargetsNode.getAttribute(L"clear"));
+                                    break;
                                 }
 
-                                pass.renderTargetList = loadChildList(xmlTargetsNode);
-                            }
-
-                            if (SUCCEEDED(resultValue))
-                            {
-                                loadDepthStates(pass, xmlPassNode.firstChildElement(L"depthstates"));
-                            }
-
-                            if (SUCCEEDED(resultValue))
-                            {
-                                loadRenderStates(pass, xmlPassNode.firstChildElement(L"renderstates"));
-                            }
-
-                            if (SUCCEEDED(resultValue))
-                            {
-                                loadBlendStates(pass, xmlPassNode.firstChildElement(L"blendstates"));
-                            }
-
-                            if (SUCCEEDED(resultValue))
-                            {
-                                std::vector<CStringW> childList;
-                                if (xmlPassNode.hasChildElement(L"resources"))
+                                Pass pass;
+                                if (xmlPassNode.hasAttribute(L"mode"))
                                 {
-                                    Gek::XmlNode xmlResourcesNode = xmlPassNode.firstChildElement(L"resources");
-                                    Gek::XmlNode xmlResourceNode = xmlResourcesNode.firstChildElement();
-                                    while (xmlResourceNode)
+                                    CStringW modeString = xmlPassNode.getAttribute(L"mode");
+                                    if (modeString.CompareNoCase(L"forward") == 0)
                                     {
-                                        pass.resourceList.push_back(xmlResourceNode.getType());
-                                        if (String::to<bool>(xmlResourceNode.getAttribute(L"generateMipMaps")))
-                                        {
-                                            pass.generateMipMaps.insert(xmlResourceNode.getType());
-                                        }
-
-                                        xmlResourceNode = xmlResourceNode.nextSiblingElement();
-                                    };
-                                }
-
-                                pass.unorderedAccessList = loadChildList(xmlPassNode, L"unorderedaccess");
-
-                                CStringA engineData;
-                                if (pass.mode != PassMode::Compute)
-                                {
-                                    engineData +=
-                                        "struct InputPixel                                          \r\n" \
-                                        "{                                                          \r\n";
-                                    switch (pass.mode)
-                                    {
-                                    case PassMode::Deferred:
-                                        engineData +=
-                                            "    float4 position     : SV_POSITION;                 \r\n" \
-                                            "    float2 texCoord     : TEXCOORD0;                   \r\n";
-                                        break;
-
-                                    case PassMode::Forward:
-                                        engineData +=
-                                            "    float4 position     : SV_POSITION;                 \r\n" \
-                                            "    float2 texCoord     : TEXCOORD0;                   \r\n" \
-                                            "    float4 viewPosition : TEXCOORD1;                   \r\n" \
-                                            "    float3 viewNormal   : NORMAL0;                     \r\n" \
-                                            "    float4 color        : COLOR0;                      \r\n" \
-                                            "    bool   frontFacing  : SV_ISFRONTFACE;              \r\n";
-                                        break;
-
-                                    default:
-                                        resultValue = E_INVALIDARG;
-                                        break;
-                                    };
-
-                                    engineData +=
-                                        "};                                                         \r\n" \
-                                        "                                                           \r\n";
-                                }
-
-                                if (pass.lighting)
-                                {
-                                    engineData +=
-                                        "namespace Lighting                                     \r\n" \
-                                        "{                                                      \r\n" \
-                                        "    struct Point                                       \r\n" \
-                                        "    {                                                  \r\n" \
-                                        "        float3  position;                              \r\n" \
-                                        "        float   radius;                                \r\n" \
-                                        "        float3  color;                                 \r\n" \
-                                        "        float   distance;                              \r\n" \
-                                        "    };                                                 \r\n" \
-                                        "                                                       \r\n" \
-                                        "    cbuffer Data : register(b1)                        \r\n" \
-                                        "    {                                                  \r\n" \
-                                        "        uint    count   : packoffset(c0);              \r\n" \
-                                        "        uint3   padding : packoffset(c0.y);            \r\n" \
-                                        "    };                                                 \r\n" \
-                                        "                                                       \r\n" \
-                                        "    StructuredBuffer<Point> list : register(t0);       \r\n" \
-                                        "    static const uint listSize = 256;                  \r\n" \
-                                        "};                                                     \r\n" \
-                                        "                                                       \r\n";
-                                }
-
-                                CStringA outputData;
-                                UINT32 renderTargetCount = pass.renderTargetList.size();
-                                for (UINT32 index = 0; index < renderTargetCount; index++)
-                                {
-                                    CStringW resource(pass.renderTargetList[index]);
-                                    auto resourceIterator = resourceList.find(resource);
-                                    if (resourceIterator != resourceList.end())
-                                    {
-                                        outputData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resource.GetString(), index);
+                                        pass.mode = PassMode::Forward;
                                     }
-                                }
-
-                                if (!outputData.IsEmpty())
-                                {
-                                    engineData +=
-                                        "struct OutputPixel                                         \r\n" \
-                                        "{                                                          \r\n";
-                                    engineData += outputData;
-                                    engineData +=
-                                        "};                                                         \r\n" \
-                                        "                                                           \r\n";
-                                }
-
-                                CStringA resourceData;
-                                UINT32 resourceStage(pass.lighting ? 1 : 0);
-                                if (pass.mode == PassMode::Forward)
-                                {
-                                    for (auto &map : mapList)
+                                    else if (modeString.CompareNoCase(L"deferred") == 0)
                                     {
-                                        resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(map.mapType), getBindType(map.bindType), map.name.GetString(), resourceStage++);
+                                        pass.mode = PassMode::Deferred;
                                     }
-                                }
-
-                                for (auto &resourceName : pass.resourceList)
-                                {
-                                    auto resourceIterator = resourceList.find(resourceName);
-                                    if (resourceIterator != resourceList.end())
+                                    else if (modeString.CompareNoCase(L"compute") == 0)
                                     {
-                                        auto &resource = (*resourceIterator).second;
-                                        resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName.GetString(), resourceStage++);
-                                    }
-                                }
-
-                                if (!resourceData.IsEmpty())
-                                {
-                                    engineData +=
-                                        "namespace Resources                                        \r\n" \
-                                        "{                                                          \r\n";
-                                    engineData += resourceData;
-                                    engineData +=
-                                        "};                                                         \r\n" \
-                                        "                                                           \r\n";
-                                }
-
-                                Gek::XmlNode xmlProgramNode = xmlPassNode.firstChildElement(L"program");
-                                if (xmlProgramNode.hasChildElement(L"source") && xmlProgramNode.hasChildElement(L"entry"))
-                                {
-                                    std::unordered_map<CStringA, CStringA> defines(globalDefines);
-
-                                    CStringW programFileName = xmlProgramNode.firstChildElement(L"source").getText();
-                                    CW2A programEntryPoint(xmlProgramNode.firstChildElement(L"entry").getText());
-                                    auto getIncludeData = [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
-                                    {
-                                        HRESULT resultValue = E_FAIL;
-                                        if (_stricmp(fileName, "GEKEngine") == 0)
-                                        {
-                                            data.resize(engineData.GetLength());
-                                            memcpy(data.data(), engineData.GetString(), data.size());
-                                            resultValue = S_OK;
-                                        }
-                                        else
-                                        {
-                                            resultValue = Gek::FileSystem::load(CA2W(fileName), data);
-                                            if (FAILED(resultValue))
-                                            {
-                                                CPathW shaderPath;
-                                                shaderPath.Combine(L"%root%\\data\\programs", CA2W(fileName));
-                                                resultValue = Gek::FileSystem::load(shaderPath, data);
-                                            }
-                                        }
-
-                                        return resultValue;
-                                    };
-
-                                    Gek::XmlNode xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
-                                    if (xmlComputeNode)
-                                    {
-                                        pass.dispatchWidth = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
-                                        pass.dispatchHeight = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
-                                        pass.dispatchDepth = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
-                                    }
-
-                                    if (pass.mode == PassMode::Compute)
-                                    {
-                                        CStringA unorderedAccessData;
-                                        UINT32 unorderedAccessListCount = pass.unorderedAccessList.size();
-                                        for (UINT32 index = 0; index < unorderedAccessListCount; index++)
-                                        {
-                                            CStringW unorderedAccess(pass.unorderedAccessList[index]);
-                                            auto resourceIterator = resourceList.find(unorderedAccess);
-                                            if (resourceIterator != resourceList.end())
-                                            {
-                                                unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
-                                            }
-                                        }
-
-                                        if (!unorderedAccessData.IsEmpty())
-                                        {
-                                            engineData +=
-                                                "namespace UnorderedAccess                              \r\n" \
-                                                "{                                                      \r\n";
-                                            engineData += unorderedAccessData;
-                                            engineData +=
-                                                "};                                                     \r\n" \
-                                                "                                                       \r\n";
-                                        }
-
-                                        pass.program = resources->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                        pass.mode = PassMode::Compute;
                                     }
                                     else
                                     {
-                                        CStringA unorderedAccessData;
-                                        UINT32 unorderedAccessListCount = pass.unorderedAccessList.size();
-                                        for (UINT32 index = 0; index < unorderedAccessListCount; index++)
-                                        {
-                                            CStringW unorderedAccess(pass.unorderedAccessList[index]);
-                                            auto resourceIterator = resourceList.find(unorderedAccess);
-                                            if (resourceIterator != resourceList.end())
-                                            {
-                                                unorderedAccessData.AppendFormat("    %S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
-                                            }
-                                        }
-
-                                        if (!unorderedAccessData.IsEmpty())
-                                        {
-                                            engineData +=
-                                                "namespace UnorderedAccess                              \r\n" \
-                                                "{                                                      \r\n";
-                                            engineData += unorderedAccessData;
-                                            engineData +=
-                                                "};                                                     \r\n" \
-                                                "                                                       \r\n";
-                                        }
-
-                                        pass.program = resources->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                        gekLogMessage(L"Invalid pass mode encountered: %s", modeString.GetString());
+                                        resultValue = E_INVALIDARG;
                                     }
                                 }
-                                else
+
+                                if (xmlPassNode.hasChildElement(L"targets"))
                                 {
-                                    resultValue = E_INVALIDARG;
+                                    pass.renderTargetList = loadChildList(xmlPassNode, L"targets");
                                 }
-                            }
+
+                                if (SUCCEEDED(resultValue))
+                                {
+                                    loadDepthStates(pass, xmlPassNode.firstChildElement(L"depthstates"));
+                                }
+
+                                if (SUCCEEDED(resultValue))
+                                {
+                                    loadRenderStates(pass, xmlPassNode.firstChildElement(L"renderstates"));
+                                }
+
+                                if (SUCCEEDED(resultValue))
+                                {
+                                    loadBlendStates(pass, xmlPassNode.firstChildElement(L"blendstates"));
+                                }
+
+                                if (SUCCEEDED(resultValue))
+                                {
+                                    std::vector<CStringW> childList;
+                                    if (xmlPassNode.hasChildElement(L"resources"))
+                                    {
+                                        Gek::XmlNode xmlResourcesNode = xmlPassNode.firstChildElement(L"resources");
+                                        Gek::XmlNode xmlResourceNode = xmlResourcesNode.firstChildElement();
+                                        while (xmlResourceNode)
+                                        {
+                                            pass.resourceList.push_back(xmlResourceNode.getType());
+                                            if (String::to<bool>(xmlResourceNode.getAttribute(L"generateMipMaps")))
+                                            {
+                                                pass.generateMipMaps.insert(xmlResourceNode.getType());
+                                            }
+
+                                            xmlResourceNode = xmlResourceNode.nextSiblingElement();
+                                        };
+                                    }
+
+                                    pass.unorderedAccessList = loadChildList(xmlPassNode, L"unorderedaccess");
+
+                                    CStringA engineData;
+                                    if (pass.mode != PassMode::Compute)
+                                    {
+                                        engineData +=
+                                            "struct InputPixel                                          \r\n" \
+                                            "{                                                          \r\n";
+                                        switch (pass.mode)
+                                        {
+                                        case PassMode::Deferred:
+                                            engineData +=
+                                                "    float4 position     : SV_POSITION;                 \r\n" \
+                                                "    float2 texCoord     : TEXCOORD0;                   \r\n";
+                                            break;
+
+                                        case PassMode::Forward:
+                                            engineData +=
+                                                "    float4 position     : SV_POSITION;                 \r\n" \
+                                                "    float2 texCoord     : TEXCOORD0;                   \r\n" \
+                                                "    float4 viewPosition : TEXCOORD1;                   \r\n" \
+                                                "    float3 viewNormal   : NORMAL0;                     \r\n" \
+                                                "    float4 color        : COLOR0;                      \r\n" \
+                                                "    bool   frontFacing  : SV_ISFRONTFACE;              \r\n";
+                                            break;
+
+                                        default:
+                                            resultValue = E_INVALIDARG;
+                                            break;
+                                        };
+
+                                        engineData +=
+                                            "};                                                         \r\n" \
+                                            "                                                           \r\n";
+                                    }
+
+                                    if (block.lighting)
+                                    {
+                                        engineData +=
+                                            "namespace Lighting                                     \r\n" \
+                                            "{                                                      \r\n" \
+                                            "    struct Point                                       \r\n" \
+                                            "    {                                                  \r\n" \
+                                            "        float3  position;                              \r\n" \
+                                            "        float   radius;                                \r\n" \
+                                            "        float3  color;                                 \r\n" \
+                                            "        float   distance;                              \r\n" \
+                                            "    };                                                 \r\n" \
+                                            "                                                       \r\n" \
+                                            "    cbuffer Data : register(b1)                        \r\n" \
+                                            "    {                                                  \r\n" \
+                                            "        uint    count   : packoffset(c0);              \r\n" \
+                                            "        uint3   padding : packoffset(c0.y);            \r\n" \
+                                            "    };                                                 \r\n" \
+                                            "                                                       \r\n" \
+                                            "    StructuredBuffer<Point> list : register(t0);       \r\n" \
+                                            "    static const uint listSize = 128;                  \r\n" \
+                                            "};                                                     \r\n" \
+                                            "                                                       \r\n";
+                                    }
+
+                                    CStringA outputData;
+                                    UINT32 renderTargetCount = pass.renderTargetList.size();
+                                    for (UINT32 index = 0; index < renderTargetCount; index++)
+                                    {
+                                        CStringW resource(pass.renderTargetList[index]);
+                                        auto resourceIterator = resourceList.find(resource);
+                                        if (resourceIterator != resourceList.end())
+                                        {
+                                            outputData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resource.GetString(), index);
+                                        }
+                                    }
+
+                                    if (!outputData.IsEmpty())
+                                    {
+                                        engineData +=
+                                            "struct OutputPixel                                         \r\n" \
+                                            "{                                                          \r\n";
+                                        engineData += outputData;
+                                        engineData +=
+                                            "};                                                         \r\n" \
+                                            "                                                           \r\n";
+                                    }
+
+                                    CStringA resourceData;
+                                    UINT32 resourceStage(block.lighting ? 1 : 0);
+                                    if (pass.mode == PassMode::Forward)
+                                    {
+                                        for (auto &map : mapList)
+                                        {
+                                            resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(map.mapType), getBindType(map.bindType), map.name.GetString(), resourceStage++);
+                                        }
+                                    }
+
+                                    for (auto &resourceName : pass.resourceList)
+                                    {
+                                        auto resourceIterator = resourceList.find(resourceName);
+                                        if (resourceIterator != resourceList.end())
+                                        {
+                                            auto &resource = (*resourceIterator).second;
+                                            resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName.GetString(), resourceStage++);
+                                        }
+                                    }
+
+                                    if (!resourceData.IsEmpty())
+                                    {
+                                        engineData +=
+                                            "namespace Resources                                        \r\n" \
+                                            "{                                                          \r\n";
+                                        engineData += resourceData;
+                                        engineData +=
+                                            "};                                                         \r\n" \
+                                            "                                                           \r\n";
+                                    }
+
+                                    Gek::XmlNode xmlProgramNode = xmlPassNode.firstChildElement(L"program");
+                                    if (xmlProgramNode.hasChildElement(L"source") && xmlProgramNode.hasChildElement(L"entry"))
+                                    {
+                                        std::unordered_map<CStringA, CStringA> defines(globalDefines);
+
+                                        CStringW programFileName = xmlProgramNode.firstChildElement(L"source").getText();
+                                        CW2A programEntryPoint(xmlProgramNode.firstChildElement(L"entry").getText());
+                                        auto getIncludeData = [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
+                                        {
+                                            HRESULT resultValue = E_FAIL;
+                                            if (_stricmp(fileName, "GEKEngine") == 0)
+                                            {
+                                                data.resize(engineData.GetLength());
+                                                memcpy(data.data(), engineData.GetString(), data.size());
+                                                resultValue = S_OK;
+                                            }
+                                            else
+                                            {
+                                                resultValue = Gek::FileSystem::load(CA2W(fileName), data);
+                                                if (FAILED(resultValue))
+                                                {
+                                                    CPathW shaderPath;
+                                                    shaderPath.Combine(L"%root%\\data\\programs", CA2W(fileName));
+                                                    resultValue = Gek::FileSystem::load(shaderPath, data);
+                                                }
+                                            }
+
+                                            return resultValue;
+                                        };
+
+                                        Gek::XmlNode xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
+                                        if (xmlComputeNode)
+                                        {
+                                            pass.dispatchWidth = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
+                                            pass.dispatchHeight = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
+                                            pass.dispatchDepth = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
+                                        }
+
+                                        if (pass.mode == PassMode::Compute)
+                                        {
+                                            CStringA unorderedAccessData;
+                                            UINT32 unorderedAccessListCount = pass.unorderedAccessList.size();
+                                            for (UINT32 index = 0; index < unorderedAccessListCount; index++)
+                                            {
+                                                CStringW unorderedAccess(pass.unorderedAccessList[index]);
+                                                auto resourceIterator = resourceList.find(unorderedAccess);
+                                                if (resourceIterator != resourceList.end())
+                                                {
+                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
+                                                }
+                                            }
+
+                                            if (!unorderedAccessData.IsEmpty())
+                                            {
+                                                engineData +=
+                                                    "namespace UnorderedAccess                              \r\n" \
+                                                    "{                                                      \r\n";
+                                                engineData += unorderedAccessData;
+                                                engineData +=
+                                                    "};                                                     \r\n" \
+                                                    "                                                       \r\n";
+                                            }
+
+                                            pass.program = resources->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                        }
+                                        else
+                                        {
+                                            CStringA unorderedAccessData;
+                                            UINT32 unorderedAccessListCount = pass.unorderedAccessList.size();
+                                            for (UINT32 index = 0; index < unorderedAccessListCount; index++)
+                                            {
+                                                CStringW unorderedAccess(pass.unorderedAccessList[index]);
+                                                auto resourceIterator = resourceList.find(unorderedAccess);
+                                                if (resourceIterator != resourceList.end())
+                                                {
+                                                    unorderedAccessData.AppendFormat("    %S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
+                                                }
+                                            }
+
+                                            if (!unorderedAccessData.IsEmpty())
+                                            {
+                                                engineData +=
+                                                    "namespace UnorderedAccess                              \r\n" \
+                                                    "{                                                      \r\n";
+                                                engineData += unorderedAccessData;
+                                                engineData +=
+                                                    "};                                                     \r\n" \
+                                                    "                                                       \r\n";
+                                            }
+
+                                            pass.program = resources->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData, &defines);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        resultValue = E_INVALIDARG;
+                                    }
+                                }
+
+                                if (SUCCEEDED(resultValue))
+                                {
+                                    block.passList.push_back(pass);
+                                    xmlPassNode = xmlPassNode.nextSiblingElement(L"pass");
+                                }
+                            };
 
                             if (SUCCEEDED(resultValue))
                             {
-                                passList.push_back(pass);
-                                xmlPassNode = xmlPassNode.nextSiblingElement();
+                                blockList.push_back(block);
+                                xmlBlockNode = xmlBlockNode.nextSiblingElement(L"block");
                             }
                         };
                     }
@@ -994,13 +1017,15 @@ namespace Gek
             }
         }
 
+        Block *currentBlock;
         Pass *currentPass;
         STDMETHODIMP_(void) setResourceList(VideoContext *videoContext, const std::vector<ResourceHandle> &resourceList)
         {
+            REQUIRE_VOID_RETURN(currentBlock);
             REQUIRE_VOID_RETURN(currentPass);
 
             UINT32 firstStage = 0;
-            if (currentPass->lighting)
+            if (currentBlock->lighting)
             {
                 firstStage = 1;
             }
@@ -1013,128 +1038,154 @@ namespace Gek
         }
 
         STDMETHODIMP_(void) draw(VideoContext *videoContext,
-            std::function<void(LPCVOID passData, bool lighting)> drawForward,
-            std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
-            std::function<void(LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> drawCompute)
+            std::function<void(std::function<void(void)> drawPasses)> drawLights,
+            std::function<void(VideoPipeline *videoPipeline)> enableLights,
+            std::function<void(void)> drawForward,
+            std::function<void(void)> drawDeferred,
+            std::function<void(UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> runCompute)
         {
-            currentPass = nullptr;
-            for (auto &pass : passList)
+            currentBlock = nullptr;
+            for (auto &block : blockList)
             {
-                currentPass = &pass;
-                resources->setDepthStates(videoContext, pass.depthStates, 0x0);
-                resources->setRenderStates(videoContext, pass.renderStates);
-                resources->setBlendStates(videoContext, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
-
-                if (pass.depthClearFlags > 0)
+                currentBlock = &block;
+                for (auto &clearTarget : block.renderTargetsClearList)
                 {
-                    resources->clearDepthStencilTarget(videoContext, depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
-                }
-
-                if (pass.renderTargetList.empty())
-                {
-                    resources->setDefaultTargets(videoContext, depthBuffer);
-                    if (pass.clearRenderTargets)
+                    auto renderTargetIterator = renderTargetMap.find(clearTarget.first);
+                    if (renderTargetIterator != renderTargetMap.end())
                     {
-                        video->clearDefaultRenderTarget(pass.renderTargetsClearColor);
+                        resources->clearRenderTarget(videoContext, renderTargetIterator->second, clearTarget.second);
                     }
                 }
-                else
+
+                auto drawPasses = [&](void) -> void
                 {
-                    static ResourceHandle renderTargetList[8];
-                    UINT32 renderTargetCount = pass.renderTargetList.size();
-                    for (UINT32 renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
+                    for (auto &pass : block.passList)
                     {
-                        ResourceHandle renderTargetHandle;
-                        auto renderTargetIterator = renderTargetMap.find(pass.renderTargetList[renderTarget]);
-                        if (renderTargetIterator != renderTargetMap.end())
+                        currentPass = &pass;
+                        if (pass.mode != PassMode::Compute)
                         {
-                            renderTargetHandle = (*renderTargetIterator).second;
-                            if (pass.clearRenderTargets)
+                            resources->setDepthStates(videoContext, pass.depthStates, 0x0);
+                            resources->setRenderStates(videoContext, pass.renderStates);
+                            resources->setBlendStates(videoContext, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
+
+                            if (pass.depthClearFlags > 0)
                             {
-                                resources->clearRenderTarget(videoContext, renderTargetHandle, pass.renderTargetsClearColor);
+                                resources->clearDepthStencilTarget(videoContext, depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
+                            }
+
+                            if (pass.renderTargetList.empty())
+                            {
+                                resources->setDefaultTargets(videoContext, depthBuffer);
+                            }
+                            else
+                            {
+                                static ResourceHandle renderTargetList[8];
+                                UINT32 renderTargetCount = pass.renderTargetList.size();
+                                for (UINT32 renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
+                                {
+                                    ResourceHandle renderTargetHandle;
+                                    auto renderTargetIterator = renderTargetMap.find(pass.renderTargetList[renderTarget]);
+                                    if (renderTargetIterator != renderTargetMap.end())
+                                    {
+                                        renderTargetHandle = (*renderTargetIterator).second;
+                                    }
+
+                                    renderTargetList[renderTarget] = renderTargetHandle;
+                                }
+
+                                resources->setRenderTargets(videoContext, renderTargetList, renderTargetCount, depthBuffer);
                             }
                         }
 
-                        renderTargetList[renderTarget] = renderTargetHandle;
-                    }
-
-                    resources->setRenderTargets(videoContext, renderTargetList, renderTargetCount, depthBuffer);
-                }
-
-                UINT32 stage = 0;
-                if (pass.lighting)
-                {
-                    stage = 1;
-                }
-
-                VideoPipeline *videoPipeline = (pass.mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
-                for (auto &resourceName : pass.resourceList)
-                {
-                    ResourceHandle resource;
-                    auto renderTargetIterator = renderTargetMap.find(resourceName);
-                    if (renderTargetIterator != renderTargetMap.end())
-                    {
-                        resource = renderTargetIterator->second;
-                        if (pass.generateMipMaps.count(resourceName) > 0)
+                        UINT32 stage = 0;
+                        if (block.lighting)
                         {
-//                            videoContext->generateMipMaps(texture);
+                            stage = 1;
                         }
-                    }
 
-                    if (!resource.isValid())
-                    {
-                        auto bufferIterator = bufferMap.find(resourceName);
-                        if (bufferIterator != bufferMap.end())
+                        VideoPipeline *videoPipeline = (pass.mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
+                        enableLights(videoPipeline);
+
+                        for (auto &resourceName : pass.resourceList)
                         {
-                            resource = bufferIterator->second;
+                            ResourceHandle resource;
+                            auto renderTargetIterator = renderTargetMap.find(resourceName);
+                            if (renderTargetIterator != renderTargetMap.end())
+                            {
+                                resource = renderTargetIterator->second;
+                                if (pass.generateMipMaps.count(resourceName) > 0)
+                                {
+                                    resources->generateMipMaps(videoContext, resource);
+                                }
+                            }
+
+                            if (!resource.isValid())
+                            {
+                                auto bufferIterator = bufferMap.find(resourceName);
+                                if (bufferIterator != bufferMap.end())
+                                {
+                                    resource = bufferIterator->second;
+                                }
+                            }
+
+                            resources->setResource(videoPipeline, resource, stage++);
                         }
-                    }
 
-                    resources->setResource(videoPipeline, resource, stage++);
-                }
-
-                stage = 0;
-                for (auto &unorderedAccessName : pass.unorderedAccessList)
-                {
-                    ResourceHandle resource;
-                    auto renderTargetIterator = renderTargetMap.find(unorderedAccessName);
-                    if (renderTargetIterator != renderTargetMap.end())
-                    {
-                        resource = renderTargetIterator->second;
-                    }
-
-                    if (!resource.isValid())
-                    {
-                        auto bufferIterator = bufferMap.find(unorderedAccessName);
-                        if (bufferIterator != bufferMap.end())
+                        stage = 0;
+                        for (auto &unorderedAccessName : pass.unorderedAccessList)
                         {
-                            resource = bufferIterator->second;
+                            ResourceHandle resource;
+                            auto renderTargetIterator = renderTargetMap.find(unorderedAccessName);
+                            if (renderTargetIterator != renderTargetMap.end())
+                            {
+                                resource = renderTargetIterator->second;
+                            }
+
+                            if (!resource.isValid())
+                            {
+                                auto bufferIterator = bufferMap.find(unorderedAccessName);
+                                if (bufferIterator != bufferMap.end())
+                                {
+                                    resource = bufferIterator->second;
+                                }
+                            }
+
+                            resources->setUnorderedAccess(videoPipeline, resource, stage++);
                         }
+
+                        resources->setProgram(videoPipeline, pass.program);
+
+                        switch (pass.mode)
+                        {
+                        case PassMode::Forward:
+                            drawForward();
+                            break;
+
+                        case PassMode::Deferred:
+                            drawDeferred();
+                            break;
+
+                        case PassMode::Compute:
+                            runCompute(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
+                            break;
+                        };
+
+                        videoContext->clearResources();
+                        currentPass = nullptr;
                     }
-
-                    resources->setUnorderedAccess(videoPipeline, resource, stage++);
-                }
-
-                resources->setProgram(videoPipeline, pass.program);
-                switch (pass.mode)
-                {
-                case PassMode::Forward:
-                    drawForward(&pass, pass.lighting);
-                    break;
-
-                case PassMode::Deferred:
-                    drawDeferred(&pass, pass.lighting);
-                    break;
-
-                case PassMode::Compute:
-                    drawCompute(&pass, pass.lighting, pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
-                    break;
                 };
 
-                videoContext->clearResources();
-            }
+                if (block.lighting)
+                {
+                    drawLights(drawPasses);
+                }
+                else
+                {
+                    drawPasses();
+                }
 
-            currentPass = nullptr;
+                currentBlock = nullptr;
+            }
         }
     };
 

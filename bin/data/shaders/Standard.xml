@@ -7,9 +7,6 @@
             <roughness bind="float">Texture2D</roughness>
             <metalness bind="float">Texture2D</metalness>
         </maps>
-        <properties>
-            <color default="1,1,1,1">float4</color>
-        </properties>
     </material>
 
     <defines>
@@ -32,86 +29,96 @@
         <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %lightListSize%">byte</tileIndexList>
     </buffers>
 
-    <pass mode="forward">
-        <depthstates>
-            <comparison>lessequal</comparison>
-            <writemask>all</writemask>
-            <clear>1</clear>
-        </depthstates>
+    <block>
+        <pass mode="forward">
+            <depthstates>
+                <comparison>lessequal</comparison>
+                <writemask>all</writemask>
+                <clear>1</clear>
+            </depthstates>
 
-        <renderstates>
-            <cullmode>back</cullmode>
-        </renderstates>
+            <renderstates>
+                <cullmode>back</cullmode>
+            </renderstates>
 
-        <targets>
-            <albedoBuffer />
-            <materialBuffer />
-            <normalBuffer />
-            <depthBuffer />
-        </targets>
+            <targets>
+                <albedoBuffer />
+                <materialBuffer />
+                <normalBuffer />
+                <depthBuffer />
+            </targets>
 
-        <program>
-            <entry>mainPixelProgram</entry>
-            <source>Standard\Deferred</source>
-        </program>
-    </pass>
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\Deferred</source>
+            </program>
+        </pass>
+    </block>
 
-    <pass mode="compute" lighting="true">
-        <resources>
-            <depthBuffer />
-        </resources>
+    <block lighting="true">
+        <clear>
+            <compositeBuffer>0,0,0,0</compositeBuffer>
+        </clear>
 
-        <unorderedaccess>
-            <tileIndexList />
-        </unorderedaccess>
+        <pass mode="compute">
+            <resources>
+                <depthBuffer />
+            </resources>
 
-        <program>
-			<compute>
-				<width>%dispatchWidth%</width>
-				<height>%dispatchHeight%</height>
-				<depth>1</depth>
-			</compute>
-            <entry>mainComputeProgram</entry>
-            <source>Standard\Tiled</source>
-        </program>
-    </pass>
+            <unorderedaccess>
+                <tileIndexList />
+            </unorderedaccess>
 
-    <pass mode="deferred" lighting="true">
-        <blend>
-            <color source="one" destination="one" operation="add" />
-            <alpha source="one" destination="one" operation="add" />
-        </blend>
+            <program>
+                <compute>
+                    <width>%dispatchWidth%</width>
+                    <height>%dispatchHeight%</height>
+                    <depth>1</depth>
+                </compute>
+                <entry>mainComputeProgram</entry>
+                <source>Standard\Tiled</source>
+            </program>
+        </pass>
 
-        <targets clear="0,0,0,0">
-            <compositeBuffer />
-        </targets>
+        <pass mode="deferred">
+            <blendstates>
+                <color source="one" destination="one" operation="add" />
+                <alpha source="one" destination="one" operation="add" />
+            </blendstates>
 
-        <resources>
-            <tileIndexList />
-            <albedoBuffer />
-            <materialBuffer />
-            <normalBuffer />
-            <depthBuffer />
-        </resources>
+            <targets>
+                <compositeBuffer />
+            </targets>
 
-        <program>
-            <entry>mainPixelProgram</entry>
-            <source>Standard\Lighting</source>
-        </program>
-    </pass>
+            <resources>
+                <tileIndexList />
+                <albedoBuffer />
+                <materialBuffer />
+                <normalBuffer />
+                <depthBuffer />
+            </resources>
 
-    <pass mode="deferred">
-        <resources>
-            <compositeBuffer generateMipMaps="true" />
-            <albedoBuffer />
-            <materialBuffer />
-            <normalBuffer />
-            <depthBuffer />
-        </resources>
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\Lighting</source>
+            </program>
+        </pass>
+    </block>
 
-        <program>
-            <entry>mainPixelProgram</entry>
-            <source>Standard\ToneMap</source>
-        </program>
-    </pass>
+    <block>
+        <pass mode="deferred">
+            <resources>
+                <compositeBuffer generateMipMaps="true" />
+                <albedoBuffer />
+                <materialBuffer />
+                <normalBuffer />
+                <depthBuffer />
+            </resources>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\ToneMap</source>
+            </program>
+        </pass>
+    </block>
 </shader>

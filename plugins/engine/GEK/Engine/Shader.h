@@ -16,9 +16,11 @@ namespace Gek
         STDMETHOD_(void, setResourceList)           (THIS_ VideoContext *videoContext, const std::vector<ResourceHandle> &materialMapList) PURE;
 
         STDMETHOD_(void, draw)                      (THIS_ VideoContext *videoContext,
-            std::function<void(LPCVOID passData, bool lighting)> drawForward,
-            std::function<void(LPCVOID passData, bool lighting)> drawDeferred,
-            std::function<void(LPCVOID passData, bool lighting, UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> drawCompute) PURE;
+            std::function<void(std::function<void(void)> drawPasses)> drawLights,
+            std::function<void(VideoPipeline *videoPipeline)> enableLights,
+            std::function<void(void)> drawForward,
+            std::function<void(void)> drawDeferred,
+            std::function<void(UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> runCompute) PURE;
     };
 
     DECLARE_INTERFACE_IID(ShaderRegistration, "02B8870C-2AEC-48FD-8F47-34166C9F16C6");
