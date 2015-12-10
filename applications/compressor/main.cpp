@@ -44,6 +44,8 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
 
     CStringW format;
     bool overwrite = false;
+    bool sRGBIn = false;
+    bool sRGBOut = false;
     for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
     {
         CStringW argument(argumentList[argumentIndex]);
@@ -65,6 +67,23 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         else if (operation.CompareNoCase(L"-overwrite") == 0)
         {
             overwrite = true;
+        }
+        else if (operation.CompareNoCase(L"-sRGB") == 0)
+        {
+            CStringW parameter(argument.Tokenize(L":", position));
+            if (parameter.CompareNoCase(L"in") == 0)
+            {
+                sRGBIn = true;
+            }
+            else if (parameter.CompareNoCase(L"out") == 0)
+            {
+                sRGBOut = true;
+            }
+            else if (parameter.CompareNoCase(L"both") == 0)
+            {
+                sRGBIn = true;
+                sRGBOut = true;
+            }
         }
     }
 
@@ -88,6 +107,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     printf("Compressing: -> %S\r\n", fileNameInput.GetString());
     printf("             <- %S\r\n", fileNameOutput.GetString());
     printf("Format: %S\r\n", format.GetString());
+    printf("In: %s, Out: %s\r\n", sRGBIn ? "sRGB" : "RGB", sRGBOut ? "sRGB" : "RGB");
 
     try
     {
@@ -136,53 +156,75 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         printf(".loaded.");
 
         DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
-        if (format.CompareNoCase(L"BC1") == 0)
+        if (sRGBOut)
         {
-            outputFormat = DXGI_FORMAT_BC1_UNORM;
+            if (format.CompareNoCase(L"BC1") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC1_UNORM_SRGB;
+            }
+            else if (format.CompareNoCase(L"BC2") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC2_UNORM_SRGB;
+            }
+            else if (format.CompareNoCase(L"BC3") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC3_UNORM_SRGB;
+            }
+            else if (format.CompareNoCase(L"BC7") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC7_UNORM_SRGB;
+            }
         }
-        else if (format.CompareNoCase(L"sBC1") == 0)
+        else
         {
-            outputFormat = DXGI_FORMAT_BC1_UNORM_SRGB;
+            if (format.CompareNoCase(L"BC1") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC1_UNORM;
+            }
+            else if (format.CompareNoCase(L"BC2") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC2_UNORM;
+            }
+            else if (format.CompareNoCase(L"BC3") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC3_UNORM;
+            }
+            else if (format.CompareNoCase(L"BC4") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC4_UNORM;
+            }
+            else if (format.CompareNoCase(L"BC5") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC5_UNORM;
+            }
+            else if (format.CompareNoCase(L"BC6") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC6H_UF16;
+            }
+            else if (format.CompareNoCase(L"BC7") == 0)
+            {
+                outputFormat = DXGI_FORMAT_BC7_UNORM;
+            }
         }
-        else if (format.CompareNoCase(L"BC2") == 0)
+
+        if (outputFormat == DXGI_FORMAT_UNKNOWN)
         {
-            outputFormat = DXGI_FORMAT_BC2_UNORM;
+            throw CompressorException(__LINE__, L"Unknown format specified: %s", format.GetString());
         }
-        else if (format.CompareNoCase(L"sBC2") == 0)
+
+        UINT32 flags = ::DirectX::TEX_COMPRESS_PARALLEL;
+        if (sRGBIn)
         {
-            outputFormat = DXGI_FORMAT_BC2_UNORM_SRGB;
+            flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
         }
-        else if (format.CompareNoCase(L"BC3") == 0)
+
+        if (sRGBOut)
         {
-            outputFormat = DXGI_FORMAT_BC3_UNORM;
-        }
-        else if (format.CompareNoCase(L"sBC3") == 0)
-        {
-            outputFormat = DXGI_FORMAT_BC3_UNORM_SRGB;
-        }
-        else if (format.CompareNoCase(L"BC4") == 0)
-        {
-            outputFormat = DXGI_FORMAT_BC4_UNORM;
-        }
-        else if (format.CompareNoCase(L"BC5") == 0)
-        {
-            outputFormat = DXGI_FORMAT_BC5_UNORM;
-        }
-        else if (format.CompareNoCase(L"BC6") == 0)
-        {
-            outputFormat = DXGI_FORMAT_BC6H_UF16;
-        }
-        else if (format.CompareNoCase(L"BC7") == 0)
-        {
-            outputFormat = DXGI_FORMAT_BC7_UNORM;
-        }
-        else if (format.CompareNoCase(L"sBC7") == 0)
-        {
-            outputFormat = DXGI_FORMAT_BC7_UNORM_SRGB;
+            flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
         }
 
         ::DirectX::ScratchImage outputImage;
-        if (FAILED(::DirectX::Compress(inputImage.GetImages(), inputImage.GetImageCount(), inputImage.GetMetadata(), outputFormat, ::DirectX::TEX_COMPRESS_PARALLEL, 0.5f, outputImage)))
+        if (FAILED(::DirectX::Compress(inputImage.GetImages(), inputImage.GetImageCount(), inputImage.GetMetadata(), outputFormat, flags, 0.5f, outputImage)))
         {
             throw CompressorException(__LINE__, L"Unable to compress to format: %s", format.GetString());
         }

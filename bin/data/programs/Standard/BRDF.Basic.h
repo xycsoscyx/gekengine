@@ -21,5 +21,6 @@ float getGaussian(float3 surfaceNormal, float3 lightDirection, float3 viewDirect
 
 float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
-    return (Math::ReciprocalPi * materialAlbedo) + getGaussian(surfaceNormal, lightDirection, viewDirection, NdotL);
+    float materialSmoothness = (1.0f - materialRoughness);
+    return (Math::ReciprocalPi * materialAlbedo) + (getGaussian(surfaceNormal, lightDirection, viewDirection, NdotL) * materialSmoothness);
 }

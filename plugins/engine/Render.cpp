@@ -674,6 +674,10 @@ namespace Gek
                                 if (FAILED(resultValue))
                                 {
                                     resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".jpg"), flags);
+                                    if (FAILED(resultValue))
+                                    {
+                                        resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".bmp"), flags);
+                                    }
                                 }
                             }
                         }

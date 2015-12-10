@@ -2,7 +2,7 @@
 <shader>
     <material>
         <maps>
-            <albedo bind="float4" loadFlags="">Texture2D</albedo>
+            <albedo bind="float4">Texture2D</albedo>
             <normal bind="float2">Texture2D</normal>
             <roughness bind="float">Texture2D</roughness>
             <metalness bind="float">Texture2D</metalness>
@@ -22,7 +22,8 @@
         <materialBuffer bind="float2">byte2</materialBuffer>
         <normalBuffer bind="half2">half2</normalBuffer>
         <depthBuffer bind="float">float</depthBuffer>
-        <compositeBuffer bind="float4" flags="mipmaps">float4</compositeBuffer>
+        <luminatedBuffer bind="float3">float4</luminatedBuffer>
+        <luminanceBuffer bind="float" flags="mipmaps">float</luminanceBuffer>
     </targets>
 
     <buffers>
@@ -57,7 +58,7 @@
 
     <block lighting="true">
         <clear>
-            <compositeBuffer>0,0,0,0</compositeBuffer>
+            <luminatedBuffer>0,0,0,0</luminatedBuffer>
         </clear>
 
         <pass mode="compute">
@@ -83,11 +84,11 @@
         <pass mode="deferred">
             <blendstates>
                 <color source="one" destination="one" operation="add" />
-                <alpha source="one" destination="one" operation="add" />
+                <writemask>rgb</writemask>
             </blendstates>
 
             <targets>
-                <compositeBuffer />
+                <luminatedBuffer />
             </targets>
 
             <resources>
@@ -108,7 +109,25 @@
     <block>
         <pass mode="deferred">
             <resources>
-                <compositeBuffer generateMipMaps="true" />
+                <luminatedBuffer />
+            </resources>
+
+            <targets>
+                <luminanceBuffer />
+            </targets>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\Luminance</source>
+            </program>
+        </pass>
+    </block>
+
+    <block>
+        <pass mode="deferred">
+            <resources>
+                <luminatedBuffer />
+                <luminanceBuffer generateMipMaps="true" />
                 <albedoBuffer />
                 <materialBuffer />
                 <normalBuffer />

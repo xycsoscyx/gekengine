@@ -385,12 +385,20 @@ namespace Gek
 
         void loadBlendTargetStates(Video::TargetBlendStates &blendStates, Gek::XmlNode &xmlBlendStatesNode)
         {
-            blendStates.writeMask = Video::ColorMask::RGBA;
-            CStringW writeMask(xmlBlendStatesNode.firstChildElement(L"writemask").getText());
-            if (writeMask.Find(L"r") >= 0) blendStates.writeMask |= Video::ColorMask::R;
-            if (writeMask.Find(L"g") >= 0) blendStates.writeMask |= Video::ColorMask::G;
-            if (writeMask.Find(L"b") >= 0) blendStates.writeMask |= Video::ColorMask::B;
-            if (writeMask.Find(L"a") >= 0) blendStates.writeMask |= Video::ColorMask::A;
+            if (xmlBlendStatesNode.hasChildElement(L"writemask"))
+            {
+                blendStates.writeMask = 0;
+                CStringW writeMask(xmlBlendStatesNode.firstChildElement(L"writemask").getText());
+                if (writeMask.Find(L"r") >= 0) blendStates.writeMask |= Video::ColorMask::R;
+                if (writeMask.Find(L"g") >= 0) blendStates.writeMask |= Video::ColorMask::G;
+                if (writeMask.Find(L"b") >= 0) blendStates.writeMask |= Video::ColorMask::B;
+                if (writeMask.Find(L"a") >= 0) blendStates.writeMask |= Video::ColorMask::A;
+
+            }
+            else
+            {
+                blendStates.writeMask = Video::ColorMask::RGBA;
+            }
 
             if (xmlBlendStatesNode.hasChildElement(L"color"))
             {

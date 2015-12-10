@@ -308,10 +308,10 @@ namespace Gek
             TargetBlendStates(void)
                 : enable(false)
                 , colorSource(BlendSource::One)
-                , colorDestination(BlendSource::Zero)
+                , colorDestination(BlendSource::One)
                 , colorOperation(BlendOperation::Add)
                 , alphaSource(BlendSource::One)
-                , alphaDestination(BlendSource::Zero)
+                , alphaDestination(BlendSource::One)
                 , alphaOperation(BlendOperation::Add)
                 , writeMask(ColorMask::RGBA)
             {

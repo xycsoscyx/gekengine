@@ -1,7 +1,7 @@
 echo off
 For /R "data/textures" %%# in (*.png,*.tga,*.jpg) Do (
     Echo %%~nx# | FIND /I "albedo" 1>NUL && (
-        release\compressor -input "%%~#" -output "%%~dpn#.dds" -format:sBC7 -overwrite
+        release\compressor -input "%%~#" -output "%%~dpn#.dds" -format:BC7 -sRGB:out -overwrite
     )
     Echo %%~nx# | FIND /I "roughness" 1>NUL && (
         release\compressor -input "%%~#" -output "%%~dpn#.dds" -format:BC4 -overwrite

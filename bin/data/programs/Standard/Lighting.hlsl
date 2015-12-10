@@ -5,10 +5,10 @@
 
 #include "BRDF.Custom.h"
 
-#define _AREA_LIGHT_SIZE 1.0f
-#define _INVERSE_SQUARE 1
+//#define _AREA_LIGHT_SIZE 1.0f
+//#define _INVERSE_SQUARE 1
 
-float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
+float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float3 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float2 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
@@ -56,29 +56,19 @@ float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 #endif
 
 #if _INVERSE_SQUARE
-        float attenuation = (lightDistanceSquared / (Lighting::list[lightIndex].radius * Lighting::list[lightIndex].radius));
-        attenuation *= attenuation;
-        attenuation = (1.0f - saturate(attenuation));
+        float falloff = (lightDistanceSquared / (Lighting::list[lightIndex].radius * Lighting::list[lightIndex].radius));
+        falloff *= falloff;
+        falloff = (1.0f - saturate(falloff));
 #else
-        float attenuation = (lightDistance / Lighting::list[lightIndex].radius);
-        attenuation = (1.0f - saturate(attenuation));
+        float falloff = (lightDistance / Lighting::list[lightIndex].radius);
+        falloff = (1.0f - saturate(falloff));
 #endif
 
-        [branch]
-        if (attenuation > 0.0f)
-        {
-            float NdotL = dot(surfaceNormal, lightDirection);
+        float NdotL = dot(surfaceNormal, lightDirection);
 
-            [branch]
-            if (NdotL > 0.0f)
-            {
-                float3 lightContribution = getBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL);
-                surfaceColor += (NdotL * lightContribution * attenuation * Lighting::list[lightIndex].color);
-            }
-        }
+        float3 lightContribution = getBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL);
+        surfaceColor += (saturate(NdotL) * lightContribution * falloff * Lighting::list[lightIndex].color);
     }
 
-    static const float3 luminance = float3(0.299f, 0.587f, 0.114f);
-    float surfaceLuminance = dot(surfaceColor, luminance);
-    return float4(surfaceColor, log2(surfaceLuminance));
+    return surfaceColor;
 }
