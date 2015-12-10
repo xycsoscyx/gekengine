@@ -850,6 +850,7 @@ namespace Gek
             {
                 auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
                 Math::Float4x4 cameraMatrix(cameraTransform.rotation, cameraTransform.position);
+                cameraMatrix *= Math::Quaternion(Math::convertDegreesToRadians(30.0f), 0.0f, 0.0f);
 
                 auto &cameraData = cameraEntity->getComponent<CameraComponent>();
 

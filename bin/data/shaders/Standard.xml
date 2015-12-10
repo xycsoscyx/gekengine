@@ -56,11 +56,27 @@
         </pass>
     </block>
 
-    <block lighting="true">
-        <clear>
-            <luminatedBuffer>0,0,0,0</luminatedBuffer>
-        </clear>
+    <block>
+        <pass mode="deferred">
+            <targets>
+                <luminatedBuffer />
+            </targets>
 
+            <resources>
+                <albedoBuffer />
+                <materialBuffer />
+                <normalBuffer />
+                <depthBuffer />
+            </resources>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\Ambient</source>
+            </program>
+        </pass>
+    </block>
+
+    <block lighting="true">
         <pass mode="compute">
             <resources>
                 <depthBuffer />

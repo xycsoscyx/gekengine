@@ -8,21 +8,8 @@ namespace Math
 
 namespace Global
 {
-    SamplerState pointSampler : register(s0)
-    {
-        Filter = MIN_MAG_MIP_POINT;
-        AddressU = Clamp;
-        AddressV = Clamp;
-    };
-
-    SamplerState linearSampler : register(s1)
-    {
-        Filter = MIN_MAG_MIP_LINEAR;
-        //MaxAnisotropy = StrToUINT32(kRender.GetAttribute(L"anisotropy"));
-        //Filter = ANISOTROPIC;
-        AddressU = Wrap;
-        AddressV = Wrap;
-    };
+    SamplerState pointSampler : register(s0);
+    SamplerState linearSampler : register(s1);
 };
 
 namespace Camera
