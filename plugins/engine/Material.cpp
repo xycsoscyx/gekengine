@@ -6,8 +6,6 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include <set>
-#include <concurrent_vector.h>
-#include <concurrent_unordered_map.h>
 #include <ppl.h>
 
 namespace Gek

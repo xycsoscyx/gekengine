@@ -6,7 +6,8 @@
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Follow.h"
 #include "GEK\Math\Matrix4x4.h"
-#include <concurrent_unordered_map.h>
+#include <map>
+#include <unordered_map>
 
 namespace Gek
 {
@@ -33,8 +34,8 @@ namespace Gek
 
     private:
         Population *population;
-        concurrency::concurrent_unordered_map<UINT32, Entity *> entityOrderMap;
-        concurrency::concurrent_unordered_map<Entity *, FollowData> entityDataMap;
+        std::map<UINT32, Entity *> entityOrderMap;
+        std::unordered_map<Entity *, FollowData> entityDataMap;
 
     public:
         FollowProcessorImplementation(void)
@@ -122,7 +123,7 @@ namespace Gek
             auto entityIterator = entityDataMap.find(entity);
             if (entityIterator != entityDataMap.end())
             {
-                entityDataMap.unsafe_erase(entityIterator);
+                entityDataMap.erase(entityIterator);
             }
         }
 

@@ -123,7 +123,7 @@
     <ClCompile Include="Follow.cpp" />
     <ClCompile Include="FollowProcessor.cpp" />
     <ClCompile Include="Light.cpp" />
-    <ClCompile Include="Size.cpp" />
+    <ClCompile Include="Scale.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -134,7 +134,7 @@
     <ClInclude Include="GEK\Components\Color.h" />
     <ClInclude Include="GEK\Components\Follow.h" />
     <ClInclude Include="GEK\Components\Light.h" />
-    <ClInclude Include="GEK\Components\Size.h" />
+    <ClInclude Include="GEK\Components\Scale.h" />
     <ClInclude Include="GEK\Components\Transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

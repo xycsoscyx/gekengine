@@ -14,14 +14,14 @@
 #include "GEK\Engine\Render.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Components\Size.h"
+#include "GEK\Components\Scale.h"
 #include "GEK\Components\Color.h"
 #include "GEK\Engine\Model.h"
-#include <concurrent_unordered_map.h>
-#include <concurrent_vector.h>
 #include <memory>
 #include <map>
 #include <set>
+#include <concurrent_unordered_map.h>
+#include <concurrent_vector.h>
 #include <ppl.h>
 #include <algorithm>
 #include <array>
@@ -397,13 +397,13 @@ namespace Gek
         {
             Math::Float4x4 matrix;
             Math::Float4 color;
-            Math::Float3 size;
+            Math::Float3 scale;
             float distance;
 
-            InstanceData(const Math::Float4x4 &matrix, const Math::Float4 &color, const Math::Float3 &size, float distance)
+            InstanceData(const Math::Float4x4 &matrix, const Math::Float4 &color, const Math::Float3 &scale, float distance)
                 : matrix(matrix)
                 , color(color)
-                , size(size)
+                , scale(scale)
                 , distance(distance)
             {
             }
@@ -416,9 +416,9 @@ namespace Gek
 
         PluginHandle plugin;
 
-        concurrency::concurrent_unordered_map<ModelData *, std::function<HRESULT(void)>> dataLoadQueue;
-        concurrency::concurrent_unordered_map<CStringW, ModelData> dataMap;
-        concurrency::concurrent_unordered_map<Entity *, ModelData *> dataEntityList;
+        std::unordered_map<ModelData *, std::function<HRESULT(void)>> dataLoadQueue;
+        std::unordered_map<CStringW, ModelData> dataMap;
+        std::unordered_map<Entity *, ModelData *> dataEntityList;
         ResourceHandle instanceBuffer;
 
     public:
@@ -749,7 +749,7 @@ namespace Gek
             auto dataEntityIterator = dataEntityList.find(entity);
             if (dataEntityIterator != dataEntityList.end())
             {
-                dataEntityList.unsafe_erase(dataEntityIterator);
+                dataEntityList.erase(dataEntityIterator);
             }
         }
 
@@ -767,18 +767,16 @@ namespace Gek
                 Entity *entity = dataEntity.first;
                 ModelData *data = dataEntity.second;
 
-                Gek::Math::Float3 size(1.0f, 1.0f, 1.0f);
-                if (entity->hasComponent<SizeComponent>())
+                Gek::Math::Float3 scale(1.0f, 1.0f, 1.0f);
+                if (entity->hasComponent<ScaleComponent>())
                 {
-                    size.set(entity->getComponent<SizeComponent>());
+                    scale.set(entity->getComponent<ScaleComponent>());
                 }
 
-                Gek::Shape::AlignedBox alignedBox(data->alignedBox);
-                alignedBox.minimum *= size;
-                alignedBox.maximum *= size;
-
                 const auto &transformComponent = entity->getComponent<TransformComponent>();
-                Shape::OrientedBox orientedBox(alignedBox, transformComponent.rotation, transformComponent.position);
+                Shape::OrientedBox orientedBox(data->alignedBox, transformComponent.rotation, transformComponent.position);
+                orientedBox.halfsize *= scale;
+
                 if (viewFrustum->isVisible(orientedBox))
                 {
                     Gek::Math::Float4 color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -787,7 +785,7 @@ namespace Gek
                         color = entity->getComponent<ColorComponent>();
                     }
 
-                    visibleList[data].push_back(InstanceData(Math::Float4x4(transformComponent.rotation, transformComponent.position), color, size, cameraTransform.position.getDistance(transformComponent.position)));
+                    visibleList[data].push_back(InstanceData(Math::Float4x4(transformComponent.rotation, transformComponent.position), color, scale, cameraTransform.position.getDistance(transformComponent.position)));
                 }
             });
 
@@ -800,7 +798,7 @@ namespace Gek
                 if (loadIterator != dataLoadQueue.end())
                 {
                     auto load = (*loadIterator).second;
-                    dataLoadQueue.unsafe_erase(loadIterator);
+                    dataLoadQueue.erase(loadIterator);
                     load();
                 }
 

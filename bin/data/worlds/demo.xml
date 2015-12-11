@@ -10,20 +10,26 @@
 
         <entity name="player">
             <transform position="0, 1, 0" rotation="0, 3.14159/2, 0" />
-            <player_body outer_radius="1" inner_radius=".25" height="1.9" stair_step=".25" />
-            <model>*sphere|debug//r10_m0|1</model>
+            <player_body outer_radius="3" inner_radius="1" height="6" stair_step="1.5" />
             <mass>250</mass>
         </entity>
 
         <entity name="player_head">
             <transform/>
-            <follow distance="0, 1.9, 0" mode="offset">player</follow>
+            <follow distance="0, 5.5, 0" mode="offset">player</follow>
+            <model>*sphere|debug//r10_m0|1</model>
+            <scale>.8, .8, .8</scale>
+        </entity>
+
+        <entity name="player_target">
+            <transform/>
+            <follow distance="0, 0, 5" mode="offset">player_head</follow>
         </entity>
 
         <entity>
             <transform />
+            <follow distance="1.5, .5, -10" speed="0.5">player_target</follow>
             <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" />
-            <follow distance=".5, 0, -10" speed="0.5">player_head</follow>
         </entity>
 
         <!--entity>

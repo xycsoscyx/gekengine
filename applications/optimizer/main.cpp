@@ -46,7 +46,7 @@ public:
     }
 };
 
-void GetMeshes(const aiScene *scene, const aiNode *node, std::multimap<CStringA, Model> &modelList, Gek::Shape::AlignedBox &boundingBox)
+void GetMeshes(const Gek::Math::Float3 &scale, const aiScene *scene, const aiNode *node, std::multimap<CStringA, Model> &modelList, Gek::Shape::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
@@ -129,6 +129,7 @@ void GetMeshes(const aiScene *scene, const aiNode *node, std::multimap<CStringA,
                     vertex.position.set(mesh->mVertices[vertexIndex].x,
                                         mesh->mVertices[vertexIndex].y,
                                         mesh->mVertices[vertexIndex].z);
+                    vertex.position *= scale;
                     boundingBox.extend(vertex.position);
 
                     vertex.texCoord.set(mesh->mTextureCoords[0][vertexIndex].x,
@@ -158,7 +159,7 @@ void GetMeshes(const aiScene *scene, const aiNode *node, std::multimap<CStringA,
 
         for (UINT32 childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            GetMeshes(scene, node->mChildren[childIndex], modelList, boundingBox);
+            GetMeshes(scale, scene, node->mChildren[childIndex], modelList, boundingBox);
         }
     }
 }
@@ -175,6 +176,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     bool generateNormals = false;
     bool smoothNormals = false;
     float smoothingAngle = 80.0f;
+    Gek::Math::Float3 scale(1.0f, 1.0f, 1.0f);
     for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
     {
         CStringW argument(argumentList[argumentIndex]);
@@ -205,6 +207,10 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         {
             smoothNormals = true;
             smoothingAngle = Gek::String::to<float>(argument.Tokenize(L":", position));
+        }
+        else if (operation.CompareNoCase(L"-scale") == 0)
+        {
+            scale = Gek::String::to<Gek::Math::Float3>(argument.Tokenize(L":", position));
         }
     }
 
@@ -266,7 +272,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
 
         Gek::Shape::AlignedBox boundingBox;
         std::multimap<CStringA, Model> modelList;
-        GetMeshes(scene, scene->mRootNode, modelList, boundingBox);
+        GetMeshes(scale, scene, scene->mRootNode, modelList, boundingBox);
         printf("< Num. Materials: %d\r\n", modelList.size());
 
         std::unordered_map<CStringA, Model> materialModelList;

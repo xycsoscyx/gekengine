@@ -15,8 +15,6 @@
 #include <DirectXTex.h>
 #include <algorithm>
 #include <memory>
-#include <concurrent_unordered_map.h>
-#include <concurrent_vector.h>
 #include <wincodec.h>
 
 #pragma comment(lib, "d3d11.lib")

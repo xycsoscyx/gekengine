@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GEK\Context\Observable.h"
-#include <concurrent_unordered_set.h>
+#include <unordered_set>
 #include <atlbase.h>
 #include <functional>
 
@@ -38,7 +38,7 @@ namespace Gek
         };
 
     private:
-        concurrency::concurrent_unordered_set<Observer *> observerList;
+        std::unordered_set<Observer *> observerList;
 
     public:
         virtual ~ObservableMixin(void);

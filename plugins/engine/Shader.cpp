@@ -7,8 +7,6 @@
 #include "GEK\Utility\FileSystem.h"
 #include <atlpath.h>
 #include <set>
-#include <concurrent_vector.h>
-#include <concurrent_unordered_map.h>
 #include <ppl.h>
 
 namespace Gek

@@ -7,26 +7,26 @@
 
 namespace Gek
 {
-    struct SizeComponent
+    struct ScaleComponent
     {
-        float value;
+        Math::Float3 value;
 
-        SizeComponent(void);
+        ScaleComponent(void);
         HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
         HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
 
-        inline operator float&()
+        inline operator Math::Float3&()
         {
             return value;
         }
 
-        inline operator const float&() const
+        inline operator const Math::Float3&() const
         {
             return value;
         }
 
 
-        inline float &operator = (float value)
+        inline Math::Float3 &operator = (Math::Float3 value)
         {
             this->value = value;
             return this->value;

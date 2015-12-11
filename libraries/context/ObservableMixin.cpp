@@ -58,7 +58,7 @@ namespace Gek
         auto observerIterator = observerList.find(observer);
         if (observerIterator != observerList.end())
         {
-            observerList.unsafe_erase(observerIterator);
+            observerList.erase(observerIterator);
             resultValue = S_OK;
         }
 

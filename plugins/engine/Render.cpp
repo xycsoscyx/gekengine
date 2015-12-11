@@ -18,71 +18,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Shape\Sphere.h"
 #include <set>
-#include <concurrent_vector.h>
-#include <concurrent_unordered_map.h>
 #include <ppl.h>
-
-namespace std
-{
-    template <>
-    struct hash<LPCSTR>
-    {
-        size_t operator()(const LPCSTR &value) const
-        {
-            return hash<string>()(string(value));
-        }
-    };
-
-    template <>
-    struct hash<LPCWSTR>
-    {
-        size_t operator()(const LPCWSTR &value) const
-        {
-            return hash<wstring>()(wstring(value));
-        }
-    };
-
-    inline size_t hashCombine(const size_t upper, const size_t lower)
-    {
-        return upper ^ (lower + 0x9e3779b9 + (upper << 6) + (upper >> 2));
-    }
-
-    inline size_t hashCombine(void)
-    {
-        return 0;
-    }
-
-    template <typename T, typename... Ts>
-    size_t hashCombine(const T& t, const Ts&... ts)
-    {
-        size_t seed = hash<T>()(t);
-        if (sizeof...(ts) == 0)
-        {
-            return seed;
-        }
-
-        size_t remainder = hashCombine(ts...);
-        return hashCombine(seed, remainder);
-    }
-
-    template <typename CLASS>
-    struct hash<CComPtr<CLASS>>
-    {
-        size_t operator()(const CComPtr<CLASS> &value) const
-        {
-            return hash<LPCVOID>()(value.p);
-        }
-    };
-
-    template <typename CLASS>
-    struct hash<CComQIPtr<CLASS>>
-    {
-        size_t operator()(const CComQIPtr<CLASS> &value) const
-        {
-            return hash<LPCVOID>()(value.p);
-        }
-    };
-};
 
 namespace Gek
 {
@@ -93,8 +29,8 @@ namespace Gek
     {
     private:
         UINT64 nextIdentifier;
-        concurrency::concurrent_unordered_map<std::size_t, HANDLE> hashMap;
-        concurrency::concurrent_unordered_map<HANDLE, CComPtr<IUnknown>> resourceMap;
+        std::unordered_map<std::size_t, HANDLE> hashMap;
+        std::unordered_map<HANDLE, CComPtr<IUnknown>> resourceMap;
 
     public:
         ObjectManager(void)
@@ -461,7 +397,7 @@ namespace Gek
 
         STDMETHODIMP_(RenderStatesHandle) createRenderStates(const Video::RenderStates &renderStates)
         {
-            std::size_t hash = std::hashCombine(static_cast<UINT8>(renderStates.fillMode),
+            std::size_t hash = std::hash_combine(static_cast<UINT8>(renderStates.fillMode),
                 static_cast<UINT8>(renderStates.cullMode),
                 renderStates.frontCounterClockwise,
                 renderStates.depthBias,
@@ -481,7 +417,7 @@ namespace Gek
 
         STDMETHODIMP_(DepthStatesHandle) createDepthStates(const Video::DepthStates &depthStates)
         {
-            std::size_t hash = std::hashCombine(depthStates.enable,
+            std::size_t hash = std::hash_combine(depthStates.enable,
                 static_cast<UINT8>(depthStates.writeMask),
                 static_cast<UINT8>(depthStates.comparisonFunction),
                 depthStates.stencilEnable,
@@ -505,7 +441,7 @@ namespace Gek
 
         STDMETHODIMP_(BlendStatesHandle) createBlendStates(const Video::UnifiedBlendStates &blendStates)
         {
-            std::size_t hash = std::hashCombine(blendStates.enable,
+            std::size_t hash = std::hash_combine(blendStates.enable,
                 static_cast<UINT8>(blendStates.colorSource),
                 static_cast<UINT8>(blendStates.colorDestination),
                 static_cast<UINT8>(blendStates.colorOperation),
@@ -526,7 +462,7 @@ namespace Gek
             std::size_t hash = 0;
             for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
             {
-                std::hashCombine(hash, std::hashCombine(blendStates.targetStates[renderTarget].enable,
+                std::hash_combine(hash, std::hash_combine(blendStates.targetStates[renderTarget].enable,
                     static_cast<UINT8>(blendStates.targetStates[renderTarget].colorSource),
                     static_cast<UINT8>(blendStates.targetStates[renderTarget].colorDestination),
                     static_cast<UINT8>(blendStates.targetStates[renderTarget].colorOperation),
@@ -695,12 +631,12 @@ namespace Gek
 
         STDMETHODIMP_(ProgramHandle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
-            std::size_t hash = std::hashCombine(fileName, entryFunction);
+            std::size_t hash = std::hash_combine(fileName, entryFunction);
             if (defineList)
             {
                 for (auto &define : (*defineList))
                 {
-                    hash = std::hashCombine(hash, std::hashCombine(define.first, define.second));
+                    hash = std::hash_combine(hash, std::hash_combine(define.first, define.second));
                 }
             }
 
@@ -714,12 +650,12 @@ namespace Gek
 
         STDMETHODIMP_(ProgramHandle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
-            std::size_t hash = std::hashCombine(fileName, entryFunction);
+            std::size_t hash = std::hash_combine(fileName, entryFunction);
             if (defineList)
             {
                 for (auto &define : (*defineList))
                 {
-                    hash = std::hashCombine(hash, std::hashCombine(define.first, define.second));
+                    hash = std::hash_combine(hash, std::hash_combine(define.first, define.second));
                 }
             }
 

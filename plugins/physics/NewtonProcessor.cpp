@@ -9,7 +9,7 @@
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Components\Size.h"
+#include "GEK\Components\Scale.h"
 #include "GEK\Newton\Mass.h"
 #include "GEK\Newton\DynamicBody.h"
 #include "GEK\Newton\Player.h"
@@ -21,7 +21,6 @@
 #include <dNewtonPlayerManager.h>
 #include <dNewtonCollision.h>
 #include <dNewtonDynamicBody.h>
-#include <concurrent_unordered_map.h>
 #include <memory>
 #include <map>
 
@@ -37,6 +36,7 @@
 
 namespace Gek
 {
+    static const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
     class NewtonBodyMixin : virtual public UnknownMixin
     {
     private:
@@ -94,7 +94,7 @@ namespace Gek
         // dNewtonBody
         void OnBodyTransform(const dFloat* const newtonMatrix, int threadHandle)
         {
-            const Math::Float4x4 &matrix = *reinterpret_cast<const Math::Float4x4 *>(newtonMatrix);
+            Math::Float4x4 matrix(newtonMatrix);
             auto &transformComponent = getEntity()->getComponent<TransformComponent>();
             transformComponent.position = matrix.translation;
             transformComponent.rotation = matrix;
@@ -103,8 +103,8 @@ namespace Gek
         // dNewtonDynamicBody
         void OnForceAndTorque(dFloat frameTime, int threadHandle)
         {
-            auto &massComponent = getEntity()->getComponent<MassComponent>();
-            AddForce(Math::Float4(0.0f, (-9.81f * massComponent), 0.0f, 0.0f).data);
+            float mass = getEntity()->getComponent<MassComponent>();
+            AddForce((Gravity * mass).data);
         }
     };
 
@@ -182,7 +182,7 @@ namespace Gek
         {
             float lateralSpeed = ((moveForward ? -1.0f : 0.0f) + (moveBackward ? 1.0f : 0.0f)) * moveSpeed;
             float strafeSpeed = ((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * moveSpeed;
-            SetPlayerVelocity(lateralSpeed, strafeSpeed, jumpCharge, viewAngle, Math::Float4(0.0f, -9.81f, 0.0f, 0.0f)/*GetNewtonSystem()->GetGravity()*/.data, frameTime);
+            SetPlayerVelocity(lateralSpeed, strafeSpeed, jumpCharge, viewAngle, Gravity.data, frameTime);
             if (jumpCharge > 0.0f)
             {
                 jumpCharge = 0.0f;
@@ -220,7 +220,8 @@ namespace Gek
                 }
                 else
                 {
-                    jumpCharge = ((float(GetTickCount() - jumpStart) / 100.0f) * jumpHeight);
+                    float jumpTime = (float(GetTickCount() - jumpStart) / 1000.0f);
+                    jumpCharge = (std::max(jumpTime, 1.0f) * jumpHeight * 3.0f);
                 }
             }
         }
@@ -282,7 +283,7 @@ namespace Gek
         Math::Float3 gravity;
         std::vector<Surface> surfaceList;
         std::map<std::size_t, INT32> surfaceIndexList;
-        concurrency::concurrent_unordered_map<Entity *, CComPtr<IUnknown>> bodyList;
+        std::unordered_map<Entity *, CComPtr<IUnknown>> bodyList;
         std::unordered_map<std::size_t, std::unique_ptr<dNewtonCollision>> collisionList;
 
     public:
@@ -416,16 +417,15 @@ namespace Gek
         {
             REQUIRE_RETURN(population, nullptr);
 
-            Math::Float3 size(1.0f, 1.0f, 1.0f);
-            if (entity->hasComponent<SizeComponent>())
+            Math::Float3 scale(1.0f, 1.0f, 1.0f);
+            if (entity->hasComponent<ScaleComponent>())
             {
-                size.set(entity->getComponent<SizeComponent>());
+                scale.set(entity->getComponent<ScaleComponent>());
             }
 
-            CStringW shape(Gek::String::format(L"%s:%f,%f,%f", dynamicBodyComponent.shape.GetString(), size.x, size.y, size.z));
-            std::size_t shapeHash = std::hash<CStringW>()(shape);
-
             dNewtonCollision *newtonCollision = nullptr;
+            std::size_t shapeHash = std::hash<CStringW>()(dynamicBodyComponent.shape);
+            shapeHash = std::hash_combine(shapeHash, std::hash<float>()(scale.x), std::hash<float>()(scale.y), std::hash<float>()(scale.z));
             auto collisionIterator = collisionList.find(shapeHash);
             if (collisionIterator != collisionList.end())
             {
@@ -438,42 +438,55 @@ namespace Gek
             {
                 gekLogScope();
 
+                int position = 0;
+                CStringW shape(dynamicBodyComponent.shape.Tokenize(L"|", position));
+                CStringW parameters(dynamicBodyComponent.shape.Tokenize(L"|", position));
+
                 collisionList[shapeHash].reset();
                 if (dynamicBodyComponent.shape.CompareNoCase(L"*cube") == 0)
                 {
+                    Math::Float3 size(String::to<Math::Float3>(parameters));
                     newtonCollision = new dNewtonCollisionBox(this, size.x, size.y, size.z, 1);
                 }
                 else if (dynamicBodyComponent.shape.CompareNoCase(L"*sphere") == 0)
                 {
-                    newtonCollision = new dNewtonCollisionSphere(this, size.x, 1);
+                    float size = String::to<float>(parameters);
+                    newtonCollision = new dNewtonCollisionSphere(this, size, 1);
                 }
                 else if (dynamicBodyComponent.shape.CompareNoCase(L"*cone") == 0)
                 {
+                    Math::Float2 size(String::to<Math::Float2>(parameters));
                     newtonCollision = new dNewtonCollisionCone(this, size.x, size.y, 1);
                 }
                 else if (dynamicBodyComponent.shape.CompareNoCase(L"*capsule") == 0)
                 {
+                    Math::Float2 size(String::to<Math::Float2>(parameters));
                     newtonCollision = new dNewtonCollisionCapsule(this, size.x, size.y, 1);
                 }
                 else if (dynamicBodyComponent.shape.CompareNoCase(L"*cylinder") == 0)
                 {
+                    Math::Float2 size(String::to<Math::Float2>(parameters));
                     newtonCollision = new dNewtonCollisionCylinder(this, size.x, size.y, 1);
                 }
                 else if (dynamicBodyComponent.shape.CompareNoCase(L"*tapered_capsule") == 0)
                 {
+                    Math::Float3 size(String::to<Math::Float3>(parameters));
                     newtonCollision = new dNewtonCollisionTaperedCapsule(this, size.x, size.y, size.z, 1);
                 }
                 else if (dynamicBodyComponent.shape.CompareNoCase(L"*tapered_cylinder") == 0)
                 {
+                    Math::Float3 size(String::to<Math::Float3>(parameters));
                     newtonCollision = new dNewtonCollisionTaperedCylinder(this, size.x, size.y, size.z, 1);
                 }
                 else if (dynamicBodyComponent.shape.CompareNoCase(L"*chamfer_cylinder") == 0)
                 {
+                    Math::Float2 size(String::to<Math::Float2>(parameters));
                     newtonCollision = new dNewtonCollisionChamferedCylinder(this, size.x, size.y, 1);
                 }
 
                 if (newtonCollision)
                 {
+                    newtonCollision->SetScale(scale.x, scale.y, scale.z);
                     collisionList[shapeHash].reset(newtonCollision);
                 }
             }
@@ -737,7 +750,7 @@ namespace Gek
             auto bodyIterator = bodyList.find(entity);
             if (bodyIterator != bodyList.end())
             {
-                bodyList.unsafe_erase(bodyIterator);
+                bodyList.erase(bodyIterator);
             }
         }
 

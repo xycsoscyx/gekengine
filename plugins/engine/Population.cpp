@@ -6,8 +6,6 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include <set>
-#include <concurrent_vector.h>
-#include <concurrent_unordered_map.h>
 #include <ppl.h>
 
 #include "GEK\Components\Transform.h"
@@ -72,9 +70,9 @@ namespace Gek
         std::unordered_map<CStringW, std::type_index> componentNameList;
         std::unordered_map<std::type_index, CComPtr<Component>> componentList;
 
-        concurrency::concurrent_vector<CAdapt<CComPtr<Entity>>> entityList;
-        concurrency::concurrent_unordered_map<CStringW, Entity *> namedEntityList;
-        concurrency::concurrent_vector<Entity *> killEntityList;
+        std::vector<CAdapt<CComPtr<Entity>>> entityList;
+        std::unordered_map<CStringW, Entity *> namedEntityList;
+        std::vector<Entity *> killEntityList;
 
     public:
         PopulationImplementation(void)
@@ -144,7 +142,7 @@ namespace Gek
 
                 if (namedEntityIterator != namedEntityList.end())
                 {
-                    namedEntityList.unsafe_erase(namedEntityIterator);
+                    namedEntityList.erase(namedEntityIterator);
                 }
 
                 if (entityList.size() > 1)
