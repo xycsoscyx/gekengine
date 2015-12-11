@@ -51,7 +51,6 @@ namespace Gek
             this->y = ((sinX * cosY * sinZ) + (cosX * sinY * cosZ));
             this->z = ((cosX * cosY * sinZ) - (sinX * sinY * cosZ));
             this->w = ((cosX * cosY * cosZ) + (sinX * sinY * sinZ));
-            normalize();
         }
 
         void Quaternion::setRotation(const Float3 &axis, float radians)
@@ -62,7 +61,6 @@ namespace Gek
             y = (normal.y * sinAngle);
             z = (normal.z * sinAngle);
             w = std::cos(radians * 0.5f);
-            normalize();
         }
 
         void Quaternion::setRotation(const Float4x4 &rotation)
@@ -103,8 +101,6 @@ namespace Gek
                     w = ((rotation.table[1][0] - rotation.table[0][1]) / denominator);
                 }
             }
-
-            normalize();
         }
 
         float Quaternion::getLengthSquared(void) const
@@ -162,15 +158,16 @@ namespace Gek
 
         Quaternion Quaternion::slerp(const Quaternion &rotation, float factor) const
         {
-            Quaternion adjustedRotation(rotation);
-            float dot(this->dot(rotation));
+            Quaternion normalA(getNormal());
+            Quaternion normalB(rotation.getNormal());
+            float dot(normalA.dot(normalB));
             if (dot < 0.0f)
             {
                 dot = -dot;
-                adjustedRotation.x = -adjustedRotation.x;
-                adjustedRotation.y = -adjustedRotation.y;
-                adjustedRotation.z = -adjustedRotation.z;
-                adjustedRotation.w = -adjustedRotation.w;
+                normalB.x = -normalB.x;
+                normalB.y = -normalB.y;
+                normalB.z = -normalB.z;
+                normalB.w = -normalB.w;
             }
 
             if (dot < 1.0f)
@@ -179,10 +176,10 @@ namespace Gek
                 float sinTheta = std::sin(theta);
                 float factorA = (std::sin((1.0f - factor) * theta) / sinTheta);
                 float factorB = (std::sin(factor * theta) / sinTheta);
-                return Quaternion(Math::blend(x, adjustedRotation.x, factorA, factorB),
-                    Math::blend(y, adjustedRotation.y, factorA, factorB),
-                    Math::blend(z, adjustedRotation.z, factorA, factorB),
-                    Math::blend(w, adjustedRotation.w, factorA, factorB));
+                return Quaternion(Math::blend(normalA.x, normalB.x, factorA, factorB),
+                                  Math::blend(normalA.y, normalB.y, factorA, factorB),
+                                  Math::blend(normalA.z, normalB.z, factorA, factorB),
+                                  Math::blend(normalA.w, normalB.w, factorA, factorB));
             }
             else
             {

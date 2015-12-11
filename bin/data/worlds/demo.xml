@@ -23,7 +23,7 @@
         <entity>
             <transform />
             <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" />
-            <follow distance=".5, 0, -3" speed="0.5">player_head</follow>
+            <follow distance=".5, 0, -10" speed="0.5">player_head</follow>
         </entity>
 
         <!--entity>

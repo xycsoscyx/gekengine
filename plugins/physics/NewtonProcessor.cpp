@@ -13,6 +13,7 @@
 #include "GEK\Newton\Mass.h"
 #include "GEK\Newton\DynamicBody.h"
 #include "GEK\Newton\Player.h"
+#include "GEK\Math\Common.h"
 #include "GEK\Math\Matrix4x4.h"
 #include "GEK\Shape\AlignedBox.h"
 #include <Newton.h>
@@ -25,9 +26,9 @@
 #include <map>
 
 #ifdef _DEBUG
-#pragma comment(lib, "newton.lib")
-#pragma comment(lib, "dNewton.lib")
-#pragma comment(lib, "dContainers.lib")
+#pragma comment(lib, "newton_d.lib")
+#pragma comment(lib, "dNewton_d.lib")
+#pragma comment(lib, "dContainers_d.lib")
 #else
 #pragma comment(lib, "newton.lib")
 #pragma comment(lib, "dNewton.lib")
@@ -137,13 +138,15 @@ namespace Gek
             , dNewtonPlayerManager::dNewtonPlayer(newtonPlayerManager, nullptr, massComponent, playerComponent.outerRadius, playerComponent.innerRadius,
                 playerComponent.height, playerComponent.stairStep, Math::Float4(0.0f, 1.0f, 0.0f, 0.0f).data, Math::Float4(0.0f, 0.0f, -1.0f, 0.0f).data, 1)
             , height(playerComponent.height)
-            , jumpHeight(height * 0.75f)
+            , jumpHeight(playerComponent.height * 0.75f)
             , moveSpeed(5.0f)
+            , viewAngle(0.0f)
             , moveForward(false)
             , moveBackward(false)
             , strafeLeft(false)
             , strafeRight(false)
             , jumpCharge(0.0f)
+            , jumpStart(0)
             , crouching(false)
         {
             SetMatrix(Math::Float4x4(transformComponent.rotation, transformComponent.position).data);
@@ -168,10 +171,9 @@ namespace Gek
         // dNewtonBody
         void OnBodyTransform(const dFloat* const newtonMatrix, int threadHandle)
         {
-            const Math::Float4x4 &matrix = *reinterpret_cast<const Math::Float4x4 *>(newtonMatrix);
+            Math::Float4x4 matrix(newtonMatrix);
             auto &transformComponent = getEntity()->getComponent<TransformComponent>();
             transformComponent.position = matrix.translation;
-            transformComponent.position.y += height;
             transformComponent.rotation = matrix;
         }
 
@@ -218,7 +220,7 @@ namespace Gek
                 }
                 else
                 {
-                    jumpCharge = ((float(GetTickCount() - jumpStart) / 1000.0f) * jumpHeight);
+                    jumpCharge = ((float(GetTickCount() - jumpStart) / 100.0f) * jumpHeight);
                 }
             }
         }
@@ -684,10 +686,6 @@ namespace Gek
             {
                 onFree();
             }
-        }
-
-        static void bodySerialization(NewtonBody* const body, void* const bodyUserData, NewtonSerializeCallback serializeCallback, void* const serializeHandle)
-        {
         }
 
         STDMETHODIMP_(void) onFree(void)
