@@ -53,6 +53,7 @@ namespace Gek
         STDMETHOD_(void, onUpdateBegin)             (THIS_ float frameTime) { };
         STDMETHOD_(void, onUpdate)                  (THIS_ float frameTime) { };
         STDMETHOD_(void, onUpdateEnd)               (THIS_ float frameTime) { };
+        STDMETHOD_(void, onUpdateDone)              (THIS_ float frameTime) { };
     };
 
     DECLARE_INTERFACE_IID(PopulationRegistration, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5");

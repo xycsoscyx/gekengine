@@ -173,24 +173,21 @@ namespace Gek
                 adjustedRotation.w = -adjustedRotation.w;
             }
 
-            if (dot > 1.0f)
+            if (dot < 1.0f)
             {
-                return rotation;
+                float theta = std::acos(dot);
+                float sinTheta = std::sin(theta);
+                float factorA = (std::sin((1.0f - factor) * theta) / sinTheta);
+                float factorB = (std::sin(factor * theta) / sinTheta);
+                return Quaternion(Math::blend(x, adjustedRotation.x, factorA, factorB),
+                    Math::blend(y, adjustedRotation.y, factorA, factorB),
+                    Math::blend(z, adjustedRotation.z, factorA, factorB),
+                    Math::blend(w, adjustedRotation.w, factorA, factorB));
             }
-
-            float theta = std::acos(dot);
-            float sTheta = std::sin(theta);
-            if (sTheta == 0.0f)
+            else
             {
-                return rotation;
+                return lerp(rotation, factor);
             }
-
-            float factorA = sin((1.0f - factor)*theta) / sTheta;
-            float factorB = sin(factor*theta) / sTheta;
-            return Quaternion(Math::blend(x, adjustedRotation.x, factorA, factorB),
-                              Math::blend(y, adjustedRotation.y, factorA, factorB),
-                              Math::blend(z, adjustedRotation.z, factorA, factorB),
-                              Math::blend(w, adjustedRotation.w, factorA, factorB));
         }
 
         bool Quaternion::operator == (const Quaternion &rotation) const

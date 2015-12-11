@@ -126,7 +126,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onUpdate(float frameTime)
+        STDMETHODIMP_(void) onUpdateEnd(float frameTime)
         {
             for (auto &entityOrderPair : entityOrderMap)
             {
@@ -144,8 +144,8 @@ namespace Gek
                 }
                 else
                 {
-                    //followData.rotation = followData.rotation.slerp(targetTransformComponent.rotation, followComponent.speed);
-                    followData.rotation = targetTransformComponent.rotation;
+                    followData.rotation = followData.rotation.slerp(targetTransformComponent.rotation, followComponent.speed);
+                    //followData.rotation = targetTransformComponent.rotation;
 
                     Math::Float3 position(targetTransformComponent.position + followData.rotation * followComponent.distance);
 

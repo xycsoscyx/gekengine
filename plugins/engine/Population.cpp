@@ -134,6 +134,7 @@ namespace Gek
             ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onUpdateBegin, std::placeholders::_1, frameTime)));
             ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onUpdate, std::placeholders::_1, frameTime)));
             ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onUpdateEnd, std::placeholders::_1, frameTime)));
+            ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onUpdateDone, std::placeholders::_1, frameTime)));
             for (auto const killEntity : killEntityList)
             {
                 auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity *> &namedEntity) -> bool

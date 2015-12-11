@@ -844,7 +844,7 @@ namespace Gek
             blendStateManager.clearResources();
         }
 
-        STDMETHODIMP_(void) onUpdateEnd(float frameTime)
+        STDMETHODIMP_(void) onUpdateDone(float frameTime)
         {
             population->listEntities<TransformComponent, CameraComponent>([&](Entity *cameraEntity) -> void
             {
