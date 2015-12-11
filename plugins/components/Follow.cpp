@@ -1,57 +1,51 @@
 #include "GEK\Components\Follow.h"
 #include "GEK\Context\ContextUserMixin.h"
-#include "GEK\Engine\BaseComponent.h"
+#include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
 
 namespace Gek
 {
-    namespace Engine
+    FollowComponent::FollowComponent(void)
+        : speed(1.0f)
     {
-        namespace Components
+    }
+
+    HRESULT FollowComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    {
+        componentParameterList[L""] = target;
+        componentParameterList[L"mode"] = mode;
+        componentParameterList[L"distance"] = String::from(distance);
+        componentParameterList[L"speed"] = String::from(speed);
+        return S_OK;
+    }
+
+    HRESULT FollowComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    {
+        setParameter(componentParameterList, L"", target, [](LPCWSTR value) -> LPCWSTR { return value; });
+        setParameter(componentParameterList, L"mode", mode, [](LPCWSTR value) -> LPCWSTR { return value; });
+        setParameter(componentParameterList, L"distance", distance, String::to<Math::Float3>);
+        setParameter(componentParameterList, L"speed", speed, String::to<float>);
+        return S_OK;
+    }
+
+    class FollowImplementation : public ContextUserMixin
+        , public ComponentMixin<FollowComponent>
+    {
+    public:
+        FollowImplementation(void)
         {
-            namespace Follow
-            {
-                Data::Data(void)
-                {
-                }
+        }
 
-                HRESULT Data::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
-                {
-                    componentParameterList[L""] = target;
-                    componentParameterList[L"offset"] = String::from(offset);
-                    componentParameterList[L"rotation"] = String::from(rotation);
-                    return S_OK;
-                }
+        BEGIN_INTERFACE_LIST(FollowImplementation)
+            INTERFACE_LIST_ENTRY_COM(Component)
+        END_INTERFACE_LIST_USER
 
-                HRESULT Data::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
-                {
-                    setParameter(componentParameterList, L"", target, [](LPCWSTR value) -> LPCWSTR { return value; });
-                    setParameter(componentParameterList, L"offset", offset, String::to<Math::Float4>);
-                    setParameter(componentParameterList, L"rotation", rotation, String::to<Math::Quaternion>);
-                    return S_OK;
-                }
+        // Component
+        STDMETHODIMP_(LPCWSTR) getName(void) const
+        {
+            return L"follow";
+        }
+    };
 
-                class Component : public ContextUserMixin
-                    , public BaseComponent<Data>
-                {
-                public:
-                    Component(void)
-                    {
-                    }
-
-                    BEGIN_INTERFACE_LIST(Component)
-                        INTERFACE_LIST_ENTRY_COM(Engine::Component::Interface)
-                    END_INTERFACE_LIST_USER
-
-                    // Component::Interface
-                    STDMETHODIMP_(LPCWSTR) getName(void) const
-                    {
-                        return L"follower";
-                    }
-                };
-
-                REGISTER_CLASS(Component)
-            }; // namespace Follow
-        }; // namespace Components
-    }; // namespace Engine
-}; // namespace Gek
+    REGISTER_CLASS(FollowImplementation)
+}; // name

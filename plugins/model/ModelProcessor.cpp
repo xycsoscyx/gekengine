@@ -359,7 +359,6 @@ namespace Gek
     static const UINT32 MaxInstanceCount = 500;
 
     class ModelProcessorImplementation : public ContextUserMixin
-        , public ObservableMixin
         , public PopulationObserver
         , public RenderObserver
         , public Processor
@@ -437,7 +436,6 @@ namespace Gek
         }
 
         BEGIN_INTERFACE_LIST(ModelProcessorImplementation)
-            INTERFACE_LIST_ENTRY_COM(Observable)
             INTERFACE_LIST_ENTRY_COM(PopulationObserver)
             INTERFACE_LIST_ENTRY_COM(RenderObserver)
             INTERFACE_LIST_ENTRY_COM(Processor)

@@ -51,6 +51,7 @@ namespace Gek
             this->y = ((sinX * cosY * sinZ) + (cosX * sinY * cosZ));
             this->z = ((cosX * cosY * sinZ) - (sinX * sinY * cosZ));
             this->w = ((cosX * cosY * cosZ) + (sinX * sinY * sinZ));
+            normalize();
         }
 
         void Quaternion::setRotation(const Float3 &axis, float radians)
@@ -61,6 +62,7 @@ namespace Gek
             y = (normal.y * sinAngle);
             z = (normal.z * sinAngle);
             w = std::cos(radians * 0.5f);
+            normalize();
         }
 
         void Quaternion::setRotation(const Float4x4 &rotation)
@@ -105,6 +107,26 @@ namespace Gek
             normalize();
         }
 
+        float Quaternion::getLengthSquared(void) const
+        {
+            return this->dot(*this);
+        }
+
+        float Quaternion::getLength(void) const
+        {
+            return std::sqrt(getLengthSquared());
+        }
+
+        Quaternion Quaternion::getNormal(void) const
+        {
+            return reinterpret_cast<Quaternion &>(_mm_mul_ps(simd, _mm_rcp_ps(_mm_set1_ps(getLength()))));
+        }
+
+        Quaternion Quaternion::getInverse(void) const
+        {
+            return Quaternion(-x, -y, -z, w);
+        }
+
         Float3 Quaternion::getEuler(void) const
         {
             Float4 square((*this) * (*this));
@@ -113,44 +135,80 @@ namespace Gek
                 std::atan2(2.0f * ((x * y) + (z * w)), (square.x - square.y - square.z + square.w)));
         }
 
-        Quaternion Quaternion::getInverse(void) const
-        {
-            return Quaternion(-x, -y, -z, w);
-        }
-
         void Quaternion::invert(void)
         {
-            (*this) *= Float4({ -1.0f, -1.0f, -1.0f, 1.0f });
+            x *= -1.0f;
+            y *= -1.0f;
+            z *= -1.0f;
+        }
+
+        void Quaternion::normalize(void)
+        {
+            (*this).set(getNormal());
+        }
+
+        float Quaternion::dot(const Quaternion &rotation) const
+        {
+            return ((x * rotation.x) + (y * rotation.y) + (z * rotation.z) + (w * rotation.w));
+        }
+
+        Quaternion Quaternion::lerp(const Quaternion &rotation, float factor) const
+        {
+            return Quaternion(Math::lerp(x, rotation.x, factor),
+                              Math::lerp(y, rotation.y, factor),
+                              Math::lerp(z, rotation.z, factor),
+                              Math::lerp(w, rotation.w, factor));
         }
 
         Quaternion Quaternion::slerp(const Quaternion &rotation, float factor) const
         {
             Quaternion adjustedRotation(rotation);
-            float cosAngle(rotation.dot(*this));
-            if (cosAngle < 0.0f)
+            float dot(this->dot(rotation));
+            if (dot < 0.0f)
             {
-                cosAngle = -cosAngle;
+                dot = -dot;
                 adjustedRotation.x = -adjustedRotation.x;
                 adjustedRotation.y = -adjustedRotation.y;
                 adjustedRotation.z = -adjustedRotation.z;
                 adjustedRotation.w = -adjustedRotation.w;
             }
 
-            if (std::abs(1.0f - cosAngle) < Epsilon)
+            if (dot > 1.0f)
             {
-                return blend((*this), adjustedRotation, factor);
+                return rotation;
             }
-            else
+
+            float theta = std::acos(dot);
+            float sTheta = std::sin(theta);
+            if (sTheta == 0.0f)
             {
-                float omega(std::acos(cosAngle));
-                float sinOmega(std::sin(omega));
-                float factorA = (std::sin((1.0f - factor) * omega) / sinOmega);
-                float factorB = (std::sin(factor * omega) / sinOmega);
-                return Quaternion(((factorA * x) + (factorB * adjustedRotation.x)),
-                    ((factorA * y) + (factorB * adjustedRotation.y)),
-                    ((factorA * z) + (factorB * adjustedRotation.z)),
-                    ((factorA * w) + (factorB * adjustedRotation.w)));
+                return rotation;
             }
+
+            float factorA = sin((1.0f - factor)*theta) / sTheta;
+            float factorB = sin(factor*theta) / sTheta;
+            return Quaternion(Math::blend(x, adjustedRotation.x, factorA, factorB),
+                              Math::blend(y, adjustedRotation.y, factorA, factorB),
+                              Math::blend(z, adjustedRotation.z, factorA, factorB),
+                              Math::blend(w, adjustedRotation.w, factorA, factorB));
+        }
+
+        bool Quaternion::operator == (const Quaternion &rotation) const
+        {
+            if (x != rotation.x) return false;
+            if (y != rotation.y) return false;
+            if (z != rotation.z) return false;
+            if (w != rotation.w) return false;
+            return true;
+        }
+
+        bool Quaternion::operator != (const Quaternion &rotation) const
+        {
+            if (x != rotation.x) return true;
+            if (y != rotation.y) return true;
+            if (z != rotation.z) return true;
+            if (w != rotation.w) return true;
+            return false;
         }
 
         Float3 Quaternion::operator * (const Float3 &vector) const
@@ -168,27 +226,21 @@ namespace Gek
             float wy2(w * y2);
             float wz2(w * z2);
             return Float3(((1.0f - (yy2 + zz2)) * vector.x + (xy2 - wz2) * vector.y + (xz2 + wy2) * vector.z),
-                ((xy2 + wz2) * vector.x + (1.0f - (xx2 + zz2)) * vector.y + (yz2 - wx2) * vector.z),
-                ((xz2 - wy2) * vector.x + (yz2 + wx2) * vector.y + (1.0f - (xx2 + yy2)) * vector.z));
+                          ((xy2 + wz2) * vector.x + (1.0f - (xx2 + zz2)) * vector.y + (yz2 - wx2) * vector.z),
+                          ((xz2 - wy2) * vector.x + (yz2 + wx2) * vector.y + (1.0f - (xx2 + yy2)) * vector.z));
         }
 
         Quaternion Quaternion::operator * (const Quaternion &rotation) const
         {
             return Quaternion(((w * rotation.x) + (x * rotation.w) + (y * rotation.z) - (z * rotation.y)),
-                ((w * rotation.y) + (y * rotation.w) + (z * rotation.x) - (x * rotation.z)),
-                ((w * rotation.z) + (z * rotation.w) + (x * rotation.y) - (y * rotation.x)),
-                ((w * rotation.w) - (x * rotation.x) - (y * rotation.y) - (z * rotation.z)));
+                              ((w * rotation.y) + (y * rotation.w) + (z * rotation.x) - (x * rotation.z)),
+                              ((w * rotation.z) + (z * rotation.w) + (x * rotation.y) - (y * rotation.x)),
+                              ((w * rotation.w) - (x * rotation.x) - (y * rotation.y) - (z * rotation.z))).getNormal();
         }
 
         void Quaternion::operator *= (const Quaternion &rotation)
         {
             (*this) = ((*this) * rotation);
-        }
-
-        Quaternion Quaternion::operator = (const Float4 &vector)
-        {
-            simd = vector.simd;
-            return (*this);
         }
 
         Quaternion Quaternion::operator = (const Quaternion &rotation)

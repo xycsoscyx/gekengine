@@ -14,7 +14,7 @@ namespace Gek
             return _mm_malloc(size * sizeof(ColorComponent), 16);
         }
 
-            void operator delete(LPVOID data)
+        void operator delete(LPVOID data)
         {
             _mm_free(data);
         }

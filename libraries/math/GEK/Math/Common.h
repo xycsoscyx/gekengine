@@ -33,5 +33,11 @@ namespace Gek
         {
             return ((x * (1.0f - factor)) + (y * factor));
         }
+
+        template <typename DATA, typename TYPE>
+        DATA blend(const DATA &x, const DATA &y, TYPE factorX, TYPE factorY)
+        {
+            return ((x * factorX) + (y * factorY));
+        }
     }; // namespace Math
 }; // namespace Gek

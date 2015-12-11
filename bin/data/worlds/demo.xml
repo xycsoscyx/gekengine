@@ -9,10 +9,21 @@
         </entity>
 
         <entity name="player">
-            <transform position="0, 10, 0" rotation="0, 0, 0" />
-            <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" />
+            <transform position="0, 1, 0" rotation="0, 3.14159/2, 0" />
             <player_body outer_radius="1" inner_radius=".25" height="1.9" stair_step=".25" />
+            <model>*sphere|debug//r10_m0|1</model>
             <mass>250</mass>
+        </entity>
+
+        <entity name="player_head">
+            <transform/>
+            <follow distance="0, 1.9, 0" mode="offset">player</follow>
+        </entity>
+
+        <entity>
+            <transform />
+            <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" />
+            <follow distance=".5, 0, -3" speed="0.5">player_head</follow>
         </entity>
 
         <!--entity>

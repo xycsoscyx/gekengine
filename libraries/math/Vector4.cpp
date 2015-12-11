@@ -39,7 +39,7 @@ namespace Gek
 
         Float4 Float4::lerp(const Float4 &vector, float factor) const
         {
-            return Gek::Math::lerp((*this), vector, factor);
+            return Math::lerp((*this), vector, factor);
         }
 
         void Float4::normalize(void)

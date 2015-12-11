@@ -297,6 +297,11 @@ namespace Gek
                 ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onEntityCreated, std::placeholders::_1, entity)));
             }
 
+            if (name)
+            {
+                namedEntityList[name] = entity;
+            }
+
             return entity;
         }
 

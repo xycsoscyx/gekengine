@@ -35,7 +35,7 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Component)
             END_INTERFACE_LIST_USER
 
-        // Component::Interface
+        // Component
         STDMETHODIMP_(LPCWSTR) getName(void) const
         {
             return L"transform";

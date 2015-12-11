@@ -161,24 +161,32 @@ namespace Gek
 
         void Float4x4::setRotation(const Quaternion &rotation, const Float3 &translation)
         {
-            float xy(rotation.x * rotation.y);
-            float xz(rotation.x * rotation.z);
-            float xw(rotation.x * rotation.w);
-
-            float yz(rotation.y * rotation.z);
-            float yw(rotation.y * rotation.w);
-
-            float zw(rotation.z * rotation.w);
-
-            const Float4 &square = reinterpret_cast<const Float4 &>(rotation) * reinterpret_cast<const Float4 &>(rotation);
-            //Float4 square(reinterpret_cast<const Float4 &>(rotation) * reinterpret_cast<const Float4 &>(rotation));
-            float determinant(1.0f / (square.x + square.y + square.z + square.w));
-            
-            this->rx.set((( square.x - square.y - square.z + square.w) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f);
-            this->ry.set((2.0f * (xy - zw) * determinant), ((-square.x + square.y - square.z + square.w) * determinant), (2.0f * (yz + xw) * determinant), 0.0f);
-            this->rz.set((2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-square.x - square.y + square.z + square.w) * determinant), 0.0f);
-            this->translation = translation;
-            this->tw = 1.0f;
+            float xx(rotation.x * rotation.x);
+            float yy(rotation.y * rotation.y);
+            float zz(rotation.z * rotation.z);
+            float ww(rotation.w * rotation.w);
+            float length(xx + yy + zz + ww);
+            if (length == 0.0f)
+            {
+                rx.set(1.0f, 0.0f, 0.0f, 0.0f);
+                ry.set(0.0f, 1.0f, 0.0f, 0.0f);
+                rz.set(0.0f, 0.0f, 1.0f, 0.0f);
+                rw.set(translation.w(1.0f));
+            }
+            else
+            {
+                float determinant(1.0f / length);
+                float xy(rotation.x * rotation.y);
+                float xz(rotation.x * rotation.z);
+                float xw(rotation.x * rotation.w);
+                float yz(rotation.y * rotation.z);
+                float yw(rotation.y * rotation.w);
+                float zw(rotation.z * rotation.w);
+                this->rx.set((( xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f);
+                this->ry.set((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f);
+                this->rz.set((2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f);
+                this->rw.set(translation.w(1.0f));
+            }
         }
 
         void Float4x4::setRotationX(float radians)
@@ -263,30 +271,15 @@ namespace Gek
 
         void Float4x4::setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)
         {
-            nz.set((target - source).getNormal());
-            nx.set(worldUpVector.cross(nz).getNormal());
-            ny.set(nz.cross(nx).getNormal());
-            nxw = 0.0f;
-            nyw = 0.0f;
-            nzw = 0.0f;
-
-            rw.set(0.0f, 0.0f, 0.0f, 1.0f);
-
-            invert();
+            setLookAt((target - source), worldUpVector);
         }
 
         void Float4x4::setLookAt(const Float3 &direction, const Float3 &worldUpVector)
         {
-            nz.set(direction.getNormal());
-            nx.set(worldUpVector.cross(nz).getNormal());
-            ny.set(nz.cross(nx).getNormal());
-            nxw = 0.0f;
-            nyw = 0.0f;
-            nzw = 0.0f;
-
+            rz.set(direction.getNormal().w(0.0f));
+            rx.set(worldUpVector.cross(nz).getNormal().w(0.0f));
+            ry.set(nz.cross(nx).getNormal().w(0.0f));
             rw.set(0.0f, 0.0f, 0.0f, 1.0f);
-
-            invert();
         }
 
         Float3 Float4x4::getEuler(void) const
