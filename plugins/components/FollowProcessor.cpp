@@ -45,6 +45,7 @@ namespace Gek
 
         ~FollowProcessorImplementation(void)
         {
+            population->removeUpdatePriority(this, 90);
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
         }
 
@@ -66,6 +67,7 @@ namespace Gek
             {
                 this->population = population;
                 resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
+                population->setUpdatePriority(this, 90);
             }
 
             return resultValue;
@@ -127,7 +129,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onUpdateEnd(float frameTime)
+        STDMETHODIMP_(void) onUpdate(float frameTime)
         {
             for (auto &entityOrderPair : entityOrderMap)
             {

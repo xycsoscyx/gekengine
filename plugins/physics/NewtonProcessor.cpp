@@ -296,6 +296,7 @@ namespace Gek
 
         ~NewtonProcessorImplementation(void)
         {
+            population->removeUpdatePriority(this, 50);
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
 
             bodyList.clear();
@@ -636,6 +637,7 @@ namespace Gek
                 this->action = initializerContext;
                 this->population = population;
 
+                population->setUpdatePriority(this, 50);
                 resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
             }
 

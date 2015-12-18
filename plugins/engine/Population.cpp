@@ -5,7 +5,7 @@
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
-#include <set>
+#include <map>
 #include <ppl.h>
 
 #include "GEK\Components\Transform.h"
@@ -74,6 +74,8 @@ namespace Gek
         std::unordered_map<CStringW, Entity *> namedEntityList;
         std::vector<Entity *> killEntityList;
 
+        std::multimap<UINT32, PopulationObserver *> updatePriorityMap;
+
     public:
         PopulationImplementation(void)
         {
@@ -129,10 +131,11 @@ namespace Gek
 
         STDMETHODIMP_(void) update(float frameTime)
         {
-            ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onUpdateBegin, std::placeholders::_1, frameTime)));
-            ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onUpdate, std::placeholders::_1, frameTime)));
-            ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onUpdateEnd, std::placeholders::_1, frameTime)));
-            ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onUpdateDone, std::placeholders::_1, frameTime)));
+            for (auto &priorityPair : updatePriorityMap)
+            {
+                priorityPair.second->onUpdate(frameTime);
+            }
+
             for (auto const killEntity : killEntityList)
             {
                 auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity *> &namedEntity) -> bool
@@ -340,6 +343,25 @@ namespace Gek
                     onEntity(entity);
                 });
             }
+        }
+
+        STDMETHODIMP_(void) setUpdatePriority(PopulationObserver *observer, UINT32 priority)
+        {
+            updatePriorityMap.insert(std::make_pair(priority, observer));
+        }
+
+        STDMETHODIMP_(void) removeUpdatePriority(PopulationObserver *observer, UINT32 priority)
+        {
+            auto priorityIterator = updatePriorityMap.equal_range(priority);
+            auto processorIterator = priorityIterator.first;
+            while (processorIterator != priorityIterator.second)
+            {
+                auto currentIterator = processorIterator++;
+                if (currentIterator->second == observer)
+                {
+                    updatePriorityMap.erase(currentIterator);
+                }
+            };
         }
     };
 

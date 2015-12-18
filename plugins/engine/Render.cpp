@@ -201,6 +201,7 @@ namespace Gek
 
         ~RenderImplementation(void)
         {
+            population->removeUpdatePriority(this, 100);
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
         }
 
@@ -226,6 +227,7 @@ namespace Gek
                 this->population = population;
                 this->initializerContext = initializerContext;
                 resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
+                population->setUpdatePriority(this, 100);
             }
 
             if (SUCCEEDED(resultValue))
@@ -596,26 +598,24 @@ namespace Gek
                 }
                 else
                 {
-                    CComPtr<VideoTexture> texture;
-                    resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s", fileName), flags);
-                    if (FAILED(resultValue))
+                    // iterate over formats in case the texture name has no extension
+                    static const wchar_t *formatList[] =
                     {
-                        resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".dds"), flags);
-                        if (FAILED(resultValue))
+                        L"",
+                        L".dds",
+                        L".tga",
+                        L".png",
+                        L".jpg",
+                        L".bmp",
+                    };
+
+                    CComPtr<VideoTexture> texture;
+                    for (auto format : formatList)
+                    {
+                        resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, format), flags);
+                        if (SUCCEEDED(resultValue))
                         {
-                            resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".tga"), flags);
-                            if (FAILED(resultValue))
-                            {
-                                resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".png"), flags);
-                                if (FAILED(resultValue))
-                                {
-                                    resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".jpg"), flags);
-                                    if (FAILED(resultValue))
-                                    {
-                                        resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, L".bmp"), flags);
-                                    }
-                                }
-                            }
+                            break;
                         }
                     }
 
@@ -780,7 +780,7 @@ namespace Gek
             blendStateManager.clearResources();
         }
 
-        STDMETHODIMP_(void) onUpdateDone(float frameTime)
+        STDMETHODIMP_(void) onUpdate(float frameTime)
         {
             population->listEntities<TransformComponent, CameraComponent>([&](Entity *cameraEntity) -> void
             {

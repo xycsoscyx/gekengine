@@ -704,10 +704,6 @@ namespace Gek
         };
 
         // PopulationObserver
-        STDMETHODIMP_(void) onLoadBegin(void)
-        {
-        }
-
         STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
         {
             if (FAILED(resultValue))
@@ -839,10 +835,6 @@ namespace Gek
                     }
                 }
             }
-        }
-
-        STDMETHODIMP_(void) onRenderOverlay(void)
-        {
         }
     };
 

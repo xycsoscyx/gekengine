@@ -11,6 +11,7 @@
 namespace Gek
 {
     DECLARE_INTERFACE(Entity);
+    DECLARE_INTERFACE(PopulationObserver);
 
     DECLARE_INTERFACE_IID(Population, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B") : virtual public IUnknown
     {
@@ -39,6 +40,9 @@ namespace Gek
                 }
             });
         }
+
+        STDMETHOD_(void, setUpdatePriority)         (THIS_ PopulationObserver *observer, UINT32 priority) PURE;
+        STDMETHOD_(void, removeUpdatePriority)      (THIS_ PopulationObserver *observer, UINT32 priority) PURE;
     };
 
     DECLARE_INTERFACE_IID(PopulationObserver, "51D6E5E6-2AD3-4D61-A704-8E6515F024F9") : virtual public Observer
@@ -50,10 +54,7 @@ namespace Gek
         STDMETHOD_(void, onEntityCreated)           (THIS_ Entity *entity) { };
         STDMETHOD_(void, onEntityDestroyed)         (THIS_ Entity *entity) { };
 
-        STDMETHOD_(void, onUpdateBegin)             (THIS_ float frameTime) { };
         STDMETHOD_(void, onUpdate)                  (THIS_ float frameTime) { };
-        STDMETHOD_(void, onUpdateEnd)               (THIS_ float frameTime) { };
-        STDMETHOD_(void, onUpdateDone)              (THIS_ float frameTime) { };
     };
 
     DECLARE_INTERFACE_IID(PopulationRegistration, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5");
