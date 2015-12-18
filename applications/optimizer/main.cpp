@@ -273,6 +273,8 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         Gek::Shape::AlignedBox boundingBox;
         std::multimap<CStringA, Model> modelList;
         GetMeshes(scale, scene, scene->mRootNode, modelList, boundingBox);
+        printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
+        printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
         printf("< Num. Materials: %d\r\n", modelList.size());
 
         std::unordered_map<CStringA, Model> materialModelList;
@@ -307,9 +309,9 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                 CStringA material = (materialModel.first);
                 material.Replace("/", "\\");
 
-                CPathA kPath(material);
-                kPath.RemoveExtension();
-                material = LPCSTR(kPath);
+                CPathA materialPath(material);
+                materialPath.RemoveExtension();
+                material = LPCSTR(materialPath);
 
                 int texturesPathIndex = material.Find("\\textures\\");
                 if (texturesPathIndex >= 0)
@@ -321,10 +323,27 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                 {
                     material = material.Left(material.GetLength() - 9);
                 }
-
-                if (material.Right(7).CompareNoCase(".albedo") == 0)
+                else if (material.Right(7).CompareNoCase(".albedo") == 0)
                 {
                     material = material.Left(material.GetLength() - 7);
+                }
+                else if (material.Right(2).CompareNoCase("_a") == 0)
+                {
+                    material = material.Left(material.GetLength() - 2);
+                }
+
+                CPathA materialName(material);
+                materialName.StripPath();
+
+                CPathA folderName(material);
+                folderName.RemoveFileSpec();
+                folderName.StripPath();
+
+                if (materialName.m_strPath.CompareNoCase(folderName.m_strPath) == 0)
+                {
+                    materialPath.m_strPath = material;
+                    materialPath.RemoveFileSpec();
+                    material = LPCSTR(materialPath);
                 }
 
                 fwrite(material.GetString(), (material.GetLength() + 1), 1, file);

@@ -1,16 +1,112 @@
 <?xml version="1.0"?>
 <world name="Demo">
     <population>
-        <entity>
-            <transform position="0, 0, 0" rotation="0, 0, 0" />
-            <model>sponza</model>
-            <dynamic_body>sponza</dynamic_body>
-            <mass>0</mass>
-        </entity>
 
+        <entity><transform position="0, 0, -10" rotation="0, 0, 0" /><model>dungeon/stairs</model><static_body>dungeon/stairs</static_body></entity>
+        
+        <entity><transform position="-15, 10, -15" rotation="0, 0, 0" /><model>dungeon/corner</model><static_body>dungeon/corner</static_body></entity>
+        <entity><transform position="-10, 10, -15" rotation="0, 0, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-5, 10, -15" rotation="0, 0, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="0, 10, -15" rotation="0, 0, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="5, 10, -15" rotation="0, 0, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="10, 10, -15" rotation="0, 0, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="15, 10, -15" rotation="0, -3.14159/2, 0" /><model>dungeon/corner</model><static_body>dungeon/corner</static_body></entity>
+
+        <entity><transform position="-15, 10, -10" rotation="0, 3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-10, 10, -10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="-5, 10, -10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="15, 10, -10" rotation="0, -3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+
+        <entity><transform position="-15, 10, -5" rotation="0, 3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-10, 10, -5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="-5, 10, -5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="15, 10, -5" rotation="0, -3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+
+        <entity><transform position="-15, 10, 0" rotation="0, 3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-10, 10, 0" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="-5, 10, 0" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="0, 10, 0" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="5, 10, 0" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="10, 10, 0" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="15, 10, 0" rotation="0, -3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+
+        <entity><transform position="-15, 10, 5" rotation="0, 3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-10, 10, 5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="-5, 10, 5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="0, 10, 5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="5, 10, 5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="10, 10, 5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="15, 10, 5" rotation="0, -3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+
+        <entity><transform position="-15, 10, 10" rotation="0, 3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-10, 10, 10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="-5, 10, 10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="0, 10, 10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="5, 10, 10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="10, 10, 10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="15, 10, 10" rotation="0, -3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        
+        <entity><transform position="-15, 10, 15" rotation="0, 3.14159/2, 0" /><model>dungeon/corner</model><static_body>dungeon/corner</static_body></entity>
+        <entity><transform position="-10, 10, 15" rotation="0, 3.14159, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-5, 10, 15" rotation="0, 3.14159, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="0, 10, 15" rotation="0, 3.14159, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="5, 10, 15" rotation="0, 3.14159, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="10, 10, 15" rotation="0, 3.14159, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="15, 10, 15" rotation="0, -3.14159, 0" /><model>dungeon/corner</model><static_body>dungeon/corner</static_body></entity>
+        
+        <entity><transform position="-15, 0, -15" rotation="0, 0, 0" /><model>dungeon/corner</model><static_body>dungeon/corner</static_body></entity>
+        <entity><transform position="-10, 0, -15" rotation="0, 0, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-5, 0, -15" rotation="0, 0, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="0, 0, -15" rotation="0, 0, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="5, 0, -15" rotation="0, 0, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="10, 0, -15" rotation="0, 0, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="15, 0, -15" rotation="0, -3.14159/2, 0" /><model>dungeon/corner</model><static_body>dungeon/corner</static_body></entity>
+
+        <entity><transform position="-15, 0, -10" rotation="0, 3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-10, 0, -10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="-5, 0, -10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="15, 0, -10" rotation="0, -3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+
+        <entity><transform position="-15, 0, -5" rotation="0, 3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-10, 0, -5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="-5, 0, -5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="15, 0, -5" rotation="0, -3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+
+        <entity><transform position="-15, 0, 0" rotation="0, 3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-10, 0, 0" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="-5, 0, 0" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="0, 0, 0" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="5, 0, 0" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="10, 0, 0" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="15, 0, 0" rotation="0, -3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+
+        <entity><transform position="-15, 0, 5" rotation="0, 3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-10, 0, 5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="-5, 0, 5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="0, 0, 5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="5, 0, 5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="10, 0, 5" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="15, 0, 5" rotation="0, -3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+
+        <entity><transform position="-15, 0, 10" rotation="0, 3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-10, 0, 10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="-5, 0, 10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="0, 0, 10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="5, 0, 10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="10, 0, 10" rotation="0, 0, 0" /><model>dungeon/floor</model><static_body>dungeon/floor</static_body></entity>
+        <entity><transform position="15, 0, 10" rotation="0, -3.14159/2, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        
+        <entity><transform position="-15, 0, 15" rotation="0, 3.14159/2, 0" /><model>dungeon/corner</model><static_body>dungeon/corner</static_body></entity>
+        <entity><transform position="-10, 0, 15" rotation="0, 3.14159, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="-5, 0, 15" rotation="0, 3.14159, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="0, 0, 15" rotation="0, 3.14159, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="5, 0, 15" rotation="0, 3.14159, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="10, 0, 15" rotation="0, 3.14159, 0" /><model>dungeon/wall</model><static_body>dungeon/wall</static_body></entity>
+        <entity><transform position="15, 0, 15" rotation="0, -3.14159, 0" /><model>dungeon/corner</model><static_body>dungeon/corner</static_body></entity>
+        
         <entity name="player">
-            <transform position="0, 1, 0" rotation="0, 3.14159/2, 0" />
-            <player_body outer_radius="3" inner_radius="1" height="6" stair_step="1.5" />
+            <transform position="0, 1, 0" rotation="0, 0, 0" />
+            <player_body outer_radius="1.5" inner_radius="1" height="6" stair_step="1.5" />
             <mass>250</mass>
         </entity>
 
@@ -19,6 +115,8 @@
             <follow distance="0, 5.5, 0" mode="offset">player</follow>
             <model>*sphere|debug//r10_m0|1</model>
             <scale>.8, .8, .8</scale>
+            <point_light radius="15" />
+            <color>1,1,1</color>
         </entity>
 
         <entity name="player_target">
@@ -39,23 +137,23 @@
         </entity-->
 
         <entity>
-            <transform position="0,1,5" />
+            <transform position="0,5,5" />
             <point_light radius="15" />
             <color>1,0,0</color>
         </entity>
         <entity>
-            <transform position="0,5,0" />
+            <transform position="0,9,0" />
             <point_light radius="15" />
             <color>0,1,0</color>
         </entity>
         <entity>
-            <transform position="0,1,-5" />
+            <transform position="0,5,-5" />
             <point_light radius="15" />
             <color>0,0,1</color>
         </entity>
 
         <entity>
-            <transform position="0,1,0" />
+            <transform position="0,5,0" />
             <model>*sphere|debug//r10_m0|1</model>
         </entity>
 

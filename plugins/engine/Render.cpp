@@ -364,7 +364,11 @@ namespace Gek
                 return resultValue;
             });
 
-            materialShaderMap[material] = shader;
+            if (shader.isValid())
+            {
+                materialShaderMap[material] = shader;
+            }
+
             return material;
         }
 

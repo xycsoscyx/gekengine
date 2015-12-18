@@ -10,8 +10,11 @@ namespace Gek
     DECLARE_REGISTERED_CLASS(MassImplementation);
     DECLARE_INTERFACE_IID(MassRegistration, "06FD2921-89A3-490C-BBF6-9C909D921E96");
 
-    DECLARE_REGISTERED_CLASS(DynamicBodyImplementation);
-    DECLARE_INTERFACE_IID(DynamicBodyRegistration, "5C52FBF3-261D-4016-9881-80E418C8E639");
+    DECLARE_REGISTERED_CLASS(RigidBodyImplementation);
+    DECLARE_INTERFACE_IID(RigidBodyRegistration, "5C52FBF3-261D-4016-9881-80E418C8E639");
+
+    DECLARE_REGISTERED_CLASS(StaticBodyImplementation);
+    DECLARE_INTERFACE_IID(StaticBodyRegistration, "D28C70AF-E77D-4D5D-BE58-FACDACE45DEA");
 
     DECLARE_REGISTERED_CLASS(PlayerImplementation);
     DECLARE_INTERFACE_IID(PlayerRegistration, "EF85AE66-9544-4B7C-A2CF-B2410BDA63BD");
@@ -24,7 +27,10 @@ DECLARE_CONTEXT_SOURCE(Components)
     ADD_CONTEXT_CLASS(Gek::MassRegistration, Gek::MassImplementation)
         ADD_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::DynamicBodyRegistration, Gek::DynamicBodyImplementation)
+    ADD_CONTEXT_CLASS(Gek::RigidBodyRegistration, Gek::RigidBodyImplementation)
+        ADD_CLASS_TYPE(Gek::ComponentType)
+
+    ADD_CONTEXT_CLASS(Gek::StaticBodyRegistration, Gek::StaticBodyImplementation)
         ADD_CLASS_TYPE(Gek::ComponentType)
 
     ADD_CONTEXT_CLASS(Gek::PlayerRegistration, Gek::PlayerImplementation)

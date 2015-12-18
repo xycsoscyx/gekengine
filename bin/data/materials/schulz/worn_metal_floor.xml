@@ -2,9 +2,9 @@
 <material>
     <shader>standard</shader>
     <maps>
-        <albedo>%directory%\%filename%_a</albedo>
-        <normal>%directory%\%filename%_n</normal>
-        <roughness>%directory%\%filename%_r</roughness>
-        <metalness>%directory%\%filename%_m</metalness>
+        <albedo>%directory%\%filename%\%filename%_a</albedo>
+        <normal>%directory%\%filename%\%filename%_n</normal>
+        <roughness>%directory%\%filename%\%filename%_r</roughness>
+        <metalness>%directory%\%filename%\%filename%_m</metalness>
     </maps>
 </material>
