@@ -34,18 +34,21 @@ namespace Gek
 
     private:
         Population *population;
+        UINT32 updateHandle;
+
         std::map<UINT32, Entity *> entityOrderMap;
         std::unordered_map<Entity *, FollowData> entityDataMap;
 
     public:
         FollowProcessorImplementation(void)
             : population(nullptr)
+            , updateHandle(0)
         {
         }
 
         ~FollowProcessorImplementation(void)
         {
-            population->removeUpdatePriority(this, 90);
+            population->removeUpdatePriority(updateHandle);
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
         }
 
@@ -67,7 +70,7 @@ namespace Gek
             {
                 this->population = population;
                 resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
-                population->setUpdatePriority(this, 90);
+                updateHandle = population->setUpdatePriority(this, 90);
             }
 
             return resultValue;

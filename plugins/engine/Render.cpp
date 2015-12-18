@@ -167,6 +167,7 @@ namespace Gek
         IUnknown *initializerContext;
         VideoSystem *video;
         Population *population;
+        UINT32 updateHandle;
 
         CComPtr<IUnknown> pointSamplerStates;
         CComPtr<IUnknown> linearSamplerStates;
@@ -196,12 +197,13 @@ namespace Gek
             : initializerContext(nullptr)
             , video(nullptr)
             , population(nullptr)
+            , updateHandle(0)
         {
         }
 
         ~RenderImplementation(void)
         {
-            population->removeUpdatePriority(this, 100);
+            population->removeUpdatePriority(updateHandle);
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
         }
 
@@ -227,7 +229,7 @@ namespace Gek
                 this->population = population;
                 this->initializerContext = initializerContext;
                 resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
-                population->setUpdatePriority(this, 100);
+                updateHandle = population->setUpdatePriority(this, 100);
             }
 
             if (SUCCEEDED(resultValue))

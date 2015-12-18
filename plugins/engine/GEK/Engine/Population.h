@@ -41,8 +41,8 @@ namespace Gek
             });
         }
 
-        STDMETHOD_(void, setUpdatePriority)         (THIS_ PopulationObserver *observer, UINT32 priority) PURE;
-        STDMETHOD_(void, removeUpdatePriority)      (THIS_ PopulationObserver *observer, UINT32 priority) PURE;
+        STDMETHOD_(UINT32, setUpdatePriority)       (THIS_ PopulationObserver *observer, UINT32 priority) PURE;
+        STDMETHOD_(void, removeUpdatePriority)      (THIS_ UINT32 updateHandle) PURE;
     };
 
     DECLARE_INTERFACE_IID(PopulationObserver, "51D6E5E6-2AD3-4D61-A704-8E6515F024F9") : virtual public Observer

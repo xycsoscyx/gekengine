@@ -276,6 +276,8 @@ namespace Gek
 
     private:
         Population *population;
+        UINT32 updateHandle;
+
         IUnknown *action;
 
         dNewtonPlayerManager *newtonPlayerManager;
@@ -289,6 +291,7 @@ namespace Gek
     public:
         NewtonProcessorImplementation(void)
             : population(nullptr)
+            , updateHandle(0)
             , action(nullptr)
             , gravity(0.0f, -9.8331f, 0.0f)
         {
@@ -296,7 +299,7 @@ namespace Gek
 
         ~NewtonProcessorImplementation(void)
         {
-            population->removeUpdatePriority(this, 50);
+            population->removeUpdatePriority(updateHandle);
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
 
             bodyList.clear();
@@ -637,7 +640,7 @@ namespace Gek
                 this->action = initializerContext;
                 this->population = population;
 
-                population->setUpdatePriority(this, 50);
+                updateHandle = population->setUpdatePriority(this, 50);
                 resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
             }
 
