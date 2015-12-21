@@ -132,122 +132,109 @@ namespace Gek
 
         STDMETHODIMP_(void) update(float frameTime)
         {
-            if (doLoad)
+            for (auto priorityPair : updatePriorityMap)
             {
-                doLoad();
-                doLoad = nullptr;
+                priorityPair.second->onUpdate(frameTime);
             }
-            else
+
+            for (auto const killEntity : killEntityList)
             {
-                for (auto priorityPair : updatePriorityMap)
+                auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity *> &namedEntity) -> bool
                 {
-                    priorityPair.second->onUpdate(frameTime);
+                    return (namedEntity.second == killEntity);
+                });
+
+                if (namedEntityIterator != namedEntityList.end())
+                {
+                    namedEntityList.erase(namedEntityIterator);
                 }
 
-                for (auto const killEntity : killEntityList)
+                if (entityList.size() > 1)
                 {
-                    auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity *> &namedEntity) -> bool
+                    auto entityIterator = std::find(entityList.begin(), entityList.end(), killEntity);
+                    if (entityIterator != entityList.end())
                     {
-                        return (namedEntity.second == killEntity);
-                    });
-
-                    if (namedEntityIterator != namedEntityList.end())
-                    {
-                        namedEntityList.erase(namedEntityIterator);
+                        (*entityIterator) = entityList.back();
                     }
 
-                    if (entityList.size() > 1)
-                    {
-                        auto entityIterator = std::find(entityList.begin(), entityList.end(), killEntity);
-                        if (entityIterator != entityList.end())
-                        {
-                            (*entityIterator) = entityList.back();
-                        }
-
-                        entityList.resize(entityList.size() - 1);
-                    }
-                    else
-                    {
-                        entityList.clear();
-                    }
+                    entityList.resize(entityList.size() - 1);
                 }
-
-                killEntityList.clear();
+                else
+                {
+                    entityList.clear();
+                }
             }
+
+            killEntityList.clear();
         }
 
-        std::function<void(void)> doLoad;
         STDMETHODIMP load(LPCWSTR fileName)
         {
-            REQUIRE_RETURN(fileName, E_INVALIDARG);
-
             gekLogScope(fileName);
 
-            doLoad = std::bind([&](const CStringW &fileName) -> void
+            REQUIRE_RETURN(fileName, E_INVALIDARG);
+
+            free();
+            ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
+
+            Gek::XmlDocument xmlDocument;
+            HRESULT resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\worlds\\%s.xml", fileName));
+            if (SUCCEEDED(resultValue))
             {
-                free();
-                ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
-
-                Gek::XmlDocument xmlDocument;
-                HRESULT resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\worlds\\%s.xml", fileName));
-                if (SUCCEEDED(resultValue))
+                Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
+                if (xmlWorldNode && xmlWorldNode.getType().CompareNoCase(L"world") == 0)
                 {
-                    Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
-                    if (xmlWorldNode && xmlWorldNode.getType().CompareNoCase(L"world") == 0)
+                    Gek::XmlNode xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
+                    if (xmlPopulationNode)
                     {
-                        Gek::XmlNode xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
-                        if (xmlPopulationNode)
+                        Gek::XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
+                        while (xmlEntityNode)
                         {
-                            Gek::XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
-                            while (xmlEntityNode)
+                            std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> entityParameterList;
+                            Gek::XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
+                            while (xmlComponentNode)
                             {
-                                std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> entityParameterList;
-                                Gek::XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
-                                while (xmlComponentNode)
+                                std::unordered_map<CStringW, CStringW> &componentParameterList = entityParameterList[xmlComponentNode.getType()];
+                                xmlComponentNode.listAttributes([&componentParameterList](LPCWSTR name, LPCWSTR value) -> void
                                 {
-                                    std::unordered_map<CStringW, CStringW> &componentParameterList = entityParameterList[xmlComponentNode.getType()];
-                                    xmlComponentNode.listAttributes([&componentParameterList](LPCWSTR name, LPCWSTR value) -> void
-                                    {
-                                        componentParameterList.insert(std::make_pair(name, value));
-                                    });
+                                    componentParameterList.insert(std::make_pair(name, value));
+                                });
 
-                                    componentParameterList[L""] = xmlComponentNode.getText();
-                                    xmlComponentNode = xmlComponentNode.nextSiblingElement();
-                                };
-
-                                if (xmlEntityNode.hasAttribute(L"name"))
-                                {
-                                    createEntity(entityParameterList, xmlEntityNode.getAttribute(L"name"));
-                                }
-                                else
-                                {
-                                    createEntity(entityParameterList, nullptr);
-                                }
-
-                                xmlEntityNode = xmlEntityNode.nextSiblingElement(L"entity");
+                                componentParameterList[L""] = xmlComponentNode.getText();
+                                xmlComponentNode = xmlComponentNode.nextSiblingElement();
                             };
-                        }
-                        else
-                        {
-                            gekLogMessage(L"[error] Unable to locate \"population\" node");
-                            resultValue = E_UNEXPECTED;
-                        }
+
+                            if (xmlEntityNode.hasAttribute(L"name"))
+                            {
+                                createEntity(entityParameterList, xmlEntityNode.getAttribute(L"name"));
+                            }
+                            else
+                            {
+                                createEntity(entityParameterList, nullptr);
+                            }
+
+                            xmlEntityNode = xmlEntityNode.nextSiblingElement(L"entity");
+                        };
                     }
                     else
                     {
-                        gekLogMessage(L"[error] Unable to locate \"world\" node");
+                        gekLogMessage(L"[error] Unable to locate \"population\" node");
                         resultValue = E_UNEXPECTED;
                     }
                 }
                 else
                 {
-                    gekLogMessage(L"[error] Unable to load population");
+                    gekLogMessage(L"[error] Unable to locate \"world\" node");
+                    resultValue = E_UNEXPECTED;
                 }
+            }
+            else
+            {
+                gekLogMessage(L"[error] Unable to load population");
+            }
 
-                ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadEnd, std::placeholders::_1, resultValue)));
-            }, CStringW(fileName));
-
-            return S_OK;
+            ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadEnd, std::placeholders::_1, resultValue)));
+            return resultValue;
         }
 
         STDMETHODIMP save(LPCWSTR fileName)

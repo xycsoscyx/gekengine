@@ -195,6 +195,7 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
+                population->load(L"demo");
                 windowActive = true;
             }
 
@@ -294,10 +295,6 @@ namespace Gek
                             if (command.CompareNoCase(L"quit") == 0)
                             {
                                 engineRunning = false;
-                            }
-                            else if (command.CompareNoCase(L"load") == 0 && parameterList.size() == 1)
-                            {
-                                population->load(parameterList[0]);
                             }
 
                             //RunCommand(strCommand, aParams);
