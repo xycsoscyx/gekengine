@@ -1,5 +1,7 @@
 #pragma once
 
+#include <typeindex>
+
 namespace Gek
 {
     DECLARE_INTERFACE_IID(Entity, "F5F5D5D3-E409-437D-BF3B-801DFA230C6C") : virtual public IUnknown

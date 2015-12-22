@@ -195,7 +195,6 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                population->load(L"demo");
                 windowActive = true;
             }
 
@@ -204,36 +203,36 @@ namespace Gek
 
         STDMETHODIMP_(LRESULT) windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam)
         {
-            auto onState = [&](WPARAM wParam, bool state)
+            auto onAction = [&](WPARAM wParam, bool state)
             {
                 switch (wParam)
                 {
                 case 'W':
                 case VK_UP:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onState, std::placeholders::_1, L"move_forward", state)));
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_forward", state)));
                     break;
 
                 case 'S':
                 case VK_DOWN:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onState, std::placeholders::_1, L"move_backward", state)));
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_backward", state)));
                     break;
 
                 case 'A':
                 case VK_LEFT:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onState, std::placeholders::_1, L"strafe_left", state)));
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_left", state)));
                     break;
 
                 case 'D':
                 case VK_RIGHT:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onState, std::placeholders::_1, L"strafe_right", state)));
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_right", state)));
                     break;
 
                 case VK_SPACE:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onState, std::placeholders::_1, L"jump", state)));
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"jump", state)));
                     break;
 
                 case VK_LCONTROL:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onState, std::placeholders::_1, L"crouch", state)));
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"crouch", state)));
                     break;
                 };
             };
@@ -296,6 +295,10 @@ namespace Gek
                             {
                                 engineRunning = false;
                             }
+                            else if (command.CompareNoCase(L"load") == 0 && parameterList.size() == 1)
+                            {
+                                population->load(parameterList[0]);
+                            }
 
                             //RunCommand(strCommand, aParams);
                         }
@@ -325,7 +328,7 @@ namespace Gek
             case WM_KEYDOWN:
                 if (!consoleActive)
                 {
-                    onState(wParam, true);
+                    onAction(wParam, true);
                 }
 
                 return 1;
@@ -337,7 +340,7 @@ namespace Gek
                 }
                 else if (!consoleActive)
                 {
-                    onState(wParam, false);
+                    onAction(wParam, false);
                 }
 
                 return 1;
@@ -401,8 +404,8 @@ namespace Gek
                     INT32 cursorMovementY = ((cursorPosition.y - clientCenterY) / 2);
                     if (cursorMovementX != 0 || cursorMovementY != 0)
                     {
-                        ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onValue, std::placeholders::_1, L"turn", float(cursorMovementX))));
-                        ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onValue, std::placeholders::_1, L"tilt", float(cursorMovementY))));
+                        ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
+                        ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
                     }
 
                     UINT32 frameCount = 3;

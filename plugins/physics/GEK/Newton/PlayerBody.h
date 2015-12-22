@@ -7,14 +7,14 @@
 
 namespace Gek
 {
-    struct PlayerComponent
+    struct PlayerBodyComponent
     {
         float outerRadius;
         float innerRadius;
         float height;
         float stairStep;
 
-        PlayerComponent(void);
+        PlayerBodyComponent(void);
         HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
         HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
     };

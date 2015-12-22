@@ -91,6 +91,7 @@ namespace Gek
 
         STDMETHODIMP_(void) onFree(void)
         {
+            entityOrderMap.clear();
             entityDataMap.clear();
         }
 

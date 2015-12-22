@@ -16,8 +16,8 @@ namespace Gek
     DECLARE_REGISTERED_CLASS(StaticBodyImplementation);
     DECLARE_INTERFACE_IID(StaticBodyRegistration, "D28C70AF-E77D-4D5D-BE58-FACDACE45DEA");
 
-    DECLARE_REGISTERED_CLASS(PlayerImplementation);
-    DECLARE_INTERFACE_IID(PlayerRegistration, "EF85AE66-9544-4B7C-A2CF-B2410BDA63BD");
+    DECLARE_REGISTERED_CLASS(PlayerBodyImplementation);
+    DECLARE_INTERFACE_IID(PlayerBodyRegistration, "EF85AE66-9544-4B7C-A2CF-B2410BDA63BD");
 
     DECLARE_REGISTERED_CLASS(NewtonProcessorImplementation);
     DECLARE_INTERFACE_IID(NewtonProcessorRegistration, "BCF7CC29-F375-4F29-9DA7-921F6A78E4E3");
@@ -33,7 +33,7 @@ DECLARE_CONTEXT_SOURCE(Components)
     ADD_CONTEXT_CLASS(Gek::StaticBodyRegistration, Gek::StaticBodyImplementation)
         ADD_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::PlayerRegistration, Gek::PlayerImplementation)
+    ADD_CONTEXT_CLASS(Gek::PlayerBodyRegistration, Gek::PlayerBodyImplementation)
         ADD_CLASS_TYPE(Gek::ComponentType)
 
     ADD_CONTEXT_CLASS(Gek::NewtonProcessorRegistration, Gek::NewtonProcessorImplementation)
