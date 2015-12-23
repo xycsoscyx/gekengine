@@ -64,7 +64,7 @@ namespace Gek
                 Gek::Math::Float3 euler;
                 if (Evaluator::get(expression, euler))
                 {
-                    value.setEuler(euler);
+                    value = Math::Quaternion::createEuler(euler.x, euler.y, euler.z);
                 }
             }
         }

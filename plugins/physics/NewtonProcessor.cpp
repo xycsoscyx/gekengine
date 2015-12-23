@@ -19,31 +19,22 @@
 #include "GEK\Math\Matrix4x4.h"
 #include "GEK\Shape\AlignedBox.h"
 #include <Newton.h>
-#include <dNewton.h>
-#include <dNewtonPlayerManager.h>
-#include <dNewtonCollision.h>
 #include <memory>
 #include <map>
+#include <set>
 
 #ifdef _DEBUG
 #pragma comment(lib, "newton_d.lib")
-#pragma comment(lib, "dNewton_d.lib")
-#pragma comment(lib, "dContainers_d.lib")
-#pragma comment(lib, "dJointLibrary_d.lib")
 #else
 #pragma comment(lib, "newton.lib")
-#pragma comment(lib, "dNewton.lib")
-#pragma comment(lib, "dContainers.lib")
-#pragma comment(lib, "dJointLibrary.lib")
 #endif
 
 namespace Gek
 {
     static const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
 
-    extern CustomPlayerControllerManager *createPlayerManager(NewtonWorld *newton);
-    extern NewtonEntity *createPlayerBody(IUnknown *actionProvider, CustomPlayerControllerManager *playerManager, Entity *entity, const PlayerBodyComponent &playerBodyComponent, const TransformComponent &transformComponent, const MassComponent &massComponent);
-    extern NewtonEntity *createRigidBody(dNewton *newton, const dNewtonCollision* const newtonCollision, Entity *entity, const TransformComponent &transformComponent, const MassComponent &massComponent);
+    extern NewtonEntity *createPlayerBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent);
+    extern NewtonEntity *createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent);
 
     struct Surface
     {
@@ -60,54 +51,6 @@ namespace Gek
             , elasticity(0.4f)
             , softness(1.0f)
         {
-        }
-    };
-
-    class NewtonBase : public dNewton
-    {
-    private:
-
-    public:
-        // dNewton
-        bool OnBodiesAABBOverlap(const dNewtonBody* const newtonBody0, const dNewtonBody* const newtonBody1, int threadHandle)
-        {
-            return true;
-        }
-
-        bool OnCompoundSubCollisionAABBOverlap(const dNewtonBody* const newtonBody0, const dNewtonCollision* const newtonCollision0, const dNewtonBody* const newtonBody1, const dNewtonCollision* const newtonCollision1, int threadHandle)
-        {
-            return true;
-        }
-
-        void OnContactProcess(dNewtonContactMaterial* const newtonContactMaterial, dFloat frameTime, int threadHandle)
-        {
-/*
-            NewtonEntity *newtonEntity0 = nullptr;//static_cast<NewtonEntity *>(newtonContactMaterial->GetBody0()->GetUserData());
-            NewtonEntity *newtonEntity1 = nullptr;//static_cast<NewtonEntity *>(newtonContactMaterial->GetBody1()->GetUserData());
-            if (newtonEntity0 && newtonEntity1)
-            {
-                NewtonWorldCriticalSectionLock(GetNewton(), threadHandle);
-                for (void *newtonContact = newtonContactMaterial->GetFirstContact(); newtonContact; newtonContact = newtonContactMaterial->GetNextContact(newtonContact))
-                {
-                    NewtonMaterial *newtonMaterial = NewtonContactGetMaterial(newtonContact);
-
-                    Math::Float3 position, normal;
-                    NewtonMaterialGetContactPositionAndNormal(newtonMaterial, newtonEntity0->getNewtonBody(), position.data, normal.data);
-
-                    INT32 surfaceIndex0 = getContactSurface(newtonEntity0->getEntity(), newtonEntity0->getNewtonBody(), newtonMaterial, position, normal);
-                    INT32 surfaceIndex1 = getContactSurface(newtonEntity1->getEntity(), newtonEntity1->getNewtonBody(), newtonMaterial, position, normal);
-                    const Surface &surface0 = getSurface(surfaceIndex0);
-                    const Surface &surface1 = getSurface(surfaceIndex1);
-
-                    NewtonMaterialSetContactSoftness(newtonMaterial, ((surface0.softness + surface1.softness) * 0.5f));
-                    NewtonMaterialSetContactElasticity(newtonMaterial, ((surface0.elasticity + surface1.elasticity) * 0.5f));
-                    NewtonMaterialSetContactFrictionCoef(newtonMaterial, surface0.staticFriction, surface0.kineticFriction, 0);
-                    NewtonMaterialSetContactFrictionCoef(newtonMaterial, surface1.staticFriction, surface1.kineticFriction, 1);
-                }
-
-                NewtonWorldCriticalSectionUnlock(GetNewton());
-            }
-*/
         }
     };
 
@@ -137,24 +80,22 @@ namespace Gek
 
         IUnknown *actionProvider;
 
-        NewtonBase *newton;
-        dNewtonCollisionScene *newtonStaticScene;
-        CustomPlayerControllerManager *newtonPlayerManager;
+        NewtonWorld *newtonWorld;
+        NewtonCollision *newtonStaticScene;
 
         Math::Float3 gravity;
         std::vector<Surface> surfaceList;
         std::map<std::size_t, INT32> surfaceIndexList;
-        std::unordered_map<Entity *, CComPtr<NewtonEntity>> bodyList;
-        std::unordered_map<std::size_t, std::unique_ptr<dNewtonCollision>> collisionList;
+        std::unordered_map<Entity *, CComPtr<NewtonEntity>> entityMap;
+        std::unordered_map<std::size_t, NewtonCollision *> collisionList;
 
     public:
         NewtonProcessorImplementation(void)
             : population(nullptr)
             , updateHandle(0)
             , actionProvider(nullptr)
-            , newton(nullptr)
+            , newtonWorld(nullptr)
             , newtonStaticScene(nullptr)
-            , newtonPlayerManager(nullptr)
             , gravity(0.0f, -9.8331f, 0.0f)
         {
         }
@@ -185,30 +126,26 @@ namespace Gek
             }
         }
 
-        INT32 getContactSurface(Entity *entity, NewtonBody *newtonBody, NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
+        INT32 getContactSurface(Entity *entity, const NewtonBody *const newtonBody, const NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
         {
-            REQUIRE_RETURN(population, -1);
-
-            if (entity->hasComponent<RigidBodyComponent>())
+            if (entity && entity->hasComponent<RigidBodyComponent>())
             {
                 auto &rigidBodyComponent = entity->getComponent<RigidBodyComponent>();
-                if (rigidBodyComponent.surface.IsEmpty())
-                {
-                    NewtonCollision *newtonCollision = NewtonMaterialGetBodyCollidingShape(newtonMaterial, newtonBody);
-                    if (newtonCollision)
-                    {
-                        dLong surfaceAttribute = 0;
-                        Math::Float3 collisionNormal;
-                        NewtonCollisionRayCast(newtonCollision, (position - normal).data, (position + normal).data, collisionNormal.data, &surfaceAttribute);
-                        if (surfaceAttribute > 0)
-                        {
-                            return INT32(surfaceAttribute);
-                        }
-                    }
-                }
-                else
+                if (!rigidBodyComponent.surface.IsEmpty())
                 {
                     return loadSurface(rigidBodyComponent.surface);
+                }
+            }
+
+            NewtonCollision *newtonCollision = NewtonMaterialGetBodyCollidingShape(newtonMaterial, newtonBody);
+            if (newtonCollision)
+            {
+                dLong surfaceAttribute = 0;
+                Math::Float3 collisionNormal;
+                NewtonCollisionRayCast(newtonCollision, (position - normal).data, (position + normal).data, collisionNormal.data, &surfaceAttribute);
+                if (surfaceAttribute > 0)
+                {
+                    return INT32(surfaceAttribute);
                 }
             }
 
@@ -274,7 +211,7 @@ namespace Gek
             return surfaceIndex;
         }
 
-        dNewtonCollision *createCollision(Entity *entity, const CStringW &shape)
+        NewtonCollision *createCollision(Entity *entity, const CStringW &shape)
         {
             REQUIRE_RETURN(population, nullptr);
 
@@ -284,7 +221,7 @@ namespace Gek
                 scale.set(entity->getComponent<ScaleComponent>());
             }
 
-            dNewtonCollision *newtonCollision = nullptr;
+            NewtonCollision *newtonCollision = nullptr;
             std::size_t collisionHash = std::hash<CStringW>()(shape);
             collisionHash = std::hash_combine(collisionHash, std::hash<float>()(scale.x), std::hash<float>()(scale.y), std::hash<float>()(scale.z));
             auto collisionIterator = collisionList.find(collisionHash);
@@ -292,7 +229,7 @@ namespace Gek
             {
                 if ((*collisionIterator).second)
                 {
-                    newtonCollision = (*collisionIterator).second.get();
+                    newtonCollision = (*collisionIterator).second;
                 }
             }
             else
@@ -303,52 +240,52 @@ namespace Gek
                 CStringW shapeType(shape.Tokenize(L"|", position));
                 CStringW parameters(shape.Tokenize(L"|", position));
 
-                collisionList[collisionHash].reset();
+                collisionList[collisionHash] = nullptr;
                 if (shapeType.CompareNoCase(L"*cube") == 0)
                 {
                     Math::Float3 size(String::to<Math::Float3>(parameters));
-                    newtonCollision = new dNewtonCollisionBox(newton, size.x, size.y, size.z, 1);
+                    newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*sphere") == 0)
                 {
                     float size = String::to<float>(parameters);
-                    newtonCollision = new dNewtonCollisionSphere(newton, size, 1);
+                    newtonCollision = NewtonCreateSphere(newtonWorld, size, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*cone") == 0)
                 {
                     Math::Float2 size(String::to<Math::Float2>(parameters));
-                    newtonCollision = new dNewtonCollisionCone(newton, size.x, size.y, 1);
+                    newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*capsule") == 0)
                 {
                     Math::Float2 size(String::to<Math::Float2>(parameters));
-                    newtonCollision = new dNewtonCollisionCapsule(newton, size.x, size.y, 1);
+                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*cylinder") == 0)
                 {
                     Math::Float2 size(String::to<Math::Float2>(parameters));
-                    newtonCollision = new dNewtonCollisionCylinder(newton, size.x, size.y, 1);
+                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*tapered_capsule") == 0)
                 {
                     Math::Float3 size(String::to<Math::Float3>(parameters));
-                    newtonCollision = new dNewtonCollisionTaperedCapsule(newton, size.x, size.y, size.z, 1);
+                    newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*tapered_cylinder") == 0)
                 {
                     Math::Float3 size(String::to<Math::Float3>(parameters));
-                    newtonCollision = new dNewtonCollisionTaperedCylinder(newton, size.x, size.y, size.z, 1);
+                    newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*chamfer_cylinder") == 0)
                 {
                     Math::Float2 size(String::to<Math::Float2>(parameters));
-                    newtonCollision = new dNewtonCollisionChamferedCylinder(newton, size.x, size.y, 1);
+                    newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
 
                 if (newtonCollision)
                 {
-                    newtonCollision->SetScale(scale.x, scale.y, scale.z);
-                    collisionList[collisionHash].reset(newtonCollision);
+                    NewtonCollisionSetScale(newtonCollision, scale.x, scale.y, scale.z);
+                    collisionList[collisionHash] = newtonCollision;
                 }
             }
 
@@ -412,9 +349,9 @@ namespace Gek
             }
         }
 
-        dNewtonCollision *loadCollision(Entity *entity, const CStringW &shape)
+        NewtonCollision *loadCollision(Entity *entity, const CStringW &shape)
         {
-            dNewtonCollision *newtonCollision = nullptr;
+            NewtonCollision *newtonCollision = nullptr;
             if (shape.GetAt(0) == L'*')
             {
                 newtonCollision = createCollision(entity, shape);
@@ -427,14 +364,14 @@ namespace Gek
                 {
                     if ((*collisionIterator).second)
                     {
-                        newtonCollision = (*collisionIterator).second.get();
+                        newtonCollision = (*collisionIterator).second;
                     }
                 }
                 else
                 {
                     gekLogScope(shape);
 
-                    collisionList[shapeHash].reset();
+                    collisionList[shapeHash] = nullptr;
                     loadModel(shape, [&](std::map<CStringA, Material> &materialList, UINT32 vertexCount, Vertex *vertexList, UINT32 indexCount, UINT16 *indexList) -> void
                     {
                         if (materialList.empty())
@@ -445,14 +382,14 @@ namespace Gek
                                 pointCloudList[index] = vertexList[indexList[index]].position;
                             }
 
-                            newtonCollision = new dNewtonCollisionConvexHull(newton, pointCloudList.size(), pointCloudList[0].data, sizeof(Math::Float3), 0.025f, 1);
+                            newtonCollision = NewtonCreateConvexHull(newtonWorld, pointCloudList.size(), pointCloudList[0].data, sizeof(Math::Float3), 0.025f, shapeHash, Math::Float4x4().data);
                         }
                         else
                         {
-                            dNewtonCollisionMesh *newtonCollisionMesh = new dNewtonCollisionMesh(newton, 1);
-                            if (newtonCollisionMesh != nullptr)
+                            newtonCollision = NewtonCreateTreeCollision(newtonWorld, shapeHash);
+                            if (newtonCollision != nullptr)
                             {
-                                newtonCollisionMesh->BeginFace();
+                                NewtonTreeCollisionBeginBuild(newtonCollision);
                                 for (auto &materialPair : materialList)
                                 {
                                     Material &material = materialPair.second;
@@ -469,20 +406,23 @@ namespace Gek
                                                 vertexList[material.firstVertex + indexList[material.firstIndex + index + 2]].position,
                                             };
 
-                                            newtonCollisionMesh->AddFace(3, face[0].data, sizeof(Math::Float3), surfaceIndex);
+                                            NewtonTreeCollisionAddFace(newtonCollision, 3, face[0].data, sizeof(Math::Float3), surfaceIndex);
                                         }
                                     }
                                 }
 
-                                newtonCollisionMesh->EndFace();
-                                newtonCollision = newtonCollisionMesh;
+#ifdef _DEBUG
+                                NewtonTreeCollisionEndBuild(newtonCollision, 0);
+#else
+                                NewtonTreeCollisionEndBuild(newtonCollision, 1);
+#endif
                             }
                         }
                     });
 
                     if (newtonCollision)
                     {
-                        collisionList[shapeHash].reset(newtonCollision);
+                        collisionList[shapeHash] = newtonCollision;
                     }
                 }
             }
@@ -511,28 +451,105 @@ namespace Gek
             return resultValue;
         };
 
+        void onPreUpdate(float timeStep)
+        {
+            for (auto &entityPair : entityMap)
+            {
+                entityPair.second->onPreUpdate(timeStep);
+            }
+        }
+
+        static void newtonOnPreUpdate(const NewtonWorld* const world, void* const listenerUserData, dFloat timeStep)
+        {
+            NewtonProcessorImplementation *processor = static_cast<NewtonProcessorImplementation *>(listenerUserData);
+            processor->onPreUpdate(timeStep);
+        }
+
+        void onPostUpdate(float timeStep)
+        {
+            for (auto &entityPair : entityMap)
+            {
+                entityPair.second->onPostUpdate(timeStep);
+            }
+        }
+
+        static void newtonOnPostUpdate(const NewtonWorld* const world, void* const listenerUserData, dFloat timeStep)
+        {
+            NewtonProcessorImplementation *processor = static_cast<NewtonProcessorImplementation *>(listenerUserData);
+            processor->onPostUpdate(timeStep);
+        }
+
+        static int newtonOnAABBOverlap(const NewtonMaterial* const material, const NewtonBody* const body0, const NewtonBody* const body1, int threadIndex)
+        {
+            return 1;
+        }
+
+        static void newtonOnContactFriction(const NewtonJoint* contactJoint, dFloat timeStep, int threadHandle)
+        {
+            const NewtonBody* const body0 = NewtonJointGetBody0(contactJoint);
+            const NewtonBody* const body1 = NewtonJointGetBody1(contactJoint);
+
+            NewtonWorld *newtonWorld = NewtonBodyGetWorld(body0);
+            NewtonProcessorImplementation *processor = static_cast<NewtonProcessorImplementation *>(NewtonWorldGetUserData(newtonWorld));
+            processor->onPostUpdate(timeStep);
+        }
+
+        void onContactFriction(const NewtonJoint* contactJoint, dFloat timeStep, int threadHandle)
+        {
+            const NewtonBody* const body0 = NewtonJointGetBody0(contactJoint);
+            const NewtonBody* const body1 = NewtonJointGetBody1(contactJoint);
+            NewtonEntity *newtonEntity0 = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body0));
+            NewtonEntity *newtonEntity1 = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body1));
+
+            NewtonWorldCriticalSectionLock(newtonWorld, threadHandle);
+            for (void* newtonContact = NewtonContactJointGetFirstContact(contactJoint); newtonContact; newtonContact = NewtonContactJointGetNextContact(contactJoint, newtonContact))
+            {
+                NewtonMaterial *newtonMaterial = NewtonContactGetMaterial(newtonContact);
+
+                Math::Float3 position, normal;
+                NewtonMaterialGetContactPositionAndNormal(newtonMaterial, body0, position.data, normal.data);
+
+                INT32 surfaceIndex0 = getContactSurface((newtonEntity0 ? newtonEntity0->getEntity() : nullptr), body0, newtonMaterial, position, normal);
+                INT32 surfaceIndex1 = getContactSurface((newtonEntity1 ? newtonEntity1->getEntity() : nullptr), body1, newtonMaterial, position, normal);
+                const Surface &surface0 = getSurface(surfaceIndex0);
+                const Surface &surface1 = getSurface(surfaceIndex1);
+
+                NewtonMaterialSetContactSoftness(newtonMaterial, ((surface0.softness + surface1.softness) * 0.5f));
+                NewtonMaterialSetContactElasticity(newtonMaterial, ((surface0.elasticity + surface1.elasticity) * 0.5f));
+                NewtonMaterialSetContactFrictionCoef(newtonMaterial, surface0.staticFriction, surface0.kineticFriction, 0);
+                NewtonMaterialSetContactFrictionCoef(newtonMaterial, surface1.staticFriction, surface1.kineticFriction, 1);
+            }
+
+            NewtonWorldCriticalSectionUnlock(newtonWorld);
+        }
+
         // PopulationObserver
         STDMETHODIMP_(void) onLoadBegin(void)
         {
-            newton = new NewtonBase();
+            newtonWorld = NewtonCreate();
+            NewtonWorldSetUserData(newtonWorld, this);
+            auto preListener = NewtonWorldAddPreListener(newtonWorld, "core", this, newtonOnPreUpdate, nullptr);
+            auto postListener = NewtonWorldAddPostListener(newtonWorld, "core", this, newtonOnPostUpdate, nullptr);
 
-            newtonStaticScene = new dNewtonCollisionScene(newton, 1);
+            int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
+            NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, NULL, newtonOnAABBOverlap, newtonOnContactFriction);
+
+            newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
             if (newtonStaticScene)
             {
-                newtonStaticScene->BeginAddRemoveCollision();
+                NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
             }
-
-            newtonPlayerManager = createPlayerManager(newton->GetNewton());
         }
 
         STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
         {
             if (newtonStaticScene)
             {
-                newtonStaticScene->EndAddRemoveCollision();
+                NewtonSceneCollisionEndAddRemove(newtonStaticScene);
                 if (SUCCEEDED(resultValue))
                 {
-                    dNewtonBody *newtonStaticBody = new dNewtonBody(newton, 0.0f, newtonStaticScene, nullptr, Math::Float4x4().data, dNewtonBody::m_dynamic, nullptr);
+                    NewtonBody *newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4().data);
+                    NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
                 }
             }
 
@@ -544,29 +561,34 @@ namespace Gek
 
         STDMETHODIMP_(void) onFree(void)
         {
-            if (newton)
+            if (newtonWorld)
             {
-                newton->WaitForUpdateToFinish();
+                NewtonWaitForUpdateToFinish(newtonWorld);
+            }
+
+            for (auto &collisionPair : collisionList)
+            {
+                NewtonDestroyCollision(collisionPair.second);
             }
 
             collisionList.clear();
-            bodyList.clear();
+            entityMap.clear();
             surfaceList.clear();
             surfaceIndexList.clear();
 
-            delete newtonStaticScene;
-            newtonStaticScene = nullptr;
-
-            delete newtonPlayerManager;
-            newtonPlayerManager = nullptr;
-
-            if (newton)
+            if (newtonStaticScene)
             {
-                newton->DestroyAllBodies();
+                NewtonDestroyCollision(newtonStaticScene);
+                newtonStaticScene = nullptr;
             }
 
-            delete newton;
-            newton = nullptr;
+            if (newtonWorld)
+            {
+                NewtonDestroyAllBodies(newtonWorld);
+                NewtonInvalidateCache(newtonWorld);
+                NewtonDestroy(newtonWorld);
+                newtonWorld = nullptr;
+            }
 
             REQUIRE_VOID_RETURN(NewtonGetMemoryUsed() == 0);
         }
@@ -581,13 +603,13 @@ namespace Gek
                 if (entity->hasComponent<StaticBodyComponent>())
                 {
                     auto &staticBodyComponent = entity->getComponent<StaticBodyComponent>();
-                    dNewtonCollision *newtonCollision = loadCollision(entity, staticBodyComponent.shape);
+                    NewtonCollision *newtonCollision = loadCollision(entity, staticBodyComponent.shape);
                     if (newtonCollision != nullptr)
                     {
-                        dNewtonCollision *clonedCollision = newtonCollision->Clone(newtonCollision->GetShape());
-                        Math::Float4x4 matrix(transformComponent.rotation, transformComponent.position);
-                        clonedCollision->SetMatrix(matrix.data);
-                        newtonStaticScene->AddCollision(clonedCollision);
+                        NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
+                        NewtonCollisionSetMatrix(clonedCollision, Math::Float4x4::createMatrix(transformComponent.rotation, transformComponent.position).data);
+                        NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
+                        NewtonDestroyCollision(clonedCollision);
                     }
                 }
                 else if (entity->hasComponents<MassComponent>())
@@ -596,23 +618,23 @@ namespace Gek
                     if (entity->hasComponent<RigidBodyComponent>())
                     {
                         auto &rigidBodyComponent = entity->getComponent<RigidBodyComponent>();
-                        dNewtonCollision *newtonCollision = loadCollision(entity, rigidBodyComponent.shape);
+                        NewtonCollision *newtonCollision = loadCollision(entity, rigidBodyComponent.shape);
                         if (newtonCollision != nullptr)
                         {
-                            CComPtr<NewtonEntity> dynamicBody = createRigidBody(newton, newtonCollision, entity, transformComponent, massComponent);
-                            if (dynamicBody)
+                            CComPtr<NewtonEntity> rigidBody = createRigidBody(newtonWorld, newtonCollision, entity, transformComponent, massComponent);
+                            if (rigidBody)
                             {
-                                bodyList[entity] = dynamicBody;
+                                entityMap[entity] = rigidBody;
                             }
                         }
                     }
                     else if (entity->hasComponent<PlayerBodyComponent>())
                     {
                         auto &playerBodyComponent = entity->getComponent<PlayerBodyComponent>();
-                        CComPtr<NewtonEntity> playerBody = createPlayerBody(actionProvider, newtonPlayerManager, entity, playerBodyComponent, transformComponent, massComponent);
+                        CComPtr<NewtonEntity> playerBody = createPlayerBody(actionProvider, newtonWorld, entity, playerBodyComponent, transformComponent, massComponent);
                         if (playerBody)
                         {
-                            bodyList[entity] = playerBody;
+                            entityMap[entity] = playerBody;
                         }
                     }
                 }
@@ -621,18 +643,18 @@ namespace Gek
 
         STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
         {
-            auto bodyIterator = bodyList.find(entity);
-            if (bodyIterator != bodyList.end())
+            auto entityIterator = entityMap.find(entity);
+            if (entityIterator != entityMap.end())
             {
-                bodyList.erase(bodyIterator);
+                entityMap.erase(entityIterator);
             }
         }
 
         STDMETHODIMP_(void) onUpdate(float frameTime)
         {
-            if (newton && frameTime > 0.0f)
+            if (newtonWorld && frameTime > 0.0f)
             {
-                newton->Update(frameTime);
+                NewtonUpdateAsync(newtonWorld, frameTime);
             }
         }
     };

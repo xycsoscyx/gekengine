@@ -7,8 +7,10 @@ namespace Gek
     namespace Math
     {
         Float3x2::Float3x2(void)
+            : data{ 1.0f, 0.0f,
+                    0.0f, 1.0f,
+                    0.0f, 0.0f }
         {
-            setIdentity();
         }
 
         Float3x2::Float3x2(const float(&data)[6])
@@ -32,37 +34,39 @@ namespace Gek
         {
         }
 
-        void Float3x2::setZero(void)
+        Float3x2 Float3x2::createZero(void)
         {
-            rows[0].set(0.0f, 0.0f);
-            rows[1].set(0.0f, 0.0f);
-            rows[2].set(0.0f, 0.0f);
+            return Float3x2({ 0.0f, 0.0f,
+                              0.0f, 0.0f,
+                              0.0f, 0.0f });
         }
 
-        void Float3x2::setIdentity(void)
+        Float3x2 Float3x2::createIdentity(void)
         {
-            rows[0].set(1.0f, 0.0f);
-            rows[1].set(0.0f, 1.0f);
-            rows[2].set(0.0f, 0.0f);
+            return Float3x2({ 1.0f, 0.0f,
+                              0.0f, 1.0f,
+                              0.0f, 0.0f });
         }
 
-        void Float3x2::setScaling(float scalar)
+        Float3x2 Float3x2::createScaling(float scalar)
         {
-            _11 = scalar;
-            _22 = scalar;
+            return Float3x2({ scalar,   0.0f,
+                                0.0f, scalar,
+                                0.0f,   0.0f });
         }
 
-        void Float3x2::setScaling(const Float2 &vector)
+        Float3x2 Float3x2::createScaling(const Float2 &vector)
         {
-            _11 = vector.x;
-            _22 = vector.y;
+            return Float3x2({ vector.x,     0.0f,
+                                  0.0f, vector.y,
+                                  0.0f,     0.0f });
         }
 
-        void Float3x2::setRotation(float radians)
+        Float3x2 Float3x2::createRotation(float radians)
         {
-            rows[0].set(std::cos(radians), -std::sin(radians));
-            rows[1].set(std::sin(radians), std::cos(radians));
-            rows[2].set(0.0f, 0.0f);
+            return Float3x2({ std::cos(radians), -std::sin(radians),
+                              std::sin(radians),  std::cos(radians),
+                                           0.0f,               0.0f });
         }
 
         Float2 Float3x2::getScaling(void) const

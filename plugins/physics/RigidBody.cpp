@@ -8,34 +8,42 @@
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Matrix4x4.h"
 #include <Newton.h>
-#include <dNewton.h>
-#include <dNewtonCollision.h>
-#include <dNewtonDynamicBody.h>
 
 namespace Gek
 {
     static const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
 
     class RigidNewtonBody : public UnknownMixin
-        , public dNewtonDynamicBody
         , public NewtonEntity
     {
     private:
         Entity *entity;
+        NewtonBody *newtonBody;
+        TransformComponent &transformComponent;
+        MassComponent &massComponent;
 
     public:
-        RigidNewtonBody(dNewton *newton, const dNewtonCollision* const newtonCollision, Entity *entity,
-            const TransformComponent &transformComponent,
-            const MassComponent &massComponent)
-            : dNewtonDynamicBody(newton, massComponent, newtonCollision, nullptr, Math::Float4x4(transformComponent.rotation, transformComponent.position).data, NULL)
-            , entity(entity)
+        RigidNewtonBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity,
+            TransformComponent &transformComponent,
+            MassComponent &massComponent)
+            : entity(entity)
+            , newtonBody(NewtonCreateDynamicBody(newtonWorld, newtonCollision, Math::Float4x4::createMatrix(transformComponent.rotation, transformComponent.position).data))
+            , transformComponent(transformComponent)
+            , massComponent(massComponent)
         {
-            NewtonBodySetUserData(GetNewtonBody(), this);
+            REQUIRE_VOID_RETURN(newtonBody);
+            NewtonBodySetMassProperties(newtonBody, massComponent, newtonCollision);
+            NewtonBodySetUserData(newtonBody, this);
         }
 
         ~RigidNewtonBody(void)
         {
+            NewtonDestroyBody(newtonBody);
         }
+
+        // IUnknown
+        BEGIN_INTERFACE_LIST(RigidNewtonBody)
+        END_INTERFACE_LIST_UNKNOWN
 
         // NewtonEntity
         STDMETHODIMP_(Entity *) getEntity(void) const
@@ -45,33 +53,26 @@ namespace Gek
 
         STDMETHODIMP_(NewtonBody *) getNewtonBody(void) const
         {
-            return GetNewtonBody();
+            return newtonBody;
         }
 
-        // dNewtonBody
-        void OnBodyTransform(const dFloat* const newtonMatrix, int threadHandle)
+        STDMETHODIMP_(void) onPreUpdate(float frameTime)
         {
-            REQUIRE_VOID_RETURN(entity);
+            NewtonBodyAddForce(newtonBody, (Gravity * (float)massComponent).data);
+        }
 
-            Math::Float4x4 matrix(newtonMatrix);
-            auto &transformComponent = entity->getComponent<TransformComponent>();
+        STDMETHODIMP_(void) onPostUpdate(float frameTime)
+        {
+            Math::Float4x4 matrix;
+            NewtonBodyGetMatrix(newtonBody, matrix.data);
             transformComponent.position = matrix.translation;
             transformComponent.rotation = matrix;
         }
-
-        // dNewtonDynamicBody
-        void OnForceAndTorque(dFloat frameTime, int threadHandle)
-        {
-            REQUIRE_VOID_RETURN(entity);
-
-            float mass = entity->getComponent<MassComponent>();
-            AddForce((Gravity * mass).data);
-        }
     };
 
-    NewtonEntity *createRigidBody(dNewton *newton, const dNewtonCollision* const newtonCollision, Entity *entity, const TransformComponent &transformComponent, const MassComponent &massComponent)
+    NewtonEntity *createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent)
     {
-        return new RigidNewtonBody(newton, newtonCollision, entity, transformComponent, massComponent);
+        return new RigidNewtonBody(newtonWorld, newtonCollision, entity, transformComponent, massComponent);
     }
 
     RigidBodyComponent::RigidBodyComponent(void)

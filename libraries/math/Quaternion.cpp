@@ -8,97 +8,83 @@ namespace Gek
 {
     namespace Math
     {
-        Quaternion::Quaternion(const Float4x4 &rotation)
+        Quaternion Quaternion::createIdentity(void)
         {
-            setRotation(rotation);
+            return Quaternion({ 0.0f, 0.0f, 0.0f, 1.0f });
         }
 
-        Quaternion::Quaternion(const Float3 &axis, float radians)
+        Quaternion Quaternion::createEuler(float pitch, float yaw, float roll)
         {
-            setRotation(axis, radians);
+            float sinPitch(std::sin(pitch * 0.5f));
+            float sinYaw(std::sin(yaw * 0.5f));
+            float sinRoll(std::sin(roll * 0.5f));
+            float cosPitch(std::cos(pitch * 0.5f));
+            float cosYaw(std::cos(yaw * 0.5f));
+            float cosRoll(std::cos(roll * 0.5f));
+            return Quaternion({
+                ((sinPitch * cosYaw * cosRoll) - (cosPitch * sinYaw * sinRoll)),
+                ((sinPitch * cosYaw * sinRoll) + (cosPitch * sinYaw * cosRoll)),
+                ((cosPitch * cosYaw * sinRoll) - (sinPitch * sinYaw * cosRoll)),
+                ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll)),
+            });
         }
 
-        Quaternion::Quaternion(const Float3 &euler)
-        {
-            setEuler(euler.x, euler.y, euler.z);
-        }
-
-        Quaternion::Quaternion(float x, float y, float z)
-        {
-            setEuler(x, y, z);
-        }
-
-        void Quaternion::setIdentity(void)
-        {
-            x = y = z = 0.0f;
-            w = 1.0f;
-        }
-
-        void Quaternion::setEuler(const Float3 &euler)
-        {
-            setEuler(euler.x, euler.y, euler.z);
-        }
-
-        void Quaternion::setEuler(float x, float y, float z)
-        {
-            float sinX(std::sin(x * 0.5f));
-            float sinY(std::sin(y * 0.5f));
-            float sinZ(std::sin(z * 0.5f));
-            float cosX(std::cos(x * 0.5f));
-            float cosY(std::cos(y * 0.5f));
-            float cosZ(std::cos(z * 0.5f));
-            this->x = ((sinX * cosY * cosZ) - (cosX * sinY * sinZ));
-            this->y = ((sinX * cosY * sinZ) + (cosX * sinY * cosZ));
-            this->z = ((cosX * cosY * sinZ) - (sinX * sinY * cosZ));
-            this->w = ((cosX * cosY * cosZ) + (sinX * sinY * sinZ));
-        }
-
-        void Quaternion::setRotation(const Float3 &axis, float radians)
+        Quaternion Quaternion::createRotation(const Float3 &axis, float radians)
         {
             Float3 normal(axis.getNormal());
             float sinAngle(std::sin(radians * 0.5f));
-            x = (normal.x * sinAngle);
-            y = (normal.y * sinAngle);
-            z = (normal.z * sinAngle);
-            w = std::cos(radians * 0.5f);
+            return Quaternion({
+                (normal.x * sinAngle),
+                (normal.y * sinAngle),
+                (normal.z * sinAngle),
+                std::cos(radians * 0.5f),
+            });
         }
 
-        void Quaternion::setRotation(const Float4x4 &rotation)
+        Quaternion Quaternion::createRotation(const Float4x4 &rotation)
         {
             float trace(rotation.table[0][0] + rotation.table[1][1] + rotation.table[2][2] + 1.0f);
             if (trace > Math::Epsilon)
             {
                 float denominator(0.5f / std::sqrt(trace));
-                w = (0.25f / denominator);
-                x = ((rotation.table[1][2] - rotation.table[2][1]) * denominator);
-                y = ((rotation.table[2][0] - rotation.table[0][2]) * denominator);
-                z = ((rotation.table[0][1] - rotation.table[1][0]) * denominator);
+                return Quaternion({
+                    ((rotation.table[1][2] - rotation.table[2][1]) * denominator),
+                    ((rotation.table[2][0] - rotation.table[0][2]) * denominator),
+                    ((rotation.table[0][1] - rotation.table[1][0]) * denominator),
+                    (0.25f / denominator),
+                });
             }
             else
             {
                 if ((rotation.table[0][0] > rotation.table[1][1]) && (rotation.table[0][0] > rotation.table[2][2]))
                 {
                     float denominator(2.0f * std::sqrt(1.0f + rotation.table[0][0] - rotation.table[1][1] - rotation.table[2][2]));
-                    x = (0.25f * denominator);
-                    y = ((rotation.table[1][0] + rotation.table[0][1]) / denominator);
-                    z = ((rotation.table[2][0] + rotation.table[0][2]) / denominator);
-                    w = ((rotation.table[2][1] - rotation.table[1][2]) / denominator);
+                    return Quaternion({
+                        (0.25f * denominator),
+                        ((rotation.table[1][0] + rotation.table[0][1]) / denominator),
+                        ((rotation.table[2][0] + rotation.table[0][2]) / denominator),
+                        ((rotation.table[2][1] - rotation.table[1][2]) / denominator),
+                    });
                 }
                 else if (rotation.table[1][1] > rotation.table[2][2])
                 {
                     float denominator(2.0f * (std::sqrt(1.0f + rotation.table[1][1] - rotation.table[0][0] - rotation.table[2][2])));
-                    x = ((rotation.table[1][0] + rotation.table[0][1]) / denominator);
-                    y = (0.25f * denominator);
-                    z = ((rotation.table[2][1] + rotation.table[1][2]) / denominator);
-                    w = ((rotation.table[2][0] - rotation.table[0][2]) / denominator);
+                    return Quaternion({
+                        ((rotation.table[1][0] + rotation.table[0][1]) / denominator),
+                        (0.25f * denominator),
+                        ((rotation.table[2][1] + rotation.table[1][2]) / denominator),
+                        ((rotation.table[2][0] - rotation.table[0][2]) / denominator),
+                    });
                 }
                 else
                 {
                     float denominator(2.0f * (std::sqrt(1.0f + rotation.table[2][2] - rotation.table[0][0] - rotation.table[1][1])));
-                    x = ((rotation.table[2][0] + rotation.table[0][2]) / denominator);
-                    y = ((rotation.table[2][1] + rotation.table[1][2]) / denominator);
-                    z = (0.25f * denominator);
-                    w = ((rotation.table[1][0] - rotation.table[0][1]) / denominator);
+                    return Quaternion({
+                        ((rotation.table[2][0] + rotation.table[0][2]) / denominator),
+                        ((rotation.table[2][1] + rotation.table[1][2]) / denominator),
+                        (0.25f * denominator),
+                        ((rotation.table[1][0] - rotation.table[0][1]) / denominator),
+                    });
                 }
             }
         }
@@ -121,14 +107,6 @@ namespace Gek
         Quaternion Quaternion::getInverse(void) const
         {
             return Quaternion(-x, -y, -z, w);
-        }
-
-        Float3 Quaternion::getEuler(void) const
-        {
-            Float4 square((*this) * (*this));
-            return Float3(std::atan2(2.0f * ((y * z) + (x * w)), (-square.x - square.y + square.z + square.w)),
-                std::asin(-2.0f * ((x * z) - (y * w))),
-                std::atan2(2.0f * ((x * y) + (z * w)), (square.x - square.y - square.z + square.w)));
         }
 
         void Quaternion::invert(void)
@@ -245,7 +223,7 @@ namespace Gek
 
         Quaternion Quaternion::operator = (const Float4x4 &rotation)
         {
-            setRotation(rotation);
+            (*this) = createRotation(rotation);
             return (*this);
         }
     }; // namespace Math

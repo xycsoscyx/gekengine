@@ -37,11 +37,11 @@ namespace Gek
             Float3x2(const float *data);
             Float3x2(const Float3x2 &matrix);
 
-            void setZero(void);
-            void setIdentity(void);
-            void setScaling(float scalar);
-            void setScaling(const Float2 &vector);
-            void setRotation(float radians);
+            static Float3x2 createZero(void);
+            static Float3x2 createIdentity(void);
+            static Float3x2 createScaling(float scalar);
+            static Float3x2 createScaling(const Float2 &vector);
+            static Float3x2 createRotation(float radians);
 
             Float2 getScaling(void) const;
 

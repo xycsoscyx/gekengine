@@ -791,7 +791,7 @@ namespace Gek
             population->listEntities<TransformComponent, CameraComponent>([&](Entity *cameraEntity) -> void
             {
                 auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
-                Math::Float4x4 cameraMatrix(cameraTransform.rotation, cameraTransform.position);
+                Math::Float4x4 cameraMatrix(Math::Float4x4::createMatrix(cameraTransform.rotation, cameraTransform.position));
 
                 auto &cameraData = cameraEntity->getComponent<CameraComponent>();
 
@@ -803,7 +803,7 @@ namespace Gek
                 cameraConstantData.minimumDistance = cameraData.minimumDistance;
                 cameraConstantData.maximumDistance = cameraData.maximumDistance;
                 cameraConstantData.viewMatrix = cameraMatrix.getInverse();
-                cameraConstantData.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraData.minimumDistance, cameraData.maximumDistance);
+                cameraConstantData.projectionMatrix = Math::Float4x4::createPerspective(fieldOfView, displayAspectRatio, cameraData.minimumDistance, cameraData.maximumDistance);
                 cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
                 video->updateBuffer(this->cameraConstantBuffer, &cameraConstantData);
 

@@ -8,8 +8,11 @@ namespace Gek
     namespace Math
     {
         Float4x4::Float4x4(void)
+            : data{ 1.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 1.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 1.0f }
         {
-            setIdentity();
         }
 
         Float4x4::Float4x4(const __m128(&data)[4])
@@ -38,128 +41,74 @@ namespace Gek
         {
         }
 
-        Float4x4::Float4x4(const Float3 &euler)
+        Float4x4 Float4x4::createZero(void)
         {
-            setEuler(euler.x, euler.y, euler.z);
+            return Float4x4({ 0.0f, 0.0f, 0.0f, 0.0f,
+                              0.0f, 0.0f, 0.0f, 0.0f,
+                              0.0f, 0.0f, 0.0f, 0.0f,
+                              0.0f, 0.0f, 0.0f, 0.0f });
         }
 
-        Float4x4::Float4x4(float x, float y, float z)
+        Float4x4 Float4x4::createIdentity(void)
         {
-            setEuler(x, y, z);
+            return Float4x4({ 1.0f, 0.0f, 0.0f, 0.0f,
+                              0.0f, 1.0f, 0.0f, 0.0f,
+                              0.0f, 0.0f, 1.0f, 0.0f,
+                              0.0f, 0.0f, 0.0f, 1.0f });
         }
 
-        Float4x4::Float4x4(const Float3 &axis, float radians)
+        Float4x4 Float4x4::createScaling(float scalar)
         {
-            setRotation(axis, radians);
+            return Float4x4({ scalar, 0.0f, 0.0f, 0.0f,
+                              0.0f, scalar, 0.0f, 0.0f,
+                              0.0f, 0.0f, scalar, 0.0f,
+                              0.0f, 0.0f, 0.0f, 1.0f });
         }
 
-        Float4x4::Float4x4(const Quaternion &rotation)
+        Float4x4 Float4x4::createScaling(const Float3 &vector)
         {
-            setRotation(rotation);
+            return Float4x4({ vector.x, 0.0f, 0.0f, 0.0f,
+                              0.0f, vector.y, 0.0f, 0.0f,
+                              0.0f, 0.0f, vector.z, 0.0f,
+                              0.0f, 0.0f, 0.0f, 1.0f });
         }
 
-        Float4x4::Float4x4(const Quaternion &rotation, const Float3 &translation)
+        Float4x4 Float4x4::createEuler(float pitch, float yaw, float roll)
         {
-            setRotation(rotation, translation);
+            float cosPitch(std::cos(pitch));
+            float sinPitch(std::sin(pitch));
+            float cosYaw(std::cos(yaw));
+            float sinYaw(std::sin(yaw));
+            float cosRoll(std::cos(roll));
+            float sinRoll(std::sin(roll));
+            float cosPitchSinYaw(cosPitch * sinYaw);
+            float sinPitchSinYaw(sinPitch * sinYaw);
+
+            return Float4x4({
+                (cosYaw * cosRoll), (-cosYaw * sinRoll), sinYaw, 0.0f,
+                (sinPitchSinYaw * cosRoll + cosPitch * sinRoll), (-sinPitchSinYaw * sinRoll + cosPitch * cosRoll), (-sinPitch * cosYaw), 0.0f,
+                (-cosPitchSinYaw * cosRoll + sinPitch * sinRoll), (cosPitchSinYaw * sinRoll + sinPitch * cosRoll), (cosPitch * cosYaw), 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f });
         }
 
-        void Float4x4::setZero(void)
-        {
-            rows[0].set(0.0f, 0.0f, 0.0f, 0.0f);
-            rows[1].set(0.0f, 0.0f, 0.0f, 0.0f);
-            rows[2].set(0.0f, 0.0f, 0.0f, 0.0f);
-            rows[3].set(0.0f, 0.0f, 0.0f, 0.0f);
-        }
-
-        void Float4x4::setIdentity(void)
-        {
-            rows[0].set(1.0f, 0.0f, 0.0f, 0.0f);
-            rows[1].set(0.0f, 1.0f, 0.0f, 0.0f);
-            rows[2].set(0.0f, 0.0f, 1.0f, 0.0f);
-            rows[3].set(0.0f, 0.0f, 0.0f, 1.0f);
-        }
-
-        void Float4x4::setScaling(float scalar)
-        {
-            setScaling(Float3(scalar));
-        }
-
-        void Float4x4::setScaling(const Float3 &vector)
-        {
-            _11 = vector.x;
-            _22 = vector.y;
-            _33 = vector.z;
-        }
-
-        void Float4x4::setEuler(const Float3 &euler)
-        {
-            setEuler(euler.x, euler.y, euler.z);
-        }
-
-        void Float4x4::setEuler(float x, float y, float z)
-        {
-            float cosX(std::cos(x));
-            float sinX(std::sin(x));
-            float cosY(std::cos(y));
-            float sinY(std::sin(y));
-            float cosZ(std::cos(z));
-            float sinZ(std::sin(z));
-            float cosXsinY(cosX * sinY);
-            float sinXsinY(sinX * sinY);
-
-            table[0][0] = (cosY * cosZ);
-            table[1][0] = (-cosY * sinZ);
-            table[2][0] = sinY;
-            table[3][0] = 0.0f;
-
-            table[0][1] = (sinXsinY * cosZ + cosX * sinZ);
-            table[1][1] = (-sinXsinY * sinZ + cosX * cosZ);
-            table[2][1] = (-sinX * cosY);
-            table[3][1] = 0.0f;
-
-            table[0][2] = (-cosXsinY * cosZ + sinX * sinZ);
-            table[1][2] = (cosXsinY * sinZ + sinX * cosZ);
-            table[2][2] = (cosX * cosY);
-            table[3][2] = 0.0f;
-
-            table[0][3] = 0.0f;
-            table[1][3] = 0.0f;
-            table[2][3] = 0.0f;
-            table[3][3] = 1.0f;
-        }
-
-        void Float4x4::setRotation(const Float3 &axis, float radians)
+        Float4x4 Float4x4::createAngular(const Float3 &axis, float radians)
         {
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
 
-            table[0][0] = (cosAngle + axis.x * axis.x * (1.0f - cosAngle));
-            table[0][1] = (axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle));
-            table[0][2] = (-axis.y * sinAngle + axis.z * axis.x * (1.0f - cosAngle));
-            table[0][3] = 0.0f;
-
-            table[1][0] = (-axis.z * sinAngle + axis.x * axis.y * (1.0f - cosAngle));
-            table[1][1] = (cosAngle + axis.y * axis.y * (1.0f - cosAngle));
-            table[1][2] = (axis.x * sinAngle + axis.z * axis.y * (1.0f - cosAngle));
-            table[1][3] = 0.0f;
-
-            table[2][0] = (axis.y * sinAngle + axis.x * axis.z * (1.0f - cosAngle));
-            table[2][1] = (-axis.x * sinAngle + axis.y * axis.z * (1.0f - cosAngle));
-            table[2][2] = (cosAngle + axis.z * axis.z * (1.0f - cosAngle));
-            table[2][3] = 0.0f;
-
-            table[3][0] = 0.0f;
-            table[3][1] = 0.0f;
-            table[3][2] = 0.0f;
-            table[3][3] = 1.0f;
+            return Float4x4({
+                (cosAngle + axis.x * axis.x * (1.0f - cosAngle)), (axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle)), (-axis.y * sinAngle + axis.z * axis.x * (1.0f - cosAngle)), 0.0f,
+                (-axis.z * sinAngle + axis.x * axis.y * (1.0f - cosAngle)), (cosAngle + axis.y * axis.y * (1.0f - cosAngle)), (axis.x * sinAngle + axis.z * axis.y * (1.0f - cosAngle)), 0.0f,
+                (axis.y * sinAngle + axis.x * axis.z * (1.0f - cosAngle)), (-axis.x * sinAngle + axis.y * axis.z * (1.0f - cosAngle)), (cosAngle + axis.z * axis.z * (1.0f - cosAngle)), 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f });
         }
 
-        void Float4x4::setRotation(const Quaternion &rotation)
+        Float4x4 Float4x4::createMatrix(const Quaternion &rotation)
         {
-            setRotation(rotation, Float3(0.0f, 0.0f, 0.0f));
+            return createMatrix(rotation, Float3(0.0f, 0.0f, 0.0f));
         }
 
-        void Float4x4::setRotation(const Quaternion &rotation, const Float3 &translation)
+        Float4x4 Float4x4::createMatrix(const Quaternion &rotation, const Float3 &translation)
         {
             float xx(rotation.x * rotation.x);
             float yy(rotation.y * rotation.y);
@@ -168,10 +117,10 @@ namespace Gek
             float length(xx + yy + zz + ww);
             if (length == 0.0f)
             {
-                rx.set(1.0f, 0.0f, 0.0f, 0.0f);
-                ry.set(0.0f, 1.0f, 0.0f, 0.0f);
-                rz.set(0.0f, 0.0f, 1.0f, 0.0f);
-                rw.set(translation.w(1.0f));
+                return Float4x4({ 1.0f, 0.0f, 0.0f, 0.0f,
+                                  0.0f, 1.0f, 0.0f, 0.0f,
+                                  0.0f, 0.0f, 1.0f, 0.0f,
+                                  translation.x, translation.y, translation.z, 1.0f });
             }
             else
             {
@@ -182,139 +131,90 @@ namespace Gek
                 float yz(rotation.y * rotation.z);
                 float yw(rotation.y * rotation.w);
                 float zw(rotation.z * rotation.w);
-                this->rx.set((( xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f);
-                this->ry.set((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f);
-                this->rz.set((2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f);
-                this->rw.set(translation.w(1.0f));
+                return Float4x4({ ((xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
+                                  (2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f,
+                                  (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f,
+                                  translation.x, translation.y, translation.z, 1.0f });
             }
         }
 
-        void Float4x4::setRotationX(float radians)
+        Float4x4 Float4x4::createPitch(float radians)
         {
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
-            table[0][0] = 1.0f; table[0][1] = 0.0f;         table[0][2] = 0.0f;     table[0][3] = 0.0f;
-            table[1][0] = 0.0f; table[1][1] = cosAngle;     table[1][2] = sinAngle; table[1][3] = 0.0f;
-            table[2][0] = 0.0f; table[2][1] = -sinAngle;    table[2][2] = cosAngle; table[2][3] = 0.0f;
-            table[3][0] = 0.0f; table[3][1] = 0.0f;         table[3][2] = 0.0f;     table[3][3] = 1.0f;
+
+            return Float4x4({
+                1.0f, 0.0f,         0.0f,     0.0f,
+                0.0f, cosAngle,     sinAngle, 0.0f,
+                0.0f, -sinAngle,    cosAngle, 0.0f,
+                0.0f, 0.0f,         0.0f,     1.0f,
+            });
         }
 
-        void Float4x4::setRotationY(float radians)
+        Float4x4 Float4x4::createYaw(float radians)
         {
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
-            table[0][0] = cosAngle;     table[0][1] = 0.0f; table[0][2] = -sinAngle;    table[0][3] = 0.0f;
-            table[1][0] = 0.0f;         table[1][1] = 1.0f; table[1][2] = 0.0f;         table[1][3] = 0.0f;
-            table[2][0] = sinAngle;     table[2][1] = 0.0f; table[2][2] = cosAngle;     table[2][3] = 0.0f;
-            table[3][0] = 0.0f;         table[3][1] = 0.0f; table[3][2] = 0.0f;         table[3][3] = 1.0f;
+
+            return Float4x4({
+                cosAngle,     0.0f, -sinAngle,    0.0f,
+                0.0f,         1.0f, 0.0f,         0.0f,
+                sinAngle,     0.0f, cosAngle,     0.0f,
+                0.0f,         0.0f, 0.0f,         1.0f,
+            });
         }
 
-        void Float4x4::setRotationZ(float radians)
+        Float4x4 Float4x4::createRoll(float radians)
         {
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
-            table[0][0] = cosAngle;     table[0][1] = sinAngle; table[0][2] = 0.0f; table[0][3] = 0.0f;
-            table[1][0] = -sinAngle;    table[1][1] = cosAngle; table[1][2] = 0.0f; table[1][3] = 0.0f;
-            table[2][0] = 0.0f;         table[2][1] = 0.0f;     table[2][2] = 1.0f; table[2][3] = 0.0f;
-            table[3][0] = 0.0f;         table[3][1] = 0.0f;     table[3][2] = 0.0f; table[3][3] = 1.0f;
+
+            return Float4x4({
+                cosAngle,     sinAngle, 0.0f, 0.0f,
+                -sinAngle,    cosAngle, 0.0f, 0.0f,
+                0.0f,         0.0f,     1.0f, 0.0f,
+                0.0f,         0.0f,     0.0f, 1.0f,
+            });
         }
 
-        void Float4x4::setOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth)
+        Float4x4 Float4x4::createOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth)
         {
-            table[0][0] = (2.0f / (right - left));
-            table[0][1] = 0.0f;
-            table[0][2] = 0.0f;
-            table[0][3] = 0.0f;
-
-            table[1][0] = 0.0f;
-            table[1][1] = (2.0f / (top - bottom));
-            table[1][2] = 0.0f;
-            table[1][3] = 0.0f;
-
-            table[2][0] = 0.0f;
-            table[2][1] = 0.0f;
-            table[2][2] = (-2.0f / (farDepth - nearDepth));
-            table[2][3] = 0.0f;
-
-            table[3][0] = -((right + left) / (right - left));;
-            table[3][1] = -((top + bottom) / (top - bottom));
-            table[3][2] = -((farDepth + nearDepth) / (farDepth - nearDepth));
-            table[3][3] = 1.0f;
+            return Float4x4({
+                (2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
+                0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f,
+                0.0f, 0.0f, (-2.0f / (farDepth - nearDepth)), 0.0f,
+                -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farDepth + nearDepth) / (farDepth - nearDepth)), 1.0f,
+            });
         }
 
-        void Float4x4::setPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
+        Float4x4 Float4x4::createPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
         {
             float x(1.0f / std::tan(fieldOfView * 0.5f));
             float y(x * aspectRatio);
             float distance(farDepth - nearDepth);
 
-            table[0][0] = x;
-            table[0][1] = 0.0f;
-            table[0][2] = 0.0f;
-            table[0][3] = 0.0f;
-
-            table[1][0] = 0.0f;
-            table[1][1] = y;
-            table[1][2] = 0.0f;
-            table[1][3] = 0.0f;
-
-            table[2][0] = 0.0f;
-            table[2][1] = 0.0f;
-            table[2][2] = ((farDepth + nearDepth) / distance);
-            table[2][3] = 1.0f;
-
-            table[3][0] = 0.0f;
-            table[3][1] = 0.0f;
-            table[3][2] = -((2.0f * farDepth * nearDepth) / distance);
-            table[3][3] = 0.0f;
+            return Float4x4({
+                x, 0.0f, 0.0f, 0.0f,
+                0.0f, y, 0.0f, 0.0f,
+                0.0f, 0.0f, ((farDepth + nearDepth) / distance), 1.0f,
+                0.0f, 0.0f, -((2.0f * farDepth * nearDepth) / distance), 0.0f,
+            });
         }
 
-        void Float4x4::setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)
+        Float4x4 Float4x4::createLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)
         {
-            setLookAt((target - source), worldUpVector);
+            return createLookAt((target - source), worldUpVector);
         }
 
-        void Float4x4::setLookAt(const Float3 &direction, const Float3 &worldUpVector)
+        Float4x4 Float4x4::createLookAt(const Float3 &direction, const Float3 &worldUpVector)
         {
-            rz.set(direction.getNormal().w(0.0f));
-            rx.set(worldUpVector.cross(nz).getNormal().w(0.0f));
-            ry.set(nz.cross(nx).getNormal().w(0.0f));
-            rw.set(0.0f, 0.0f, 0.0f, 1.0f);
-        }
-
-        Float3 Float4x4::getEuler(void) const
-        {
-            Float3 euler;
-            euler.y = std::asin(_31);
-
-            float cosAngle = std::cos(euler.y);
-            if (std::abs(cosAngle) > 0.005)
-            {
-                euler.x = std::atan2(-(_32 / cosAngle), (_33 / cosAngle));
-                euler.z = std::atan2(-(_21 / cosAngle), (_11 / cosAngle));
-            }
-            else
-            {
-                euler.x = 0.0f;
-                euler.y = std::atan2(_12, _22);
-            }
-
-            if (euler.x < 0.0f)
-            {
-                euler.x += (Pi * 2.0f);
-            }
-
-            if (euler.y < 0.0f)
-            {
-                euler.y += (Pi * 2.0f);
-            }
-
-            if (euler.z < 0.0f)
-            {
-                euler.z += (Pi * 2.0f);
-            }
-
-            return euler;
+            Float3 nz(direction.getNormal());
+            Float3 nx(worldUpVector.cross(nz).getNormal());
+            Float3 ny(nz.cross(nx).getNormal());
+            return Float4x4({ nx.x, nx.y, nx.z, 0.0f,
+                              ny.x, ny.y, ny.z, 0.0f,
+                              nz.x, nz.y, nz.z, 0.0f,
+                              0.0f, 0.0f, 0.0f, 1.0f });
         }
 
         Float3 Float4x4::getScaling(void) const
@@ -428,7 +328,7 @@ namespace Gek
 
         Float4x4 Float4x4::operator = (const Quaternion &rotation)
         {
-            setRotation(rotation);
+            (*this) = createMatrix(rotation);
             return (*this);
         }
 

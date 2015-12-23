@@ -51,11 +51,6 @@ namespace Gek
                 normalize();
             }
 
-            Quaternion(const Float4x4 &rotation);
-            Quaternion(const Float3 &axis, float radians);
-            Quaternion(const Float3 &euler);
-            Quaternion(float x, float y, float z);
-
             inline void set(float x, float y, float z, float w)
             {
                 simd = _mm_setr_ps(x, y, z, w);
@@ -66,17 +61,15 @@ namespace Gek
                 simd = vector.simd;
             }
 
-            void setIdentity(void);
-            void setEuler(const Float3 &euler);
-            void setEuler(float x, float y, float z);
-            void setRotation(const Float3 &axis, float radians);
-            void setRotation(const Float4x4 &rotation);
+            static Quaternion createIdentity(void);
+            static Quaternion createEuler(float pitch, float yaw, float roll);
+            static Quaternion createRotation(const Float3 &axis, float radians);
+            static Quaternion createRotation(const Float4x4 &rotation);
 
             float getLengthSquared(void) const;
             float getLength(void) const;
             Quaternion getNormal(void) const;
             Quaternion getInverse(void) const;
-            Float3 getEuler(void) const;
 
             void invert(void);
             void normalize(void);
