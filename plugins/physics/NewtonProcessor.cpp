@@ -36,30 +36,30 @@ namespace Gek
     extern NewtonEntity *createPlayerBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent);
     extern NewtonEntity *createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent);
 
-    struct Surface
-    {
-        bool ghost;
-        float staticFriction;
-        float kineticFriction;
-        float elasticity;
-        float softness;
-
-        Surface(void)
-            : ghost(false)
-            , staticFriction(0.9f)
-            , kineticFriction(0.5f)
-            , elasticity(0.4f)
-            , softness(1.0f)
-        {
-        }
-    };
-
     class NewtonProcessorImplementation : public ContextUserMixin
         , public ObservableMixin
         , public PopulationObserver
         , public Processor
     {
     public:
+        struct Surface
+        {
+            bool ghost;
+            float staticFriction;
+            float kineticFriction;
+            float elasticity;
+            float softness;
+
+            Surface(void)
+                : ghost(false)
+                , staticFriction(0.9f)
+                , kineticFriction(0.5f)
+                , elasticity(0.4f)
+                , softness(1.0f)
+            {
+            }
+        };
+
         struct Vertex
         {
             Math::Float3 position;
@@ -451,50 +451,78 @@ namespace Gek
             return resultValue;
         };
 
-        void onPreUpdate(float timeStep)
+        static void newtonPreUpdateTask(NewtonWorld* const world, void* const userData, int threadIndex)
+        {
+            auto updatePair = *(std::pair<NewtonEntity *, float> *)userData;
+            updatePair.first->onPreUpdate(updatePair.second, threadIndex);
+        }
+
+        void onPreUpdate(dFloat frameTime)
         {
             for (auto &entityPair : entityMap)
             {
-                entityPair.second->onPreUpdate(timeStep);
+                NewtonDispachThreadJob(newtonWorld, newtonPreUpdateTask, &std::make_pair(entityPair.second, frameTime));
             }
+
+            NewtonSyncThreadJobs(newtonWorld);
         }
 
-        static void newtonOnPreUpdate(const NewtonWorld* const world, void* const listenerUserData, dFloat timeStep)
+        static void newtonWorldPreUpdate(const NewtonWorld* const world, void* const listenerUserData, dFloat frameTime)
         {
             NewtonProcessorImplementation *processor = static_cast<NewtonProcessorImplementation *>(listenerUserData);
-            processor->onPreUpdate(timeStep);
+            processor->onPreUpdate(frameTime);
         }
 
-        void onPostUpdate(float timeStep)
+        static void newtonPostUpdateTask(NewtonWorld* const world, void* const userData, int threadIndex)
+        {
+            auto updatePair = *(std::pair<NewtonEntity *, float> *)userData;
+            updatePair.first->onPostUpdate(updatePair.second, threadIndex);
+        }
+
+        void onPostUpdate(dFloat frameTime)
         {
             for (auto &entityPair : entityMap)
             {
-                entityPair.second->onPostUpdate(timeStep);
+                NewtonDispachThreadJob(newtonWorld, newtonPostUpdateTask, &std::make_pair(entityPair.second, frameTime));
             }
+
+            NewtonSyncThreadJobs(newtonWorld);
         }
 
-        static void newtonOnPostUpdate(const NewtonWorld* const world, void* const listenerUserData, dFloat timeStep)
+        static void newtonWorldPostUpdate(const NewtonWorld* const world, void* const listenerUserData, dFloat frameTime)
         {
             NewtonProcessorImplementation *processor = static_cast<NewtonProcessorImplementation *>(listenerUserData);
-            processor->onPostUpdate(timeStep);
+            processor->onPostUpdate(frameTime);
         }
 
-        static int newtonOnAABBOverlap(const NewtonMaterial* const material, const NewtonBody* const body0, const NewtonBody* const body1, int threadIndex)
+        static void newtonApplyForceAndTorque(const NewtonBody* const body, dFloat frameTime, int threadHandle)
+        {
+            NewtonEntity *newtonEntity = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body));
+            newtonEntity->onApplyForceAndTorque(frameTime, threadHandle);
+        }
+
+        static void newtonSetTransform(const NewtonBody* const body, const dFloat* const matrixData, int threadHandle)
+        {
+            NewtonEntity *newtonEntity = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body));
+            newtonEntity->onSetTransform(matrixData, threadHandle);
+        }
+
+        static int newtonOnAABBOverlap(const NewtonMaterial* const material, const NewtonBody* const body0, const NewtonBody* const body1, int threadHandle)
         {
             return 1;
         }
 
-        static void newtonOnContactFriction(const NewtonJoint* contactJoint, dFloat timeStep, int threadHandle)
+        static void newtonOnContactFriction(const NewtonJoint* contactJoint, dFloat frameTime, int threadHandle)
         {
             const NewtonBody* const body0 = NewtonJointGetBody0(contactJoint);
             const NewtonBody* const body1 = NewtonJointGetBody1(contactJoint);
 
             NewtonWorld *newtonWorld = NewtonBodyGetWorld(body0);
             NewtonProcessorImplementation *processor = static_cast<NewtonProcessorImplementation *>(NewtonWorldGetUserData(newtonWorld));
-            processor->onPostUpdate(timeStep);
+            processor->onContactFriction(contactJoint, frameTime, threadHandle);
         }
 
-        void onContactFriction(const NewtonJoint* contactJoint, dFloat timeStep, int threadHandle)
+        void onContactFriction(const NewtonJoint* contactJoint, dFloat frameTime, int threadHandle)
         {
             const NewtonBody* const body0 = NewtonJointGetBody0(contactJoint);
             const NewtonBody* const body1 = NewtonJointGetBody1(contactJoint);
@@ -528,8 +556,9 @@ namespace Gek
         {
             newtonWorld = NewtonCreate();
             NewtonWorldSetUserData(newtonWorld, this);
-            auto preListener = NewtonWorldAddPreListener(newtonWorld, "core", this, newtonOnPreUpdate, nullptr);
-            auto postListener = NewtonWorldAddPostListener(newtonWorld, "core", this, newtonOnPostUpdate, nullptr);
+
+            NewtonWorldAddPreListener(newtonWorld, "__player_pre_listener__", this, newtonWorldPreUpdate, nullptr);
+            NewtonWorldAddPostListener(newtonWorld, "__player_post_listener__", this, newtonWorldPostUpdate, nullptr);
 
             int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
             NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, NULL, newtonOnAABBOverlap, newtonOnContactFriction);
@@ -625,6 +654,8 @@ namespace Gek
                             if (rigidBody)
                             {
                                 entityMap[entity] = rigidBody;
+                                NewtonBodySetForceAndTorqueCallback(rigidBody->getNewtonBody(), newtonApplyForceAndTorque);
+                                NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
                             }
                         }
                     }
@@ -635,6 +666,8 @@ namespace Gek
                         if (playerBody)
                         {
                             entityMap[entity] = playerBody;
+                            NewtonBodySetForceAndTorqueCallback(playerBody->getNewtonBody(), newtonApplyForceAndTorque);
+                            NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
                         }
                     }
                 }

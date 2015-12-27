@@ -25,6 +25,12 @@ namespace Gek
             Plane(const Math::Float3 &pointA, const Math::Float3 &pointB, const Math::Float3 &pointC);
             Plane(const Math::Float3 &normal, const Math::Float3 &pointOnPlane);
 
+            inline Plane &operator = (const Plane &plane)
+            {
+                vector = plane.vector;
+                return (*this);
+            }
+
             void normalize(void);
 
             float getDistance(const Math::Float3 &point) const;

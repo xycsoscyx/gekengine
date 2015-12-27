@@ -1145,7 +1145,7 @@ namespace Gek
 
             UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
-            flags |= D3D11_CREATE_DEVICE_DEBUG;
+            //flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
             D3D_FEATURE_LEVEL featureLevelList[] =

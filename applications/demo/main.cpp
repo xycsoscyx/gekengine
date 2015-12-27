@@ -198,9 +198,9 @@ L"        </entity>\r\n";
 
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
-        _clearfp();
-        unsigned unused_current_word = 0;
-        _controlfp_s(&unused_current_word, 0, _EM_ZERODIVIDE | _EM_INVALID);
+        //_clearfp();
+        //unsigned unused_current_word = 0;
+        //_controlfp_s(&unused_current_word, 0, _EM_ZERODIVIDE | _EM_INVALID);
 
         CComPtr<Gek::Context> context;
         Gek::Context::create(&context);

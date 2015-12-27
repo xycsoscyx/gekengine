@@ -11,7 +11,9 @@ namespace Gek
         STDMETHOD_(Entity *, getEntity)                 (THIS) const PURE;
         STDMETHOD_(NewtonBody *, getNewtonBody)         (THIS) const PURE;
 
-        STDMETHOD_(void, onPreUpdate)                   (THIS_ float frameTime) { };
-        STDMETHOD_(void, onPostUpdate)                  (THIS_ float frameTime) { };
+        STDMETHOD_(void, onApplyForceAndTorque)         (THIS_ dFloat frameTime, int threadHandle) { };
+        STDMETHOD_(void, onSetTransform)                (THIS_ const dFloat* const matrixData, int threadHandle) { };
+        STDMETHOD_(void, onPreUpdate)                   (THIS_ dFloat frameTime, int threadHandle) { };
+        STDMETHOD_(void, onPostUpdate)                  (THIS_ dFloat frameTime, int threadHandle) { };
     };
 }; // namespace Gek

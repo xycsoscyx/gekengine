@@ -95,6 +95,26 @@ namespace Gek
             void operator *= (const Quaternion &rotation);
             Quaternion operator = (const Quaternion &rotation);
             Quaternion operator = (const Float4x4 &rotation);
+
+            inline void operator /= (const Float4 &vector)
+            {
+                simd = _mm_div_ps(simd, vector.simd);
+            }
+
+            inline void operator *= (const Float4 &vector)
+            {
+                simd = _mm_mul_ps(simd, vector.simd);
+            }
+
+            inline Float4 operator / (const Float4 &vector) const
+            {
+                return reinterpret_cast<Float4 &>(_mm_div_ps(simd, vector.simd));
+            }
+
+            inline Float4 operator * (const Float4 &vector) const
+            {
+                return reinterpret_cast<Float4 &>(_mm_mul_ps(simd, vector.simd));
+            }
         };
     }; // namespace Math
 }; // namespace Gek
