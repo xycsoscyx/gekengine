@@ -84,6 +84,7 @@ namespace Gek
                 filter->hitPoint.set(hitContact[0], hitContact[1], hitContact[2]);
                 filter->hitNormal.set(hitNormal[0], hitNormal[1], hitNormal[2]);
             }
+
             return intersectParam;
         }
     };
