@@ -1,12 +1,12 @@
 #pragma once
 
+#include "GEK\Math\Vector3.h"
 #include "GEK\Math\Vector4.h"
 
 namespace Gek
 {
     namespace Math
     {
-        struct Float3;
         struct Float4x4;
 
         struct Quaternion
@@ -51,6 +51,16 @@ namespace Gek
                 normalize();
             }
 
+            Quaternion(float pitch, float yaw, float roll)
+            {
+                setEulerRotation(pitch, yaw, roll);
+            }
+
+            Quaternion(const Float3 &axis, float radians)
+            {
+                setAngularRotation(axis, radians);
+            }
+
             inline void set(float x, float y, float z, float w)
             {
                 simd = _mm_setr_ps(x, y, z, w);
@@ -61,10 +71,10 @@ namespace Gek
                 simd = vector.simd;
             }
 
-            static Quaternion createIdentity(void);
-            static Quaternion createEuler(float pitch, float yaw, float roll);
-            static Quaternion createRotation(const Float3 &axis, float radians);
-            static Quaternion createRotation(const Float4x4 &rotation);
+            void setEulerRotation(float pitch, float yaw, float roll);
+            void setAngularRotation(const Float3 &axis, float radians);
+
+            Float4x4 getMatrix(const Float3 &translation = Float3(0.0f, 0.0f, 0.0f)) const;
 
             float getLengthSquared(void) const;
             float getLength(void) const;
@@ -94,26 +104,25 @@ namespace Gek
             Quaternion operator * (const Quaternion &rotation) const;
             void operator *= (const Quaternion &rotation);
             Quaternion operator = (const Quaternion &rotation);
-            Quaternion operator = (const Float4x4 &rotation);
 
-            inline void operator /= (const Float4 &vector)
+            inline void operator /= (float scalar)
             {
-                simd = _mm_div_ps(simd, vector.simd);
+                simd = _mm_div_ps(simd, _mm_set1_ps(scalar));
             }
 
-            inline void operator *= (const Float4 &vector)
+            inline void operator *= (float scalar)
             {
-                simd = _mm_mul_ps(simd, vector.simd);
+                simd = _mm_mul_ps(simd, _mm_set1_ps(scalar));
             }
 
-            inline Float4 operator / (const Float4 &vector) const
+            inline Quaternion operator / (float scalar) const
             {
-                return reinterpret_cast<Float4 &>(_mm_div_ps(simd, vector.simd));
+                return _mm_div_ps(simd, _mm_set1_ps(scalar));
             }
 
-            inline Float4 operator * (const Float4 &vector) const
+            inline Quaternion operator * (float scalar) const
             {
-                return reinterpret_cast<Float4 &>(_mm_mul_ps(simd, vector.simd));
+                return _mm_mul_ps(simd, _mm_set1_ps(scalar));
             }
         };
     }; // namespace Math

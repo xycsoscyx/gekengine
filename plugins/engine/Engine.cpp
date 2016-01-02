@@ -18,6 +18,7 @@ namespace Gek
         , public ObservableMixin
         , public Engine
         , public RenderObserver
+        , public PopulationObserver
     {
     private:
         HWND window;
@@ -31,9 +32,16 @@ namespace Gek
         CComPtr<Render> render;
         std::list<CComPtr<Processor>> processorList;
 
+        UINT32 updateHandle;
+        std::mutex actionMutex;
+        std::list<std::pair<wchar_t, bool>> actionQueue;
+
         bool consoleActive;
         float consolePosition;
         CStringW userMessage;
+
+        std::mutex commandMutex;
+        std::list<std::pair<CStringW, std::vector<CStringW>>> commandQueue;
 
         CComPtr<IUnknown> backgroundBrush;
         CComPtr<IUnknown> foregroundBrush;
@@ -48,6 +56,7 @@ namespace Gek
             , windowActive(false)
             , engineRunning(true)
             , updateAccumulator(0.0)
+            , updateHandle(0)
             , consoleActive(false)
             , consolePosition(0.0f)
         {
@@ -66,6 +75,7 @@ namespace Gek
             logTypeBrushList[3].Release();
 
             processorList.clear();
+            population->removeUpdatePriority(updateHandle);
             ObservableMixin::removeObserver(render, getClass<RenderObserver>());
             render.Release();
             population.Release();
@@ -77,6 +87,7 @@ namespace Gek
         BEGIN_INTERFACE_LIST(EngineImplementation)
             INTERFACE_LIST_ENTRY_COM(Engine)
             INTERFACE_LIST_ENTRY_COM(RenderObserver)
+            INTERFACE_LIST_ENTRY_COM(PopulationObserver)
             INTERFACE_LIST_ENTRY_MEMBER_COM(VideoSystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(OverlaySystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
@@ -108,6 +119,10 @@ namespace Gek
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = population->initialize(this);
+                    if (SUCCEEDED(resultValue))
+                    {
+                        updateHandle = population->setUpdatePriority(this, 0);
+                    }
                 }
             }
 
@@ -203,40 +218,6 @@ namespace Gek
 
         STDMETHODIMP_(LRESULT) windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam)
         {
-            auto onAction = [&](WPARAM wParam, bool state)
-            {
-                switch (wParam)
-                {
-                case 'W':
-                case VK_UP:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_forward", state)));
-                    break;
-
-                case 'S':
-                case VK_DOWN:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_backward", state)));
-                    break;
-
-                case 'A':
-                case VK_LEFT:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_left", state)));
-                    break;
-
-                case 'D':
-                case VK_RIGHT:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_right", state)));
-                    break;
-
-                case VK_SPACE:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"jump", state)));
-                    break;
-
-                case VK_LCONTROL:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"crouch", state)));
-                    break;
-                };
-            };
-
             switch (message)
             {
             case WM_SETCURSOR:
@@ -297,10 +278,9 @@ namespace Gek
                             }
                             else if (command.CompareNoCase(L"load") == 0 && parameterList.size() == 1)
                             {
-                                population->load(parameterList[0]);
+                                std::lock_guard<std::mutex> lock(commandMutex);
+                                commandQueue.push_back(std::make_pair(command, parameterList));
                             }
-
-                            //RunCommand(strCommand, aParams);
                         }
 
                         userMessage.Empty();
@@ -328,7 +308,8 @@ namespace Gek
             case WM_KEYDOWN:
                 if (!consoleActive)
                 {
-                    onAction(wParam, true);
+                    std::lock_guard<std::mutex> lock(actionMutex);
+                    actionQueue.push_back(std::make_pair(wParam, true));
                 }
 
                 return 1;
@@ -340,7 +321,8 @@ namespace Gek
                 }
                 else if (!consoleActive)
                 {
-                    onAction(wParam, false);
+                    std::lock_guard<std::mutex> lock(actionMutex);
+                    actionQueue.push_back(std::make_pair(wParam, false));
                 }
 
                 return 1;
@@ -358,7 +340,7 @@ namespace Gek
             case WM_MOUSEWHEEL:
                 if (true)
                 {
-                    INT32 mouseWhellDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+                    INT32 mouseWheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
                 }
 
                 return 1;
@@ -391,23 +373,6 @@ namespace Gek
                 {
                     consolePosition = std::max(0.0f, (consolePosition - float(updateTime * 4.0)));
 
-                    POINT cursorPosition;
-                    GetCursorPos(&cursorPosition);
-
-                    RECT clientRectangle;
-                    GetWindowRect(window, &clientRectangle);
-                    INT32 clientCenterX = (clientRectangle.left + ((clientRectangle.right - clientRectangle.left) / 2));
-                    INT32 clientCenterY = (clientRectangle.top + ((clientRectangle.bottom - clientRectangle.top) / 2));
-                    SetCursorPos(clientCenterX, clientCenterY);
-
-                    INT32 cursorMovementX = ((cursorPosition.x - clientCenterX) / 2);
-                    INT32 cursorMovementY = ((cursorPosition.y - clientCenterY) / 2);
-                    if (cursorMovementX != 0 || cursorMovementY != 0)
-                    {
-                        ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
-                        ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
-                    }
-
                     UINT32 frameCount = 3;
                     updateAccumulator += updateTime;
                     while (updateAccumulator > (1.0 / 30.0))
@@ -426,10 +391,89 @@ namespace Gek
             }
             else
             {
-                population->update();
+                population->idle();
             }
 
             return engineRunning;
+        }
+
+        // PopulationObserver
+        STDMETHODIMP_(void) onUpdate(float frameTime)
+        {
+            std::list<std::pair<CStringW, std::vector<CStringW>>> commandCopy;
+            if (true)
+            {
+                std::lock_guard<std::mutex> lock(commandMutex);
+                commandCopy = commandQueue;
+                commandQueue.clear();
+            }
+
+            for (auto command : commandCopy)
+            {
+                if (command.first.CompareNoCase(L"load") == 0 && command.second.size() == 1)
+                {
+                    population->load(command.second[0]);
+                }
+            }
+
+            std::list<std::pair<wchar_t, bool>> actionCopy;
+            if (true)
+            {
+                std::lock_guard<std::mutex> lock(actionMutex);
+                actionCopy = actionQueue;
+                actionQueue.clear();
+            }
+
+            POINT cursorPosition;
+            GetCursorPos(&cursorPosition);
+
+            RECT clientRectangle;
+            GetWindowRect(window, &clientRectangle);
+            INT32 clientCenterX = (clientRectangle.left + ((clientRectangle.right - clientRectangle.left) / 2));
+            INT32 clientCenterY = (clientRectangle.top + ((clientRectangle.bottom - clientRectangle.top) / 2));
+            SetCursorPos(clientCenterX, clientCenterY);
+
+            INT32 cursorMovementX = ((cursorPosition.x - clientCenterX) / 2);
+            INT32 cursorMovementY = ((cursorPosition.y - clientCenterY) / 2);
+            if (cursorMovementX != 0 || cursorMovementY != 0)
+            {
+                ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
+                ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
+            }
+
+            for (auto action : actionCopy)
+            {
+                switch (action.first)
+                {
+                case 'W':
+                case VK_UP:
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_forward", action.second)));
+                    break;
+
+                case 'S':
+                case VK_DOWN:
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_backward", action.second)));
+                    break;
+
+                case 'A':
+                case VK_LEFT:
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_left", action.second)));
+                    break;
+
+                case 'D':
+                case VK_RIGHT:
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_right", action.second)));
+                    break;
+
+                case VK_SPACE:
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"jump", action.second)));
+                    break;
+
+                case VK_LCONTROL:
+                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"crouch", action.second)));
+                    break;
+                };
+            }
         }
 
         // RenderObserver

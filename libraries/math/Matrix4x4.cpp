@@ -41,39 +41,21 @@ namespace Gek
         {
         }
 
-        Float4x4 Float4x4::createZero(void)
+        void Float4x4::setScaling(float scalar)
         {
-            return Float4x4({ 0.0f, 0.0f, 0.0f, 0.0f,
-                              0.0f, 0.0f, 0.0f, 0.0f,
-                              0.0f, 0.0f, 0.0f, 0.0f,
-                              0.0f, 0.0f, 0.0f, 0.0f });
+            _11 = scalar;
+            _22 = scalar;
+            _33 = scalar;
         }
 
-        Float4x4 Float4x4::createIdentity(void)
+        void Float4x4::setScaling(const Float3 &vector)
         {
-            return Float4x4({ 1.0f, 0.0f, 0.0f, 0.0f,
-                              0.0f, 1.0f, 0.0f, 0.0f,
-                              0.0f, 0.0f, 1.0f, 0.0f,
-                              0.0f, 0.0f, 0.0f, 1.0f });
+            _11 = vector.x;
+            _22 = vector.y;
+            _33 = vector.z;
         }
 
-        Float4x4 Float4x4::createScaling(float scalar)
-        {
-            return Float4x4({ scalar, 0.0f, 0.0f, 0.0f,
-                              0.0f, scalar, 0.0f, 0.0f,
-                              0.0f, 0.0f, scalar, 0.0f,
-                              0.0f, 0.0f, 0.0f, 1.0f });
-        }
-
-        Float4x4 Float4x4::createScaling(const Float3 &vector)
-        {
-            return Float4x4({ vector.x, 0.0f, 0.0f, 0.0f,
-                              0.0f, vector.y, 0.0f, 0.0f,
-                              0.0f, 0.0f, vector.z, 0.0f,
-                              0.0f, 0.0f, 0.0f, 1.0f });
-        }
-
-        Float4x4 Float4x4::createEuler(float pitch, float yaw, float roll)
+        void Float4x4::setEulerRotation(float pitch, float yaw, float roll)
         {
             float cosPitch(std::cos(pitch));
             float sinPitch(std::sin(pitch));
@@ -84,137 +66,132 @@ namespace Gek
             float cosPitchSinYaw(cosPitch * sinYaw);
             float sinPitchSinYaw(sinPitch * sinYaw);
 
-            return Float4x4({
-                (cosYaw * cosRoll), (-cosYaw * sinRoll), sinYaw, 0.0f,
-                (sinPitchSinYaw * cosRoll + cosPitch * sinRoll), (-sinPitchSinYaw * sinRoll + cosPitch * cosRoll), (-sinPitch * cosYaw), 0.0f,
-                (-cosPitchSinYaw * cosRoll + sinPitch * sinRoll), (cosPitchSinYaw * sinRoll + sinPitch * cosRoll), (cosPitch * cosYaw), 0.0f,
-                0.0f, 0.0f, 0.0f, 1.0f });
+            rx.set((cosYaw * cosRoll), (-cosYaw * sinRoll), sinYaw, 0.0f);
+            ry.set((sinPitchSinYaw * cosRoll + cosPitch * sinRoll), (-sinPitchSinYaw * sinRoll + cosPitch * cosRoll), (-sinPitch * cosYaw), 0.0f);
+            rz.set((-cosPitchSinYaw * cosRoll + sinPitch * sinRoll), (cosPitchSinYaw * sinRoll + sinPitch * cosRoll), (cosPitch * cosYaw), 0.0f);
         }
 
-        Float4x4 Float4x4::createAngular(const Float3 &axis, float radians)
+        void Float4x4::setAngularRotation(const Float3 &axis, float radians)
         {
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
 
-            return Float4x4({
-                (cosAngle + axis.x * axis.x * (1.0f - cosAngle)), (axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle)), (-axis.y * sinAngle + axis.z * axis.x * (1.0f - cosAngle)), 0.0f,
-                (-axis.z * sinAngle + axis.x * axis.y * (1.0f - cosAngle)), (cosAngle + axis.y * axis.y * (1.0f - cosAngle)), (axis.x * sinAngle + axis.z * axis.y * (1.0f - cosAngle)), 0.0f,
-                (axis.y * sinAngle + axis.x * axis.z * (1.0f - cosAngle)), (-axis.x * sinAngle + axis.y * axis.z * (1.0f - cosAngle)), (cosAngle + axis.z * axis.z * (1.0f - cosAngle)), 0.0f,
-                0.0f, 0.0f, 0.0f, 1.0f });
+            rx.set((cosAngle + axis.x * axis.x * (1.0f - cosAngle)), (axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle)), (-axis.y * sinAngle + axis.z * axis.x * (1.0f - cosAngle)), 0.0f);
+            ry.set((-axis.z * sinAngle + axis.x * axis.y * (1.0f - cosAngle)), (cosAngle + axis.y * axis.y * (1.0f - cosAngle)), (axis.x * sinAngle + axis.z * axis.y * (1.0f - cosAngle)), 0.0f);
+            rz.set((axis.y * sinAngle + axis.x * axis.z * (1.0f - cosAngle)), (-axis.x * sinAngle + axis.y * axis.z * (1.0f - cosAngle)), (cosAngle + axis.z * axis.z * (1.0f - cosAngle)), 0.0f);
         }
 
-        Float4x4 Float4x4::createMatrix(const Quaternion &rotation)
-        {
-            return createMatrix(rotation, Float3(0.0f, 0.0f, 0.0f));
-        }
-
-        Float4x4 Float4x4::createMatrix(const Quaternion &rotation, const Float3 &translation)
-        {
-            float xx(rotation.x * rotation.x);
-            float yy(rotation.y * rotation.y);
-            float zz(rotation.z * rotation.z);
-            float ww(rotation.w * rotation.w);
-            float length(xx + yy + zz + ww);
-            if (length == 0.0f)
-            {
-                return Float4x4({ 1.0f, 0.0f, 0.0f, 0.0f,
-                                  0.0f, 1.0f, 0.0f, 0.0f,
-                                  0.0f, 0.0f, 1.0f, 0.0f,
-                                  translation.x, translation.y, translation.z, 1.0f });
-            }
-            else
-            {
-                float determinant(1.0f / length);
-                float xy(rotation.x * rotation.y);
-                float xz(rotation.x * rotation.z);
-                float xw(rotation.x * rotation.w);
-                float yz(rotation.y * rotation.z);
-                float yw(rotation.y * rotation.w);
-                float zw(rotation.z * rotation.w);
-                return Float4x4({ ((xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
-                                  (2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f,
-                                  (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f,
-                                  translation.x, translation.y, translation.z, 1.0f });
-            }
-        }
-
-        Float4x4 Float4x4::createPitch(float radians)
+        void Float4x4::setPitchRotation(float radians)
         {
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
 
-            return Float4x4({
-                1.0f, 0.0f,         0.0f,     0.0f,
-                0.0f, cosAngle,     sinAngle, 0.0f,
-                0.0f, -sinAngle,    cosAngle, 0.0f,
-                0.0f, 0.0f,         0.0f,     1.0f,
-            });
+            rx.set(1.0f, 0.0f, 0.0f, 0.0f);
+            ry.set(0.0f, cosAngle, sinAngle, 0.0f);
+            rz.set(0.0f, -sinAngle, cosAngle, 0.0f);
         }
 
-        Float4x4 Float4x4::createYaw(float radians)
+        void Float4x4::setYawRotation(float radians)
         {
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
 
-            return Float4x4({
-                cosAngle,     0.0f, -sinAngle,    0.0f,
-                0.0f,         1.0f, 0.0f,         0.0f,
-                sinAngle,     0.0f, cosAngle,     0.0f,
-                0.0f,         0.0f, 0.0f,         1.0f,
-            });
+            rx.set(cosAngle, 0.0f, -sinAngle, 0.0f);
+            ry.set(0.0f, 1.0f, 0.0f, 0.0f);
+            rz.set(sinAngle, 0.0f, cosAngle, 0.0f);
         }
 
-        Float4x4 Float4x4::createRoll(float radians)
+        void Float4x4::setRollRotation(float radians)
         {
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
 
-            return Float4x4({
-                cosAngle,     sinAngle, 0.0f, 0.0f,
-                -sinAngle,    cosAngle, 0.0f, 0.0f,
-                0.0f,         0.0f,     1.0f, 0.0f,
-                0.0f,         0.0f,     0.0f, 1.0f,
-            });
+            rx.set(cosAngle, sinAngle, 0.0f, 0.0f);
+            ry.set(-sinAngle, cosAngle, 0.0f, 0.0f);
+            rz.set(0.0f, 0.0f, 1.0f, 0.0f);
         }
 
-        Float4x4 Float4x4::createOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth)
+        void Float4x4::setOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth)
         {
-            return Float4x4({
-                (2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
-                0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f,
-                0.0f, 0.0f, (-2.0f / (farDepth - nearDepth)), 0.0f,
-                -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farDepth + nearDepth) / (farDepth - nearDepth)), 1.0f,
-            });
+            rx.set((2.0f / (right - left)), 0.0f, 0.0f, 0.0f);
+            ry.set(0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f);
+            rz.set(0.0f, 0.0f, (-2.0f / (farDepth - nearDepth)), 0.0f);
+            rw.set(-((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farDepth + nearDepth) / (farDepth - nearDepth)), 1.0f);
         }
 
-        Float4x4 Float4x4::createPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
+        void Float4x4::setPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
         {
             float x(1.0f / std::tan(fieldOfView * 0.5f));
             float y(x * aspectRatio);
             float distance(farDepth - nearDepth);
 
-            return Float4x4({
-                x, 0.0f, 0.0f, 0.0f,
-                0.0f, y, 0.0f, 0.0f,
-                0.0f, 0.0f, ((farDepth + nearDepth) / distance), 1.0f,
-                0.0f, 0.0f, -((2.0f * farDepth * nearDepth) / distance), 0.0f,
-            });
+            rx.set(x, 0.0f, 0.0f, 0.0f);
+            ry.set(0.0f, y, 0.0f, 0.0f);
+            rz.set(0.0f, 0.0f, ((farDepth + nearDepth) / distance), 1.0f);
+            rw.set(0.0f, 0.0f, -((2.0f * farDepth * nearDepth) / distance), 0.0f);
         }
 
-        Float4x4 Float4x4::createLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)
+        void Float4x4::setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)
         {
-            return createLookAt((target - source), worldUpVector);
+            setLookAt((target - source), worldUpVector);
         }
 
-        Float4x4 Float4x4::createLookAt(const Float3 &direction, const Float3 &worldUpVector)
+        void Float4x4::setLookAt(const Float3 &direction, const Float3 &worldUpVector)
         {
             Float3 nz(direction.getNormal());
             Float3 nx(worldUpVector.cross(nz).getNormal());
             Float3 ny(nz.cross(nx).getNormal());
-            return Float4x4({ nx.x, nx.y, nx.z, 0.0f,
-                              ny.x, ny.y, ny.z, 0.0f,
-                              nz.x, nz.y, nz.z, 0.0f,
-                              0.0f, 0.0f, 0.0f, 1.0f });
+            rx.set(nx.w(0.0f));
+            ry.set(ny.w(0.0f));
+            rz.set(nz.w(0.0f));
+        }
+
+        Quaternion Float4x4::getQuaternion(void) const
+        {
+            float trace(table[0][0] + table[1][1] + table[2][2] + 1.0f);
+            if (trace > Math::Epsilon)
+            {
+                float denominator(0.5f / std::sqrt(trace));
+                return Quaternion({
+                    ((table[1][2] - table[2][1]) * denominator),
+                    ((table[2][0] - table[0][2]) * denominator),
+                    ((table[0][1] - table[1][0]) * denominator),
+                    (0.25f / denominator),
+                });
+            }
+            else
+            {
+                if ((table[0][0] > table[1][1]) && (table[0][0] > table[2][2]))
+                {
+                    float denominator(2.0f * std::sqrt(1.0f + table[0][0] - table[1][1] - table[2][2]));
+                    return Quaternion({
+                        (0.25f * denominator),
+                        ((table[1][0] + table[0][1]) / denominator),
+                        ((table[2][0] + table[0][2]) / denominator),
+                        ((table[2][1] - table[1][2]) / denominator),
+                    });
+                }
+                else if (table[1][1] > table[2][2])
+                {
+                    float denominator(2.0f * (std::sqrt(1.0f + table[1][1] - table[0][0] - table[2][2])));
+                    return Quaternion({
+                        ((table[1][0] + table[0][1]) / denominator),
+                        (0.25f * denominator),
+                        ((table[2][1] + table[1][2]) / denominator),
+                        ((table[2][0] - table[0][2]) / denominator),
+                    });
+                }
+                else
+                {
+                    float denominator(2.0f * (std::sqrt(1.0f + table[2][2] - table[0][0] - table[1][1])));
+                    return Quaternion({
+                        ((table[2][0] + table[0][2]) / denominator),
+                        ((table[2][1] + table[1][2]) / denominator),
+                        (0.25f * denominator),
+                        ((table[1][0] - table[0][1]) / denominator),
+                    });
+                }
+            }
         }
 
         Float3 Float4x4::getScaling(void) const
@@ -323,12 +300,6 @@ namespace Gek
             rows[1] = matrix.rows[1];
             rows[2] = matrix.rows[2];
             rows[3] = matrix.rows[3];
-            return (*this);
-        }
-
-        Float4x4 Float4x4::operator = (const Quaternion &rotation)
-        {
-            (*this) = createMatrix(rotation);
             return (*this);
         }
 

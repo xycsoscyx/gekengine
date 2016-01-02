@@ -130,6 +130,11 @@ namespace Gek
             return resultValue;
         }
 
+        STDMETHODIMP_(void) idle(void)
+        {
+            ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onIdle, std::placeholders::_1)));
+        }
+
         STDMETHODIMP_(void) update(float frameTime)
         {
             if (loadScene)

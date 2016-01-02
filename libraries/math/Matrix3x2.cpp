@@ -34,39 +34,22 @@ namespace Gek
         {
         }
 
-        Float3x2 Float3x2::createZero(void)
+        void Float3x2::setScaling(float scalar)
         {
-            return Float3x2({ 0.0f, 0.0f,
-                              0.0f, 0.0f,
-                              0.0f, 0.0f });
+            _11 = scalar;
+            _22 = scalar;
         }
 
-        Float3x2 Float3x2::createIdentity(void)
+        void Float3x2::setScaling(const Float2 &vector)
         {
-            return Float3x2({ 1.0f, 0.0f,
-                              0.0f, 1.0f,
-                              0.0f, 0.0f });
+            _11 = vector.x;
+            _22 = vector.y;
         }
 
-        Float3x2 Float3x2::createScaling(float scalar)
+        void Float3x2::setRotation(float radians)
         {
-            return Float3x2({ scalar,   0.0f,
-                                0.0f, scalar,
-                                0.0f,   0.0f });
-        }
-
-        Float3x2 Float3x2::createScaling(const Float2 &vector)
-        {
-            return Float3x2({ vector.x,     0.0f,
-                                  0.0f, vector.y,
-                                  0.0f,     0.0f });
-        }
-
-        Float3x2 Float3x2::createRotation(float radians)
-        {
-            return Float3x2({ std::cos(radians), -std::sin(radians),
-                              std::sin(radians),  std::cos(radians),
-                                           0.0f,               0.0f });
+            rx.set(std::cos(radians), -std::sin(radians));
+            ry.set(std::sin(radians),  std::cos(radians));
         }
 
         Float2 Float3x2::getScaling(void) const

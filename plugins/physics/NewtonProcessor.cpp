@@ -495,12 +495,6 @@ namespace Gek
             processor->onPostUpdate(frameTime);
         }
 
-        static void newtonApplyForceAndTorque(const NewtonBody* const body, dFloat frameTime, int threadHandle)
-        {
-            NewtonEntity *newtonEntity = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body));
-            newtonEntity->onApplyForceAndTorque(frameTime, threadHandle);
-        }
-
         static void newtonSetTransform(const NewtonBody* const body, const dFloat* const matrixData, int threadHandle)
         {
             NewtonEntity *newtonEntity = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body));
@@ -636,7 +630,7 @@ namespace Gek
                     if (newtonCollision != nullptr)
                     {
                         NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
-                        NewtonCollisionSetMatrix(clonedCollision, Math::Float4x4::createMatrix(transformComponent.rotation, transformComponent.position).data);
+                        NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
                         NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
                         NewtonDestroyCollision(clonedCollision);
                     }
@@ -654,7 +648,6 @@ namespace Gek
                             if (rigidBody)
                             {
                                 entityMap[entity] = rigidBody;
-                                NewtonBodySetForceAndTorqueCallback(rigidBody->getNewtonBody(), newtonApplyForceAndTorque);
                                 NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
                             }
                         }
@@ -666,7 +659,6 @@ namespace Gek
                         if (playerBody)
                         {
                             entityMap[entity] = playerBody;
-                            NewtonBodySetForceAndTorqueCallback(playerBody->getNewtonBody(), newtonApplyForceAndTorque);
                             NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
                         }
                     }

@@ -17,6 +17,7 @@ namespace Gek
     {
         STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
                 
+        STDMETHOD_(void, idle)                      (THIS) PURE;
         STDMETHOD_(void, update)                    (THIS_ float frameTime = 0.0f) PURE;
 
         STDMETHOD(load)                             (THIS_ LPCWSTR fileName) PURE;
@@ -55,6 +56,7 @@ namespace Gek
         STDMETHOD_(void, onEntityDestroyed)         (THIS_ Entity *entity) { };
 
         STDMETHOD_(void, onUpdate)                  (THIS_ float frameTime) { };
+        STDMETHOD_(void, onIdle)                    (THIS) { };
     };
 
     DECLARE_INTERFACE_IID(PopulationRegistration, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5");

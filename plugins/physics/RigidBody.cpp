@@ -27,13 +27,13 @@ namespace Gek
             TransformComponent &transformComponent,
             MassComponent &massComponent)
             : entity(entity)
-            , newtonBody(NewtonCreateDynamicBody(newtonWorld, newtonCollision, Math::Float4x4::createMatrix(transformComponent.rotation, transformComponent.position).data))
+            , newtonBody(NewtonCreateDynamicBody(newtonWorld, newtonCollision, transformComponent.getMatrix().data))
             , transformComponent(transformComponent)
             , massComponent(massComponent)
         {
             REQUIRE_VOID_RETURN(newtonBody);
             NewtonBodySetMassProperties(newtonBody, massComponent, newtonCollision);
-            NewtonBodySetMatrix(newtonBody, Math::Float4x4::createMatrix(transformComponent.rotation, transformComponent.position));
+            NewtonBodySetMatrix(newtonBody, transformComponent.getMatrix().data);
             NewtonBodySetUserData(newtonBody, dynamic_cast<NewtonEntity *>(this));
         }
 
@@ -57,7 +57,7 @@ namespace Gek
             return newtonBody;
         }
 
-        STDMETHODIMP_(void) onApplyForceAndTorque(dFloat frameTime, int threadHandle)
+        STDMETHODIMP_(void) onPreUpdate(dFloat frameTime, int threadHandle)
         {
             NewtonBodyAddForce(newtonBody, (Gravity * (float)massComponent).data);
         }
@@ -66,7 +66,7 @@ namespace Gek
         {
             Math::Float4x4 matrix(matrixData);
             transformComponent.position = matrix.translation;
-            transformComponent.rotation = matrix;
+            transformComponent.rotation = matrix.getQuaternion();
         }
     };
 

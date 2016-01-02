@@ -67,22 +67,29 @@ namespace Gek
             Float4x4(const float(&data)[16]);
             Float4x4(const float *data);
             Float4x4(const Float4x4 &matrix);
+            Float4x4(float pitch, float yaw, float roll)
+            {
+                setEulerRotation(pitch, yaw, roll);
+            }
 
-            static Float4x4 createZero(void);
-            static Float4x4 createIdentity(void);
-            static Float4x4 createScaling(float scalar);
-            static Float4x4 createScaling(const Float3 &vector);
-            static Float4x4 createEuler(float pitch, float yaw, float roll);
-            static Float4x4 createAngular(const Float3 &axis, float radians);
-            static Float4x4 createMatrix(const Quaternion &rotation);
-            static Float4x4 createMatrix(const Quaternion &rotation, const Float3 &translation);
-            static Float4x4 createPitch(float radians);
-            static Float4x4 createYaw(float radians);
-            static Float4x4 createRoll(float radians);
-            static Float4x4 createOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth);
-            static Float4x4 createPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth);
-            static Float4x4 createLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector);
-            static Float4x4 createLookAt(const Float3 &direction, const Float3 &worldUpVector);
+            Float4x4(const Float3 &axis, float radians)
+            {
+                setAngularRotation(axis, radians);
+            }
+
+            void setScaling(float scalar);
+            void setScaling(const Float3 &vector);
+            void setEulerRotation(float pitch, float yaw, float roll);
+            void setAngularRotation(const Float3 &axis, float radians);
+            void setPitchRotation(float radians);
+            void setYawRotation(float radians);
+            void setRollRotation(float radians);
+            void setOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth);
+            void setPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth);
+            void setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector);
+            void setLookAt(const Float3 &direction, const Float3 &worldUpVector);
+
+            Quaternion getQuaternion(void) const;
 
             Float3 getScaling(void) const;
             float getDeterminant(void) const;
@@ -100,7 +107,6 @@ namespace Gek
             operator float *();
 
             Float4x4 operator = (const Float4x4 &matrix);
-            Float4x4 operator = (const Quaternion &rotation);
 
             void operator *= (const Float4x4 &matrix);
             Float4x4 operator * (const Float4x4 &matrix) const;

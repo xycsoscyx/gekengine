@@ -781,7 +781,7 @@ namespace Gek
                         color = entity->getComponent<ColorComponent>();
                     }
 
-                    visibleList[data].push_back(InstanceData(Math::Float4x4::createMatrix(transformComponent.rotation, transformComponent.position), color, scale, cameraTransform.position.getDistance(transformComponent.position)));
+                    visibleList[data].push_back(InstanceData(transformComponent.getMatrix(), color, scale, cameraTransform.position.getDistance(transformComponent.position)));
                 }
             });
 

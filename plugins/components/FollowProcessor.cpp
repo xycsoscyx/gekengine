@@ -154,8 +154,11 @@ namespace Gek
                     followData.rotation = followData.rotation.slerp(targetTransformComponent.rotation, followComponent.speed);
                     //followData.rotation = targetTransformComponent.rotation;
 
-                    transformComponent.position = (targetTransformComponent.position + followData.rotation * followComponent.distance);
-                    transformComponent.rotation = Math::Float4x4(Math::Float4x4::createLookAt(transformComponent.position, targetTransformComponent.position, Math::Float3(0.0f, 1.0f, 0.0f)));
+                    transformComponent.position = (targetTransformComponent.position + (followData.rotation * followComponent.distance));
+
+                    Math::Float4x4 lookAtMatrix;
+                    lookAtMatrix.setLookAt(transformComponent.position, targetTransformComponent.position, Math::Float3(0.0f, 1.0f, 0.0f));
+                    transformComponent.rotation = lookAtMatrix.getQuaternion();
                 }
             }
         }

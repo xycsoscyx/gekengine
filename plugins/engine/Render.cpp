@@ -786,12 +786,18 @@ namespace Gek
             blendStateManager.clearResources();
         }
 
+        STDMETHODIMP_(void) onIdle(void)
+        {
+            ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderOverlay, std::placeholders::_1)));
+            video->present(true);
+        }
+
         STDMETHODIMP_(void) onUpdate(float frameTime)
         {
             population->listEntities<TransformComponent, CameraComponent>([&](Entity *cameraEntity) -> void
             {
                 auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
-                Math::Float4x4 cameraMatrix(Math::Float4x4::createMatrix(cameraTransform.rotation, cameraTransform.position));
+                Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
 
                 auto &cameraData = cameraEntity->getComponent<CameraComponent>();
 
@@ -803,7 +809,7 @@ namespace Gek
                 cameraConstantData.minimumDistance = cameraData.minimumDistance;
                 cameraConstantData.maximumDistance = cameraData.maximumDistance;
                 cameraConstantData.viewMatrix = cameraMatrix.getInverse();
-                cameraConstantData.projectionMatrix = Math::Float4x4::createPerspective(fieldOfView, displayAspectRatio, cameraData.minimumDistance, cameraData.maximumDistance);
+                cameraConstantData.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraData.minimumDistance, cameraData.maximumDistance);
                 cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
                 video->updateBuffer(this->cameraConstantBuffer, &cameraConstantData);
 

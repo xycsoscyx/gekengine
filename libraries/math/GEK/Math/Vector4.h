@@ -21,12 +21,12 @@ namespace Gek
 
         public:
             Float4(void)
-                : data{ 0.0f, 0.0f, 0.0f, 0.0f }
+                : simd(_mm_set1_ps(0.0f))
             {
             }
 
             Float4(float value)
-                : data{ value, value, value, value }
+                : simd(_mm_set1_ps(value))
             {
             }
 
@@ -51,7 +51,7 @@ namespace Gek
             }
 
             Float4(float x, float y, float z, float w)
-                : data{ x, y, z, w }
+                : simd(_mm_setr_ps(x, y, z, w))
             {
             }
 
@@ -137,28 +137,28 @@ namespace Gek
 
             inline Float4 operator - (const Float4 &vector) const
             {
-                return reinterpret_cast<Float4 &>(_mm_sub_ps(simd, vector.simd));
+                return _mm_sub_ps(simd, vector.simd);
             }
 
             inline Float4 operator + (const Float4 &vector) const
             {
-                return reinterpret_cast<Float4 &>(_mm_add_ps(simd, vector.simd));
+                return _mm_add_ps(simd, vector.simd);
             }
 
             inline Float4 operator / (const Float4 &vector) const
             {
-                return reinterpret_cast<Float4 &>(_mm_div_ps(simd, vector.simd));
+                return _mm_div_ps(simd, vector.simd);
             }
 
             inline Float4 operator * (const Float4 &vector) const
             {
-                return reinterpret_cast<Float4 &>(_mm_mul_ps(simd, vector.simd));
+                return _mm_mul_ps(simd, vector.simd);
             }
         };
 
         inline Float4 operator - (const Float4 &vector)
         {
-            return reinterpret_cast<Float4 &>(_mm_sub_ps(_mm_set1_ps(0.0f), vector.simd));
+            return _mm_sub_ps(_mm_set1_ps(0.0f), vector.simd);
         }
     }; // namespace Math
 }; // namespace Gek
