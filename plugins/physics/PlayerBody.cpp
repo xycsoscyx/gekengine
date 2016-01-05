@@ -377,7 +377,7 @@ namespace Gek
             Math::Float4x4 outerShapeMatrix(movementBasis);
             float capsuleHeight = (playerBodyComponent.height - playerBodyComponent.stairStep);
             sphereCastOrigin = ((capsuleHeight * 0.5f) + playerBodyComponent.stairStep);
-            outerShapeMatrix.translation = (outerShapeMatrix.nx * sphereCastOrigin);
+            outerShapeMatrix.translation = (outerShapeMatrix.ny * sphereCastOrigin);
             NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.5f, 0, outerShapeMatrix.data);
             NewtonCollisionSetScale(bodyCapsule, capsuleHeight, (playerBodyComponent.outerRadius * 4.0f), (playerBodyComponent.outerRadius * 4.0f));
 
@@ -544,7 +544,7 @@ namespace Gek
 
                     normalizedTimeLeft -= timeToImpact;
 
-                    float speed[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
+                    float speedDelta[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
                     float bounceSpeed[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
                     Math::Float3 bounceNormal[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
                     for (int contact = 1; contact < contactCount; contact++)
@@ -564,32 +564,27 @@ namespace Gek
                     }
 
                     int bounceCount = 0;
-                    if (!isJumping() && !isFalling())
+                    auto setBounceData = [&](const NewtonWorldConvexCastReturnInfo &castInfo) -> void
                     {
-                        upConstraint.m_point[0] = matrix.translation.x;
-                        upConstraint.m_point[1] = matrix.translation.y;
-                        upConstraint.m_point[2] = matrix.translation.z;
-
-                        speed[bounceCount] = 0.0f;
-                        bounceNormal[bounceCount].set(upConstraint.m_normal);
-                        bounceSpeed[bounceCount] = calculateContactKinematics(velocity, &upConstraint);
+                        speedDelta[bounceCount] = 0.0f;
+                        bounceNormal[bounceCount].set(castInfo.m_normal);
+                        bounceSpeed[bounceCount] = calculateContactKinematics(velocity, &castInfo);
                         bounceCount++;
-                    }
+                    };
+
+                    upConstraint.m_point[0] = matrix.translation.x;
+                    upConstraint.m_point[1] = matrix.translation.y;
+                    upConstraint.m_point[2] = matrix.translation.z;
+                    setBounceData(upConstraint);
 
                     for (int contact = 0; contact < contactCount; contact++)
                     {
-                        speed[bounceCount] = 0.0f;
-                        bounceNormal[bounceCount].set(info[contact].m_normal);
-                        bounceSpeed[bounceCount] = calculateContactKinematics(velocity, &info[contact]);
-                        bounceCount++;
+                        setBounceData(info[contact]);
                     }
 
                     for (int contact = 0; contact < previousContactCount; contact++)
                     {
-                        speed[bounceCount] = 0.0f;
-                        bounceNormal[bounceCount] = Math::Float3(previousInfo[contact].m_normal);
-                        bounceSpeed[bounceCount] = calculateContactKinematics(velocity, &previousInfo[contact]);
-                        bounceCount++;
+                        setBounceData(previousInfo[contact]);
                     }
 
                     float residual = 10.0f;
@@ -601,7 +596,7 @@ namespace Gek
                         {
                             Math::Float3 normal(bounceNormal[bounce]);
                             float value = (bounceSpeed[bounce] - normal.dot(auxiliaryBounceVelocity));
-                            float delta = (speed[bounce] + value);
+                            float delta = (speedDelta[bounce] + value);
                             if (delta < 0.0f)
                             {
                                 value = 0.0f;
@@ -609,8 +604,8 @@ namespace Gek
                             }
 
                             residual = std::max(std::abs(value), residual);
-                            auxiliaryBounceVelocity += (normal * (delta - speed[bounce]));
-                            speed[bounce] = delta;
+                            auxiliaryBounceVelocity += (normal * (delta - speedDelta[bounce]));
+                            speedDelta[bounce] = delta;
                         }
                     }
 
@@ -618,7 +613,7 @@ namespace Gek
                     for (int contact = 0; contact < bounceCount; contact++)
                     {
                         Math::Float3 normal(bounceNormal[contact]);
-                        velocityStep += (normal * speed[contact]);
+                        velocityStep += (normal * speedDelta[contact]);
                     }
 
                     velocity += velocityStep;
