@@ -8,6 +8,7 @@ namespace Gek
     {
         const float Infinity = FLT_MAX;
         const float Epsilon = FLT_EPSILON;
+        const float EpsilonSquared = (FLT_EPSILON * FLT_EPSILON);
         const float Pi = 3.14159265358979323846f;
 
         template <typename TYPE>
