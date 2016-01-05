@@ -11,7 +11,7 @@ namespace Gek
     {
         float outerRadius;
         float innerRadius;
-        float height;
+        float halfHeight;
         float stairStep;
 
         PlayerBodyComponent(void);

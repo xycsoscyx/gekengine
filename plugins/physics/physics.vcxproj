@@ -128,6 +128,7 @@
   <ItemGroup>
     <ClInclude Include="GEK\Newton\Mass.h" />
     <ClInclude Include="GEK\Newton\NewtonEntity.h" />
+    <ClInclude Include="GEK\Newton\NewtonProcessor.h" />
     <ClInclude Include="GEK\Newton\PlayerBody.h" />
     <ClInclude Include="GEK\Newton\RigidBody.h" />
     <ClInclude Include="GEK\Newton\StaticBody.h" />

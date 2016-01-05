@@ -15,6 +15,7 @@
 #include "GEK\Newton\StaticBody.h"
 #include "GEK\Newton\PlayerBody.h"
 #include "GEK\Newton\NewtonEntity.h"
+#include "GEK\Newton\NewtonProcessor.h"
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Matrix4x4.h"
 #include "GEK\Shape\AlignedBox.h"
@@ -31,8 +32,6 @@
 
 namespace Gek
 {
-    static const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
-
     extern NewtonEntity *createPlayerBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent);
     extern NewtonEntity *createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent);
 
@@ -40,6 +39,7 @@ namespace Gek
         , public ObservableMixin
         , public PopulationObserver
         , public Processor
+        , public NewtonProcessor
     {
     public:
         struct Surface
@@ -430,7 +430,14 @@ namespace Gek
             return newtonCollision;
         }
 
-        // System::Interface
+        // NewtonProcessor
+        STDMETHODIMP_(Math::Float3) getGravity(const Math::Float3 &position)
+        {
+            const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
+            return Gravity;
+        }
+
+        // Processor
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
             gekLogScope();
@@ -549,10 +556,10 @@ namespace Gek
         STDMETHODIMP_(void) onLoadBegin(void)
         {
             newtonWorld = NewtonCreate();
-            NewtonWorldSetUserData(newtonWorld, this);
+            NewtonWorldSetUserData(newtonWorld, static_cast<NewtonProcessor *>(this));
 
-            NewtonWorldAddPreListener(newtonWorld, "__player_pre_listener__", this, newtonWorldPreUpdate, nullptr);
-            NewtonWorldAddPostListener(newtonWorld, "__player_post_listener__", this, newtonWorldPostUpdate, nullptr);
+            NewtonWorldAddPreListener(newtonWorld, "__gek_pre_listener__", this, newtonWorldPreUpdate, nullptr);
+            NewtonWorldAddPostListener(newtonWorld, "__gek_post_listener__", this, newtonWorldPostUpdate, nullptr);
 
             int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
             NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, NULL, newtonOnAABBOverlap, newtonOnContactFriction);

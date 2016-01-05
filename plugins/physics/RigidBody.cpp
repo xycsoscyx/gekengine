@@ -1,5 +1,6 @@
 #include "GEK\Newton\RigidBody.h"
 #include "GEK\Newton\NewtonEntity.h"
+#include "GEK\Newton\NewtonProcessor.h"
 #include "GEK\Newton\Mass.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Engine\ComponentMixin.h"
@@ -11,12 +12,12 @@
 
 namespace Gek
 {
-    static const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
-
     class RigidNewtonBody : public UnknownMixin
         , public NewtonEntity
     {
     private:
+        NewtonProcessor *newtonProcessor;
+
         Entity *entity;
         NewtonBody *newtonBody;
         TransformComponent &transformComponent;
@@ -26,7 +27,8 @@ namespace Gek
         RigidNewtonBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity,
             TransformComponent &transformComponent,
             MassComponent &massComponent)
-            : entity(entity)
+            : newtonProcessor(static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld)))
+            , entity(entity)
             , newtonBody(NewtonCreateDynamicBody(newtonWorld, newtonCollision, transformComponent.getMatrix().data))
             , transformComponent(transformComponent)
             , massComponent(massComponent)
@@ -59,7 +61,8 @@ namespace Gek
 
         STDMETHODIMP_(void) onPreUpdate(dFloat frameTime, int threadHandle)
         {
-            NewtonBodyAddForce(newtonBody, (Gravity * (float)massComponent).data);
+            Math::Float3 gravity(newtonProcessor->getGravity(transformComponent.position));
+            NewtonBodyAddForce(newtonBody, (gravity * (float)massComponent).data);
         }
 
         STDMETHODIMP_(void) onSetTransform(const dFloat* const matrixData, int threadHandle)

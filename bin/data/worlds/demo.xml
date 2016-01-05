@@ -106,7 +106,7 @@
         
         <entity name="player">
             <transform position="0, 1, 0" rotation="0, 0, 0" />
-            <player_body outer_radius="1.5" inner_radius="1" height="6" stair_step="1.5" />
+            <player_body outer_radius="1.5" inner_radius=".5" half_height="3" stair_step="1.5" />
             <mass>250</mass>
         </entity>
 

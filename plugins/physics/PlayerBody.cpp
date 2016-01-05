@@ -1,4 +1,5 @@
 #include "GEK\Newton\PlayerBody.h"
+#include "GEK\Newton\NewtonProcessor.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Engine\ComponentMixin.h"
@@ -24,8 +25,6 @@ static const float D_PLAYER_CONTACT_SKIN_THICKNESS = 0.025f;
 
 namespace Gek
 {
-    static const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
-
     class ConvexCastPreFilter
     {
     protected:
@@ -122,6 +121,8 @@ namespace Gek
 
     private:
         IUnknown *actionProvider;
+        NewtonProcessor *newtonProcessor;
+        NewtonWorld *newtonWorld;
 
         Entity *entity;
         PlayerBodyComponent &playerBodyComponent;
@@ -132,7 +133,6 @@ namespace Gek
         float restrainingDistance;
         float sphereCastOrigin;
 
-        NewtonWorld *newtonWorld;
         NewtonBody *newtonBody;
         NewtonCollision *newtonCastingShape;
         NewtonCollision *newtonSupportShape;
@@ -148,7 +148,6 @@ namespace Gek
         Math::Float3 groundVelocity;
 
         bool isJumpingState;
-        bool isFallingState;
 
     private:
         void setRestrainingDistance(float distance)
@@ -218,6 +217,7 @@ namespace Gek
         {
             Math::Float4x4 matrix;
             NewtonBodyGetMatrix(newtonBody, matrix.data);
+            Math::Float3 gravity(newtonProcessor->getGravity(matrix.translation));
             Math::Float4x4 localBasis(matrix * movementBasis);
 
             Math::Float3 desiredVelocity;
@@ -229,7 +229,7 @@ namespace Gek
                     // player is in a legal slope, he is in full control of his movement
                     Math::Float3 bodyVelocity;
                     NewtonBodyGetVelocity(newtonBody, bodyVelocity.data);
-                    desiredVelocity = ((localBasis.ny * bodyVelocity.dot(localBasis.ny)) + (Gravity * frameTime) + (localBasis.nz * forwardSpeed) + (localBasis.nx * lateralSpeed) + (localBasis.ny * verticalSpeed));
+                    desiredVelocity = ((localBasis.ny * bodyVelocity.dot(localBasis.ny)) + (gravity * frameTime) + (localBasis.nz * forwardSpeed) + (localBasis.nx * lateralSpeed) + (localBasis.ny * verticalSpeed));
                     desiredVelocity += (groundVelocity - (localBasis.ny * localBasis.ny.dot(groundVelocity)));
 
                     float speedLimitMagnitudeSquared = ((forwardSpeed * forwardSpeed) + (lateralSpeed * lateralSpeed) + (verticalSpeed * verticalSpeed) + groundVelocity.dot(groundVelocity) + 0.1f);
@@ -250,7 +250,7 @@ namespace Gek
                     // player is in an illegal ramp, he slides down hill an loses control of his movement 
                     NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
                     desiredVelocity += (localBasis.ny * verticalSpeed);
-                    desiredVelocity += (Gravity * frameTime);
+                    desiredVelocity += (gravity * frameTime);
                     float groundNormalVelocity = groundNormal.dot(desiredVelocity - groundVelocity);
                     if (groundNormalVelocity < 0.0f)
                     {
@@ -263,7 +263,7 @@ namespace Gek
                 // player is on free fall, only apply the gravity
                 NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
                 desiredVelocity += (localBasis.ny * verticalSpeed);
-                desiredVelocity += (Gravity * frameTime);
+                desiredVelocity += (gravity * frameTime);
             }
 
             return desiredVelocity;
@@ -293,7 +293,6 @@ namespace Gek
             if (filterData.hitBody)
             {
                 isJumpingState = false;
-                isFallingState = false;
                 groundNormal = filterData.hitNormal;
                 Math::Float3 supportPoint(castMatrix.translation + ((destination - castMatrix.translation) * filterData.intersectionDistance));
                 NewtonBodyGetPointVelocity(filterData.hitBody, supportPoint.data, groundVelocity.data);
@@ -319,14 +318,11 @@ namespace Gek
             return isJumpingState;
         }
 
-        void setFalling(void)
-        {
-            isFallingState = true;
-        }
-
         bool isFalling(void)
         {
-            return isFallingState;
+            Math::Float3 velocity;
+            NewtonBodyGetVelocity(newtonBody, velocity.data);
+            return (velocity.y < 0.0f);
         }
 
     public:
@@ -335,6 +331,7 @@ namespace Gek
             TransformComponent &transformComponent,
             MassComponent &massComponent)
             : actionProvider(actionProvider)
+            , newtonProcessor(static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld)))
             , newtonWorld(newtonWorld)
             , newtonBody(nullptr)
             , entity(entity)
@@ -347,7 +344,6 @@ namespace Gek
             , lateralSpeed(0.0f)
             , verticalSpeed(0.0f)
             , isJumpingState(false)
-            , isFallingState(false)
         {
             movementBasis.nx.set( 1.0f, 0.0f, 0.0f);
             movementBasis.ny.set( 0.0f, 1.0f, 0.0f);
@@ -362,20 +358,20 @@ namespace Gek
 
             // create an inner thin cylinder
             Math::Float3 point0(0.0f, playerBodyComponent.innerRadius, 0.0f);
-            Math::Float3 point1(playerBodyComponent.height, playerBodyComponent.innerRadius, 0.0f);
-            for (int step = 0; step < numberOfSteps; step++)
+            Math::Float3 point1(playerBodyComponent.halfHeight, playerBodyComponent.innerRadius, 0.0f);
+            for (int currentPoint = 0; currentPoint < numberOfSteps; currentPoint++)
             {
                 Math::Float4x4 rotation;
-                rotation.setPitchRotation(step * 2.0f * 3.141592f / numberOfSteps);
-                convexPoints[0][step] = (movementBasis * rotation * point0);
-                convexPoints[1][step] = (movementBasis * rotation * point1);
+                rotation.setPitchRotation(currentPoint * 2.0f * 3.141592f / numberOfSteps);
+                convexPoints[0][currentPoint] = (movementBasis * rotation * point0);
+                convexPoints[1][currentPoint] = (movementBasis * rotation * point1);
             }
 
             NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, (numberOfSteps * 2), convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
 
             // create the outer thick cylinder
             Math::Float4x4 outerShapeMatrix(movementBasis);
-            float capsuleHeight = (playerBodyComponent.height - playerBodyComponent.stairStep);
+            float capsuleHeight = (playerBodyComponent.halfHeight - playerBodyComponent.stairStep);
             sphereCastOrigin = ((capsuleHeight * 0.5f) + playerBodyComponent.stairStep);
             outerShapeMatrix.translation = (outerShapeMatrix.ny * sphereCastOrigin);
             NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.5f, 0, outerShapeMatrix.data);
@@ -403,12 +399,12 @@ namespace Gek
 
             point0.set(0.0f, castRadius, 0.0f);
             point1.set(castHeight, castRadius, 0.0f);
-            for (int step = 0; step < numberOfSteps; step++)
+            for (int currentPoint = 0; currentPoint < numberOfSteps; currentPoint++)
             {
                 Math::Float4x4 rotation;
-                rotation.setPitchRotation(step * 2.0f * 3.141592f / numberOfSteps);
-                convexPoints[0][step] = (movementBasis * rotation * point0);
-                convexPoints[1][step] = (movementBasis * rotation * point1);
+                rotation.setPitchRotation(currentPoint * 2.0f * 3.141592f / numberOfSteps);
+                convexPoints[0][currentPoint] = (movementBasis * rotation * point0);
+                convexPoints[1][currentPoint] = (movementBasis * rotation * point1);
             }
 
             newtonCastingShape = NewtonCreateConvexHull(newtonWorld, (numberOfSteps * 2), convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
@@ -504,18 +500,18 @@ namespace Gek
             Math::Float3 velocity;
             NewtonBodyGetVelocity(newtonBody, velocity.data);
             float normalizedTimeLeft = 1.0f;
-            float step = (frameTime * velocity.getLength());
+            float velocityStep = (frameTime * velocity.getLength());
             float descreteframeTime = (frameTime * (1.0f / D_PLAYER_DESCRETE_MOTION_STEPS));
             int previousContactCount = 0;
             ConvexCastPreFilter preFilterData(newtonBody);
-            NewtonWorldConvexCastReturnInfo previousInfo[D_PLAYER_CONTROLLER_MAX_CONTACTS];
+            NewtonWorldConvexCastReturnInfo previousInfoList[D_PLAYER_CONTROLLER_MAX_CONTACTS];
 
             Math::Float3 scale;
             NewtonCollisionGetScale(newtonUpperBodyShape, &scale.x, &scale.y, &scale.z);
             
             //const float radius = (playerBodyComponent.outerRadius * 4.0f);
             const float radius = ((playerBodyComponent.outerRadius + restrainingDistance) * 4.0f);
-            NewtonCollisionSetScale(newtonUpperBodyShape, playerBodyComponent.height - playerBodyComponent.stairStep, radius, radius);
+            NewtonCollisionSetScale(newtonUpperBodyShape, playerBodyComponent.halfHeight - playerBodyComponent.stairStep, radius, radius);
 
             NewtonWorldConvexCastReturnInfo upConstraint;
             memset(&upConstraint, 0, sizeof(upConstraint));
@@ -523,7 +519,7 @@ namespace Gek
             upConstraint.m_normal[1] = movementBasis.ny.y;
             upConstraint.m_normal[2] = movementBasis.ny.z;
 
-            for (int step = 0; ((step < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedTimeLeft > PLAYER_EPSILON)); step++)
+            for (int currentStep = 0; ((currentStep < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedTimeLeft > PLAYER_EPSILON)); currentStep++)
             {
                 if (velocity.dot(velocity) < PLAYER_EPSILON)
                 {
@@ -531,9 +527,9 @@ namespace Gek
                 }
 
                 float timeToImpact = 0.0f;
-                NewtonWorldConvexCastReturnInfo info[D_PLAYER_CONTROLLER_MAX_CONTACTS];
+                NewtonWorldConvexCastReturnInfo currentInfoList[D_PLAYER_CONTROLLER_MAX_CONTACTS];
                 Math::Float3 destinationPosition(matrix.translation + (velocity * frameTime));
-                int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, destinationPosition.data, newtonUpperBodyShape, &timeToImpact, &preFilterData, ConvexCastPreFilter::preFilter, info, ARRAYSIZE(info), threadHandle);
+                int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, destinationPosition.data, newtonUpperBodyShape, &timeToImpact, &preFilterData, ConvexCastPreFilter::preFilter, currentInfoList, ARRAYSIZE(currentInfoList), threadHandle);
                 if (contactCount)
                 {
                     matrix.translation += (velocity * (timeToImpact * frameTime));
@@ -544,19 +540,19 @@ namespace Gek
 
                     normalizedTimeLeft -= timeToImpact;
 
-                    float speedDelta[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
-                    float bounceSpeed[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
-                    Math::Float3 bounceNormal[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
-                    for (int contact = 1; contact < contactCount; contact++)
+                    float speedDeltaList[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
+                    float bounceSpeedList[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
+                    Math::Float3 bounceNormalList[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
+                    for (int currentContact = 1; currentContact < contactCount; currentContact++)
                     {
-                        Math::Float3 normal0(info[contact - 1].m_normal);
-                        for (int previousContact = 0; previousContact < contact; previousContact++)
+                        Math::Float3 normal0(currentInfoList[currentContact - 1].m_normal);
+                        for (int previousContact = 0; previousContact < currentContact; previousContact++)
                         {
-                            Math::Float3 normal1(info[previousContact].m_normal);
+                            Math::Float3 normal1(currentInfoList[previousContact].m_normal);
                             if (normal0.dot(normal1) > 0.9999f)
                             {
-                                info[contact] = info[contactCount - 1];
-                                contact--;
+                                currentInfoList[currentContact] = currentInfoList[contactCount - 1];
+                                currentContact--;
                                 contactCount--;
                                 break;
                             }
@@ -566,9 +562,9 @@ namespace Gek
                     int bounceCount = 0;
                     auto setBounceData = [&](const NewtonWorldConvexCastReturnInfo &castInfo) -> void
                     {
-                        speedDelta[bounceCount] = 0.0f;
-                        bounceNormal[bounceCount].set(castInfo.m_normal);
-                        bounceSpeed[bounceCount] = calculateContactKinematics(velocity, &castInfo);
+                        speedDeltaList[bounceCount] = 0.0f;
+                        bounceNormalList[bounceCount].set(castInfo.m_normal);
+                        bounceSpeedList[bounceCount] = calculateContactKinematics(velocity, &castInfo);
                         bounceCount++;
                     };
 
@@ -577,43 +573,43 @@ namespace Gek
                     upConstraint.m_point[2] = matrix.translation.z;
                     setBounceData(upConstraint);
 
-                    for (int contact = 0; contact < contactCount; contact++)
+                    for (int currentContact = 0; currentContact < contactCount; currentContact++)
                     {
-                        setBounceData(info[contact]);
+                        setBounceData(currentInfoList[currentContact]);
                     }
 
-                    for (int contact = 0; contact < previousContactCount; contact++)
+                    for (int currentContact = 0; currentContact < previousContactCount; currentContact++)
                     {
-                        setBounceData(previousInfo[contact]);
+                        setBounceData(previousInfoList[currentContact]);
                     }
 
-                    float residual = 10.0f;
+                    float residualSpeed = 10.0f;
                     Math::Float3 auxiliaryBounceVelocity;
-                    for (int contact = 0; ((contact < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residual > PLAYER_EPSILON)); contact++)
+                    for (int currentContact = 0; ((currentContact < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residualSpeed > PLAYER_EPSILON)); currentContact++)
                     {
-                        residual = 0.0f;
-                        for (int bounce = 0; bounce < bounceCount; bounce++)
+                        residualSpeed = 0.0f;
+                        for (int currentBound = 0; currentBound < bounceCount; currentBound++)
                         {
-                            Math::Float3 normal(bounceNormal[bounce]);
-                            float value = (bounceSpeed[bounce] - normal.dot(auxiliaryBounceVelocity));
-                            float delta = (speedDelta[bounce] + value);
-                            if (delta < 0.0f)
+                            Math::Float3 normal(bounceNormalList[currentBound]);
+                            float currentSpeed = (bounceSpeedList[currentBound] - normal.dot(auxiliaryBounceVelocity));
+                            float speedDelta = (speedDeltaList[currentBound] + currentSpeed);
+                            if (speedDelta < 0.0f)
                             {
-                                value = 0.0f;
-                                delta = 0.0f;
+                                currentSpeed = 0.0f;
+                                speedDelta = 0.0f;
                             }
 
-                            residual = std::max(std::abs(value), residual);
-                            auxiliaryBounceVelocity += (normal * (delta - speedDelta[bounce]));
-                            speedDelta[bounce] = delta;
+                            residualSpeed = std::max(std::abs(currentSpeed), residualSpeed);
+                            auxiliaryBounceVelocity += (normal * (speedDelta - speedDeltaList[currentBound]));
+                            speedDeltaList[currentBound] = speedDelta;
                         }
                     }
 
                     Math::Float3 velocityStep;
-                    for (int contact = 0; contact < bounceCount; contact++)
+                    for (int currentContact = 0; currentContact < bounceCount; currentContact++)
                     {
-                        Math::Float3 normal(bounceNormal[contact]);
-                        velocityStep += (normal * speedDelta[contact]);
+                        Math::Float3 normal(bounceNormalList[currentContact]);
+                        velocityStep += (normal * speedDeltaList[currentContact]);
                     }
 
                     velocity += velocityStep;
@@ -626,7 +622,7 @@ namespace Gek
                     }
 
                     previousContactCount = contactCount;
-                    memcpy(previousInfo, info, (previousContactCount * sizeof(NewtonWorldConvexCastReturnInfo)));
+                    memcpy(previousInfoList, currentInfoList, (previousContactCount * sizeof(NewtonWorldConvexCastReturnInfo)));
                 }
                 else
                 {
@@ -647,8 +643,8 @@ namespace Gek
             }
             else
             {
-                step = std::abs(localBasis.ny.dot(velocity * frameTime));
-                float castDist = ((groundNormal.dot(groundNormal) > 0.0f) ? playerBodyComponent.stairStep : step);
+                velocityStep = std::abs(localBasis.ny.dot(velocity * frameTime));
+                float castDist = ((groundNormal.dot(groundNormal) > 0.0f) ? playerBodyComponent.stairStep : velocityStep);
                 Math::Float3 destination(matrix.translation - (localBasis.ny * (castDist * 2.0f)));
                 updateGroundPlane(matrix, supportMatrix, destination, threadHandle);
             }
@@ -832,9 +828,13 @@ namespace Gek
             playerBody->addPlayerVelocity(0.0f, 0.0f, jumpVelocity);
             jumpVelocity = 0.0f;
 
-            if (!playerBody->isJumping() && !playerBody->isFalling())
+            if (!playerBody->isJumping())
             {
                 return createIdleState(playerBody);
+            }
+            else if (playerBody->isFalling())
+            {
+                return createFallingState(playerBody);
             }
 
             return nullptr;
@@ -848,7 +848,6 @@ namespace Gek
             : PlayerStateMixin(playerBody)
         {
             REQUIRE_VOID_RETURN(playerBody);
-            playerBody->setFalling();
         }
 
         // State
@@ -858,7 +857,7 @@ namespace Gek
 
             playerBody->addPlayerVelocity(0.0f, 0.0f, 0.0f);
 
-            if (!playerBody->isJumping() && !playerBody->isFalling())
+            if (!playerBody->isFalling())
             {
                 return createIdleState(playerBody);
             }
@@ -900,10 +899,10 @@ namespace Gek
     }
 
     PlayerBodyComponent::PlayerBodyComponent(void)
-        : outerRadius(1.0f)
-        , innerRadius(0.25f)
-        , height(1.9f)
-        , stairStep(0.25f)
+        : outerRadius(1.5f)
+        , innerRadius(0.5f)
+        , halfHeight(3.0f)
+        , stairStep(1.5f)
     {
     }
 
@@ -911,7 +910,7 @@ namespace Gek
     {
         componentParameterList[L"outer_radius"] = String::from(outerRadius);
         componentParameterList[L"inner_radius"] = String::from(innerRadius);
-        componentParameterList[L"playerBodyComponent.height"] = String::from(height);
+        componentParameterList[L"half_height"] = String::from(halfHeight);
         componentParameterList[L"stair_step"] = String::from(stairStep);
         return S_OK;
     }
@@ -920,7 +919,7 @@ namespace Gek
     {
         setParameter(componentParameterList, L"outer_radius", outerRadius, String::to<float>);
         setParameter(componentParameterList, L"inner_radius", innerRadius, String::to<float>);
-        setParameter(componentParameterList, L"playerBodyComponent.height", height, String::to<float>);
+        setParameter(componentParameterList, L"half_height", halfHeight, String::to<float>);
         setParameter(componentParameterList, L"stair_step", stairStep, String::to<float>);
         return S_OK;
     }

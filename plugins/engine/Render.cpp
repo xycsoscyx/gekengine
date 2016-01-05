@@ -892,13 +892,19 @@ namespace Gek
                             if (currentPlugin != drawCall.plugin)
                             {
                                 Plugin *plugin = pluginManager.getResource<Plugin>(currentPlugin = drawCall.plugin);
-                                plugin->enable(videoContext);
+                                if (plugin)
+                                {
+                                    plugin->enable(videoContext);
+                                }
                             }
 
                             if (currentMaterial != drawCall.material)
                             {
                                 Material *material = materialManager.getResource<Material>(currentMaterial = drawCall.material);
-                                shader->setResourceList(videoContext, material->getResourceList());
+                                if (material)
+                                {
+                                    shader->setResourceList(videoContext, material->getResourceList());
+                                }
                             }
 
                             drawCall.onDraw(videoContext);
