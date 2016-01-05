@@ -147,7 +147,8 @@ namespace Gek
         Math::Float3 groundNormal;
         Math::Float3 groundVelocity;
 
-        const NewtonBody *onNewtonBody;
+        bool isJumpingState;
+        bool isFallingState;
 
     private:
         void setRestrainingDistance(float distance)
@@ -289,8 +290,10 @@ namespace Gek
 
             groundNormal.set(0.0f);
             groundVelocity.set(0.0f);
-            if (onNewtonBody = filterData.hitBody)
+            if (filterData.hitBody)
             {
+                isJumpingState = false;
+                isFallingState = false;
                 groundNormal = filterData.hitNormal;
                 Math::Float3 supportPoint(castMatrix.translation + ((destination - castMatrix.translation) * filterData.intersectionDistance));
                 NewtonBodyGetPointVelocity(filterData.hitBody, supportPoint.data, groundVelocity.data);
@@ -305,10 +308,25 @@ namespace Gek
             this->lateralSpeed += lateralSpeed;
             this->verticalSpeed += verticalSpeed;
         }
-
-        bool isOnSomething(void)
+        
+        void setJumping(void)
         {
-            return (onNewtonBody ? true : false);
+            isJumpingState = true;
+        }
+
+        bool isJumping(void)
+        {
+            return isJumpingState;
+        }
+
+        void setFalling(void)
+        {
+            isFallingState = true;
+        }
+
+        bool isFalling(void)
+        {
+            return isFallingState;
         }
 
     public:
@@ -328,7 +346,8 @@ namespace Gek
             , forwardSpeed(0.0f)
             , lateralSpeed(0.0f)
             , verticalSpeed(0.0f)
-            , onNewtonBody(nullptr)
+            , isJumpingState(false)
+            , isFallingState(false)
         {
             movementBasis.nx.set( 1.0f, 0.0f, 0.0f);
             movementBasis.ny.set( 0.0f, 1.0f, 0.0f);
@@ -344,12 +363,12 @@ namespace Gek
             // create an inner thin cylinder
             Math::Float3 point0(0.0f, playerBodyComponent.innerRadius, 0.0f);
             Math::Float3 point1(playerBodyComponent.height, playerBodyComponent.innerRadius, 0.0f);
-            for (int index = 0; index < numberOfSteps; index++)
+            for (int step = 0; step < numberOfSteps; step++)
             {
                 Math::Float4x4 rotation;
-                rotation.setPitchRotation(index * 2.0f * 3.141592f / numberOfSteps);
-                convexPoints[0][index] = (movementBasis * rotation * point0);
-                convexPoints[1][index] = (movementBasis * rotation * point1);
+                rotation.setPitchRotation(step * 2.0f * 3.141592f / numberOfSteps);
+                convexPoints[0][step] = (movementBasis * rotation * point0);
+                convexPoints[1][step] = (movementBasis * rotation * point1);
             }
 
             NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, (numberOfSteps * 2), convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
@@ -365,8 +384,8 @@ namespace Gek
             // compound collision player controller
             NewtonCollision* const playerShape = NewtonCreateCompoundCollision(newtonWorld, 0);
             NewtonCompoundCollisionBeginAddRemove(playerShape);
-            NewtonCompoundCollisionAddSubCollision(playerShape, bodyCapsule);
             NewtonCompoundCollisionAddSubCollision(playerShape, supportShape);
+            NewtonCompoundCollisionAddSubCollision(playerShape, bodyCapsule);
             NewtonCompoundCollisionEndAddRemove(playerShape);
 
             // create the kinematic body
@@ -384,12 +403,12 @@ namespace Gek
 
             point0.set(0.0f, castRadius, 0.0f);
             point1.set(castHeight, castRadius, 0.0f);
-            for (int index = 0; index < numberOfSteps; index++)
+            for (int step = 0; step < numberOfSteps; step++)
             {
                 Math::Float4x4 rotation;
-                rotation.setPitchRotation(index * 2.0f * 3.141592f / numberOfSteps);
-                convexPoints[0][index] = (movementBasis * rotation * point0);
-                convexPoints[1][index] = (movementBasis * rotation * point1);
+                rotation.setPitchRotation(step * 2.0f * 3.141592f / numberOfSteps);
+                convexPoints[0][step] = (movementBasis * rotation * point0);
+                convexPoints[1][step] = (movementBasis * rotation * point1);
             }
 
             newtonCastingShape = NewtonCreateConvexHull(newtonWorld, (numberOfSteps * 2), convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
@@ -493,6 +512,7 @@ namespace Gek
 
             Math::Float3 scale;
             NewtonCollisionGetScale(newtonUpperBodyShape, &scale.x, &scale.y, &scale.z);
+            
             //const float radius = (playerBodyComponent.outerRadius * 4.0f);
             const float radius = ((playerBodyComponent.outerRadius + restrainingDistance) * 4.0f);
             NewtonCollisionSetScale(newtonUpperBodyShape, playerBodyComponent.height - playerBodyComponent.stairStep, radius, radius);
@@ -527,16 +547,16 @@ namespace Gek
                     float speed[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
                     float bounceSpeed[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
                     Math::Float3 bounceNormal[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
-                    for (int index = 1; index < contactCount; index++)
+                    for (int contact = 1; contact < contactCount; contact++)
                     {
-                        Math::Float3 normal0(info[index - 1].m_normal);
-                        for (int contact = 0; contact < index; contact++)
+                        Math::Float3 normal0(info[contact - 1].m_normal);
+                        for (int previousContact = 0; previousContact < contact; previousContact++)
                         {
-                            Math::Float3 normal1(info[contact].m_normal);
+                            Math::Float3 normal1(info[previousContact].m_normal);
                             if (normal0.dot(normal1) > 0.9999f)
                             {
-                                info[index] = info[contactCount - 1];
-                                index--;
+                                info[contact] = info[contactCount - 1];
+                                contact--;
                                 contactCount--;
                                 break;
                             }
@@ -544,7 +564,7 @@ namespace Gek
                     }
 
                     int bounceCount = 0;
-                    if (verticalSpeed == 0.0f)
+                    if (!isJumping() && !isFalling())
                     {
                         upConstraint.m_point[0] = matrix.translation.x;
                         upConstraint.m_point[1] = matrix.translation.y;
@@ -556,25 +576,25 @@ namespace Gek
                         bounceCount++;
                     }
 
-                    for (int index = 0; index < contactCount; index++)
+                    for (int contact = 0; contact < contactCount; contact++)
                     {
                         speed[bounceCount] = 0.0f;
-                        bounceNormal[bounceCount].set(info[index].m_normal);
-                        bounceSpeed[bounceCount] = calculateContactKinematics(velocity, &info[index]);
+                        bounceNormal[bounceCount].set(info[contact].m_normal);
+                        bounceSpeed[bounceCount] = calculateContactKinematics(velocity, &info[contact]);
                         bounceCount++;
                     }
 
-                    for (int index = 0; index < previousContactCount; index++)
+                    for (int contact = 0; contact < previousContactCount; contact++)
                     {
                         speed[bounceCount] = 0.0f;
-                        bounceNormal[bounceCount] = Math::Float3(previousInfo[index].m_normal);
-                        bounceSpeed[bounceCount] = calculateContactKinematics(velocity, &previousInfo[index]);
+                        bounceNormal[bounceCount] = Math::Float3(previousInfo[contact].m_normal);
+                        bounceSpeed[bounceCount] = calculateContactKinematics(velocity, &previousInfo[contact]);
                         bounceCount++;
                     }
 
                     float residual = 10.0f;
                     Math::Float3 auxiliaryBounceVelocity;
-                    for (int index = 0; ((index < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residual > PLAYER_EPSILON)); index++)
+                    for (int contact = 0; ((contact < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residual > PLAYER_EPSILON)); contact++)
                     {
                         residual = 0.0f;
                         for (int bounce = 0; bounce < bounceCount; bounce++)
@@ -595,10 +615,10 @@ namespace Gek
                     }
 
                     Math::Float3 velocityStep;
-                    for (int index = 0; index < bounceCount; index++)
+                    for (int contact = 0; contact < bounceCount; contact++)
                     {
-                        Math::Float3 normal(bounceNormal[index]);
-                        velocityStep += (normal * speed[index]);
+                        Math::Float3 normal(bounceNormal[contact]);
+                        velocityStep += (normal * speed[contact]);
                     }
 
                     velocity += velocityStep;
@@ -625,7 +645,7 @@ namespace Gek
             // determine if player is standing on some plane
             Math::Float4x4 supportMatrix(matrix);
             supportMatrix.translation += (localBasis.ny * sphereCastOrigin);
-            if (verticalSpeed > 0.0f)
+            if (isJumping() || isFalling())
             {
                 Math::Float3 destination(matrix.translation);
                 updateGroundPlane(matrix, supportMatrix, destination, threadHandle);
@@ -638,10 +658,8 @@ namespace Gek
                 updateGroundPlane(matrix, supportMatrix, destination, threadHandle);
             }
 
-            // set player velocity, position and orientation
             NewtonBodySetVelocity(newtonBody, velocity.data);
             NewtonBodySetMatrix(newtonBody, matrix.data);
-
             transformComponent.position = matrix.translation;
             transformComponent.rotation = matrix.getQuaternion();
         }
@@ -808,6 +826,7 @@ namespace Gek
             , jumpVelocity(10.0f)
         {
             REQUIRE_VOID_RETURN(playerBody);
+            playerBody->setJumping();
         }
 
         // State
@@ -818,7 +837,7 @@ namespace Gek
             playerBody->addPlayerVelocity(0.0f, 0.0f, jumpVelocity);
             jumpVelocity = 0.0f;
 
-            if (playerBody->isOnSomething())
+            if (!playerBody->isJumping() && !playerBody->isFalling())
             {
                 return createIdleState(playerBody);
             }
@@ -833,6 +852,8 @@ namespace Gek
         FallingState(PlayerNewtonBody *playerBody)
             : PlayerStateMixin(playerBody)
         {
+            REQUIRE_VOID_RETURN(playerBody);
+            playerBody->setFalling();
         }
 
         // State
@@ -842,7 +863,7 @@ namespace Gek
 
             playerBody->addPlayerVelocity(0.0f, 0.0f, 0.0f);
 
-            if (playerBody->isOnSomething())
+            if (!playerBody->isJumping() && !playerBody->isFalling())
             {
                 return createIdleState(playerBody);
             }

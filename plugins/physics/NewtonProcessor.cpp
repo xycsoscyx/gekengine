@@ -587,6 +587,7 @@ namespace Gek
             if (newtonWorld)
             {
                 NewtonWaitForUpdateToFinish(newtonWorld);
+                NewtonSerializeToFile(newtonWorld, "d:\\newton.bin", nullptr, nullptr);
             }
 
             for (auto &collisionPair : collisionList)
