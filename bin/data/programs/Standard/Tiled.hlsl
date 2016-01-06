@@ -64,7 +64,7 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
         {
             float lightDistance = dot(tileFrustum[planeIndex], float4(Lighting::list[lightIndex].position, 1.0f));
-            isLightVisible = (isLightVisible && (lightDistance >= -Lighting::list[lightIndex].radius));
+            isLightVisible = (isLightVisible && (lightDistance >= -Lighting::list[lightIndex].range));
         }
 
         [branch]

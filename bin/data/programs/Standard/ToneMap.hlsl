@@ -10,7 +10,7 @@ static const float LinearAngle = 0.10f;
 static const float ToeStrength = 0.20f;
 static const float ToeNumerator = 0.01f;
 static const float ToeDenominator = 0.30f;
-static const float LinearWhite = 11.2f;
+static const float LinearWhite = 5.0f;
 static const float LuminanceSaturation = 1.0f;
 static const float Bias = 0.5f;
 

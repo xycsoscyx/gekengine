@@ -6,11 +6,11 @@
 
 namespace Gek
 {
-    struct PointLightComponent
+    struct LightComponent
     {
-        float radius;
+        float range;
 
-        PointLightComponent(void);
+        LightComponent(void);
         HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
         HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
     };

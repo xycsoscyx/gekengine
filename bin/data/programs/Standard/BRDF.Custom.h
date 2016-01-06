@@ -40,7 +40,14 @@ float getSchlickSmith(float materialRoughness, float NdotL, float NdotV)
 
 float3 getG(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
 {
-    return getSchlickSmith(materialRoughness, NdotL, NdotV);
+    const float anisotropic = 1.0f;
+
+    float aspect = sqrt(1 - (anisotropic * 0.9f));
+    float materialRoughnessSquared = (materialRoughness * materialRoughness);
+    float materialRoughnessX = max(0.001f, materialRoughnessSquared / aspect);
+    float materialRoughnessY = max(0.001f, materialRoughnessSquared * aspect);
+    return getSchlickSmith(materialRoughnessX, NdotL, NdotV) * 
+           getSchlickSmith(materialRoughnessY, NdotL, NdotV);
 }
 
 float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)

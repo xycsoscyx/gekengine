@@ -5,40 +5,40 @@
 
 namespace Gek
 {
-    PointLightComponent::PointLightComponent(void)
+    LightComponent::LightComponent(void)
     {
     }
 
-    HRESULT PointLightComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT LightComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        componentParameterList[L"radius"] = String::from(radius);
+        componentParameterList[L"range"] = String::from(range);
         return S_OK;
     }
 
-    HRESULT PointLightComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT LightComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"radius", radius, String::to<float>);
+        setParameter(componentParameterList, L"range", range, String::to<float>);
         return S_OK;
     }
 
-    class PointLightImplementation : public ContextUserMixin
-        , public ComponentMixin<PointLightComponent>
+    class LightImplementation : public ContextUserMixin
+        , public ComponentMixin<LightComponent>
     {
     public:
-        PointLightImplementation(void)
+        LightImplementation(void)
         {
         }
 
-        BEGIN_INTERFACE_LIST(PointLightImplementation)
+        BEGIN_INTERFACE_LIST(LightImplementation)
             INTERFACE_LIST_ENTRY_COM(Component)
         END_INTERFACE_LIST_USER
 
         // Component
         STDMETHODIMP_(LPCWSTR) getName(void) const
         {
-            return L"point_light";
+            return L"light";
         }
     };
 
-    REGISTER_CLASS(PointLightImplementation)
+    REGISTER_CLASS(LightImplementation)
 }; // namespace Gek

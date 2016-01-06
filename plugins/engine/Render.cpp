@@ -126,12 +126,12 @@ namespace Gek
         struct LightData
         {
             Math::Float3 position;
-            float radius;
+            float range;
             Math::Float3 color;
             float distance;
-            LightData(const Math::Float3 &position, float radius, const Math::Float3 &color)
+            LightData(const Math::Float3 &position, float range, const Math::Float3 &color)
                 : position(position)
-                , radius(radius)
+                , range(range)
                 , color(color)
                 , distance(position.getLength())
             {
@@ -823,14 +823,14 @@ namespace Gek
                 const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
                 lightList.clear();
-                population->listEntities<TransformComponent, PointLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
+                population->listEntities<TransformComponent, LightComponent, ColorComponent>([&](Entity *lightEntity) -> void
                 {
                     auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
-                    auto &pointLightComponent = lightEntity->getComponent<PointLightComponent>();
-                    if (viewFrustum.isVisible(Shape::Sphere(lightTransformComponent.position, pointLightComponent.radius)))
+                    auto &lightComponent = lightEntity->getComponent<LightComponent>();
+                    if (viewFrustum.isVisible(Shape::Sphere(lightTransformComponent.position, lightComponent.range)))
                     {
                         auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-                        lightList.emplace_back((cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz, pointLightComponent.radius, lightColorComponent.value.xyz);
+                        lightList.emplace_back((cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz, lightComponent.range, lightColorComponent.value.xyz);
                     }
                 });
 

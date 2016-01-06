@@ -13,8 +13,8 @@ namespace Gek
     DECLARE_REGISTERED_CLASS(ColorImplementation);
     DECLARE_INTERFACE_IID(ColorRegistration, "A46EA40F-6325-4B4A-A20E-DD8B904D9EC3");
 
-    DECLARE_REGISTERED_CLASS(PointLightImplementation);
-    DECLARE_INTERFACE_IID(PointLightRegistration, "E4D8A791-319B-4324-8DBE-F99A7AAA6DB9");
+    DECLARE_REGISTERED_CLASS(LightImplementation);
+    DECLARE_INTERFACE_IID(LightRegistration, "E4D8A791-319B-4324-8DBE-F99A7AAA6DB9");
 
     DECLARE_REGISTERED_CLASS(ScaleImplementation);
     DECLARE_INTERFACE_IID(ScaleRegistration, "EA3E463D-2A25-4886-B4A2-C035C641D4B8");
@@ -36,7 +36,7 @@ DECLARE_CONTEXT_SOURCE(Components)
     ADD_CONTEXT_CLASS(Gek::ColorRegistration, Gek::ColorImplementation)
         ADD_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::PointLightRegistration, Gek::PointLightImplementation)
+    ADD_CONTEXT_CLASS(Gek::LightRegistration, Gek::LightImplementation)
         ADD_CLASS_TYPE(Gek::ComponentType)
 
     ADD_CONTEXT_CLASS(Gek::ScaleRegistration, Gek::ScaleImplementation)

@@ -115,7 +115,7 @@
             <follow distance="0, 5.5, 0" mode="offset">player</follow>
             <model>*sphere|debug//r10_m0|1</model>
             <scale>.8, .8, .8</scale>
-            <point_light radius="15" />
+            <light range="15" />
             <color>1,1,1</color>
         </entity>
 
@@ -132,23 +132,23 @@
 
         <!--entity>
             <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <point_light radius="lerp(15, 30, arand(1))" />
+            <light range="lerp(15, 30, arand(1))" />
             <color>1,0,0</color>
         </entity-->
 
         <entity>
             <transform position="0,5,5" />
-            <point_light radius="15" />
+            <light range="15" />
             <color>1,0,0</color>
         </entity>
         <entity>
             <transform position="0,9,0" />
-            <point_light radius="15" />
+            <light range="15" />
             <color>0,1,0</color>
         </entity>
         <entity>
             <transform position="0,5,-5" />
-            <point_light radius="15" />
+            <light range="15" />
             <color>0,0,1</color>
         </entity>
 

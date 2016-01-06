@@ -805,7 +805,7 @@ namespace Gek
                                             "    struct Point                                       \r\n" \
                                             "    {                                                  \r\n" \
                                             "        float3  position;                              \r\n" \
-                                            "        float   radius;                                \r\n" \
+                                            "        float   range;                                 \r\n" \
                                             "        float3  color;                                 \r\n" \
                                             "        float   distance;                              \r\n" \
                                             "    };                                                 \r\n" \

@@ -56,11 +56,11 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 #endif
 
 #if _INVERSE_SQUARE
-        float falloff = (lightDistanceSquared / (Lighting::list[lightIndex].radius * Lighting::list[lightIndex].radius));
+        float falloff = (lightDistanceSquared / (Lighting::list[lightIndex].range * Lighting::list[lightIndex].range));
         falloff *= falloff;
         falloff = (1.0f - saturate(falloff));
 #else
-        float falloff = (lightDistance / Lighting::list[lightIndex].radius);
+        float falloff = (lightDistance / Lighting::list[lightIndex].range);
         falloff = (1.0f - saturate(falloff));
 #endif
 
