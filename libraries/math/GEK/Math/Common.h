@@ -36,7 +36,7 @@ namespace Gek
         }
 
         template <typename DATA, typename TYPE>
-        DATA blend(const DATA &x, const DATA &y, TYPE factorX, TYPE factorY)
+        DATA blend(const DATA &x, TYPE factorX, const DATA &y, TYPE factorY)
         {
             return ((x * factorX) + (y * factorY));
         }

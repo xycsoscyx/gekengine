@@ -84,9 +84,9 @@ namespace Gek
 
         void Quaternion::invert(void)
         {
-            x *= -1.0f;
-            y *= -1.0f;
-            z *= -1.0f;
+            x = -x;
+            y = -y;
+            z = -z;
         }
 
         void Quaternion::normalize(void)
@@ -101,10 +101,7 @@ namespace Gek
 
         Quaternion Quaternion::lerp(const Quaternion &rotation, float factor) const
         {
-            return Quaternion(Math::lerp(x, rotation.x, factor),
-                              Math::lerp(y, rotation.y, factor),
-                              Math::lerp(z, rotation.z, factor),
-                              Math::lerp(w, rotation.w, factor));
+            return Math::lerp((*this), rotation, factor);
         }
 
         Quaternion Quaternion::slerp(const Quaternion &rotation, float factor) const
@@ -115,10 +112,7 @@ namespace Gek
             if (dot < 0.0f)
             {
                 dot = -dot;
-                normalB.x = -normalB.x;
-                normalB.y = -normalB.y;
-                normalB.z = -normalB.z;
-                normalB.w = -normalB.w;
+                normalB *= -1.0f;
             }
 
             if (dot < 1.0f)
@@ -127,10 +121,7 @@ namespace Gek
                 float sinTheta = std::sin(theta);
                 float factorA = (std::sin((1.0f - factor) * theta) / sinTheta);
                 float factorB = (std::sin(factor * theta) / sinTheta);
-                return Quaternion(Math::blend(normalA.x, normalB.x, factorA, factorB),
-                                  Math::blend(normalA.y, normalB.y, factorA, factorB),
-                                  Math::blend(normalA.z, normalB.z, factorA, factorB),
-                                  Math::blend(normalA.w, normalB.w, factorA, factorB));
+                return Math::blend(normalA, factorA, normalB, factorB);
             }
             else
             {

@@ -181,9 +181,14 @@ namespace Gek
             }
         }
 
-        Math::Float3 calculateAverageOmega(const Math::Quaternion &_quaternion0, const Math::Quaternion &quaternion1, float inverseFrameTime) const
+        Math::Float3 calculateAverageOmega(const Math::Float4x4 &matrix, const Math::Quaternion &quaternion1, float inverseFrameTime) const
         {
-            Math::Quaternion quaternion0(_quaternion0);
+        }
+
+        void setDesiredOmega(const Math::Float4x4 &matrix, float frameTime) const
+        {
+            Math::Quaternion quaternion0(matrix.getQuaternion());
+            Math::Quaternion quaternion1(movementBasis.ny, headingAngle);
             if (quaternion0.dot(quaternion1) < 0.0f)
             {
                 quaternion0 *= -1.0f;
@@ -191,45 +196,31 @@ namespace Gek
 
             Math::Quaternion deltaQuaternion(quaternion0.getInverse() * quaternion1);
             Math::Float3 omegaDirection(deltaQuaternion.x, deltaQuaternion.y, deltaQuaternion.z);
-
             float directionMagnitudeSquared = omegaDirection.dot(omegaDirection);
-            if (directionMagnitudeSquared < PLAYER_EPSILON_SQUARED)
+            if (directionMagnitudeSquared >= PLAYER_EPSILON_SQUARED)
             {
-                return 0.0f;
+                float inverseDirectionMagnitude = (1.0f / std::sqrt(directionMagnitudeSquared));
+                float directionMagnitude = (directionMagnitudeSquared * inverseDirectionMagnitude);
+                float omegaMagnitude = (2.0f * std::atan2(directionMagnitude, deltaQuaternion.w) * (0.5f / frameTime));
+                Math::Float3 desiredOmega(omegaDirection * (inverseDirectionMagnitude * omegaMagnitude));
+                NewtonBodySetOmega(newtonBody, desiredOmega.data);
             }
-
-            float inverseDirectionMagnitude = (1.0f / std::sqrt(directionMagnitudeSquared));
-            float directionMagnitude = (directionMagnitudeSquared * inverseDirectionMagnitude);
-
-            float omegaMagnitude = (2.0f * std::atan2(directionMagnitude, deltaQuaternion.w) * inverseFrameTime);
-            return (omegaDirection * (inverseDirectionMagnitude * omegaMagnitude));
         }
 
-        Math::Float3 calculateDesiredOmega(float frameTime) const
+        void setDesiredVelocity(const Math::Float4x4 &matrix, float frameTime) const
         {
-            float playerRotationData[4];
-            NewtonBodyGetRotation(newtonBody, playerRotationData);
-            Math::Quaternion targetRotation(movementBasis.ny, headingAngle);
-            return calculateAverageOmega({ playerRotationData[1], playerRotationData[2], playerRotationData[3], playerRotationData[0] }, targetRotation, (0.5f / frameTime));
-        }
-
-        Math::Float3 calculateDesiredVelocity(float forwardSpeed, float lateralSpeed, float verticalSpeed, float frameTime) const
-        {
-            Math::Float4x4 matrix;
-            NewtonBodyGetMatrix(newtonBody, matrix.data);
             Math::Float3 gravity(newtonProcessor->getGravity(matrix.translation));
             Math::Float4x4 localBasis(matrix * movementBasis);
 
             Math::Float3 desiredVelocity;
+            NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
             if ((verticalSpeed <= 0.0f) && (groundNormal.dot(groundNormal) > 0.0f))
             {
                 // plane is supported by a ground plane, apply the player input desiredVelocity
                 if (groundNormal.dot(localBasis.ny) >= maximumSlope)
                 {
                     // player is in a legal slope, he is in full control of his movement
-                    Math::Float3 bodyVelocity;
-                    NewtonBodyGetVelocity(newtonBody, bodyVelocity.data);
-                    desiredVelocity = ((localBasis.ny * bodyVelocity.dot(localBasis.ny)) + (gravity * frameTime) + (localBasis.nz * forwardSpeed) + (localBasis.nx * lateralSpeed) + (localBasis.ny * verticalSpeed));
+                    desiredVelocity = ((localBasis.ny * desiredVelocity.dot(localBasis.ny)) + (gravity * frameTime) + (localBasis.nz * forwardSpeed) + (localBasis.nx * lateralSpeed) + (localBasis.ny * verticalSpeed));
                     desiredVelocity += (groundVelocity - (localBasis.ny * localBasis.ny.dot(groundVelocity)));
 
                     float speedLimitMagnitudeSquared = ((forwardSpeed * forwardSpeed) + (lateralSpeed * lateralSpeed) + (verticalSpeed * verticalSpeed) + groundVelocity.dot(groundVelocity) + 0.1f);
@@ -248,7 +239,6 @@ namespace Gek
                 else
                 {
                     // player is in an illegal ramp, he slides down hill an loses control of his movement 
-                    NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
                     desiredVelocity += (localBasis.ny * verticalSpeed);
                     desiredVelocity += (gravity * frameTime);
                     float groundNormalVelocity = groundNormal.dot(desiredVelocity - groundVelocity);
@@ -261,12 +251,11 @@ namespace Gek
             else
             {
                 // player is on free fall, only apply the gravity
-                NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
                 desiredVelocity += (localBasis.ny * verticalSpeed);
                 desiredVelocity += (gravity * frameTime);
             }
 
-            return desiredVelocity;
+            NewtonBodySetVelocity(newtonBody, desiredVelocity.data);
         }
 
         float calculateContactKinematics(const Math::Float3& velocity, const NewtonWorldConvexCastReturnInfo* const contactInfo) const
@@ -475,11 +464,10 @@ namespace Gek
                 newState->onEnter();
             }
 
-            Math::Float3 omega(calculateDesiredOmega(frameTime));
-            NewtonBodySetOmega(newtonBody, omega.data);
-
-            Math::Float3 velocity(calculateDesiredVelocity(forwardSpeed, lateralSpeed, verticalSpeed, frameTime));
-            NewtonBodySetVelocity(newtonBody, velocity.data);
+            Math::Float4x4 matrix;
+            NewtonBodyGetMatrix(newtonBody, matrix.data);
+            setDesiredOmega(matrix, frameTime);
+            setDesiredVelocity(matrix, frameTime);
         }
 
         STDMETHODIMP_(void) onPostUpdate(float frameTime, int threadHandle)
