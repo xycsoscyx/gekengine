@@ -1,7 +1,7 @@
 float3 getTrowbridgeReitz(float alpha, float NdotH)
 {
     float alphaSquared = sqr(alpha);
-    return (alphaSquared / (Math::Pi * sqr(sqr(NdotH) * (alphaSquared - 1.0f) + 1.0f)));
+    return (alphaSquared / (Math::Pi * sqr(sqr(NdotH) * (alphaSquared - 1.0) + 1.0)));
 }
 
 float3 getD(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
@@ -17,7 +17,7 @@ float3 getSchlickFresnel(float3 F0, float VdotH)
 float3 getSchlickFresnelApproximation(float3 F0, float VdotH)
 {
     static const float MagicExponent = 8.656170f; // == 1/ln(2) * 6   (6 is SpecularPower of 5 + 1)
-    return F0 + (1.0f - F0) * exp2(-MagicExponent * VdotH);
+    return F0 + (1.0 - F0) * exp2(-MagicExponent * VdotH);
 }
 
 float3 getF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
@@ -29,18 +29,18 @@ float3 getF(float3 materialAlbedo, float materialRoughness, float materialMetaln
 
 float getG1V(float k, float angle)
 {
-    return (angle / (angle * (1.0f - k) + k));
+    return (angle / (angle * (1.0 - k) + k));
 }
 
 float getSchlickSmith(float materialRoughness, float NdotL, float NdotV)
 {
-    float k = (sqr(materialRoughness + 1.0f) / 8.0f);
+    float k = (sqr(materialRoughness + 1.0) / 8.0);
     return (getG1V(k, NdotL) * getG1V(k, NdotV));
 }
 
 float3 getG(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
 {
-    const float anisotropic = 1.0f;
+    const float anisotropic = 1.0;
 
     float aspect = sqrt(1 - (anisotropic * 0.9f));
     float materialRoughnessSquared = (materialRoughness * materialRoughness);
@@ -63,5 +63,5 @@ float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMet
     float D = getD(materialAlbedo, materialRoughness, materialMetalness, alpha, surfaceNormal, lightDirection, viewDirection, halfAngle, NdotL, NdotV, NdotH, VdotH);
     float F = getF(materialAlbedo, materialRoughness, materialMetalness, alpha, surfaceNormal, lightDirection, viewDirection, halfAngle, NdotL, NdotV, NdotH, VdotH);
     float G = getG(materialAlbedo, materialRoughness, materialMetalness, alpha, surfaceNormal, lightDirection, viewDirection, halfAngle, NdotL, NdotV, NdotH, VdotH);
-    return (Math::ReciprocalPi * diffuseColor) + ((D * F * G) / (4.0f * NdotL * NdotV));
+    return (Math::ReciprocalPi * diffuseColor) + ((D * F * G) / (4.0 * NdotL * NdotV));
 }

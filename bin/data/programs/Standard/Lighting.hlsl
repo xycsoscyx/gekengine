@@ -5,7 +5,7 @@
 
 #include "BRDF.Custom.h"
 
-//#define _AREA_LIGHT_SIZE 1.0f
+//#define _AREA_LIGHT_SIZE 1.0
 //#define _INVERSE_SQUARE 1
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
@@ -28,7 +28,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
     const uint bufferOffset = (tileIndex * Lighting::listSize);
 
-    float3 surfaceColor = 0.0f;
+    float3 surfaceColor = 0.0;
 
     [loop]
     for (uint lightTileIndex = 0; lightTileIndex < Lighting::count; lightTileIndex++)
@@ -58,10 +58,10 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 #if _INVERSE_SQUARE
         float falloff = (lightDistanceSquared / (Lighting::list[lightIndex].range * Lighting::list[lightIndex].range));
         falloff *= falloff;
-        falloff = (1.0f - saturate(falloff));
+        falloff = (1.0 - saturate(falloff));
 #else
         float falloff = (lightDistance / Lighting::list[lightIndex].range);
-        falloff = (1.0f - saturate(falloff));
+        falloff = (1.0 - saturate(falloff));
 #endif
 
         float NdotL = dot(surfaceNormal, lightDirection);

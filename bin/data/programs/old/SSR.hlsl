@@ -11,11 +11,11 @@ Texture2D           gs_pOutputBuffer        : register(t5);
 float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 {
     float4 nScreen = gs_pOutputBuffer.Sample(gs_pPointSampler, kInput.texCoord);
-    if (gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texCoord).w < 1.0f)
+    if (gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texCoord).w < 1.0)
     {
         float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texCoord);
         float nReflectivity = nCenterInfo.w;
-        if (nReflectivity > 0.0f)
+        if (nReflectivity > 0.0)
         {
             float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texCoord);
             float3 nCenterPosition = GetViewPosition(kInput.texCoord, nCenterDepth);
@@ -42,7 +42,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             {
                 nRayPosition += (nReflection.xyz * gs_nStepSize);
                 nTexCoord = mul(Camera::projectionMatrix, float4(nRayPosition, 1));
-                nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
+                nTexCoord.xy = ((((nTexCoord.xy * float2(1.0, -1.0)) / nTexCoord.w) * 0.5) + 0.5);
                 nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
                 nSamplePosition = GetViewPosition(nTexCoord.xy, nSampleDepth);
                 if (nSamplePosition.z <= nRayPosition.z)
@@ -64,7 +64,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
                 {
                     nRayPosition -= (nReflection.xyz * gs_nStepSize / gs_nNumStepsBack);
                     nTexCoord = mul(Camera::projectionMatrix, float4(nRayPosition, 1));
-                    nTexCoord.xy = ((((nTexCoord.xy * float2(1.0f, -1.0f)) / nTexCoord.w) * 0.5f) + 0.5f);
+                    nTexCoord.xy = ((((nTexCoord.xy * float2(1.0, -1.0)) / nTexCoord.w) * 0.5) + 0.5);
                     nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
                     nSamplePosition = GetViewPosition(nTexCoord.xy, nSampleDepth);
                     if (nSamplePosition.z > nRayPosition.z)

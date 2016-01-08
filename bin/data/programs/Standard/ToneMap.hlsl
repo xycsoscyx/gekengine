@@ -2,17 +2,17 @@
 
 #include "GEKGlobal.h"
 
-static const float Exposure = 0.0f;
-static const float WhiteLevel = 5.0f;
+static const float Exposure = 0.0;
+static const float WhiteLevel = 5.0;
 static const float ShoulderStrength = 0.22f;
 static const float LinearStrength = 0.30f;
 static const float LinearAngle = 0.10f;
 static const float ToeStrength = 0.20f;
 static const float ToeNumerator = 0.01f;
 static const float ToeDenominator = 0.30f;
-static const float LinearWhite = 5.0f;
-static const float LuminanceSaturation = 1.0f;
-static const float Bias = 0.5f;
+static const float LinearWhite = 5.0;
+static const float LuminanceSaturation = 1.0;
+static const float Bias = 0.5;
 
 // Approximates luminance from an RGB value
 float CalculateLuminance(float3 color)
@@ -34,7 +34,7 @@ float3 ToneMapDragoLogarithmic(float3 color)
     float pixelLuminance = CalculateLuminance(color);
     float toneMappedLuminance = log10(1 + pixelLuminance);
     toneMappedLuminance /= log10(1 + WhiteLevel);
-    toneMappedLuminance /= log10(2 + (8 * ((pixelLuminance / WhiteLevel) * log10(Bias) / log10(0.5f))));
+    toneMappedLuminance /= log10(2 + (8 * ((pixelLuminance / WhiteLevel) * log10(Bias) / log10(0.5))));
     return toneMappedLuminance * pow((color / pixelLuminance), LuminanceSaturation);
 }
 
@@ -58,7 +58,7 @@ float3 ToneMapReinhard(float3 color)
 float3 ToneMapReinhardModified(float3 color)
 {
     float pixelLuminance = CalculateLuminance(color);
-    float toneMappedLuminance = (pixelLuminance * (1.0f + (pixelLuminance / (WhiteLevel * WhiteLevel))) / (1.0f + pixelLuminance));
+    float toneMappedLuminance = (pixelLuminance * (1.0 + (pixelLuminance / (WhiteLevel * WhiteLevel))) / (1.0 + pixelLuminance));
     return toneMappedLuminance * pow((color / pixelLuminance), LuminanceSaturation);
 }
 
@@ -66,7 +66,7 @@ float3 ToneMapReinhardModified(float3 color)
 float3 ToneMapFilmicALU(float3 color)
 {
     color = max(0, (color - 0.004f));
-    color = (color * ((6.2f * color) + 0.5f)) / (color * ((6.2f * color) + 1.7f) + 0.06f);
+    color = (color * ((6.2f * color) + 0.5)) / (color * ((6.2f * color) + 1.7f) + 0.06f);
     // result has 1/2.2 baked in
     return pow(color, 2.2f);
 }
@@ -105,9 +105,9 @@ float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float averageLuminance = Resources::luminanceBuffer.SampleLevel(Global::linearSampler, inputPixel.texCoord, 10);
     float3 color = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord).rgb;
 
-    color = CalcExposedColor(color, averageLuminance, 0.0f);
+    color = CalcExposedColor(color, averageLuminance, 0.0);
     color = ToneMapFilmicUncharted2(color);
-    color = pow(color, (1.0f / 2.2f));
+    color = pow(color, (1.0 / 2.2f));
 
     return float4(color, 1);
 }

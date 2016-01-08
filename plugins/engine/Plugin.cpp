@@ -42,7 +42,7 @@ namespace Gek
         else if (_wcsicmp(formatString, L"D16") == 0) return Video::Format::Depth16;
         else if (_wcsicmp(formatString, L"D24S8") == 0) return Video::Format::Depth24Stencil8;
         else if (_wcsicmp(formatString, L"D32") == 0) return Video::Format::Depth32;
-        return Video::Format::Invalid;
+        return Video::Format::Unknown;
     }
 
     static LPCSTR getFormatType(Video::Format formatType)

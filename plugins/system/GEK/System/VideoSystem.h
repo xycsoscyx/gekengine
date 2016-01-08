@@ -14,7 +14,7 @@ namespace Gek
     {
         enum class Format : UINT8
         {
-            Invalid = 0,
+            Unknown = 0,
             Byte,
             Byte2,
             Byte3,
@@ -362,7 +362,7 @@ namespace Gek
             UINT32 slotIndex;
 
             InputElement(void)
-                : format(Format::Invalid)
+                : format(Format::Unknown)
                 , semanticName(nullptr)
                 , semanticIndex(0)
                 , slotClass(ElementType::Vertex)
@@ -477,7 +477,7 @@ namespace Gek
 
     DECLARE_INTERFACE_IID(VideoSystem, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6") : virtual public IUnknown
     {
-        STDMETHOD(initialize)                               (THIS_ HWND window, bool fullScreen, Video::Format depthBufferFormat = Video::Format::Invalid) PURE;
+        STDMETHOD(initialize)                               (THIS_ HWND window, bool fullScreen, Video::Format depthBufferFormat = Video::Format::Unknown) PURE;
         STDMETHOD(setFullScreen)                            (THIS_ bool fullScreen) PURE;
         STDMETHOD(resize)                                   (THIS) PURE;
 

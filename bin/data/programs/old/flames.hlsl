@@ -31,11 +31,11 @@ WORLDVERTEX GetWorldVertex(SOURCEVERTEX kSource)
     nS*= kInstance.m_nSize;
     nCos *= kInstance.m_nSize;
                 
-	float3 kXOffSet = mul(float3(nSin, nCos, 0.0f), (float3x3)Camera::viewMatrix);
-	float3 kYOffSet = mul(float3(nCos,-nSin, 0.0f), (float3x3)Camera::viewMatrix);
+	float3 kXOffSet = mul(float3(nSin, nCos, 0.0), (float3x3)Camera::viewMatrix);
+	float3 kYOffSet = mul(float3(nCos,-nSin, 0.0), (float3x3)Camera::viewMatrix);
 
 	WORLDVERTEX kVertex;
-	kVertex.position      = float4(kInstance.m_nPosition, 1.0f);
+	kVertex.position      = float4(kInstance.m_nPosition, 1.0);
 	kVertex.position.xyz += (kXOffSet * kSource.position.x);
 	kVertex.position.xyz += (kYOffSet * kSource.position.y);
 	kVertex.texCoord      = kSource.texCoord;

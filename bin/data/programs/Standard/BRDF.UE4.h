@@ -38,10 +38,10 @@ float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMet
 
     float alpha = sqr(materialRoughness);
 
-    float NdotH = clamp(dot(surfaceNormal, halfAngle), 0.0001f, 1.0f);
+    float NdotH = clamp(dot(surfaceNormal, halfAngle), 0.0001f, 1.0);
     float D = getGGX(alpha, NdotH);
 
-    float NdotV = clamp(dot(surfaceNormal, viewDirection), 0.0001f, 1.0f);
+    float NdotV = clamp(dot(surfaceNormal, viewDirection), 0.0001f, 1.0);
     float G = getSchlickGGX(alpha, NdotV);
 
     return (Math::ReciprocalPi * diffuseColor) + (specularColor * (0.25 * D * G) / (NdotL * NdotV));

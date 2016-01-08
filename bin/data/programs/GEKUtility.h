@@ -41,7 +41,7 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     float3 decodeNormal(half2 enc)
     {
         half scale = 1.7777;
-        half3 nn = half3(enc * 2 * scale - scale, 1.0f);
+        half3 nn = half3(enc * 2 * scale - scale, 1.0);
         half g = 2.0 / dot(nn.xyz, nn.xyz);
         half3 n;
         n.xy = g*nn.xy;
@@ -56,7 +56,7 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
 float3 getViewPosition(float2 texCoord, float depth)
 {
     float2 adjustedCoord = texCoord;
-    adjustedCoord.y = (1.0f - adjustedCoord.y);
-    adjustedCoord.xy = (adjustedCoord.xy * 2.0f - 1.0f);
-    return (float3((adjustedCoord * Camera::fieldOfView), 1.0f) * depth * Camera::maximumDistance);
+    adjustedCoord.y = (1.0 - adjustedCoord.y);
+    adjustedCoord.xy = (adjustedCoord.xy * 2.0 - 1.0);
+    return (float3((adjustedCoord * Camera::fieldOfView), 1.0) * depth * Camera::maximumDistance);
 }

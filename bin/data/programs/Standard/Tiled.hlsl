@@ -41,16 +41,16 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         float2 tileScale = depthBufferSize * rcp(float(2 * tileSize));
         float2 tileBias = tileScale - float2(tilePosition.xy);
 
-        float3 frustumXPlane = float3(Camera::projectionMatrix[0][0] * tileScale.x, 0.0f, tileBias.x);
-        float3 frustumYPlane = float3(0.0f, -Camera::projectionMatrix[1][1] * tileScale.y, tileBias.y);
-        float3 frustumZPlane = float3(0.0f, 0.0f, 1.0f);
+        float3 frustumXPlane = float3(Camera::projectionMatrix[0][0] * tileScale.x, 0.0, tileBias.x);
+        float3 frustumYPlane = float3(0.0, -Camera::projectionMatrix[1][1] * tileScale.y, tileBias.y);
+        float3 frustumZPlane = float3(0.0, 0.0, 1.0);
 
-        tileFrustum[0] = float4(normalize(frustumZPlane - frustumXPlane), 0.0f),
-        tileFrustum[1] = float4(normalize(frustumZPlane + frustumXPlane), 0.0f),
-        tileFrustum[2] = float4(normalize(frustumZPlane - frustumYPlane), 0.0f),
-        tileFrustum[3] = float4(normalize(frustumZPlane + frustumYPlane), 0.0f),
-        tileFrustum[4] = float4(0.0f, 0.0f, 1.0f, -minimumDepth);
-        tileFrustum[5] = float4(0.0f, 0.0f, -1.0f, maximumDepth);
+        tileFrustum[0] = float4(normalize(frustumZPlane - frustumXPlane), 0.0),
+        tileFrustum[1] = float4(normalize(frustumZPlane + frustumXPlane), 0.0),
+        tileFrustum[2] = float4(normalize(frustumZPlane - frustumYPlane), 0.0),
+        tileFrustum[3] = float4(normalize(frustumZPlane + frustumYPlane), 0.0),
+        tileFrustum[4] = float4(0.0, 0.0, 1.0, -minimumDepth);
+        tileFrustum[5] = float4(0.0, 0.0, -1.0, maximumDepth);
     }
 
     GroupMemoryBarrierWithGroupSync();
@@ -63,7 +63,7 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         [unroll]
         for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
         {
-            float lightDistance = dot(tileFrustum[planeIndex], float4(Lighting::list[lightIndex].position, 1.0f));
+            float lightDistance = dot(tileFrustum[planeIndex], float4(Lighting::list[lightIndex].position, 1.0));
             isLightVisible = (isLightVisible && (lightDistance >= -Lighting::list[lightIndex].range));
         }
 

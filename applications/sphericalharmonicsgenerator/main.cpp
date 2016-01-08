@@ -34,11 +34,9 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
     return DefWindowProc(window, message, wParam, lParam);
 }
 
-#include <conio.h>
 int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariableList)
 {
     printf("GEK Spherical Harmonics Generator\r\n");
-    getch();
 
     CStringW fileNameInput;
     CStringW fileNameOutput;
@@ -140,13 +138,14 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                                         if (environmentMap)
                                         {
                                             CComPtr<Gek::VideoBuffer> coefficientBuffer;
-                                            resultValue = video->createBuffer(&coefficientBuffer, Gek::Video::Format::Float3, 9, Gek::Video::BufferType::Structured, Gek::Video::BufferFlags::UnorderedAccess);
+                                            resultValue = video->createBuffer(&coefficientBuffer, Gek::Video::Format::Float4, 9, Gek::Video::BufferType::Raw, Gek::Video::BufferFlags::UnorderedAccess);
                                             if (coefficientBuffer)
                                             {
                                                 CComPtr<Gek::VideoBuffer> coefficientCopy;
-                                                resultValue = video->createBuffer(&coefficientCopy, Gek::Video::Format::Float3, 9, Gek::Video::BufferType::Structured, Gek::Video::BufferFlags::Readable);
+                                                resultValue = video->createBuffer(&coefficientCopy, Gek::Video::Format::Float4, 9, Gek::Video::BufferType::Raw, Gek::Video::BufferFlags::Readable);
                                                 if (coefficientCopy)
                                                 {
+                                                    video->present(false);
                                                     CComPtr<IUnknown> samplerStates;
                                                     video->createSamplerStates(&samplerStates, Gek::Video::SamplerStates());
                                                     video->getDefaultContext()->computePipeline()->setSamplerStates(samplerStates, 0);
@@ -158,15 +157,19 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
 
                                                     video->copyBuffer(coefficientCopy, coefficientBuffer);
 
-                                                    Gek::Math::Float3 *coefficientData = nullptr;
+                                                    Gek::Math::Float4 *coefficientData = nullptr;
                                                     resultValue = video->mapBuffer(coefficientCopy, (LPVOID *)&coefficientData, Gek::Video::Map::Read);
                                                     if (SUCCEEDED(resultValue))
                                                     {
+                                                        CStringA output;
+                                                        output += "float3 coefficients[9] = \r\n";
+                                                        output += "{\r\n";
                                                         for (UINT32 order = 0; order < 9; order++)
                                                         {
-                                                            printf("Coefficient %d: %f, %f, %f\r\n", order, coefficientData[order].x, coefficientData[order].y, coefficientData[order].z);
+                                                            output.AppendFormat("    float3(%f, %f, %f),\r\n", coefficientData[order].x, coefficientData[order].y, coefficientData[order].z);
                                                         }
 
+                                                        output += "};\r\n";
                                                         video->unmapBuffer(coefficientBuffer);
                                                     }
                                                     else

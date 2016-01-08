@@ -280,7 +280,7 @@ namespace Gek
 
     public:
         BufferImplementation(UINT32 stride, UINT32 count, ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView = nullptr, ID3D11UnorderedAccessView *d3dUnorderedAccessView = nullptr)
-            : format(Video::Format::Invalid)
+            : format(Video::Format::Unknown)
             , stride(stride)
             , count(count)
             , d3dBuffer(d3dBuffer)
@@ -337,7 +337,7 @@ namespace Gek
 
     public:
         TextureMixin(UINT32 width, UINT32 height, UINT32 depth, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView)
-            : format(Video::Format::Invalid)
+            : format(Video::Format::Unknown)
             , width(width)
             , height(height)
             , depth(depth)
@@ -1832,7 +1832,7 @@ namespace Gek
                 if (flags & Video::BufferFlags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = DXGI_FORMAT_UNKNOWN;//DirectX::BufferFormatList[static_cast<UINT8>(format)];
+                    viewDescription.Format = DirectX::BufferFormatList[static_cast<UINT8>(format)];
                     viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
                     viewDescription.Buffer.NumElements = count;
@@ -1853,12 +1853,17 @@ namespace Gek
                 }
             }
 
+            if (FAILED(resultValue))
+            {
+                return resultValue;
+            }
+
             return resultValue;
         }
 
         STDMETHODIMP createBuffer(VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID data)
         {
-            return createBuffer(returnObject, Video::Format::Invalid, stride, count, type, flags, data);
+            return createBuffer(returnObject, Video::Format::Unknown, stride, count, type, flags, data);
         }
 
         STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID data)
@@ -2526,7 +2531,7 @@ namespace Gek
             cubeMap.InitializeCubeFromImages(imageList, 6, 0);
 
             CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-            resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMapMetaData, &d3dShaderResourceView);
+            resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMap.GetMetadata(), &d3dShaderResourceView);
             if (d3dShaderResourceView)
             {
                 CComPtr<TextureImplementation> texture(new TextureImplementation(cubeMapMetaData.width, cubeMapMetaData.height, 1, d3dShaderResourceView, nullptr));

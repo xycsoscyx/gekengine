@@ -19,10 +19,10 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
     float2 nOffset = (gs_nRadius * nSize * nScaleDepth);
     nOffset = max(nOffset, nSize);
 
-    float3 nSampleNormalP0 = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( nOffset.x, 0.0f))));
-    float3 nSampleNormalN0 = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2(-nOffset.x, 0.0f))));
-    float3 nSampleNormal0P = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( 0.0f, nOffset.y))));
-    float3 nSampleNormal0N = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( 0.0f,-nOffset.y))));
+    float3 nSampleNormalP0 = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( nOffset.x, 0.0))));
+    float3 nSampleNormalN0 = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2(-nOffset.x, 0.0))));
+    float3 nSampleNormal0P = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( 0.0, nOffset.y))));
+    float3 nSampleNormal0N = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( 0.0,-nOffset.y))));
     float3 nSampleNormalNN = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2(-nOffset.x,-nOffset.y))));
     float3 nSampleNormalPP = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( nOffset.x, nOffset.y))));
     float3 nSampleNormalNP = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2(-nOffset.x, nOffset.y))));
@@ -37,10 +37,10 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
     nEdgeNormal = step(0, nEdgeNormal);
     float nAverageEdgeNormal = saturate(dot(nEdgeNormal, 0.3f));
 
-    float nSampleDepthP0 = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( nOffset.x, 0.0f)));
-    float nSampleDepthN0 = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2(-nOffset.x, 0.0f)));
-    float nSampleDepth0P = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( 0.0f, nOffset.y)));
-    float nSampleDepth0N = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( 0.0f,-nOffset.y)));
+    float nSampleDepthP0 = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( nOffset.x, 0.0)));
+    float nSampleDepthN0 = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2(-nOffset.x, 0.0)));
+    float nSampleDepth0P = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( 0.0, nOffset.y)));
+    float nSampleDepth0N = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( 0.0,-nOffset.y)));
     float nSampleDepthNN = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2(-nOffset.x,-nOffset.y)));
     float nSampleDepthPP = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2( nOffset.x, nOffset.y)));
     float nSampleDepthNP = gs_pDepthBuffer.Sample(gs_pPointSampler, (kInput.texCoord + float2(-nOffset.x, nOffset.y)));
@@ -51,9 +51,9 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
     nEdgeDepth.y = (nSampleDepth0P + nSampleDepth0N);
     nEdgeDepth.z = (nSampleDepthNN + nSampleDepthPP);
     nEdgeDepth.w = (nSampleDepthNP + nSampleDepthPN);
-    nEdgeDepth = (abs((2.0f * nCenterDepth) - nEdgeDepth) - 0.004f);
+    nEdgeDepth = (abs((2.0 * nCenterDepth) - nEdgeDepth) - 0.004f);
     nEdgeDepth = step(nEdgeDepth, 0);
     float nAverageEdgeDepth = saturate(dot(nEdgeDepth, 0.4f));
 
-    return float4((nAlbedo.xyz * nAverageEdgeDepth * nAverageEdgeNormal), 1.0f);
+    return float4((nAlbedo.xyz * nAverageEdgeDepth * nAverageEdgeNormal), 1.0);
 }

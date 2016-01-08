@@ -9,7 +9,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     float4 albedo = (Resources::albedo.Sample(Global::linearSampler, inputPixel.texCoord) * inputPixel.color);
     
     [branch]
-    if(albedo.a < 0.5f)
+    if(albedo.a < 0.5)
     {
         discard;
     }
@@ -18,7 +18,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     float3 normal;
     // assume normals are stored as 3Dc format, so generate the Z value
-    normal.xy = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texCoord) * 2.0f) - 1.0f);
+    normal.xy = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texCoord) * 2.0) - 1.0);
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
     normal = (mul(normal, viewBasis)) * (inputPixel.frontFacing ? 1 : -1);
 
