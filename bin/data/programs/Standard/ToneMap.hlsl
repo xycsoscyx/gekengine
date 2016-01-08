@@ -105,9 +105,9 @@ float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float averageLuminance = Resources::luminanceBuffer.SampleLevel(Global::linearSampler, inputPixel.texCoord, 10);
     float3 color = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord).rgb;
 
-    color = CalcExposedColor(color, averageLuminance, 0.0);
-    color = ToneMapFilmicUncharted2(color);
-    color = pow(color, (1.0 / 2.2f));
+    //color = CalcExposedColor(color, averageLuminance, 0.0);
+    //color = ToneMapFilmicUncharted2(color);
+    //color = pow(color, (1.0 / 2.2f));
 
     return float4(color, 1);
 }

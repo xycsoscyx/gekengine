@@ -146,11 +146,9 @@ namespace Gek
         // Interface
         STDMETHODIMP initialize(HWND window)
         {
-            gekLogScope(LPCVOID(window));
-
             REQUIRE_RETURN(window, E_INVALIDARG);
 
-            HRESULT resultValue = E_FAIL;
+            gekCheckScope(resultValue, LPCVOID(window));
             if (gekCheckResult(resultValue = DirectSoundCreate8(nullptr, &directSound, nullptr)))
             {
                 if (gekCheckResult(resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY)))
@@ -235,13 +233,11 @@ namespace Gek
 
         STDMETHODIMP copyEffect(AudioEffect **returnObject, AudioEffect *source)
         {
-            gekLogScope();
-
             REQUIRE_RETURN(directSound, E_FAIL);
-            REQUIRE_RETURN(source, E_INVALIDARG);
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            REQUIRE_RETURN(source, E_INVALIDARG);
 
-            HRESULT resultValue = E_FAIL;
+            gekCheckScope(resultValue);
             CComPtr<IDirectSoundBuffer> directSoundBuffer;
             resultValue = directSound->DuplicateSoundBuffer((LPDIRECTSOUNDBUFFER)source->getBuffer(), &directSoundBuffer);
             if (directSoundBuffer)
@@ -264,13 +260,11 @@ namespace Gek
 
         STDMETHODIMP copySound(AudioSound **returnObject, AudioSound *source)
         {
-            gekLogScope();
-
             REQUIRE_RETURN(directSound, E_FAIL);
-            REQUIRE_RETURN(source, E_INVALIDARG);
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            REQUIRE_RETURN(source, E_INVALIDARG);
 
-            HRESULT resultValue = E_FAIL;
+            gekCheckScope(resultValue);
             CComPtr<IDirectSoundBuffer> directSoundBuffer;
             resultValue = directSound->DuplicateSoundBuffer(LPDIRECTSOUNDBUFFER(source->getBuffer()), &directSoundBuffer);
             if (directSoundBuffer)
@@ -297,13 +291,14 @@ namespace Gek
 
         HRESULT loadFromFile(IDirectSoundBuffer **returnObject, LPCWSTR fileName, DWORD flags, GUID soundAlgorithm)
         {
-            gekLogScope(fileName, flags);
-
             REQUIRE_RETURN(directSound, E_FAIL);
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            REQUIRE_RETURN(fileName, E_INVALIDARG);
+
+            gekCheckScope(resultValue, fileName, flags);
 
             std::vector<UINT8> fileData;
-            HRESULT resultValue = Gek::FileSystem::load(fileName, fileData);
+            resultValue = Gek::FileSystem::load(fileName, fileData);
             if (SUCCEEDED(resultValue))
             {
                 resultValue = E_FAIL;
@@ -360,13 +355,13 @@ namespace Gek
 
         STDMETHODIMP loadEffect(AudioEffect **returnObject, LPCWSTR fileName)
         {
-            gekLogScope(fileName);
-
             REQUIRE_RETURN(directSound, E_FAIL);
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            REQUIRE_RETURN(fileName, E_INVALIDARG);
 
+            gekCheckScope(resultValue, fileName);
             CComPtr<IDirectSoundBuffer> directSoundBuffer;
-            HRESULT resultValue = loadFromFile(&directSoundBuffer, fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL);
+            resultValue = loadFromFile(&directSoundBuffer, fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL);
             if (directSoundBuffer)
             {
                 resultValue = E_FAIL;
@@ -386,13 +381,13 @@ namespace Gek
 
         STDMETHODIMP loadSound(AudioSound **returnObject, LPCWSTR fileName)
         {
-            gekLogScope(fileName);
-
             REQUIRE_RETURN(directSound, E_FAIL);
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            REQUIRE_RETURN(fileName, E_INVALIDARG);
 
+            gekCheckScope(resultValue, fileName);
             CComPtr<IDirectSoundBuffer> directSoundBuffer;
-            HRESULT resultValue = loadFromFile(&directSoundBuffer, fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL);
+            resultValue = loadFromFile(&directSoundBuffer, fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL);
             if (directSoundBuffer)
             {
                 resultValue = E_FAIL;

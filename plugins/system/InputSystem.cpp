@@ -386,15 +386,14 @@ namespace Gek
 
         void addJoystick(LPCDIDEVICEINSTANCE deviceObjectInstance)
         {
-            gekLogScope();
-
+            gekCheckScope(resultValue);
             CComPtr<JoystickImplementation> joystick = new JoystickImplementation();
             if (joystick != nullptr)
             {
-                if (gekCheckResult(joystick->initialize(directInput, window, deviceObjectInstance->guidInstance)))
+                if (gekCheckResult(resultValue = joystick->initialize(directInput, window, deviceObjectInstance->guidInstance)))
                 {
                     CComPtr<InputDevice> joystickDevice;
-                    joystickDevice->QueryInterface(IID_PPV_ARGS(&joystickDevice));
+                    gekCheckResult(resultValue = joystickDevice->QueryInterface(IID_PPV_ARGS(&joystickDevice)));
                     if (joystickDevice != nullptr)
                     {
                         joystickDeviceList.push_back(joystickDevice);
@@ -421,10 +420,9 @@ namespace Gek
         // Interface
         STDMETHODIMP initialize(HWND window)
         {
-            gekLogScope(LPCVOID(window));
+            gekCheckScope(resultValue, LPCVOID(window));
 
             this->window = window;
-            HRESULT resultValue = E_FAIL;
             gekCheckResult(resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr));
             if (directInput != nullptr)
             {
@@ -494,9 +492,9 @@ namespace Gek
 
             mouseDevice->update();
             keyboardDevice->update();
-            for (auto &spDevice : joystickDeviceList)
+            for (auto &joystickDevice : joystickDeviceList)
             {
-                spDevice->update();
+                joystickDevice->update();
             }
 
             return S_OK;

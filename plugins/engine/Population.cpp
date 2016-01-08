@@ -95,12 +95,12 @@ namespace Gek
         // Population
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            gekLogScope();
-            gekLogMessage(L"Loading Components...");
-
             REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
-            HRESULT resultValue = getContext()->createEachType(__uuidof(ComponentType), [&](REFCLSID className, IUnknown *object) -> HRESULT
+            gekCheckScope(resultValue);
+            gekLogMessage(L"Loading Components...");
+
+            resultValue = getContext()->createEachType(__uuidof(ComponentType), [&](REFCLSID className, IUnknown *object) -> HRESULT
             {
                 CComQIPtr<Component> component(object);
                 if (component)
@@ -182,15 +182,15 @@ namespace Gek
         std::function<void(void)> loadScene;
         STDMETHODIMP load(LPCWSTR fileName)
         {
-            gekLogScope(fileName);
-
             loadScene = std::bind([&](const CStringW &fileName) -> HRESULT
             {
+                gekCheckScope(resultValue, fileName);
+
                 free();
                 ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
                 Gek::XmlDocument xmlDocument;
-                HRESULT resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\worlds\\%s.xml", fileName));
+                resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\worlds\\%s.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();

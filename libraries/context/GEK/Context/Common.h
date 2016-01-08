@@ -67,6 +67,7 @@ namespace Gek
     {
     private:
         Context *context;
+        HRESULT *returnValue;
         LPCSTR file;
         UINT32 line;
         CStringW call;
@@ -74,7 +75,7 @@ namespace Gek
         UINT32 startTime;
 
     public:
-        LoggingScope(Context *context, LPCSTR file, UINT32 line, const CStringW &call);
+        LoggingScope(Context *context, HRESULT *returnValue, LPCSTR file, UINT32 line, const CStringW &call);
         ~LoggingScope(void);
     };
 
@@ -115,7 +116,8 @@ inline bool gekCheckResultDirectly(Gek::Context *context, HRESULT resultValue, L
     }
 }
 
-#define gekLogScope(...)                            Gek::LoggingScope functionScope(getContext(), __FILE__, __LINE__, Gek::compileFunction(__FUNCTION__, __VA_ARGS__));
+#define gekLogScope(...)                            Gek::LoggingScope functionScope(getContext(), nullptr, __FILE__, __LINE__, Gek::compileFunction(__FUNCTION__, __VA_ARGS__));
+#define gekCheckScope(RESULT, ...)                  HRESULT RESULT = E_FAIL; Gek::LoggingScope functionScope(getContext(), &RESULT, __FILE__, __LINE__, Gek::compileFunction(__FUNCTION__, __VA_ARGS__));
 #define gekLogMessage(FORMAT, ...)                  getContext()->logMessage(__FILE__, __LINE__, 0, FORMAT, __VA_ARGS__)
 #define gekCheckResult(FUNCTION)                    gekCheckResultDirectly(getContext(), FUNCTION, #FUNCTION, __FILE__, __LINE__)
 #define gekException(FORMAT, ...)                   Gek::Exception(__FILE__, __FUNCTION__, __LINE__, FORMAT, __VA_ARGS__)

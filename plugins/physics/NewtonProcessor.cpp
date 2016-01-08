@@ -165,44 +165,52 @@ namespace Gek
             }
             else
             {
-                gekLogScope(fileName);
+                gekCheckScope(resultValue, fileName);
 
                 surfaceIndexList[fileNameHash] = -1;
 
                 Gek::XmlDocument xmlDocument;
-                if (SUCCEEDED(xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName))))
+                if (SUCCEEDED(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName))))
                 {
                     Surface surface;
                     Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
                     if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
                     {
-                        Gek::XmlNode xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
-                        if (xmlSurfaceNode)
+                        if (xmlMaterialNode.hasChildElement(L"surface"))
                         {
-                            surface.ghost = String::to<bool>(xmlSurfaceNode.getAttribute(L"ghost"));
-                            if (xmlSurfaceNode.hasAttribute(L"staticfriction"))
+                            Gek::XmlNode xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
+                            if (xmlSurfaceNode)
                             {
-                                surface.staticFriction = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"staticfriction"));
-                            }
+                                surface.ghost = String::to<bool>(xmlSurfaceNode.getAttribute(L"ghost"));
+                                if (xmlSurfaceNode.hasAttribute(L"staticfriction"))
+                                {
+                                    surface.staticFriction = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"staticfriction"));
+                                }
 
-                            if (xmlSurfaceNode.hasAttribute(L"kineticfriction"))
-                            {
-                                surface.kineticFriction = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"kineticfriction"));
-                            }
+                                if (xmlSurfaceNode.hasAttribute(L"kineticfriction"))
+                                {
+                                    surface.kineticFriction = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"kineticfriction"));
+                                }
 
-                            if (xmlSurfaceNode.hasAttribute(L"elasticity"))
-                            {
-                                surface.elasticity = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"elasticity"));
-                            }
+                                if (xmlSurfaceNode.hasAttribute(L"elasticity"))
+                                {
+                                    surface.elasticity = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"elasticity"));
+                                }
 
-                            if (xmlSurfaceNode.hasAttribute(L"softness"))
-                            {
-                                surface.softness = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"softness"));
-                            }
+                                if (xmlSurfaceNode.hasAttribute(L"softness"))
+                                {
+                                    surface.softness = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"softness"));
+                                }
 
-                            surfaceIndex = surfaceList.size();
-                            surfaceIndexList[fileNameHash] = surfaceIndex;
-                            surfaceList.push_back(surface);
+                                surfaceIndex = surfaceList.size();
+                                surfaceIndexList[fileNameHash] = surfaceIndex;
+                                surfaceList.push_back(surface);
+                            }
+                        }
+                        else
+                        {
+                            // material is using the default surface properties, which is ok
+                            resultValue = S_OK;
                         }
                     }
                 }
@@ -234,7 +242,7 @@ namespace Gek
             }
             else
             {
-                gekLogScope();
+                gekLogScope(shape);
 
                 int position = 0;
                 CStringW shapeType(shape.Tokenize(L"|", position));
@@ -440,11 +448,10 @@ namespace Gek
         // Processor
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            gekLogScope();
-
             REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
-            HRESULT resultValue = E_FAIL;
+            gekCheckScope(resultValue);
+
             CComQIPtr<Population> population(initializerContext);
             if (population)
             {

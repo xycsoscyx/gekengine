@@ -513,25 +513,21 @@ namespace Gek
         // Shader
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
-            gekLogScope(fileName);
-
             REQUIRE_RETURN(initializerContext, E_INVALIDARG);
             REQUIRE_RETURN(fileName, E_INVALIDARG);
 
-            HRESULT resultValue = E_FAIL;
+            gekCheckScope(resultValue, fileName);
+
             CComQIPtr<VideoSystem> video(initializerContext);
             CComQIPtr<Resources> resources(initializerContext);
             if (video && resources)
             {
                 this->video = video;
                 this->resources = resources;
+
                 width = video->getWidth();
                 height = video->getHeight();
-                resultValue = S_OK;
-            }
 
-            if (SUCCEEDED(resultValue))
-            {
                 Gek::XmlDocument xmlDocument;
                 gekCheckResult(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\shaders\\%s.xml", fileName)));
                 if (SUCCEEDED(resultValue))
@@ -592,7 +588,7 @@ namespace Gek
                         if (xmlDepthNode)
                         {
                             Video::Format format = getFormat(xmlDepthNode.getText());
-                            depthBuffer = resources->createDepthTarget(width, height, format, 0);
+                            depthBuffer = resources->createDepthTarget(format, width, height, 0);
                         }
 
                         Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"targets");
@@ -605,7 +601,7 @@ namespace Gek
                                 Video::Format format = getFormat(xmlTargetNode.getText());
                                 BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
                                 UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
-                                renderTargetMap[name] = resources->createRenderTarget(width, height, format, flags);
+                                renderTargetMap[name] = resources->createRenderTarget(format, width, height, flags);
 
                                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
@@ -1110,7 +1106,10 @@ namespace Gek
                         }
 
                         VideoPipeline *videoPipeline = (pass.mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
-                        enableLights(videoPipeline);
+                        if (block.lighting)
+                        {
+                            enableLights(videoPipeline);
+                        }
 
                         for (auto &resourceName : pass.resourceList)
                         {

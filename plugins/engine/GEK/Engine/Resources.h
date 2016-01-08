@@ -79,8 +79,8 @@ namespace Gek
         STDMETHOD_(DepthStatesHandle, createDepthStates)    (THIS_ const Video::DepthStates &depthStates) PURE;
         STDMETHOD_(BlendStatesHandle, createBlendStates)    (THIS_ const Video::UnifiedBlendStates &blendStates) PURE;
         STDMETHOD_(BlendStatesHandle, createBlendStates)    (THIS_ const Video::IndependentBlendStates &blendStates) PURE;
-        STDMETHOD_(ResourceHandle, createRenderTarget)      (THIS_ UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
-        STDMETHOD_(ResourceHandle, createDepthTarget)       (THIS_ UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
+        STDMETHOD_(ResourceHandle, createRenderTarget)      (THIS_ Video::Format format, UINT32 width, UINT32 height, UINT32 flags) PURE;
+        STDMETHOD_(ResourceHandle, createDepthTarget)       (THIS_ Video::Format format, UINT32 width, UINT32 height, UINT32 flags) PURE;
 
         STDMETHOD_(void, generateMipMaps)                   (THIS_ VideoContext *videoContext, ResourceHandle resourceHandle) PURE;
 

@@ -14,6 +14,7 @@
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\Evaluator.h"
+#include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Shape\Sphere.h"
@@ -30,7 +31,8 @@ namespace Gek
     private:
         UINT64 nextIdentifier;
         std::unordered_map<std::size_t, HANDLE> hashMap;
-        std::unordered_map<HANDLE, CComPtr<IUnknown>> resourceMap;
+        std::unordered_map<HANDLE, CComPtr<IUnknown>> localResourceMap;
+        std::unordered_map<HANDLE, CComPtr<IUnknown>> globalResourceMap;
 
     public:
         ObjectManager(void)
@@ -48,28 +50,40 @@ namespace Gek
         void clearResources(void)
         {
             hashMap.clear();
-            resourceMap.clear();
+            localResourceMap.clear();
         }
 
         HANDLE getResourceHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource)
         {
             HANDLE handle;
-            auto hashIterator = hashMap.find(hash);
-            if (hashIterator == hashMap.end())
+            if (hash == 0)
             {
-                handle.assign(InterlockedIncrement(&nextIdentifier));
-                hashMap[hash] = handle;
-                resourceMap[handle] = nullptr;
-
                 CComPtr<IUnknown> resource;
                 if (SUCCEEDED(loadResource(&resource)) && resource)
                 {
-                    resourceMap[handle] = resource;
+                    handle.assign(InterlockedIncrement(&nextIdentifier));
+                    globalResourceMap[handle] = resource;
                 }
             }
             else
             {
-                handle = hashIterator->second;
+                auto hashIterator = hashMap.find(hash);
+                if (hashIterator == hashMap.end())
+                {
+                    handle.assign(InterlockedIncrement(&nextIdentifier));
+                    hashMap[hash] = handle;
+                    localResourceMap[handle] = nullptr;
+
+                    CComPtr<IUnknown> resource;
+                    if (SUCCEEDED(loadResource(&resource)) && resource)
+                    {
+                        localResourceMap[handle] = resource;
+                    }
+                }
+                else
+                {
+                    handle = hashIterator->second;
+                }
             }
 
             return handle;
@@ -81,7 +95,7 @@ namespace Gek
             if (resource)
             {
                 handle.assign(InterlockedIncrement(&nextIdentifier));
-                resourceMap[handle] = resource;
+                localResourceMap[handle] = resource;
             }
 
             return handle;
@@ -90,10 +104,16 @@ namespace Gek
         template <typename TYPE>
         TYPE *getResource(HANDLE handle)
         {
-            auto resourceIterator = resourceMap.find(handle);
-            if (resourceIterator != resourceMap.end())
+            auto globalIterator = globalResourceMap.find(handle);
+            if (globalIterator != globalResourceMap.end())
             {
-                return dynamic_cast<TYPE *>(resourceIterator->second.p);
+                return dynamic_cast<TYPE *>(globalIterator->second.p);
+            }
+
+            auto localIterator = localResourceMap.find(handle);
+            if (localIterator != localResourceMap.end())
+            {
+                return dynamic_cast<TYPE *>(localIterator->second.p);
             }
 
             return nullptr;
@@ -488,23 +508,23 @@ namespace Gek
             });
         }
 
-        STDMETHODIMP_(ResourceHandle) createRenderTarget(UINT32 width, UINT32 height, Video::Format format, UINT32 flags)
+        STDMETHODIMP_(ResourceHandle) createRenderTarget(Video::Format format, UINT32 width, UINT32 height, UINT32 flags)
         {
             CComPtr<VideoTarget> renderTarget;
-            video->createRenderTarget(&renderTarget, width, height, format, flags);
+            video->createRenderTarget(&renderTarget, format, width, height, flags);
             return resourceManager.addUniqueResource(renderTarget);
         }
 
-        STDMETHODIMP_(ResourceHandle) createDepthTarget(UINT32 width, UINT32 height, Video::Format format, UINT32 flags)
+        STDMETHODIMP_(ResourceHandle) createDepthTarget(Video::Format format, UINT32 width, UINT32 height, UINT32 flags)
         {
             CComPtr<IUnknown> depthTarget;
-            video->createDepthTarget(&depthTarget, width, height, format, flags);
+            video->createDepthTarget(&depthTarget, format, width, height, flags);
             return resourceManager.addUniqueResource(depthTarget);
         }
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
-            std::size_t hash = std::hash<LPCWSTR>()(name);
+            std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
             return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
@@ -522,7 +542,7 @@ namespace Gek
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
-            std::size_t hash = std::hash<LPCWSTR>()(name);
+            std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
             return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
@@ -538,6 +558,114 @@ namespace Gek
             });
         }
 
+        HRESULT createTexture(VideoTexture **returnObject, CStringW parameters, UINT32 flags)
+        {
+            REQUIRE_RETURN(returnObject, E_INVALIDARG);
+
+            gekCheckScope(resultValue, parameters, flags);
+
+            CComPtr<VideoTexture> texture;
+
+            int position = 0;
+            CStringW type(parameters.Tokenize(L":", position));
+            CStringW value(parameters.Tokenize(L":", position));
+            if (type.CompareNoCase(L"color") == 0)
+            {
+                UINT8 colorData[4] = { 0, 0, 0, 0 };
+                UINT32 colorPitch = 0;
+
+                float color1;
+                Math::Float2 color2;
+                Math::Float4 color4;
+                if (Evaluator::get(value, color1))
+                {
+                    resultValue = video->createTexture(&texture, Video::Format::Byte, 1, 1, 1, Video::TextureFlags::Resource);
+                    colorData[0] = UINT8(color1 * 255.0f);
+                    colorPitch = 1;
+                }
+                else if (Evaluator::get(value, color2))
+                {
+                    resultValue = video->createTexture(&texture, Video::Format::Byte2, 1, 1, 1, Video::TextureFlags::Resource);
+                    colorData[0] = UINT8(color2.x * 255.0f);
+                    colorData[1] = UINT8(color2.y * 255.0f);
+                    colorPitch = 2;
+                }
+                else if (Evaluator::get(value, color4))
+                {
+                    resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                    colorData[0] = UINT8(color4.x * 255.0f);
+                    colorData[1] = UINT8(color4.y * 255.0f);
+                    colorData[2] = UINT8(color4.z * 255.0f);
+                    colorData[3] = UINT8(color4.w * 255.0f);
+                    colorPitch = 4;
+                }
+
+                if (texture && colorPitch > 0)
+                {
+                    video->updateTexture(texture, colorData, colorPitch);
+                }
+            }
+            else if (type.CompareNoCase(L"normal") == 0)
+            {
+                resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                if (texture)
+                {
+                    Math::Float3 normal((String::to<Math::Float3>(value) + 1.0f) * 0.5f);
+                    UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
+                                         UINT32(UINT8(normal.y * 255.0f) << 8) |
+                                         UINT32(UINT8(normal.z * 255.0f) << 16);
+                    video->updateTexture(texture, &normalValue, 4);
+                }
+            }
+
+            if (texture)
+            {
+                resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
+            }
+
+            return resultValue;
+        }
+
+        HRESULT loadTexture(VideoTexture **returnObject, LPCWSTR fileName, UINT32 flags)
+        {
+            REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            REQUIRE_RETURN(fileName, E_INVALIDARG);
+
+            gekCheckScope(resultValue, fileName, flags);
+
+            // iterate over formats in case the texture name has no extension
+            static LPCWSTR formatList[] =
+            {
+                L"",
+                L".dds",
+                L".tga",
+                L".png",
+                L".jpg",
+                L".bmp",
+            };
+
+            CComPtr<VideoTexture> texture;
+            for (auto format : formatList)
+            {
+                CStringW fullFileName(FileSystem::expandPath(String::format(L"%%root%%\\data\\textures\\%s%s", fileName, format)));
+                if (PathFileExists(fullFileName))
+                {
+                    resultValue = video->loadTexture(&texture, fullFileName, flags);
+                    if (SUCCEEDED(resultValue))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (texture)
+            {
+                resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
+            }
+
+            return resultValue;
+        }
+
         STDMETHODIMP_(ResourceHandle) loadTexture(LPCWSTR fileName, UINT32 flags)
         {
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
@@ -545,90 +673,21 @@ namespace Gek
             {
                 REQUIRE_RETURN(fileName, E_INVALIDARG);
 
-                HRESULT resultValue = E_FAIL;
+                gekCheckScope(resultValue, fileName, flags);
+
+                CComPtr<VideoTexture> texture;
                 if ((*fileName) && (*fileName) == L'*')
                 {
-                    if (_wcsnicmp(fileName, L"*color:", 7) == 0)
-                    {
-                        CComPtr<VideoTexture> texture;
-
-                        UINT8 colorData[4] = { 0, 0, 0, 0 };
-                        UINT32 colorPitch = 0;
-
-                        float color1;
-                        Math::Float2 color2;
-                        Math::Float4 color4;
-                        if (Evaluator::get((fileName + 7), color1))
-                        {
-                            resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte, Video::TextureFlags::Resource);
-                            colorData[0] = UINT8(color1 * 255.0f);
-                            colorPitch = 1;
-                        }
-                        else if (Evaluator::get((fileName + 7), color2))
-                        {
-                            resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte2, Video::TextureFlags::Resource);
-                            colorData[0] = UINT8(color2.x * 255.0f);
-                            colorData[1] = UINT8(color2.y * 255.0f);
-                            colorPitch = 2;
-                        }
-                        else if (Evaluator::get((fileName + 7), color4))
-                        {
-                            resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
-                            colorData[0] = UINT8(color4.x * 255.0f);
-                            colorData[1] = UINT8(color4.y * 255.0f);
-                            colorData[2] = UINT8(color4.z * 255.0f);
-                            colorData[3] = UINT8(color4.w * 255.0f);
-                            colorPitch = 4;
-                        }
-
-                        if (texture && colorPitch > 0)
-                        {
-                            video->updateTexture(texture, colorData, colorPitch);
-                            resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-                        }
-                    }
-                    else if (_wcsnicmp(fileName, L"*normal:", 8) == 0)
-                    {
-                        CComPtr<VideoTexture> texture;
-                        resultValue = video->createTexture(&texture, 1, 1, 1, Video::Format::Byte4, Video::TextureFlags::Resource);
-                        if (texture)
-                        {
-                            Math::Float3 normal((String::to<Math::Float3>(fileName + 8) + 1.0f) * 0.5f);
-                            UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
-                                UINT32(UINT8(normal.y * 255.0f) << 8) |
-                                UINT32(UINT8(normal.z * 255.0f) << 16);
-                            video->updateTexture(texture, &normalValue, 4);
-                            resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-                        }
-                    }
+                    resultValue = createTexture(&texture, &fileName[1], flags);
                 }
                 else
                 {
-                    // iterate over formats in case the texture name has no extension
-                    static const wchar_t *formatList[] =
-                    {
-                        L"",
-                        L".dds",
-                        L".tga",
-                        L".png",
-                        L".jpg",
-                        L".bmp",
-                    };
+                    resultValue = loadTexture(&texture, fileName, flags);
+                }
 
-                    CComPtr<VideoTexture> texture;
-                    for (auto format : formatList)
-                    {
-                        resultValue = video->loadTexture(&texture, String::format(L"%%root%%\\data\\textures\\%s%s", fileName, format), flags);
-                        if (SUCCEEDED(resultValue))
-                        {
-                            break;
-                        }
-                    }
-
-                    if (SUCCEEDED(resultValue) && texture)
-                    {
-                        resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-                    }
+                if (texture)
+                {
+                    resultValue = texture->QueryInterface(returnObject);
                 }
 
                 return resultValue;
@@ -781,6 +840,7 @@ namespace Gek
             programManager.clearResources();
             materialManager.clearResources();
             shaderManager.clearResources();
+            resourceManager.clearResources();
             renderStateManager.clearResources();
             depthStateManager.clearResources();
             blendStateManager.clearResources();

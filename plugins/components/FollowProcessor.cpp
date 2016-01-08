@@ -60,11 +60,10 @@ namespace Gek
         // System::Interface
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            gekLogScope();
-
             REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
-            HRESULT resultValue = E_FAIL;
+            gekCheckScope(resultValue);
+
             CComQIPtr<Population> population(initializerContext);
             if (population)
             {

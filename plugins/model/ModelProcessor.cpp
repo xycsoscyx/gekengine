@@ -443,11 +443,11 @@ namespace Gek
 
         HRESULT loadShape(ModelData *data, CStringW parameters)
         {
+            gekCheckScope(resultValue, parameters);
+
             int position = 0;
             CStringW shape = parameters.Tokenize(L"|", position);
             CStringW materialName = parameters.Tokenize(L"|", position);
-
-            HRESULT resultValue = E_FAIL;
             MaterialHandle material = resources->loadMaterial(materialName);
             if (material.isValid())
             {
@@ -487,9 +487,9 @@ namespace Gek
             return resultValue;
         }
 
-        HRESULT preLoadShape(ModelData *data, const CStringW &parameters)
+        HRESULT preLoadShape(ModelData *data, CStringW parameters)
         {
-            HRESULT resultValue = S_OK;
+            gekCheckScope(resultValue, parameters);
 
             int position = 0;
             CStringW shape = parameters.Tokenize(L"|", position);
@@ -525,8 +525,10 @@ namespace Gek
 
         HRESULT loadModel(ModelData *data, CStringW fileName, CStringW name)
         {
+            gekCheckScope(resultValue, fileName, name);
+
             std::vector<UINT8> fileData;
-            HRESULT resultValue = Gek::FileSystem::load(fileName, fileData);
+            resultValue = Gek::FileSystem::load(fileName, fileData);
             if (SUCCEEDED(resultValue))
             {
                 UINT8 *rawFileData = fileData.data();
@@ -591,6 +593,10 @@ namespace Gek
                         rawFileData += (sizeof(UINT16) * indexCount);
                     }
                 }
+                else
+                {
+                    gekLogMessage(L"Invalid GEK model data found: ID(%d) Type(%d) Version(%d)", gekIdentifier, gekModelType, gekModelVersion);
+                }
             }
 
             if (SUCCEEDED(resultValue))
@@ -605,10 +611,12 @@ namespace Gek
         {
             REQUIRE_RETURN(fileName, E_INVALIDARG);
 
+            gekCheckScope(resultValue, fileName, name);
+
             static const UINT32 PreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shape::AlignedBox));
 
             std::vector<UINT8> fileData;
-            HRESULT resultValue = Gek::FileSystem::load(fileName, fileData, PreReadSize);
+            resultValue = Gek::FileSystem::load(fileName, fileData, PreReadSize);
             if (SUCCEEDED(resultValue))
             {
                 UINT8 *rawFileData = fileData.data();
@@ -627,6 +635,10 @@ namespace Gek
                     data->alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
                     resultValue = S_OK;
                 }
+                else
+                {
+                    gekLogMessage(L"Invalid GEK model data found: ID(%d) Type(%d) Version(%d)", gekIdentifier, gekModelType, gekModelVersion);
+                }
             }
 
             if (SUCCEEDED(resultValue))
@@ -643,14 +655,12 @@ namespace Gek
 
         HRESULT preLoadData(ModelData *data, LPCWSTR model)
         {
-            gekLogScope(model);
-
             REQUIRE_RETURN(model, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
             if (*model == L'*')
             {
-                resultValue = preLoadShape(data, (model + 1));
+                resultValue = preLoadShape(data, &model[1]);
             }
             else
             {
@@ -665,11 +675,10 @@ namespace Gek
         // System::Interface
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            gekLogScope();
-
             REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
-            HRESULT resultValue = E_FAIL;
+            gekCheckScope(resultValue);
+
             CComQIPtr<PluginResources> resources(initializerContext);
             CComQIPtr<Render> render(initializerContext);
             CComQIPtr<Population> population(initializerContext);
@@ -697,7 +706,7 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                instanceBuffer = resources->createBuffer(L"model:instances", sizeof(InstanceData), 1024, Video::BufferType::Vertex, Video::BufferFlags::Writable);
+                instanceBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 1024, Video::BufferType::Vertex, Video::BufferFlags::Writable);
             }
 
             return resultValue;

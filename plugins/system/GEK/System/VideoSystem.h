@@ -500,8 +500,8 @@ namespace Gek
         STDMETHOD(createBlendStates)                        (THIS_ IUnknown **returnObject, const Video::IndependentBlendStates &blendStates) PURE;
         STDMETHOD(createSamplerStates)                      (THIS_ IUnknown **returnObject, const Video::SamplerStates &samplerStates) PURE;
 
-        STDMETHOD(createRenderTarget)                       (THIS_ VideoTarget **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
-        STDMETHOD(createDepthTarget)                        (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
+        STDMETHOD(createRenderTarget)                       (THIS_ VideoTarget **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 flags) PURE;
+        STDMETHOD(createDepthTarget)                        (THIS_ IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 flags) PURE;
 
         STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
         STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
@@ -520,7 +520,7 @@ namespace Gek
         STDMETHOD(loadGeometryProgram)                      (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
         STDMETHOD(loadPixelProgram)                         (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-        STDMETHOD(createTexture)                            (THIS_ VideoTexture **returnObject, UINT32 width, UINT32 height, UINT32 depth, Video::Format format, DWORD flags) PURE;
+        STDMETHOD(createTexture)                            (THIS_ VideoTexture **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags) PURE;
         STDMETHOD(loadTexture)                              (THIS_ VideoTexture **returnObject, LPCWSTR fileName, DWORD flags) PURE;
         STDMETHOD(loadCubeMap)                              (THIS_ VideoTexture **returnObject, LPCWSTR fileNameList[6], DWORD flags) PURE;
         STDMETHOD_(void, updateTexture)                     (THIS_ VideoTexture *texture, LPCVOID data, UINT32 pitch, Shape::Rectangle<UINT32> *rectangle = nullptr) PURE;

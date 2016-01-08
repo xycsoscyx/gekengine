@@ -13,8 +13,9 @@
 
 namespace Gek
 {
-    LoggingScope::LoggingScope(Context *context, LPCSTR file, UINT32 line, const CStringW &call)
+    LoggingScope::LoggingScope(Context *context, HRESULT *returnValue, LPCSTR file, UINT32 line, const CStringW &call)
         : context(context)
+        , returnValue(returnValue)
         , file(file)
         , line(line)
         , call(call)
@@ -26,7 +27,14 @@ namespace Gek
     LoggingScope::~LoggingScope(void)
     {
         UINT32 totalTime(GetTickCount() - startTime);
-        context->logMessage(file, line, -1, L"[leaving] %s (%ums)", call.GetString(), totalTime);
+        if (returnValue)
+        {
+            context->logMessage(file, line, -1, L"[leaving] %s: %s (0x%08X) (%ums)", call.GetString(), (SUCCEEDED(*returnValue) ? L"succeeded" : L"failed"), (*returnValue), totalTime);
+        }
+        else
+        {
+            context->logMessage(file, line, -1, L"[leaving] %s (%ums)", call.GetString(), totalTime);
+        }
     }
 
     class ContextImplementation : virtual public UnknownMixin

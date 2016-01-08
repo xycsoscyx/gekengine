@@ -112,12 +112,10 @@ namespace Gek
         // Plugin
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
-            gekLogScope(fileName);
-
             REQUIRE_RETURN(initializerContext, E_INVALIDARG);
             REQUIRE_RETURN(fileName, E_INVALIDARG);
 
-            HRESULT resultValue = E_FAIL;
+            gekCheckScope(resultValue, fileName);
             CComQIPtr<VideoSystem> video(initializerContext);
             if (video)
             {
