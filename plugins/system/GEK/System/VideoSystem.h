@@ -164,18 +164,32 @@ namespace Gek
             Border,
         };
 
+        enum class Map : UINT8
+        {
+            Read = 0,
+            Write,
+            ReadWrite,
+            WriteDiscard,
+            WriteNoOverwrite,
+        };
+
+        enum class BufferType : UINT8
+        {
+            Raw = 0,
+            Vertex,
+            Index,
+            Constant,
+            Structured,
+        };
+
         namespace BufferFlags
         {
             enum
             {
-                VertexBuffer = 1 << 0,
-                IndexBuffer = 1 << 1,
-                ConstantBuffer = 1 << 2,
-                StructuredBuffer = 1 << 3,
-                Resource = 1 << 4,
-                UnorderedAccess = 1 << 5,
-                Static = 1 << 6,
-                Dynamic = 1 << 7,
+                Readable = 1 << 0,
+                Writable = 1 << 1,
+                Resource = 1 << 2,
+                UnorderedAccess = 1 << 3,
             };
         }; // BufferFlags
 
@@ -489,11 +503,12 @@ namespace Gek
         STDMETHOD(createRenderTarget)                       (THIS_ VideoTarget **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
         STDMETHOD(createDepthTarget)                        (THIS_ IUnknown **returnObject, UINT32 width, UINT32 height, Video::Format format, UINT32 flags) PURE;
 
-        STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
-        STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData = nullptr) PURE;
+        STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
+        STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
         STDMETHOD_(void, updateBuffer)                      (THIS_ VideoBuffer *buffer, LPCVOID data) PURE;
-        STDMETHOD(mapBuffer)                                (THIS_ VideoBuffer *buffer, LPVOID *data) PURE;
+        STDMETHOD(mapBuffer)                                (THIS_ VideoBuffer *buffer, LPVOID *data, Video::Map mapping = Video::Map::WriteDiscard) PURE;
         STDMETHOD_(void, unmapBuffer)                       (THIS_ VideoBuffer *buffer) PURE;
+        STDMETHOD_(void, copyBuffer)                        (THIS_ VideoBuffer *destination, VideoBuffer *source) PURE;
 
         STDMETHOD(compileComputeProgram)                    (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
         STDMETHOD(compileVertexProgram)                     (THIS_ IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
@@ -507,6 +522,7 @@ namespace Gek
 
         STDMETHOD(createTexture)                            (THIS_ VideoTexture **returnObject, UINT32 width, UINT32 height, UINT32 depth, Video::Format format, DWORD flags) PURE;
         STDMETHOD(loadTexture)                              (THIS_ VideoTexture **returnObject, LPCWSTR fileName, DWORD flags) PURE;
+        STDMETHOD(loadCubeMap)                              (THIS_ VideoTexture **returnObject, LPCWSTR fileNameList[6], DWORD flags) PURE;
         STDMETHOD_(void, updateTexture)                     (THIS_ VideoTexture *texture, LPCVOID data, UINT32 pitch, Shape::Rectangle<UINT32> *rectangle = nullptr) PURE;
 
         STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Float4 &colorClear) PURE;

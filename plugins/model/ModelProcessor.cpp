@@ -470,8 +470,8 @@ namespace Gek
                     materialInfo.material = material;
                     data->materialInfoList.push_back(materialInfo);
 
-                    data->vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, geoSphere.getVertices().data());
-                    data->indexBuffer = resources->createBuffer(String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, geoSphere.getIndices().data());
+                    data->vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
+                    data->indexBuffer = resources->createBuffer(String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
                 }
                 else
                 {
@@ -578,7 +578,7 @@ namespace Gek
                         UINT32 vertexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
-                        data->vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s", name.GetString()), sizeof(Vertex), vertexCount, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, rawFileData);
+                        data->vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s", name.GetString()), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
                         rawFileData += (sizeof(Vertex) * vertexCount);
                     }
 
@@ -587,7 +587,7 @@ namespace Gek
                         UINT32 indexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
-                        data->indexBuffer = resources->createBuffer(String::format(L"model:index:%s", name.GetString()), Video::Format::Short, indexCount, Video::BufferFlags::IndexBuffer | Video::BufferFlags::Static, rawFileData);
+                        data->indexBuffer = resources->createBuffer(String::format(L"model:index:%s", name.GetString()), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
                         rawFileData += (sizeof(UINT16) * indexCount);
                     }
                 }
@@ -697,7 +697,7 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                instanceBuffer = resources->createBuffer(L"model:instances", sizeof(InstanceData), 1024, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Dynamic);
+                instanceBuffer = resources->createBuffer(L"model:instances", sizeof(InstanceData), 1024, Video::BufferType::Vertex, Video::BufferFlags::Writable);
             }
 
             return resultValue;

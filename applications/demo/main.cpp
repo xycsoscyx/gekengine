@@ -229,7 +229,7 @@ L"        </entity>\r\n";
                 kClass.hCursor = nullptr;
                 kClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
                 kClass.lpszMenuName = nullptr;
-                kClass.lpszClassName = L"GEKvX_Engine_314159";
+                kClass.lpszClassName = L"GEKvX_Engine_Demo";
                 if (RegisterClass(&kClass))
                 {
                     UINT32 width = 800;
@@ -273,7 +273,7 @@ L"        </entity>\r\n";
                     int windowHeight = (clientRect.bottom - clientRect.top);
                     int centerPositionX = (windowed ? (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2) : 0);
                     int centerPositionY = (windowed ? (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2) : 0);
-                    HWND window = CreateWindow(L"GEKvX_Engine_314159", L"GEKvX Engine", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
+                    HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Engine - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
                     if (window)
                     {
                         if (SUCCEEDED(engineCore->initialize(window)))

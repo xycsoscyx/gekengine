@@ -222,6 +222,15 @@ namespace Gek
             D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP,
         };
 
+        static const D3D11_MAP MapList[] =
+        {
+            D3D11_MAP_READ,
+            D3D11_MAP_WRITE,
+            D3D11_MAP_READ_WRITE,
+            D3D11_MAP_WRITE_DISCARD,
+            D3D11_MAP_WRITE_NO_OVERWRITE,
+        };
+
         static const DWRITE_FONT_STYLE FontStyleList[] =
         {
             DWRITE_FONT_STYLE_NORMAL,
@@ -1708,7 +1717,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP createBuffer(VideoBuffer **returnObject, UINT32 stride, UINT32 count, DWORD flags, LPCVOID data)
+        STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID data)
         {
             gekLogScope(stride,
                 count,
@@ -1721,167 +1730,60 @@ namespace Gek
 
             D3D11_BUFFER_DESC bufferDescription;
             bufferDescription.ByteWidth = (stride * count);
-            if (flags & Video::BufferFlags::Static)
+            switch (type)
             {
-                if (data == nullptr)
-                {
-                    return E_INVALIDARG;
-                }
+            case Video::BufferType::Structured:
+                bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+                bufferDescription.StructureByteStride = stride;
+                bufferDescription.BindFlags = 0;
+                break;
 
+            default:
+                bufferDescription.MiscFlags = 0;
+                bufferDescription.StructureByteStride = 0;
+                switch (type)
+                {
+                case Video::BufferType::Vertex:
+                    bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+                    break;
+
+                case Video::BufferType::Index:
+                    bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
+                    break;
+
+                case Video::BufferType::Constant:
+                    bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+                    break;
+
+                default:
+                    bufferDescription.BindFlags = 0;
+                    break;
+                };
+            };
+
+            if (data != nullptr)
+            {
                 bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;
+                bufferDescription.CPUAccessFlags = 0;
             }
-            else if (flags & Video::BufferFlags::Dynamic)
+            else if (flags & Video::BufferFlags::Readable)
+            {
+                bufferDescription.Usage = D3D11_USAGE_STAGING;
+                bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+                if (flags & Video::BufferFlags::Writable)
+                {
+                    bufferDescription.CPUAccessFlags |= D3D11_CPU_ACCESS_WRITE;
+                }
+            }
+            else if (flags & Video::BufferFlags::Writable)
             {
                 bufferDescription.Usage = D3D11_USAGE_DYNAMIC;
-            }
-            else
-            {
-                bufferDescription.Usage = D3D11_USAGE_DEFAULT;
-            }
-
-            if (flags & Video::BufferFlags::VertexBuffer)
-            {
-                bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-            }
-            else if (flags & Video::BufferFlags::IndexBuffer)
-            {
-                bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
-            }
-            else if (flags & Video::BufferFlags::ConstantBuffer)
-            {
-                bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            }
-            else
-            {
-                bufferDescription.BindFlags = 0;
-            }
-
-            if (flags & Video::BufferFlags::Resource)
-            {
-                bufferDescription.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
-            }
-
-            if (flags & Video::BufferFlags::UnorderedAccess)
-            {
-                bufferDescription.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
-            }
-
-            if (flags & Video::BufferFlags::Dynamic)
-            {
                 bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
             }
             else
             {
-                bufferDescription.CPUAccessFlags = 0;
-            }
-
-            if (flags & Video::BufferFlags::StructuredBuffer)
-            {
-                bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-                bufferDescription.StructureByteStride = stride;
-            }
-            else
-            {
-                bufferDescription.MiscFlags = 0;
-                bufferDescription.StructureByteStride = 0;
-            }
-
-            HRESULT resultValue = E_FAIL;
-            CComPtr<ID3D11Buffer> d3dBuffer;
-            if (data == nullptr)
-            {
-                gekCheckResult(resultValue = d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer));
-            }
-            else
-            {
-                D3D11_SUBRESOURCE_DATA resourceData;
-                resourceData.pSysMem = data;
-                resourceData.SysMemPitch = 0;
-                resourceData.SysMemSlicePitch = 0;
-                gekCheckResult(resultValue = d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer));
-            }
-
-            if (d3dBuffer)
-            {
-                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (flags & Video::BufferFlags::Resource)
-                {
-                    D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                    viewDescription.Format = DXGI_FORMAT_UNKNOWN;
-                    viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-                    viewDescription.Buffer.FirstElement = 0;
-                    viewDescription.Buffer.NumElements = count;
-
-                    gekCheckResult(resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView));
-                }
-
-                CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (flags & Video::BufferFlags::UnorderedAccess)
-                {
-                    D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = DXGI_FORMAT_UNKNOWN;
-                    viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-                    viewDescription.Buffer.FirstElement = 0;
-                    viewDescription.Buffer.NumElements = count;
-                    viewDescription.Buffer.Flags = 0;
-
-                    gekCheckResult(resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView));
-                }
-
-                resultValue = E_OUTOFMEMORY;
-                CComPtr<BufferImplementation> buffer(new BufferImplementation(stride, count, d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView));
-                if (buffer)
-                {
-                    gekCheckResult(resultValue = buffer->QueryInterface(IID_PPV_ARGS(returnObject)));
-                }
-            }
-
-            return resultValue;
-        }
-
-        STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 count, DWORD flags, LPCVOID data)
-        {
-            gekLogScope(UINT32(format),
-                count,
-                flags,
-                LPCVOID(data));
-
-            REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
-            REQUIRE_RETURN(count > 0, E_INVALIDARG);
-
-            UINT32 stride = DirectX::FormatStrideList[static_cast<UINT8>(format)];
-
-            D3D11_BUFFER_DESC bufferDescription;
-            bufferDescription.ByteWidth = (stride * count);
-            if (flags & Video::BufferFlags::Static)
-            {
-                if (data == nullptr)
-                {
-                    return E_INVALIDARG;
-                }
-
-                bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;
-            }
-            else
-            {
                 bufferDescription.Usage = D3D11_USAGE_DEFAULT;
-            }
-
-            if (flags & Video::BufferFlags::VertexBuffer)
-            {
-                bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-            }
-            else if (flags & Video::BufferFlags::IndexBuffer)
-            {
-                bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
-            }
-            else if (flags & Video::BufferFlags::ConstantBuffer)
-            {
-                bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            }
-            else
-            {
-                bufferDescription.BindFlags = 0;
+                bufferDescription.CPUAccessFlags = 0;
             }
 
             if (flags & Video::BufferFlags::Resource)
@@ -1894,18 +1796,6 @@ namespace Gek
                 bufferDescription.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
             }
 
-            bufferDescription.CPUAccessFlags = 0;
-            if (flags & Video::BufferFlags::StructuredBuffer)
-            {
-                bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-                bufferDescription.StructureByteStride = stride;
-            }
-            else
-            {
-                bufferDescription.MiscFlags = 0;
-                bufferDescription.StructureByteStride = 0;
-            }
-
             HRESULT resultValue = E_FAIL;
             CComPtr<ID3D11Buffer> d3dBuffer;
             if (data == nullptr)
@@ -1931,21 +1821,28 @@ namespace Gek
                     viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
                     viewDescription.Buffer.NumElements = count;
-
                     gekCheckResult(resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView));
+                    if (FAILED(resultValue))
+                    {
+                        return resultValue;
+                    }
                 }
 
                 CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
                 if (flags & Video::BufferFlags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::BufferFormatList[static_cast<UINT8>(format)];
+                    viewDescription.Format = DXGI_FORMAT_UNKNOWN;//DirectX::BufferFormatList[static_cast<UINT8>(format)];
                     viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
                     viewDescription.Buffer.NumElements = count;
                     viewDescription.Buffer.Flags = 0;
 
                     gekCheckResult(resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView));
+                    if (FAILED(resultValue))
+                    {
+                        return resultValue;
+                    }
                 }
 
                 resultValue = E_OUTOFMEMORY;
@@ -1959,6 +1856,17 @@ namespace Gek
             return resultValue;
         }
 
+        STDMETHODIMP createBuffer(VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID data)
+        {
+            return createBuffer(returnObject, Video::Format::Invalid, stride, count, type, flags, data);
+        }
+
+        STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID data)
+        {
+            UINT32 stride = DirectX::FormatStrideList[static_cast<UINT8>(format)];
+            return createBuffer(returnObject, format, stride, count, type, flags, data);
+        }
+
         STDMETHODIMP_(void) updateBuffer(VideoBuffer *buffer, LPCVOID data)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
@@ -1968,7 +1876,7 @@ namespace Gek
             d3dDeviceContext->UpdateSubresource(d3dBuffer, 0, nullptr, data, 0, 0);
         }
 
-        STDMETHODIMP mapBuffer(VideoBuffer *buffer, LPVOID *data)
+        STDMETHODIMP mapBuffer(VideoBuffer *buffer, LPVOID *data, Video::Map mapping)
         {
             REQUIRE_RETURN(d3dDeviceContext, E_FAIL);
             REQUIRE_RETURN(data, E_INVALIDARG);
@@ -1977,11 +1885,13 @@ namespace Gek
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
             if (d3dBuffer)
             {
+                D3D11_MAP d3dMapping = DirectX::MapList[static_cast<UINT8>(mapping)];
+
                 D3D11_MAPPED_SUBRESOURCE mappedSubResource;
                 mappedSubResource.pData = nullptr;
                 mappedSubResource.RowPitch = 0;
                 mappedSubResource.DepthPitch = 0;
-                resultValue = d3dDeviceContext->Map(d3dBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubResource);
+                resultValue = d3dDeviceContext->Map(d3dBuffer, 0, d3dMapping, 0, &mappedSubResource);
                 if (SUCCEEDED(resultValue))
                 {
                     (*data) = mappedSubResource.pData;
@@ -1998,6 +1908,17 @@ namespace Gek
 
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
             d3dDeviceContext->Unmap(d3dBuffer, 0);
+        }
+
+        STDMETHODIMP_(void) copyBuffer(VideoBuffer *destination, VideoBuffer *source)
+        {
+            REQUIRE_VOID_RETURN(d3dDeviceContext);
+            REQUIRE_VOID_RETURN(destination);
+            REQUIRE_VOID_RETURN(source);
+
+            CComQIPtr<ID3D11Buffer> d3dDestination(destination);
+            CComQIPtr<ID3D11Buffer> d3dSource(source);
+            d3dDeviceContext->CopyResource(d3dDestination, d3dSource);
         }
 
         STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
@@ -2511,6 +2432,107 @@ namespace Gek
                     {
                         resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
                     }
+                }
+            }
+
+            return resultValue;
+        }
+
+        STDMETHODIMP loadCubeMap(VideoTexture **returnObject, LPCWSTR fileNameList[6], DWORD flags)
+        {
+            REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
+
+            HRESULT resultValue = S_OK;
+
+            std::vector<UINT8> fileData[6];
+            for (UINT32 side = 0; side < 6 && SUCCEEDED(resultValue); side++)
+            {
+                resultValue = Gek::FileSystem::load(fileNameList[side], fileData[side]);
+            }
+
+            if (FAILED(resultValue))
+            {
+                return resultValue;
+            }
+
+            ::DirectX::ScratchImage cubeMapList[6];
+            ::DirectX::TexMetadata cubeMapMetaData;
+            for (UINT32 side = 0; side < 6 && SUCCEEDED(resultValue); side++)
+            {
+                if (FAILED(::DirectX::LoadFromDDSMemory(fileData[side].data(), fileData[side].size(), 0, &cubeMapMetaData, cubeMapList[side])))
+                {
+                    if (FAILED(::DirectX::LoadFromTGAMemory(fileData[side].data(), fileData[side].size(), &cubeMapMetaData, cubeMapList[side])))
+                    {
+                        static const DWORD formatList[] =
+                        {
+                            ::DirectX::WIC_CODEC_PNG,              // Portable Network Graphics (.png)
+                            ::DirectX::WIC_CODEC_BMP,              // Windows Bitmap (.bmp)
+                            ::DirectX::WIC_CODEC_JPEG,             // Joint Photographic Experts Group (.jpg, .jpeg)
+                        };
+
+                        for (UINT32 format = 0; format < _ARRAYSIZE(formatList); format++)
+                        {
+                            if (SUCCEEDED(::DirectX::LoadFromWICMemory(fileData[side].data(), fileData[side].size(), formatList[format], &cubeMapMetaData, cubeMapList[side])))
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (FAILED(resultValue))
+            {
+                return resultValue;
+            }
+
+            if (flags && Video::TextureLoadFlags::sRGB)
+            {
+                switch (cubeMapMetaData.format)
+                {
+                case DXGI_FORMAT_R8G8B8A8_UNORM:
+                    cubeMapList[0].OverrideFormat(cubeMapMetaData.format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC1_UNORM:
+                    cubeMapList[0].OverrideFormat(cubeMapMetaData.format = DXGI_FORMAT_BC1_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC2_UNORM:
+                    cubeMapList[0].OverrideFormat(cubeMapMetaData.format = DXGI_FORMAT_BC2_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC3_UNORM:
+                    cubeMapList[0].OverrideFormat(cubeMapMetaData.format = DXGI_FORMAT_BC3_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC7_UNORM:
+                    cubeMapList[0].OverrideFormat(cubeMapMetaData.format = DXGI_FORMAT_BC7_UNORM_SRGB);
+                    break;
+                };
+            }
+
+            ::DirectX::Image imageList[6] =
+            {
+                *cubeMapList[0].GetImage(0, 0, 0),
+                *cubeMapList[1].GetImage(0, 0, 0),
+                *cubeMapList[2].GetImage(0, 0, 0),
+                *cubeMapList[3].GetImage(0, 0, 0),
+                *cubeMapList[4].GetImage(0, 0, 0),
+                *cubeMapList[5].GetImage(0, 0, 0),
+            };
+
+            ::DirectX::ScratchImage cubeMap;
+            cubeMap.InitializeCubeFromImages(imageList, 6, 0);
+
+            CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+            resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMapMetaData, &d3dShaderResourceView);
+            if (d3dShaderResourceView)
+            {
+                CComPtr<TextureImplementation> texture(new TextureImplementation(cubeMapMetaData.width, cubeMapMetaData.height, 1, d3dShaderResourceView, nullptr));
+                if (texture)
+                {
+                    resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
                 }
             }
 

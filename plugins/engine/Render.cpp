@@ -253,17 +253,17 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantData), 1, Video::BufferFlags::ConstantBuffer);
+                resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Writable);
             }
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&lightConstantBuffer, sizeof(LightConstants), 1, Video::BufferFlags::Dynamic | Video::BufferFlags::ConstantBuffer);
+                resultValue = video->createBuffer(&lightConstantBuffer, sizeof(LightConstants), 1, Video::BufferType::Constant, Video::BufferFlags::Writable);
             }
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&lightDataBuffer, sizeof(LightData), MaxLightCount, Video::BufferFlags::Dynamic | Video::BufferFlags::StructuredBuffer | Video::BufferFlags::Resource);
+                resultValue = video->createBuffer(&lightDataBuffer, sizeof(LightData), MaxLightCount, Video::BufferType::Structured, Video::BufferFlags::Writable | Video::BufferFlags::Resource);
             }
 
             if (SUCCEEDED(resultValue))
@@ -312,7 +312,7 @@ namespace Gek
                     Math::Float2(-1.0f,-1.0f), Math::Float2(0.0f, 1.0f),
                 };
 
-                resultValue = video->createBuffer(&deferredVertexBuffer, sizeof(Math::Float4), 6, Video::BufferFlags::VertexBuffer | Video::BufferFlags::Static, vertexList);
+                resultValue = video->createBuffer(&deferredVertexBuffer, sizeof(Math::Float4), 6, Video::BufferType::Vertex, 0, vertexList);
             }
 
             return resultValue;
@@ -502,7 +502,7 @@ namespace Gek
             return resourceManager.addUniqueResource(depthTarget);
         }
 
-        STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, DWORD flags, LPCVOID staticData)
+        STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
             std::size_t hash = std::hash<LPCWSTR>()(name);
             return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
@@ -510,7 +510,7 @@ namespace Gek
                 HRESULT resultValue = E_FAIL;
 
                 CComPtr<VideoBuffer> buffer;
-                resultValue = video->createBuffer(&buffer, stride, count, flags, staticData);
+                resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
                 if (SUCCEEDED(resultValue) && buffer)
                 {
                     resultValue = buffer->QueryInterface(returnObject);
@@ -520,7 +520,7 @@ namespace Gek
             });
         }
 
-        STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, Video::Format format, UINT32 count, DWORD flags, LPCVOID staticData)
+        STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
             std::size_t hash = std::hash<LPCWSTR>()(name);
             return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
@@ -528,7 +528,7 @@ namespace Gek
                 HRESULT resultValue = E_FAIL;
 
                 CComPtr<VideoBuffer> buffer;
-                resultValue = video->createBuffer(&buffer, format, count, flags, staticData);
+                resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
                 if (SUCCEEDED(resultValue) && buffer)
                 {
                     resultValue = buffer->QueryInterface(returnObject);

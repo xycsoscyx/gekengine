@@ -166,7 +166,7 @@ void GetMeshes(const Gek::Math::Float3 &scale, const aiScene *scene, const aiNod
 
 int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariableList)
 {
-    printf("GEK Mesh Optimizer\r\n");
+    printf("GEK Model Converter\r\n");
 
     CStringW fileNameInput;
     CStringW fileNameOutput;
