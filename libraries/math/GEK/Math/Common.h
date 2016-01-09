@@ -40,5 +40,11 @@ namespace Gek
         {
             return ((x * factorX) + (y * factorY));
         }
+
+        template<typename DATA>
+        DATA saturate(DATA value, DATA min, DATA max)
+        {
+            return std::min(std::max(value, min), max);
+        }
     }; // namespace Math
 }; // namespace Gek

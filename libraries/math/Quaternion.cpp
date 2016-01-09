@@ -99,34 +99,18 @@ namespace Gek
             return ((x * rotation.x) + (y * rotation.y) + (z * rotation.z) + (w * rotation.w));
         }
 
-        Quaternion Quaternion::lerp(const Quaternion &rotation, float factor) const
-        {
-            return Math::lerp((*this), rotation, factor);
-        }
-
         Quaternion Quaternion::slerp(const Quaternion &rotation, float factor) const
         {
-            Quaternion normalA(getNormal());
-            Quaternion normalB(rotation.getNormal());
-            float dot(normalA.dot(normalB));
-            if (dot < 0.0f)
+            double omega = std::acos(saturate(dot(rotation), -1.0f, 1.0f));
+            if (std::abs(omega) < 1e-10f)
             {
-                dot = -dot;
-                normalB *= -1.0f;
+                omega = 1e-10f;
             }
 
-            if (dot < 1.0f)
-            {
-                float theta = std::acos(dot);
-                float sinTheta = std::sin(theta);
-                float factorA = (std::sin((1.0f - factor) * theta) / sinTheta);
-                float factorB = (std::sin(factor * theta) / sinTheta);
-                return Math::blend(normalA, factorA, normalB, factorB);
-            }
-            else
-            {
-                return lerp(rotation, factor);
-            }
+            float sinTheta = std::sin(omega);
+            float factor0 = (std::sin((1.0f - factor) * omega) / sinTheta);
+            float factor1 = (std::sin(factor * omega) / sinTheta);
+            return blend((*this), factor0, rotation, factor1);
         }
 
         bool Quaternion::operator == (const Quaternion &rotation) const

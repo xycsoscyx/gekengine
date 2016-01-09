@@ -11,12 +11,12 @@ float3 getD(float3 materialAlbedo, float materialRoughness, float materialMetaln
 
 float3 getSchlickFresnel(float3 F0, float VdotH)
 {
-    return (F0 + (1 - F0) * pow((1 - VdotH), 5));
+    return (F0 + (1.0 - F0) * pow((1 - VdotH), 5.0));
 }
 
 float3 getSchlickFresnelApproximation(float3 F0, float VdotH)
 {
-    static const float MagicExponent = 8.656170f; // == 1/ln(2) * 6   (6 is SpecularPower of 5 + 1)
+    static const float MagicExponent = 8.656170; // == 1/ln(2) * 6   (6 is SpecularPower of 5 + 1)
     return F0 + (1.0 - F0) * exp2(-MagicExponent * VdotH);
 }
 
@@ -40,14 +40,7 @@ float getSchlickSmith(float materialRoughness, float NdotL, float NdotV)
 
 float3 getG(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
 {
-    const float anisotropic = 1.0;
-
-    float aspect = sqrt(1 - (anisotropic * 0.9f));
-    float materialRoughnessSquared = (materialRoughness * materialRoughness);
-    float materialRoughnessX = max(0.001f, materialRoughnessSquared / aspect);
-    float materialRoughnessY = max(0.001f, materialRoughnessSquared * aspect);
-    return getSchlickSmith(materialRoughnessX, NdotL, NdotV) * 
-           getSchlickSmith(materialRoughnessY, NdotL, NdotV);
+    return getSchlickSmith(materialRoughness, NdotL, NdotV);
 }
 
 float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)

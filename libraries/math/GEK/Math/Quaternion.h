@@ -84,7 +84,6 @@ namespace Gek
             void invert(void);
             void normalize(void);
             float dot(const Quaternion &rotation) const;
-            Quaternion lerp(const Quaternion &rotation, float factor) const;
             Quaternion slerp(const Quaternion &rotation, float factor) const;
 
             bool operator == (const Quaternion &vector) const;
@@ -125,19 +124,14 @@ namespace Gek
                 return _mm_add_ps(simd, _mm_set1_ps(scalar));
             }
 
-            inline Quaternion operator + (const Quaternion &rotation) const
-            {
-                return _mm_add_ps(simd, rotation.simd);
-            }
-
-            inline Quaternion operator - (const Quaternion &rotation) const
-            {
-                return _mm_sub_ps(simd, rotation.simd);
-            }
-
             inline Quaternion operator * (float scalar) const
             {
                 return _mm_mul_ps(simd, _mm_set1_ps(scalar));
+            }
+
+            inline Quaternion operator + (const Quaternion &rotation) const
+            {
+                return _mm_add_ps(simd, rotation.simd);
             }
         };
     }; // namespace Math

@@ -142,7 +142,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                                             if (coefficientBuffer)
                                             {
                                                 CComPtr<Gek::VideoBuffer> coefficientCopy;
-                                                resultValue = video->createBuffer(&coefficientCopy, Gek::Video::Format::Float4, 9, Gek::Video::BufferType::Raw, Gek::Video::BufferFlags::Readable);
+                                                resultValue = video->createBuffer(&coefficientCopy, Gek::Video::Format::Float4, 9, Gek::Video::BufferType::Raw, Gek::Video::BufferFlags::Staging);
                                                 if (coefficientCopy)
                                                 {
                                                     video->present(false);

@@ -256,7 +256,7 @@ namespace Gek
                                     "    WorldVertex worldVertex = getWorldVertex(pluginVertex);                                        \r\n" \
                                     "                                                                                                   \r\n" \
                                     "    ViewVertex viewVertex;                                                                         \r\n" \
-                                    "    viewVertex.viewNormal = mul(Camera::viewMatrix, float4(worldVertex.normal, 0.0f)).xyz;         \r\n" \
+                                    "    viewVertex.viewNormal = mul(Camera::viewMatrix, float4(worldVertex.normal, 0.0)).xyz;          \r\n" \
                                     "    viewVertex.viewPosition = mul(Camera::viewMatrix, worldVertex.position);                       \r\n" \
                                     "    viewVertex.position = mul(Camera::projectionMatrix, viewVertex.viewPosition);                  \r\n" \
                                     "    viewVertex.texCoord = worldVertex.texCoord;                                                    \r\n" \
@@ -301,7 +301,7 @@ namespace Gek
                                                 return resultValue;
                                             };
 
-                                            resultValue = video->compileVertexProgram(&vertexProgram, engineData, "mainVertexProgram", elementList, getIncludeData);
+                                            resultValue = video->compileVertexProgram(&vertexProgram, engineData, "mainVertexProgram", &elementList, getIncludeData);
                                         }
                                     }
                                     else

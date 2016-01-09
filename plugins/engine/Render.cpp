@@ -23,7 +23,7 @@
 
 namespace Gek
 {
-    static const UINT32 MaxLightCount = 128;
+    static const UINT32 MaxLightCount = 255;
 
     template <class HANDLE>
     class ObjectManager
@@ -196,8 +196,6 @@ namespace Gek
         CComPtr<VideoBuffer> lightDataBuffer;
 
         CComPtr<IUnknown> deferredVertexProgram;
-        CComPtr<VideoBuffer> deferredVertexBuffer;
-        CComPtr<VideoBuffer> deferredIndexBuffer;
 
         ObjectManager<ProgramHandle> programManager;
         ObjectManager<PluginHandle> pluginManager;
@@ -233,7 +231,7 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(PluginResources)
             INTERFACE_LIST_ENTRY_COM(Resources)
             INTERFACE_LIST_ENTRY_COM(Render)
-            END_INTERFACE_LIST_USER
+        END_INTERFACE_LIST_USER
 
         // Render/Resources
         STDMETHODIMP initialize(IUnknown *initializerContext)
@@ -273,66 +271,38 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Writable);
+                resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
             }
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&lightConstantBuffer, sizeof(LightConstants), 1, Video::BufferType::Constant, Video::BufferFlags::Writable);
+                resultValue = video->createBuffer(&lightConstantBuffer, sizeof(LightConstants), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
             }
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&lightDataBuffer, sizeof(LightData), MaxLightCount, Video::BufferType::Structured, Video::BufferFlags::Writable | Video::BufferFlags::Resource);
+                resultValue = video->createBuffer(&lightDataBuffer, sizeof(LightData), MaxLightCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
             }
 
             if (SUCCEEDED(resultValue))
             {
                 static const char program[] =
-                    "struct Vertex                                                                      \r\n" \
-                    "{                                                                                  \r\n" \
-                    "    float2 position : POSITION;                                                    \r\n" \
-                    "    float2 texCoord : TEXCOORD0;                                                   \r\n" \
-                    "};                                                                                 \r\n" \
-                    "                                                                                   \r\n" \
                     "struct Pixel                                                                       \r\n" \
                     "{                                                                                  \r\n" \
                     "    float4 position : SV_POSITION;                                                 \r\n" \
                     "    float2 texCoord : TEXCOORD0;                                                   \r\n" \
                     "};                                                                                 \r\n" \
                     "                                                                                   \r\n" \
-                    "Pixel mainVertexProgram(in Vertex vertex)                                          \r\n" \
+                    "Pixel mainVertexProgram(in uint vertexID : SV_VertexID)                            \r\n" \
                     "{                                                                                  \r\n" \
                     "    Pixel pixel;                                                                   \r\n" \
-                    "    pixel.position = float4(vertex.position, 0.0f, 1.0f);                          \r\n" \
-                    "    pixel.texCoord = vertex.texCoord;                                              \r\n" \
+                    "    pixel.texCoord = float2((vertexID << 1) & 2, vertexID & 2);                    \r\n" \
+                    "    pixel.position = float4(pixel.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f); \r\n" \
                     "    return pixel;                                                                  \r\n" \
                     "}                                                                                  \r\n" \
                     "                                                                                   \r\n";
 
-                static const std::vector<Video::InputElement> elementList =
-                {
-                    Video::InputElement(Video::Format::Float2, "POSITION", 0),
-                    Video::InputElement(Video::Format::Float2, "TEXCOORD", 0),
-                };
-
-                resultValue = video->compileVertexProgram(&deferredVertexProgram, program, "mainVertexProgram", elementList);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                static const Math::Float2 vertexList[] =
-                {
-                    Math::Float2(-1.0f, 1.0f), Math::Float2(0.0f, 0.0f),
-                    Math::Float2(1.0f, 1.0f), Math::Float2(1.0f, 0.0f),
-                    Math::Float2(1.0f,-1.0f), Math::Float2(1.0f, 1.0f),
-
-                    Math::Float2(-1.0f, 1.0f), Math::Float2(0.0f, 0.0f),
-                    Math::Float2(1.0f,-1.0f), Math::Float2(1.0f, 1.0f),
-                    Math::Float2(-1.0f,-1.0f), Math::Float2(0.0f, 1.0f),
-                };
-
-                resultValue = video->createBuffer(&deferredVertexBuffer, sizeof(Math::Float4), 6, Video::BufferType::Vertex, 0, vertexList);
+                resultValue = video->compileVertexProgram(&deferredVertexProgram, program, "mainVertexProgram", nullptr);
             }
 
             return resultValue;
@@ -967,9 +937,8 @@ namespace Gek
 
                     auto drawDeferred = [&](void) -> void
                     {
-                        videoContext->setVertexBuffer(0, deferredVertexBuffer, 0);
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-                        videoContext->drawPrimitive(6, 0);
+                        videoContext->drawPrimitive(3, 0);
                     };
 
                     auto runCompute = [&](UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth) -> void

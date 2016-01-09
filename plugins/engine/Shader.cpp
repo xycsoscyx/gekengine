@@ -488,7 +488,7 @@ namespace Gek
             fullValue.Replace(L"%displayWidth%", String::format(L"%d", video->getWidth()));
             fullValue.Replace(L"%displayHeight%", String::format(L"%d", video->getHeight()));
 
-            fullValue.Replace(L"%lightListSize%", L"128");
+            fullValue.Replace(L"%lightListSize%", L"255");
 
             return replaceDefines(fullValue);
         }
@@ -813,7 +813,7 @@ namespace Gek
                                             "    };                                                 \r\n" \
                                             "                                                       \r\n" \
                                             "    StructuredBuffer<Point> list : register(t0);       \r\n" \
-                                            "    static const uint listSize = 128;                  \r\n" \
+                                            "    static const uint listSize = 255;                  \r\n" \
                                             "};                                                     \r\n" \
                                             "                                                       \r\n";
                                     }

@@ -17,27 +17,16 @@ float3 getHemisphericalAmbient(InputPixel inputPixel)
 
     float up = saturate(surfaceNormal.y);
     float down = saturate(-surfaceNormal.y);
-    float middle = 1 - abs(surfaceNormal.y);
+    float middle = 1.0 - abs(surfaceNormal.y);
 
-    return materialAlbedo * AmbientLevel * (GroundColor * up + SkyColor * down + HorizonColor * middle);
+    return materialAlbedo * (GroundColor * up + SkyColor * down + HorizonColor * middle);
 }
 
-static const float Pi = 3.141592654f;
-static const float CosineA0 = Pi;
-static const float CosineA1 = (2.0 * Pi) / 3.0;
-static const float CosineA2 = Pi * 0.25f;
+static const float CosineA0 = Math::Pi;
+static const float CosineA1 = (2.0 * Math::Pi) / 3.0;
+static const float CosineA2 = Math::Pi * 0.25;
 
-struct SH9
-{
-    float c[9];
-};
-
-struct SH9Color
-{
-    float3 c[9];
-};
-
-void getSphereicalHarmonicCosineLobe(out float3 coefficients[9], float3 direction)
+void getSphereicalHarmonicCosineLobe(inout float3 coefficients[9], float3 direction)
 {
     // Band 0
     coefficients[0] = 0.282095 * CosineA0;
@@ -80,23 +69,27 @@ float3 getSphericalHarmonicDiffuse(InputPixel inputPixel)
 
     float3 coefficients[9] =
     {
-        float3(1.995419, 2.003088, 1.821823),
+        float3( 1.995419,  2.003088,  1.821823),
         float3(-1.006211, -1.039061, -1.129413),
-        float3(0.239883, 0.222330, 0.261833),
-        float3(0.029817, 0.023817, 0.030901),
+        float3( 0.239883,  0.222330,  0.261833),
+        float3( 0.029817,  0.023817,  0.030901),
         float3(-0.005715, -0.006985, -0.001721),
-        float3(0.015700, 0.011130, 0.021361),
+        float3( 0.015700,  0.011130,  0.021361),
         float3(-0.090218, -0.058563, -0.090928),
-        float3(0.037282, 0.034900, 0.024507),
+        float3( 0.037282,  0.034900,  0.024507),
         float3(-0.275658, -0.241120, -0.266649),
     };
 
     // Diffuse BRDF is albedo / Pi
-    return getSphericalHarmonicIrradiance(surfaceNormal, coefficients) * materialAlbedo * (1.0 / Pi);
+    return getSphericalHarmonicIrradiance(surfaceNormal, coefficients) * materialAlbedo * (1.0 / Math::Pi);
 }
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    return getSphericalHarmonicDiffuse(inputPixel);
-    return getHemisphericalAmbient(inputPixel);
+#ifdef true
+    float3 ambient = getSphericalHarmonicDiffuse(inputPixel);
+#else
+    float3 ambient = getHemisphericalAmbient(inputPixel);
+#endif
+    return ambient * AmbientLevel;
 }

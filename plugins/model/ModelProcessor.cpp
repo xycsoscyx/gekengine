@@ -32,21 +32,21 @@ namespace Gek
     Math::Float2 encodeNormal(Math::Float3 normal)
     {
         Math::Float2 encoded(normal.x, normal.y);
-        return encoded.getNormal() * sqrt(normal.z * 0.5f + 0.5f);
+        return encoded.getNormal() * std::sqrt(normal.z * 0.5f + 0.5f);
     }
 #elif _ENCODE_OCTAHEDRON
     Math::Float2 octahedronWrap(Math::Float2 value)
     {
-        return (1.0 - abs(value)) * (value >= 0.0 ? 1.0 : -1.0);
+        return (1.0f - std::abs(value)) * (value >= 0.0f ? 1.0f : -1.0f);
     }
 
     Math::Float2 encodeNormal((Math::Float3 normal)
     {
-        normal /= (abs(normal.x) + abs(normal.y) + abs(normal.z));
+        normal /= (std::abs(normal.x) + std::abs(normal.y) + std::abs(normal.z));
 
         Math::Float2 encoded(normal.x, normal.y);
-        encoded = normal.z >= 0.0 ? encoded : OctWrap(encoded);
-        encoded = encoded * 0.5 + 0.5;
+        encoded = normal.z >= 0.0f ? encoded : OctWrap(encoded);
+        encoded = encoded * 0.5f + 0.5f;
         return encoded;
     }
 #else
@@ -93,11 +93,17 @@ namespace Gek
             size_t getSplitEdge(size_t vertex)
             {
                 if (vertex == vertices[0])
+                {
                     return splitEdges[0];
+                }
                 else if (vertex == vertices[1])
+                {
                     return splitEdges[1];
+                }
                 else
+                {
                     return 0;
+                }
             }
         };
 
@@ -454,7 +460,7 @@ namespace Gek
                 resultValue = S_OK;
                 if (shape.CompareNoCase(L"cube") == 0)
                 {
-                    Math::Float3 size(String::to<Math::Float3>(parameters.Tokenize(L"|", position)));
+                    resultValue = E_FAIL;
                 }
                 else if (shape.CompareNoCase(L"sphere") == 0)
                 {
@@ -493,18 +499,11 @@ namespace Gek
 
             int position = 0;
             CStringW shape = parameters.Tokenize(L"|", position);
-            CStringW material = parameters.Tokenize(L"|", position);
             if (shape.CompareNoCase(L"cube") == 0)
             {
-                Math::Float3 size(String::to<Math::Float3>(parameters.Tokenize(L"|", position)));
-                data->alignedBox.minimum = -Math::Float3(size * Math::Float3(0.5f));
-                data->alignedBox.maximum = Math::Float3(size * Math::Float3(0.5f));
             }
-            else if (shape.CompareNoCase(L"sphere") == 0)
+            else if (shape.CompareNoCase(L"sphere") != 0)
             {
-                float radius = String::to<float>(parameters.Tokenize(L"|", position));
-                data->alignedBox.minimum = Math::Float3(-radius);
-                data->alignedBox.maximum = Math::Float3(radius);
             }
             else
             {
@@ -513,6 +512,8 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
+                data->alignedBox.minimum = Math::Float3(-1.0f);
+                data->alignedBox.maximum = Math::Float3(1.0f);
                 auto loadIterator = dataLoadQueue.find(data);
                 if (loadIterator == dataLoadQueue.end())
                 {
@@ -706,7 +707,7 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                instanceBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 1024, Video::BufferType::Vertex, Video::BufferFlags::Writable);
+                instanceBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 1024, Video::BufferType::Vertex, Video::BufferFlags::Mappable);
             }
 
             return resultValue;

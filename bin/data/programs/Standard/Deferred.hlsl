@@ -20,13 +20,13 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     // assume normals are stored as 3Dc format, so generate the Z value
     normal.xy = ((Resources::normal.Sample(Global::linearSampler, inputPixel.texCoord) * 2.0) - 1.0);
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
-    normal = (mul(normal, viewBasis)) * (inputPixel.frontFacing ? 1 : -1);
+    normal = (mul(normal, viewBasis)) * (inputPixel.frontFacing ? 1.0 : -1.0);
 
     OutputPixel outputPixel;
     outputPixel.albedoBuffer = albedo.xyz;
     outputPixel.materialBuffer.x = Resources::roughness.Sample(Global::linearSampler, inputPixel.texCoord);
     outputPixel.materialBuffer.y = Resources::metalness.Sample(Global::linearSampler, inputPixel.texCoord);
     outputPixel.normalBuffer = encodeNormal(normal);
-    outputPixel.depthBuffer  = (inputPixel.viewPosition.z / Camera::maximumDistance);
+    outputPixel.depthBuffer = (inputPixel.viewPosition.z / Camera::maximumDistance);
     return outputPixel;
 }

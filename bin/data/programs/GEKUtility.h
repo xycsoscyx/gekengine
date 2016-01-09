@@ -1,6 +1,6 @@
 float sqr(float x)
 {
-    return x*x;
+    return x * x;
 }
 
 float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
@@ -32,20 +32,20 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     half2 encodeNormal(float3 n)
     {
         half scale = 1.7777;
-        half2 enc = n.xy / (n.z + 1);
+        half2 enc = n.xy / (n.z + 1.0);
         enc /= scale;
-        enc = enc*0.5 + 0.5;
-        return half4(enc, 0, 0);
+        enc = enc * 0.5 + 0.5;
+        return enc;
     }
 
     float3 decodeNormal(half2 enc)
     {
         half scale = 1.7777;
-        half3 nn = half3(enc * 2 * scale - scale, 1.0);
+        half3 nn = half3(enc * 2.0 * scale - scale, 1.0);
         half g = 2.0 / dot(nn.xyz, nn.xyz);
         half3 n;
         n.xy = g*nn.xy;
-        n.z = g - 1;
+        n.z = g - 1.0;
         return n;
     }
 #else

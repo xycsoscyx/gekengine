@@ -924,7 +924,8 @@ namespace Gek
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(indexBuffer);
-            d3dDeviceContext->IASetIndexBuffer(d3dBuffer, indexBuffer ? (indexBuffer->getFormat() == Video::Format::Short ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT) : DXGI_FORMAT_UNKNOWN, offset);
+            DXGI_FORMAT format = (indexBuffer ? (indexBuffer->getFormat() == Video::Format::Short ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT) : DXGI_FORMAT_UNKNOWN);
+            d3dDeviceContext->IASetIndexBuffer(d3dBuffer, format, offset);
         }
 
         STDMETHODIMP_(void) setPrimitiveType(Video::PrimitiveType primitiveType)
@@ -1730,16 +1731,12 @@ namespace Gek
                 bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;
                 bufferDescription.CPUAccessFlags = 0;
             }
-            else if (flags & Video::BufferFlags::Readable)
+            else if (flags & Video::BufferFlags::Staging)
             {
                 bufferDescription.Usage = D3D11_USAGE_STAGING;
-                bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-                if (flags & Video::BufferFlags::Writable)
-                {
-                    bufferDescription.CPUAccessFlags |= D3D11_CPU_ACCESS_WRITE;
-                }
+                bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
             }
-            else if (flags & Video::BufferFlags::Writable)
+            else if (flags & Video::BufferFlags::Mappable)
             {
                 bufferDescription.Usage = D3D11_USAGE_DYNAMIC;
                 bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -1936,7 +1933,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
+        STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> *elementLayout, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
         {
             REQUIRE_RETURN(d3dDevice, E_FAIL);
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -1972,57 +1969,62 @@ namespace Gek
                 gekCheckResult(resultValue = d3dDevice->CreateVertexShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader));
                 if (d3dShader)
                 {
-                    UINT32 elementLayoutCount = elementLayout.size();
-                    Video::ElementType lastElementType = Video::ElementType::Vertex;
-                    std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList(elementLayoutCount);
-                    for (UINT32 inputElement = 0; inputElement < elementLayoutCount; ++inputElement)
+                    CComPtr<ID3D11InputLayout> d3dInputLayout;
+                    if (elementLayout)
                     {
-                        if (lastElementType != elementLayout[inputElement].slotClass)
+                        Video::ElementType lastElementType = Video::ElementType::Vertex;
+                        std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList;
+                        for (auto &element : (*elementLayout))
                         {
-                            inputElementList[inputElement].AlignedByteOffset = 0;
+                            D3D11_INPUT_ELEMENT_DESC elementDesc;
+                            if (lastElementType != element.slotClass)
+                            {
+                                elementDesc.AlignedByteOffset = 0;
+                            }
+                            else
+                            {
+                                elementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+                            }
+
+                            lastElementType = element.slotClass;
+                            elementDesc.SemanticName = element.semanticName;
+                            elementDesc.SemanticIndex = element.semanticIndex;
+                            elementDesc.InputSlot = element.slotIndex;
+                            switch (element.slotClass)
+                            {
+                            case Video::ElementType::Instance:
+                                elementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
+                                elementDesc.InstanceDataStepRate = 1;
+                                break;
+
+                            case Video::ElementType::Vertex:
+                            default:
+                                elementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+                                elementDesc.InstanceDataStepRate = 0;
+                            };
+
+                            elementDesc.Format = DirectX::BufferFormatList[static_cast<UINT8>(element.format)];
+                            if (elementDesc.Format == DXGI_FORMAT_UNKNOWN)
+                            {
+                                break;
+                            }
+
+                            inputElementList.push_back(elementDesc);
                         }
-                        else
-                        {
-                            inputElementList[inputElement].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-                        }
 
-                        lastElementType = elementLayout[inputElement].slotClass;
-                        inputElementList[inputElement].SemanticName = elementLayout[inputElement].semanticName;
-                        inputElementList[inputElement].SemanticIndex = elementLayout[inputElement].semanticIndex;
-                        inputElementList[inputElement].InputSlot = elementLayout[inputElement].slotIndex;
-                        switch (elementLayout[inputElement].slotClass)
+                        if (inputElementList.size() == (*elementLayout).size())
                         {
-                        case Video::ElementType::Instance:
-                            inputElementList[inputElement].InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
-                            inputElementList[inputElement].InstanceDataStepRate = 1;
-                            break;
-
-                        case Video::ElementType::Vertex:
-                        default:
-                            inputElementList[inputElement].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-                            inputElementList[inputElement].InstanceDataStepRate = 0;
-                        };
-
-                        inputElementList[inputElement].Format = DirectX::BufferFormatList[static_cast<UINT8>(elementLayout[inputElement].format)];
-                        if (inputElementList[inputElement].Format == DXGI_FORMAT_UNKNOWN)
-                        {
-                            inputElementList.clear();
-                            break;
+                            gekCheckResult(resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), &d3dInputLayout));
                         }
                     }
 
-                    if (inputElementList.size() == elementLayout.size())
+                    if (SUCCEEDED(resultValue))
                     {
-                        CComPtr<ID3D11InputLayout> d3dInputLayout;
-                        gekCheckResult(resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), &d3dInputLayout));
-                        if (d3dInputLayout)
+                        resultValue = E_OUTOFMEMORY;
+                        CComPtr<VertexProgram> shader(new VertexProgram(d3dShader, d3dInputLayout));
+                        if (shader)
                         {
-                            resultValue = E_OUTOFMEMORY;
-                            CComPtr<VertexProgram> shader(new VertexProgram(d3dShader, d3dInputLayout));
-                            if (shader)
-                            {
-                                gekCheckResult(resultValue = shader->QueryInterface(IID_PPV_ARGS(returnObject)));
-                            }
+                            gekCheckResult(resultValue = shader->QueryInterface(IID_PPV_ARGS(returnObject)));
                         }
                     }
                 }
@@ -2135,7 +2137,7 @@ namespace Gek
             return compileComputeProgram(returnObject, nullptr, programScript, entryFunction, defineList, include);
         }
 
-        STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> *elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
             CComPtr<IncludeImplementation> include(new IncludeImplementation(L"", onInclude));
             return compileVertexProgram(returnObject, nullptr, programScript, entryFunction, elementLayout, defineList, include);
@@ -2170,7 +2172,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP loadVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP loadVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> *elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
             REQUIRE_RETURN(fileName, E_INVALIDARG);
 
