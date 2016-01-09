@@ -846,12 +846,6 @@ namespace Gek
             blendStateManager.clearResources();
         }
 
-        STDMETHODIMP_(void) onIdle(void)
-        {
-            ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderOverlay, std::placeholders::_1)));
-            video->present(true);
-        }
-
         STDMETHODIMP_(void) onUpdate(float frameTime)
         {
             population->listEntities<TransformComponent, CameraComponent>([&](Entity *cameraEntity) -> void

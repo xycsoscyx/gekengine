@@ -389,10 +389,6 @@ namespace Gek
                     };
                 }
             }
-            else
-            {
-                population->idle();
-            }
 
             return engineRunning;
         }
