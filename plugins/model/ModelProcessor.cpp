@@ -478,6 +478,7 @@ namespace Gek
 
                     data->vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
                     data->indexBuffer = resources->createBuffer(String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
+                    resultValue = ((data->vertexBuffer.isValid() && data->indexBuffer.isValid()) ? S_OK : E_FAIL);
                 }
                 else
                 {
@@ -501,9 +502,11 @@ namespace Gek
             CStringW shape = parameters.Tokenize(L"|", position);
             if (shape.CompareNoCase(L"cube") == 0)
             {
+                resultValue = E_FAIL;
             }
             else if (shape.CompareNoCase(L"sphere") != 0)
             {
+                resultValue = S_OK;
             }
             else
             {

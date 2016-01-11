@@ -835,14 +835,14 @@ namespace Gek
                 cameraConstantData.viewMatrix = cameraMatrix.getInverse();
                 cameraConstantData.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraData.minimumDistance, cameraData.maximumDistance);
                 cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
-                video->updateBuffer(this->cameraConstantBuffer, &cameraConstantData);
+                video->updateBuffer(cameraConstantBuffer, &cameraConstantData);
 
                 VideoContext *videoContext = video->getDefaultContext();
 
-                videoContext->geometryPipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
-                videoContext->vertexPipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
-                videoContext->pixelPipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
-                videoContext->computePipeline()->setConstantBuffer(this->cameraConstantBuffer, 0);
+                videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
+                videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
+                videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
+                videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer, 0);
 
                 const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 

@@ -2422,92 +2422,94 @@ namespace Gek
                 fileNameList[5], 
                 flags);
 
-            if (SUCCEEDED(resultValue))
+            ::DirectX::ScratchImage cubeMapList[6];
+            ::DirectX::TexMetadata cubeMapMetaData;
+            for (UINT32 side = 0; side < 6; side++)
             {
-                ::DirectX::ScratchImage cubeMapList[6];
-                ::DirectX::TexMetadata cubeMapMetaData;
-                for (UINT32 side = 0; side < 6 && SUCCEEDED(resultValue); side++)
+                std::vector<UINT8> fileData;
+                gekCheckResult(resultValue = Gek::FileSystem::load(fileNameList[side], fileData));
+                if (SUCCEEDED(resultValue))
                 {
-                    std::vector<UINT8> fileData;
-                    gekCheckResult(resultValue = Gek::FileSystem::load(fileNameList[side], fileData));
-                    if (SUCCEEDED(resultValue))
+                    CPathW filePath(fileNameList[side]);
+                    CStringW extension(filePath.GetExtension());
+                    if (extension.CompareNoCase(L".dds") == 0)
                     {
-                        CPathW filePath(fileNameList[side]);
-                        CStringW extension(filePath.GetExtension());
-                        if (extension.CompareNoCase(L".dds") == 0)
-                        {
-                            gekCheckResult(resultValue = ::DirectX::LoadFromDDSMemory(fileData.data(), fileData.size(), 0, &cubeMapMetaData, cubeMapList[side]));
-                        }
-                        else if (extension.CompareNoCase(L".tga") == 0)
-                        {
-                            gekCheckResult(resultValue = ::DirectX::LoadFromTGAMemory(fileData.data(), fileData.size(), &cubeMapMetaData, cubeMapList[side]));
-                        }
-                        else if (extension.CompareNoCase(L".png") == 0)
-                        {
-                            gekCheckResult(resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_PNG, &cubeMapMetaData, cubeMapList[side]));
-                        }
-                        else if (extension.CompareNoCase(L".bmp") == 0)
-                        {
-                            gekCheckResult(resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_BMP, &cubeMapMetaData, cubeMapList[side]));
-                        }
-                        else if (extension.CompareNoCase(L".jpg") == 0 ||
-                                 extension.CompareNoCase(L".jpeg") == 0)
-                        {
-                            gekCheckResult(resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_JPEG, &cubeMapMetaData, cubeMapList[side]));
-                        }
+                        gekCheckResult(resultValue = ::DirectX::LoadFromDDSMemory(fileData.data(), fileData.size(), 0, &cubeMapMetaData, cubeMapList[side]));
+                    }
+                    else if (extension.CompareNoCase(L".tga") == 0)
+                    {
+                        gekCheckResult(resultValue = ::DirectX::LoadFromTGAMemory(fileData.data(), fileData.size(), &cubeMapMetaData, cubeMapList[side]));
+                    }
+                    else if (extension.CompareNoCase(L".png") == 0)
+                    {
+                        gekCheckResult(resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_PNG, &cubeMapMetaData, cubeMapList[side]));
+                    }
+                    else if (extension.CompareNoCase(L".bmp") == 0)
+                    {
+                        gekCheckResult(resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_BMP, &cubeMapMetaData, cubeMapList[side]));
+                    }
+                    else if (extension.CompareNoCase(L".jpg") == 0 ||
+                        extension.CompareNoCase(L".jpeg") == 0)
+                    {
+                        gekCheckResult(resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_JPEG, &cubeMapMetaData, cubeMapList[side]));
                     }
                 }
 
-                if (SUCCEEDED(resultValue))
+                if (FAILED(resultValue))
                 {
-                    ::DirectX::Image imageList[6] =
+                    break;
+                }
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
+                ::DirectX::Image imageList[6] =
+                {
+                    *cubeMapList[0].GetImage(0, 0, 0),
+                    *cubeMapList[1].GetImage(0, 0, 0),
+                    *cubeMapList[2].GetImage(0, 0, 0),
+                    *cubeMapList[3].GetImage(0, 0, 0),
+                    *cubeMapList[4].GetImage(0, 0, 0),
+                    *cubeMapList[5].GetImage(0, 0, 0),
+                };
+
+                ::DirectX::ScratchImage cubeMap;
+                cubeMap.InitializeCubeFromImages(imageList, 6, 0);
+                if (flags && Video::TextureLoadFlags::sRGB)
+                {
+                    switch (cubeMap.GetMetadata().format)
                     {
-                        *cubeMapList[0].GetImage(0, 0, 0),
-                        *cubeMapList[1].GetImage(0, 0, 0),
-                        *cubeMapList[2].GetImage(0, 0, 0),
-                        *cubeMapList[3].GetImage(0, 0, 0),
-                        *cubeMapList[4].GetImage(0, 0, 0),
-                        *cubeMapList[5].GetImage(0, 0, 0),
+                    case DXGI_FORMAT_R8G8B8A8_UNORM:
+                        cubeMap.OverrideFormat(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+                        break;
+
+                    case DXGI_FORMAT_BC1_UNORM:
+                        cubeMap.OverrideFormat(DXGI_FORMAT_BC1_UNORM_SRGB);
+                        break;
+
+                    case DXGI_FORMAT_BC2_UNORM:
+                        cubeMap.OverrideFormat(DXGI_FORMAT_BC2_UNORM_SRGB);
+                        break;
+
+                    case DXGI_FORMAT_BC3_UNORM:
+                        cubeMap.OverrideFormat(DXGI_FORMAT_BC3_UNORM_SRGB);
+                        break;
+
+                    case DXGI_FORMAT_BC7_UNORM:
+                        cubeMap.OverrideFormat(DXGI_FORMAT_BC7_UNORM_SRGB);
+                        break;
                     };
+                }
 
-                    ::DirectX::ScratchImage cubeMap;
-                    cubeMap.InitializeCubeFromImages(imageList, 6, 0);
-                    if (flags && Video::TextureLoadFlags::sRGB)
+                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                gekCheckResult(resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMap.GetMetadata(), &d3dShaderResourceView));
+                if (d3dShaderResourceView)
+                {
+                    resultValue = E_OUTOFMEMORY;
+                    CComPtr<TextureImplementation> texture(new TextureImplementation(Video::Format::Unknown, cubeMapMetaData.width, cubeMapMetaData.height, 1, d3dShaderResourceView, nullptr));
+                    if (texture)
                     {
-                        switch (cubeMap.GetMetadata().format)
-                        {
-                        case DXGI_FORMAT_R8G8B8A8_UNORM:
-                            cubeMap.OverrideFormat(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
-                            break;
-
-                        case DXGI_FORMAT_BC1_UNORM:
-                            cubeMap.OverrideFormat(DXGI_FORMAT_BC1_UNORM_SRGB);
-                            break;
-
-                        case DXGI_FORMAT_BC2_UNORM:
-                            cubeMap.OverrideFormat(DXGI_FORMAT_BC2_UNORM_SRGB);
-                            break;
-
-                        case DXGI_FORMAT_BC3_UNORM:
-                            cubeMap.OverrideFormat(DXGI_FORMAT_BC3_UNORM_SRGB);
-                            break;
-
-                        case DXGI_FORMAT_BC7_UNORM:
-                            cubeMap.OverrideFormat(DXGI_FORMAT_BC7_UNORM_SRGB);
-                            break;
-                        };
-                    }
-
-                    CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                    gekCheckResult(resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMap.GetMetadata(), &d3dShaderResourceView));
-                    if (d3dShaderResourceView)
-                    {
-                        resultValue = E_OUTOFMEMORY;
-                        CComPtr<TextureImplementation> texture(new TextureImplementation(Video::Format::Unknown, cubeMapMetaData.width, cubeMapMetaData.height, 1, d3dShaderResourceView, nullptr));
-                        if (texture)
-                        {
-                            gekCheckResult(resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject)));
-                        }
+                        gekCheckResult(resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject)));
                     }
                 }
             }
