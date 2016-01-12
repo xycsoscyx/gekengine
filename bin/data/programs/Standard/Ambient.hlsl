@@ -81,15 +81,15 @@ float3 EvalSH9Cosine(float3 dir, SH9Color sh)
 float3 getSphericalHarmonicDiffuse(float3 surfaceNormal)
 {
     SH9Color sh;
-    sh.coefficients[0] = float3(1.544518, 1.517793, 1.422065);
-    sh.coefficients[1] = float3(0.815147, 0.901850, 0.955648);
-    sh.coefficients[2] = float3(0.082595, 0.124363, 0.155639);
-    sh.coefficients[3] = float3(-0.088787, -0.095615, -0.087551);
-    sh.coefficients[4] = float3(-0.029684, -0.030612, -0.036516);
-    sh.coefficients[5] = float3(0.081306, 0.076570, 0.076694);
-    sh.coefficients[6] = float3(-0.183242, -0.226157, -0.270554);
-    sh.coefficients[7] = float3(-0.059880, -0.032156, 0.006691);
-    sh.coefficients[8] = float3(-0.112564, -0.134566, -0.186299);
+    sh.coefficients[0] = float3(0.167524, 0.168247, 0.171347);
+    sh.coefficients[1] = float3(0.106371, 0.105560, 0.105015);
+    sh.coefficients[2] = float3(0.049939, 0.050512, 0.049984);
+    sh.coefficients[3] = float3(-0.009429, -0.010265, -0.007534);
+    sh.coefficients[4] = float3(0.000388, 0.000894, 0.001921);
+    sh.coefficients[5] = float3(-0.029572, -0.029955, -0.030386);
+    sh.coefficients[6] = float3(0.071940, 0.071332, 0.068708);
+    sh.coefficients[7] = float3(0.002985, 0.001814, -0.001255);
+    sh.coefficients[8] = float3(0.004516, 0.005567, 0.010872);
     return EvalSH9Cosine(surfaceNormal, sh);
 }
 
