@@ -38,19 +38,19 @@ SH9 ProjectOntoSH9(float3 dir)
     SH9 sh;
 
     // Band 0
-    sh.coefficients[0] = 0.282095f;
+    sh.coefficients[0] = 0.282095;
 
     // Band 1
-    sh.coefficients[1] = 0.488603f * dir.y;
-    sh.coefficients[2] = 0.488603f * dir.z;
-    sh.coefficients[3] = 0.488603f * dir.x;
+    sh.coefficients[1] = 0.488603 * dir.y;
+    sh.coefficients[2] = 0.488603 * dir.z;
+    sh.coefficients[3] = 0.488603 * dir.x;
 
     // Band 2
-    sh.coefficients[4] = 1.092548f * dir.x * dir.y;
-    sh.coefficients[5] = 1.092548f * dir.y * dir.z;
-    sh.coefficients[6] = 0.315392f * (3.0f * dir.z * dir.z - 1.0f);
-    sh.coefficients[7] = 1.092548f * dir.x * dir.z;
-    sh.coefficients[8] = 0.546274f * (dir.x * dir.x - dir.y * dir.y);
+    sh.coefficients[4] = 1.092548 * dir.x * dir.y;
+    sh.coefficients[5] = 1.092548 * dir.y * dir.z;
+    sh.coefficients[6] = 0.315392 * (3.0 * dir.z * dir.z - 1.0);
+    sh.coefficients[7] = 1.092548 * dir.x * dir.z;
+    sh.coefficients[8] = 0.546274 * (dir.x * dir.x - dir.y * dir.y);
 
     return sh;
 }
@@ -68,7 +68,7 @@ float3 EvalSH9Cosine(float3 dir, SH9Color sh)
     dirSH.coefficients[7] *= CosineA2;
     dirSH.coefficients[8] *= CosineA2;
 
-    float3 result;
+    float3 result = 0.0;
     for (uint i = 0; i < 9; ++i)
     {
         result += dirSH.coefficients[i] * sh.coefficients[i];
@@ -81,15 +81,15 @@ float3 EvalSH9Cosine(float3 dir, SH9Color sh)
 float3 getSphericalHarmonicDiffuse(float3 surfaceNormal)
 {
     SH9Color sh;
-    sh.coefficients[0] = float3(1.921531, 1.937642, 1.729140);
-    sh.coefficients[1] = float3(1.093395, 1.184863, 1.259173);
-    sh.coefficients[2] = float3(0.247702, 0.229946, 0.268398);
-    sh.coefficients[3] = float3(-0.029712, -0.023393, -0.029628);
-    sh.coefficients[4] = float3(-0.005654, -0.007113, -0.000729);
-    sh.coefficients[5] = float3(-0.015192, -0.010674, -0.020464);
-    sh.coefficients[6] = float3(-0.085432, -0.051636, -0.079557);
-    sh.coefficients[7] = float3(-0.038082, -0.035628, -0.025043);
-    sh.coefficients[8] = float3(-0.288221, -0.252444, -0.282916);
+    sh.coefficients[0] = float3(1.544518, 1.517793, 1.422065);
+    sh.coefficients[1] = float3(0.815147, 0.901850, 0.955648);
+    sh.coefficients[2] = float3(0.082595, 0.124363, 0.155639);
+    sh.coefficients[3] = float3(-0.088787, -0.095615, -0.087551);
+    sh.coefficients[4] = float3(-0.029684, -0.030612, -0.036516);
+    sh.coefficients[5] = float3(0.081306, 0.076570, 0.076694);
+    sh.coefficients[6] = float3(-0.183242, -0.226157, -0.270554);
+    sh.coefficients[7] = float3(-0.059880, -0.032156, 0.006691);
+    sh.coefficients[8] = float3(-0.112564, -0.134566, -0.186299);
     return EvalSH9Cosine(surfaceNormal, sh);
 }
 
@@ -104,5 +104,5 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 #else
     float3 ambient = getHemisphericalAmbient(surfaceNormal);
 #endif
-    return ambient * materialAlbedo * AmbientLevel;
+    return ambient;// *materialAlbedo * AmbientLevel;
 }

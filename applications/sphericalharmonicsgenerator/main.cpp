@@ -187,10 +187,10 @@ namespace Gek
                 for (int x = 0; x < width; ++x)
                 {
                     Math::Float3 texel;
-                    int offset = ((y * width) + x) * 4;
-                    texel.x = float(imageFace.pixels[offset + 0]) / 256.0f;
-                    texel.y = float(imageFace.pixels[offset + 1]) / 256.0f;
-                    texel.z = float(imageFace.pixels[offset + 2]) / 256.0f;
+                    int offset = ((imageFace.rowPitch * y) + (x * 4));
+                    texel.x = float(imageFace.pixels[offset + 0]) / 255.0f;
+                    texel.y = float(imageFace.pixels[offset + 1]) / 255.0f;
+                    texel.z = float(imageFace.pixels[offset + 2]) / 255.0f;
 
                     float u = (x + 0.5f) / width;
                     float v = (y + 0.5f) / height;
@@ -222,56 +222,55 @@ namespace Gek
         HRESULT resultValue = FileSystem::load(fileName, fileData);
         if (SUCCEEDED(resultValue))
         {
-            ::DirectX::ScratchImage baseImage;
-                
+
             CPathW filePath(fileName);
             CStringW extension(filePath.GetExtension());
             if (extension.CompareNoCase(L".dds") == 0)
             {
-                resultValue = ::DirectX::LoadFromDDSMemory(fileData.data(), fileData.size(), 0, nullptr, baseImage);
+                resultValue = ::DirectX::LoadFromDDSMemory(fileData.data(), fileData.size(), 0, nullptr, image);
             }
             else if (extension.CompareNoCase(L".tga") == 0)
             {
-                resultValue = ::DirectX::LoadFromTGAMemory(fileData.data(), fileData.size(), nullptr, baseImage);
+                resultValue = ::DirectX::LoadFromTGAMemory(fileData.data(), fileData.size(), nullptr, image);
             }
             else if (extension.CompareNoCase(L".png") == 0)
             {
-                resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_PNG, nullptr, baseImage);
+                resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image);
             }
             else if (extension.CompareNoCase(L".bmp") == 0)
             {
-                resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_BMP, nullptr, baseImage);
+                resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image);
             }
             else if (extension.CompareNoCase(L".jpg") == 0 ||
                 extension.CompareNoCase(L".jpeg") == 0)
             {
-                resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, baseImage);
+                resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image);
             }
 
-            if (SUCCEEDED(resultValue))
+            if (SUCCEEDED(resultValue) && ::DirectX::IsCompressed(image.GetMetadata().format))
             {
                 ::DirectX::ScratchImage decompressedImage;
-                if (::DirectX::IsCompressed(baseImage.GetMetadata().format))
-                {
-                    resultValue = ::DirectX::Decompress(*baseImage.GetImage(0, 0, 0), DXGI_FORMAT_R8G8B8A8_UNORM, decompressedImage);
-                }
-                else
-                {
-                    decompressedImage.InitializeFromImage(*baseImage.GetImage(0, 0, 0));
-                }
-
+                resultValue = ::DirectX::Decompress(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_R8G8B8A8_UNORM, decompressedImage);
                 if (SUCCEEDED(resultValue))
                 {
-                    if (decompressedImage.GetMetadata().format == DXGI_FORMAT_R8G8B8A8_UNORM)
-                    {
-                        resultValue = image.InitializeFromImage(*decompressedImage.GetImage(0, 0, 0));
-                    }
-                    else
-                    {
-                        resultValue = ::DirectX::Convert(*decompressedImage.GetImage(0, 0, 0), DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0.0f, image);
-                    }
+                    image = std::move(decompressedImage);
                 }
             }
+
+            if (SUCCEEDED(resultValue) && image.GetMetadata().format != DXGI_FORMAT_R8G8B8A8_UNORM)
+            {
+                ::DirectX::ScratchImage rgbImage;
+                resultValue = ::DirectX::Convert(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0.0f, rgbImage);
+                if (SUCCEEDED(resultValue))
+                {
+                    image = std::move(rgbImage);
+                }
+            }
+        }
+
+        if (SUCCEEDED(resultValue) && !image.GetMetadata().IsCubemap())
+        {
+            resultValue = E_INVALIDARG;
         }
 
         return resultValue;
@@ -370,16 +369,11 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         Gek::SH9Color sh = Gek::ProjectCubemapToSH(image);
 
         CStringA output;
-        output += ("float3 coefficients[9] = \r\n");
-        output += ("{\r\n");
         for (int i = 0; i < 9; i++)
         {
-            output.AppendFormat("    float3(%f, %f, %f),\r\n", sh.coefficients[i].x,
-                                                               sh.coefficients[i].y,
-                                                               sh.coefficients[i].z);
+            output.AppendFormat("    sh.coefficients[%d] = float3(%f, %f, %f);\r\n", i, sh.coefficients[i].x, sh.coefficients[i].y, sh.coefficients[i].z);
         }
 
-        output += ("};\r\n");
         printf(output);
     }
     catch (GeneratorException exception)

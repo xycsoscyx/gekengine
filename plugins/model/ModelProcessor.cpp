@@ -504,7 +504,7 @@ namespace Gek
             {
                 resultValue = E_FAIL;
             }
-            else if (shape.CompareNoCase(L"sphere") != 0)
+            else if (shape.CompareNoCase(L"sphere") == 0)
             {
                 resultValue = S_OK;
             }
