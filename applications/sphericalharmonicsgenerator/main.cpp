@@ -214,28 +214,28 @@ namespace Gek
         return resultValue;
     }
 
-    static const Math::Float3 nx(-1.0, 0.0, 0.0);
-    static const Math::Float3 px(1.0, 0.0, 0.0);
-    static const Math::Float3 ny(0.0, -1.0, 0.0);
-    static const Math::Float3 py(0.0, 1.0, 0.0);
-    static const Math::Float3 nz(0.0, 0.0, -1.0);
-    static const Math::Float3 pz(0.0, 0.0, 1.0);
+    static const Math::Float3 NegativeXAxis(-1.0, 0.0, 0.0);
+    static const Math::Float3 PositiveXAxis(1.0, 0.0, 0.0);
+    static const Math::Float3 NegativeYAxis(0.0, -1.0, 0.0);
+    static const Math::Float3 PositiveYAxis(0.0, 1.0, 0.0);
+    static const Math::Float3 NegativeZAxis(0.0, 0.0, -1.0);
+    static const Math::Float3 PositiveZAxis(0.0, 0.0, 1.0);
 
-    static const Math::Float3 cubemap_axis[6][3] =
+    static const Math::Float3 CubeMapAxis[6][3] =
     {
-        { pz, py, nx },
-        { nz, py, px },
-        { nx, nz, ny },
-        { nx, pz, py },
-        { nx, py, nz },
-        { px, py, pz },
+        { PositiveZAxis, PositiveYAxis, NegativeXAxis },
+        { NegativeZAxis, PositiveYAxis, PositiveXAxis },
+        { NegativeXAxis, NegativeZAxis, NegativeYAxis },
+        { NegativeXAxis, PositiveZAxis, PositiveYAxis },
+        { NegativeXAxis, PositiveYAxis, NegativeZAxis },
+        { PositiveXAxis, PositiveYAxis, PositiveZAxis },
     };
 
-    static Math::Float3 getVector(int F, float x, float y, float z)
+    static Math::Float3 getTexelDirection(int F, float x, float y, float z)
     {
-        Math::Float3 X = cubemap_axis[F][0];
-        Math::Float3 Y = cubemap_axis[F][1];
-        Math::Float3 Z = cubemap_axis[F][2];
+        Math::Float3 X = CubeMapAxis[F][0];
+        Math::Float3 Y = CubeMapAxis[F][1];
+        Math::Float3 Z = CubeMapAxis[F][2];
 
         Math::Float3 w;
         w[0] = X[0] * x + Y[0] * y + Z[0] * z;
@@ -244,7 +244,7 @@ namespace Gek
         return w.getNormal();
     }
 
-    float solid_angle(const Math::Float3 &a, const Math::Float3 &b, const Math::Float3 &c)
+    float calculateSolidAngle(const Math::Float3 &a, const Math::Float3 &b, const Math::Float3 &c)
     {
         float n = fabs(a[0] * (b[1] * c[2] - b[2] * c[1]) +
                        a[1] * (b[2] * c[0] - b[0] * c[2]) +
@@ -306,8 +306,8 @@ namespace Gek
 
     float calc_domega(const Math::Float3 &v00, const Math::Float3 &v01, const Math::Float3 &v10, const Math::Float3 &v11)
     {
-        return (solid_angle(v00, v11, v01) +
-                solid_angle(v11, v00, v10)) / (4 * PI);
+        return (calculateSolidAngle(v00, v11, v01) +
+                calculateSolidAngle(v11, v00, v10)) / (4 * PI);
     }
 
     SH9 calc_Y(const Math::Float3 &dir)
@@ -341,11 +341,11 @@ namespace Gek
                 float x  = (2.0f * (xpos + 0.5f) - N) / N;
                 float x1 = (2.0f * (xpos + 1.0f) - N) / N;
 
-                Math::Float3 v00 = getVector(F, x0, y0, 1.0f);
-                Math::Float3 v01 = getVector(F, x0, y1, 1.0f);
-                Math::Float3 v10 = getVector(F, x1, y0, 1.0f);
-                Math::Float3 v11 = getVector(F, x1, y1, 1.0f);
-                Math::Float3 v = getVector(F, x, y, 1.0f);
+                Math::Float3 v00 = getTexelDirection(F, x0, y0, 1.0f);
+                Math::Float3 v01 = getTexelDirection(F, x0, y1, 1.0f);
+                Math::Float3 v10 = getTexelDirection(F, x1, y0, 1.0f);
+                Math::Float3 v11 = getTexelDirection(F, x1, y1, 1.0f);
+                Math::Float3 v = getTexelDirection(F, x, y, 1.0f);
 
                 float dd = calc_domega(v00, v01, v10, v11);
 
@@ -416,7 +416,7 @@ namespace Gek
                 float y = (2.0f * (ypos + 0.5f) - float(N)) / float(N);
                 float x = (2.0f * (xpos + 0.5f) - float(N)) / float(N);
 
-                Math::Float3 v = getVector(F, x, y, 1.0f);
+                Math::Float3 v = getTexelDirection(F, x, y, 1.0f);
 
                 /* Compute the irradiance. */
                 Math::Float3 w = (M * v.w(1.0f)).xyz;
