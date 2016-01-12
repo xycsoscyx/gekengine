@@ -192,8 +192,8 @@ namespace Gek
                     texel.y = float(imageFace.pixels[offset + 1]) / 255.0f;
                     texel.z = float(imageFace.pixels[offset + 2]) / 255.0f;
 
-                    float u = (x + 0.5f) / width;
-                    float v = (y + 0.5f) / height;
+                    float u = (x + 0.5f) / float(width);
+                    float v = (y + 0.5f) / float(height);
 
                     // Account for cubemap texel distribution
                     u = u * 2.0f - 1.0f;
@@ -205,11 +205,9 @@ namespace Gek
                     result += ProjectOntoSH9Color(direction, texel) * weight;
                     weightSum += weight;
                 }
-
-                printf(".");
             }
 
-            printf("\r\n");
+            printf("..done\r\n");
         }
 
         result *= (4.0f * 3.14159f) / weightSum;
