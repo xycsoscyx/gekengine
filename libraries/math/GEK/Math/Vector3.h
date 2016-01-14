@@ -105,7 +105,7 @@ namespace Gek
             }
 
             // vector operations
-            inline Float3 operator = (const Float3 &vector)
+            inline Float3 &operator = (const Float3 &vector)
             {
                 x = vector.x;
                 y = vector.y;
@@ -162,7 +162,7 @@ namespace Gek
             }
 
             // scalar operations
-            inline Float3 operator = (float scalar)
+            inline Float3 &operator = (float scalar)
             {
                 x = scalar;
                 y = scalar;

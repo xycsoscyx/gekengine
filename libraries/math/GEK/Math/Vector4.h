@@ -110,7 +110,7 @@ namespace Gek
             }
 
             // vector operations
-            inline Float4 operator = (const Float4 &vector)
+            inline Float4 &operator = (const Float4 &vector)
             {
                 simd = vector.simd;
                 return (*this);
@@ -157,7 +157,7 @@ namespace Gek
             }
 
             // scalar operations
-            inline Float4 operator = (float scalar)
+            inline Float4 &operator = (float scalar)
             {
                 simd = _mm_set1_ps(scalar);
                 return (*this);

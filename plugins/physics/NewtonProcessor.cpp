@@ -405,16 +405,19 @@ namespace Gek
                                     const Surface &surface = getSurface(surfaceIndex);
                                     if (!surface.ghost)
                                     {
-                                        for (UINT32 index = 0; index < material.indexCount; index += 3)
+                                        typedef Math::Float3 Face[3];
+                                        UINT32 faceCount = (material.indexCount / 3);
+                                        std::vector<Face> materialFaceList(faceCount);
+                                        for (UINT32 face = 0; face < faceCount; ++face)
                                         {
-                                            Math::Float3 face[3] =
-                                            {
-                                                vertexList[material.firstVertex + indexList[material.firstIndex + index + 0]].position,
-                                                vertexList[material.firstVertex + indexList[material.firstIndex + index + 1]].position,
-                                                vertexList[material.firstVertex + indexList[material.firstIndex + index + 2]].position,
-                                            };
+                                            materialFaceList[face][0] = vertexList[material.firstVertex + indexList[material.firstIndex + (face * 3) + 0]].position;
+                                            materialFaceList[face][1] = vertexList[material.firstVertex + indexList[material.firstIndex + (face * 3) + 1]].position;
+                                            materialFaceList[face][2] = vertexList[material.firstVertex + indexList[material.firstIndex + (face * 3) + 2]].position;
+                                        }
 
-                                            NewtonTreeCollisionAddFace(newtonCollision, 3, face[0].data, sizeof(Math::Float3), surfaceIndex);
+                                        for (UINT32 face = 0; face < faceCount; ++face)
+                                        {
+                                            NewtonTreeCollisionAddFace(newtonCollision, 3, materialFaceList[face][0].data, sizeof(Math::Float3), surfaceIndex);
                                         }
                                     }
                                 }
