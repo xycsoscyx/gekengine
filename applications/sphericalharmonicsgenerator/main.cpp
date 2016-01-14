@@ -151,10 +151,10 @@ namespace Gek
                 }
             }
 
-            if (SUCCEEDED(resultValue) && image.GetMetadata().format != DXGI_FORMAT_R8G8B8A8_UNORM)
+            if (SUCCEEDED(resultValue) && image.GetMetadata().format != DXGI_FORMAT_R32G32B32A32_FLOAT)
             {
                 ::DirectX::ScratchImage rgbImage;
-                resultValue = ::DirectX::Convert(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_R8G8B8A8_UNORM, 0, 0.0f, rgbImage);
+                resultValue = ::DirectX::Convert(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0.0f, rgbImage);
                 if (SUCCEEDED(resultValue))
                 {
                     image = std::move(rgbImage);
@@ -346,18 +346,16 @@ namespace Gek
             for (int y = 0; y < imageSize; ++y)
             {
                 float v = (((y + 0.5f) / imageSizeFloat) * 2.0f) - 1.0f;
-                int texelIndexY = (y * imageFace.rowPitch);
 
+                float *pixels = (float *)&imageFace.pixels[y * imageFace.rowPitch];
                 for (int x = 0; x < imageSize; ++x)
                 {
                     float u = (((x + 0.5f) / imageSizeFloat) * 2.0f) - 1.0f;
 
-                    int texelIndex = (texelIndexY + (x * 4));
-
                     Math::Float4 sample;
-                    sample.x = float(imageFace.pixels[texelIndex + 0]) / 255.0f;
-                    sample.y = float(imageFace.pixels[texelIndex + 1]) / 255.0f;
-                    sample.z = float(imageFace.pixels[texelIndex + 2]) / 255.0f;
+                    sample.x = pixels[x * 4 + 0];
+                    sample.y = pixels[x * 4 + 1];
+                    sample.z = pixels[x * 4 + 2];
 
                     const float temp = 1.0f + u * u + v * v;
                     const float weight = 4.0f / (std::sqrt(temp) * temp);
