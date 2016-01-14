@@ -98,6 +98,7 @@ namespace Gek
                 return data;
             }
 
+            // vector operations
             inline Float2 operator = (const Float2 &vector)
             {
                 x = vector.x;
@@ -148,11 +149,83 @@ namespace Gek
             {
                 return Float2((x * vector.x), (y * vector.y));
             }
+
+            // scalar operations
+            inline Float2 operator = (float scalar)
+            {
+                x = scalar;
+                y = scalar;
+                return (*this);
+            }
+
+            inline void operator -= (float scalar)
+            {
+                x -= scalar;
+                y -= scalar;
+            }
+
+            inline void operator += (float scalar)
+            {
+                x += scalar;
+                y += scalar;
+            }
+
+            inline void operator /= (float scalar)
+            {
+                x /= scalar;
+                y /= scalar;
+            }
+
+            inline void operator *= (float scalar)
+            {
+                x *= scalar;
+                y *= scalar;
+            }
+
+            inline Float2 operator - (float scalar) const
+            {
+                return Float2((x - scalar), (y - scalar));
+            }
+
+            inline Float2 operator + (float scalar) const
+            {
+                return Float2((x + scalar), (y + scalar));
+            }
+
+            inline Float2 operator / (float scalar) const
+            {
+                return Float2((x / scalar), (y / scalar));
+            }
+
+            inline Float2 operator * (float scalar) const
+            {
+                return Float2((x * scalar), (y * scalar));
+            }
         };
 
         inline Float2 operator - (const Float2 &vector)
         {
             return Float2(-vector.x, -vector.y);
+        }
+
+        inline Float2 operator + (float scalar, const Float2 &vector)
+        {
+            return Float2(scalar + vector.x, scalar + vector.y);
+        }
+
+        inline Float2 operator - (float scalar, const Float2 &vector)
+        {
+            return Float2(scalar - vector.x, scalar - vector.y);
+        }
+
+        inline Float2 operator * (float scalar, const Float2 &vector)
+        {
+            return Float2(scalar * vector.x, scalar * vector.y);
+        }
+
+        inline Float2 operator / (float scalar, const Float2 &vector)
+        {
+            return Float2(scalar / vector.x, scalar / vector.y);
         }
     }; // namespace Math
 }; // namespace Gek

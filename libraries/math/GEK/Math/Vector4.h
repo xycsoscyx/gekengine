@@ -109,6 +109,7 @@ namespace Gek
                 return data;
             }
 
+            // vector operations
             inline Float4 operator = (const Float4 &vector)
             {
                 simd = vector.simd;
@@ -154,11 +155,78 @@ namespace Gek
             {
                 return _mm_mul_ps(simd, vector.simd);
             }
+
+            // scalar operations
+            inline Float4 operator = (float scalar)
+            {
+                simd = _mm_set1_ps(scalar);
+                return (*this);
+            }
+
+            inline void operator -= (float scalar)
+            {
+                simd = _mm_sub_ps(simd, _mm_set1_ps(scalar));
+            }
+
+            inline void operator += (float scalar)
+            {
+                simd = _mm_add_ps(simd, _mm_set1_ps(scalar));
+            }
+
+            inline void operator /= (float scalar)
+            {
+                simd = _mm_div_ps(simd, _mm_set1_ps(scalar));
+            }
+
+            inline void operator *= (float scalar)
+            {
+                simd = _mm_mul_ps(simd, _mm_set1_ps(scalar));
+            }
+
+            inline Float4 operator - (float scalar) const
+            {
+                return _mm_sub_ps(simd, _mm_set1_ps(scalar));
+            }
+
+            inline Float4 operator + (float scalar) const
+            {
+                return _mm_add_ps(simd, _mm_set1_ps(scalar));
+            }
+
+            inline Float4 operator / (float scalar) const
+            {
+                return _mm_div_ps(simd, _mm_set1_ps(scalar));
+            }
+
+            inline Float4 operator * (float scalar) const
+            {
+                return _mm_mul_ps(simd, _mm_set1_ps(scalar));
+            }
         };
 
         inline Float4 operator - (const Float4 &vector)
         {
             return _mm_sub_ps(_mm_set1_ps(0.0f), vector.simd);
+        }
+
+        inline Float4 operator + (float scalar, const Float4 &vector)
+        {
+            return _mm_add_ps(_mm_set1_ps(scalar), vector.simd);
+        }
+
+        inline Float4 operator - (float scalar, const Float4 &vector)
+        {
+            return _mm_sub_ps(_mm_set1_ps(scalar), vector.simd);
+        }
+
+        inline Float4 operator * (float scalar, const Float4 &vector)
+        {
+            return _mm_mul_ps(_mm_set1_ps(scalar), vector.simd);
+        }
+
+        inline Float4 operator / (float scalar, const Float4 &vector)
+        {
+            return _mm_div_ps(_mm_set1_ps(scalar), vector.simd);
         }
     }; // namespace Math
 }; // namespace Gek

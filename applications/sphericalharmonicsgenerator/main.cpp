@@ -37,78 +37,149 @@ namespace Gek
     static const float CosineA1 = 2.0f / 3.0f;
     static const float CosineA2 = 0.25f;
 
-    class SH9
+    template <typename TYPE, int SIZE>
+    class SH
     {
     public:
-        float coefficients[9];
+        TYPE coefficients[SIZE];
 
     public:
-        SH9(void)
-            : coefficients{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+        SH(void)
         {
-        }
-
-        const float &operator[] (int index) const
-        {
-            return coefficients[index];
-        }
-
-        float &operator[] (int index)
-        {
-            return coefficients[index];
-        }
-    };
-
-    class SH9Color
-    {
-    public:
-        Math::Float4 coefficients[9];
-        float totalScale;
-
-    public:
-        SH9Color(void)
-            : totalScale(0.0f)
-        {
-        }
-
-        const Math::Float4 &operator[] (int index) const
-        {
-            return coefficients[index];
-        }
-
-        Math::Float4 &operator[] (int index)
-        {
-            return coefficients[index];
-        }
-
-        SH9Color operator * (float scalar)
-        {
-            SH9Color result;
-            for (int i = 0; i < 9; ++i)
+            for (int index = 0; index < SIZE; ++index)
             {
-                result.coefficients[i] = coefficients[i] * scalar;
+                coefficients[index] = TYPE(0.0f);
+            }
+        }
+
+        const TYPE &operator[] (int index) const
+        {
+            return coefficients[index];
+        }
+
+        TYPE &operator[] (int index)
+        {
+            return coefficients[index];
+        }
+
+        SH &operator = (const SH &other)
+        {
+            for (int index = 0; index < SIZE; ++index)
+            {
+                coefficients[index] = other.coefficients[index];
+            }
+
+            return (*this);
+        }
+
+        SH operator + (const SH &other)
+        {
+            SH result;
+            for (int index = 0; index < SIZE; ++index)
+            {
+                result[index] = coefficients[index] + other.coefficients[index];
             }
 
             return result;
         }
 
-        void operator += (const SH9Color &sphericalHarmonics)
+        SH operator - (const SH &other)
         {
-            totalScale += sphericalHarmonics.totalScale;
-            for (int i = 0; i < 9; ++i)
+            SH result;
+            for (int index = 0; index < SIZE; ++index)
             {
-                coefficients[i] += sphericalHarmonics.coefficients[i];
+                result[index] = coefficients[index] - other.coefficients[index];
             }
+
+            return result;
         }
 
-        void operator *= (float scalar)
+        SH operator * (const SH &other)
         {
-            for (int i = 0; i < 9; ++i)
+            SH result;
+            for (int index = 0; index < SIZE; ++index)
             {
-                coefficients[i] *= scalar;
+                result[index] = coefficients[index] * other.coefficients[index];
             }
+
+            return result;
+        }
+
+        SH operator * (const TYPE &scale)
+        {
+            SH result;
+            for (int index = 0; index < SIZE; ++index)
+            {
+                result[index] = coefficients[index] * scale;
+            }
+
+            return result;
+        }
+
+        SH operator / (const TYPE &scale)
+        {
+            SH result;
+            for (int index = 0; index < SIZE; ++index)
+            {
+                result[index] = coefficients[index] / scale;
+            }
+
+            return result;
+        }
+
+        SH &operator += (const SH &other)
+        {
+            for (int index = 0; index < SIZE; ++index)
+            {
+                coefficients[index] += other.coefficients[index];
+            }
+
+            return (*this);
+        }
+
+        SH &operator -= (const SH &other)
+        {
+            for (int index = 0; index < SIZE; ++index)
+            {
+                coefficients[index] -= other.coefficients[index];
+            }
+
+            return (*this);
+        }
+
+        SH &operator *= (const SH &other)
+        {
+            for (int index = 0; index < SIZE; ++index)
+            {
+                coefficients[index] *= other.coefficients[index];
+            }
+
+            return (*this);
+        }
+
+        SH &operator *= (const TYPE &scale)
+        {
+            for (int index = 0; index < SIZE; ++index)
+            {
+                coefficients[index] *= scale;
+            }
+
+            return (*this);
+        }
+
+        SH &operator /= (const TYPE &scale)
+        {
+            for (int index = 0; index < SIZE; ++index)
+            {
+                coefficients[index] /= scale;
+            }
+
+            return (*this);
         }
     };
+
+    typedef SH<float, 9> SH9;
+    typedef SH<Math::Float4, 9> SH9Color;
 
     HRESULT loadTexture(LPCWSTR fileName, ::DirectX::ScratchImage &image)
     {

@@ -104,6 +104,7 @@ namespace Gek
                 return data;
             }
 
+            // vector operations
             inline Float3 operator = (const Float3 &vector)
             {
                 x = vector.x;
@@ -159,11 +160,88 @@ namespace Gek
             {
                 return Float3((x * vector.x), (y * vector.y), (z * vector.z));
             }
+
+            // scalar operations
+            inline Float3 operator = (float scalar)
+            {
+                x = scalar;
+                y = scalar;
+                z = scalar;
+                return (*this);
+            }
+
+            inline void operator -= (float scalar)
+            {
+                x -= scalar;
+                y -= scalar;
+                z -= scalar;
+            }
+
+            inline void operator += (float scalar)
+            {
+                x += scalar;
+                y += scalar;
+                z += scalar;
+            }
+
+            inline void operator /= (float scalar)
+            {
+                x /= scalar;
+                y /= scalar;
+                z /= scalar;
+            }
+
+            inline void operator *= (float scalar)
+            {
+                x *= scalar;
+                y *= scalar;
+                z *= scalar;
+            }
+
+            inline Float3 operator - (float scalar) const
+            {
+                return Float3((x - scalar), (y - scalar), (z - scalar));
+            }
+
+            inline Float3 operator + (float scalar) const
+            {
+                return Float3((x + scalar), (y + scalar), (z + scalar));
+            }
+
+            inline Float3 operator / (float scalar) const
+            {
+                return Float3((x / scalar), (y / scalar), (z / scalar));
+            }
+
+            inline Float3 operator * (float scalar) const
+            {
+                return Float3((x * scalar), (y * scalar), (z * scalar));
+            }
         };
 
         inline Float3 operator - (const Float3 &vector)
         {
             return Float3(-vector.x, -vector.y, -vector.z);
+        }
+
+        inline Float3 operator + (float scalar, const Float3 &vector)
+        {
+            return Float3(scalar + vector.x, scalar + vector.y, scalar + vector.z);
+        }
+
+        inline Float3 operator - (float scalar, const Float3 &vector)
+        {
+            return Float3(scalar - vector.x, scalar - vector.y, scalar - vector.z);
+        }
+
+        inline Float3 operator * (float scalar, const Float3 &vector)
+        {
+            return Float3(scalar * vector.x, scalar * vector.y, scalar * vector.z);
+        }
+
+        inline Float3 operator / (float scalar, const Float3 &vector)
+        {
+            return Float3(scalar / vector.x, scalar / vector.y, scalar / vector.z);
         }
     }; // namespace Math
 }; // namespace Gek
