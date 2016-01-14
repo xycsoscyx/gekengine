@@ -10,7 +10,6 @@
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    return 0;
     float3 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float2 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float materialRoughness = ((materialInfo.x * 0.9) + 0.1); // account for infinitely small point lights

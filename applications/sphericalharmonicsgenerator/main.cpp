@@ -1,6 +1,7 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\Common.h"
+#include "GEK\Math\Common.h"
 #include "GEK\Math\Matrix4x4.h"
 #include <DirectXTex.h>
 #include <atlbase.h>
@@ -62,8 +63,14 @@ namespace Gek
     {
     public:
         Math::Float4 coefficients[9];
+        float totalScale;
 
     public:
+        SH9Color(void)
+            : totalScale(0.0f)
+        {
+        }
+
         const Math::Float4 &operator[] (int index) const
         {
             return coefficients[index];
@@ -85,11 +92,12 @@ namespace Gek
             return result;
         }
 
-        void operator += (const SH9Color &sh)
+        void operator += (const SH9Color &sphericalHarmonics)
         {
+            totalScale += sphericalHarmonics.totalScale;
             for (int i = 0; i < 9; ++i)
             {
-                coefficients[i] += sh.coefficients[i];
+                coefficients[i] += sphericalHarmonics.coefficients[i];
             }
         }
 
@@ -152,8 +160,24 @@ namespace Gek
                     image = std::move(rgbImage);
                 }
             }
+
+            if (SUCCEEDED(resultValue) && !image.GetMetadata().IsCubemap())
+            {
+                ::DirectX::ScratchImage resized;
+                resultValue = ::DirectX::Resize(image.GetImages()[0], 256, 256, 0, resized);
+                if (SUCCEEDED(resultValue))
+                {
+                    image = std::move(resized);
+                }
+            }
         }
 
+        return resultValue;
+    }
+
+    HRESULT loadCubeMap(LPCWSTR fileName, ::DirectX::ScratchImage &image)
+    {
+        HRESULT resultValue = loadTexture(fileName, image);
         if (SUCCEEDED(resultValue) && !image.GetMetadata().IsCubemap())
         {
             resultValue = E_INVALIDARG;
@@ -162,7 +186,7 @@ namespace Gek
         return resultValue;
     }
 
-    HRESULT loadCubeMap(LPCWSTR directory, ::DirectX::ScratchImage &image)
+    HRESULT loadIntoCubeMap(LPCWSTR directory, ::DirectX::ScratchImage &image)
     {
         HRESULT resultValue = E_FAIL;
         ::DirectX::ScratchImage cubeMapList[6];
@@ -214,240 +238,139 @@ namespace Gek
         return resultValue;
     }
 
-    static const Math::Float3 NegativeXAxis(-1.0, 0.0, 0.0);
-    static const Math::Float3 PositiveXAxis(1.0, 0.0, 0.0);
-    static const Math::Float3 NegativeYAxis(0.0, -1.0, 0.0);
-    static const Math::Float3 PositiveYAxis(0.0, 1.0, 0.0);
-    static const Math::Float3 NegativeZAxis(0.0, 0.0, -1.0);
-    static const Math::Float3 PositiveZAxis(0.0, 0.0, 1.0);
-
-    static const Math::Float3 CubeMapAxis[6][3] =
-    {
-        { PositiveZAxis, PositiveYAxis, NegativeXAxis },
-        { NegativeZAxis, PositiveYAxis, PositiveXAxis },
-        { NegativeXAxis, NegativeZAxis, NegativeYAxis },
-        { NegativeXAxis, PositiveZAxis, PositiveYAxis },
-        { NegativeXAxis, PositiveYAxis, NegativeZAxis },
-        { PositiveXAxis, PositiveYAxis, PositiveZAxis },
-    };
-
-    static Math::Float3 getTexelDirection(int F, float x, float y, float z)
-    {
-        Math::Float3 X = CubeMapAxis[F][0];
-        Math::Float3 Y = CubeMapAxis[F][1];
-        Math::Float3 Z = CubeMapAxis[F][2];
-
-        Math::Float3 w;
-        w[0] = X[0] * x + Y[0] * y + Z[0] * z;
-        w[1] = X[1] * x + Y[1] * y + Z[1] * z;
-        w[2] = X[2] * x + Y[2] * y + Z[2] * z;
-        return w.getNormal();
-    }
-
-    float calculateSolidAngle(const Math::Float3 &a, const Math::Float3 &b, const Math::Float3 &c)
-    {
-        float n = fabs(a[0] * (b[1] * c[2] - b[2] * c[1]) +
-                       a[1] * (b[2] * c[0] - b[0] * c[2]) +
-                       a[2] * (b[0] * c[1] - b[1] * c[0]));
-
-        float d = 1.0f + a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-                       + a[0] * c[0] + a[1] * c[1] + a[2] * c[2]
-                       + b[0] * c[0] + b[1] * c[1] + b[2] * c[2];
-
-        return 2.0f * std::atan2(n, d);
-    }
-
-    SH9Color sph_grace_cathedral(void)
-    {
-        SH9Color sh;
-        sh.coefficients[0] = Math::Float3(0.79f, 0.44f, 0.54f).w(0.0f);
-        sh.coefficients[1] = Math::Float3(0.39f, 0.35f, 0.60f).w(0.0f);
-        sh.coefficients[2] = Math::Float3(-0.34f, -0.18f, -0.27f).w(0.0f);
-        sh.coefficients[3] = Math::Float3(-0.29f, -0.06f, 0.01f).w(0.0f);
-        sh.coefficients[4] = Math::Float3(-0.11f, -0.05f, -0.12f).w(0.0f);
-        sh.coefficients[5] = Math::Float3(-0.26f, -0.22f, -0.47f).w(0.0f);
-        sh.coefficients[6] = Math::Float3(-0.16f, -0.09f, -0.15f).w(0.0f);
-        sh.coefficients[7] = Math::Float3(0.56f, 0.21f, 0.14f).w(0.0f);
-        sh.coefficients[8] = Math::Float3(0.21f, -0.05f, -0.30f).w(0.0f);
-        return sh;
-    }
-
-    SH9Color sph_eucalyptus_grove(void)
-    {
-        SH9Color sh;
-        sh.coefficients[0] = Math::Float3(0.38f, 0.43f, 0.45f).w(0.0f);
-        sh.coefficients[1] = Math::Float3(0.29f, 0.36f, 0.41f).w(0.0f);
-        sh.coefficients[2] = Math::Float3(0.04f, 0.03f, 0.01f).w(0.0f);
-        sh.coefficients[3] = Math::Float3(-0.10f, -0.10f, -0.09f).w(0.0f);
-        sh.coefficients[4] = Math::Float3(-0.06f, -0.06f, -0.04f).w(0.0f);
-        sh.coefficients[5] = Math::Float3(0.01f, -0.01f, -0.05f).w(0.0f);
-        sh.coefficients[6] = Math::Float3(-0.09f, -0.13f, -0.15f).w(0.0f);
-        sh.coefficients[7] = Math::Float3(-0.06f, -0.05f, -0.04f).w(0.0f);
-        sh.coefficients[8] = Math::Float3(0.02f, -0.00f, -0.05f).w(0.0f);
-        return sh;
-    }
-
-    SH9Color sph_st_peters_basilica(void)
-    {
-        SH9Color sh;
-        sh.coefficients[0] = Math::Float3(0.36f, 0.26f, 0.23f).w(0.0f);
-        sh.coefficients[1] = Math::Float3(0.18f, 0.14f, 0.13f).w(0.0f);
-        sh.coefficients[2] = Math::Float3(-0.02f, -0.01f, -0.00f).w(0.0f);
-        sh.coefficients[3] = Math::Float3(0.03f, 0.02f, 0.01f).w(0.0f);
-        sh.coefficients[4] = Math::Float3(0.02f, 0.01f, 0.00f).w(0.0f);
-        sh.coefficients[5] = Math::Float3(-0.05f, -0.03f, -0.01f).w(0.0f);
-        sh.coefficients[6] = Math::Float3(-0.09f, -0.08f, -0.07f).w(0.0f);
-        sh.coefficients[7] = Math::Float3(0.01f, 0.00f, 0.00f).w(0.0f);
-        sh.coefficients[8] = Math::Float3(-0.08f, -0.06f, 0.00f).w(0.0f);
-        return sh;
-    }
-
-    /*----------------------------------------------------------------------------*/
-
-    float calc_domega(const Math::Float3 &v00, const Math::Float3 &v01, const Math::Float3 &v10, const Math::Float3 &v11)
-    {
-        return (calculateSolidAngle(v00, v11, v01) +
-                calculateSolidAngle(v11, v00, v10)) / (4 * PI);
-    }
-
-    SH9 calc_Y(const Math::Float3 &dir)
+    SH9 ProjectOntoSH9(const Math::Float3& dir)
     {
         SH9 sh;
+
+        // Band 0
         sh[0] = 0.282095f;
+
+        // Band 1
         sh[1] = 0.488603f * dir.y;
         sh[2] = 0.488603f * dir.z;
         sh[3] = 0.488603f * dir.x;
+
+        // Band 2
         sh[4] = 1.092548f * dir.x * dir.y;
         sh[5] = 1.092548f * dir.y * dir.z;
         sh[6] = 0.315392f * (3.0f * dir.z * dir.z - 1.0f);
         sh[7] = 1.092548f * dir.x * dir.z;
         sh[8] = 0.546274f * (dir.x * dir.x - dir.y * dir.y);
+
         return sh;
     }
 
-    SH9Color env_to_sph_face(const ::DirectX::Image &image, int F)
+    SH9Color ProjectOntoSH9Color(const Math::Float3& dir, const Math::Float4& color)
     {
-        SH9Color L;
-        int N = image.width;
-        for (int ypos = 0; ypos < N; ++ypos)
+        SH9 sh = ProjectOntoSH9(dir);
+
+        SH9Color shColor;
+        for (int i = 0; i < 9; ++i)
         {
-            for (int xpos = 0; xpos < N; ++xpos)
+            shColor[i] = color * sh[i];
+        }
+
+        return shColor;
+    }
+
+    Math::Float4 EvalSH9Cosine(const Math::Float3& dir, const SH9Color& sh)
+    {
+        SH9 dirSH = ProjectOntoSH9(dir);
+        dirSH[0] *= CosineA0;
+        dirSH[1] *= CosineA1;
+        dirSH[2] *= CosineA1;
+        dirSH[3] *= CosineA1;
+        dirSH[4] *= CosineA2;
+        dirSH[5] *= CosineA2;
+        dirSH[6] *= CosineA2;
+        dirSH[7] *= CosineA2;
+        dirSH[8] *= CosineA2;
+
+        Math::Float4 result;
+        for (int i = 0; i < 9; ++i)
+        {
+            result += sh[i] * dirSH[i];
+        }
+
+        return result;
+    }
+
+    // Utility function to vmap a XY + Side coordinate to a direction vector
+    Math::Float3 MapXYSToDirection(int face, float u, float v)
+    {
+        v *= -1.0f;
+
+        Math::Float3 dir = 0.0f;
+
+        // +x, -x, +y, -y, +z, -z
+        switch (face)
+        {
+        case 0:
+            dir = Math::Float3(1.0f, v, -u);
+            break;
+
+        case 1:
+            dir = Math::Float3(-1.0f, v, u);
+            break;
+
+        case 2:
+            dir = Math::Float3(u, 1.0f, -v);
+            break;
+
+        case 3:
+            dir = Math::Float3(u, -1.0f, v);
+            break;
+
+        case 4:
+            dir = Math::Float3(u, v, 1.0f);
+            break;
+
+        case 5:
+            dir = Math::Float3(-u, v, -1.0f);
+            break;
+        };
+
+        return dir.getNormal();
+    }
+
+    SH9Color ProjectCubeMapToSH(const ::DirectX::ScratchImage &image)
+    {
+        int imageSize = image.GetMetadata().width;
+        float imageSizeFloat = float(imageSize);
+
+        SH9Color result;
+        float weightSum = 0.0f;
+        for (int face = 0; face < 6; ++face)
+        {
+            ::DirectX::Image imageFace(image.GetImages()[face]);
+            for (int y = 0; y < imageSize; ++y)
             {
-                /* Compute the direction vector to this pixel. */
-                float y0 = (2.0f * (ypos) - N) / N;
-                float y  = (2.0f * (ypos + 0.5f) - N) / N;
-                float y1 = (2.0f * (ypos + 1.0f) - N) / N;
-                float x0 = (2.0f * (xpos) - N) / N;
-                float x  = (2.0f * (xpos + 0.5f) - N) / N;
-                float x1 = (2.0f * (xpos + 1.0f) - N) / N;
+                float v = (((y + 0.5f) / imageSizeFloat) * 2.0f) - 1.0f;
+                int texelIndexY = (y * imageFace.rowPitch);
 
-                Math::Float3 v00 = getTexelDirection(F, x0, y0, 1.0f);
-                Math::Float3 v01 = getTexelDirection(F, x0, y1, 1.0f);
-                Math::Float3 v10 = getTexelDirection(F, x1, y0, 1.0f);
-                Math::Float3 v11 = getTexelDirection(F, x1, y1, 1.0f);
-                Math::Float3 v = getTexelDirection(F, x, y, 1.0f);
-
-                float dd = calc_domega(v00, v01, v10, v11);
-
-                SH9 Y = calc_Y(v);
-
-                Math::Float3 p;
-                p.x = float(image.pixels[(ypos * image.rowPitch) + (xpos * 4) + 0]) / 255.0f;
-                p.y = float(image.pixels[(ypos * image.rowPitch) + (xpos * 4) + 1]) / 255.0f;
-                p.z = float(image.pixels[(ypos * image.rowPitch) + (xpos * 4) + 2]) / 255.0f;
-                for (int k = 0; k < 3; ++k)
+                for (int x = 0; x < imageSize; ++x)
                 {
-                    L[0][k] += Y[0] * p[k] * dd;
-                    L[1][k] += Y[1] * p[k] * dd;
-                    L[2][k] += Y[2] * p[k] * dd;
-                    L[3][k] += Y[3] * p[k] * dd;
-                    L[4][k] += Y[4] * p[k] * dd;
-                    L[5][k] += Y[5] * p[k] * dd;
-                    L[6][k] += Y[6] * p[k] * dd;
-                    L[7][k] += Y[7] * p[k] * dd;
-                    L[8][k] += Y[8] * p[k] * dd;
+                    float u = (((x + 0.5f) / imageSizeFloat) * 2.0f) - 1.0f;
+
+                    int texelIndex = (texelIndexY + (x * 4));
+
+                    Math::Float4 sample;
+                    sample.x = float(imageFace.pixels[texelIndex + 0]) / 255.0f;
+                    sample.y = float(imageFace.pixels[texelIndex + 1]) / 255.0f;
+                    sample.z = float(imageFace.pixels[texelIndex + 2]) / 255.0f;
+
+                    const float temp = 1.0f + u * u + v * v;
+                    const float weight = 4.0f / (std::sqrt(temp) * temp);
+
+                    Math::Float3 dir = MapXYSToDirection(face, u, v);
+                    result += ProjectOntoSH9Color(dir, sample) * weight;
+                    weightSum += weight;
                 }
             }
         }
 
-        return L;
-    }
-
-    SH9Color env_to_sph(const ::DirectX::ScratchImage &image)
-    {
-        SH9Color L;
-        for (int F = 0; F < 6; ++F)
-        {
-            L += env_to_sph_face(image.GetImages()[F], F);
-        }
-
-        return L;
-    }
-
-    Math::Float4x4 irrmatrix(float Lzz, float Lpn, float Lpz,
-                             float Lpp, float Lqm, float Lqn,
-                             float Lqz, float Lqp, float Lqq)
-    {
-        const float c1 = 0.429043f;
-        const float c2 = 0.511664f;
-        const float c3 = 0.743125f;
-        const float c4 = 0.886227f;
-        const float c5 = 0.247708f;
-
-        return Math::Float4x4(
-        {
-            c1 * Lqq, c1 * Lqm, c1 * Lqp, c2 * Lpp,
-            c1 * Lqm,-c1 * Lqq, c1 * Lqn, c2 * Lpn,
-            c1 * Lqp, c1 * Lqn, c3 * Lqz, c2 * Lpz,
-            c2 * Lpp, c2 * Lpn, c2 * Lpz, c4 * Lzz - c5 * Lqz,
-        });
-    }
-
-    void sph_to_irr_face(const ::DirectX::Image &image, const Math::Float4x4 &M, int F, int k)
-    {
-        int N = image.width;
-
-        /* Iterate over all pixels of the current cube face. */
-        for (int ypos = 0; ypos < N; ++ypos)
-        {
-            for (int xpos = 0; xpos < N; ++xpos)
-            {
-                /* Compute the direction vector of the current pixel. */
-                float y = (2.0f * (ypos + 0.5f) - float(N)) / float(N);
-                float x = (2.0f * (xpos + 0.5f) - float(N)) / float(N);
-
-                Math::Float3 v = getTexelDirection(F, x, y, 1.0f);
-
-                /* Compute the irradiance. */
-                Math::Float3 w = (M * v.w(1.0f)).xyz;
-                image.pixels[(ypos * image.rowPitch) + (xpos * 4) + k] = unsigned char(v.dot(w) * 255.0f);
-            }
-        }
-    }
-
-    SH9Color sph_to_irr(const SH9Color &L, int N)
-    {
-        ::DirectX::ScratchImage image;
-        image.InitializeCube(DXGI_FORMAT_R8G8B8A8_UNORM, N, N, 1, 0);
-
-        /* Iterate over all cube faces. */
-        for (int F = 0; F < 6; ++F)
-        {
-            /* Iterate over all channels. */
-            for (int k = 0; k < 3; ++k)
-            {
-                /* Generate the irradiance matrix for the current channel. */
-                Math::Float4x4 M = irrmatrix(L[0][k], L[1][k], L[2][k],
-                                             L[3][k], L[4][k], L[5][k],
-                                             L[6][k], L[7][k], L[8][k]);
-
-                /* Render the current cube face using the current irradiance. */
-                sph_to_irr_face(image.GetImages()[F], M, F, k);
-            }
-        }
-
-        ::DirectX::SaveToDDSFile(image.GetImages(), image.GetImageCount(), image.GetMetadata(), 0, L".//sh.dds");
-        return env_to_sph(image);
+        result *= (4.0f * 3.14159f) / weightSum;
+        return result;
     }
 };
 
@@ -482,24 +405,27 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Release"));
 #endif
         ::DirectX::ScratchImage image;
-        HRESULT resultValue = Gek::loadTexture(fileNameInput, image);
+        HRESULT resultValue = Gek::loadCubeMap(fileNameInput, image);
         if (FAILED(resultValue))
         {
-            resultValue = Gek::loadCubeMap(fileNameInput, image);
+            resultValue = Gek::loadIntoCubeMap(fileNameInput, image);
+            if (SUCCEEDED(resultValue))
+            {
+                ::DirectX::SaveToDDSFile(image.GetImages(), image.GetImageCount(), image.GetMetadata(), 0, fileNameInput + L"\\cubemap.dds");
+            }
         }
 
         if (SUCCEEDED(resultValue))
         {
-            Gek::SH9Color sh = Gek::env_to_sph(image);
-
-            Gek::SH9Color ish = Gek::sph_to_irr(sh, 32);
+            Gek::SH9Color sphericalHarmonics = Gek::ProjectCubeMapToSH(image);
 
             CStringA output;
             for (int i = 0; i < 9; i++)
             {
-                output.AppendFormat("    sh.coefficients[%d] = float3(%f, %f, %f);\r\n", i, ish[i].x, ish[i].y, ish[i].z);
+                output.AppendFormat("    radiance.coefficients[%d] = float3(%f, %f, %f);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
             }
 
+            Gek::FileSystem::save(L"..//data//programs//Standard//radiance.h", output);
             printf(output);
         }
     }

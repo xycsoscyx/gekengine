@@ -3,7 +3,7 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-static const float AmbientLevel = 1.0;
+static const float AmbientLevel = 0.01;
 
 static const float3 SkyColor = float3((88.0 / 255.0), (58.0 / 255.0), (129.0 / 25.0));
 static const float3 HorizonColor = float3(0, 0, 0);
@@ -19,9 +19,9 @@ float3 getHemisphericalAmbient(float3 surfaceNormal)
     return (GroundColor * up + SkyColor * down + HorizonColor * middle);
 }
 
-static const float CosineA0 = 1.0;
-static const float CosineA1 = 2.0 / 3.0;
-static const float CosineA2 = 0.25;
+static const float CosineA0 = Math::Pi;
+static const float CosineA1 = (2.0 * Math::Pi) / 3.0;
+static const float CosineA2 = Math::Pi * 0.25;
 
 struct SH9
 {
@@ -33,64 +33,38 @@ struct SH9Color
     float3 coefficients[9];
 };
 
-SH9 ProjectOntoSH9(float3 dir)
+float3 EvaluateSphericalHarmonics(float3 normal, SH9Color radiance)
 {
-    SH9 sh;
+    static const float C1 = 0.429043;
+    static const float C2 = 0.511664;
+    static const float C3 = 0.743125;
+    static const float C4 = 0.886227;
+    static const float C5 = 0.247708;
 
-    // Band 0
-    sh.coefficients[0] = 0.282095;
+    return
 
-    // Band 1
-    sh.coefficients[1] = 0.488603 * dir.y;
-    sh.coefficients[2] = 0.488603 * dir.z;
-    sh.coefficients[3] = 0.488603 * dir.x;
+        // constant term, lowest frequency //////
+        C4 * radiance.coefficients[0] +
 
-    // Band 2
-    sh.coefficients[4] = 1.092548 * dir.x * dir.y;
-    sh.coefficients[5] = 1.092548 * dir.y * dir.z;
-    sh.coefficients[6] = 0.315392 * (3.0 * dir.z * dir.z - 1.0);
-    sh.coefficients[7] = 1.092548 * dir.x * dir.z;
-    sh.coefficients[8] = 0.546274 * (dir.x * dir.x - dir.y * dir.y);
+        // axis aligned terms ///////////////////
+        2.0 * C2 * radiance.coefficients[1] * normal.y +
+        2.0 * C2 * radiance.coefficients[2] * normal.z +
+        2.0 * C2 * radiance.coefficients[3] * normal.x +
 
-    return sh;
-}
-
-float3 EvalSH9Cosine(float3 dir, SH9Color sh)
-{
-    SH9 dirSH = ProjectOntoSH9(dir);
-    dirSH.coefficients[0] *= CosineA0;
-    dirSH.coefficients[1] *= CosineA1;
-    dirSH.coefficients[2] *= CosineA1;
-    dirSH.coefficients[3] *= CosineA1;
-    dirSH.coefficients[4] *= CosineA2;
-    dirSH.coefficients[5] *= CosineA2;
-    dirSH.coefficients[6] *= CosineA2;
-    dirSH.coefficients[7] *= CosineA2;
-    dirSH.coefficients[8] *= CosineA2;
-
-    float3 result = 0.0;
-    for (uint i = 0; i < 9; ++i)
-    {
-        result += dirSH.coefficients[i] * sh.coefficients[i];
-    }
-
-    return result;
+        // band 2 terms /////////////////////////
+        2.0 * C1 * radiance.coefficients[4] * normal.x * normal.y +
+        2.0 * C1 * radiance.coefficients[5] * normal.y * normal.z +
+        C3 * radiance.coefficients[6] * normal.z * normal.z - C5 * radiance.coefficients[6] +
+        2.0 * C1 * radiance.coefficients[7] * normal.x * normal.z +
+        C1 * radiance.coefficients[8] * (normal.x * normal.x - normal.y * normal.y);
 }
 
 // http://www.gamedev.net/topic/671562-spherical-harmonics-cubemap/
 float3 getSphericalHarmonicDiffuse(float3 surfaceNormal)
 {
-    SH9Color sh;
-    sh.coefficients[0] = float3(0.167524, 0.168247, 0.171347);
-    sh.coefficients[1] = float3(0.106371, 0.105560, 0.105015);
-    sh.coefficients[2] = float3(0.049939, 0.050512, 0.049984);
-    sh.coefficients[3] = float3(-0.009429, -0.010265, -0.007534);
-    sh.coefficients[4] = float3(0.000388, 0.000894, 0.001921);
-    sh.coefficients[5] = float3(-0.029572, -0.029955, -0.030386);
-    sh.coefficients[6] = float3(0.071940, 0.071332, 0.068708);
-    sh.coefficients[7] = float3(0.002985, 0.001814, -0.001255);
-    sh.coefficients[8] = float3(0.004516, 0.005567, 0.010872);
-    return EvalSH9Cosine(surfaceNormal, sh);
+    SH9Color radiance;
+#include "radiance.h"
+    return EvaluateSphericalHarmonics(surfaceNormal, radiance);
 }
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
@@ -99,10 +73,8 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
     surfaceNormal = mul(surfaceNormal, (float3x3)Camera::viewMatrix);
 
-#ifdef true
     float3 ambient = getSphericalHarmonicDiffuse(surfaceNormal);
-#else
-    float3 ambient = getHemisphericalAmbient(surfaceNormal);
-#endif
-    return ambient;// *materialAlbedo * AmbientLevel;
+    //float3 ambient = getHemisphericalAmbient(surfaceNormal);
+
+    return ambient * materialAlbedo * AmbientLevel;
 }
