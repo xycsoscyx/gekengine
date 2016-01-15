@@ -28,8 +28,10 @@ namespace Gek
         Gek::Timer timer;
         double updateAccumulator;
         CComPtr<VideoSystem> video;
-        CComPtr<Population> population;
+        CComPtr<Resources> resources;
         CComPtr<Render> render;
+
+        CComPtr<Population> population;
         std::list<CComPtr<Processor>> processorList;
 
         UINT32 updateHandle;
@@ -78,6 +80,7 @@ namespace Gek
             population->removeUpdatePriority(updateHandle);
             ObservableMixin::removeObserver(render, getClass<RenderObserver>());
             render.Release();
+            resources.Release();
             population.Release();
             video.Release();
 
@@ -90,10 +93,10 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(PopulationObserver)
             INTERFACE_LIST_ENTRY_MEMBER_COM(VideoSystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(OverlaySystem, video)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(PluginResources, render)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(Resources, render)
+            INTERFACE_LIST_ENTRY_MEMBER_COM(PluginResources, resources)
+            INTERFACE_LIST_ENTRY_MEMBER_COM(Resources, resources)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Render, render)
+            INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
         END_INTERFACE_LIST_USER
 
         // Engine
@@ -106,11 +109,19 @@ namespace Gek
             {
                 this->window = window;
                 resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(VideoSystemRegistration, &video));
+                if (SUCCEEDED(resultValue))
+                {
+                    resultValue = video->initialize(window, false);
+                }
             }
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->initialize(window, false);
+                resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(ResourcesRegistration, &resources));
+                if (SUCCEEDED(resultValue))
+                {
+                    resultValue = resources->initialize(this);
+                }
             }
 
             if (SUCCEEDED(resultValue))

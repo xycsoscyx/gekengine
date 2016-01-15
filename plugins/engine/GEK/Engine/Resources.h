@@ -3,6 +3,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\System\VideoSystem.h"
 #include <type_traits>
+#include <typeindex>
 
 namespace Gek
 {
@@ -69,6 +70,16 @@ namespace Gek
     DECLARE_INTERFACE_IID(Resources, "2B0EB375-460C-46E8-9B99-DB21AB54FBA5") : virtual public PluginResources
     {
         STDMETHOD(initialize)                               (THIS_ IUnknown *initializerContext) PURE;
+        STDMETHOD_(void, clearLocal)                        (THIS) PURE;
+        
+        STDMETHOD_(ShaderHandle, getShader)                 (THIS_ MaterialHandle material) PURE;
+        STDMETHOD_(IUnknown *, getResource)                 (THIS_ std::type_index type, LPCVOID handle) PURE;
+
+        template <typename RESOURCE, typename HANDLE>
+        RESOURCE *getResource(HANDLE handle)
+        {
+            return dynamic_cast<RESOURCE *>(getResource(typeid(HANDLE), LPCVOID(&handle)));
+        }
 
         STDMETHOD_(ShaderHandle, loadShader)                (THIS_ LPCWSTR fileName) PURE;
         STDMETHOD_(void, loadResourceList)                  (THIS_ ShaderHandle shader, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::vector<ResourceHandle> &resourceList) PURE;
@@ -93,6 +104,8 @@ namespace Gek
         STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ VideoContext *videoContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
         STDMETHOD_(void, setDefaultTargets)                 (THIS_ VideoContext *videoContext, ResourceHandle depthBuffer) PURE;
     };
+
+    DECLARE_INTERFACE_IID(ResourcesRegistration, "1EF802ED-5694-479F-AE59-FA3F6F30808A");
 }; // namespace Gek
 
 namespace std

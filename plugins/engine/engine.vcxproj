@@ -128,6 +128,7 @@
     <ClCompile Include="Plugin.cpp" />
     <ClCompile Include="Population.cpp" />
     <ClCompile Include="Render.cpp" />
+    <ClCompile Include="Resources.cpp" />
     <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
