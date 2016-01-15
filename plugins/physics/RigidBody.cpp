@@ -61,6 +61,8 @@ namespace Gek
 
         STDMETHODIMP_(void) onPreUpdate(dFloat frameTime, int threadHandle)
         {
+            NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
+
             Math::Float3 gravity(newtonProcessor->getGravity(transformComponent.position));
             NewtonBodyAddForce(newtonBody, (gravity * (float)massComponent).data);
         }

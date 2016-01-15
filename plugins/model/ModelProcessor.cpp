@@ -14,7 +14,6 @@
 #include "GEK\Engine\Render.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Components\Scale.h"
 #include "GEK\Components\Color.h"
 #include "GEK\Engine\Model.h"
 #include <memory>
@@ -427,6 +426,8 @@ namespace Gek
         std::unordered_map<Entity *, ModelData *> dataEntityList;
         ResourceHandle instanceBuffer;
 
+        std::list<std::unique_ptr<std::thread>> loadList;
+
     public:
         ModelProcessorImplementation(void)
             : resources(nullptr)
@@ -776,15 +777,9 @@ namespace Gek
                 Entity *entity = dataEntity.first;
                 ModelData *data = dataEntity.second;
 
-                Gek::Math::Float3 scale(1.0f, 1.0f, 1.0f);
-                if (entity->hasComponent<ScaleComponent>())
-                {
-                    scale.set(entity->getComponent<ScaleComponent>());
-                }
-
                 const auto &transformComponent = entity->getComponent<TransformComponent>();
                 Shape::OrientedBox orientedBox(data->alignedBox, transformComponent.rotation, transformComponent.position);
-                orientedBox.halfsize *= scale;
+                orientedBox.halfsize *= transformComponent.scale;
 
                 if (viewFrustum->isVisible(orientedBox))
                 {
@@ -794,7 +789,7 @@ namespace Gek
                         color = entity->getComponent<ColorComponent>();
                     }
 
-                    visibleList[data].push_back(InstanceData(transformComponent.getMatrix(), color, scale, cameraTransform.position.getDistance(transformComponent.position)));
+                    visibleList[data].push_back(InstanceData(transformComponent.getMatrix(), color, transformComponent.scale, cameraTransform.position.getDistance(transformComponent.position)));
                 }
             });
 

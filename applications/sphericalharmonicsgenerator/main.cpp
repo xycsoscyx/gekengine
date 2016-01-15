@@ -6,6 +6,8 @@
 #include <DirectXTex.h>
 #include <atlbase.h>
 #include <atlpath.h>
+#include <array>
+#include <ppl.h>
 
 #ifdef _DEBUG
 #pragma comment(lib, "..\\..\\external\\DirectXTex\\Bin\\Desktop_2013\\Win32\\Debug\\DirectXTex.lib")
@@ -41,7 +43,7 @@ namespace Gek
     class SH
     {
     public:
-        TYPE coefficients[SIZE];
+        std::array<TYPE, SIZE> coefficients;
 
     public:
         SH(void)

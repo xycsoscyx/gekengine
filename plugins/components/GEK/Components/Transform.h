@@ -21,8 +21,9 @@ namespace Gek
             _mm_free(data);
         }
 
-        Gek::Math::Quaternion rotation;
         Gek::Math::Float3 position;
+        Gek::Math::Quaternion rotation;
+        Gek::Math::Float3 scale;
 
         TransformComponent(void);
         HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;

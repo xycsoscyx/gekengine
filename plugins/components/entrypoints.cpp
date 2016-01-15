@@ -16,9 +16,6 @@ namespace Gek
     DECLARE_REGISTERED_CLASS(LightImplementation);
     DECLARE_INTERFACE_IID(LightRegistration, "E4D8A791-319B-4324-8DBE-F99A7AAA6DB9");
 
-    DECLARE_REGISTERED_CLASS(ScaleImplementation);
-    DECLARE_INTERFACE_IID(ScaleRegistration, "EA3E463D-2A25-4886-B4A2-C035C641D4B8");
-
     DECLARE_REGISTERED_CLASS(TransformImplementation);
     DECLARE_INTERFACE_IID(TransformRegistration, "62BAFD17-E5CB-4CA0-84B2-963836AE9836");
 
@@ -37,9 +34,6 @@ DECLARE_CONTEXT_SOURCE(Components)
         ADD_CLASS_TYPE(Gek::ComponentType)
 
     ADD_CONTEXT_CLASS(Gek::LightRegistration, Gek::LightImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
-
-    ADD_CONTEXT_CLASS(Gek::ScaleRegistration, Gek::ScaleImplementation)
         ADD_CLASS_TYPE(Gek::ComponentType)
 
     ADD_CONTEXT_CLASS(Gek::TransformRegistration, Gek::TransformImplementation)

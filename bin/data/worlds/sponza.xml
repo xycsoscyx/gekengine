@@ -15,10 +15,9 @@
         </entity>
 
         <entity name="player_head">
-            <transform/>
+            <transform scale=".8,.8,.8"/>
             <follow distance="0, 5.5, 0" mode="offset">player</follow>
             <model>*sphere|debug//r10_m0|1</model>
-            <scale>.8, .8, .8</scale>
             <light range="15" />
             <color>1,1,1</color>
         </entity>

@@ -13,6 +13,7 @@ namespace Gek
     {
         componentParameterList[L"position"] = String::from(position);
         componentParameterList[L"rotation"] = String::from(rotation);
+        componentParameterList[L"scale"] = String::from(scale);
         return S_OK;
     }
 
@@ -20,6 +21,7 @@ namespace Gek
     {
         setParameter(componentParameterList, L"position", position, String::to<Math::Float3>);
         setParameter(componentParameterList, L"rotation", rotation, String::to<Math::Quaternion>);
+        setParameter(componentParameterList, L"scale", scale, String::to<Math::Float3>);
         return S_OK;
     }
 

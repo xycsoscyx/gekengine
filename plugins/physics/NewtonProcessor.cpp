@@ -9,7 +9,6 @@
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Components\Scale.h"
 #include "GEK\Newton\Mass.h"
 #include "GEK\Newton\RigidBody.h"
 #include "GEK\Newton\StaticBody.h"
@@ -223,15 +222,8 @@ namespace Gek
         {
             REQUIRE_RETURN(population, nullptr);
 
-            Math::Float3 scale(1.0f, 1.0f, 1.0f);
-            if (entity->hasComponent<ScaleComponent>())
-            {
-                scale.set(entity->getComponent<ScaleComponent>());
-            }
-
             NewtonCollision *newtonCollision = nullptr;
             std::size_t collisionHash = std::hash<CStringW>()(shape);
-            collisionHash = std::hash_combine(collisionHash, std::hash<float>()(scale.x), std::hash<float>()(scale.y), std::hash<float>()(scale.z));
             auto collisionIterator = collisionList.find(collisionHash);
             if (collisionIterator != collisionList.end())
             {
@@ -292,7 +284,6 @@ namespace Gek
 
                 if (newtonCollision)
                 {
-                    NewtonCollisionSetScale(newtonCollision, scale.x, scale.y, scale.z);
                     collisionList[collisionHash] = newtonCollision;
                 }
             }
