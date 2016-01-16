@@ -559,11 +559,11 @@ namespace Gek
                     data->materialInfoList.resize(materialCount);
                     for (UINT32 materialIndex = 0; materialIndex < materialCount; ++materialIndex)
                     {
-                        CStringA materialNameUtf8(rawFileData);
-                        rawFileData += (materialNameUtf8.GetLength() + 1);
+                        CStringW materialName = LPCWSTR(rawFileData);
+                        rawFileData += ((materialName.GetLength() + 1) * sizeof(wchar_t));
 
                         MaterialInfo &materialInfo = data->materialInfoList[materialIndex];
-                        materialInfo.material = resources->loadMaterial(CA2W(materialNameUtf8, CP_UTF8));
+                        materialInfo.material = resources->loadMaterial(materialName);
                         if (!materialInfo.material.isValid())
                         {
                             resultValue = E_FAIL;

@@ -29,6 +29,12 @@
 #pragma comment(lib, "newton.lib")
 #endif
 
+static void deSerializeCollision(void* const serializeHandle, void* const buffer, int size)
+{
+    FILE *file = (FILE *)serializeHandle;
+    fread(buffer, 1, size, file);
+}
+
 namespace Gek
 {
     extern NewtonEntity *createPlayerBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent);
@@ -84,7 +90,7 @@ namespace Gek
 
         Math::Float3 gravity;
         std::vector<Surface> surfaceList;
-        std::map<std::size_t, INT32> surfaceIndexList;
+        std::map<std::size_t, UINT32> surfaceIndexList;
         std::unordered_map<Entity *, CComPtr<NewtonEntity>> entityMap;
         std::unordered_map<std::size_t, NewtonCollision *> collisionList;
 
@@ -112,20 +118,12 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Processor)
         END_INTERFACE_LIST_USER
 
-        const Surface &getSurface(INT32 surfaceIndex) const
+        const Surface &getSurface(UINT32 surfaceIndex) const
         {
-            if (surfaceIndex >= 0 && surfaceIndex < int(surfaceList.size()))
-            {
-                return surfaceList[surfaceIndex];
-            }
-            else
-            {
-                static const Surface defaultSurface;
-                return defaultSurface;
-            }
+            return surfaceList[surfaceIndex];
         }
 
-        INT32 getContactSurface(Entity *entity, const NewtonBody *const newtonBody, const NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
+        UINT32 getContactSurface(Entity *entity, const NewtonBody *const newtonBody, const NewtonMaterial *newtonMaterial, const Math::Float3 &position, const Math::Float3 &normal)
         {
             if (entity && entity->hasComponent<RigidBodyComponent>())
             {
@@ -144,18 +142,18 @@ namespace Gek
                 NewtonCollisionRayCast(newtonCollision, (position - normal).data, (position + normal).data, collisionNormal.data, &surfaceAttribute);
                 if (surfaceAttribute > 0)
                 {
-                    return INT32(surfaceAttribute);
+                    return UINT32(surfaceAttribute);
                 }
             }
 
-            return -1;
+            return 0;
         }
 
-        INT32 loadSurface(LPCWSTR fileName)
+        UINT32 loadSurface(LPCWSTR fileName)
         {
-            REQUIRE_RETURN(fileName, -1);
+            REQUIRE_RETURN(fileName, 0);
 
-            INT32 surfaceIndex = -1;
+            UINT32 surfaceIndex = 0;
             std::size_t fileNameHash = std::hash<CStringW>()(fileName);
             auto surfaceIterator = surfaceIndexList.find(fileNameHash);
             if (surfaceIterator != surfaceIndexList.end())
@@ -166,12 +164,11 @@ namespace Gek
             {
                 gekCheckScope(resultValue, fileName);
 
-                surfaceIndexList[fileNameHash] = -1;
+                surfaceIndexList[fileNameHash] = 0;
 
                 Gek::XmlDocument xmlDocument;
                 if (SUCCEEDED(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName))))
                 {
-                    Surface surface;
                     Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
                     if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
                     {
@@ -180,6 +177,7 @@ namespace Gek
                             Gek::XmlNode xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
                             if (xmlSurfaceNode)
                             {
+                                Surface surface;
                                 surface.ghost = String::to<bool>(xmlSurfaceNode.getAttribute(L"ghost"));
                                 if (xmlSurfaceNode.hasAttribute(L"staticfriction"))
                                 {
@@ -205,11 +203,6 @@ namespace Gek
                                 surfaceIndexList[fileNameHash] = surfaceIndex;
                                 surfaceList.push_back(surface);
                             }
-                        }
-                        else
-                        {
-                            // material is using the default surface properties, which is ok
-                            resultValue = S_OK;
                         }
                     }
                 }
@@ -291,63 +284,6 @@ namespace Gek
             return newtonCollision;
         }
 
-        void loadModel(LPCWSTR model, std::function<void(std::map<CStringA, Material> &materialList, UINT32 vertexCount, Vertex *vertexList, UINT32 indexCount, UINT16 *indexList)> loadData)
-        {
-            std::vector<UINT8> fileData;
-            HRESULT resultValue = Gek::FileSystem::load(Gek::String::format(L"%%root%%\\data\\models\\%s.gek", model), fileData);
-            if (SUCCEEDED(resultValue))
-            {
-                UINT8 *rawFileData = fileData.data();
-                UINT32 gekIdentifier = *((UINT32 *)rawFileData);
-                rawFileData += sizeof(UINT32);
-
-                UINT16 gekModelType = *((UINT16 *)rawFileData);
-                rawFileData += sizeof(UINT16);
-
-                UINT16 gekModelVersion = *((UINT16 *)rawFileData);
-                rawFileData += sizeof(UINT16);
-
-                if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 2)
-                {
-                    Gek::Shape::AlignedBox alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
-                    rawFileData += sizeof(Gek::Shape::AlignedBox);
-
-                    UINT32 materialCount = *((UINT32 *)rawFileData);
-                    rawFileData += sizeof(UINT32);
-
-                    std::map<CStringA, Material> materialList;
-                    for (UINT32 surfaceIndex = 0; surfaceIndex < materialCount; ++surfaceIndex)
-                    {
-                        CStringA materialName = rawFileData;
-                        rawFileData += (materialName.GetLength() + 1);
-
-                        Material &material = materialList[materialName];
-                        material.firstVertex = *((UINT32 *)rawFileData);
-                        rawFileData += sizeof(UINT32);
-
-                        material.firstIndex = *((UINT32 *)rawFileData);
-                        rawFileData += sizeof(UINT32);
-
-                        material.indexCount = *((UINT32 *)rawFileData);
-                        rawFileData += sizeof(UINT32);
-                    }
-
-                    UINT32 vertexCount = *((UINT32 *)rawFileData);
-                    rawFileData += sizeof(UINT32);
-
-                    Vertex *vertexList = (Vertex *)rawFileData;
-                    rawFileData += (sizeof(Vertex) * vertexCount);
-
-                    UINT32 indexCount = *((UINT32 *)rawFileData);
-                    rawFileData += sizeof(UINT32);
-
-                    UINT16 *indexList = (UINT16 *)rawFileData;
-
-                    loadData(materialList, vertexCount, vertexList, indexCount, indexList);
-                }
-            }
-        }
-
         NewtonCollision *loadCollision(Entity *entity, const CStringW &shape)
         {
             NewtonCollision *newtonCollision = nullptr;
@@ -370,57 +306,52 @@ namespace Gek
                 {
                     gekLogScope(shape);
 
-                    collisionList[shapeHash] = nullptr;
-                    loadModel(shape, [&](std::map<CStringA, Material> &materialList, UINT32 vertexCount, Vertex *vertexList, UINT32 indexCount, UINT16 *indexList) -> void
+                    CStringW fileName(FileSystem::expandPath(String::format(L"%%root%%\\data\\models\\%s.bin", shape.GetString())));
+
+                    FILE *file = nullptr;
+                    _wfopen_s(&file, fileName, L"rb");
+                    if (file)
                     {
-                        if (materialList.empty())
+                        UINT32 gekIdentifier = 0;
+                        fread(&gekIdentifier, sizeof(UINT32), 1, file);
+
+                        UINT16 gekModelType = 0;
+                        fread(&gekModelType, sizeof(UINT16), 1, file);
+
+                        UINT16 gekModelVersion = 0;
+                        fread(&gekModelVersion, sizeof(UINT16), 1, file);
+
+                        if (gekIdentifier == *(UINT32 *)"GEKX")
                         {
-                            std::vector<Math::Float3> pointCloudList(indexCount);
-                            for (UINT32 index = 0; index < indexCount; ++index)
+                            if (gekModelType == 1 && gekModelVersion == 0)
                             {
-                                pointCloudList[index] = vertexList[indexList[index]].position;
+                                newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, file);
                             }
-
-                            newtonCollision = NewtonCreateConvexHull(newtonWorld, pointCloudList.size(), pointCloudList[0].data, sizeof(Math::Float3), 0.025f, shapeHash, Math::Float4x4().data);
-                        }
-                        else
-                        {
-                            newtonCollision = NewtonCreateTreeCollision(newtonWorld, shapeHash);
-                            if (newtonCollision != nullptr)
+                            else if (gekModelType == 2 && gekModelVersion == 0)
                             {
-                                NewtonTreeCollisionBeginBuild(newtonCollision);
-                                for (auto &materialPair : materialList)
+                                UINT32 materialCount = 0;
+                                fread(&materialCount, sizeof(UINT32), 1, file);
+                                for (int materialIndex = 0; materialIndex < materialCount; materialIndex++)
                                 {
-                                    Material &material = materialPair.second;
-                                    INT32 surfaceIndex = loadSurface(CA2W(materialPair.first, CP_UTF8));
-                                    const Surface &surface = getSurface(surfaceIndex);
-                                    if (!surface.ghost)
+                                    CStringW materialName;
+                                    wchar_t letter = 0;
+                                    do
                                     {
-                                        typedef Math::Float3 Face[3];
-                                        UINT32 faceCount = (material.indexCount / 3);
-                                        std::vector<Face> materialFaceList(faceCount);
-                                        for (UINT32 face = 0; face < faceCount; ++face)
-                                        {
-                                            materialFaceList[face][0] = vertexList[material.firstVertex + indexList[material.firstIndex + (face * 3) + 0]].position;
-                                            materialFaceList[face][1] = vertexList[material.firstVertex + indexList[material.firstIndex + (face * 3) + 1]].position;
-                                            materialFaceList[face][2] = vertexList[material.firstVertex + indexList[material.firstIndex + (face * 3) + 2]].position;
-                                        }
+                                        fread(&letter, sizeof(wchar_t), 1, file);
+                                        materialName += letter;
+                                    } while (letter != 0);
 
-                                        for (UINT32 face = 0; face < faceCount; ++face)
-                                        {
-                                            NewtonTreeCollisionAddFace(newtonCollision, 3, materialFaceList[face][0].data, sizeof(Math::Float3), surfaceIndex);
-                                        }
-                                    }
+                                    UINT32 surfaceIndex = loadSurface(materialName);
                                 }
 
-#ifdef _DEBUG
-                                NewtonTreeCollisionEndBuild(newtonCollision, 0);
-#else
-                                NewtonTreeCollisionEndBuild(newtonCollision, 1);
-#endif
+                                newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, file);
                             }
                         }
-                    });
+
+                        fclose(file);
+                    }
+
+                    collisionList[shapeHash] = nullptr;
 
                     if (newtonCollision)
                     {
@@ -539,8 +470,8 @@ namespace Gek
                 Math::Float3 position, normal;
                 NewtonMaterialGetContactPositionAndNormal(newtonMaterial, body0, position.data, normal.data);
 
-                INT32 surfaceIndex0 = getContactSurface((newtonEntity0 ? newtonEntity0->getEntity() : nullptr), body0, newtonMaterial, position, normal);
-                INT32 surfaceIndex1 = getContactSurface((newtonEntity1 ? newtonEntity1->getEntity() : nullptr), body1, newtonMaterial, position, normal);
+                UINT32 surfaceIndex0 = getContactSurface((newtonEntity0 ? newtonEntity0->getEntity() : nullptr), body0, newtonMaterial, position, normal);
+                UINT32 surfaceIndex1 = getContactSurface((newtonEntity1 ? newtonEntity1->getEntity() : nullptr), body1, newtonMaterial, position, normal);
                 const Surface &surface0 = getSurface(surfaceIndex0);
                 const Surface &surface1 = getSurface(surfaceIndex1);
 
@@ -574,6 +505,7 @@ namespace Gek
 
         STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
         {
+            surfaceList.push_back(Surface());
             if (newtonStaticScene)
             {
                 NewtonSceneCollisionEndAddRemove(newtonStaticScene);

@@ -7,11 +7,9 @@
 
 namespace Gek
 {
-    template <typename TYPE>
+    template <typename TYPE, int ID>
     struct Handle
     {
-        typedef TYPE HandleType;
-
         TYPE identifier;
 
         Handle(void)
@@ -29,25 +27,25 @@ namespace Gek
             return (identifier == 0 ? false : true);
         }
 
-        bool operator == (const typename Handle<TYPE> &handle) const
+        bool operator == (const typename Handle<TYPE, ID> &handle) const
         {
             return (this->identifier == handle.identifier);
         }
 
-        bool operator != (const typename Handle<TYPE> &handle) const
+        bool operator != (const typename Handle<TYPE, ID> &handle) const
         {
             return (this->identifier != handle.identifier);
         }
     };
 
-    typedef Handle<UINT16> ProgramHandle;
-    typedef Handle<UINT8> PluginHandle;
-    typedef Handle<UINT16> MaterialHandle;
-    typedef Handle<UINT8> ShaderHandle;
-    typedef Handle<UINT32> ResourceHandle;
-    typedef Handle<UINT8> RenderStatesHandle;
-    typedef Handle<UINT8> DepthStatesHandle;
-    typedef Handle<UINT8> BlendStatesHandle;
+    using ProgramHandle = Handle<UINT16, 0>;
+    using PluginHandle = Handle<UINT8, 0>;
+    using MaterialHandle = Handle<UINT16, 1>;
+    using ShaderHandle = Handle<UINT8, 1>;
+    using ResourceHandle = Handle<UINT32, 0>;
+    using RenderStatesHandle = Handle<UINT8, 2>;
+    using DepthStatesHandle = Handle<UINT8, 3>;
+    using BlendStatesHandle = Handle<UINT8, 4>;
 
     DECLARE_INTERFACE_IID(PluginResources, "5E319AC8-2369-416E-B010-ED3E860405C4") : virtual public IUnknown
     {
@@ -110,10 +108,10 @@ namespace Gek
 
 namespace std
 {
-    template <typename TYPE>
-    struct hash<Gek::Handle<TYPE>>
+    template <typename TYPE, int ID>
+    struct hash<Gek::Handle<TYPE, ID>>
     {
-        size_t operator()(const Gek::Handle<TYPE> &value) const
+        size_t operator()(const Gek::Handle<TYPE, ID> &value) const
         {
             return value.identifier;
         }

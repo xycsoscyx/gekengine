@@ -207,7 +207,9 @@ namespace Gek
         // Render
         STDMETHODIMP_(void) queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(VideoContext *)> draw)
         {
-            //drawCallList.emplace_back(materialShaderMap[material], plugin, material, draw);
+            REQUIRE_VOID_RETURN(resources);
+
+            drawCallList.emplace_back(resources->getShader(material), plugin, material, draw);
         }
 
         // PopulationObserver
@@ -232,6 +234,10 @@ namespace Gek
 
         STDMETHODIMP_(void) onUpdate(float frameTime)
         {
+            REQUIRE_VOID_RETURN(population);
+            REQUIRE_VOID_RETURN(resources);
+            REQUIRE_VOID_RETURN(video);
+
             population->listEntities<TransformComponent, CameraComponent>([&](Entity *cameraEntity) -> void
             {
                 auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
