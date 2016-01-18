@@ -40,16 +40,22 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         float3 lightRay = light.position - surfacePosition;
         float3 centerToRay = dot(lightRay, reflectNormal) * reflectNormal - lightRay;
         float3 closestPoint = lightRay + centerToRay * clamp(light.radius / length(centerToRay), 0.0, 1.0);
-        float lightDistanceSquared = dot(closestPoint, closestPoint);
-        float lightDistance = sqrt(lightDistanceSquared);
-        float3 lightDirection = (closestPoint / lightDistance);
+        float3 lightDirection = normalize(closestPoint);
+        float lightDistance = length(closestPoint);
 
-        float attenuation = 1.0;
+        float distanceOverRange = (lightDistance / light.range);
+        float distanceOverRange2 = sqr(distanceOverRange);
+        float distanceOverRange4 = sqr(distanceOverRange2);
+        float falloff = sqr(saturate(1.0 - distanceOverRange4));
+        falloff /= (sqr(lightDistance) + 1.0);
 
         float NdotL = dot(surfaceNormal, lightDirection);
 
-        float3 lightContribution = getBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL);
-        surfaceColor += (saturate(NdotL) * lightContribution * attenuation * light.color);
+        float3 diffuseAlbedo = lerp(materialAlbedo, 0.0, materialMetalness);
+        float3 diffuseLighting = (diffuseAlbedo * Math::ReciprocalPi);
+
+        float3 specularLighting = getSpecularBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL);
+        surfaceColor += (saturate(NdotL) * (diffuseLighting + specularLighting) * falloff * light.color);
     }
 
     return surfaceColor;
