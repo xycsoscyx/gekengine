@@ -27,7 +27,7 @@
     </targets>
 
     <buffers>
-        <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %lightListSize%">byte</tileIndexList>
+        <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %maximumListSize%">byte</tileIndexList>
     </buffers>
 
     <block>

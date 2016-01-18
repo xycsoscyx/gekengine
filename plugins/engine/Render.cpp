@@ -51,13 +51,13 @@ namespace Gek
         {
             Math::Float3 position;
             float range;
+            float radius;
             Math::Float3 color;
-            float distance;
-            LightData(const Math::Float3 &position, float range, const Math::Float3 &color)
+            LightData(const Math::Float3 &position, float range, float radius, const Math::Float3 &color)
                 : position(position)
                 , range(range)
+                , radius(radius)
                 , color(color)
-                , distance(position.getLength())
             {
             }
         };
@@ -274,7 +274,7 @@ namespace Gek
                     if (viewFrustum.isVisible(Shape::Sphere(lightTransformComponent.position, lightComponent.range)))
                     {
                         auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-                        lightList.emplace_back((cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz, lightComponent.range, lightColorComponent.value.xyz);
+                        lightList.emplace_back((cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz, lightComponent.range, lightComponent.radius, lightColorComponent.value.xyz);
                     }
                 });
 

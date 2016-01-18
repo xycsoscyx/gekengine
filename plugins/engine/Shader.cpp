@@ -476,7 +476,7 @@ namespace Gek
             fullValue.Replace(L"%displayWidth%", String::format(L"%d", video->getWidth()));
             fullValue.Replace(L"%displayHeight%", String::format(L"%d", video->getHeight()));
 
-            fullValue.Replace(L"%lightListSize%", L"255");
+            fullValue.Replace(L"%maximumListSize%", L"255");
 
             return replaceDefines(fullValue);
         }
@@ -787,22 +787,22 @@ namespace Gek
                                         engineData +=
                                             "namespace Lighting                                     \r\n" \
                                             "{                                                      \r\n" \
-                                            "    struct Point                                       \r\n" \
+                                            "    struct Data                                        \r\n" \
                                             "    {                                                  \r\n" \
                                             "        float3  position;                              \r\n" \
                                             "        float   range;                                 \r\n" \
+                                            "        float   radius;                                \r\n" \
                                             "        float3  color;                                 \r\n" \
-                                            "        float   distance;                              \r\n" \
                                             "    };                                                 \r\n" \
                                             "                                                       \r\n" \
-                                            "    cbuffer Data : register(b1)                        \r\n" \
+                                            "    cbuffer Parameters : register(b1)                  \r\n" \
                                             "    {                                                  \r\n" \
                                             "        uint    count   : packoffset(c0);              \r\n" \
                                             "        uint3   padding : packoffset(c0.y);            \r\n" \
                                             "    };                                                 \r\n" \
                                             "                                                       \r\n" \
-                                            "    StructuredBuffer<Point> list : register(t0);       \r\n" \
-                                            "    static const uint listSize = 255;                  \r\n" \
+                                            "    StructuredBuffer<Data> list : register(t0);        \r\n" \
+                                            "    static const uint maximumListSize = 255;           \r\n" \
                                             "};                                                     \r\n" \
                                             "                                                       \r\n";
                                     }

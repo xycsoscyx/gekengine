@@ -18,7 +18,7 @@
             <transform scale=".8,.8,.8"/>
             <follow distance="0, 5.5, 0" mode="offset">player</follow>
             <model>*sphere|debug//r10_m0|1</model>
-            <light range="15" />
+            <light range="15" radius="1" />
             <color>1,1,1</color>
         </entity>
 
@@ -41,17 +41,17 @@
 
         <entity>
             <transform position="0,5,5" />
-            <light range="15" />
+            <light range="15" radius="1" />
             <color>1,0,0</color>
         </entity>
         <entity>
             <transform position="0,9,0" />
-            <light range="15" />
+            <light range="15" radius="1" />
             <color>0,1,0</color>
         </entity>
         <entity>
             <transform position="0,5,-5" />
-            <light range="15" />
+            <light range="15" radius="1" />
             <color>0,0,1</color>
         </entity>
 

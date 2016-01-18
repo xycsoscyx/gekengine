@@ -185,9 +185,9 @@ namespace Gek
             return (deltaRotation * rotation);
         }
 
-        void setDesiredOmega(const Math::Float4x4 &matrix, float frameTime) const
+        void setDesiredOmega(const Math::Quaternion &rotation, float frameTime) const
         {
-            Math::Quaternion quaternion0(matrix.getQuaternion());
+            Math::Quaternion quaternion0(rotation);
             Math::Quaternion quaternion1(movementBasis.ny, headingAngle);
             if (quaternion0.dot(quaternion1) < 0.0f)
             {
@@ -464,9 +464,12 @@ namespace Gek
                 newState->onEnter();
             }
 
+            float rotation[4] = {};
+            NewtonBodyGetRotation(newtonBody, rotation);
+            setDesiredOmega({ rotation[1], rotation[2], rotation[3], rotation[0] }, frameTime);
+
             Math::Float4x4 matrix;
             NewtonBodyGetMatrix(newtonBody, matrix.data);
-            setDesiredOmega(matrix, frameTime);
             setDesiredVelocity(matrix, frameTime);
         }
 

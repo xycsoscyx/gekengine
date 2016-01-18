@@ -1,46 +1,39 @@
-float3 getTrowbridgeReitz(float alpha, float NdotH)
+float getTrowbridgeReitzGGX(float alpha, float NdotH)
 {
     float alphaSquared = sqr(alpha);
-    return (alphaSquared / (Math::Pi * sqr(sqr(NdotH) * (alphaSquared - 1.0) + 1.0)));
+    return (alphaSquared * rcp(Math::Pi * sqr(sqr(NdotH) * (alphaSquared - 1.0) + 1.0)));
 }
 
-float3 getD(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
+float getMicroFacetDistribution(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
 {
-    return getTrowbridgeReitz(alpha, NdotH);
-}
-
-float3 getSchlickFresnel(float3 F0, float VdotH)
-{
-    return (F0 + (1.0 - F0) * pow((1 - VdotH), 5.0));
+    return getTrowbridgeReitzGGX(alpha, NdotH);
 }
 
 float3 getSchlickFresnelApproximation(float3 F0, float VdotH)
 {
-    static const float MagicExponent = 8.656170; // == 1/ln(2) * 6   (6 is SpecularPower of 5 + 1)
-    return F0 + (1.0 - F0) * exp2(-MagicExponent * VdotH);
+    return (F0 + (1.0 - F0) * pow((1 - VdotH), 5.0));
 }
 
-float3 getF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
+float3 getFresnel(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
 {
     float3 F0 = lerp(materialAlbedo, 1.0, (1.0 - materialMetalness));
     return getSchlickFresnelApproximation(F0, VdotH);
-    return getSchlickFresnel(F0, VdotH);
 }
 
-float getG1V(float k, float angle)
+float getSchlickBeckmann(float k, float angle)
 {
-    return (angle / (angle * (1.0 - k) + k));
+    return (angle * rcp(angle * (1.0 - k) + k));
 }
 
-float getSchlickSmith(float materialRoughness, float NdotL, float NdotV)
+float getSmithGGX(float alpha, float NdotL, float NdotV)
 {
-    float k = (sqr(materialRoughness + 1.0) / 8.0);
-    return (getG1V(k, NdotL) * getG1V(k, NdotV));
+    float k = (alpha * 0.5);
+    return (getSchlickBeckmann(k, NdotL) * getSchlickBeckmann(k, NdotV));
 }
 
-float3 getG(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
+float getGeometricAttenuation(float3 materialAlbedo, float materialRoughness, float materialMetalness, float alpha, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float3 halfAngle, float NdotL, float NdotV, float NdotH, float VdotH)
 {
-    return getSchlickSmith(materialRoughness, NdotL, NdotV);
+    return getSmithGGX(alpha, NdotL, NdotV);
 }
 
 float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
@@ -53,8 +46,8 @@ float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMet
     float NdotV = dot(surfaceNormal, viewDirection);
     float NdotH = dot(surfaceNormal, halfAngle);
     float VdotH = dot(viewDirection, halfAngle);
-    float D = getD(materialAlbedo, materialRoughness, materialMetalness, alpha, surfaceNormal, lightDirection, viewDirection, halfAngle, NdotL, NdotV, NdotH, VdotH);
-    float F = getF(materialAlbedo, materialRoughness, materialMetalness, alpha, surfaceNormal, lightDirection, viewDirection, halfAngle, NdotL, NdotV, NdotH, VdotH);
-    float G = getG(materialAlbedo, materialRoughness, materialMetalness, alpha, surfaceNormal, lightDirection, viewDirection, halfAngle, NdotL, NdotV, NdotH, VdotH);
-    return (Math::ReciprocalPi * diffuseColor) + ((D * F * G) / (4.0 * NdotL * NdotV));
+    float D = getMicroFacetDistribution(materialAlbedo, materialRoughness, materialMetalness, alpha, surfaceNormal, lightDirection, viewDirection, halfAngle, NdotL, NdotV, NdotH, VdotH);
+    float3 F = getFresnel(materialAlbedo, materialRoughness, materialMetalness, alpha, surfaceNormal, lightDirection, viewDirection, halfAngle, NdotL, NdotV, NdotH, VdotH);
+    float G = getGeometricAttenuation(materialAlbedo, materialRoughness, materialMetalness, alpha, surfaceNormal, lightDirection, viewDirection, halfAngle, NdotL, NdotV, NdotH, VdotH);
+    return (Math::ReciprocalPi * diffuseColor) + ((D * F * G) * rcp(4.0 * NdotL * NdotV));
 }
