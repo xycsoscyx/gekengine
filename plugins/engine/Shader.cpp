@@ -126,29 +126,17 @@ namespace Gek
         struct Map
         {
             CStringW name;
+            CStringW defaultValue;
             MapType mapType;
             BindType bindType;
             UINT32 flags;
 
-            Map(LPCWSTR name, MapType mapType, BindType bindType, UINT32 flags)
+            Map(LPCWSTR name, LPCWSTR defaultValue, MapType mapType, BindType bindType, UINT32 flags)
                 : name(name)
+                , defaultValue(defaultValue)
                 , mapType(mapType)
                 , bindType(bindType)
                 , flags(flags)
-            {
-            }
-        };
-
-        struct Property
-        {
-            CStringW name;
-            BindType bindType;
-            CStringW default;
-
-            Property(LPCWSTR name, BindType bindType, LPCWSTR default)
-                : name(name)
-                , bindType(bindType)
-                , default(default)
             {
             }
         };
@@ -557,10 +545,11 @@ namespace Gek
                                 while (xmlMapNode)
                                 {
                                     CStringW name(xmlMapNode.getType());
+                                    CStringW defaultValue(xmlMapNode.getAttribute(L"default"));
                                     MapType mapType = getMapType(xmlMapNode.getText());
                                     BindType bindType = getBindType(xmlMapNode.getAttribute(L"bind"));
                                     UINT32 flags = getTextureLoadFlags(xmlMapNode.getAttribute(L"flags"));
-                                    mapList.push_back(Map(name, mapType, bindType, flags));
+                                    mapList.push_back(Map(name, defaultValue, mapType, bindType, flags));
 
                                     xmlMapNode = xmlMapNode.nextSiblingElement();
                                 };
@@ -1013,6 +1002,11 @@ namespace Gek
                     materialFileName.Replace(L"%filename%", LPCWSTR(fileSpec));
                     materialFileName.Replace(L"%material%", materialName);
                     map = resources->loadTexture(materialFileName, mapValue.flags);
+                }
+
+                if (!map.isValid())
+                {
+                    map = resources->loadTexture(mapValue.defaultValue, 0);
                 }
 
                 resourceList.push_back(map);

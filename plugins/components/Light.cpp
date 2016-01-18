@@ -6,6 +6,7 @@
 namespace Gek
 {
     LightComponent::LightComponent(void)
+        : range(0.0f)
     {
     }
 

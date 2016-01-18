@@ -6,6 +6,7 @@
 namespace Gek
 {
     TransformComponent::TransformComponent(void)
+        : scale(1.0f, 1.0f, 1.0f)
     {
     }
 

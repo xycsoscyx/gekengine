@@ -176,11 +176,9 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
     fwrite(buffer, 1, size, file);
 }
 
-#include <conio.h>
 int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariableList)
 {
     printf("GEK Model Converter\r\n");
-    getch();
 
     CStringW meshInput;
     CStringW meshOutput;

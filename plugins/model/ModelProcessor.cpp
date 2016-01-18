@@ -772,7 +772,7 @@ namespace Gek
             const auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
 
             concurrency::concurrent_unordered_map<ModelData *, concurrency::concurrent_vector<InstanceData>> visibleList;
-            concurrency::parallel_for_each(dataEntityList.begin(), dataEntityList.end(), [&](const std::pair<Entity *, ModelData *> &dataEntity) -> void
+            std::for_each(dataEntityList.begin(), dataEntityList.end(), [&](const std::pair<Entity *, ModelData *> &dataEntity) -> void
             {
                 Entity *entity = dataEntity.first;
                 ModelData *data = dataEntity.second;
