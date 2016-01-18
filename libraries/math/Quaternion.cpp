@@ -24,12 +24,13 @@ namespace Gek
 
         void Quaternion::setAngularRotation(const Float3 &axis, float radians)
         {
+            float halfRadians = (radians * 0.5f);
             Float3 normal(axis.getNormal());
-            float sinAngle(std::sin(radians * 0.5f));
+            float sinAngle(std::sin(halfRadians));
             x = (normal.x * sinAngle);
             y = (normal.y * sinAngle);
             z = (normal.z * sinAngle);
-            w = std::cos(radians * 0.5f);
+            w = std::cos(halfRadians);
         }
 
         Float4x4 Quaternion::getMatrix(const Float3 &translation) const
@@ -101,7 +102,7 @@ namespace Gek
 
         Quaternion Quaternion::slerp(const Quaternion &rotation, float factor) const
         {
-            double omega = std::acos(saturate(dot(rotation), -1.0f, 1.0f));
+            float omega = std::acos(saturate(dot(rotation), -1.0f, 1.0f));
             if (std::abs(omega) < 1e-10f)
             {
                 omega = 1e-10f;

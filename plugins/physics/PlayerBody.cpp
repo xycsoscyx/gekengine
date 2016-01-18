@@ -162,27 +162,27 @@ namespace Gek
 
         Math::Quaternion integrateOmega(const Math::Quaternion &rotation, const Math::Float3& omega, float frameTime) const
         {
-            // this is correct
-            float omegaMagnitudeSquared = omega.dot(omega);
-            const float errorAngle = 0.0125f * 3.141592f / 180.0f;
-            const float errorAngleSquared = errorAngle * errorAngle;
-            if (omegaMagnitudeSquared > errorAngleSquared)
-            {
-                float inverseOmegaMagnitude = 1.0f / std::sqrt(omegaMagnitudeSquared);
-                Math::Float3 omegaAxis(omega * (inverseOmegaMagnitude));
-                float omegaAngle = (inverseOmegaMagnitude * omegaMagnitudeSquared * frameTime);
+            Math::Quaternion deltaRotation;
+            Math::Float3 theta = (omega * frameTime * 0.5f);
+            float thetaMagnitideSquared = theta.getLengthSquared();
 
-                Math::Quaternion deltaRotation(omegaAxis, omegaAngle);
-                return ((rotation * deltaRotation) * (1.0f / std::sqrt(rotation.dot(rotation))));
+            float angle;
+            if (thetaMagnitideSquared * thetaMagnitideSquared / 24.0f < Math::Epsilon)
+            {
+                deltaRotation.w = 1.0f - thetaMagnitideSquared / 2.0f;
+                angle = 1.0f - thetaMagnitideSquared / 6.0f;
             }
             else
             {
-                return rotation;
+                float thetaMag = sqrt(thetaMagnitideSquared);
+                deltaRotation.w = cos(thetaMag);
+                angle = sin(thetaMag) / thetaMag;
             }
-        }
 
-        Math::Float3 calculateAverageOmega(const Math::Float4x4 &matrix, const Math::Quaternion &quaternion1, float inverseFrameTime) const
-        {
+            deltaRotation.x = theta.x * angle;
+            deltaRotation.y = theta.y * angle;
+            deltaRotation.z = theta.z * angle;
+            return (deltaRotation * rotation);
         }
 
         void setDesiredOmega(const Math::Float4x4 &matrix, float frameTime) const
@@ -196,7 +196,7 @@ namespace Gek
 
             Math::Quaternion deltaQuaternion(quaternion0.getInverse() * quaternion1);
             Math::Float3 omegaDirection(deltaQuaternion.x, deltaQuaternion.y, deltaQuaternion.z);
-            float directionMagnitudeSquared = omegaDirection.dot(omegaDirection);
+            float directionMagnitudeSquared = omegaDirection.getLengthSquared();
             if (directionMagnitudeSquared >= PLAYER_EPSILON_SQUARED)
             {
                 float inverseDirectionMagnitude = (1.0f / std::sqrt(directionMagnitudeSquared));
@@ -214,7 +214,7 @@ namespace Gek
 
             Math::Float3 desiredVelocity;
             NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
-            if ((verticalSpeed <= 0.0f) && (groundNormal.dot(groundNormal) > 0.0f))
+            if ((verticalSpeed <= 0.0f) && (groundNormal.getLengthSquared() > 0.0f))
             {
                 // plane is supported by a ground plane, apply the player input desiredVelocity
                 if (groundNormal.dot(localBasis.ny) >= maximumSlope)
@@ -223,8 +223,8 @@ namespace Gek
                     desiredVelocity = ((localBasis.ny * desiredVelocity.dot(localBasis.ny)) + (gravity * frameTime) + (localBasis.nz * forwardSpeed) + (localBasis.nx * lateralSpeed) + (localBasis.ny * verticalSpeed));
                     desiredVelocity += (groundVelocity - (localBasis.ny * localBasis.ny.dot(groundVelocity)));
 
-                    float speedLimitMagnitudeSquared = ((forwardSpeed * forwardSpeed) + (lateralSpeed * lateralSpeed) + (verticalSpeed * verticalSpeed) + groundVelocity.dot(groundVelocity) + 0.1f);
-                    float speedMagnitudeSquared = desiredVelocity.dot(desiredVelocity);
+                    float speedLimitMagnitudeSquared = ((forwardSpeed * forwardSpeed) + (lateralSpeed * lateralSpeed) + (verticalSpeed * verticalSpeed) + groundVelocity.getLengthSquared() + 0.1f);
+                    float speedMagnitudeSquared = desiredVelocity.getLengthSquared();
                     if (speedMagnitudeSquared > speedLimitMagnitudeSquared)
                     {
                         desiredVelocity *= std::sqrt(speedLimitMagnitudeSquared / speedMagnitudeSquared);
@@ -509,7 +509,7 @@ namespace Gek
 
             for (int currentStep = 0; ((currentStep < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedTimeLeft > PLAYER_EPSILON)); currentStep++)
             {
-                if (velocity.dot(velocity) < PLAYER_EPSILON)
+                if (velocity.getLengthSquared() < PLAYER_EPSILON)
                 {
                     break;
                 }
@@ -601,7 +601,7 @@ namespace Gek
                     }
 
                     velocity += velocityStep;
-                    float velocityMagnitudeSquared = velocityStep.dot(velocityStep);
+                    float velocityMagnitudeSquared = velocityStep.getLengthSquared();
                     if (velocityMagnitudeSquared < PLAYER_EPSILON_SQUARED)
                     {
                         float advanceTime = std::min(descreteframeTime, (normalizedTimeLeft * frameTime));
@@ -632,7 +632,7 @@ namespace Gek
             else
             {
                 velocityStep = std::abs(localBasis.ny.dot(velocity * frameTime));
-                float castDist = ((groundNormal.dot(groundNormal) > 0.0f) ? playerBodyComponent.stairStep : velocityStep);
+                float castDist = ((groundNormal.getLengthSquared() > 0.0f) ? playerBodyComponent.stairStep : velocityStep);
                 Math::Float3 destination(matrix.translation - (localBasis.ny * (castDist * 2.0f)));
                 updateGroundPlane(matrix, supportMatrix, destination, threadHandle);
             }
