@@ -24,7 +24,7 @@
 #include <set>
 
 #ifdef _DEBUG
-#pragma comment(lib, "newton_d.lib")
+#pragma comment(lib, "newton.lib")
 #else
 #pragma comment(lib, "newton.lib")
 #endif
