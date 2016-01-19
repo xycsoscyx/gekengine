@@ -4,6 +4,7 @@
 #include "GEK\Math\Vector3.h"
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Quaternion.h"
+#include "GEK\Utility\Hash.h"
 #include <Windows.h>
 #include <atlbase.h>
 #include <atlstr.h>

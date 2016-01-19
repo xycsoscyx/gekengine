@@ -23,18 +23,7 @@
 #include <assimp/postprocess.h>
 #pragma comment(lib, "assimp.lib")
 
-struct Vertex
-{
-    Gek::Math::Float3 position;
-    Gek::Math::Float2 texCoord;
-    Gek::Math::Float3 normal;
-};
-
-struct Model
-{
-    std::vector<UINT16> indexList;
-    std::vector<Vertex> vertexList;
-};
+#include "Progressive Meshes/quadrics.h"
 
 class OptimizerException
 {
@@ -53,146 +42,154 @@ public:
     }
 };
 
-void GetMeshes(const aiScene *scene, const aiNode *node, std::multimap<CStringA, Model> &modelList, Gek::Shape::AlignedBox &boundingBox)
+namespace Gek
 {
-    if (node == nullptr)
+    struct Vertex
     {
-        throw OptimizerException(__LINE__, L"Invalid node encountered");
-    }
+        Gek::Math::Float3 position;
+        Gek::Math::Float2 texCoord;
+        Gek::Math::Float3 normal;
+    };
 
-    if (node->mNumMeshes > 0)
+    struct Model
     {
-        if (node->mMeshes == nullptr)
+        std::vector<UINT16> indexList;
+        std::vector<Vertex> vertexList;
+    };
+
+    void GetMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<CStringA, std::list<Model>> &modelList, Gek::Shape::AlignedBox &boundingBox)
+    {
+        if (node == nullptr)
         {
-            throw OptimizerException(__LINE__, L"Invalid node mesh data");
+            throw OptimizerException(__LINE__, L"Invalid node encountered");
         }
 
-        for (UINT32 meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
+        if (node->mNumMeshes > 0)
         {
-            UINT32 nodeMeshIndex = node->mMeshes[meshIndex];
-            if (nodeMeshIndex >= scene->mNumMeshes)
+            if (node->mMeshes == nullptr)
             {
-                throw OptimizerException(__LINE__, L"Invalid mesh index encountered: %d (of %d)", nodeMeshIndex, scene->mNumMeshes);
+                throw OptimizerException(__LINE__, L"Invalid node mesh data");
             }
 
-            const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
-            if (mesh->mNumFaces > 0)
+            for (UINT32 meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
             {
-                if (mesh->mFaces == nullptr)
+                UINT32 nodeMeshIndex = node->mMeshes[meshIndex];
+                if (nodeMeshIndex >= scene->mNumMeshes)
                 {
-                    throw OptimizerException(__LINE__, L"Mesh missing face information");
+                    throw OptimizerException(__LINE__, L"Invalid mesh index encountered: %d (of %d)", nodeMeshIndex, scene->mNumMeshes);
                 }
 
-                if (mesh->mVertices == nullptr)
+                const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
+                if (mesh->mNumFaces > 0)
                 {
-                    throw OptimizerException(__LINE__, L"Mesh missing vertex information");
-                }
-
-                if (mesh->mTextureCoords == nullptr || mesh->mTextureCoords[0] == nullptr)
-                {
-                    throw OptimizerException(__LINE__, L"Mesh missing texcoord0 information");
-                }
-
-                if (mesh->mNormals == nullptr)
-                {
-                    throw OptimizerException(__LINE__, L"Mesh missing normal information");
-                }
-
-                CStringA material;
-                if (scene->mMaterials != nullptr)
-                {
-                    const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
-                    if (sceneMaterial != nullptr)
+                    if (mesh->mFaces == nullptr)
                     {
-                        aiString sceneDiffuseMaterial;
-                        sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                        CStringA diffuseMaterial = sceneDiffuseMaterial.C_Str();
-                        if (!diffuseMaterial.IsEmpty())
+                        throw OptimizerException(__LINE__, L"Mesh missing face information");
+                    }
+
+                    if (mesh->mVertices == nullptr)
+                    {
+                        throw OptimizerException(__LINE__, L"Mesh missing vertex information");
+                    }
+
+                    CStringA material;
+                    if (scene->mMaterials != nullptr)
+                    {
+                        const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
+                        if (sceneMaterial != nullptr)
                         {
-                            material = diffuseMaterial;
+                            aiString sceneDiffuseMaterial;
+                            sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
+                            CStringA diffuseMaterial = sceneDiffuseMaterial.C_Str();
+                            if (!diffuseMaterial.IsEmpty())
+                            {
+                                material = diffuseMaterial;
+                            }
                         }
                     }
-                }
 
-                Model model;
-                for (UINT32 faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex)
-                {
-                    const aiFace &face = mesh->mFaces[faceIndex];
-                    if (face.mNumIndices == 3)
+                    Model model;
+                    for (UINT32 faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex)
                     {
-                        model.indexList.push_back(face.mIndices[0]);
-                        model.indexList.push_back(face.mIndices[1]);
-                        model.indexList.push_back(face.mIndices[2]);
+                        const aiFace &face = mesh->mFaces[faceIndex];
+                        if (face.mNumIndices == 3)
+                        {
+                            model.indexList.push_back(face.mIndices[0]);
+                            model.indexList.push_back(face.mIndices[1]);
+                            model.indexList.push_back(face.mIndices[2]);
+                        }
+                        else
+                        {
+                            printf("(Mesh %d) Invalid Face Found: %d (%d vertices)\r\n", meshIndex, faceIndex, face.mNumIndices);
+                        }
                     }
-                    else
+
+                    for (UINT32 vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
                     {
-                        printf("(Mesh %d) Invalid Face Found: %d (%d vertices)\r\n", meshIndex, faceIndex, face.mNumIndices);
+                        Vertex vertex;
+                        vertex.position.set(mesh->mVertices[vertexIndex].x,
+                            mesh->mVertices[vertexIndex].y,
+                            mesh->mVertices[vertexIndex].z);
+                        boundingBox.extend(vertex.position);
+
+                        if (mesh->mTextureCoords[0])
+                        {
+                            vertex.texCoord.set(mesh->mTextureCoords[0][vertexIndex].x,
+                                mesh->mTextureCoords[0][vertexIndex].y);
+                        }
+
+                        if (mesh->mNormals)
+                        {
+                            vertex.normal.set(mesh->mNormals[vertexIndex].x,
+                                mesh->mNormals[vertexIndex].y,
+                                mesh->mNormals[vertexIndex].z);
+                        }
+
+                        model.vertexList.push_back(vertex);
+                    }
+
+                    if (!material.IsEmpty())
+                    {
+                        modelList[material].push_back(model);
                     }
                 }
+            }
+        }
 
-                for (UINT32 vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
-                {
-                    Vertex vertex;
-                    vertex.position.set(mesh->mVertices[vertexIndex].x,
-                        mesh->mVertices[vertexIndex].y,
-                        mesh->mVertices[vertexIndex].z);
-                    boundingBox.extend(vertex.position);
+        if (node->mNumChildren > 0)
+        {
+            if (node->mChildren == nullptr)
+            {
+                throw OptimizerException(__LINE__, L"Invalid node children data");
+            }
 
-                    vertex.texCoord.set(mesh->mTextureCoords[0][vertexIndex].x,
-                        mesh->mTextureCoords[0][vertexIndex].y);
-
-                    vertex.normal.set(mesh->mNormals[vertexIndex].x,
-                        mesh->mNormals[vertexIndex].y,
-                        mesh->mNormals[vertexIndex].z);
-
-                    model.vertexList.push_back(vertex);
-                }
-
-                if (!material.IsEmpty())
-                {
-                    modelList.insert(std::make_pair(material, model));
-                }
+            for (UINT32 childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
+            {
+                GetMeshes(scene, node->mChildren[childIndex], modelList, boundingBox);
             }
         }
     }
 
-    if (node->mNumChildren > 0)
+    void serializeCollision(void* const serializeHandle, const void* const buffer, int size)
     {
-        if (node->mChildren == nullptr)
-        {
-            throw OptimizerException(__LINE__, L"Invalid node children data");
-        }
-
-        for (UINT32 childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
-        {
-            GetMeshes(scene, node->mChildren[childIndex], modelList, boundingBox);
-        }
+        FILE *file = (FILE *)serializeHandle;
+        fwrite(buffer, 1, size, file);
     }
-}
-
-void serializeCollision(void* const serializeHandle, const void* const buffer, int size)
-{
-    FILE *file = (FILE *)serializeHandle;
-    fwrite(buffer, 1, size, file);
-}
+}; // namespace Gek
 
 int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariableList)
 {
     printf("GEK Model Converter\r\n");
 
-    CStringW meshInput;
-    CStringW meshOutput;
-    CStringW convexHullOutput;
-    CStringW treeOutput;
+    CStringW fileNameInput;
+    CStringW fileNameOutput;
+    CStringW mode("model");
 
-    bool createMesh = false;
     bool flipCoords = false;
     bool flipWinding = false;
     bool generateNormals = false;
     bool smoothNormals = false;
     float smoothingAngle = 80.0f;
-    bool createConvexHull = false;
-    bool createTree = false;
     for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
     {
         CStringW argument(argumentList[argumentIndex]);
@@ -201,12 +198,15 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         CStringW operation(argument.Tokenize(L":", position));
         if (operation.CompareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
         {
-            meshInput = argumentList[argumentIndex];
+            fileNameInput = argumentList[argumentIndex];
         }
-        else if (operation.CompareNoCase(L"-mesh") == 0 && ++argumentIndex < argumentCount)
+        else if (operation.CompareNoCase(L"-output") == 0 && ++argumentIndex < argumentCount)
         {
-            createMesh = true;
-            meshOutput = argumentList[argumentIndex];
+            fileNameOutput = argumentList[argumentIndex];
+        }
+        else if (operation.CompareNoCase(L"-mode") == 0)
+        {
+            mode = argument.Tokenize(L":", position);
         }
         else if (operation.CompareNoCase(L"-flipCoords") == 0)
         {
@@ -225,248 +225,277 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             smoothNormals = true;
             smoothingAngle = Gek::String::to<float>(argument.Tokenize(L":", position));
         }
-        else if (operation.CompareNoCase(L"-convexHull") == 0 && ++argumentIndex < argumentCount)
-        {
-            createConvexHull = true;
-            convexHullOutput = argumentList[argumentIndex];
-        }
-        else if (operation.CompareNoCase(L"-tree") == 0 && ++argumentIndex < argumentCount)
-        {
-            createTree = true;
-            treeOutput = argumentList[argumentIndex];
-        }
     }
 
     try
     {
-        aiPropertyStore *propertyStore = aiCreatePropertyStore();
-        if (generateNormals)
-        {
-            aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
-            if (smoothNormals)
-            {
-                aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
-            }
-        }
+        int notRequiredComponents =
+            aiComponent_TANGENTS_AND_BITANGENTS |
+            aiComponent_COLORS |
+            aiComponent_BONEWEIGHTS |
+            aiComponent_ANIMATIONS |
+            aiComponent_LIGHTS |
+            aiComponent_CAMERAS |
+            0;
 
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
-
-        const aiScene* scene = aiImportFileExWithProperties(CW2A(meshInput, CP_UTF8),
-            (generateNormals ? aiProcess_RemoveComponent : 0) | // remove normals if we are generating them
+        unsigned int importFlags =
+            (flipWinding ? aiProcess_FlipWindingOrder : 0) |
+            aiProcess_RemoveComponent | // remove extra data that is not required
             aiProcess_SplitLargeMeshes | // split large, unrenderable meshes into submeshes
             aiProcess_Triangulate | // triangulate polygons with more than 3 edges
-                                    //aiProcess_ConvertToLeftHanded | // convert everything to D3D left handed space
-            (flipCoords ? aiProcess_FlipUVs : 0) |
-            (flipWinding ? aiProcess_FlipWindingOrder : 0) |
             aiProcess_SortByPType | // make ‘clean’ meshes which consist of a single typ of primitives
             aiProcess_ValidateDataStructure | // perform a full validation of the loader’s output
             aiProcess_ImproveCacheLocality | // improve the cache locality of the output vertices
             aiProcess_RemoveRedundantMaterials | // remove redundant materials
             aiProcess_FindDegenerates | // remove degenerated polygons from the import
-            aiProcess_GenUVCoords | // convert spherical, cylindrical, box and planar mapping to proper UVs
-            aiProcess_TransformUVCoords | // preprocess UV transformations (scaling, translation …)
             aiProcess_FindInstances | // search for instanced meshes and remove them by references to one master
-            aiProcess_LimitBoneWeights | // limit bone weights to 4 per vertex
             aiProcess_OptimizeMeshes | // join small meshes, if possible;
-            aiProcess_SplitByBoneCount | // split meshes with too many bones. Necessary for our (limited) hardware skinning shader
-            0, NULL, propertyStore);
+            0;
 
-        aiApplyPostProcessing(scene,
-            (generateNormals ? (smoothNormals ? aiProcess_GenSmoothNormals : aiProcess_GenNormals) : 0) | // generate normal vectors, smoothing if specified
-            aiProcess_PreTransformVertices |
-            //aiProcess_CalcTangentSpace | // calculate tangents and bitangents if possible
-            aiProcess_JoinIdenticalVertices | // join identical vertices/ optimize indexing
+        unsigned int postProcessFlags =
+            aiProcess_PreTransformVertices | // pretransform the vertices by the a local node matrices
+            aiProcess_JoinIdenticalVertices | // join identical vertices / optimize indexing
             aiProcess_ValidateDataStructure | // perform a full validation of the loader’s output
             aiProcess_FindInvalidData | // detect invalid model data, such as invalid normal vectors
-            0);
+            0;
 
-        aiReleasePropertyStore(propertyStore);
+        aiPropertyStore *propertyStore = aiCreatePropertyStore();
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+        if (mode.CompareNoCase(L"model") == 0)
+        {
+            importFlags |= aiProcess_GenUVCoords; // convert spherical, cylindrical, box and planar mapping to proper UVs
+            importFlags |= aiProcess_TransformUVCoords; // preprocess UV transformations (scaling, translation …)
+            if (generateNormals)
+            {
+                notRequiredComponents |= aiComponent_NORMALS; // remove normals component since we are generating them
+                if (smoothNormals)
+                {
+                    aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
+                    postProcessFlags |= aiProcess_GenSmoothNormals; // generate smoothed normal vectors
+                }
+                else
+                {
+                    postProcessFlags |= aiProcess_GenNormals; // generate normal vectors
+                }
+            }
+                
+            aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
+            if (flipCoords)
+            {
+                importFlags |= aiProcess_FlipUVs;
+            }
+        }
+        else
+        {
+            notRequiredComponents |= aiComponent_TEXCOORDS; // we don't need texture coordinates for collision information
+            notRequiredComponents |= aiComponent_NORMALS; // we don't need normals for collision information
+        }
+
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
+        const aiScene* scene = aiImportFileExWithProperties(CW2A(fileNameInput, CP_UTF8), importFlags, NULL, propertyStore);
         if (scene == nullptr)
         {
-            throw OptimizerException(__LINE__, L"Unable to Load Input: %s", meshInput.GetString());
+            throw OptimizerException(__LINE__, L"Unable to Load Input: %s", fileNameInput.GetString());
         }
 
         if (scene->mMeshes == nullptr)
         {
-            throw OptimizerException(__LINE__, L"No meshes found in scene: %s", meshInput.GetString());
+            throw OptimizerException(__LINE__, L"No meshes found in scene: %s", fileNameInput.GetString());
         }
 
+        aiApplyPostProcessing(scene, postProcessFlags);
+
         Gek::Shape::AlignedBox boundingBox;
-        std::multimap<CStringA, Model> modelList;
-        GetMeshes(scene, scene->mRootNode, modelList, boundingBox);
+        std::unordered_map<CStringA, std::list<Gek::Model>> modelListUTF8;
+        Gek::GetMeshes(scene, scene->mRootNode, modelListUTF8, boundingBox);
+
+        aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
 
-        std::unordered_map<CStringW, Model> materialModelList;
-        for (auto &model : modelList)
+        std::unordered_map<CStringW, std::list<Gek::Model>> modelList;
+        for (auto &material : modelListUTF8)
         {
-            CStringW material = CA2W(model.first, CP_UTF8);
-            material.Replace(L"/", L"\\");
+            CStringW materialName = CA2W(material.first, CP_UTF8);
+            materialName.Replace(L"/", L"\\");
 
-            CPathW materialPath(material);
+            CPathW materialPath(materialName);
             materialPath.RemoveExtension();
-            material = LPCWSTR(materialPath);
+            materialName = LPCWSTR(materialPath);
 
-            int texturesPathIndex = material.Find(L"\\textures\\");
+            int texturesPathIndex = materialName.Find(L"\\textures\\");
             if (texturesPathIndex >= 0)
             {
-                material = material.Mid(texturesPathIndex + 10);
+                materialName = materialName.Mid(texturesPathIndex + 10);
             }
 
-            if (material.Right(9).CompareNoCase(L".colormap") == 0)
+            if (materialName.Right(9).CompareNoCase(L".colormap") == 0)
             {
-                material = material.Left(material.GetLength() - 9);
+                materialName = materialName.Left(materialName.GetLength() - 9);
             }
-            else if (material.Right(7).CompareNoCase(L".albedo") == 0)
+            else if (materialName.Right(7).CompareNoCase(L".albedo") == 0)
             {
-                material = material.Left(material.GetLength() - 7);
+                materialName = materialName.Left(materialName.GetLength() - 7);
             }
-            else if (material.Right(2).CompareNoCase(L"_a") == 0)
+            else if (materialName.Right(2).CompareNoCase(L"_a") == 0)
             {
-                material = material.Left(material.GetLength() - 2);
+                materialName = materialName.Left(materialName.GetLength() - 2);
             }
 
-            CPathW materialName(material);
-            materialName.StripPath();
+            CPathW fileSpecifier(materialName);
+            fileSpecifier.StripPath();
 
-            CPathW folderName(material);
+            CPathW folderName(materialName);
             folderName.RemoveFileSpec();
             folderName.StripPath();
 
-            if (materialName.m_strPath.CompareNoCase(folderName.m_strPath) == 0)
+            if (fileSpecifier.m_strPath.CompareNoCase(folderName.m_strPath) == 0)
             {
-                materialPath.m_strPath = material;
+                materialPath.m_strPath = materialName;
                 materialPath.RemoveFileSpec();
-                material = LPCWSTR(materialPath);
+                materialName = LPCWSTR(materialPath);
             }
 
-            Model &materialModel = materialModelList[material];
-            for (auto &nIndex : model.second.indexList)
-            {
-                materialModel.indexList.push_back(UINT16(nIndex + materialModel.vertexList.size()));
-            }
-
-            materialModel.vertexList.insert(materialModel.vertexList.end(), model.second.vertexList.begin(), model.second.vertexList.end());
-        }
-
-        printf("< Num. Materials: %d\r\n", materialModelList.size());
-        for (auto &materialModel : materialModelList)
-        {
-            CStringW material = materialModel.first;
-            printf("-< Material: %S\r\n", material.GetString());
-            printf("--< Num. Vertices: %d\r\n", materialModel.second.vertexList.size());
-            printf("--< Num. Indices: %d\r\n", materialModel.second.indexList.size());
+            modelList[materialName] = material.second;
         }
 
         printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
         printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
-
-        if (createMesh)
+        if (mode.CompareNoCase(L"model") == 0)
         {
+            std::unordered_map<CStringW, Gek::Model> sortedModelList;
+            for (auto &material : modelList)
+            {
+                Gek::Model &sortedModel = sortedModelList[material.first];
+                for (auto &model : material.second)
+                {
+                    for (auto &index : model.indexList)
+                    {
+                        sortedModel.indexList.push_back(UINT16(index + sortedModel.vertexList.size()));
+                    }
+
+                    sortedModel.vertexList.insert(sortedModel.vertexList.end(), model.vertexList.begin(), model.vertexList.end());
+                }
+            }
+
             FILE *file = nullptr;
-            _wfopen_s(&file, meshOutput, L"wb");
+            _wfopen_s(&file, fileNameOutput, L"wb");
             if (file != nullptr)
             {
-                UINT32 nGEKX = *(UINT32 *)"GEKX";
-                UINT16 nType = 0;
-                UINT16 nVersion = 2;
-                UINT32 materialCount = materialModelList.size();
-                fwrite(&nGEKX, sizeof(UINT32), 1, file);
-                fwrite(&nType, sizeof(UINT16), 1, file);
-                fwrite(&nVersion, sizeof(UINT16), 1, file);
+                UINT32 gekMagic = *(UINT32 *)"GEKX";
+                UINT16 gekModelType = 0;
+                UINT16 gekModelVersion = 2;
+                UINT32 materialCount = sortedModelList.size();
+                fwrite(&gekMagic, sizeof(UINT32), 1, file);
+                fwrite(&gekModelType, sizeof(UINT16), 1, file);
+                fwrite(&gekModelVersion, sizeof(UINT16), 1, file);
                 fwrite(&boundingBox, sizeof(Gek::Shape::AlignedBox), 1, file);
                 fwrite(&materialCount, sizeof(UINT32), 1, file);
 
-                Model finalModelData;
-                for (auto &materialModel : materialModelList)
+                Gek::Model fullModel;
+                printf("> Num. Materials: %d\r\n", materialCount);
+                for (auto &model : sortedModelList)
                 {
-                    CStringW material = materialModel.first;
-                    fwrite(material.GetString(), ((material.GetLength() + 1) * sizeof(WCHAR)), 1, file);
+                    CStringW materialName = model.first;
+                    fwrite(materialName.GetString(), ((materialName.GetLength() + 1) * sizeof(WCHAR)), 1, file);
 
-                    UINT32 firstVertex = finalModelData.vertexList.size();
-                    UINT32 firstIndex = finalModelData.indexList.size();
-                    UINT32 indexCount = materialModel.second.indexList.size();
+                    UINT32 firstVertex = fullModel.vertexList.size();
+                    UINT32 firstIndex = fullModel.indexList.size();
+                    UINT32 indexCount = model.second.indexList.size();
                     fwrite(&firstVertex, sizeof(UINT32), 1, file);
                     fwrite(&firstIndex, sizeof(UINT32), 1, file);
                     fwrite(&indexCount, sizeof(UINT32), 1, file);
 
-                    finalModelData.vertexList.insert(finalModelData.vertexList.end(), materialModel.second.vertexList.begin(), materialModel.second.vertexList.end());
-                    finalModelData.indexList.insert(finalModelData.indexList.end(), materialModel.second.indexList.begin(), materialModel.second.indexList.end());
+                    printf("-  %S\r\n", materialName.GetString());
+                    printf("    %d vertices\r\n", model.second.vertexList.size());
+                    printf("    %d indices\r\n", model.second.indexList.size());
+
+                    fullModel.vertexList.insert(fullModel.vertexList.end(), model.second.vertexList.begin(), model.second.vertexList.end());
+                    fullModel.indexList.insert(fullModel.indexList.end(), model.second.indexList.begin(), model.second.indexList.end());
                 }
 
-                UINT32 vertexCount = finalModelData.vertexList.size();
+                UINT32 vertexCount = fullModel.vertexList.size();
                 fwrite(&vertexCount, sizeof(UINT32), 1, file);
-                fwrite(finalModelData.vertexList.data(), sizeof(Vertex), finalModelData.vertexList.size(), file);
+                fwrite(fullModel.vertexList.data(), sizeof(Gek::Vertex), fullModel.vertexList.size(), file);
 
-                UINT32 indexCount = finalModelData.indexList.size();
+                UINT32 indexCount = fullModel.indexList.size();
                 fwrite(&indexCount, sizeof(UINT32), 1, file);
-                fwrite(finalModelData.indexList.data(), sizeof(UINT16), finalModelData.indexList.size(), file);
+                fwrite(fullModel.indexList.data(), sizeof(UINT16), fullModel.indexList.size(), file);
+
+                printf("> %d total vertices\r\n", vertexCount);
+                printf("> %d total indices\r\n", indexCount);
 
                 fclose(file);
             }
             else
             {
-                throw OptimizerException(__LINE__, L"[error] Unable to Save Output: %s\r\n", meshOutput.GetString());
+                throw OptimizerException(__LINE__, L"[error] Unable to Save Output: %s\r\n", fileNameOutput.GetString());
             }
         }
-
-        if (createConvexHull || createTree)
+        else  if (mode.CompareNoCase(L"hull") == 0)
         {
             NewtonWorld *newtonWorld = NewtonCreate();
-            if (createConvexHull)
+            std::vector<Gek::Math::Float3> pointCloudList;
+            for (auto &material : modelList)
             {
-                std::vector<Gek::Math::Float3> pointCloudList;
-                for (auto &materialModel : materialModelList)
+                for (auto &model : material.second)
                 {
-                    auto &indexList = materialModel.second.indexList;
-                    auto &vertexList = materialModel.second.vertexList;
-                    for (auto &index : indexList)
+                    for (auto &index : model.indexList)
                     {
-                        pointCloudList.push_back(vertexList[index].position);
+                        pointCloudList.push_back(model.vertexList[index].position);
                     }
-                }
-
-                NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointCloudList.size(), pointCloudList[0].data, sizeof(Gek::Math::Float3), 0.025f, 0, Gek::Math::Float4x4().data);
-                if (newtonCollision)
-                {
-                    FILE *file = nullptr;
-                    _wfopen_s(&file, convexHullOutput, L"wb");
-                    if (file != nullptr)
-                    {
-                        UINT32 nGEKX = *(UINT32 *)"GEKX";
-                        UINT16 nType = 1;
-                        UINT16 nVersion = 0;
-                        fwrite(&nGEKX, sizeof(UINT32), 1, file);
-                        fwrite(&nType, sizeof(UINT16), 1, file);
-                        fwrite(&nVersion, sizeof(UINT16), 1, file);
-
-                        NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
-                        fclose(file);
-                    }
-
-                    NewtonDestroyCollision(newtonCollision);
-                }
-                else
-                {
-                    throw OptimizerException(__LINE__, L"[error] Unable to Serialize Convex Hull: %s\r\n", convexHullOutput.GetString());
                 }
             }
 
-            if (createTree)
+            printf("> Num. Points: %d\r\n", pointCloudList.size());
+            NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointCloudList.size(), pointCloudList[0].data, sizeof(Gek::Math::Float3), 0.025f, 0, Gek::Math::Float4x4().data);
+            if (newtonCollision)
             {
-                NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
-                if (newtonCollision != nullptr)
+                FILE *file = nullptr;
+                _wfopen_s(&file, fileNameOutput, L"wb");
+                if (file != nullptr)
                 {
-                    std::vector<CStringW> materialList;
-                    NewtonTreeCollisionBeginBuild(newtonCollision);
-                    for (auto &materialModel : materialModelList)
+                    UINT32 gekMagic = *(UINT32 *)"GEKX";
+                    UINT16 gekModelType = 1;
+                    UINT16 gekModelVersion = 0;
+                    fwrite(&gekMagic, sizeof(UINT32), 1, file);
+                    fwrite(&gekModelType, sizeof(UINT16), 1, file);
+                    fwrite(&gekModelVersion, sizeof(UINT16), 1, file);
+
+                    NewtonCollisionSerialize(newtonWorld, newtonCollision, Gek::serializeCollision, file);
+                    fclose(file);
+                }
+
+                NewtonDestroyCollision(newtonCollision);
+            }
+            else
+            {
+                throw OptimizerException(__LINE__, L"[error] Unable to Serialize Convex Hull: %s\r\n", fileNameOutput.GetString());
+            }
+
+            NewtonDestroy(newtonWorld);
+        }
+        else  if (mode.CompareNoCase(L"tree") == 0)
+        {
+            printf("> Num. Materials: %d\r\n", modelList.size());
+
+            NewtonWorld *newtonWorld = NewtonCreate();
+            NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
+            if (newtonCollision != nullptr)
+            {
+                int materialIdentifier = 0;
+                NewtonTreeCollisionBeginBuild(newtonCollision);
+                for (auto &material : modelList)
+                {
+                    printf("-  %S: %d models\r\n", material.first.GetString(), material.second.size());
+                    for (auto &model : material.second)
                     {
-                        int materialIndex = materialList.size();
-                        materialList.push_back(materialModel.first);
+                        printf("-    %d vertices\r\n", model.vertexList.size());
+                        printf("     %d indices\r\n", model.indexList.size());
+
                         std::vector<Gek::Math::Float3> faceVertexList;
-                        auto &indexList = materialModel.second.indexList;
-                        auto &vertexList = materialModel.second.vertexList;
+                        auto &indexList = model.indexList;
+                        auto &vertexList = model.vertexList;
                         for (auto &index : indexList)
                         {
                             faceVertexList.push_back(vertexList[index].position);
@@ -474,46 +503,52 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
 
                         for (UINT32 index = 0; index < faceVertexList.size(); index += 3)
                         {
-                            NewtonTreeCollisionAddFace(newtonCollision, 3, faceVertexList[index].data, sizeof(Gek::Math::Float3), materialIndex);
+                            NewtonTreeCollisionAddFace(newtonCollision, 3, faceVertexList[index].data, sizeof(Gek::Math::Float3), materialIdentifier);
                         }
                     }
 
-                    NewtonTreeCollisionEndBuild(newtonCollision, 1);
+                    ++materialIdentifier;
+                }
 
-                    FILE *file = nullptr;
-                    _wfopen_s(&file, treeOutput, L"wb");
-                    if (file != nullptr)
-                    {
-                        UINT32 nGEKX = *(UINT32 *)"GEKX";
-                        UINT16 nType = 2;
-                        UINT16 nVersion = 0;
-                        UINT32 materialCount = materialList.size();
-                        fwrite(&nGEKX, sizeof(UINT32), 1, file);
-                        fwrite(&nType, sizeof(UINT16), 1, file);
-                        fwrite(&nVersion, sizeof(UINT16), 1, file);
-                        fwrite(&materialCount, sizeof(UINT32), 1, file);
-                        for (auto &material : materialList)
-                        {
-                            fwrite(material.GetString(), ((material.GetLength() + 1) * sizeof(wchar_t)), 1, file);
-                        }
+                NewtonTreeCollisionEndBuild(newtonCollision, 1);
 
-                        NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
-                        fclose(file);
-                    }
-                    else
+                FILE *file = nullptr;
+                _wfopen_s(&file, fileNameOutput, L"wb");
+                if (file != nullptr)
+                {
+                    UINT32 gekMagic = *(UINT32 *)"GEKX";
+                    UINT16 gekModelType = 2;
+                    UINT16 gekModelVersion = 0;
+                    UINT32 materialCount = modelList.size();
+                    fwrite(&gekMagic, sizeof(UINT32), 1, file);
+                    fwrite(&gekModelType, sizeof(UINT16), 1, file);
+                    fwrite(&gekModelVersion, sizeof(UINT16), 1, file);
+                    fwrite(&materialCount, sizeof(UINT32), 1, file);
+                    for (auto &material : modelList)
                     {
-                        throw OptimizerException(__LINE__, L"[error] Unable to Serialize Tree: %s\r\n", treeOutput.GetString());
+                        fwrite(material.first.GetString(), ((material.first.GetLength() + 1) * sizeof(wchar_t)), 1, file);
                     }
 
-                    NewtonDestroyCollision(newtonCollision);
+                    NewtonCollisionSerialize(newtonWorld, newtonCollision, Gek::serializeCollision, file);
+                    fclose(file);
                 }
                 else
                 {
-                    throw OptimizerException(__LINE__, L"[error] Unable to Create Tree Collision\r\n");
+                    throw OptimizerException(__LINE__, L"[error] Unable to Serialize Tree: %s\r\n", fileNameOutput.GetString());
                 }
+
+                NewtonDestroyCollision(newtonCollision);
+            }
+            else
+            {
+                throw OptimizerException(__LINE__, L"[error] Unable to Create Tree Collision\r\n");
             }
 
             NewtonDestroy(newtonWorld);
+        }
+        else
+        {
+            throw OptimizerException(__LINE__, L"[error] Invalid conversion mode specified: %s", mode.GetString());
         }
     }
     catch (OptimizerException exception)

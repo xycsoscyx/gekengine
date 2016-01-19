@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CD1F62C9-8032-40A9-9749-594249AEE5E9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>optimizer</RootNamespace>
+    <RootNamespace>modelconverter</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -109,6 +109,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Progressive Meshes\quadrics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\math\math.vcxproj">
@@ -120,6 +121,10 @@
     <ProjectReference Include="..\..\libraries\utility\utility.vcxproj">
       <Project>{be4f1e7f-e045-4d30-aed6-02a60c83bd97}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Progressive Meshes\matrix.h" />
+    <ClInclude Include="Progressive Meshes\quadrics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
