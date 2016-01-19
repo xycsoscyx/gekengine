@@ -17,6 +17,7 @@ namespace Gek
                 struct { float x, y, z, w; };
                 struct { float data[4]; };
                 struct { __m128 simd; };
+                struct { Float3 vector; float w; };
             };
 
         public:

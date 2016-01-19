@@ -15,12 +15,30 @@ namespace Gek
         , public PopulationObserver
         , public Processor
     {
+    public:
+        struct Data
+        {
+            Entity *target;
+            Math::Quaternion rotation;
+
+            Data(void)
+                : target(nullptr)
+            {
+            }
+
+            Data(Entity *target)
+                : target(target)
+                , rotation(target->getComponent<TransformComponent>().rotation)
+            {
+            }
+        };
+
     private:
         Population *population;
         UINT32 updateHandle;
 
         std::map<UINT32, Entity *> entityOrderMap;
-        std::unordered_map<Entity *, std::pair<Entity *, Math::Quaternion>> entityDataMap;
+        std::unordered_map<Entity *, Data> entityDataMap;
 
     public:
         FollowProcessorImplementation(void)
@@ -94,7 +112,7 @@ namespace Gek
                         auto &targetTransformComponent = target->getComponent<TransformComponent>();
                         transformComponent.position = targetTransformComponent.position;
                         transformComponent.rotation = targetTransformComponent.rotation;
-                        entityDataMap[entity] = std::make_pair(target, targetTransformComponent.rotation);
+                        entityDataMap[entity] = Data(target);
 
                         static UINT32 nextOrder = 0;
                         UINT32 order = InterlockedIncrement(&nextOrder);
@@ -119,27 +137,26 @@ namespace Gek
             {
                 auto entityDataIterator = entityDataMap.find(entityOrderPair.second);
                 Entity *entity = entityDataIterator->first;
-                Entity *target = entityDataIterator->second.first;
-                Math::Quaternion &rotation = entityDataIterator->second.second;
+                Data &data = entityDataIterator->second;
                 auto &followComponent = entity->getComponent<FollowComponent>();
                 auto &transformComponent = entity->getComponent<TransformComponent>();
-                auto &targetTransformComponent = target->getComponent<TransformComponent>();
+                auto &targetTransformComponent = data.target->getComponent<TransformComponent>();
 
                 if (followComponent.mode.CompareNoCase(L"offset") == 0)
                 {
-                    transformComponent.position = targetTransformComponent.position + targetTransformComponent.rotation * followComponent.distance;
-                    transformComponent.rotation = targetTransformComponent.rotation;
+                    transformComponent.position.set(targetTransformComponent.position + (targetTransformComponent.rotation * followComponent.distance));
+                    transformComponent.rotation.set(targetTransformComponent.rotation);
                 }
                 else
                 {
-                    rotation = rotation.slerp(targetTransformComponent.rotation, followComponent.speed);
-                    //rotation = targetTransformComponent.rotation;
+                    //data.rotation.set(data.rotation.slerp(targetTransformComponent.rotation, followComponent.speed * frameTime));
+                    data.rotation = targetTransformComponent.rotation;
 
-                    transformComponent.position = (targetTransformComponent.position + (rotation * followComponent.distance));
+                    transformComponent.position.set(targetTransformComponent.position + (data.rotation * followComponent.distance));
 
                     Math::Float4x4 lookAtMatrix;
                     lookAtMatrix.setLookAt(transformComponent.position, targetTransformComponent.position, Math::Float3(0.0f, 1.0f, 0.0f));
-                    transformComponent.rotation = lookAtMatrix.getQuaternion();
+                    transformComponent.rotation.set(lookAtMatrix.getQuaternion());
                 }
             }
         }

@@ -134,21 +134,8 @@ namespace Gek
 
         Float3 Quaternion::operator * (const Float3 &vector) const
         {
-            float x2(x * 2.0f);
-            float y2(y * 2.0f);
-            float z2(z * 2.0f);
-            float xx2(x * x2);
-            float yy2(y * y2);
-            float zz2(z * z2);
-            float xy2(x * y2);
-            float xz2(x * z2);
-            float yz2(y * z2);
-            float wx2(w * x2);
-            float wy2(w * y2);
-            float wz2(w * z2);
-            return Float3(((1.0f - (yy2 + zz2)) * vector.x + (xy2 - wz2) * vector.y + (xz2 + wy2) * vector.z),
-                          ((xy2 + wz2) * vector.x + (1.0f - (xx2 + zz2)) * vector.y + (yz2 - wx2) * vector.z),
-                          ((xz2 - wy2) * vector.x + (yz2 + wx2) * vector.y + (1.0f - (xx2 + yy2)) * vector.z));
+            Float3 cross(2.0f * this->vector.cross(vector));
+            return (vector + (this->w * cross) + this->vector.cross(cross));
         }
 
         Quaternion Quaternion::operator * (const Quaternion &rotation) const
