@@ -429,6 +429,11 @@ namespace Gek
                 resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
                 if (SUCCEEDED(resultValue) && buffer)
                 {
+                    if (flags & Video::BufferFlags::UnorderedAccess)
+                    {
+                        video->getDefaultContext()->clearUnorderedAccessBuffer(buffer, 1.0f);
+                    }
+
                     resultValue = buffer->QueryInterface(returnObject);
                 }
 

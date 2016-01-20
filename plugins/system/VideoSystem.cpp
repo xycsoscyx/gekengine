@@ -875,6 +875,26 @@ namespace Gek
             }
         }
 
+        STDMETHODIMP_(void) clearUnorderedAccessBuffer(VideoBuffer *buffer, float value)
+        {
+            REQUIRE_VOID_RETURN(d3dDeviceContext);
+            REQUIRE_VOID_RETURN(buffer);
+
+            CComQIPtr<ID3D11UnorderedAccessView> d3dBuffer(buffer);
+            if (buffer)
+            {
+                float valueList[4] =
+                {
+                    value,
+                    value,
+                    value,
+                    value,
+                };
+
+                d3dDeviceContext->ClearUnorderedAccessViewFloat(d3dBuffer, valueList);
+            }
+        }
+
         STDMETHODIMP_(void) setRenderTargets(VideoTarget **renderTargetList, UINT32 renderTargetCount, IUnknown *depthBuffer)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);

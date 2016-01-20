@@ -454,6 +454,7 @@ namespace Gek
 
         STDMETHOD_(void, clearRenderTarget)                 (THIS_ VideoTarget *renderTarget, const Math::Float4 &colorClear) PURE;
         STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ IUnknown *depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
+        STDMETHOD_(void, clearUnorderedAccessBuffer)        (THIS_ VideoBuffer *buffer, float value) PURE;
         STDMETHOD_(void, setRenderTargets)                  (THIS_ VideoTarget **renderTargetList, UINT32 renderTargetCount, IUnknown *depthBuffer) PURE;
 
         STDMETHOD_(void, setRenderStates)                   (THIS_ IUnknown *renderStates) PURE;
