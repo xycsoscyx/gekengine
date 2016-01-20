@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ContextImplementation.cpp" />
+    <ClCompile Include="Context.cpp" />
     <ClCompile Include="ContextUserMixin.cpp" />
     <ClCompile Include="ObservableMixin.cpp" />
     <ClCompile Include="UnknownMixin.cpp" />

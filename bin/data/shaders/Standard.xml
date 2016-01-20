@@ -28,6 +28,7 @@
 
     <buffers>
         <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %maximumListSize%">byte</tileIndexList>
+        <averageLuminance size="1">float</averageLuminance>
     </buffers>
 
     <block>
@@ -149,6 +150,10 @@
                 <normalBuffer />
                 <depthBuffer />
             </resources>
+
+            <unorderedaccess>
+                <averageLuminance />
+            </unorderedaccess>
 
             <program>
                 <entry>mainPixelProgram</entry>

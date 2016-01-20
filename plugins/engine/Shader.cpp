@@ -928,6 +928,8 @@ namespace Gek
                                         }
                                         else
                                         {
+                                            UINT32 renderTargetCount = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
+
                                             CStringA unorderedAccessData;
                                             UINT32 unorderedAccessListCount = pass.unorderedAccessList.size();
                                             for (UINT32 index = 0; index < unorderedAccessListCount; index++)
@@ -936,7 +938,7 @@ namespace Gek
                                                 auto resourceIterator = resourceList.find(unorderedAccess);
                                                 if (resourceIterator != resourceList.end())
                                                 {
-                                                    unorderedAccessData.AppendFormat("    %S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), index);
+                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), unorderedAccess.GetString(), (index + renderTargetCount));
                                                 }
                                             }
 
@@ -1130,7 +1132,7 @@ namespace Gek
                             resources->setResource(videoPipeline, resource, stage++);
                         }
 
-                        stage = 0;
+                        stage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
                         for (auto &unorderedAccessName : pass.unorderedAccessList)
                         {
                             ResourceHandle resource;

@@ -18,7 +18,7 @@
     <ClCompile Include="ContextUserMixin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ContextImplementation.cpp">
+    <ClCompile Include="Context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

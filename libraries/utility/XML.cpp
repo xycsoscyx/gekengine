@@ -278,7 +278,7 @@ namespace Gek
         return resultValue;
     }
 
-    HRESULT XmlDocument::load(LPCWSTR fileName)
+    HRESULT XmlDocument::load(LPCWSTR fileName, bool validateDTD)
     {
         if (document != nullptr)
         {
@@ -288,7 +288,7 @@ namespace Gek
 
         HRESULT resultValue = E_FAIL;
         CStringW expandedFileName(Gek::FileSystem::expandPath(fileName));
-        document = xmlReadFile(CW2A(expandedFileName, CP_UTF8), nullptr, XML_PARSE_DTDATTR | XML_PARSE_NOENT | XML_PARSE_DTDVALID);
+        document = xmlReadFile(CW2A(expandedFileName, CP_UTF8), nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT);
         if (document != nullptr)
         {
             resultValue = S_OK;

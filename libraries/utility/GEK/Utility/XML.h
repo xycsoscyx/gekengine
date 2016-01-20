@@ -49,7 +49,7 @@ namespace Gek
         ~XmlDocument(void);
 
         HRESULT create(LPCWSTR rootType);
-        HRESULT load(LPCWSTR fileName);
+        HRESULT load(LPCWSTR fileName, bool validateDTD = false);
         HRESULT save(LPCWSTR fileName);
 
         XmlNode getRoot(void) const;

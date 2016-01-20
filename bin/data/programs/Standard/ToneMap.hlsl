@@ -102,7 +102,11 @@ float3 CalcExposedColor(float3 color, float avgLuminance, float threshold)
 
 float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
+    float previousluminance = UnorderedAccess::averageLuminance[0];
     float averageLuminance = Resources::luminanceBuffer.SampleLevel(Global::linearSampler, inputPixel.texCoord, 10);
+    averageLuminance = lerp(previousluminance, averageLuminance, 0.5);
+    UnorderedAccess::averageLuminance[0] = averageLuminance;
+
     float3 color = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord).rgb;
 
     color = CalcExposedColor(color, averageLuminance, 0.0);
