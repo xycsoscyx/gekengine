@@ -2,6 +2,7 @@
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\FileSystem.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Processor.h"
@@ -236,42 +237,42 @@ namespace Gek
                 collisionList[collisionHash] = nullptr;
                 if (shapeType.CompareNoCase(L"*cube") == 0)
                 {
-                    Math::Float3 size(String::to<Math::Float3>(parameters));
+                    Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
                     newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*sphere") == 0)
                 {
-                    float size = String::to<float>(parameters);
+                    float size = Evaluator::get<float>(parameters);
                     newtonCollision = NewtonCreateSphere(newtonWorld, size, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*cone") == 0)
                 {
-                    Math::Float2 size(String::to<Math::Float2>(parameters));
+                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
                     newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*capsule") == 0)
                 {
-                    Math::Float2 size(String::to<Math::Float2>(parameters));
+                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
                     newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*cylinder") == 0)
                 {
-                    Math::Float2 size(String::to<Math::Float2>(parameters));
+                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
                     newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*tapered_capsule") == 0)
                 {
-                    Math::Float3 size(String::to<Math::Float3>(parameters));
+                    Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
                     newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*tapered_cylinder") == 0)
                 {
-                    Math::Float3 size(String::to<Math::Float3>(parameters));
+                    Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
                     newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*chamfer_cylinder") == 0)
                 {
-                    Math::Float2 size(String::to<Math::Float2>(parameters));
+                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
                     newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
 

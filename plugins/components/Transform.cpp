@@ -1,6 +1,7 @@
 #include "GEK\Components\Transform.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Engine\ComponentMixin.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 
 namespace Gek
@@ -20,9 +21,9 @@ namespace Gek
 
     HRESULT TransformComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"position", position, String::to<Math::Float3>);
-        setParameter(componentParameterList, L"rotation", rotation, String::to<Math::Quaternion>);
-        setParameter(componentParameterList, L"scale", scale, String::to<Math::Float3>);
+        setParameter(componentParameterList, L"position", position, Evaluator::get<Math::Float3>);
+        setParameter(componentParameterList, L"rotation", rotation, Evaluator::get<Math::Quaternion>);
+        setParameter(componentParameterList, L"scale", scale, Evaluator::get<Math::Float3>);
         return S_OK;
     }
 

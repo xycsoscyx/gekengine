@@ -1,6 +1,7 @@
 #include "GEK\Newton\Mass.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Engine\ComponentMixin.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Math\Common.h"
 
@@ -19,7 +20,7 @@ namespace Gek
 
     HRESULT MassComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"", value, String::to<float>);
+        setParameter(componentParameterList, L"", value, Evaluator::get<float>);
         return S_OK;
     }
 

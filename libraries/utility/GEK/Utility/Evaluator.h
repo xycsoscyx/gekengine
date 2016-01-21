@@ -21,5 +21,13 @@ namespace Gek
         bool get(LPCWSTR expression, INT64 &result);
         bool get(LPCWSTR expression, UINT64 &result);
         bool get(LPCWSTR expression, bool &result);
+
+        template <typename TYPE>
+        TYPE get(LPCWSTR expression)
+        {
+            TYPE value;
+            get(expression, value);
+            return value;
+        }
     }; // namespace Evaluator
 }; // namespace Gek

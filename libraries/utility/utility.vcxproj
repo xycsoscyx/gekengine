@@ -26,7 +26,6 @@
     <ClInclude Include="GEK\Utility\String.h" />
     <ClInclude Include="GEK\Utility\Timer.h" />
     <ClInclude Include="GEK\Utility\XML.h" />
-    <ClInclude Include="ShuntingYard.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BE4F1E7F-E045-4D30-AED6-02A60C83BD97}</ProjectGuid>

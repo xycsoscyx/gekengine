@@ -5,210 +5,166 @@ namespace Gek
 {
     namespace String
     {
-        void to(LPCWSTR expression, double &value)
+        bool to(LPCWSTR expression, double &value)
         {
             value = 0.0;
-            Evaluator::get(expression, value);
+            return (swscanf_s(expression, L"%lf", &value) == 1);
         }
 
-        void to(LPCWSTR expression, float &value)
+        bool to(LPCWSTR expression, float &value)
         {
             value = 0.0f;
-            Evaluator::get(expression, value);
+            return (swscanf_s(expression, L"%f", &value) == 1);
         }
 
-        void to(LPCWSTR expression, Gek::Math::Float2 &value)
+        bool to(LPCWSTR expression, Gek::Math::Float2 &value)
         {
-            if (!Evaluator::get(expression, value))
-            {
-                if (Evaluator::get(expression, value.x))
-                {
-                    value.y = value.x;
-                }
-            }
+            return (swscanf_s(expression, L"%f,%f", &value.x, &value.y) == 2);
         }
 
-        void to(LPCWSTR expression, Gek::Math::Float3 &value)
+        bool to(LPCWSTR expression, Gek::Math::Float3 &value)
         {
-            if (!Evaluator::get(expression, value))
-            {
-                if (Evaluator::get(expression, value.x))
-                {
-                    value.y = value.z = value.x;
-                }
-            }
+            return (swscanf_s(expression, L"%f,%f,%f", &value.x, &value.y, &value.z) == 3);
         }
 
-        void to(LPCWSTR expression, Gek::Math::Float4 &value)
+        bool to(LPCWSTR expression, Gek::Math::Float4 &value)
         {
-            if (!Evaluator::get(expression, value))
-            {
-                if (Evaluator::get(expression, *(Gek::Math::Float3 *)&value))
-                {
-                    value.w = 1.0f;
-                }
-                else
-                {
-                    if (Evaluator::get(expression, value.x))
-                    {
-                        value.y = value.z = value.w = value.x;
-                    }
-                }
-            }
+            return (swscanf_s(expression, L"%f,%f,%f,%f", &value.x, &value.y, &value.z, &value.w) == 4);
         }
 
-        void to(LPCWSTR expression, Gek::Math::Quaternion &value)
+        bool to(LPCWSTR expression, Gek::Math::Quaternion &value)
         {
-            if (!Evaluator::get(expression, value))
+            int values = swscanf_s(expression, L"%f,%f,%f,%f", &value.x, &value.y, &value.z, &value.w);
+            if (values == 3)
             {
-                Gek::Math::Float3 euler;
-                if (Evaluator::get(expression, euler))
-                {
-                    value.setEulerRotation(euler.x, euler.y, euler.z);
-                }
+                value.setEulerRotation(value.x, value.y, value.z);
+                values = 4;
             }
+
+            return (values == 4);
         }
 
-        void to(LPCWSTR expression, INT32 &value)
+        bool to(LPCWSTR expression, INT32 &value)
         {
             value = 0;
-            Evaluator::get(expression, value);
+            return (swscanf_s(expression, L"%d", &value) == 1);
         }
 
-        void to(LPCWSTR expression, UINT32 &value)
+        bool to(LPCWSTR expression, UINT32 &value)
         {
             value = 0;
-            Evaluator::get(expression, value);
+            return (swscanf_s(expression, L"%u", &value) == 1);
         }
 
-        void to(LPCWSTR expression, INT64 &value)
+        bool to(LPCWSTR expression, INT64 &value)
         {
             value = 0;
-            Evaluator::get(expression, value);
+            return (swscanf_s(expression, L"%lld", &value) == 1);
         }
 
-        void to(LPCWSTR expression, UINT64 &value)
+        bool to(LPCWSTR expression, UINT64 &value)
         {
             value = 0;
-            Evaluator::get(expression, value);
+            return (swscanf_s(expression, L"%llu", &value) == 1);
         }
 
-        void to(LPCWSTR expression, bool &value)
+        bool to(LPCWSTR expression, bool &value)
         {
-            value = false;
-            Evaluator::get(expression, value);
+            if (_wcsicmp(expression, L"true") == 0 ||
+                _wcsicmp(expression, L"yes") == 0)
+            {
+                value = true;
+                return true;
+            }
+
+            INT32 integerValue = 0;
+            if (to(expression, integerValue))
+            {
+                value = (integerValue == 0 ? false : true);
+                return true;
+            }
+
+            return false;
         }
 
         CStringW from(double value)
         {
-            CStringW strValue;
-            strValue.Format(L"%f", value);
-            return strValue;
+            return format(L"%f", value);
         }
 
         CStringW from(float value)
         {
-            CStringW strValue;
-            strValue.Format(L"%f", value);
-            return strValue;
+            return format(L"%f", value);
         }
 
         CStringW from(const Gek::Math::Float2 &value)
         {
-            CStringW strValue;
-            strValue.Format(L"%f,%f", value.x, value.y);
-            return strValue;
+            return format(L"%f,%f", value.x, value.y);
         }
 
         CStringW from(const Gek::Math::Float3 &value)
         {
-            CStringW strValue;
-            strValue.Format(L"%f,%f,%f", value.x, value.y, value.z);
-            return strValue;
+            return format(L"%f,%f,%f", value.x, value.y, value.z);
         }
 
         CStringW from(const Gek::Math::Float4 &value)
         {
-            CStringW strValue;
-            strValue.Format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);
-            return strValue;
+            return format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);
         }
 
         CStringW from(const Gek::Math::Quaternion &value)
         {
-            CStringW strValue;
-            strValue.Format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);
-            return strValue;
+            return format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);
         }
 
         CStringW from(INT8 value)
         {
-            CStringW strValue;
-            strValue.Format(L"%hhd", value);
-            return strValue;
+            return format(L"%hhd", value);
         }
 
         CStringW from(UINT8 value)
         {
-            CStringW strValue;
-            strValue.Format(L"%hhu", value);
-            return strValue;
+            return format(L"%hhu", value);
         }
 
         CStringW from(INT16 value)
         {
-            CStringW strValue;
-            strValue.Format(L"%hd", value);
-            return strValue;
+            return format(L"%hd", value);
         }
 
         CStringW from(UINT16 value)
         {
-            CStringW strValue;
-            strValue.Format(L"%hu", value);
-            return strValue;
+            return format(L"%hu", value);
         }
 
         CStringW from(INT32 value)
         {
-            CStringW strValue;
-            strValue.Format(L"%d", value);
-            return strValue;
+            return format(L"%d", value);
         }
 
         CStringW from(UINT32 value)
         {
-            CStringW strValue;
-            strValue.Format(L"%u", value);
-            return strValue;
+            return format(L"%u", value);
         }
 
         CStringW from(DWORD value)
         {
-            CStringW strValue;
-            strValue.Format(L"0x%08X", value);
-            return strValue;
+            return format(L"0x%08X", value);
         }
 
         CStringW from(LPCVOID value)
         {
-            CStringW strValue;
-            strValue.Format(L"%p", value);
-            return strValue;
+            return format(L"%p", value);
         }
 
         CStringW from(INT64 value)
         {
-            CStringW strValue;
-            strValue.Format(L"%lld", value);
-            return strValue;
+            return format(L"%lld", value);
         }
 
         CStringW from(UINT64 value)
         {
-            CStringW strValue;
-            strValue.Format(L"%llu", value);
-            return strValue;
+            return format(L"%llu", value);
         }
 
         CStringW from(bool value)

@@ -1,6 +1,7 @@
 #include "GEK\Components\Light.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Engine\ComponentMixin.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 
 namespace Gek
@@ -20,8 +21,8 @@ namespace Gek
 
     HRESULT LightComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"range", range, String::to<float>);
-        setParameter(componentParameterList, L"radius", radius, String::to<float>);
+        setParameter(componentParameterList, L"range", range, Evaluator::get<float>);
+        setParameter(componentParameterList, L"radius", radius, Evaluator::get <float>);
         return S_OK;
     }
 

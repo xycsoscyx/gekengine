@@ -2,9 +2,10 @@
 #include "GEK\Engine\Resources.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\System\VideoSystem.h"
+#include "GEK\Utility\FileSystem.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
-#include "GEK\Utility\FileSystem.h"
 #include <atlpath.h>
 #include <set>
 #include <ppl.h>
@@ -526,12 +527,12 @@ namespace Gek
                     {
                         if (xmlShaderNode.hasAttribute(L"width"))
                         {
-                            width = String::to<UINT32>(xmlShaderNode.getAttribute(L"width"));
+                            width = Evaluator::get<UINT32>(xmlShaderNode.getAttribute(L"width"));
                         }
 
                         if (xmlShaderNode.hasAttribute(L"height"))
                         {
-                            height = String::to<UINT32>(xmlShaderNode.getAttribute(L"height"));
+                            height = Evaluator::get<UINT32>(xmlShaderNode.getAttribute(L"height"));
                         }
 
                         std::unordered_map<CStringW, std::pair<MapType, BindType>> resourceList;
@@ -567,7 +568,7 @@ namespace Gek
                                 CStringW value(xmlDefineNode.getText());
                                 defineList[name] = value;
 
-                                globalDefines[LPCSTR(CW2A(name))].Format("%f", String::to<float>(replaceDefines(value)));
+                                globalDefines[LPCSTR(CW2A(name))].Format("%f", Evaluator::get<float>(replaceDefines(value)));
 
                                 xmlDefineNode = xmlDefineNode.nextSiblingElement();
                             };
@@ -606,7 +607,7 @@ namespace Gek
                             {
                                 CStringW name(xmlBufferNode.getType());
                                 Video::Format format = getFormat(xmlBufferNode.getText());
-                                UINT32 size = String::to<UINT32>(replaceDefines(xmlBufferNode.getAttribute(L"size")));
+                                UINT32 size = Evaluator::get<UINT32>(replaceDefines(xmlBufferNode.getAttribute(L"size")));
                                 bufferMap[name] = resources->createBuffer(String::format(L"%s:buffer:%s", fileName, name.GetString()), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                                 switch (format)
                                 {
@@ -894,9 +895,9 @@ namespace Gek
                                         Gek::XmlNode xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
                                         if (xmlComputeNode)
                                         {
-                                            pass.dispatchWidth = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
-                                            pass.dispatchHeight = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
-                                            pass.dispatchDepth = std::max(String::to<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
+                                            pass.dispatchWidth = std::max(Evaluator::get<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
+                                            pass.dispatchHeight = std::max(Evaluator::get<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
+                                            pass.dispatchDepth = std::max(Evaluator::get<UINT32>(replaceDefines(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
                                         }
 
                                         if (pass.mode == PassMode::Compute)

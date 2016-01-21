@@ -1,6 +1,7 @@
 #include "GEK\Components\Follow.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Engine\ComponentMixin.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 
 namespace Gek
@@ -23,8 +24,8 @@ namespace Gek
     {
         setParameter(componentParameterList, L"", target, [](LPCWSTR value) -> LPCWSTR { return value; });
         setParameter(componentParameterList, L"mode", mode, [](LPCWSTR value) -> LPCWSTR { return value; });
-        setParameter(componentParameterList, L"distance", distance, String::to<Math::Float3>);
-        setParameter(componentParameterList, L"speed", speed, String::to<float>);
+        setParameter(componentParameterList, L"distance", distance, Evaluator::get<Math::Float3>);
+        setParameter(componentParameterList, L"speed", speed, Evaluator::get<float>);
         return S_OK;
     }
 

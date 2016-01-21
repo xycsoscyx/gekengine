@@ -1,6 +1,7 @@
 #include "GEK\Components\Color.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Engine\ComponentMixin.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 
 namespace Gek
@@ -18,7 +19,7 @@ namespace Gek
 
     HRESULT ColorComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"", value, String::to<Math::Float4>);
+        setParameter(componentParameterList, L"", value, Evaluator::get<Math::Float4>);
         return S_OK;
     }
 

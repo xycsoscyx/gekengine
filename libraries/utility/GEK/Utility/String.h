@@ -13,17 +13,17 @@ namespace Gek
 {
     namespace String
     {
-        void to(LPCWSTR expression, double &value);
-        void to(LPCWSTR expression, float &value);
-        void to(LPCWSTR expression, Gek::Math::Float2 &value);
-        void to(LPCWSTR expression, Gek::Math::Float3 &value);
-        void to(LPCWSTR expression, Gek::Math::Float4 &value);
-        void to(LPCWSTR expression, Gek::Math::Quaternion &value);
-        void to(LPCWSTR expression, INT32 &value);
-        void to(LPCWSTR expression, UINT32 &value);
-        void to(LPCWSTR expression, INT64 &value);
-        void to(LPCWSTR expression, UINT64 &value);
-        void to(LPCWSTR expression, bool &value);
+        bool to(LPCWSTR expression, double &value);
+        bool to(LPCWSTR expression, float &value);
+        bool to(LPCWSTR expression, Gek::Math::Float2 &value);
+        bool to(LPCWSTR expression, Gek::Math::Float3 &value);
+        bool to(LPCWSTR expression, Gek::Math::Float4 &value);
+        bool to(LPCWSTR expression, Gek::Math::Quaternion &value);
+        bool to(LPCWSTR expression, INT32 &value);
+        bool to(LPCWSTR expression, UINT32 &value);
+        bool to(LPCWSTR expression, INT64 &value);
+        bool to(LPCWSTR expression, UINT64 &value);
+        bool to(LPCWSTR expression, bool &value);
 
         template <typename TYPE>
         TYPE to(LPCWSTR expression)

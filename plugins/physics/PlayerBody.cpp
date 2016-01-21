@@ -8,6 +8,7 @@
 #include "GEK\Newton\NewtonEntity.h"
 #include "GEK\Newton\PlayerBody.h"
 #include "GEK\Newton\Mass.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Matrix4x4.h"
@@ -908,10 +909,10 @@ namespace Gek
 
     HRESULT PlayerBodyComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"outer_radius", outerRadius, String::to<float>);
-        setParameter(componentParameterList, L"inner_radius", innerRadius, String::to<float>);
-        setParameter(componentParameterList, L"half_height", halfHeight, String::to<float>);
-        setParameter(componentParameterList, L"stair_step", stairStep, String::to<float>);
+        setParameter(componentParameterList, L"outer_radius", outerRadius, Evaluator::get<float>);
+        setParameter(componentParameterList, L"inner_radius", innerRadius, Evaluator::get<float>);
+        setParameter(componentParameterList, L"half_height", halfHeight, Evaluator::get<float>);
+        setParameter(componentParameterList, L"stair_step", stairStep, Evaluator::get<float>);
         return S_OK;
     }
 
