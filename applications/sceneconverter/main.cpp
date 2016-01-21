@@ -7,9 +7,6 @@
 #include <unordered_map>
 #include <map>
 
-#include <sqlite3.h>
-#pragma comment(lib, "sqlite3.lib")
-
 class OptimizerException
 {
 public:
@@ -57,9 +54,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     CoInitialize(nullptr);
     try
     {
-        sqlite3 *database = nullptr;
-        sqlite3_open(CW2A(fileNameOutput, CP_UTF8), &database);
-        if (database)
+        if (true)
         {
             Gek::XmlDocument xmlDocument;
             HRESULT resultValue = xmlDocument.load(fileNameInput);

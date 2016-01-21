@@ -109,7 +109,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Progressive Meshes\quadrics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\math\math.vcxproj">
@@ -124,7 +123,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Progressive Meshes\matrix.h" />
-    <ClInclude Include="Progressive Meshes\quadrics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
