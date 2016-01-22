@@ -290,6 +290,18 @@ private:
         return p1.precedence - p2.precedence;
     }
 
+    CStringW getVariable(const CStringW &token)
+    {
+        if (variableMap.count(token) > 0)
+        {
+            return variableMap[token];
+        }
+        else
+        {
+            return token;
+        }
+    }
+
 private:
     std::vector<CStringW> convertExpressionToInfix(const CStringW &expression)
     {
@@ -303,7 +315,7 @@ private:
             {
                 if (!string.IsEmpty())
                 {
-                    infixTokenList.push_back(string);
+                    infixTokenList.push_back(getVariable(string));
                 }
 
                 string.Empty();
@@ -311,8 +323,7 @@ private:
             }
             else
             {
-                // Append the numbers      
-                if (!token.IsEmpty() && token != " ")
+                if (!token.IsEmpty() && token != L" ")
                 {
                     string.Append(token);
                 }
@@ -320,7 +331,7 @@ private:
                 {
                     if (!string.IsEmpty())
                     {
-                        infixTokenList.push_back(string);
+                        infixTokenList.push_back(getVariable(string));
                         string.Empty();
                     }
                 }
@@ -330,6 +341,25 @@ private:
         if (!string.IsEmpty())
         {
             infixTokenList.push_back(string);
+        }
+
+        for (auto token = infixTokenList.begin(), previous = infixTokenList.end(), next = (token + 1); token != infixTokenList.end(); previous = token, token = next++)
+        {
+            if (previous != infixTokenList.end())
+            {
+                if ((*token) == L"(" && (*previous) == L")")
+                {
+                    previous = infixTokenList.insert(previous, L"*");
+                    token = (previous + 1);
+                    next = (token + 1);
+                }
+                else if (isNumber(*token, false) && ((*next) == L"(" || !isOperation(*next)))
+                {
+                    previous = infixTokenList.insert(previous, L"*");
+                    token = (previous + 1);
+                    next = (token + 1);
+                }
+            }
         }
 
         return infixTokenList;
@@ -481,7 +511,7 @@ private:
                     TYPE valueLeft = stack.popValue();
                     stack.push(Gek::String::from(operation.binaryFunction(valueLeft, valueRight)));
                 }
-                else if(operation.unaryFunction)
+                else if (operation.unaryFunction)
                 {
                     stack.push(Gek::String::from(operation.unaryFunction(value)));
                 }
@@ -523,6 +553,7 @@ private:
     }
 
 private:
+    std::map<CStringW, CStringW> variableMap;
     std::map<CStringW, Operation> operationsMap;
     std::map<CStringW, Function> functionsMap;
     std::locale locale;
@@ -531,6 +562,9 @@ public:
     ShuntingYard(void)
         : locale("")
     {
+        variableMap[L"pi"] = L"3.14159265358979323846";
+        variableMap[L"e"] = L"2.71828182845904523536";
+
         operationsMap.insert({ L"^", { 4, Associations::Right, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
         {
             return std::pow(valueLeft, valueRight);
@@ -562,22 +596,40 @@ public:
             return (valueLeft - valueRight);
         } } });
 
-        functionsMap.insert({ L"sin", { 1, [](Stack<Token> &stack) -> TYPE
+        functionsMap.insert({ L"sin",{ 1, [](Stack<Token> &stack) -> TYPE
         {
             TYPE value = stack.popValue();
             return std::sin(value);
         } } });
 
-        functionsMap.insert({ L"cos", { 1, [](Stack<Token> &stack) -> TYPE
+        functionsMap.insert({ L"cos",{ 1, [](Stack<Token> &stack) -> TYPE
         {
             TYPE value = stack.popValue();
             return std::cos(value);
         } } });
 
-        functionsMap.insert({ L"tan", { 1, [](Stack<Token> &stack) -> TYPE
+        functionsMap.insert({ L"tan",{ 1, [](Stack<Token> &stack) -> TYPE
         {
             TYPE value = stack.popValue();
             return std::tan(value);
+        } } });
+
+        functionsMap.insert({ L"asin",{ 1, [](Stack<Token> &stack) -> TYPE
+        {
+            TYPE value = stack.popValue();
+            return std::asin(value);
+        } } });
+
+        functionsMap.insert({ L"acos",{ 1, [](Stack<Token> &stack) -> TYPE
+        {
+            TYPE value = stack.popValue();
+            return std::acos(value);
+        } } });
+
+        functionsMap.insert({ L"atan",{ 1, [](Stack<Token> &stack) -> TYPE
+        {
+            TYPE value = stack.popValue();
+            return std::atan(value);
         } } });
 
         functionsMap.insert({ L"min", { 2, [](Stack<Token> &stack) -> TYPE
@@ -645,14 +697,14 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     LPCWSTR expressionList[] =
     {
+        L"1(2(3(4+5)))",
+        L"(2)(3)",
         L"3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3",
         L"sin ( max ( 2 , 3 ) / 3 * 3.1415 )",
         L"sin(max(2,3)/3*3.1415)",
         L"   sin(max(2,3)/3*3.1415)",
         L"   sin(max(2,3)/3*3.1415)   ",
         L"sin(max(2,3)/3*3.1415)   ",
-        L"(2 + 2(3 * 5))",
-        L"(2)(3)",
     };
 
     ShuntingYard<float> shuntingYard;
@@ -785,10 +837,10 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                     context->logMessage(__FILE__, __LINE__, 0, L"Unable to register window class: %d", GetLastError());
                 }
             }
-    }
+        }
 
         return 0;
-}
+    }
 
     return -1;
 }
