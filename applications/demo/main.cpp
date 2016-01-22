@@ -168,25 +168,66 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
 template <typename TYPE>
 class ShuntingYard
 {
-public:
+private:
     enum class Associations : UINT8
     {
         Left = 0,
         Right,
     };
 
+    struct Token
+    {
+        CStringW value;
+        UINT32 parameterCount;
+
+        Token(void)
+        {
+        }
+
+        Token(const CStringW &value, UINT32 parameterCount = 0)
+            : value(value)
+            , parameterCount(parameterCount)
+        {
+        }
+
+        operator const LPCWSTR() const
+        {
+            return value.GetString();
+        }
+
+        operator const CStringW &() const
+        {
+            return value;
+        }
+
+        bool operator == (const Token &token) const
+        {
+            return value == token.value;
+        }
+
+        bool operator == (LPCWSTR value) const
+        {
+            return this->value.Compare(value) == 0;
+        }
+    };
+
     struct Operation
     {
         int precedence;
         Associations association;
+        std::function<TYPE(std::stack<Token>)> function;
     };
 
-    static const std::map<CStringW, Operation> operationMap;
-    static const std::set<CStringW> functionList;
-
-    bool isOperator(const CStringW &token)
+    struct Function
     {
-        return (operationMap.count(token) > 0);
+        UINT32 parameterCount;
+        std::function<TYPE(std::stack<Token>)> function;
+    };
+
+private:
+    bool isOperation(const CStringW &token)
+    {
+        return (operationsMap.count(token) > 0);
     }
 
     bool isParenthesis(const CStringW &token)
@@ -199,6 +240,30 @@ public:
         return token == L",";
     }
 
+    bool isAssociative(const CStringW &token, const Associations& type)
+    {
+        auto &p = operationsMap.find(token)->second;
+        return p.association == type;
+    }
+
+    int comparePrecedence(const CStringW &token1, const CStringW &token2)
+    {
+        auto &p1 = operationsMap.find(token1)->second;
+        auto &p2 = operationsMap.find(token2)->second;
+        return p1.precedence - p2.precedence;
+    }
+
+    bool isNumber(const CStringW &token)
+    {
+        return std::isdigit(token.GetAt(0), locale);
+    }
+
+    bool isFunction(const CStringW &token)
+    {
+        return functionsMap.count(token) > 0;
+    }
+
+private:
     std::vector<CStringW> convertExpressionToInfix(const CStringW &expression)
     {
         CStringW string;
@@ -207,7 +272,7 @@ public:
         {
             const CStringW token(expression.GetAt(index));
 
-            if (isOperator(token) || isParenthesis(token) || isSeparator(token))
+            if (isOperation(token) || isParenthesis(token) || isSeparator(token))
             {
                 if (!string.IsEmpty())
                 {
@@ -243,38 +308,26 @@ public:
         return infixTokenList;
     }
 
-    bool isAssociative(const CStringW &token, const Associations& type)
-    {
-        auto &p = operationMap.find(token)->second;
-        return p.association == type;
-    }
-
-    int comparePrecedence(const CStringW &token1, const CStringW &token2)
-    {
-        auto &p1 = operationMap.find(token1)->second;
-        auto &p2 = operationMap.find(token2)->second;
-        return p1.precedence - p2.precedence;
-    }
-
-    bool isNumber(const CStringW &token)
-    {
-        return std::regex_match(token.GetString(), std::wregex(L"^(\\-|\\+)?[0-9]*(\\.[0-9]+)?"));
-    }
-
-    bool isFunction(const CStringW &token)
-    {
-        return functionList.count(token) > 0;
-    }
-
-    bool convertInfixToReversePolishNotation(const std::vector<CStringW> &infixTokenList, std::vector<CStringW> &rpnTokenList)
+    bool convertInfixToReversePolishNotation(const std::vector<CStringW> &infixTokenList, std::vector<Token> &rpnTokenList)
     {
         std::stack<CStringW> stack;
+        std::stack<bool> parameterExistsStack;
+        std::stack<UINT32> parameterCountStack;
         int size = infixTokenList.size();
         for (auto &token : infixTokenList)
         {
-            if (isOperator(token))
+            if (isNumber(token))
             {
-                while (!stack.empty() && isOperator(stack.top()) &&
+                rpnTokenList.push_back(token);
+                if (!parameterExistsStack.empty())
+                {
+                    parameterExistsStack.pop();
+                    parameterExistsStack.push(true);
+                }
+            }
+            else if (isOperation(token))
+            {
+                while (!stack.empty() && isOperation(stack.top()) &&
                     (isAssociative(token, Associations::Left) && comparePrecedence(token, stack.top()) == 0) ||
                     (isAssociative(token, Associations::Right) && comparePrecedence(token, stack.top()) < 0))
                 {
@@ -287,6 +340,14 @@ public:
             else if (isFunction(token))
             {
                 stack.push(token);
+                parameterCountStack.push(0);
+                if (!parameterExistsStack.empty())
+                {
+                    parameterExistsStack.pop();
+                    parameterExistsStack.push(true);
+                }
+
+                parameterExistsStack.push(false);
             }
             else if (isSeparator(token))
             {
@@ -307,6 +368,14 @@ public:
                         return false;
                     }
                 };
+
+                if (parameterExistsStack.top())
+                {
+                    parameterCountStack.top()++;
+                }
+
+                parameterExistsStack.pop();
+                parameterExistsStack.push(false);
             }
             else if (token == L"(")
             {
@@ -335,13 +404,18 @@ public:
                 stack.pop();
                 if (!stack.empty() && isFunction(stack.top()))
                 {
-                    rpnTokenList.push_back(stack.top());
+                    UINT32 parameterCount = parameterCountStack.top();
+                    if (parameterExistsStack.top())
+                    {
+                        parameterCount++;
+                    }
+
+                    rpnTokenList.push_back(Token(stack.top(), parameterCount));
+
+                    parameterExistsStack.pop();
+                    parameterCountStack.pop();
                     stack.pop();
                 }
-            }
-            else if (isNumber(token))
-            {
-                rpnTokenList.push_back(token);
             }
             else
             {
@@ -365,17 +439,19 @@ public:
         return true;
     }
 
-    bool evaluateReversePolishNotation(const std::vector<CStringW> &rpnTokenList, TYPE &value)
+    bool evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, TYPE &value)
     {
-        std::stack<CStringW> stack;
+        std::stack<Token> stack;
         for (auto &token : rpnTokenList)
         {
-            if (!isOperator(token) && isNumber(token))
+            if (isNumber(token))
             {
                 stack.push(token);
             }
-            else if (isOperator(token))
+            else if (isOperation(token))
             {
+                auto &operation = operationsMap.find(token)->second;
+                stack.push(Gek::String::from(operation.function(stack)));
                 if (token == L"+")
                 {
                     if (stack.empty())
@@ -386,7 +462,7 @@ public:
                     TYPE value2 = Gek::String::to<TYPE>(stack.top());
                     stack.pop();
 
-                    if (!stack.empty() && !isOperator(stack.top()) && isNumber(stack.top()))
+                    if (!stack.empty() && !isOperation(stack.top()) && isNumber(stack.top()))
                     {
                         TYPE value1 = Gek::String::to<TYPE>(stack.top());
                         stack.pop();
@@ -408,7 +484,7 @@ public:
                     TYPE value2 = Gek::String::to<TYPE>(stack.top());
                     stack.pop();
 
-                    if (!stack.empty() && !isOperator(stack.top()) && isNumber(stack.top()))
+                    if (!stack.empty() && !isOperation(stack.top()) && isNumber(stack.top()))
                     {
                         TYPE value1 = Gek::String::to<TYPE>(stack.top());
                         stack.pop();
@@ -468,9 +544,19 @@ public:
             }
             else if (isFunction(token))
             {
+                auto &function = functionsMap.find(token)->second;
+                if (function.parameterCount == token.parameterCount)
+                {
+                    stack.push(Gek::String::from(function.function(stack)));
+                }
+                else
+                {
+                    return false;
+                }
+
                 if (token == L"sin")
                 {
-                    if (stack.empty())
+                    if (stack.empty() || token.parameterCount != 1)
                     {
                         return false;
                     }
@@ -482,7 +568,7 @@ public:
                 }
                 else if (token == L"cos")
                 {
-                    if (stack.empty())
+                    if (stack.empty() || token.parameterCount != 1)
                     {
                         return false;
                     }
@@ -494,7 +580,7 @@ public:
                 }
                 else if (token == L"tan")
                 {
-                    if (stack.empty())
+                    if (stack.empty() || token.parameterCount != 1)
                     {
                         return false;
                     }
@@ -506,7 +592,7 @@ public:
                 }
                 else if (token == L"min")
                 {
-                    if (stack.size() < 2)
+                    if (stack.size() < 2 || token.parameterCount != 2)
                     {
                         return false;
                     }
@@ -521,7 +607,7 @@ public:
                 }
                 else if (token == L"max")
                 {
-                    if (stack.size() < 2)
+                    if (stack.size() < 2 || token.parameterCount != 2)
                     {
                         return false;
                     }
@@ -552,11 +638,35 @@ public:
         }
     }
 
+private:
+    std::map<CStringW, Operation> operationsMap;
+    std::map<CStringW, Function> functionsMap;
+    std::locale locale;
+
+public:
+    ShuntingYard(void)
+        : locale("")
+    {
+        operationsMap.insert({ L"^", { 4, Associations::Right, [](std::stack<Token>) -> TYPE { return 0; } } });
+        operationsMap.insert({ L"*", { 3, Associations::Left, [](std::stack<Token>) -> TYPE { return 0; } } });
+        operationsMap.insert({ L"/", { 3, Associations::Left, [](std::stack<Token>) -> TYPE { return 0; } } });
+        operationsMap.insert({ L"+", { 2, Associations::Left, [](std::stack<Token>) -> TYPE { return 0; } } });
+        operationsMap.insert({ L"-", { 2, Associations::Left, [](std::stack<Token>) -> TYPE { return 0; } } });
+        operationsMap.insert({ L"+", { 2, Associations::Left, [](std::stack<Token>) -> TYPE { return 0; } } });
+        operationsMap.insert({ L"-", { 2, Associations::Left, [](std::stack<Token>) -> TYPE { return 0; } } });
+
+        functionsMap.insert({ L"sin", { 1, [](std::stack<Token>) -> TYPE { return 0; } } });
+        functionsMap.insert({ L"cos", { 1, [](std::stack<Token>) -> TYPE { return 0; } } });
+        functionsMap.insert({ L"tan", { 1, [](std::stack<Token>) -> TYPE { return 0; } } });
+        functionsMap.insert({ L"min", { 2, [](std::stack<Token>) -> TYPE { return 0; } } });
+        functionsMap.insert({ L"max", { 2, [](std::stack<Token>) -> TYPE { return 0; } } });
+    }
+
     bool evaluate(const CStringW &expression, TYPE &value)
     {
         auto infixTokenList = convertExpressionToInfix(expression);
 
-        std::vector<CStringW> rpnTokenList;
+        std::vector<Token> rpnTokenList;
         if (convertInfixToReversePolishNotation(infixTokenList, rpnTokenList))
         {
             return evaluateReversePolishNotation(rpnTokenList, value);
@@ -564,26 +674,6 @@ public:
 
         return false;
     }
-};
-
-template <typename TYPE>
-const std::map<CStringW, typename ShuntingYard<TYPE>::Operation> ShuntingYard<TYPE>::operationMap =
-{
-    { L"^",{ 4, Associations::Right } },
-    { L"*",{ 3, Associations::Left } },
-    { L"/",{ 3, Associations::Left } },
-    { L"+",{ 2, Associations::Left } },
-    { L"-",{ 2, Associations::Left } },
-};
-
-template <typename TYPE>
-const std::set<CStringW> ShuntingYard<TYPE>::functionList =
-{
-    L"sin",
-    L"cos",
-    L"tan",
-    L"min",
-    L"max",
 };
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
@@ -624,13 +714,19 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     {
         L"3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3",
         L"sin ( max ( 2 , 3 ) / 3 * 3.1415 )",
+        L"sin(max(2,3)/3*3.1415)",
+        L"   sin(max(2,3)/3*3.1415)",
+        L"   sin(max(2,3)/3*3.1415)   ",
+        L"sin(max(2,3)/3*3.1415)   ",
+        L"(2 + 2(3 * 5))",
+        L"(2)(3)",
     };
 
-    ShuntingYard<float> shuntingYardFloat;
+    ShuntingYard<float> shuntingYard;
     for (auto &expression : expressionList)
     {
         float value = 0.0f;
-        if (shuntingYardFloat.evaluate(expression, value))
+        if (shuntingYard.evaluate(expression, value))
         {
             OutputDebugString(L"yay");
         }
