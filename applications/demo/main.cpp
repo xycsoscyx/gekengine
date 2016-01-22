@@ -273,6 +273,7 @@ public:
         InvalidOperator,
         InvalidFunctionParameters,
         MisplacedSeparator,
+        MissingFunctionParenthesis,
     };
 
 public:
@@ -458,13 +459,39 @@ private:
     }
 
 private:
+    void checkForImplicitMultiplication(std::vector<Token> &infixTokenList, const Token &token)
+    {
+        if (!infixTokenList.empty())
+        {
+            const Token &previous = infixTokenList.back();
+
+            // ) 2 or 2 2
+            if (token.type == TokenType::Number && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
+            {
+                infixTokenList.push_back(Token(TokenType::Operation, L"*"));
+            }
+            // 2 ( or ) (
+            else if (token.type == TokenType::LeftParenthesis && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
+            {
+                infixTokenList.push_back(Token(TokenType::Operation, L"*"));
+            }
+            // ) sin or 2 sin
+            else if (token.type == TokenType::Function && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
+            {
+                infixTokenList.push_back(Token(TokenType::Operation, L"*"));
+            }
+        }
+
+        infixTokenList.push_back(token);
+    }
+
     bool replaceFirstVariable(std::vector<Token> &infixTokenList, CStringW &token)
     {
         for (auto &variable : variableMap)
         {
             if (token.Find(variable.first) == 0)
             {
-                infixTokenList.push_back(Token(TokenType::Number, variable.second));
+                checkForImplicitMultiplication(infixTokenList, Token(TokenType::Number, variable.second));
                 token = token.Mid(variable.first.GetLength());
                 return true;
             }
@@ -479,7 +506,7 @@ private:
         {
             if (token.Find(function.first) == 0)
             {
-                infixTokenList.push_back(Token(TokenType::Function, function.first));
+                checkForImplicitMultiplication(infixTokenList, Token(TokenType::Function, function.first));
                 token = token.Mid(function.first.GetLength());
                 return true;
             }
@@ -496,7 +523,7 @@ private:
             if (std::regex_search(token.GetString(), matches, std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")))
             {
                 CStringW value = matches[0].str().c_str();
-                infixTokenList.push_back(Token(TokenType::Number, value));
+                checkForImplicitMultiplication(infixTokenList, Token(TokenType::Number, value));
                 token = token.Mid(value.GetLength());
                 continue;
             }
@@ -508,10 +535,16 @@ private:
 
             if (replaceFirstFunction(infixTokenList, token))
             {
+                if (!token.IsEmpty())
+                {
+                    // function must be followed by a left parenthesis, so it has to be at the end of an implicit block
+                    return Status::MissingFunctionParenthesis;
+                }
+
                 continue;
             }
 
-                if (!token.IsEmpty())
+            if (!token.IsEmpty())
             {
                 // nothing was replaced, yet we still have remaining characters?
                 return Status::UnknownTokenType;
@@ -536,7 +569,7 @@ private:
                     runningToken.Empty();
                 }
 
-                infixTokenList.push_back(Token(getTokenType(nextToken), nextToken));
+                checkForImplicitMultiplication(infixTokenList, Token(getTokenType(nextToken), nextToken));
             }
             else
             {
