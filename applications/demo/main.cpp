@@ -479,7 +479,7 @@ private:
                     const Token &previous = infixTokenList.back();
 
                     // 2+-3 or sin(1)*-1
-                    if (previous.type == TokenType::BinaryOperation)
+                    if (previous.type == TokenType::BinaryOperation || previous.type == TokenType::UnaryOperation)
                     {
                         token.type = TokenType::UnaryOperation;
                     }
@@ -626,9 +626,11 @@ private:
                 break;
 
             case TokenType::UnaryOperation:
+                stack.push(token);
+                break;
+
             case TokenType::BinaryOperation:
-                while (!stack.empty() && 
-                    ((stack.top().type == TokenType::UnaryOperation || stack.top().type == TokenType::BinaryOperation) &&
+                while (!stack.empty() && (stack.top().type == TokenType::BinaryOperation &&
                     (isAssociative(token.string, Associations::Left) && comparePrecedence(token.string, stack.top().string) == 0) ||
                     (isAssociative(token.string, Associations::Right) && comparePrecedence(token.string, stack.top().string) < 0)))
                 {
@@ -870,6 +872,9 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     static const CStringW expressionList[] =
     {
+        L"--3",
+        L"2--3",
+        L"2(--3)",
         L"2^-3",
         L"2pie3",
         L"1(2(3(4+5)))",
