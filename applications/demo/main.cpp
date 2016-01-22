@@ -176,8 +176,20 @@ private:
         Right,
     };
 
+    enum class TokenType : UINT8
+    {
+        Unknown = 0,
+        Number,
+        Operation,
+        LeftParenthesis,
+        RightParenthesis,
+        Separator,
+        Function,
+    };
+
     struct Token
     {
+        TokenType type;
         CStringW value;
         UINT32 parameterCount;
 
@@ -185,8 +197,9 @@ private:
         {
         }
 
-        Token(const CStringW &value, UINT32 parameterCount = 0)
-            : value(value)
+        Token(TokenType type, const CStringW &value, UINT32 parameterCount = 0)
+            : type(type)
+            , value(value)
             , parameterCount(parameterCount)
         {
         }
@@ -245,318 +258,22 @@ private:
     };
 
 private:
-    bool isNumber(const CStringW &token, bool includeNegative)
-    {
-        if (includeNegative && token.GetAt(0) == L'-')
-        {
-            return std::isdigit(token.GetAt(1), locale);
-        }
-        else
-        {
-            return std::isdigit(token.GetAt(0), locale);
-        }
-    }
-
-    bool isOperation(const CStringW &token)
-    {
-        return (operationsMap.count(token) > 0);
-    }
-
-    bool isFunction(const CStringW &token)
-    {
-        return functionsMap.count(token) > 0;
-    }
-
-    bool isParenthesis(const CStringW &token)
-    {
-        return token == L"(" || token == L")";
-    }
-
-    bool isSeparator(const CStringW &token)
-    {
-        return token == L",";
-    }
-
-    bool isAssociative(const CStringW &token, const Associations &type)
-    {
-        auto &p = operationsMap.find(token)->second;
-        return p.association == type;
-    }
-
-    int comparePrecedence(const CStringW &token1, const CStringW &token2)
-    {
-        auto &p1 = operationsMap.find(token1)->second;
-        auto &p2 = operationsMap.find(token2)->second;
-        return p1.precedence - p2.precedence;
-    }
-
-    CStringW getVariable(const CStringW &token)
-    {
-        if (variableMap.count(token) > 0)
-        {
-            return variableMap[token];
-        }
-        else
-        {
-            return token;
-        }
-    }
-
-private:
-    std::vector<CStringW> convertExpressionToInfix(const CStringW &expression)
-    {
-        CStringW string;
-        std::vector<CStringW> infixTokenList;
-        for (int index = 0; index < expression.GetLength(); ++index)
-        {
-            const CStringW token(expression.GetAt(index));
-
-            if (isOperation(token) || isParenthesis(token) || isSeparator(token))
-            {
-                if (!string.IsEmpty())
-                {
-                    infixTokenList.push_back(getVariable(string));
-                }
-
-                string.Empty();
-                infixTokenList.push_back(token);
-            }
-            else
-            {
-                if (!token.IsEmpty() && token != L" ")
-                {
-                    string.Append(token);
-                }
-                else
-                {
-                    if (!string.IsEmpty())
-                    {
-                        infixTokenList.push_back(getVariable(string));
-                        string.Empty();
-                    }
-                }
-            }
-        }
-
-        if (!string.IsEmpty())
-        {
-            infixTokenList.push_back(string);
-        }
-
-        for (auto token = infixTokenList.begin(), previous = infixTokenList.end(), next = (token + 1); token != infixTokenList.end(); previous = token, token = next++)
-        {
-            if (previous != infixTokenList.end())
-            {
-                if ((*token) == L"(" && (*previous) == L")")
-                {
-                    previous = infixTokenList.insert(previous, L"*");
-                    token = (previous + 1);
-                    next = (token + 1);
-                }
-                else if (isNumber(*token, false) && ((*next) == L"(" || !isOperation(*next)))
-                {
-                    previous = infixTokenList.insert(previous, L"*");
-                    token = (previous + 1);
-                    next = (token + 1);
-                }
-            }
-        }
-
-        return infixTokenList;
-    }
-
-    bool convertInfixToReversePolishNotation(const std::vector<CStringW> &infixTokenList, std::vector<Token> &rpnTokenList)
-    {
-        Stack<CStringW> stack;
-        Stack<bool> parameterExistsStack;
-        Stack<UINT32> parameterCountStack;
-        int size = infixTokenList.size();
-        for (auto &token : infixTokenList)
-        {
-            if (isNumber(token, false))
-            {
-                rpnTokenList.push_back(token);
-                if (!parameterExistsStack.empty())
-                {
-                    parameterExistsStack.pop();
-                    parameterExistsStack.push(true);
-                }
-            }
-            else if (isOperation(token))
-            {
-                while (!stack.empty() && isOperation(stack.top()) &&
-                    (isAssociative(token, Associations::Left) && comparePrecedence(token, stack.top()) == 0) ||
-                    (isAssociative(token, Associations::Right) && comparePrecedence(token, stack.top()) < 0))
-                {
-                    rpnTokenList.push_back(stack.popTop());
-                };
-
-                stack.push(token);
-            }
-            else if (isFunction(token))
-            {
-                stack.push(token);
-                parameterCountStack.push(0);
-                if (!parameterExistsStack.empty())
-                {
-                    parameterExistsStack.pop();
-                    parameterExistsStack.push(true);
-                }
-
-                parameterExistsStack.push(false);
-            }
-            else if (isSeparator(token))
-            {
-                if (stack.empty())
-                {
-                    // we can't not have values on the stack and find a parameter separator
-                    return false;
-                }
-
-                while (stack.top() != L"(")
-                {
-                    rpnTokenList.push_back(stack.popTop());
-                    if (stack.empty())
-                    {
-                        // found a separator with a starting parenthesis
-                        return false;
-                    }
-                };
-
-                if (parameterExistsStack.top())
-                {
-                    parameterCountStack.top()++;
-                }
-
-                parameterExistsStack.pop();
-                parameterExistsStack.push(false);
-            }
-            else if (token == L"(")
-            {
-                stack.push(token);
-            }
-            else if (token == L")")
-            {
-                if (stack.empty())
-                {
-                    // we can't have an ending parenthesis without a starting one
-                    return false;
-                }
-
-                while (stack.top() != L"(")
-                {
-                    rpnTokenList.push_back(stack.popTop());
-                    if (stack.empty())
-                    {
-                        // found a closing parenthesis without a starting one
-                        return false;
-                    }
-                };
-
-                stack.pop();
-                if (!stack.empty() && isFunction(stack.top()))
-                {
-                    UINT32 parameterCount = parameterCountStack.popTop();
-                    if (parameterExistsStack.popTop())
-                    {
-                        parameterCount++;
-                    }
-
-                    rpnTokenList.push_back(Token(stack.popTop(), parameterCount));
-                }
-            }
-            else
-            {
-                // what's in the box?!?
-                return false;
-            }
-        }
-
-        while (!stack.empty())
-        {
-            if (isParenthesis(stack.top()))
-            {
-                // all parenthesis should have been handled above
-                return false;
-            }
-
-            rpnTokenList.push_back(stack.popTop());
-        };
-
-        return true;
-    }
-
-    bool evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, TYPE &value)
-    {
-        Stack<Token> stack;
-        for (auto &token : rpnTokenList)
-        {
-            if (isNumber(token, false))
-            {
-                stack.push(token);
-            }
-            else if (isOperation(token))
-            {
-                auto &operation = operationsMap.find(token)->second;
-
-                union
-                {
-                    TYPE value;
-                    TYPE valueRight;
-                };
-
-                value = stack.popValue();
-                if (operation.binaryFunction && !stack.empty() && !isOperation(stack.top()) && isNumber(stack.top(), true))
-                {
-                    TYPE valueLeft = stack.popValue();
-                    stack.push(Gek::String::from(operation.binaryFunction(valueLeft, valueRight)));
-                }
-                else if (operation.unaryFunction)
-                {
-                    stack.push(Gek::String::from(operation.unaryFunction(value)));
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else if (isFunction(token))
-            {
-                auto &function = functionsMap.find(token)->second;
-                if (function.parameterCount != token.parameterCount)
-                {
-                    return false;
-                }
-
-                if (stack.size() < function.parameterCount)
-                {
-                    return false;
-                }
-
-                stack.push(Gek::String::from(function.function(stack)));
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        if (stack.size() == 1)
-        {
-            value = Gek::String::to<TYPE>(stack.top());
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-private:
     std::map<CStringW, CStringW> variableMap;
     std::map<CStringW, Operation> operationsMap;
     std::map<CStringW, Function> functionsMap;
     std::locale locale;
+
+public:
+    enum class Status : UINT8
+    {
+        Success = 0,
+        UnknownTokenType,
+        UnbalancedEquation,
+        UnbalancedParenthesis,
+        InvalidOperator,
+        InvalidFunctionParameters,
+        MisplacedSeparator,
+    };
 
 public:
     ShuntingYard(void)
@@ -565,22 +282,22 @@ public:
         variableMap[L"pi"] = L"3.14159265358979323846";
         variableMap[L"e"] = L"2.71828182845904523536";
 
-        operationsMap.insert({ L"^", { 4, Associations::Right, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
+        operationsMap.insert({ L"^",{ 4, Associations::Right, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
         {
             return std::pow(valueLeft, valueRight);
         } } });
 
-        operationsMap.insert({ L"*", { 3, Associations::Left, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
+        operationsMap.insert({ L"*",{ 3, Associations::Left, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
         {
             return (valueLeft * valueRight);
         } } });
 
-        operationsMap.insert({ L"/", { 3, Associations::Left, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
+        operationsMap.insert({ L"/",{ 3, Associations::Left, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
         {
             return (valueLeft / valueRight);
         } } });
 
-        operationsMap.insert({ L"+", { 2, Associations::Left, [](TYPE value) -> TYPE
+        operationsMap.insert({ L"+",{ 2, Associations::Left, [](TYPE value) -> TYPE
         {
             return value;
         }, [](TYPE valueLeft, TYPE valueRight) -> TYPE
@@ -588,7 +305,7 @@ public:
             return (valueLeft + valueRight);
         } } });
 
-        operationsMap.insert({ L"-", { 2, Associations::Left, [](TYPE value) -> TYPE
+        operationsMap.insert({ L"-",{ 2, Associations::Left, [](TYPE value) -> TYPE
         {
             return -value;
         }, [](TYPE valueLeft, TYPE valueRight) -> TYPE
@@ -632,14 +349,14 @@ public:
             return std::atan(value);
         } } });
 
-        functionsMap.insert({ L"min", { 2, [](Stack<Token> &stack) -> TYPE
+        functionsMap.insert({ L"min",{ 2, [](Stack<Token> &stack) -> TYPE
         {
             TYPE value2 = stack.popValue();
             TYPE value1 = stack.popValue();
             return std::min(value1, value2);
         } } });
 
-        functionsMap.insert({ L"max", { 2, [](Stack<Token> &stack) -> TYPE
+        functionsMap.insert({ L"max",{ 2, [](Stack<Token> &stack) -> TYPE
         {
             TYPE value2 = stack.popValue();
             TYPE value1 = stack.popValue();
@@ -647,17 +364,405 @@ public:
         } } });
     }
 
-    bool evaluate(const CStringW &expression, TYPE &value)
+    Status evaluate(const CStringW &expression, TYPE &value)
     {
-        auto infixTokenList = convertExpressionToInfix(expression);
+        std::vector<Token> infixTokenList = convertExpressionToInfix(expression);
 
         std::vector<Token> rpnTokenList;
-        if (convertInfixToReversePolishNotation(infixTokenList, rpnTokenList))
+        Status status = convertInfixToReversePolishNotation(infixTokenList, rpnTokenList);
+        if (status == Status::Success)
         {
-            return evaluateReversePolishNotation(rpnTokenList, value);
+            status = evaluateReversePolishNotation(rpnTokenList, value);
+        }
+
+        return status;
+    }
+
+private:
+    bool isNumber(const CStringW &token)
+    {
+        return std::regex_match(token.GetString(), std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$"));
+    }
+
+    bool isOperation(const CStringW &token)
+    {
+        return (operationsMap.count(token) > 0);
+    }
+
+    bool isFunction(const CStringW &token)
+    {
+        return (functionsMap.count(token) > 0);
+    }
+
+    bool isLeftParenthesis(const CStringW &token)
+    {
+        return token == L'(';
+    }
+
+    bool isRightParenthesis(const CStringW &token)
+    {
+        return token == L')';
+    }
+
+    bool isParenthesis(const CStringW &token)
+    {
+        return (isLeftParenthesis(token) || isRightParenthesis(token));
+    }
+
+    bool isSeparator(const CStringW &token)
+    {
+        return token == L',';
+    }
+
+    bool isAssociative(const CStringW &token, const Associations &type)
+    {
+        auto &p = operationsMap.find(token)->second;
+        return p.association == type;
+    }
+
+    int comparePrecedence(const CStringW &token1, const CStringW &token2)
+    {
+        auto &p1 = operationsMap.find(token1)->second;
+        auto &p2 = operationsMap.find(token2)->second;
+        return p1.precedence - p2.precedence;
+    }
+
+    TokenType getTokenType(const CStringW &token)
+    {
+        if (isNumber(token))
+        {
+            return TokenType::Number;
+        }
+        else if (isOperation(token))
+        {
+            return TokenType::Operation;
+        }
+        else if (isFunction(token))
+        {
+            return TokenType::Function;
+        }
+        else if (isSeparator(token))
+        {
+            return TokenType::Separator;
+        }
+        else if (isLeftParenthesis(token))
+        {
+            return TokenType::LeftParenthesis;
+        }
+        else if (isRightParenthesis(token))
+        {
+            return TokenType::RightParenthesis;
+        }
+
+        return TokenType::Unknown;
+    }
+
+private:
+    bool replaceFirstVariable(std::vector<Token> &infixTokenList, CStringW &token)
+    {
+        for (auto &variable : variableMap)
+        {
+            if (token.Find(variable.first) == 0)
+            {
+                infixTokenList.push_back(Token(TokenType::Number, variable.second));
+                token = token.Mid(variable.first.GetLength());
+                return true;
+            }
         }
 
         return false;
+    }
+
+    bool replaceFirstFunction(std::vector<Token> &infixTokenList, CStringW &token)
+    {
+        for (auto &function : functionsMap)
+        {
+            if (token.Find(function.first) == 0)
+            {
+                infixTokenList.push_back(Token(TokenType::Function, function.first));
+                token = token.Mid(function.first.GetLength());
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    Status parseSubTokens(std::vector<Token> &infixTokenList, CStringW token)
+    {
+        while (!token.IsEmpty())
+        {
+            std::wcmatch matches;
+            if (std::regex_search(token.GetString(), matches, std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")))
+            {
+                CStringW value = matches[0].str().c_str();
+                infixTokenList.push_back(Token(TokenType::Number, value));
+                token = token.Mid(value.GetLength());
+                continue;
+            }
+
+            if (replaceFirstVariable(infixTokenList, token))
+            {
+                continue;
+            }
+
+            if (replaceFirstFunction(infixTokenList, token))
+            {
+                continue;
+            }
+
+                if (!token.IsEmpty())
+            {
+                // nothing was replaced, yet we still have remaining characters?
+                return Status::UnknownTokenType;
+            }
+        };
+
+        return Status::Success;
+    }
+
+    std::vector<Token> convertExpressionToInfix(const CStringW &expression)
+    {
+        CStringW runningToken;
+        std::vector<Token> infixTokenList;
+        for (int index = 0; index < expression.GetLength(); ++index)
+        {
+            CStringW nextToken = expression.GetAt(index);
+            if (isOperation(nextToken) || isParenthesis(nextToken) || isSeparator(nextToken))
+            {
+                if (!runningToken.IsEmpty())
+                {
+                    parseSubTokens(infixTokenList, runningToken);
+                    runningToken.Empty();
+                }
+
+                infixTokenList.push_back(Token(getTokenType(nextToken), nextToken));
+            }
+            else
+            {
+                if (nextToken == L" ")
+                {
+                    if (!runningToken.IsEmpty())
+                    {
+                        parseSubTokens(infixTokenList, runningToken);
+                        runningToken.Empty();
+                    }
+                }
+                else
+                {
+                    runningToken.Append(nextToken);
+                }
+            }
+        }
+
+        if (!runningToken.IsEmpty())
+        {
+            parseSubTokens(infixTokenList, runningToken);
+        }
+
+        return infixTokenList;
+    }
+
+    Status convertInfixToReversePolishNotation(const std::vector<Token> &infixTokenList, std::vector<Token> &rpnTokenList)
+    {
+        Stack<Token> stack;
+        Stack<bool> parameterExistsStack;
+        Stack<UINT32> parameterCountStack;
+        int size = infixTokenList.size();
+        for (auto &token : infixTokenList)
+        {
+            switch (token.type)
+            {
+            case TokenType::Number:
+                rpnTokenList.push_back(token);
+                if (!parameterExistsStack.empty())
+                {
+                    parameterExistsStack.pop();
+                    parameterExistsStack.push(true);
+                }
+
+                break;
+
+            case TokenType::Operation:
+                while (!stack.empty() && stack.top().type == TokenType::Operation &&
+                    (isAssociative(token, Associations::Left) && comparePrecedence(token, stack.top()) == 0) ||
+                    (isAssociative(token, Associations::Right) && comparePrecedence(token, stack.top()) < 0))
+                {
+                    rpnTokenList.push_back(stack.popTop());
+                };
+
+                stack.push(token);
+                break;
+
+            case TokenType::LeftParenthesis:
+                 stack.push(token);
+                 break;
+
+            case TokenType::RightParenthesis:
+                if (stack.empty())
+                {
+                    // we can't have an ending parenthesis without a starting one
+                    return Status::UnbalancedParenthesis;
+                }
+
+                while (stack.top().type != TokenType::LeftParenthesis)
+                {
+                    rpnTokenList.push_back(stack.popTop());
+                    if (stack.empty())
+                    {
+                        // found a closing parenthesis without a starting one
+                        return Status::UnbalancedParenthesis;
+                    }
+                };
+
+                stack.pop();
+                if (!stack.empty())
+                {
+                    if (isFunction(stack.top()))
+                    {
+                        UINT32 parameterCount = parameterCountStack.popTop();
+                        if (parameterExistsStack.popTop())
+                        {
+                            parameterCount++;
+                        }
+
+                        rpnTokenList.push_back(Token(TokenType::Function, stack.popTop(), parameterCount));
+                    }
+                }
+                
+                break;
+
+            case TokenType::Separator:
+                if (stack.empty())
+                {
+                    // we can't not have values on the stack and find a parameter separator
+                    return Status::MisplacedSeparator;
+                }
+
+                while (stack.top().type != TokenType::LeftParenthesis)
+                {
+                    rpnTokenList.push_back(stack.popTop());
+                    if (stack.empty())
+                    {
+                        // found a separator with a starting parenthesis
+                        return Status::MisplacedSeparator;
+                    }
+                };
+
+                if (parameterExistsStack.top())
+                {
+                    parameterCountStack.top()++;
+                }
+
+                parameterExistsStack.pop();
+                parameterExistsStack.push(false);
+                break;
+
+            case TokenType::Function:
+                stack.push(token);
+                parameterCountStack.push(0);
+                if (!parameterExistsStack.empty())
+                {
+                    parameterExistsStack.pop();
+                    parameterExistsStack.push(true);
+                }
+
+                parameterExistsStack.push(false);
+                break;
+
+            default:
+                return Status::UnknownTokenType;
+            };
+        }
+
+        while (!stack.empty())
+        {
+            if (stack.top().type == TokenType::LeftParenthesis ||
+                stack.top().type == TokenType::RightParenthesis)
+            {
+                // all parenthesis should have been handled above
+                return Status::UnbalancedParenthesis;
+            }
+
+            CStringW token = stack.popTop();
+            rpnTokenList.push_back(Token(getTokenType(token), token));
+        };
+
+        return Status::Success;
+    }
+
+    Status evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, TYPE &value)
+    {
+        Stack<Token> stack;
+        for (auto &token : rpnTokenList)
+        {
+            switch (token.type)
+            {
+            case TokenType::Number:
+                stack.push(token);
+                break;
+
+            case TokenType::Operation:
+                if (true)
+                {
+                    auto &operation = operationsMap.find(token)->second;
+
+                    union
+                    {
+                        TYPE value;
+                        TYPE valueRight;
+                    };
+
+                    value = stack.popValue();
+                    if (operation.binaryFunction && !stack.empty() && !isOperation(stack.top()) && isNumber(stack.top()))
+                    {
+                        TYPE valueLeft = stack.popValue();
+                        stack.push(Token(TokenType::Number, Gek::String::from(operation.binaryFunction(valueLeft, valueRight))));
+                    }
+                    else if (operation.unaryFunction)
+                    {
+                        stack.push(Token(TokenType::Number, Gek::String::from(operation.unaryFunction(value))));
+                    }
+                    else
+                    {
+                        return Status::InvalidOperator;
+                    }
+
+                    break;
+                }
+
+            case TokenType::Function:
+                if (true)
+                {
+                    auto &function = functionsMap.find(token)->second;
+                    if (function.parameterCount != token.parameterCount)
+                    {
+                        return Status::InvalidFunctionParameters;
+                    }
+
+                    if (stack.size() < function.parameterCount)
+                    {
+                        return Status::InvalidFunctionParameters;
+                    }
+
+                    stack.push(Token(TokenType::Number, Gek::String::from(function.function(stack))));
+                    break;
+                }
+
+            default:
+                return Status::UnknownTokenType;
+            };
+        }
+
+        if (stack.size() == 1)
+        {
+            value = Gek::String::to<TYPE>(stack.top());
+            return Status::Success;
+        }
+        else
+        {
+            return Status::UnbalancedEquation;
+        }
     }
 };
 
@@ -695,8 +800,9 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         }
     }
 
-    LPCWSTR expressionList[] =
+    static const CStringW expressionList[] =
     {
+        L"2pie3",
         L"1(2(3(4+5)))",
         L"(2)(3)",
         L"3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3",
@@ -711,7 +817,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     for (auto &expression : expressionList)
     {
         float value = 0.0f;
-        if (shuntingYard.evaluate(expression, value))
+        if (shuntingYard.evaluate(expression, value) == ShuntingYard<float>::Status::Success)
         {
             OutputDebugString(L"yay");
         }
