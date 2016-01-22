@@ -180,7 +180,8 @@ private:
     {
         Unknown = 0,
         Number,
-        Operation,
+        UnaryOperation,
+        BinaryOperation,
         LeftParenthesis,
         RightParenthesis,
         Separator,
@@ -190,38 +191,25 @@ private:
     struct Token
     {
         TokenType type;
-        CStringW value;
         UINT32 parameterCount;
+        CStringW string;
+        TYPE value;
 
         Token(void)
         {
         }
 
-        Token(TokenType type, const CStringW &value, UINT32 parameterCount = 0)
+        Token(TokenType type, const CStringW &string, UINT32 parameterCount = 0)
             : type(type)
-            , value(value)
+            , string(string)
             , parameterCount(parameterCount)
         {
         }
 
-        operator const LPCWSTR() const
+        Token(TokenType type, TYPE value)
+            : type(type)
+            , value(value)
         {
-            return value.GetString();
-        }
-
-        operator const CStringW &() const
-        {
-            return value;
-        }
-
-        bool operator == (const Token &token) const
-        {
-            return value == token.value;
-        }
-
-        bool operator == (LPCWSTR value) const
-        {
-            return this->value.Compare(value) == 0;
         }
     };
 
@@ -233,13 +221,6 @@ private:
             DATA topElement = top();
             stack::pop();
             return topElement;
-        }
-
-        TYPE popValue(void)
-        {
-            DATA topElement = top();
-            stack::pop();
-            return Gek::String::to<TYPE>(topElement);
         }
     };
 
@@ -258,7 +239,7 @@ private:
     };
 
 private:
-    std::map<CStringW, CStringW> variableMap;
+    std::map<CStringW, TYPE> variableMap;
     std::map<CStringW, Operation> operationsMap;
     std::map<CStringW, Function> functionsMap;
     std::locale locale;
@@ -271,7 +252,9 @@ public:
         UnbalancedEquation,
         UnbalancedParenthesis,
         InvalidOperator,
+        InvalidOperand,
         InvalidFunctionParameters,
+        NotEnoughFunctionParameters,
         MisplacedSeparator,
         MissingFunctionParenthesis,
     };
@@ -280,8 +263,8 @@ public:
     ShuntingYard(void)
         : locale("")
     {
-        variableMap[L"pi"] = L"3.14159265358979323846";
-        variableMap[L"e"] = L"2.71828182845904523536";
+        variableMap[L"pi"] = 3.14159265358979323846;
+        variableMap[L"e"] = 2.71828182845904523536;
 
         operationsMap.insert({ L"^",{ 4, Associations::Right, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
         {
@@ -316,51 +299,51 @@ public:
 
         functionsMap.insert({ L"sin",{ 1, [](Stack<Token> &stack) -> TYPE
         {
-            TYPE value = stack.popValue();
+            TYPE value = stack.popTop().value;
             return std::sin(value);
         } } });
 
         functionsMap.insert({ L"cos",{ 1, [](Stack<Token> &stack) -> TYPE
         {
-            TYPE value = stack.popValue();
+            TYPE value = stack.popTop().value;
             return std::cos(value);
         } } });
 
         functionsMap.insert({ L"tan",{ 1, [](Stack<Token> &stack) -> TYPE
         {
-            TYPE value = stack.popValue();
+            TYPE value = stack.popTop().value;
             return std::tan(value);
         } } });
 
         functionsMap.insert({ L"asin",{ 1, [](Stack<Token> &stack) -> TYPE
         {
-            TYPE value = stack.popValue();
+            TYPE value = stack.popTop().value;
             return std::asin(value);
         } } });
 
         functionsMap.insert({ L"acos",{ 1, [](Stack<Token> &stack) -> TYPE
         {
-            TYPE value = stack.popValue();
+            TYPE value = stack.popTop().value;
             return std::acos(value);
         } } });
 
         functionsMap.insert({ L"atan",{ 1, [](Stack<Token> &stack) -> TYPE
         {
-            TYPE value = stack.popValue();
+            TYPE value = stack.popTop().value;
             return std::atan(value);
         } } });
 
         functionsMap.insert({ L"min",{ 2, [](Stack<Token> &stack) -> TYPE
         {
-            TYPE value2 = stack.popValue();
-            TYPE value1 = stack.popValue();
+            TYPE value2 = stack.popTop().value;
+            TYPE value1 = stack.popTop().value;
             return std::min(value1, value2);
         } } });
 
         functionsMap.insert({ L"max",{ 2, [](Stack<Token> &stack) -> TYPE
         {
-            TYPE value2 = stack.popValue();
-            TYPE value1 = stack.popValue();
+            TYPE value2 = stack.popTop().value;
+            TYPE value1 = stack.popTop().value;
             return std::max(value1, value2);
         } } });
     }
@@ -436,7 +419,7 @@ private:
         }
         else if (isOperation(token))
         {
-            return TokenType::Operation;
+            return TokenType::BinaryOperation;
         }
         else if (isFunction(token))
         {
@@ -459,7 +442,7 @@ private:
     }
 
 private:
-    void checkForImplicitMultiplication(std::vector<Token> &infixTokenList, const Token &token)
+    void insertToken(std::vector<Token> &infixTokenList, Token &token)
     {
         if (!infixTokenList.empty())
         {
@@ -468,17 +451,44 @@ private:
             // ) 2 or 2 2
             if (token.type == TokenType::Number && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(TokenType::Operation, L"*"));
+                infixTokenList.push_back(Token(TokenType::BinaryOperation, L"*"));
             }
             // 2 ( or ) (
             else if (token.type == TokenType::LeftParenthesis && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(TokenType::Operation, L"*"));
+                infixTokenList.push_back(Token(TokenType::BinaryOperation, L"*"));
             }
             // ) sin or 2 sin
             else if (token.type == TokenType::Function && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(TokenType::Operation, L"*"));
+                infixTokenList.push_back(Token(TokenType::BinaryOperation, L"*"));
+            }
+        }
+
+        if (token.type == TokenType::BinaryOperation)
+        {
+            if (token.string == L"-" || token.string == L"+")
+            {
+                // -3 or -sin
+                if (infixTokenList.empty())
+                {
+                    token.type = TokenType::UnaryOperation;
+                }
+                else
+                {
+                    const Token &previous = infixTokenList.back();
+
+                    // 2+-3 or sin(1)*-1
+                    if (previous.type == TokenType::BinaryOperation)
+                    {
+                        token.type = TokenType::UnaryOperation;
+                    }
+                    // (-3)
+                    else if (previous.type == TokenType::LeftParenthesis)
+                    {
+                        token.type = TokenType::UnaryOperation;
+                    }
+                }
             }
         }
 
@@ -491,7 +501,7 @@ private:
         {
             if (token.Find(variable.first) == 0)
             {
-                checkForImplicitMultiplication(infixTokenList, Token(TokenType::Number, variable.second));
+                insertToken(infixTokenList, Token(TokenType::Number, variable.second));
                 token = token.Mid(variable.first.GetLength());
                 return true;
             }
@@ -506,7 +516,7 @@ private:
         {
             if (token.Find(function.first) == 0)
             {
-                checkForImplicitMultiplication(infixTokenList, Token(TokenType::Function, function.first));
+                insertToken(infixTokenList, Token(TokenType::Function, function.first));
                 token = token.Mid(function.first.GetLength());
                 return true;
             }
@@ -523,7 +533,7 @@ private:
             if (std::regex_search(token.GetString(), matches, std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")))
             {
                 CStringW value = matches[0].str().c_str();
-                checkForImplicitMultiplication(infixTokenList, Token(TokenType::Number, value));
+                insertToken(infixTokenList, Token(TokenType::Number, Gek::String::to<TYPE>(value)));
                 token = token.Mid(value.GetLength());
                 continue;
             }
@@ -569,7 +579,7 @@ private:
                     runningToken.Empty();
                 }
 
-                checkForImplicitMultiplication(infixTokenList, Token(getTokenType(nextToken), nextToken));
+                insertToken(infixTokenList, Token(getTokenType(nextToken), nextToken));
             }
             else
             {
@@ -601,7 +611,6 @@ private:
         Stack<Token> stack;
         Stack<bool> parameterExistsStack;
         Stack<UINT32> parameterCountStack;
-        int size = infixTokenList.size();
         for (auto &token : infixTokenList)
         {
             switch (token.type)
@@ -616,10 +625,12 @@ private:
 
                 break;
 
-            case TokenType::Operation:
-                while (!stack.empty() && stack.top().type == TokenType::Operation &&
-                    (isAssociative(token, Associations::Left) && comparePrecedence(token, stack.top()) == 0) ||
-                    (isAssociative(token, Associations::Right) && comparePrecedence(token, stack.top()) < 0))
+            case TokenType::UnaryOperation:
+            case TokenType::BinaryOperation:
+                while (!stack.empty() && 
+                    ((stack.top().type == TokenType::UnaryOperation || stack.top().type == TokenType::BinaryOperation) &&
+                    (isAssociative(token.string, Associations::Left) && comparePrecedence(token.string, stack.top().string) == 0) ||
+                    (isAssociative(token.string, Associations::Right) && comparePrecedence(token.string, stack.top().string) < 0)))
                 {
                     rpnTokenList.push_back(stack.popTop());
                 };
@@ -628,8 +639,8 @@ private:
                 break;
 
             case TokenType::LeftParenthesis:
-                 stack.push(token);
-                 break;
+                stack.push(token);
+                break;
 
             case TokenType::RightParenthesis:
                 if (stack.empty())
@@ -649,20 +660,18 @@ private:
                 };
 
                 stack.pop();
-                if (!stack.empty())
+                if (!stack.empty() && stack.top().type == TokenType::Function)
                 {
-                    if (isFunction(stack.top()))
+                    Token function = stack.popTop();
+                    function.parameterCount = parameterCountStack.popTop();
+                    if (parameterExistsStack.popTop())
                     {
-                        UINT32 parameterCount = parameterCountStack.popTop();
-                        if (parameterExistsStack.popTop())
-                        {
-                            parameterCount++;
-                        }
-
-                        rpnTokenList.push_back(Token(TokenType::Function, stack.popTop(), parameterCount));
+                        function.parameterCount++;
                     }
+
+                    rpnTokenList.push_back(function);
                 }
-                
+
                 break;
 
             case TokenType::Separator:
@@ -717,8 +726,7 @@ private:
                 return Status::UnbalancedParenthesis;
             }
 
-            CStringW token = stack.popTop();
-            rpnTokenList.push_back(Token(getTokenType(token), token));
+            rpnTokenList.push_back(stack.popTop());
         };
 
         return Status::Success;
@@ -735,26 +743,53 @@ private:
                 stack.push(token);
                 break;
 
-            case TokenType::Operation:
+            case TokenType::UnaryOperation:
                 if (true)
                 {
-                    auto &operation = operationsMap.find(token)->second;
-
-                    union
+                    auto &operation = operationsMap.find(token.string)->second;
+                    if (operation.unaryFunction)
                     {
-                        TYPE value;
-                        TYPE valueRight;
-                    };
-
-                    value = stack.popValue();
-                    if (operation.binaryFunction && !stack.empty() && !isOperation(stack.top()) && isNumber(stack.top()))
-                    {
-                        TYPE valueLeft = stack.popValue();
-                        stack.push(Token(TokenType::Number, Gek::String::from(operation.binaryFunction(valueLeft, valueRight))));
+                        if (!stack.empty() && (stack.top().type == TokenType::Number))
+                        {
+                            TYPE value = stack.popTop().value;
+                            stack.push(Token(TokenType::Number, operation.unaryFunction(value)));
+                        }
+                        else
+                        {
+                            return Status::InvalidOperand;
+                        }
                     }
-                    else if (operation.unaryFunction)
+                    else
                     {
-                        stack.push(Token(TokenType::Number, Gek::String::from(operation.unaryFunction(value))));
+                        return Status::InvalidOperator;
+                    }
+
+                    break;
+                }
+
+            case TokenType::BinaryOperation:
+                if (true)
+                {
+                    auto &operation = operationsMap.find(token.string)->second;
+                    if (operation.binaryFunction)
+                    {
+                        if (!stack.empty() && (stack.top().type == TokenType::Number))
+                        {
+                            TYPE valueRight = stack.popTop().value;
+                            if (!stack.empty() && (stack.top().type == TokenType::Number))
+                            {
+                                TYPE valueLeft = stack.popTop().value;
+                                stack.push(Token(TokenType::Number, operation.binaryFunction(valueLeft, valueRight)));
+                            }
+                            else
+                            {
+                                return Status::InvalidOperand;
+                            }
+                        }
+                        else
+                        {
+                            return Status::InvalidOperand;
+                        }
                     }
                     else
                     {
@@ -767,7 +802,7 @@ private:
             case TokenType::Function:
                 if (true)
                 {
-                    auto &function = functionsMap.find(token)->second;
+                    auto &function = functionsMap.find(token.string)->second;
                     if (function.parameterCount != token.parameterCount)
                     {
                         return Status::InvalidFunctionParameters;
@@ -775,10 +810,10 @@ private:
 
                     if (stack.size() < function.parameterCount)
                     {
-                        return Status::InvalidFunctionParameters;
+                        return Status::NotEnoughFunctionParameters;
                     }
 
-                    stack.push(Token(TokenType::Number, Gek::String::from(function.function(stack))));
+                    stack.push(Token(TokenType::Number, function.function(stack)));
                     break;
                 }
 
@@ -789,7 +824,7 @@ private:
 
         if (stack.size() == 1)
         {
-            value = Gek::String::to<TYPE>(stack.top());
+            value = stack.top().value;
             return Status::Success;
         }
         else
@@ -835,6 +870,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     static const CStringW expressionList[] =
     {
+        L"2^-3",
         L"2pie3",
         L"1(2(3(4+5)))",
         L"(2)(3)",
