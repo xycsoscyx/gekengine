@@ -249,14 +249,14 @@ public:
     {
         Success = 0,
         UnknownTokenType,
-        UnbalancedEquation,
         UnbalancedParenthesis,
+        InvalidEquation,
         InvalidOperator,
         InvalidOperand,
         InvalidFunctionParameters,
         NotEnoughFunctionParameters,
-        MisplacedSeparator,
         MissingFunctionParenthesis,
+        MisplacedSeparator,
     };
 
 public:
@@ -641,6 +641,18 @@ private:
                 break;
 
             case TokenType::LeftParenthesis:
+                if (!stack.empty() && (stack.top().type == TokenType::Function))
+                {
+                    parameterCountStack.push(0);
+                    if (!parameterExistsStack.empty())
+                    {
+                        parameterExistsStack.pop();
+                        parameterExistsStack.push(true);
+                    }
+
+                    parameterExistsStack.push(false);
+                }
+
                 stack.push(token);
                 break;
 
@@ -677,7 +689,7 @@ private:
                 break;
 
             case TokenType::Separator:
-                if (stack.empty())
+                if (stack.empty() || parameterExistsStack.empty())
                 {
                     // we can't not have values on the stack and find a parameter separator
                     return Status::MisplacedSeparator;
@@ -704,14 +716,6 @@ private:
 
             case TokenType::Function:
                 stack.push(token);
-                parameterCountStack.push(0);
-                if (!parameterExistsStack.empty())
-                {
-                    parameterExistsStack.pop();
-                    parameterExistsStack.push(true);
-                }
-
-                parameterExistsStack.push(false);
                 break;
 
             default:
@@ -831,7 +835,7 @@ private:
         }
         else
         {
-            return Status::UnbalancedEquation;
+            return Status::InvalidEquation;
         }
     }
 };
@@ -872,6 +876,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     static const CStringW expressionList[] =
     {
+        L"(3,2)",
         L"--3",
         L"2--3",
         L"2(--3)",
