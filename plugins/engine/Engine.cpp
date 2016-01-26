@@ -415,7 +415,7 @@ namespace Gek
                 commandQueue.clear();
             }
 
-            for (auto command : commandCopy)
+            for (auto &command : commandCopy)
             {
                 if (command.first.CompareNoCase(L"load") == 0 && command.second.size() == 1)
                 {
@@ -448,7 +448,7 @@ namespace Gek
                 ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
             }
 
-            for (auto action : actionCopy)
+            for (auto &action : actionCopy)
             {
                 switch (action.first)
                 {
@@ -510,12 +510,12 @@ namespace Gek
                 overlay->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrush, true);
                 overlay->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, font, textBrush, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
 
-                float nPosition = (consoleHeight - 40.0f);
+                float textPosition = (consoleHeight - 40.0f);
                 /*
-                for (auto &kMessage : m_aConsoleLog)
+                for (auto &message : consoleLogList)
                 {
-                overlay->drawText({ 15.0f, (nPosition - 20.0f), (width - 15.0f), nPosition }, font, logTypeBrushList[kMessage.first], kMessage.second);
-                nPosition -= 20.0f;
+                overlay->drawText({ 15.0f, (nPosition - 20.0f), (width - 15.0f), textPosition }, font, logTypeBrushList[kMessage.first], message.second);
+                textPosition -= 20.0f;
                 }
                 */
                 overlay->endDraw();

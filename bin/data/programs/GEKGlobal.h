@@ -1,6 +1,7 @@
 namespace Math
 {
     static const float Pi = 3.14159265358979323846;
+    static const float Tau = (2.0 * 3.14159265358979323846);
     static const float ReciprocalPi = (1.0 / Pi);
     static const float InversePi = (1.0 - Pi);
     static const float TwoPi = 2.0 * Pi;

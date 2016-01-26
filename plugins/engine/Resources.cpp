@@ -89,18 +89,6 @@ namespace Gek
             return handle;
         }
 
-        HANDLE addUniqueResource(IUnknown *resource)
-        {
-            HANDLE handle;
-            if (resource)
-            {
-                handle.assign(InterlockedIncrement(&nextIdentifier));
-                localResourceMap[handle] = resource;
-            }
-
-            return handle;
-        }
-
         IUnknown *getResource(HANDLE handle)
         {
             auto globalIterator = globalResourceMap.find(handle);
@@ -386,18 +374,22 @@ namespace Gek
             });
         }
 
-        STDMETHODIMP_(ResourceHandle) createRenderTarget(Video::Format format, UINT32 width, UINT32 height, UINT32 flags)
+        STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags)
         {
-            CComPtr<VideoTarget> renderTarget;
-            video->createRenderTarget(&renderTarget, format, width, height, flags);
-            return resourceManager.addUniqueResource(renderTarget);
-        }
+            std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
+            return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            {
+                HRESULT resultValue = E_FAIL;
 
-        STDMETHODIMP_(ResourceHandle) createDepthTarget(Video::Format format, UINT32 width, UINT32 height, UINT32 flags)
-        {
-            CComPtr<IUnknown> depthTarget;
-            video->createDepthTarget(&depthTarget, format, width, height, flags);
-            return resourceManager.addUniqueResource(depthTarget);
+                CComPtr<VideoTexture> texture;
+                resultValue = video->createTexture(&texture, format, width, height, depth, flags);
+                if (SUCCEEDED(resultValue) && texture)
+                {
+                    resultValue = texture->QueryInterface(returnObject);
+                }
+
+                return resultValue;
+            });
         }
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
@@ -493,7 +485,7 @@ namespace Gek
                 resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
                 if (texture)
                 {
-                    Math::Float3 normal((String::to<Math::Float3>(value) + 1.0f) * 0.5f);
+                    Math::Float3 normal((Evaluator::get<Math::Float3>(value).getNormal() + 1.0f) * 0.5f);
                     UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
                                          UINT32(UINT8(normal.y * 255.0f) << 8) |
                                          UINT32(UINT8(normal.z * 255.0f) << 16);
@@ -528,7 +520,7 @@ namespace Gek
             };
 
             CComPtr<VideoTexture> texture;
-            for (auto format : formatList)
+            for (auto &format : formatList)
             {
                 CStringW fullFileName(FileSystem::expandPath(String::format(L"%%root%%\\data\\textures\\%s%s", fileName, format)));
                 if (PathFileExists(fullFileName))
@@ -628,6 +620,11 @@ namespace Gek
         STDMETHODIMP_(void) generateMipMaps(VideoContext *videoContext, ResourceHandle resourceHandle)
         {
             videoContext->generateMipMaps(resourceManager.getResource<VideoTexture>(resourceHandle));
+        }
+
+        STDMETHODIMP_(void) copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
+        {
+            video->copyResource(resourceManager.getResource(destinationHandle), resourceManager.getResource(sourceHandle));
         }
 
         STDMETHODIMP_(void) setRenderStates(VideoContext *videoContext, RenderStatesHandle renderStatesHandle)

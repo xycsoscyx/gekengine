@@ -12,12 +12,14 @@ namespace Gek
     HRESULT ModelComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
         componentParameterList[L""] = value;
+        componentParameterList[L"skin"] = skin;
         return S_OK;
     }
 
     HRESULT ModelComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
         setParameter(componentParameterList, L"", value, [](LPCWSTR value) -> LPCWSTR { return value; });
+        setParameter(componentParameterList, L"skin", skin, [](LPCWSTR value) -> LPCWSTR { return value; });
         return S_OK;
     }
 

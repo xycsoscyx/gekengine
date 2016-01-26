@@ -291,6 +291,7 @@ namespace Gek
 
         BEGIN_INTERFACE_LIST(BufferImplementation)
             INTERFACE_LIST_ENTRY_COM(VideoBuffer)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Resource, d3dBuffer)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Buffer, d3dBuffer)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
@@ -313,28 +314,45 @@ namespace Gek
         }
     };
 
-    template <typename CLASS>
-    class TextureMixin : public UnknownMixin
-        , public CLASS
+    class TextureImplementation : public UnknownMixin
+        , public VideoTarget
     {
     protected:
+        CComPtr<ID3D11Resource> d3dResource;
+        CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+        CComPtr<ID3D11DepthStencilView> d3dDepthStencilView;
         CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
         CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
         Video::Format format;
         UINT32 width;
         UINT32 height;
         UINT32 depth;
+        Video::ViewPort viewPort;
 
     public:
-        TextureMixin(Video::Format format, UINT32 width, UINT32 height, UINT32 depth, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView)
-            : format(format)
+        TextureImplementation(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+            : d3dResource(d3dResource)
+            , d3dRenderTargetView(d3dRenderTargetView)
+            , d3dDepthStencilView(d3dDepthStencilView)
+            , d3dShaderResourceView(d3dShaderResourceView)
+            , d3dUnorderedAccessView(d3dUnorderedAccessView)
+            , format(format)
             , width(width)
             , height(height)
             , depth(depth)
-            , d3dShaderResourceView(d3dShaderResourceView)
-            , d3dUnorderedAccessView(d3dUnorderedAccessView)
+            , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
         {
         }
+
+        BEGIN_INTERFACE_LIST(TextureImplementation)
+            INTERFACE_LIST_ENTRY_COM(VideoTexture)
+            INTERFACE_LIST_ENTRY_COM(VideoTarget)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Resource, d3dResource)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11RenderTargetView, d3dRenderTargetView)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DepthStencilView, d3dDepthStencilView)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
+        END_INTERFACE_LIST_UNKNOWN
 
         // VideoTexture
         STDMETHODIMP_(Video::Format) getFormat(void)
@@ -356,44 +374,6 @@ namespace Gek
         {
             return depth;
         }
-    };
-
-    class TextureImplementation : public TextureMixin<VideoTexture>
-    {
-    public:
-        TextureImplementation(Video::Format format, UINT32 width, UINT32 height, UINT32 depth, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView)
-            : TextureMixin(format, width, height, depth, d3dShaderResourceView, d3dUnorderedAccessView)
-        {
-        }
-
-        BEGIN_INTERFACE_LIST(TextureImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoTexture)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
-        END_INTERFACE_LIST_UNKNOWN
-    };
-
-    class RenderTargetImplementation : public TextureMixin<VideoTarget>
-    {
-    private:
-        CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-        Video::ViewPort viewPort;
-
-    public:
-        RenderTargetImplementation(Video::Format format, UINT32 width, UINT32 height, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11RenderTargetView *d3dRenderTargetView)
-            : TextureMixin(format, width, height, 0, d3dShaderResourceView, nullptr)
-            , d3dRenderTargetView(d3dRenderTargetView)
-            , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
-        {
-        }
-
-        BEGIN_INTERFACE_LIST(RenderTargetImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoTexture)
-            INTERFACE_LIST_ENTRY_COM(VideoTarget)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11RenderTargetView, d3dRenderTargetView)
-        END_INTERFACE_LIST_UNKNOWN
 
         // VideoTarget
         STDMETHODIMP_(const Video::ViewPort &) getViewPort(void)
@@ -1596,111 +1576,6 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP createRenderTarget(VideoTarget **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 flags)
-        {
-            REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
-            REQUIRE_RETURN(width > 0, E_INVALIDARG);
-            REQUIRE_RETURN(height > 0, E_INVALIDARG);
-
-            gekCheckScope(resultValue, UINT32(format),
-                width,
-                height);
-
-            D3D11_TEXTURE2D_DESC textureDescription;
-            textureDescription.Format = DXGI_FORMAT_UNKNOWN;
-            textureDescription.Width = width;
-            textureDescription.Height = height;
-            textureDescription.MipLevels = ((flags & Video::TextureFlags::MipMaps) ? 0 : 1);
-            textureDescription.ArraySize = 1;
-            textureDescription.SampleDesc.Count = 1;
-            textureDescription.SampleDesc.Quality = 0;
-            textureDescription.Usage = D3D11_USAGE_DEFAULT;
-            textureDescription.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-            textureDescription.CPUAccessFlags = 0;
-            textureDescription.MiscFlags = ((flags & Video::TextureFlags::MipMaps) ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
-            textureDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
-
-            CComPtr<ID3D11Texture2D> texture2D;
-            gekCheckResult(resultValue = d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D));
-            if (texture2D)
-            {
-                D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
-                renderViewDescription.Format = textureDescription.Format;
-                renderViewDescription.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-                renderViewDescription.Texture2D.MipSlice = 0;
-
-                CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-                gekCheckResult(resultValue = d3dDevice->CreateRenderTargetView(texture2D, &renderViewDescription, &d3dRenderTargetView));
-                if (d3dRenderTargetView)
-                {
-                    D3D11_SHADER_RESOURCE_VIEW_DESC shaderViewDescription;
-                    shaderViewDescription.Format = textureDescription.Format;
-                    shaderViewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-                    shaderViewDescription.Texture2D.MostDetailedMip = 0;
-                    shaderViewDescription.Texture2D.MipLevels = ((flags & Video::TextureFlags::MipMaps) ? -1 : 1);
-
-                    CComPtr<ID3D11ShaderResourceView> shaderView;
-                    gekCheckResult(resultValue = d3dDevice->CreateShaderResourceView(texture2D, &shaderViewDescription, &shaderView));
-                    if (shaderView)
-                    {
-                        resultValue = E_OUTOFMEMORY;
-                        CComPtr<RenderTargetImplementation> renderTarget(new RenderTargetImplementation(format, width, height, shaderView, d3dRenderTargetView));
-                        if (renderTarget)
-                        {
-                            gekCheckResult(resultValue = renderTarget->QueryInterface(IID_PPV_ARGS(returnObject)));
-                        }
-                    }
-                }
-            }
-
-            return resultValue;
-        }
-
-        STDMETHODIMP createDepthTarget(IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 flags)
-        {
-            REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
-            REQUIRE_RETURN(width > 0, E_INVALIDARG);
-            REQUIRE_RETURN(height > 0, E_INVALIDARG);
-
-            gekCheckScope(resultValue, UINT32(format),
-                width,
-                height);
-
-            D3D11_TEXTURE2D_DESC depthDescription;
-            depthDescription.Format = DXGI_FORMAT_UNKNOWN;
-            depthDescription.Width = width;
-            depthDescription.Height = height;
-            depthDescription.MipLevels = ((flags & Video::TextureFlags::MipMaps) ? 0 : 1);
-            depthDescription.ArraySize = 1;
-            depthDescription.SampleDesc.Count = 1;
-            depthDescription.SampleDesc.Quality = 0;
-            depthDescription.Usage = D3D11_USAGE_DEFAULT;
-            depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-            depthDescription.CPUAccessFlags = 0;
-            depthDescription.MiscFlags = ((flags & Video::TextureFlags::MipMaps) ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
-            depthDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
-
-            CComPtr<ID3D11Texture2D> texture2D;
-            gekCheckResult(resultValue = d3dDevice->CreateTexture2D(&depthDescription, nullptr, &texture2D));
-            if (texture2D)
-            {
-                D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
-                depthStencilDescription.Format = depthDescription.Format;
-                depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-                depthStencilDescription.Flags = 0;
-                depthStencilDescription.Texture2D.MipSlice = 0;
-
-                CComPtr<ID3D11DepthStencilView> depthStencilView;
-                gekCheckResult(resultValue = d3dDevice->CreateDepthStencilView(texture2D, &depthStencilDescription, &depthStencilView));
-                if (depthStencilView)
-                {
-                    gekCheckResult(resultValue = depthStencilView->QueryInterface(IID_PPV_ARGS(returnObject)));
-                }
-            }
-
-            return resultValue;
-        }
-
         STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID data)
         {
             REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
@@ -1895,14 +1770,14 @@ namespace Gek
             d3dDeviceContext->Unmap(d3dBuffer, 0);
         }
 
-        STDMETHODIMP_(void) copyBuffer(VideoBuffer *destination, VideoBuffer *source)
+        STDMETHODIMP_(void) copyResource(IUnknown *destination, IUnknown *source)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             REQUIRE_VOID_RETURN(destination);
             REQUIRE_VOID_RETURN(source);
 
-            CComQIPtr<ID3D11Buffer> d3dDestination(destination);
-            CComQIPtr<ID3D11Buffer> d3dSource(source);
+            CComQIPtr<ID3D11Resource> d3dDestination(destination);
+            CComQIPtr<ID3D11Resource> d3dSource(source);
             d3dDeviceContext->CopyResource(d3dDestination, d3dSource);
         }
 
@@ -2243,6 +2118,51 @@ namespace Gek
             return resultValue;
         }
 
+        STDMETHODIMP createDepthTarget(IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 flags)
+        {
+            REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
+            REQUIRE_RETURN(width > 0, E_INVALIDARG);
+            REQUIRE_RETURN(height > 0, E_INVALIDARG);
+
+            gekCheckScope(resultValue, UINT32(format),
+                width,
+                height);
+
+            D3D11_TEXTURE2D_DESC depthDescription;
+            depthDescription.Format = DXGI_FORMAT_UNKNOWN;
+            depthDescription.Width = width;
+            depthDescription.Height = height;
+            depthDescription.MipLevels = ((flags & Video::TextureFlags::MipMaps) ? 0 : 1);
+            depthDescription.ArraySize = 1;
+            depthDescription.SampleDesc.Count = 1;
+            depthDescription.SampleDesc.Quality = 0;
+            depthDescription.Usage = D3D11_USAGE_DEFAULT;
+            depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+            depthDescription.CPUAccessFlags = 0;
+            depthDescription.MiscFlags = ((flags & Video::TextureFlags::MipMaps) ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
+            depthDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
+
+            CComPtr<ID3D11Texture2D> texture2D;
+            gekCheckResult(resultValue = d3dDevice->CreateTexture2D(&depthDescription, nullptr, &texture2D));
+            if (texture2D)
+            {
+                D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
+                depthStencilDescription.Format = depthDescription.Format;
+                depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+                depthStencilDescription.Flags = 0;
+                depthStencilDescription.Texture2D.MipSlice = 0;
+
+                CComPtr<ID3D11DepthStencilView> depthStencilView;
+                gekCheckResult(resultValue = d3dDevice->CreateDepthStencilView(texture2D, &depthStencilDescription, &depthStencilView));
+                if (depthStencilView)
+                {
+                    gekCheckResult(resultValue = depthStencilView->QueryInterface(IID_PPV_ARGS(returnObject)));
+                }
+            }
+
+            return resultValue;
+        }
+
         STDMETHODIMP createTexture(VideoTexture **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags)
         {
             REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
@@ -2254,6 +2174,31 @@ namespace Gek
                 flags);
 
             UINT32 bindFlags = 0;
+            if (flags & Video::TextureFlags::RenderTarget)
+            {
+                if (flags & Video::TextureFlags::DepthTarget)
+                {
+                    return E_INVALIDARG;
+                }
+
+                bindFlags |= D3D11_BIND_RENDER_TARGET;
+            }
+
+            if (flags & Video::TextureFlags::DepthTarget)
+            {
+                if (flags & Video::TextureFlags::RenderTarget)
+                {
+                    return E_INVALIDARG;
+                }
+
+                if (depth > 1)
+                {
+                    return E_INVALIDARG;
+                }
+
+                bindFlags |= D3D11_BIND_DEPTH_STENCIL;
+            }
+
             if (flags & Video::TextureFlags::Resource)
             {
                 bindFlags |= D3D11_BIND_SHADER_RESOURCE;
@@ -2264,6 +2209,7 @@ namespace Gek
                 bindFlags |= D3D11_BIND_UNORDERED_ACCESS;
             }
 
+            DXGI_FORMAT d3dFormat = DirectX::TextureFormatList[static_cast<UINT8>(format)];;
             CComQIPtr<ID3D11Resource> d3dResource;
             if (depth == 1)
             {
@@ -2271,7 +2217,7 @@ namespace Gek
                 textureDescription.Width = width;
                 textureDescription.Height = height;
                 textureDescription.MipLevels = ((flags & Video::TextureFlags::MipMaps) ? 0 : 1);
-                textureDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
+                textureDescription.Format = d3dFormat;
                 textureDescription.ArraySize = 1;
                 textureDescription.SampleDesc.Count = 1;
                 textureDescription.SampleDesc.Quality = 0;
@@ -2294,7 +2240,7 @@ namespace Gek
                 textureDescription.Height = height;
                 textureDescription.Depth = depth;
                 textureDescription.MipLevels = ((flags & Video::TextureFlags::MipMaps) ? 0 : 1);
-                textureDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
+                textureDescription.Format = d3dFormat;
                 textureDescription.Usage = D3D11_USAGE_DEFAULT;
                 textureDescription.BindFlags = bindFlags;
                 textureDescription.CPUAccessFlags = 0;
@@ -2310,8 +2256,41 @@ namespace Gek
 
             if (d3dResource)
             {
+                CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+                if (SUCCEEDED(resultValue) && flags & Video::TextureFlags::RenderTarget)
+                {
+                    D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
+                    renderViewDescription.Format = d3dFormat;
+                    if (depth == 1)
+                    {
+                        renderViewDescription.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+                        renderViewDescription.Texture2D.MipSlice = 0;
+                    }
+                    else
+                    {
+                        renderViewDescription.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
+                        renderViewDescription.Texture3D.MipSlice = 0;
+                        renderViewDescription.Texture3D.FirstWSlice = 0;
+                        renderViewDescription.Texture3D.WSize = depth;
+                    }
+
+                    gekCheckResult(resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView));
+                }
+
+                CComPtr<ID3D11DepthStencilView> depthStencilView;
+                if (SUCCEEDED(resultValue) && flags & Video::TextureFlags::DepthTarget)
+                {
+                    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
+                    depthStencilDescription.Format = d3dFormat;
+                    depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+                    depthStencilDescription.Flags = 0;
+                    depthStencilDescription.Texture2D.MipSlice = 0;
+
+                    gekCheckResult(resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &depthStencilView));
+                }
+
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (flags & Video::TextureFlags::Resource)
+                if (SUCCEEDED(resultValue) && flags & Video::TextureFlags::Resource)
                 {
                     gekCheckResult(resultValue = d3dDevice->CreateShaderResourceView(d3dResource, nullptr, &d3dShaderResourceView));
                 }
@@ -2320,7 +2299,7 @@ namespace Gek
                 if (flags & Video::TextureFlags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
+                    viewDescription.Format = d3dFormat;
                     if (depth == 1)
                     {
                         viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
@@ -2337,10 +2316,13 @@ namespace Gek
                     gekCheckResult(resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView));
                 }
 
-                CComPtr<TextureImplementation> texture(new TextureImplementation(format, width, height, depth, d3dShaderResourceView, d3dUnorderedAccessView));
-                if (texture)
+                if (SUCCEEDED(resultValue))
                 {
-                    gekCheckResult(resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject)));
+                    CComPtr<TextureImplementation> texture(new TextureImplementation(d3dResource, d3dRenderTargetView, depthStencilView, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height, depth));
+                    if (texture)
+                    {
+                        gekCheckResult(resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject)));
+                    }
                 }
             }
 
@@ -2417,11 +2399,17 @@ namespace Gek
                     gekCheckResult(resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), &d3dShaderResourceView));
                     if (d3dShaderResourceView)
                     {
-                        resultValue = E_OUTOFMEMORY;
-                        CComPtr<TextureImplementation> texture(new TextureImplementation(Video::Format::Unknown, scratchImage.GetMetadata().width, scratchImage.GetMetadata().height, scratchImage.GetMetadata().depth, d3dShaderResourceView, nullptr));
-                        if (texture)
+                        resultValue = E_UNEXPECTED;
+                        CComPtr<ID3D11Resource> d3dResource;
+                        d3dShaderResourceView->GetResource(&d3dResource);
+                        if (d3dResource)
                         {
-                            gekCheckResult(resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject)));
+                            resultValue = E_OUTOFMEMORY;
+                            CComPtr<TextureImplementation> texture(new TextureImplementation(d3dResource, nullptr, nullptr, d3dShaderResourceView, nullptr, Video::Format::Unknown, scratchImage.GetMetadata().width, scratchImage.GetMetadata().height, scratchImage.GetMetadata().depth));
+                            if (texture)
+                            {
+                                gekCheckResult(resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject)));
+                            }
                         }
                     }
                 }
@@ -2525,11 +2513,17 @@ namespace Gek
                 gekCheckResult(resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMap.GetMetadata(), &d3dShaderResourceView));
                 if (d3dShaderResourceView)
                 {
-                    resultValue = E_OUTOFMEMORY;
-                    CComPtr<TextureImplementation> texture(new TextureImplementation(Video::Format::Unknown, cubeMapMetaData.width, cubeMapMetaData.height, 1, d3dShaderResourceView, nullptr));
-                    if (texture)
+                    resultValue = E_UNEXPECTED;
+                    CComPtr<ID3D11Resource> d3dResource;
+                    d3dShaderResourceView->GetResource(&d3dResource);
+                    if (d3dResource)
                     {
-                        gekCheckResult(resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject)));
+                        resultValue = E_OUTOFMEMORY;
+                        CComPtr<TextureImplementation> texture(new TextureImplementation(d3dResource, nullptr, nullptr, d3dShaderResourceView, nullptr, Video::Format::Unknown, cubeMapMetaData.width, cubeMapMetaData.height, 1));
+                        if (texture)
+                        {
+                            gekCheckResult(resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject)));
+                        }
                     }
                 }
             }

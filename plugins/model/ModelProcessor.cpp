@@ -19,6 +19,8 @@
 #include <memory>
 #include <map>
 #include <set>
+#include <csignal>
+#include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
 #include <ppl.h>
@@ -369,30 +371,22 @@ namespace Gek
         , public Processor
     {
     public:
-        struct MaterialInfo
+        struct SubModel
         {
+            bool skin;
             MaterialHandle material;
-            UINT32 firstVertex;
-            UINT32 firstIndex;
+            ResourceHandle vertexBuffer;
+            ResourceHandle indexBuffer;
             UINT32 indexCount;
-
-            MaterialInfo(void)
-                : firstVertex(0)
-                , firstIndex(0)
-                , indexCount(0)
-            {
-            }
         };
 
-        struct ModelData
+        struct Model
         {
             bool loaded;
             Shape::AlignedBox alignedBox;
-            ResourceHandle vertexBuffer;
-            ResourceHandle indexBuffer;
-            std::vector<MaterialInfo> materialInfoList;
+            std::vector<SubModel> subModelList;
 
-            ModelData(void)
+            Model(void)
                 : loaded(false)
             {
             }
@@ -403,13 +397,11 @@ namespace Gek
             Math::Float4x4 matrix;
             Math::Float4 color;
             Math::Float3 scale;
-            float distance;
 
-            InstanceData(const Math::Float4x4 &matrix, const Math::Float4 &color, const Math::Float3 &scale, float distance)
+            InstanceData(const Math::Float4x4 &matrix, const Math::Float4 &color, const Math::Float3 &scale)
                 : matrix(matrix)
                 , color(color)
                 , scale(scale)
-                , distance(distance)
             {
             }
         };
@@ -421,12 +413,14 @@ namespace Gek
 
         PluginHandle plugin;
 
-        std::unordered_map<ModelData *, std::function<HRESULT(void)>> dataLoadQueue;
-        std::unordered_map<CStringW, ModelData> dataMap;
-        std::unordered_map<Entity *, ModelData *> dataEntityList;
-        ResourceHandle instanceBuffer;
+        std::unique_ptr<std::thread> loadFileThread;
+        std::unique_ptr<std::thread> loadDataThread;
+        concurrency::concurrent_queue<std::function<void(void)>> loadFileQueue;
+        concurrency::concurrent_queue<std::function<void(void)>> loadDataQueue;
 
-        std::list<std::unique_ptr<std::thread>> loadList;
+        std::unordered_map<CStringW, Model> dataMap;
+        std::unordered_map<Entity *, Model &> dataEntityList;
+        concurrency::concurrent_unordered_map<Model *, concurrency::concurrent_vector<InstanceData>> visibleList;
 
     public:
         ModelProcessorImplementation(void)
@@ -448,43 +442,35 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Processor)
         END_INTERFACE_LIST_USER
 
-        HRESULT loadShape(ModelData *data, CStringW parameters)
+        HRESULT loadShape(Model *data, CStringW parameters)
         {
             gekCheckScope(resultValue, parameters);
 
+            resultValue = S_OK;
+
             int position = 0;
             CStringW shape = parameters.Tokenize(L"|", position);
-            CStringW materialName = parameters.Tokenize(L"|", position);
-            MaterialHandle material = resources->loadMaterial(materialName);
-            if (material.isValid())
+            if (shape.CompareNoCase(L"cube") == 0)
             {
-                resultValue = S_OK;
-                if (shape.CompareNoCase(L"cube") == 0)
-                {
-                    resultValue = E_FAIL;
-                }
-                else if (shape.CompareNoCase(L"sphere") == 0)
-                {
-                    UINT32 divisionCount = String::to<UINT32>(parameters.Tokenize(L"|", position));
+                resultValue = E_FAIL;
+            }
+            else if (shape.CompareNoCase(L"sphere") == 0)
+            {
+                UINT32 divisionCount = String::to<UINT32>(parameters.Tokenize(L"|", position));
 
-                    GeoSphere geoSphere;
-                    geoSphere.generate(divisionCount);
+                GeoSphere geoSphere;
+                geoSphere.generate(divisionCount);
 
-                    MaterialInfo materialInfo;
-                    materialInfo.firstVertex = 0;
-                    materialInfo.firstIndex = 0;
-                    materialInfo.indexCount = geoSphere.getIndices().size();
-                    materialInfo.material = material;
-                    data->materialInfoList.push_back(materialInfo);
-
-                    data->vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
-                    data->indexBuffer = resources->createBuffer(String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
-                    resultValue = ((data->vertexBuffer.isValid() && data->indexBuffer.isValid()) ? S_OK : E_FAIL);
-                }
-                else
-                {
-                    resultValue = E_FAIL;
-                }
+                data->subModelList.resize(1);
+                SubModel &subModel = data->subModelList.front();
+                subModel.indexCount = geoSphere.getIndices().size();
+                subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
+                subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
+                resultValue = ((subModel.vertexBuffer.isValid() && subModel.indexBuffer.isValid()) ? S_OK : E_FAIL);
+            }
+            else
+            {
+                resultValue = E_FAIL;
             }
 
             if (SUCCEEDED(resultValue))
@@ -495,7 +481,7 @@ namespace Gek
             return resultValue;
         }
 
-        HRESULT preLoadShape(ModelData *data, CStringW parameters)
+        HRESULT preLoadShape(Model *data, CStringW parameters)
         {
             gekCheckScope(resultValue, parameters);
 
@@ -518,17 +504,12 @@ namespace Gek
             {
                 data->alignedBox.minimum = Math::Float3(-1.0f);
                 data->alignedBox.maximum = Math::Float3(1.0f);
-                auto loadIterator = dataLoadQueue.find(data);
-                if (loadIterator == dataLoadQueue.end())
-                {
-                    dataLoadQueue[data] = std::bind(&ModelProcessorImplementation::loadShape, this, data, CStringW(parameters));
-                }
             }
 
             return resultValue;
         }
 
-        HRESULT loadModel(ModelData *data, CStringW fileName, CStringW name)
+        HRESULT loadModel(Model *data, CStringW fileName, CStringW name)
         {
             gekCheckScope(resultValue, fileName, name);
 
@@ -547,54 +528,47 @@ namespace Gek
                 rawFileData += sizeof(UINT16);
 
                 resultValue = E_INVALIDARG;
-                if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 2)
+                if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 3)
                 {
                     data->alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
                     rawFileData += sizeof(Gek::Shape::AlignedBox);
 
-                    UINT32 materialCount = *((UINT32 *)rawFileData);
+                    UINT32 subModelCount = *((UINT32 *)rawFileData);
                     rawFileData += sizeof(UINT32);
 
                     resultValue = S_OK;
-                    data->materialInfoList.resize(materialCount);
-                    for (UINT32 materialIndex = 0; materialIndex < materialCount; ++materialIndex)
+                    data->subModelList.resize(subModelCount);
+                    for (UINT32 modelIndex = 0; modelIndex < subModelCount; ++modelIndex)
                     {
                         CStringW materialName = LPCWSTR(rawFileData);
                         rawFileData += ((materialName.GetLength() + 1) * sizeof(wchar_t));
 
-                        MaterialInfo &materialInfo = data->materialInfoList[materialIndex];
-                        materialInfo.material = resources->loadMaterial(materialName);
-                        if (!materialInfo.material.isValid())
+                        SubModel &subModel = data->subModelList[modelIndex];
+                        if (materialName.CompareNoCase(L"skin") == 0)
                         {
-                            resultValue = E_FAIL;
-                            break;
+                            subModel.skin = true;
+                        }
+                        else
+                        {
+                            subModel.material = resources->loadMaterial(materialName);
+                            if (!subModel.material.isValid())
+                            {
+                                resultValue = E_FAIL;
+                                break;
+                            }
                         }
 
-                        materialInfo.firstVertex = *((UINT32 *)rawFileData);
-                        rawFileData += sizeof(UINT32);
-
-                        materialInfo.firstIndex = *((UINT32 *)rawFileData);
-                        rawFileData += sizeof(UINT32);
-
-                        materialInfo.indexCount = *((UINT32 *)rawFileData);
-                        rawFileData += sizeof(UINT32);
-                    }
-
-                    if (SUCCEEDED(resultValue))
-                    {
                         UINT32 vertexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
-                        data->vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s", name.GetString()), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
+                        subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%s", name.GetString()), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
                         rawFileData += (sizeof(Vertex) * vertexCount);
-                    }
 
-                    if (SUCCEEDED(resultValue))
-                    {
                         UINT32 indexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
-                        data->indexBuffer = resources->createBuffer(String::format(L"model:index:%s", name.GetString()), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
+                        subModel.indexCount = indexCount;
+                        subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%s", name.GetString()), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
                         rawFileData += (sizeof(UINT16) * indexCount);
                     }
                 }
@@ -612,7 +586,7 @@ namespace Gek
             return resultValue;
         }
 
-        HRESULT preLoadModel(ModelData *data, LPCWSTR fileName, LPCWSTR name)
+        HRESULT preLoadModel(Model *data, LPCWSTR fileName, LPCWSTR name)
         {
             REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -635,7 +609,7 @@ namespace Gek
                 rawFileData += sizeof(UINT16);
 
                 resultValue = E_INVALIDARG;
-                if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 2)
+                if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 3)
                 {
                     data->alignedBox = *(Gek::Shape::AlignedBox *)rawFileData;
                     resultValue = S_OK;
@@ -646,19 +620,10 @@ namespace Gek
                 }
             }
 
-            if (SUCCEEDED(resultValue))
-            {
-                auto loadIterator = dataLoadQueue.find(data);
-                if (loadIterator == dataLoadQueue.end())
-                {
-                    dataLoadQueue[data] = std::bind(&ModelProcessorImplementation::loadModel, this, data, CStringW(fileName), CStringW(name));
-                }
-            }
-
             return resultValue;
         }
 
-        HRESULT preLoadData(ModelData *data, LPCWSTR model)
+        HRESULT preLoadData(Model *data, LPCWSTR model)
         {
             REQUIRE_RETURN(model, E_INVALIDARG);
 
@@ -709,11 +674,6 @@ namespace Gek
                 }
             }
 
-            if (SUCCEEDED(resultValue))
-            {
-                instanceBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 1024, Video::BufferType::Vertex, Video::BufferFlags::Mappable);
-            }
-
             return resultValue;
         };
 
@@ -728,6 +688,20 @@ namespace Gek
 
         STDMETHODIMP_(void) onFree(void)
         {
+            loadFileQueue.clear();
+            if (loadFileThread)
+            {
+                loadFileThread->join();
+                loadFileThread = nullptr;
+            }
+
+            loadDataQueue.clear();
+            if (loadDataThread)
+            {
+                loadDataThread->join();
+                loadDataThread = nullptr;
+            }
+
             dataMap.clear();
             dataEntityList.clear();
         }
@@ -743,13 +717,13 @@ namespace Gek
                 auto dataNameIterator = dataMap.find(modelComponent);
                 if (dataNameIterator != dataMap.end())
                 {
-                    dataEntityList[entity] = &(*dataNameIterator).second;
+                    dataEntityList[entity] = (*dataNameIterator).second;
                 }
                 else
                 {
-                    ModelData &data = dataMap[modelComponent];
+                    Model &data = dataMap[modelComponent];
                     preLoadData(&data, modelComponent);
-                    dataEntityList[entity] = &data;
+                    dataEntityList[entity] = data;
                 }
             }
         }
@@ -769,14 +743,13 @@ namespace Gek
             REQUIRE_VOID_RETURN(population);
             REQUIRE_VOID_RETURN(viewFrustum);
 
-            const auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
-
-            concurrency::concurrent_unordered_map<ModelData *, concurrency::concurrent_vector<InstanceData>> visibleList;
-            std::for_each(dataEntityList.begin(), dataEntityList.end(), [&](const std::pair<Entity *, ModelData *> &dataEntity) -> void
+            visibleList.clear();
+            std::for_each(dataEntityList.begin(), dataEntityList.end(), [&](const std::pair<Entity *, Model *> &dataEntity) -> void
             {
                 Entity *entity = dataEntity.first;
-                ModelData *data = dataEntity.second;
+                Model *data = dataEntity.second;
 
+                const auto &modelComponent = entity->getComponent<ModelComponent>();
                 const auto &transformComponent = entity->getComponent<TransformComponent>();
                 Shape::OrientedBox orientedBox(data->alignedBox, transformComponent.rotation, transformComponent.position);
                 orientedBox.halfsize *= transformComponent.scale;
@@ -789,57 +762,28 @@ namespace Gek
                         color = entity->getComponent<ColorComponent>();
                     }
 
-                    visibleList[data].push_back(InstanceData(transformComponent.getMatrix(), color, transformComponent.scale, cameraTransform.position.getDistance(transformComponent.position)));
+                    visibleList[data].push_back(InstanceData(transformComponent.getMatrix(), color, transformComponent.scale));
                 }
             });
 
-            std::vector<InstanceData> instanceArray;
-            std::map<ModelData *, std::pair<UINT32, UINT32>> instanceMap;
-            for (auto instancePair : visibleList)
+            for (auto &visible : visibleList)
             {
-                ModelData *data = (instancePair.first);
-                auto loadIterator = dataLoadQueue.find(data);
-                if (loadIterator != dataLoadQueue.end())
+                Model &data = *(visible.first);
+                if (data.loaded)
                 {
-                    auto load = (*loadIterator).second;
-                    dataLoadQueue.erase(loadIterator);
-                    load();
-                }
-
-                if (data->loaded)
-                {
-                    auto &instanceList = instancePair.second;
-                    concurrency::parallel_sort(instanceList.begin(), instanceList.end(), [&](const InstanceData &leftInstance, const InstanceData &rightInstance) -> bool
+                    for (auto &instance : visible.second)
                     {
-                        return (leftInstance.distance < rightInstance.distance);
-                    });
-
-                    instanceMap[data] = std::make_pair(instanceList.size(), instanceArray.size());
-                    instanceArray.insert(instanceArray.end(), instanceList.begin(), instanceList.end());
-                }
-            }
-
-            LPVOID instanceData = nullptr;
-            if (SUCCEEDED(resources->mapBuffer(instanceBuffer, &instanceData)))
-            {
-                UINT32 instanceCount = std::min(instanceArray.size(), size_t(1024));
-                memcpy(instanceData, instanceArray.data(), (sizeof(InstanceData) * instanceCount));
-                resources->unmapBuffer(instanceBuffer);
-
-                for (auto &instancePair : instanceMap)
-                {
-                    auto data = instancePair.first;
-                    for (auto &materialInfo : data->materialInfoList)
-                    {
-                        static auto drawCall = [](VideoContext *videoContext, PluginResources *resources, ResourceHandle vertexBuffer, ResourceHandle instanceBuffer, ResourceHandle indexBuffer, UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) -> void
+                        static auto drawCall = [](VideoContext *videoContext, PluginResources *resources, const SubModel &subModel, const InstanceData &instance) -> void
                         {
-                            resources->setVertexBuffer(videoContext, 0, vertexBuffer, 0);
-                            resources->setVertexBuffer(videoContext, 1, instanceBuffer, 0);
-                            resources->setIndexBuffer(videoContext, indexBuffer, 0);
-                            videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
+                            resources->setVertexBuffer(videoContext, 0, subModel.vertexBuffer, 0);
+                            resources->setIndexBuffer(videoContext, subModel.indexBuffer, 0);
+                            videoContext->drawIndexedPrimitive(subModel.indexCount, 0, 0);
                         };
 
-                        render->queueDrawCall(plugin, materialInfo.material, std::bind(drawCall, std::placeholders::_1, resources, data->vertexBuffer, instanceBuffer, data->indexBuffer, instancePair.second.first, instancePair.second.second, materialInfo.indexCount, materialInfo.firstIndex, materialInfo.firstVertex));
+                        for (auto &subModel : data.subModelList)
+                        {
+                            render->queueDrawCall(plugin, subModel.material, std::bind(drawCall, std::placeholders::_1, resources, subModel, instance));
+                        }
                     }
                 }
             }

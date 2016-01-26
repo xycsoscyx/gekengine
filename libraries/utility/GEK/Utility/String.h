@@ -28,7 +28,7 @@ namespace Gek
         template <typename TYPE>
         TYPE to(LPCWSTR expression)
         {
-            TYPE value;
+            TYPE value = {};
             to(expression, value);
             return value;
         }

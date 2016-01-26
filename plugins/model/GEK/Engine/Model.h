@@ -10,6 +10,7 @@ namespace Gek
     struct ModelComponent
     {
         CStringW value;
+        CStringW skin;
 
         ModelComponent(void);
         HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;

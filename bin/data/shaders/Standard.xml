@@ -17,18 +17,19 @@
 
     <depth>D32</depth>
 
-    <targets>
-        <albedoBuffer bind="float3">byte4</albedoBuffer>
-        <materialBuffer bind="float2">byte2</materialBuffer>
-        <normalBuffer bind="half2">half2</normalBuffer>
-        <depthBuffer bind="float">float</depthBuffer>
-        <luminatedBuffer bind="float3">float4</luminatedBuffer>
-        <luminanceBuffer bind="float" flags="mipmaps">float</luminanceBuffer>
-    </targets>
+    <textures>
+        <albedoBuffer bind="float3" flags="target">byte4</albedoBuffer>
+        <materialBuffer bind="float2" flags="target">byte2</materialBuffer>
+        <normalBuffer bind="half2" flags="target">half2</normalBuffer>
+        <depthBuffer bind="float" flags="target">float</depthBuffer>
+        <luminatedBuffer bind="float3" flags="target">float4</luminatedBuffer>
+        <luminanceBuffer bind="float" flags="target, mipmaps">float</luminanceBuffer>
+        <previousLuminance bind="float" flags="unorderedAccess" width="1" height="1">float</previousLuminance>
+        <averageLuminance bind="float" flags="target, unorderedAccess" width="1" height="1">float</averageLuminance>
+    </textures>
 
     <buffers>
-        <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %maximumListSize%">byte</tileIndexList>
-        <averageLuminance size="1">float</averageLuminance>
+        <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %maximumListSize%" flags="unorderedAccess">byte</tileIndexList>
     </buffers>
 
     <block>
@@ -52,7 +53,7 @@
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\Deferred</source>
+                <source>Standard\StoreDeferred</source>
             </program>
         </pass>
     </block>
@@ -72,7 +73,7 @@
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\Ambient</source>
+                <source>Standard\AmbientLighting</source>
             </program>
         </pass>
     </block>
@@ -94,7 +95,7 @@
                     <depth>1</depth>
                 </compute>
                 <entry>mainComputeProgram</entry>
-                <source>Standard\Tiled</source>
+                <source>Standard\TiledLightCulling</source>
             </program>
         </pass>
 
@@ -118,7 +119,7 @@
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\Lighting</source>
+                <source>Standard\AccumulateLighting</source>
             </program>
         </pass>
     </block>
@@ -135,7 +136,29 @@
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\Luminance</source>
+                <source>Standard\CalculateLuminance</source>
+            </program>
+        </pass>
+    </block>
+
+    <block>
+        <pass mode="deferred">
+            <resources>
+                <luminanceBuffer generateMipMaps="true" />
+                <previousLuminance copy="averageLuminance"/>
+            </resources>
+
+            <unorderedaccess>
+                <averageLuminance />
+            </unorderedaccess>
+
+            <targets>
+                <averageLuminance />
+            </targets>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\AverageLuminance</source>
             </program>
         </pass>
     </block>
@@ -144,16 +167,12 @@
         <pass mode="deferred">
             <resources>
                 <luminatedBuffer />
-                <luminanceBuffer generateMipMaps="true" />
+                <averageLuminance />
                 <albedoBuffer />
                 <materialBuffer />
                 <normalBuffer />
                 <depthBuffer />
             </resources>
-
-            <unorderedaccess>
-                <averageLuminance />
-            </unorderedaccess>
 
             <program>
                 <entry>mainPixelProgram</entry>

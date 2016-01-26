@@ -209,7 +209,10 @@ namespace Gek
         {
             REQUIRE_VOID_RETURN(resources);
 
-            drawCallList.emplace_back(resources->getShader(material), plugin, material, draw);
+            if (plugin.isValid() && material.isValid() && draw)
+            {
+                drawCallList.emplace_back(resources->getShader(material), plugin, material, draw);
+            }
         }
 
         // PopulationObserver

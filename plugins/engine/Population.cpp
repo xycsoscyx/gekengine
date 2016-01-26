@@ -25,7 +25,7 @@ namespace Gek
 
         ~EntityImplementation(void)
         {
-            for (auto componentPair : componentList)
+            for (auto &componentPair : componentList)
             {
                 componentPair.second.first->destroy(componentPair.second.second);
             }
@@ -138,12 +138,12 @@ namespace Gek
                 loadScene = nullptr;
             }
 
-            for (auto priorityPair : updatePriorityMap)
+            for (auto &priorityPair : updatePriorityMap)
             {
                 priorityPair.second->onUpdate(frameTime);
             }
 
-            for (auto const killEntity : killEntityList)
+            for (auto const &killEntity : killEntityList)
             {
                 auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity *> &namedEntity) -> bool
                 {
@@ -278,7 +278,7 @@ namespace Gek
             if (entity)
             {
                 entityList.push_back(CComPtr<Entity>(entity->getClass<Entity>()));
-                for (auto componentParameterPair : entityParameterList)
+                for (auto &componentParameterPair : entityParameterList)
                 {
                     auto &componentName = componentParameterPair.first;
                     auto &componentParameterList = componentParameterPair.second;

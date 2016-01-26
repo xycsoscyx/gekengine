@@ -162,6 +162,7 @@ namespace Gek
             std::vector<CStringW> renderTargetList;
             std::vector<CStringW> resourceList;
             std::set<CStringW> generateMipMaps;
+            std::unordered_map<CStringW, CStringW> copyResources;
             std::vector<CStringW> unorderedAccessList;
             ProgramHandle program;
             UINT32 dispatchWidth;
@@ -201,8 +202,7 @@ namespace Gek
         std::vector<Map> mapList;
         std::unordered_map<CStringW, CStringW> defineList;
         ResourceHandle depthBuffer;
-        std::unordered_map<CStringW, ResourceHandle> renderTargetMap;
-        std::unordered_map<CStringW, ResourceHandle> bufferMap;
+        std::unordered_map<CStringW, ResourceHandle> resourceMap;
         std::vector<Block> blockList;
 
     private:
@@ -287,22 +287,32 @@ namespace Gek
             return flags;
         }
 
-        static UINT32 getTextureCreateFlags(const CStringW &createFlags)
+        static UINT32 getTextureCreateFlags(CStringW createFlags)
         {
+            createFlags.Replace(L" ", L"");
+
             UINT32 flags = 0;
             int position = 0;
-            CStringW flag(createFlags.Tokenize(L"|", position));
+            CStringW flag(createFlags.Tokenize(L",", position));
             while (!flag.IsEmpty())
             {
                 if (flag.CompareNoCase(L"mipmaps") == 0)
                 {
                     flags |= Video::TextureFlags::MipMaps;
                 }
+                else if (flag.CompareNoCase(L"target") == 0)
+                {
+                    flags |= Video::TextureFlags::RenderTarget;
+                }
+                else if (flag.CompareNoCase(L"unorderedaccess") == 0)
+                {
+                    flags |= Video::TextureFlags::UnorderedAccess;
+                }
 
                 flag = createFlags.Tokenize(L"|", position);
             };
 
-            return flags;
+            return (flags | Video::TextureFlags::Resource);
         }
 
         void loadStencilStates(Video::DepthStates::StencilStates &stencilStates, Gek::XmlNode &xmlStencilNode)
@@ -578,10 +588,10 @@ namespace Gek
                         if (xmlDepthNode)
                         {
                             Video::Format format = getFormat(xmlDepthNode.getText());
-                            depthBuffer = resources->createDepthTarget(format, width, height, 0);
+                            depthBuffer = resources->createTexture(String::format(L"%s:depth", fileName), format, width, height, 1, Video::TextureFlags::DepthTarget);
                         }
 
-                        Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"targets");
+                        Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"textures");
                         if (xmlTargetsNode)
                         {
                             Gek::XmlNode xmlTargetNode = xmlTargetsNode.firstChildElement();
@@ -591,7 +601,7 @@ namespace Gek
                                 Video::Format format = getFormat(xmlTargetNode.getText());
                                 BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
                                 UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
-                                renderTargetMap[name] = resources->createRenderTarget(format, width, height, flags);
+                                resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, width, height, 1, flags);
 
                                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
@@ -608,7 +618,7 @@ namespace Gek
                                 CStringW name(xmlBufferNode.getType());
                                 Video::Format format = getFormat(xmlBufferNode.getText());
                                 UINT32 size = Evaluator::get<UINT32>(replaceDefines(xmlBufferNode.getAttribute(L"size")));
-                                bufferMap[name] = resources->createBuffer(String::format(L"%s:buffer:%s", fileName, name.GetString()), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
+                                resourceMap[name] = resources->createBuffer(String::format(L"%s:buffer:%s", fileName, name.GetString()), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                                 switch (format)
                                 {
                                 case Video::Format::Byte:
@@ -741,6 +751,11 @@ namespace Gek
                                             if (String::to<bool>(xmlResourceNode.getAttribute(L"generateMipMaps")))
                                             {
                                                 pass.generateMipMaps.insert(xmlResourceNode.getType());
+                                            }
+
+                                            if (xmlResourceNode.hasAttribute(L"copy"))
+                                            {
+                                                pass.copyResources[xmlResourceNode.getType()] = xmlResourceNode.getAttribute(L"copy");
                                             }
 
                                             xmlResourceNode = xmlResourceNode.nextSiblingElement();
@@ -1049,10 +1064,10 @@ namespace Gek
                 currentBlock = &block;
                 for (auto &clearTarget : block.renderTargetsClearList)
                 {
-                    auto renderTargetIterator = renderTargetMap.find(clearTarget.first);
-                    if (renderTargetIterator != renderTargetMap.end())
+                    auto resourceIterator = resourceMap.find(clearTarget.first);
+                    if (resourceIterator != resourceMap.end())
                     {
-                        resources->clearRenderTarget(videoContext, renderTargetIterator->second, clearTarget.second);
+                        resources->clearRenderTarget(videoContext, resourceIterator->second, clearTarget.second);
                     }
                 }
 
@@ -1083,10 +1098,10 @@ namespace Gek
                                 for (UINT32 renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
                                 {
                                     ResourceHandle renderTargetHandle;
-                                    auto renderTargetIterator = renderTargetMap.find(pass.renderTargetList[renderTarget]);
-                                    if (renderTargetIterator != renderTargetMap.end())
+                                    auto resourceIterator = resourceMap.find(pass.renderTargetList[renderTarget]);
+                                    if (resourceIterator != resourceMap.end())
                                     {
-                                        renderTargetHandle = (*renderTargetIterator).second;
+                                        renderTargetHandle = (*resourceIterator).second;
                                     }
 
                                     renderTargetList[renderTarget] = renderTargetHandle;
@@ -1111,22 +1126,27 @@ namespace Gek
                         for (auto &resourceName : pass.resourceList)
                         {
                             ResourceHandle resource;
-                            auto renderTargetIterator = renderTargetMap.find(resourceName);
-                            if (renderTargetIterator != renderTargetMap.end())
+                            auto resourceIterator = resourceMap.find(resourceName);
+                            if (resourceIterator != resourceMap.end())
                             {
-                                resource = renderTargetIterator->second;
+                                resource = resourceIterator->second;
+                            }
+
+                            if (resource.isValid())
+                            {
                                 if (pass.generateMipMaps.count(resourceName) > 0)
                                 {
                                     resources->generateMipMaps(videoContext, resource);
                                 }
-                            }
 
-                            if (!resource.isValid())
-                            {
-                                auto bufferIterator = bufferMap.find(resourceName);
-                                if (bufferIterator != bufferMap.end())
+                                if (pass.copyResources.count(resourceName) > 0)
                                 {
-                                    resource = bufferIterator->second;
+                                    CStringW copyFrom(pass.copyResources[resourceName]);
+                                    auto copyIterator = resourceMap.find(copyFrom);
+                                    if (copyIterator != resourceMap.end())
+                                    {
+                                        resources->copyResource(resource, copyIterator->second);
+                                    }
                                 }
                             }
 
@@ -1137,19 +1157,10 @@ namespace Gek
                         for (auto &unorderedAccessName : pass.unorderedAccessList)
                         {
                             ResourceHandle resource;
-                            auto renderTargetIterator = renderTargetMap.find(unorderedAccessName);
-                            if (renderTargetIterator != renderTargetMap.end())
+                            auto resourceIterator = resourceMap.find(unorderedAccessName);
+                            if (resourceIterator != resourceMap.end())
                             {
-                                resource = renderTargetIterator->second;
-                            }
-
-                            if (!resource.isValid())
-                            {
-                                auto bufferIterator = bufferMap.find(unorderedAccessName);
-                                if (bufferIterator != bufferMap.end())
-                                {
-                                    resource = bufferIterator->second;
-                                }
+                                resource = resourceIterator->second;
                             }
 
                             resources->setUnorderedAccess(videoPipeline, resource, stage++);

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<material>
+    <shader>standard</shader>
+    <maps>
+        <albedo>%directory%\%filename%\%filename%_a</albedo>
+        <normal>%directory%\%filename%\%filename%_n</normal>
+        <roughness>%directory%\%filename%\%filename%_r</roughness>
+        <metalness>*color:0.000000</metalness>
+    </maps>
+</material>

@@ -123,12 +123,34 @@ namespace Gek
 
         bool get(LPCWSTR expression, Gek::Math::Float4 &result)
         {
-            return evaluateFloat.getVector(expression, result.data);
+            bool success = evaluateFloat.getVector(expression, result.data);
+            if (!success)
+            {
+                Math::Float3 part;
+                success = evaluateFloat.getVector(expression, part.data);
+                if (success)
+                {
+                    result = part.w(1.0f);
+                }
+            }
+
+            return success;
         }
 
         bool get(LPCWSTR expression, Gek::Math::Quaternion &result)
         {
-            return evaluateFloat.getVector(expression, result.data);
+            bool success = evaluateFloat.getVector(expression, result.data);
+            if (!success)
+            {
+                Math::Float3 euler;
+                success = evaluateFloat.getVector(expression, euler.data);
+                if (success)
+                {
+                    result.setEulerRotation(euler.x, euler.y, euler.z);
+                }
+            }
+
+            return success;
         }
 
         bool get(LPCWSTR expression, INT32 &result)

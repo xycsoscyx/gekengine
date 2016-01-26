@@ -53,6 +53,7 @@ namespace Gek
         STDMETHOD_(MaterialHandle, loadMaterial)            (THIS_ LPCWSTR fileName) PURE;
         STDMETHOD_(ResourceHandle, loadTexture)             (THIS_ LPCWSTR fileName, UINT32 flags) PURE;
 
+        STDMETHOD_(ResourceHandle, createTexture)           (THIS_ LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags) PURE;
         STDMETHOD_(ResourceHandle, createBuffer)            (THIS_ LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
         STDMETHOD_(ResourceHandle, createBuffer)            (THIS_ LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
 
@@ -88,10 +89,9 @@ namespace Gek
         STDMETHOD_(DepthStatesHandle, createDepthStates)    (THIS_ const Video::DepthStates &depthStates) PURE;
         STDMETHOD_(BlendStatesHandle, createBlendStates)    (THIS_ const Video::UnifiedBlendStates &blendStates) PURE;
         STDMETHOD_(BlendStatesHandle, createBlendStates)    (THIS_ const Video::IndependentBlendStates &blendStates) PURE;
-        STDMETHOD_(ResourceHandle, createRenderTarget)      (THIS_ Video::Format format, UINT32 width, UINT32 height, UINT32 flags) PURE;
-        STDMETHOD_(ResourceHandle, createDepthTarget)       (THIS_ Video::Format format, UINT32 width, UINT32 height, UINT32 flags) PURE;
 
         STDMETHOD_(void, generateMipMaps)                   (THIS_ VideoContext *videoContext, ResourceHandle resourceHandle) PURE;
+        STDMETHOD_(void, copyResource)                      (THIS_ ResourceHandle destinationHandle, ResourceHandle sourceHandle) PURE;
 
         STDMETHOD_(void, setRenderStates)                   (THIS_ VideoContext *videoContext, RenderStatesHandle renderStatesHandle) PURE;
         STDMETHOD_(void, setDepthStates)                    (THIS_ VideoContext *videoContext, DepthStatesHandle depthStatesHandle, UINT32 stencilReference) PURE;

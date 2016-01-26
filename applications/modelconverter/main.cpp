@@ -382,46 +382,33 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             {
                 UINT32 gekMagic = *(UINT32 *)"GEKX";
                 UINT16 gekModelType = 0;
-                UINT16 gekModelVersion = 2;
-                UINT32 materialCount = sortedModelList.size();
+                UINT16 gekModelVersion = 3;
+                UINT32 modelCount = sortedModelList.size();
                 fwrite(&gekMagic, sizeof(UINT32), 1, file);
                 fwrite(&gekModelType, sizeof(UINT16), 1, file);
                 fwrite(&gekModelVersion, sizeof(UINT16), 1, file);
                 fwrite(&boundingBox, sizeof(Gek::Shape::AlignedBox), 1, file);
-                fwrite(&materialCount, sizeof(UINT32), 1, file);
+                fwrite(&modelCount, sizeof(UINT32), 1, file);
 
                 Gek::Model fullModel;
-                printf("> Num. Materials: %d\r\n", materialCount);
+                printf("> Num. Models: %d\r\n", modelCount);
                 for (auto &model : sortedModelList)
                 {
                     CStringW materialName = model.first;
                     fwrite(materialName.GetString(), ((materialName.GetLength() + 1) * sizeof(WCHAR)), 1, file);
 
-                    UINT32 firstVertex = fullModel.vertexList.size();
-                    UINT32 firstIndex = fullModel.indexList.size();
-                    UINT32 indexCount = model.second.indexList.size();
-                    fwrite(&firstVertex, sizeof(UINT32), 1, file);
-                    fwrite(&firstIndex, sizeof(UINT32), 1, file);
+                    UINT32 vertexCount = fullModel.vertexList.size();
+                    fwrite(&vertexCount, sizeof(UINT32), 1, file);
+                    fwrite(model.second.vertexList.data(), sizeof(Gek::Vertex), model.second.vertexList.size(), file);
+
+                    UINT32 indexCount = fullModel.indexList.size();
                     fwrite(&indexCount, sizeof(UINT32), 1, file);
+                    fwrite(model.second.indexList.data(), sizeof(UINT16), model.second.indexList.size(), file);
 
                     printf("-  %S\r\n", materialName.GetString());
                     printf("    %d vertices\r\n", model.second.vertexList.size());
                     printf("    %d indices\r\n", model.second.indexList.size());
-
-                    fullModel.vertexList.insert(fullModel.vertexList.end(), model.second.vertexList.begin(), model.second.vertexList.end());
-                    fullModel.indexList.insert(fullModel.indexList.end(), model.second.indexList.begin(), model.second.indexList.end());
                 }
-
-                UINT32 vertexCount = fullModel.vertexList.size();
-                fwrite(&vertexCount, sizeof(UINT32), 1, file);
-                fwrite(fullModel.vertexList.data(), sizeof(Gek::Vertex), fullModel.vertexList.size(), file);
-
-                UINT32 indexCount = fullModel.indexList.size();
-                fwrite(&indexCount, sizeof(UINT32), 1, file);
-                fwrite(fullModel.indexList.data(), sizeof(UINT16), fullModel.indexList.size(), file);
-
-                printf("> %d total vertices\r\n", vertexCount);
-                printf("> %d total indices\r\n", indexCount);
 
                 fclose(file);
             }
