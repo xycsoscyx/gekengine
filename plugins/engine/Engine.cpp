@@ -40,14 +40,13 @@ namespace Gek
 
         bool consoleActive;
         float consolePosition;
-        CStringW userMessage;
+        CStringW currentCommand;
+        std::list<CStringW> commandLog;
 
         std::mutex commandMutex;
         std::list<std::pair<CStringW, std::vector<CStringW>>> commandQueue;
 
         CComPtr<IUnknown> backgroundBrush;
-        CComPtr<IUnknown> foregroundBrush;
-        CComPtr<IUnknown> bitmap;
         CComPtr<IUnknown> font;
         CComPtr<IUnknown> textBrush;
         CComPtr<IUnknown> logTypeBrushList[4];
@@ -66,22 +65,26 @@ namespace Gek
 
         ~EngineImplementation(void)
         {
+            population->free();
+
+            processorList.clear();
+
+            ObservableMixin::removeObserver(render, getClass<RenderObserver>());
+            render.Release();
+
+            resources.Release();
+
+            population->removeUpdatePriority(updateHandle);
+            population.Release();
+
             backgroundBrush.Release();
-            foregroundBrush.Release();
             textBrush.Release();
             font.Release();
-            bitmap.Release();
             logTypeBrushList[0].Release();
             logTypeBrushList[1].Release();
             logTypeBrushList[2].Release();
             logTypeBrushList[3].Release();
 
-            processorList.clear();
-            population->removeUpdatePriority(updateHandle);
-            ObservableMixin::removeObserver(render, getClass<RenderObserver>());
-            render.Release();
-            resources.Release();
-            population.Release();
             video.Release();
 
             CoUninitialize();
@@ -177,12 +180,7 @@ namespace Gek
                 float consoleHeight = (height * 0.5f);
 
                 OverlaySystem *overlay = video->getOverlay();
-                resultValue = overlay->createBrush(&backgroundBrush, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 0.5f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 0.5f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = overlay->createBrush(&foregroundBrush, { { 0.0f, Math::Float4(0.0f, 0.0f, 0.0f, 0.75f) },{ 1.0f, Math::Float4(0.25f, 0.25f, 0.25f, 0.75f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
-                }
-
+                resultValue = overlay->createBrush(&backgroundBrush, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = overlay->createBrush(&textBrush, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -191,11 +189,6 @@ namespace Gek
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = overlay->createFont(&font, L"Tahoma", 400, Video::FontStyle::Normal, 15.0f);
-                }
-
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = overlay->loadBitmap(&bitmap, L"%root%\\data\\console.bmp");
                 }
 
                 if (SUCCEEDED(resultValue))
@@ -263,9 +256,9 @@ namespace Gek
                     switch (wParam)
                     {
                     case 0x08: // backspace
-                        if (userMessage.GetLength() > 0)
+                        if (currentCommand.GetLength() > 0)
                         {
-                            userMessage = userMessage.Mid(0, userMessage.GetLength() - 1);
+                            currentCommand = currentCommand.Mid(0, currentCommand.GetLength() - 1);
                         }
 
                         break;
@@ -275,12 +268,13 @@ namespace Gek
                         if (true)
                         {
                             int position = 0;
-                            CStringW command = userMessage.Tokenize(L" ", position);
+                            commandLog.push_back(currentCommand);
+                            CStringW command = currentCommand.Tokenize(L" ", position);
 
                             std::vector<CStringW> parameterList;
-                            while (position >= 0 && position < userMessage.GetLength())
+                            while (position >= 0 && position < currentCommand.GetLength())
                             {
-                                parameterList.push_back(userMessage.Tokenize(L" ", position));
+                                parameterList.push_back(currentCommand.Tokenize(L" ", position));
                             };
 
                             if (command.CompareNoCase(L"quit") == 0)
@@ -294,11 +288,11 @@ namespace Gek
                             }
                         }
 
-                        userMessage.Empty();
+                        currentCommand.Empty();
                         break;
 
                     case 0x1B: // escape
-                        userMessage.Empty();
+                        currentCommand.Empty();
                         break;
 
                     case 0x09: // tab
@@ -307,7 +301,7 @@ namespace Gek
                     default:
                         if (wParam != '`')
                         {
-                            userMessage += (WCHAR)wParam;
+                            currentCommand += (WCHAR)wParam;
                         }
 
                         break;
@@ -498,26 +492,22 @@ namespace Gek
 
                 overlay->setTransform(Math::Float3x2());
 
-                float nTop = -((1.0f - consolePosition) * consoleHeight);
+                float consoleTop = -((1.0f - consolePosition) * consoleHeight);
 
                 Math::Float3x2 transformMatrix;
-                transformMatrix.translation = Math::Float2(0.0f, nTop);
+                transformMatrix.translation = Math::Float2(0.0f, consoleTop);
                 overlay->setTransform(transformMatrix);
 
                 overlay->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrush, true);
-                overlay->drawBitmap(bitmap, { 0.0f, 0.0f, width, consoleHeight }, Video::InterpolationMode::Linear, 1.0f);
-                overlay->drawRectangle({ 10.0f, 10.0f, (width - 10.0f), (consoleHeight - 40.0f) }, foregroundBrush, true);
-                overlay->drawRectangle({ 10.0f, (consoleHeight - 30.0f), (width - 10.0f), (consoleHeight - 10.0f) }, foregroundBrush, true);
-                overlay->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, font, textBrush, userMessage + ((GetTickCount() / 500 % 2) ? L"_" : L""));
+                overlay->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, font, textBrush, currentCommand + ((GetTickCount() / 500 % 2) ? L"_" : L""));
 
                 float textPosition = (consoleHeight - 40.0f);
-                /*
-                for (auto &message : consoleLogList)
+                for (auto &command : commandLog)
                 {
-                overlay->drawText({ 15.0f, (nPosition - 20.0f), (width - 15.0f), textPosition }, font, logTypeBrushList[kMessage.first], message.second);
-                textPosition -= 20.0f;
+                    overlay->drawText({ 15.0f, (textPosition - 20.0f), (width - 15.0f), textPosition }, font, logTypeBrushList[0], command);
+                    textPosition -= 20.0f;
                 }
-                */
+
                 overlay->endDraw();
             }
         }

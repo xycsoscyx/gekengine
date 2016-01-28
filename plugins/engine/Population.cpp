@@ -84,7 +84,6 @@ namespace Gek
 
         ~PopulationImplementation(void)
         {
-            free();
         }
 
         BEGIN_INTERFACE_LIST(PopulationImplementation)

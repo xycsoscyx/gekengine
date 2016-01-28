@@ -7,45 +7,55 @@
 
 namespace Gek
 {
-    template <typename TYPE, int ID>
+    template <typename TYPE, int UNIQUE>
     struct Handle
     {
+        bool isSet;
         TYPE identifier;
 
         Handle(void)
-            : identifier(0)
+            : isSet(false)
         {
         }
 
         void assign(UINT64 identifier)
         {
             this->identifier = TYPE(identifier);
+            isSet = true;
         }
 
         bool isValid(void) const
         {
-            return (identifier == 0 ? false : true);
+            return isSet;
         }
 
-        bool operator == (const typename Handle<TYPE, ID> &handle) const
+        bool operator == (const typename Handle<TYPE, UNIQUE> &handle) const
         {
-            return (this->identifier == handle.identifier);
+            return (this->isSet && handle.isSet && this->identifier == handle.identifier);
         }
 
-        bool operator != (const typename Handle<TYPE, ID> &handle) const
+        bool operator != (const typename Handle<TYPE, UNIQUE> &handle) const
         {
-            return (this->identifier != handle.identifier);
+            return (!this->isSet || !handle.isSet || this->identifier != handle.identifier);
         }
     };
 
-    using ProgramHandle = Handle<UINT16, 0>;
-    using PluginHandle = Handle<UINT8, 0>;
-    using MaterialHandle = Handle<UINT16, 1>;
-    using ShaderHandle = Handle<UINT8, 1>;
-    using ResourceHandle = Handle<UINT32, 0>;
-    using RenderStatesHandle = Handle<UINT8, 2>;
-    using DepthStatesHandle = Handle<UINT8, 3>;
-    using BlendStatesHandle = Handle<UINT8, 4>;
+    using RenderStatesHandle = Handle<UINT8, __LINE__>;
+    using DepthStatesHandle = Handle<UINT8, __LINE__>;
+    using BlendStatesHandle = Handle<UINT8, __LINE__>;
+    using ProgramHandle = Handle<UINT16, __LINE__>;
+    using PluginHandle = Handle<UINT8, __LINE__>;
+    using ShaderHandle = Handle<UINT8, __LINE__>;
+    using PropertiesHandle = Handle<UINT16, __LINE__>;
+    using ResourceHandle = Handle<UINT32, __LINE__>;
+
+    struct MaterialData
+    {
+        ShaderHandle shader;
+        PropertiesHandle properties;
+    };
+
+    using MaterialHandle = Handle<MaterialData, __LINE__>;
 
     DECLARE_INTERFACE_IID(PluginResources, "5E319AC8-2369-416E-B010-ED3E860405C4") : virtual public IUnknown
     {
@@ -62,6 +72,7 @@ namespace Gek
 
         STDMETHOD_(void, setResource)                       (THIS_ VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage) PURE;
         STDMETHOD_(void, setUnorderedAccess)                (THIS_ VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage) PURE;
+        STDMETHOD_(void, setConstantBuffer)                 (THIS_ VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage) PURE;
         STDMETHOD_(void, setVertexBuffer)                   (THIS_ VideoContext *videoContext, UINT32 slot, ResourceHandle resourceHandle, UINT32 offset) PURE;
         STDMETHOD_(void, setIndexBuffer)                    (THIS_ VideoContext *videoContext, ResourceHandle resourceHandle, UINT32 offset) PURE;
     };
@@ -71,7 +82,6 @@ namespace Gek
         STDMETHOD(initialize)                               (THIS_ IUnknown *initializerContext) PURE;
         STDMETHOD_(void, clearLocal)                        (THIS) PURE;
         
-        STDMETHOD_(ShaderHandle, getShader)                 (THIS_ MaterialHandle material) PURE;
         STDMETHOD_(IUnknown *, getResource)                 (THIS_ std::type_index type, LPCVOID handle) PURE;
 
         template <typename RESOURCE, typename HANDLE>
@@ -108,10 +118,10 @@ namespace Gek
 
 namespace std
 {
-    template <typename TYPE, int ID>
-    struct hash<Gek::Handle<TYPE, ID>>
+    template <typename TYPE, int UNIQUE>
+    struct hash<Gek::Handle<TYPE, UNIQUE>>
     {
-        size_t operator()(const Gek::Handle<TYPE, ID> &value) const
+        size_t operator()(const Gek::Handle<TYPE, UNIQUE> &value) const
         {
             return value.identifier;
         }

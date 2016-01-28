@@ -67,21 +67,21 @@ namespace Gek
         {
             union
             {
-                UINT64 value;
+                UINT32 value;
                 struct
                 {
                     ShaderHandle shader;
                     PluginHandle plugin;
-                    MaterialHandle material;
+                    PropertiesHandle properties;
                 };
             };
 
             DrawCall onDraw;
 
-            DrawCallValue(ShaderHandle shader, PluginHandle plugin, MaterialHandle material, DrawCall onDraw)
-                : shader(shader)
-                , plugin(plugin)
-                , material(material)
+            DrawCallValue(PluginHandle plugin, MaterialHandle material, DrawCall onDraw)
+                : plugin(plugin)
+                , shader(material.identifier.shader)
+                , properties(material.identifier.properties)
                 , onDraw(onDraw)
             {
             }
@@ -211,7 +211,7 @@ namespace Gek
 
             if (plugin.isValid() && material.isValid() && draw)
             {
-                drawCallList.emplace_back(resources->getShader(material), plugin, material, draw);
+                drawCallList.emplace_back(plugin, material, draw);
             }
         }
 
@@ -295,7 +295,7 @@ namespace Gek
 
                 ShaderHandle currentShader;
                 PluginHandle currentPlugin;
-                MaterialHandle currentMaterial;
+                PropertiesHandle currentProperties;
                 UINT32 drawCallCount = drawCallList.size();
                 for (UINT32 drawCallIndex = 0; drawCallIndex < drawCallCount; )
                 {
@@ -345,9 +345,9 @@ namespace Gek
                                 }
                             }
 
-                            if (currentMaterial != drawCall.material)
+                            if (currentProperties != drawCall.properties)
                             {
-                                Material *material = resources->getResource<Material, MaterialHandle>(currentMaterial = drawCall.material);
+                                Material *material = resources->getResource<Material, PropertiesHandle>(currentProperties = drawCall.properties);
                                 if (material)
                                 {
                                     shader->setResourceList(videoContext, material->getResourceList());

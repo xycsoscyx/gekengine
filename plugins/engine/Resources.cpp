@@ -122,13 +122,12 @@ namespace Gek
 
         ObjectManager<ProgramHandle> programManager;
         ObjectManager<PluginHandle> pluginManager;
-        ObjectManager<MaterialHandle> materialManager;
+        ObjectManager<PropertiesHandle> materialManager;
         ObjectManager<ShaderHandle> shaderManager;
         ObjectManager<ResourceHandle> resourceManager;
         ObjectManager<RenderStatesHandle> renderStateManager;
         ObjectManager<DepthStatesHandle> depthStateManager;
         ObjectManager<BlendStatesHandle> blendStateManager;
-        std::unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
     public:
         ResourcesImplementation(void)
@@ -172,19 +171,6 @@ namespace Gek
             renderStateManager.clearResources();
             depthStateManager.clearResources();
             blendStateManager.clearResources();
-            materialShaderMap.clear();
-        }
-
-        STDMETHODIMP_(ShaderHandle) getShader(MaterialHandle material)
-        {
-            ShaderHandle shader;
-            auto materialShaderIterator = materialShaderMap.find(material);
-            if (materialShaderIterator != materialShaderMap.end())
-            {
-                shader = materialShaderIterator->second;
-            }
-
-            return shader;
         }
 
         STDMETHODIMP_(IUnknown *) getResource(std::type_index type, LPCVOID handle)
@@ -197,9 +183,9 @@ namespace Gek
             {
                 return shaderManager.getResource(*static_cast<const ShaderHandle *>(handle));
             }
-            else if (type == typeid(MaterialHandle))
+            else if (type == typeid(PropertiesHandle))
             {
-                return materialManager.getResource(*static_cast<const MaterialHandle *>(handle));
+                return materialManager.getResource(*static_cast<const PropertiesHandle *>(handle));
             }
 
             return nullptr;
@@ -231,7 +217,7 @@ namespace Gek
         {
             ShaderHandle shader;
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
-            MaterialHandle material = materialManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            PropertiesHandle properties = materialManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
@@ -250,11 +236,10 @@ namespace Gek
                 return resultValue;
             });
 
-            if (shader.isValid())
-            {
-                materialShaderMap[material] = shader;
-            }
-
+            MaterialHandle material;
+            material.identifier.shader = shader;
+            material.identifier.properties = properties;
+            material.isSet = true;
             return material;
         }
 
@@ -642,14 +627,19 @@ namespace Gek
             videoContext->setBlendStates(blendStateManager.getResource<IUnknown>(blendStatesHandle), blendFactor, sampleMask);
         }
 
-        STDMETHODIMP_(void) setResource(VideoPipeline *videoPipeline, ResourceHandle ResourceHandle, UINT32 stage)
+        STDMETHODIMP_(void) setResource(VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage)
         {
-            videoPipeline->setResource(resourceManager.getResource<IUnknown>(ResourceHandle), stage);
+            videoPipeline->setResource(resourceManager.getResource<IUnknown>(resourceHandle), stage);
         }
 
-        STDMETHODIMP_(void) setUnorderedAccess(VideoPipeline *videoPipeline, ResourceHandle ResourceHandle, UINT32 stage)
+        STDMETHODIMP_(void) setUnorderedAccess(VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage)
         {
-            videoPipeline->setUnorderedAccess(resourceManager.getResource<IUnknown>(ResourceHandle), stage);
+            videoPipeline->setUnorderedAccess(resourceManager.getResource<IUnknown>(resourceHandle), stage);
+        }
+
+        STDMETHODIMP_(void) setConstantBuffer(VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage)
+        {
+            videoPipeline->setConstantBuffer(resourceManager.getResource<VideoBuffer>(resourceHandle), stage);
         }
 
         STDMETHODIMP_(void) setProgram(VideoPipeline *videoPipeline, ProgramHandle programHandle)
@@ -657,19 +647,19 @@ namespace Gek
             videoPipeline->setProgram(programManager.getResource<IUnknown>(programHandle));
         }
 
-        STDMETHODIMP_(void) setVertexBuffer(VideoContext *videoContext, UINT32 slot, ResourceHandle ResourceHandle, UINT32 offset)
+        STDMETHODIMP_(void) setVertexBuffer(VideoContext *videoContext, UINT32 slot, ResourceHandle resourceHandle, UINT32 offset)
         {
-            videoContext->setVertexBuffer(slot, resourceManager.getResource<VideoBuffer>(ResourceHandle), offset);
+            videoContext->setVertexBuffer(slot, resourceManager.getResource<VideoBuffer>(resourceHandle), offset);
         }
 
-        STDMETHODIMP_(void) setIndexBuffer(VideoContext *videoContext, ResourceHandle ResourceHandle, UINT32 offset)
+        STDMETHODIMP_(void) setIndexBuffer(VideoContext *videoContext, ResourceHandle resourceHandle, UINT32 offset)
         {
-            videoContext->setIndexBuffer(resourceManager.getResource<VideoBuffer>(ResourceHandle), offset);
+            videoContext->setIndexBuffer(resourceManager.getResource<VideoBuffer>(resourceHandle), offset);
         }
 
-        STDMETHODIMP_(void) clearRenderTarget(VideoContext *videoContext, ResourceHandle ResourceHandle, const Math::Float4 &color)
+        STDMETHODIMP_(void) clearRenderTarget(VideoContext *videoContext, ResourceHandle resourceHandle, const Math::Float4 &color)
         {
-            videoContext->clearRenderTarget(resourceManager.getResource<VideoTarget>(ResourceHandle), color);
+            videoContext->clearRenderTarget(resourceManager.getResource<VideoTarget>(resourceHandle), color);
         }
 
         STDMETHODIMP_(void) clearDepthStencilTarget(VideoContext *videoContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear)

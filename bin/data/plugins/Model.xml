@@ -4,11 +4,6 @@
 		<position format="float3" name="POSITION" index="0" slotclass="vertex" slotindex="0" />
 		<texCoord format="float2" name="TEXCOORD" index="0" slotclass="vertex" slotindex="0" />
         <normal format="float3" name="NORMAL" index="0" slotclass="vertex" slotindex="0" />
-        <transform format="float4x4" name="InstanceTransform" index="0" slotclass="instance" slotindex="1" />
-        <color format="float4" name="InstanceColor" index="0" slotclass="instance" slotindex="1" />
-        <scale format="float3" name="InstanceScale" index="0" slotclass="instance" slotindex="1" />
-        <distance format="float" name="InstanceDistance" index="0" slotclass="instance" slotindex="1" />
-        <instanceIndex />
     </layout>
     <vertex>
         <program>model</program>

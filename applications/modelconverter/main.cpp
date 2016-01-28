@@ -390,18 +390,17 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                 fwrite(&boundingBox, sizeof(Gek::Shape::AlignedBox), 1, file);
                 fwrite(&modelCount, sizeof(UINT32), 1, file);
 
-                Gek::Model fullModel;
                 printf("> Num. Models: %d\r\n", modelCount);
                 for (auto &model : sortedModelList)
                 {
                     CStringW materialName = model.first;
                     fwrite(materialName.GetString(), ((materialName.GetLength() + 1) * sizeof(WCHAR)), 1, file);
 
-                    UINT32 vertexCount = fullModel.vertexList.size();
+                    UINT32 vertexCount = model.second.vertexList.size();
                     fwrite(&vertexCount, sizeof(UINT32), 1, file);
                     fwrite(model.second.vertexList.data(), sizeof(Gek::Vertex), model.second.vertexList.size(), file);
 
-                    UINT32 indexCount = fullModel.indexList.size();
+                    UINT32 indexCount = model.second.indexList.size();
                     fwrite(&indexCount, sizeof(UINT32), 1, file);
                     fwrite(model.second.indexList.data(), sizeof(UINT16), model.second.indexList.size(), file);
 
