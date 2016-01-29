@@ -82,7 +82,7 @@ namespace Gek
         STDMETHOD(initialize)                               (THIS_ IUnknown *initializerContext) PURE;
         STDMETHOD_(void, clearLocal)                        (THIS) PURE;
         
-        STDMETHOD_(IUnknown *, getResource)                 (THIS_ std::type_index type, LPCVOID handle) PURE;
+        STDMETHOD_(IUnknown *, getResource)                 (THIS_ const std::type_index &type, LPCVOID handle) PURE;
 
         template <typename RESOURCE, typename HANDLE>
         RESOURCE *getResource(HANDLE handle)

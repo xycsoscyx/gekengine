@@ -173,7 +173,7 @@ namespace Gek
             blendStateManager.clearResources();
         }
 
-        STDMETHODIMP_(IUnknown *) getResource(std::type_index type, LPCVOID handle)
+        STDMETHODIMP_(IUnknown *) getResource(const std::type_index &type, LPCVOID handle)
         {
             if (type == typeid(PluginHandle))
             {

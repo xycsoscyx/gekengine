@@ -48,11 +48,16 @@ namespace Gek
         std::unordered_map<CLSID, std::function<HRESULT(ContextUser **)>> classList;
         std::unordered_map<CLSID, std::vector<CLSID>> typedClassList;
 
+        UINT32 nextListenerHandle;
+        std::unordered_map<UINT32, std::function<void(LPVOID)>> listenerMap;
+        std::unordered_multimap<std::type_index, UINT32> eventListenerMap;
+
         long loggingIndent;
 
     public:
         ContextImplementation(void)
             : loggingIndent(0)
+            , nextListenerHandle(0)
         {
         }
 
@@ -199,6 +204,37 @@ namespace Gek
             return resultValue;
         }
 
+        STDMETHODIMP_(UINT32) addListener(std::type_index type, std::function<void(LPVOID)> onEvent)
+        {
+            UINT32 listenerHandle = InterlockedIncrement(&nextListenerHandle);
+            listenerMap[listenerHandle] = onEvent;
+            eventListenerMap.insert(std::make_pair(type, listenerHandle));
+            return listenerHandle;
+        }
+
+        STDMETHODIMP_(void) removeListener(UINT32 listenerHandle)
+        {
+            listenerMap.erase(listenerHandle);
+            auto eventIterator = std::find_if(eventListenerMap.begin(), eventListenerMap.end(), [listenerHandle](std::pair<const std::type_index, UINT32> &eventPair) -> bool
+            {
+                return (eventPair.second == listenerHandle);
+            });
+
+            if (eventIterator != eventListenerMap.end())
+            {
+                eventListenerMap.erase(eventIterator);
+            }
+        }
+
+        STDMETHODIMP_(void) sendEvent(const std::type_index &type, LPVOID data)
+        {
+            auto groupRange = eventListenerMap.equal_range(type);
+            for (auto listenerKey = groupRange.first; listenerKey != groupRange.second; listenerKey++)
+            {
+                listenerMap[listenerKey->second](data);
+            }
+        }
+
         STDMETHODIMP_(void) logMessage(LPCSTR file, UINT32 line, INT32 changeIndent, LPCWSTR format, ...)
         {
             if (format != nullptr)
@@ -241,8 +277,13 @@ namespace Gek
 
                 message = (indent.data() + message);
                 OutputDebugString(Gek::String::format(L"% 30S (%05d)%s\r\n", file, line, message.GetString()));
-                ObservableMixin::sendEvent(Event<ContextObserver>(std::bind(&ContextObserver::onLogMessage, std::placeholders::_1, file, line, message.GetString())));
-            }
+
+                MessageEvent messageEvent;
+                messageEvent.file = file;
+                messageEvent.line = line;
+                messageEvent.message = message;
+                Context::sendEvent(messageEvent);
+                ObservableMixin::sendEvent(Event<ContextObserver>(std::bind(&ContextObserver::onLogMessage, std::placeholders::_1, file, line, message.GetString())));            }
         }
     };
 
