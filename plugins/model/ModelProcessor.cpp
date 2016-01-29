@@ -16,16 +16,15 @@
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Color.h"
 #include "GEK\Engine\Model.h"
-#include <memory>
-#include <map>
-#include <set>
-#include <csignal>
 #include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
 #include <ppl.h>
 #include <algorithm>
+#include <memory>
+#include <future>
 #include <array>
+#include <map>
 
 namespace Gek
 {
@@ -416,7 +415,7 @@ namespace Gek
         PluginHandle plugin;
         ResourceHandle constantBuffer;
 
-        std::thread loadModelThread;
+        std::future<void> loadModelRunning;
         concurrency::concurrent_queue<std::function<void(void)>> loadModelQueue;
         concurrency::concurrent_unordered_map<CStringW, bool> loadModelSet;
 
@@ -667,15 +666,18 @@ namespace Gek
                 loadModelQueue.push(std::bind(&ModelProcessorImplementation::loadMesh, this, data, fileName));
             }
 
-            if (!loadModelThread.joinable())
+            if (!loadModelRunning.valid() || (loadModelRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
             {
-                loadModelThread = std::thread([&](void) -> void
+                loadModelRunning = std::async(std::launch::async, [&](void) -> void
                 {
+                    CoInitialize(nullptr);
                     std::function<void(void)> function;
                     while (loadModelQueue.try_pop(function))
                     {
                         function();
                     };
+
+                    CoUninitialize();
                 });
             }
 
@@ -739,9 +741,9 @@ namespace Gek
         {
             loadModelSet.clear();
             loadModelQueue.clear();
-            if (loadModelThread.joinable())
+            if (loadModelRunning.valid() && (loadModelRunning.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready))
             {
-                loadModelThread.join();
+                loadModelRunning.get();
             }
 
             dataMap.clear();
@@ -825,7 +827,7 @@ namespace Gek
                                 memcpy(instanceData, instance, sizeof(InstanceData));
                                 resources->unmapBuffer(constantBuffer);
 
-                                resources->setConstantBuffer(videoContext->vertexPipeline(), constantBuffer, 1);
+                                resources->setConstantBuffer(videoContext->vertexPipeline(), constantBuffer, 2);
                                 resources->setVertexBuffer(videoContext, 0, subModel->vertexBuffer, 0);
                                 resources->setIndexBuffer(videoContext, subModel->indexBuffer, 0);
                                 videoContext->drawIndexedPrimitive(subModel->indexCount, 0, 0);

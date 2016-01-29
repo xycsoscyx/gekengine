@@ -158,7 +158,7 @@
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\AverageLuminance</source>
+                <source>Standard\AdaptiveLuminance</source>
             </program>
         </pass>
     </block>

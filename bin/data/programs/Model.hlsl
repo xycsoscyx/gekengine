@@ -2,7 +2,7 @@
 
 namespace Model
 {
-    cbuffer buffer : register(b1)
+    cbuffer buffer : register(b2)
     {
         float4x4 transform;
         float4 color;

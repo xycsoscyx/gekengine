@@ -258,118 +258,121 @@ namespace Gek
                 cameraConstantData.viewMatrix = cameraMatrix.getInverse();
                 cameraConstantData.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraData.minimumDistance, cameraData.maximumDistance);
                 cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
-                video->updateBuffer(cameraConstantBuffer, &cameraConstantData);
-
-                VideoContext *videoContext = video->getDefaultContext();
-
-                videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
-                videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
-                videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
-                videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer, 0);
 
                 const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
-                lightList.clear();
-                population->listEntities<TransformComponent, LightComponent, ColorComponent>([&](Entity *lightEntity) -> void
-                {
-                    auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
-                    auto &lightComponent = lightEntity->getComponent<LightComponent>();
-                    if (viewFrustum.isVisible(Shape::Sphere(lightTransformComponent.position, lightComponent.range)))
-                    {
-                        auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-                        lightList.emplace_back((cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz, lightComponent.range, lightComponent.radius, lightColorComponent.value.xyz);
-                    }
-                });
-
                 drawCallList.clear();
                 ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
-                concurrency::parallel_sort(drawCallList.begin(), drawCallList.end(), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
+                if (!drawCallList.empty())
                 {
-                    return (leftValue.value < rightValue.value);
-                });
+                    video->updateBuffer(cameraConstantBuffer, &cameraConstantData);
 
-                UINT32 lightListCount = lightList.size();
-                videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
-                videoContext->pixelPipeline()->setSamplerStates(linearSamplerStates, 1);
-                videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+                    VideoContext *videoContext = video->getDefaultContext();
+                    videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
+                    videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
+                    videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
+                    videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer, 0);
 
-                ShaderHandle currentShader;
-                PluginHandle currentPlugin;
-                PropertiesHandle currentProperties;
-                UINT32 drawCallCount = drawCallList.size();
-                for (UINT32 drawCallIndex = 0; drawCallIndex < drawCallCount; )
-                {
-                    DrawCallValue &drawCall = drawCallList[drawCallIndex];
-                    Shader *shader = resources->getResource<Shader, ShaderHandle>(currentShader = drawCall.shader);
-                    auto drawLights = [&](std::function<void(void)> drawPasses) -> void
+                    concurrency::parallel_sort(drawCallList.begin(), drawCallList.end(), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
                     {
-                        for (UINT32 lightBase = 0; lightBase < lightListCount; lightBase += MaxLightCount)
+                        return (leftValue.value < rightValue.value);
+                    });
+
+                    lightList.clear();
+                    population->listEntities<TransformComponent, LightComponent, ColorComponent>([&](Entity *lightEntity) -> void
+                    {
+                        auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
+                        auto &lightComponent = lightEntity->getComponent<LightComponent>();
+                        if (viewFrustum.isVisible(Shape::Sphere(lightTransformComponent.position, lightComponent.range)))
                         {
-                            UINT32 lightCount = std::min((lightListCount - lightBase), MaxLightCount);
-
-                            LightConstants *lightConstants = nullptr;
-                            if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (LPVOID *)&lightConstants)))
-                            {
-                                memcpy(lightConstants, &lightCount, sizeof(UINT32));
-                                video->unmapBuffer(lightConstantBuffer);
-                            }
-
-                            LightData *lightingData = nullptr;
-                            if (SUCCEEDED(video->mapBuffer(lightDataBuffer, (LPVOID *)&lightingData)))
-                            {
-                                memcpy(lightingData, &lightList[lightBase], (sizeof(LightData) * lightCount));
-                                video->unmapBuffer(lightDataBuffer);
-                            }
-
-                            drawPasses();
+                            auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
+                            lightList.emplace_back((cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz, lightComponent.range, lightComponent.radius, lightColorComponent.value.xyz);
                         }
-                    };
+                    });
 
-                    auto enableLights = [&](VideoPipeline *videoPipeline) -> void
-                    {
-                        videoPipeline->setResource(lightDataBuffer, 0);
-                        videoPipeline->setConstantBuffer(lightConstantBuffer, 1);
-                    };
+                    UINT32 lightListCount = lightList.size();
+                    videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
+                    videoContext->pixelPipeline()->setSamplerStates(linearSamplerStates, 1);
+                    videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
-                    auto drawForward = [&](void) -> void
+                    ShaderHandle currentShader;
+                    PluginHandle currentPlugin;
+                    PropertiesHandle currentProperties;
+                    UINT32 drawCallCount = drawCallList.size();
+                    for (UINT32 drawCallIndex = 0; drawCallIndex < drawCallCount; )
                     {
-                        while (drawCallIndex < drawCallCount)
+                        DrawCallValue &drawCall = drawCallList[drawCallIndex];
+                        Shader *shader = resources->getResource<Shader, ShaderHandle>(currentShader = drawCall.shader);
+                        auto drawLights = [&](std::function<void(void)> drawPasses) -> void
                         {
-                            drawCall = drawCallList[drawCallIndex++];
-                            if (currentPlugin != drawCall.plugin)
+                            for (UINT32 lightBase = 0; lightBase < lightListCount; lightBase += MaxLightCount)
                             {
-                                Plugin *plugin = resources->getResource<Plugin, PluginHandle>(currentPlugin = drawCall.plugin);
-                                if (plugin)
-                                {
-                                    plugin->enable(videoContext);
-                                }
-                            }
+                                UINT32 lightCount = std::min((lightListCount - lightBase), MaxLightCount);
 
-                            if (currentProperties != drawCall.properties)
-                            {
-                                Material *material = resources->getResource<Material, PropertiesHandle>(currentProperties = drawCall.properties);
-                                if (material)
+                                LightConstants *lightConstants = nullptr;
+                                if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (LPVOID *)&lightConstants)))
                                 {
-                                    shader->setResourceList(videoContext, material->getResourceList());
+                                    lightConstants->count = lightCount;
+                                    video->unmapBuffer(lightConstantBuffer);
                                 }
-                            }
 
-                            drawCall.onDraw(videoContext);
+                                LightData *lightingData = nullptr;
+                                if (SUCCEEDED(video->mapBuffer(lightDataBuffer, (LPVOID *)&lightingData)))
+                                {
+                                    memcpy(lightingData, &lightList[lightBase], (sizeof(LightData) * lightCount));
+                                    video->unmapBuffer(lightDataBuffer);
+                                }
+
+                                drawPasses();
+                            }
                         };
-                    };
 
-                    auto drawDeferred = [&](void) -> void
-                    {
-                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-                        videoContext->drawPrimitive(3, 0);
-                    };
+                        auto enableLights = [&](VideoPipeline *videoPipeline) -> void
+                        {
+                            videoPipeline->setResource(lightDataBuffer, 0);
+                            videoPipeline->setConstantBuffer(lightConstantBuffer, 1);
+                        };
 
-                    auto runCompute = [&](UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth) -> void
-                    {
-                        videoContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
-                    };
+                        auto drawForward = [&](void) -> void
+                        {
+                            while (drawCallIndex < drawCallCount)
+                            {
+                                drawCall = drawCallList[drawCallIndex++];
+                                if (currentPlugin != drawCall.plugin)
+                                {
+                                    Plugin *plugin = resources->getResource<Plugin, PluginHandle>(currentPlugin = drawCall.plugin);
+                                    if (plugin)
+                                    {
+                                        plugin->enable(videoContext);
+                                    }
+                                }
 
-                    shader->draw(videoContext, drawLights, enableLights, drawForward, drawDeferred, runCompute);
+                                if (currentProperties != drawCall.properties)
+                                {
+                                    Material *material = resources->getResource<Material, PropertiesHandle>(currentProperties = drawCall.properties);
+                                    if (material)
+                                    {
+                                        shader->setResourceList(videoContext, material->getResourceList());
+                                    }
+                                }
+
+                                drawCall.onDraw(videoContext);
+                            };
+                        };
+
+                        auto drawDeferred = [&](void) -> void
+                        {
+                            videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+                            videoContext->drawPrimitive(3, 0);
+                        };
+
+                        auto runCompute = [&](UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth) -> void
+                        {
+                            videoContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
+                        };
+
+                        shader->draw(videoContext, drawLights, enableLights, drawForward, drawDeferred, runCompute);
+                    }
                 }
             });
 

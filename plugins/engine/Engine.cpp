@@ -268,7 +268,7 @@ namespace Gek
                         if (true)
                         {
                             int position = 0;
-                            commandLog.push_back(currentCommand);
+                            commandLog.push_front(currentCommand);
                             CStringW command = currentCommand.Tokenize(L" ", position);
 
                             std::vector<CStringW> parameterList;

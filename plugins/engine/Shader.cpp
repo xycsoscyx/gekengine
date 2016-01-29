@@ -507,7 +507,7 @@ namespace Gek
 
         BEGIN_INTERFACE_LIST(ShaderImplementation)
             INTERFACE_LIST_ENTRY_COM(Shader)
-            END_INTERFACE_LIST_USER
+        END_INTERFACE_LIST_USER
 
         // Shader
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
@@ -601,7 +601,20 @@ namespace Gek
                                 Video::Format format = getFormat(xmlTargetNode.getText());
                                 BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
                                 UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
-                                resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, width, height, 1, flags);
+
+                                int textureWidth = width;
+                                if (xmlTargetNode.hasAttribute(L"width"))
+                                {
+                                    textureWidth = String::to<UINT32>(xmlTargetNode.getAttribute(L"width"));
+                                }
+
+                                int textureHeight = height;
+                                if (xmlTargetNode.hasAttribute(L"height"))
+                                {
+                                    textureHeight = String::to<UINT32>(xmlTargetNode.getAttribute(L"height"));
+                                }
+
+                                resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, textureWidth, textureHeight, 1, flags);
 
                                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
@@ -1153,7 +1166,7 @@ namespace Gek
                             resources->setResource(videoPipeline, resource, stage++);
                         }
 
-                        stage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
+                        stage = (pass.renderTargetList.empty() ? 0 : pass.renderTargetList.size());
                         for (auto &unorderedAccessName : pass.unorderedAccessList)
                         {
                             ResourceHandle resource;

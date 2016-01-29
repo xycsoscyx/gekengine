@@ -11,29 +11,13 @@
         <entity name="player">
             <transform position="0, 30, 0" rotation="0, 0, 0" scale="1.5,3,1.5"/>
             <player_body outer_radius="1.5" inner_radius=".5" half_height="3" stair_step="1.5" />
-            <model>*sphere|debug//r10_m0|1</model>
             <mass>250</mass>
         </entity>
 
         <entity name="player_head">
             <transform scale=".8,.8,.8"/>
             <follow distance="0, 5.5, 0" mode="offset">player</follow>
-            <model>*sphere|debug//r10_m0|1</model>
-            <light range="30" radius=".1" />
-            <color>10,10,10</color>
-        </entity>
-
-        <entity name="player_target">
-            <transform scale=".1,.1,.1"/>
-            <follow distance="0, 0, 5" mode="offset">player_head</follow>
-            <model>*sphere|debug//r10_m0|1</model>
-        </entity>
-
-        <entity>
-            <transform scale=".1,.1,.1"/>
-            <follow distance="-1.5, .5, -10" speed="0.5">player_target</follow>
             <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" />
-            <model>*sphere|debug//r10_m0|1</model>
         </entity>
 
         <entity>
@@ -522,504 +506,304 @@
         </entity>
 
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
         <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
-        </entity>
-        <entity>
-            <transform position="rand(55), lerp(10, 50, arand(1)), rand(30)" />
-            <light range="lerp(5, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
-            <color>arand(1)*15,arand(1)*15,arand(1)*15</color>
+            <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
+            <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
+            <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
+            <model>*sphere|debug//r0_m0|1</model>
         </entity>
 
     </population>
