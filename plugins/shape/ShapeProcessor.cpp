@@ -370,25 +370,20 @@ namespace Gek
         , public Processor
     {
     public:
-        struct SubShape
-        {
-            bool skin;
-            MaterialHandle material;
-            ResourceHandle vertexBuffer;
-            ResourceHandle indexBuffer;
-            UINT32 indexCount;
-        };
-
         struct Shape
         {
             std::atomic<bool> loaded;
 
-            CStringW name;
+            CStringW parameters;
             Shapes::AlignedBox alignedBox;
-            std::vector<SubShape> subShapeList;
+            MaterialHandle material;
+            ResourceHandle vertexBuffer;
+            ResourceHandle indexBuffer;
+            UINT32 indexCount;
 
             Shape(void)
                 : loaded(false)
+                , indexCount(0)
             {
             }
         };
@@ -443,12 +438,16 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Processor)
         END_INTERFACE_LIST_USER
 
-        HRESULT loadBoundingBox(Shape *data, CStringW parameters)
+        HRESULT loadBoundingBox(Shape *data, const CStringW &parameters)
         {
+            REQUIRE_RETURN(data, E_INVALIDARG);
+
             gekCheckScope(resultValue, parameters);
 
+            data->parameters = parameters;
+
             int position = 0;
-            CStringW shape = parameters.Tokenize(L"|", position);
+            CStringW shape = data->parameters.Tokenize(L"|", position);
             if (shape.CompareNoCase(L"cube") == 0)
             {
                 resultValue = E_FAIL;
@@ -471,46 +470,31 @@ namespace Gek
             return resultValue;
         }
 
-        HRESULT loadBoundingBox(Shape *data)
+        HRESULT loadShapeWorker(Shape *data)
         {
             REQUIRE_RETURN(data, E_INVALIDARG);
 
-            HRESULT resultValue = E_FAIL;
-            if (data->name.GetAt(0) == L'*')
-            {
-                resultValue = loadBoundingBox(data, data->name.Mid(1));
-            }
-
-            return resultValue;
-        }
-
-        HRESULT loadShape(Shape *data, CStringW parameters)
-        {
-            gekCheckScope(resultValue, parameters);
-
-            resultValue = S_OK;
+            gekCheckScope(resultValue, data->parameters.GetString());
 
             int position = 0;
-            CStringW shape = parameters.Tokenize(L"|", position);
-            CStringW material = parameters.Tokenize(L"|", position);
+            CStringW shape = data->parameters.Tokenize(L"|", position);
+            CStringW material = data->parameters.Tokenize(L"|", position);
             if (shape.CompareNoCase(L"cube") == 0)
             {
                 resultValue = E_FAIL;
             }
             else if (shape.CompareNoCase(L"sphere") == 0)
             {
-                UINT32 divisionCount = String::to<UINT32>(parameters.Tokenize(L"|", position));
+                UINT32 divisionCount = String::to<UINT32>(data->parameters.Tokenize(L"|", position));
 
                 GeoSphere geoSphere;
                 geoSphere.generate(divisionCount);
 
-                data->subShapeList.resize(1);
-                SubShape &subShape = data->subShapeList.front();
-                subShape.material = resources->loadMaterial(material);
-                subShape.indexCount = geoSphere.getIndices().size();
-                subShape.vertexBuffer = resources->createBuffer(String::format(L"shape:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
-                subShape.indexBuffer = resources->createBuffer(String::format(L"shape:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
-                resultValue = ((subShape.vertexBuffer.isValid() && subShape.indexBuffer.isValid()) ? S_OK : E_FAIL);
+                data->material = resources->loadMaterial(material);
+                data->indexCount = geoSphere.getIndices().size();
+                data->vertexBuffer = resources->createBuffer(String::format(L"shape:vertex:%s:%d", shape.GetString(), divisionCount), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
+                data->indexBuffer = resources->createBuffer(String::format(L"shape:index:%s:%d", shape.GetString(), divisionCount), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
+                resultValue = ((data->vertexBuffer.isValid() && data->indexBuffer.isValid()) ? S_OK : E_FAIL);
             }
             else
             {
@@ -529,20 +513,13 @@ namespace Gek
         {
             REQUIRE_RETURN(data, E_INVALIDARG);
 
-            if (loadShapeSet.count(data->name) > 0)
+            if (loadShapeSet.count(data->parameters) > 0)
             {
                 return S_OK;
             }
 
-            loadShapeSet.insert(std::make_pair(data->name, true));
-            if (data->name.GetAt(0) == L'*')
-            {
-                loadShapeQueue.push(std::bind(&ShapeProcessorImplementation::loadShape, this, data, data->name.Mid(1)));
-            }
-            else
-            {
-            }
-
+            loadShapeSet.insert(std::make_pair(data->parameters, true));
+            loadShapeQueue.push(std::bind(&ShapeProcessorImplementation::loadShapeWorker, this, data));
             if (!loadShapeRunning.valid() || (loadShapeRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
             {
                 loadShapeRunning = std::async(std::launch::async, [&](void) -> void
@@ -643,9 +620,7 @@ namespace Gek
                 else
                 {
                     Shape &data = dataMap[shapeComponent];
-                    data.name.SetString(shapeComponent);
-                    loadBoundingBox(&data);
-
+                    loadBoundingBox(&data, shapeComponent);
                     dataEntityList[entity] = &data;
                 }
             }
@@ -696,7 +671,7 @@ namespace Gek
                 {
                     for (auto &instance : visible.second)
                     {
-                        static auto drawCall = [](VideoContext *videoContext, PluginResources *resources, SubShape *subShape, InstanceData *instance, ResourceHandle constantBuffer) -> void
+                        static auto drawCall = [](VideoContext *videoContext, PluginResources *resources, Shape *shape, InstanceData *instance, ResourceHandle constantBuffer) -> void
                         {
                             LPVOID instanceData;
                             if (SUCCEEDED(resources->mapBuffer(constantBuffer, &instanceData)))
@@ -705,16 +680,13 @@ namespace Gek
                                 resources->unmapBuffer(constantBuffer);
 
                                 resources->setConstantBuffer(videoContext->vertexPipeline(), constantBuffer, 2);
-                                resources->setVertexBuffer(videoContext, 0, subShape->vertexBuffer, 0);
-                                resources->setIndexBuffer(videoContext, subShape->indexBuffer, 0);
-                                videoContext->drawIndexedPrimitive(subShape->indexCount, 0, 0);
+                                resources->setVertexBuffer(videoContext, 0, shape->vertexBuffer, 0);
+                                resources->setIndexBuffer(videoContext, shape->indexBuffer, 0);
+                                videoContext->drawIndexedPrimitive(shape->indexCount, 0, 0);
                             }
                         };
 
-                        for (auto &subShape : data.subShapeList)
-                        {
-                            render->queueDrawCall(plugin, subShape.material, std::bind(drawCall, std::placeholders::_1, resources, &subShape, &instance, constantBuffer));
-                        }
+                        render->queueDrawCall(plugin, data.material, std::bind(drawCall, std::placeholders::_1, resources, &data, &instance, constantBuffer));
                     }
                 }
                 else
