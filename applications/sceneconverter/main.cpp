@@ -1,4 +1,3 @@
-#include "GEK\Context\Common.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include <atlpath.h>

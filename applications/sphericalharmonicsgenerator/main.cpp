@@ -1,6 +1,5 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
-#include "GEK\Context\Common.h"
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Matrix4x4.h"
 #include <DirectXTex.h>
@@ -8,12 +7,6 @@
 #include <atlpath.h>
 #include <array>
 #include <ppl.h>
-
-#ifdef _DEBUG
-#pragma comment(lib, "..\\..\\external\\DirectXTex\\Bin\\Desktop_2013\\Win32\\Debug\\DirectXTex.lib")
-#else
-#pragma comment(lib, "..\\..\\external\\DirectXTex\\Bin\\Desktop_2013\\Win32\\Release\\DirectXTex.lib")
-#endif
 
 class GeneratorException
 {

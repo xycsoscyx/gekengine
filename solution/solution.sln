@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "math", "..\libraries\math\math.vcxproj", "{80C85026-E106-47BF-91FA-43220B44141B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "utility", "..\libraries\utility\utility.vcxproj", "{BE4F1E7F-E045-4D30-AED6-02A60C83BD97}"
+	ProjectSection(ProjectDependencies) = postProject
+		{80C85026-E106-47BF-91FA-43220B44141B} = {80C85026-E106-47BF-91FA-43220B44141B}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Applications", "Applications", "{0804103F-967E-4D50-A657-99A350E0937C}"
 EndProject
@@ -25,19 +28,16 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "system", "..\plugins\system\system.vcxproj", "{8A1E9F91-5131-4B97-93F2-FAA6B1EA9220}"
 	ProjectSection(ProjectDependencies) = postProject
 		{80C85026-E106-47BF-91FA-43220B44141B} = {80C85026-E106-47BF-91FA-43220B44141B}
-		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B} = {4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "components", "..\plugins\components\components.vcxproj", "{215A87CB-0AEA-4823-BFC0-56F30CB4C077}"
 	ProjectSection(ProjectDependencies) = postProject
 		{80C85026-E106-47BF-91FA-43220B44141B} = {80C85026-E106-47BF-91FA-43220B44141B}
-		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B} = {4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "demo", "..\applications\demo\demo.vcxproj", "{E397CE77-7FAB-470F-B2FC-32FAD6A9721B}"
 	ProjectSection(ProjectDependencies) = postProject
 		{80C85026-E106-47BF-91FA-43220B44141B} = {80C85026-E106-47BF-91FA-43220B44141B}
-		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B} = {4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "model", "..\plugins\model\model.vcxproj", "{D703B82C-12A3-499D-92D7-B22A27C72625}"
@@ -56,6 +56,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "modelconverter", "..\applic
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "texturecompressor", "..\applications\texturecompressor\texturecompressor.vcxproj", "{0187C6AD-8624-4DF3-9A8E-CD1631BED302}"
+	ProjectSection(ProjectDependencies) = postProject
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {371B9FA9-4C90-4AC6-A123-ACED756D6C77}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sphericalharmonicsgenerator", "..\applications\sphericalharmonicsgenerator\sphericalharmonicsgenerator.vcxproj", "{DF631EC3-458D-44D5-AF2A-514563175A09}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -63,6 +66,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sphericalharmonicsgenerator
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sceneconverter", "..\applications\sceneconverter\sceneconverter.vcxproj", "{25D897B2-C047-4BD8-9ECF-BAF4A0BF59AC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B} = {4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shape", "..\plugins\shape\shape.vcxproj", "{BF2CD2C6-6A36-45B6-B017-511916CA2BD3}"
 	ProjectSection(ProjectDependencies) = postProject

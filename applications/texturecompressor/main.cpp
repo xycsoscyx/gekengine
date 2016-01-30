@@ -3,19 +3,12 @@
 #include "GEK\Math\Matrix4x4.h"
 #include "GEK\Shapes\AlignedBox.h"
 #include "GEK\Utility\String.h"
-#include "GEK\Context\Common.h"
 #include <DirectXTex.h>
 #include <atlpath.h>
 #include <algorithm>
 #include <vector>
 #include <unordered_map>
 #include <map>
-
-#ifdef _DEBUG
-    #pragma comment(lib, "..\\..\\external\\DirectXTex\\Bin\\Desktop_2013\\Win32\\Debug\\DirectXTex.lib")
-#else
-    #pragma comment(lib, "..\\..\\external\\DirectXTex\\Bin\\Desktop_2013\\Win32\\Release\\DirectXTex.lib")
-#endif
 
 class CompressorException
 {

@@ -109,8 +109,8 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\libraries\context\context.vcxproj">
-      <Project>{e4015f2b-c176-414f-8733-1c2d88ef3fb5}</Project>
+    <ProjectReference Include="..\..\external\DirectXTex\DirectXTex_Desktop_2013.vcxproj">
+      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\libraries\math\math.vcxproj">
       <Project>{80c85026-e106-47bf-91fa-43220b44141b}</Project>

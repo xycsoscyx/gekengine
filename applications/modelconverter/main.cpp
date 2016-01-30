@@ -3,7 +3,6 @@
 #include "GEK\Math\Matrix4x4.h"
 #include "GEK\Shapes\AlignedBox.h"
 #include "GEK\Utility\String.h"
-#include "GEK\Context\Common.h"
 #include <atlpath.h>
 #include <algorithm>
 #include <vector>
