@@ -70,6 +70,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shape", "..\plugins\shape\s
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shapes", "..\libraries\shapes\shapes.vcxproj", "{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{80C85026-E106-47BF-91FA-43220B44141B} = {80C85026-E106-47BF-91FA-43220B44141B}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
