@@ -196,6 +196,8 @@ private:
         TYPE value;
 
         Token(void)
+            : type(TokenType::Unknown)
+            , parameterCount(0)
         {
         }
 
@@ -757,8 +759,8 @@ private:
                     {
                         if (!stack.empty() && (stack.top().type == TokenType::Number))
                         {
-                            TYPE value = stack.popTop().value;
-                            stack.push(Token(TokenType::Number, operation.unaryFunction(value)));
+                            TYPE functionValue = stack.popTop().value;
+                            stack.push(Token(TokenType::Number, operation.unaryFunction(functionValue)));
                         }
                         else
                         {
@@ -781,11 +783,11 @@ private:
                     {
                         if (!stack.empty() && (stack.top().type == TokenType::Number))
                         {
-                            TYPE valueRight = stack.popTop().value;
+                            TYPE functionValueRight = stack.popTop().value;
                             if (!stack.empty() && (stack.top().type == TokenType::Number))
                             {
-                                TYPE valueLeft = stack.popTop().value;
-                                stack.push(Token(TokenType::Number, operation.binaryFunction(valueLeft, valueRight)));
+                                TYPE functionValueLeft = stack.popTop().value;
+                                stack.push(Token(TokenType::Number, operation.binaryFunction(functionValueLeft, functionValueRight)));
                             }
                             else
                             {

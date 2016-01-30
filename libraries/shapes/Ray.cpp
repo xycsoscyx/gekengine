@@ -1,11 +1,11 @@
-#include "GEK\Shape\Ray.h"
-#include "GEK\Shape\OrientedBox.h"
+#include "GEK\Shapes\Ray.h"
+#include "GEK\Shapes\OrientedBox.h"
 #include "GEK\Math\Common.h"
 #include <algorithm>
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         Ray::Ray(void)
         {
@@ -77,5 +77,5 @@ namespace Gek
 
             return minimum;
         }
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

@@ -1,9 +1,9 @@
-#include "GEK\Shape\Sphere.h"
-#include "GEK\Shape\Plane.h"
+#include "GEK\Shapes\Sphere.h"
+#include "GEK\Shapes\Plane.h"
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         Sphere::Sphere(void)
             : radius(0.0f)
@@ -45,5 +45,5 @@ namespace Gek
                 return 0;
             }
         }
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

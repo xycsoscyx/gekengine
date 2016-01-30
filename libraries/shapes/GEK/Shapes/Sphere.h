@@ -4,7 +4,7 @@
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         struct Plane;
 
@@ -23,5 +23,5 @@ namespace Gek
 
             int getPosition(const Plane &plane) const;
         };
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

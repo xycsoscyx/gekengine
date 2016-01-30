@@ -2,7 +2,7 @@
 
 #include "GEK\Context\Observer.h"
 #include "GEK\System\VideoSystem.h"
-#include "GEK\Shape\Frustum.h"
+#include "GEK\Shapes\Frustum.h"
 
 namespace Gek
 {

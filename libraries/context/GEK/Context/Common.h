@@ -10,8 +10,8 @@
 #include <varargs.h>
 #include <unordered_map>
 
-#define REQUIRE_VOID_RETURN(CHECK)          do { if ((CHECK) == 0) { _ASSERTE(CHECK); return; } } while (false)
-#define REQUIRE_RETURN(CHECK, RETURN)       do { if ((CHECK) == 0) { _ASSERTE(CHECK); return (RETURN); } } while (false)
+#define REQUIRE_VOID_RETURN(CHECK)          do { if ((CHECK) == false) { _ASSERTE(CHECK); return; } } while (false)
+#define REQUIRE_RETURN(CHECK, RETURN)       do { if ((CHECK) == false) { _ASSERTE(CHECK); return (RETURN); } } while (false)
 
 #define CLSID_IID_PPV_ARGS(CLASS, OBJECT)   __uuidof(CLASS), IID_PPV_ARGS(OBJECT)
 

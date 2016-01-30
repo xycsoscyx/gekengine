@@ -4,7 +4,7 @@
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         struct OrientedBox;
 
@@ -23,5 +23,5 @@ namespace Gek
 
             float getDistance(const OrientedBox &orientedBox) const;
         };
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

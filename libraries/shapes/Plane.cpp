@@ -1,8 +1,8 @@
-#include "GEK\Shape\Plane.h"
+#include "GEK\Shapes\Plane.h"
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         Plane::Plane(void)
             : normal(0.0f, 0.0f, 0.0f)
@@ -47,5 +47,5 @@ namespace Gek
         {
             return (normal.dot(point) + distance);
         }
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

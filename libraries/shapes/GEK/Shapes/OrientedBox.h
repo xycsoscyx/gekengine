@@ -3,11 +3,11 @@
 #include "GEK\Math\Vector3.h"
 #include "GEK\Math\Matrix4x4.h"
 #include "GEK\Math\Quaternion.h"
-#include "GEK\Shape\AlignedBox.h"
+#include "GEK\Shapes\AlignedBox.h"
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         struct Plane;
 
@@ -27,5 +27,5 @@ namespace Gek
 
             int getPosition(const Plane &plane) const;
         };
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

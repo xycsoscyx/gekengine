@@ -1,11 +1,11 @@
-#include "GEK\Shape\AlignedBox.h"
-#include "GEK\Shape\Plane.h"
+#include "GEK\Shapes\AlignedBox.h"
+#include "GEK\Shapes\Plane.h"
 #include "GEK\Math\Common.h"
 #include <algorithm>
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         AlignedBox::AlignedBox(void)
             : minimum(Math::Infinity)
@@ -77,5 +77,5 @@ namespace Gek
 
             return 1;
         }
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

@@ -452,7 +452,7 @@ namespace Gek
         STDMETHOD_(void, clearResources)                    (THIS) PURE;
 
         STDMETHOD_(void, setViewports)                      (THIS_ Video::ViewPort *viewPortList, UINT32 viewPortCount) PURE;
-        STDMETHOD_(void, setScissorRect)                    (THIS_ Shape::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount) PURE;
+        STDMETHOD_(void, setScissorRect)                    (THIS_ Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount) PURE;
 
         STDMETHOD_(void, clearRenderTarget)                 (THIS_ VideoTarget *renderTarget, const Math::Float4 &colorClear) PURE;
         STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ IUnknown *depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
@@ -506,7 +506,7 @@ namespace Gek
         STDMETHOD(createTexture)                            (THIS_ VideoTexture **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags) PURE;
         STDMETHOD(loadTexture)                              (THIS_ VideoTexture **returnObject, LPCWSTR fileName, DWORD flags) PURE;
         STDMETHOD(loadCubeMap)                              (THIS_ VideoTexture **returnObject, LPCWSTR fileNameList[6], DWORD flags) PURE;
-        STDMETHOD_(void, updateTexture)                     (THIS_ VideoTexture *texture, LPCVOID data, UINT32 pitch, Shape::Rectangle<UINT32> *rectangle = nullptr) PURE;
+        STDMETHOD_(void, updateTexture)                     (THIS_ VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *rectangle = nullptr) PURE;
 
         STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
         STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;

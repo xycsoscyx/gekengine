@@ -1,7 +1,7 @@
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Vector3.h"
 #include "GEK\Math\Matrix4x4.h"
-#include "GEK\Shape\AlignedBox.h"
+#include "GEK\Shapes\AlignedBox.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Context\Common.h"
 #include <atlpath.h>
@@ -55,7 +55,7 @@ namespace Gek
         std::vector<Vertex> vertexList;
     };
 
-    void GetMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<CStringA, std::list<Model>> &modelList, Gek::Shape::AlignedBox &boundingBox)
+    void GetMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<CStringA, std::list<Model>> &modelList, Gek::Shapes::AlignedBox &boundingBox)
     {
         if (node == nullptr)
         {
@@ -304,7 +304,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
 
         aiApplyPostProcessing(scene, postProcessFlags);
 
-        Gek::Shape::AlignedBox boundingBox;
+        Gek::Shapes::AlignedBox boundingBox;
         std::unordered_map<CStringA, std::list<Gek::Model>> modelListUTF8;
         Gek::GetMeshes(scene, scene->mRootNode, modelListUTF8, boundingBox);
 
@@ -387,7 +387,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                 fwrite(&gekMagic, sizeof(UINT32), 1, file);
                 fwrite(&gekModelType, sizeof(UINT16), 1, file);
                 fwrite(&gekModelVersion, sizeof(UINT16), 1, file);
-                fwrite(&boundingBox, sizeof(Gek::Shape::AlignedBox), 1, file);
+                fwrite(&boundingBox, sizeof(Gek::Shapes::AlignedBox), 1, file);
                 fwrite(&modelCount, sizeof(UINT32), 1, file);
 
                 printf("> Num. Models: %d\r\n", modelCount);

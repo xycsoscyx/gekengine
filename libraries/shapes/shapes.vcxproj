@@ -11,21 +11,21 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Shape\AlignedBox.h" />
-    <ClInclude Include="GEK\Shape\Frustum.h" />
-    <ClInclude Include="GEK\Shape\OrientedBox.h" />
-    <ClInclude Include="GEK\Shape\Plane.h" />
-    <ClInclude Include="GEK\Shape\Ray.h" />
-    <ClInclude Include="GEK\Shape\Rectangle.h" />
-    <ClInclude Include="GEK\Shape\Sphere.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="AlignedBox.cpp" />
     <ClCompile Include="Frustum.cpp" />
     <ClCompile Include="OrientedBox.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Ray.cpp" />
     <ClCompile Include="Sphere.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GEK\Shapes\AlignedBox.h" />
+    <ClInclude Include="GEK\Shapes\Frustum.h" />
+    <ClInclude Include="GEK\Shapes\OrientedBox.h" />
+    <ClInclude Include="GEK\Shapes\Plane.h" />
+    <ClInclude Include="GEK\Shapes\Ray.h" />
+    <ClInclude Include="GEK\Shapes\Rectangle.h" />
+    <ClInclude Include="GEK\Shapes\Sphere.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}</ProjectGuid>

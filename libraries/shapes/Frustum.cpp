@@ -1,8 +1,8 @@
-#include "GEK\Shape\Frustum.h"
+#include "GEK\Shapes\Frustum.h"
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         Frustum::Frustum(const Math::Float4x4 &transform)
         {
@@ -48,5 +48,5 @@ namespace Gek
             planes[5].distance = transform._44 + transform._42;
             planes[5].normalize();
         }
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

@@ -17,7 +17,7 @@
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
-#include "GEK\Shape\Sphere.h"
+#include "GEK\Shapes\Sphere.h"
 #include <set>
 #include <ppl.h>
 
@@ -61,7 +61,7 @@ namespace Gek
                 CComPtr<IUnknown> resource;
                 if (SUCCEEDED(loadResource(&resource)) && resource)
                 {
-                    handle.assign(InterlockedIncrement(&nextIdentifier));
+                    handle = InterlockedIncrement(&nextIdentifier);
                     globalResourceMap[handle] = resource;
                 }
             }
@@ -70,7 +70,7 @@ namespace Gek
                 auto hashIterator = hashMap.find(hash);
                 if (hashIterator == hashMap.end())
                 {
-                    handle.assign(InterlockedIncrement(&nextIdentifier));
+                    handle = InterlockedIncrement(&nextIdentifier);
                     hashMap[hash] = handle;
                     localResourceMap[handle] = nullptr;
 
@@ -288,8 +288,7 @@ namespace Gek
                 renderStates.antialiasedLineEnable);
             return renderStateManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->createRenderStates(returnObject, renderStates);
+                HRESULT resultValue = video->createRenderStates(returnObject, renderStates);
                 return resultValue;
             });
         }
@@ -312,8 +311,7 @@ namespace Gek
                 static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction));
             return depthStateManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->createDepthStates(returnObject, depthStates);
+                HRESULT resultValue = video->createDepthStates(returnObject, depthStates);
                 return resultValue;
             });
         }
@@ -330,8 +328,7 @@ namespace Gek
                 blendStates.writeMask);
             return blendStateManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->createBlendStates(returnObject, blendStates);
+                HRESULT resultValue = video->createBlendStates(returnObject, blendStates);
                 return resultValue;
             });
         }
@@ -353,8 +350,7 @@ namespace Gek
 
             return blendStateManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->createBlendStates(returnObject, blendStates);
+                HRESULT resultValue = video->createBlendStates(returnObject, blendStates);
                 return resultValue;
             });
         }
@@ -364,10 +360,8 @@ namespace Gek
             std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
             return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
-                HRESULT resultValue = E_FAIL;
-
                 CComPtr<VideoTexture> texture;
-                resultValue = video->createTexture(&texture, format, width, height, depth, flags);
+                HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags);
                 if (SUCCEEDED(resultValue) && texture)
                 {
                     resultValue = texture->QueryInterface(returnObject);
@@ -382,10 +376,8 @@ namespace Gek
             std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
             return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
-                HRESULT resultValue = E_FAIL;
-
                 CComPtr<VideoBuffer> buffer;
-                resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
+                HRESULT resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
                 if (SUCCEEDED(resultValue) && buffer)
                 {
                     resultValue = buffer->QueryInterface(returnObject);
@@ -400,10 +392,8 @@ namespace Gek
             std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
             return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
-                HRESULT resultValue = E_FAIL;
-
                 CComPtr<VideoBuffer> buffer;
-                resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
+                HRESULT resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
                 if (SUCCEEDED(resultValue) && buffer)
                 {
                     if (flags & Video::BufferFlags::UnorderedAccess)
@@ -567,8 +557,7 @@ namespace Gek
 
             return programManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
-                HRESULT resultValue = E_FAIL;
-                resultValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
+                HRESULT resultValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
                 return resultValue;
             });
         }

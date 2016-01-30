@@ -1,10 +1,10 @@
-#include "GEK\Shape\OrientedBox.h"
-#include "GEK\Shape\Plane.h"
+#include "GEK\Shapes\OrientedBox.h"
+#include "GEK\Shapes\Plane.h"
 #include <algorithm>
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         OrientedBox::OrientedBox(void)
         {
@@ -55,5 +55,5 @@ namespace Gek
                 return 0;
             }
         }
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

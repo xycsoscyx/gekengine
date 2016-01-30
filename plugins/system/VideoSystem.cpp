@@ -824,7 +824,7 @@ namespace Gek
             d3dDeviceContext->RSSetViewports(viewPortCount, (D3D11_VIEWPORT *)viewPortList);
         }
 
-        STDMETHODIMP_(void) setScissorRect(Shape::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount)
+        STDMETHODIMP_(void) setScissorRect(Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             REQUIRE_VOID_RETURN(rectangleList);
@@ -2531,7 +2531,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP_(void) updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shape::Rectangle<UINT32> *destinationRectangle)
+        STDMETHODIMP_(void) updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *destinationRectangle)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
 
@@ -2640,7 +2640,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP createBrush(IUnknown **returnObject, const std::vector<Video::GradientPoint> &stopPoints, const Shape::Rectangle<float> &extents)
+        STDMETHODIMP createBrush(IUnknown **returnObject, const std::vector<Video::GradientPoint> &stopPoints, const Shapes::Rectangle<float> &extents)
         {
             REQUIRE_RETURN(d2dDeviceContext, E_INVALIDARG);
 
@@ -2749,7 +2749,7 @@ namespace Gek
             d2dDeviceContext->SetTransform(*(D2D1_MATRIX_3X2_F *)&matrix);
         }
 
-        STDMETHODIMP_(void) drawText(const Shape::Rectangle<float> &extents, IUnknown *font, IUnknown *brush, LPCWSTR format, ...)
+        STDMETHODIMP_(void) drawText(const Shapes::Rectangle<float> &extents, IUnknown *font, IUnknown *brush, LPCWSTR format, ...)
         {
             REQUIRE_VOID_RETURN(d2dDeviceContext);
             REQUIRE_VOID_RETURN(format);
@@ -2770,7 +2770,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) drawRectangle(const Shape::Rectangle<float> &extents, IUnknown *brush, bool fillShape)
+        STDMETHODIMP_(void) drawRectangle(const Shapes::Rectangle<float> &extents, IUnknown *brush, bool fillShape)
         {
             REQUIRE_VOID_RETURN(d2dDeviceContext);
             CComQIPtr<ID2D1Brush> d2dBrush(brush);
@@ -2787,7 +2787,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) drawRectangle(const Shape::Rectangle<float> &extents, const Math::Float2 &cornerRadius, IUnknown *brush, bool fillShape)
+        STDMETHODIMP_(void) drawRectangle(const Shapes::Rectangle<float> &extents, const Math::Float2 &cornerRadius, IUnknown *brush, bool fillShape)
         {
             REQUIRE_VOID_RETURN(d2dDeviceContext);
             CComQIPtr<ID2D1Brush> d2dBrush(brush);
@@ -2804,7 +2804,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) drawBitmap(IUnknown *bitmap, const Shape::Rectangle<float> &destinationExtents, Video::InterpolationMode interpolationMode, float opacity)
+        STDMETHODIMP_(void) drawBitmap(IUnknown *bitmap, const Shapes::Rectangle<float> &destinationExtents, Video::InterpolationMode interpolationMode, float opacity)
         {
             REQUIRE_VOID_RETURN(d2dDeviceContext);
             CComQIPtr<ID2D1Bitmap1> d2dBitmap(bitmap);
@@ -2814,7 +2814,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) drawBitmap(IUnknown *bitmap, const Shape::Rectangle<float> &destinationExtents, const Shape::Rectangle<float> &sourceExtents, Video::InterpolationMode interpolationMode, float opacity)
+        STDMETHODIMP_(void) drawBitmap(IUnknown *bitmap, const Shapes::Rectangle<float> &destinationExtents, const Shapes::Rectangle<float> &sourceExtents, Video::InterpolationMode interpolationMode, float opacity)
         {
             REQUIRE_VOID_RETURN(d2dDeviceContext);
             CComQIPtr<ID2D1Bitmap1> d2dBitmap(bitmap);

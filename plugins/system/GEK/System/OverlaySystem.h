@@ -3,7 +3,7 @@
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Matrix3x2.h"
-#include "GEK\Shape\Rectangle.h"
+#include "GEK\Shapes\Rectangle.h"
 #include <unordered_map>
 
 namespace Gek
@@ -50,7 +50,7 @@ namespace Gek
     DECLARE_INTERFACE_IID(OverlaySystem, "D3B65773-4EB1-46F8-A38D-009CA43CE77F") : virtual public IUnknown
     {
         STDMETHOD(createBrush)                  (THIS_ IUnknown **returnObject, const Math::Float4 &color) PURE;
-        STDMETHOD(createBrush)                  (THIS_ IUnknown **returnObject, const std::vector<Video::GradientPoint> &stopPoints, const Shape::Rectangle<float> &extents) PURE;
+        STDMETHOD(createBrush)                  (THIS_ IUnknown **returnObject, const std::vector<Video::GradientPoint> &stopPoints, const Shapes::Rectangle<float> &extents) PURE;
 
         STDMETHOD(createFont)                   (THIS_ IUnknown **returnObject, LPCWSTR face, UINT32 weight, Video::FontStyle style, float size) PURE;
 
@@ -60,13 +60,13 @@ namespace Gek
 
         STDMETHOD_(void, setTransform)          (THIS_ const Math::Float3x2 &matrix) PURE;
 
-        STDMETHOD_(void, drawText)              (THIS_ const Shape::Rectangle<float> &extents, IUnknown *font, IUnknown *brush, LPCWSTR format, ...) PURE;
+        STDMETHOD_(void, drawText)              (THIS_ const Shapes::Rectangle<float> &extents, IUnknown *font, IUnknown *brush, LPCWSTR format, ...) PURE;
 
-        STDMETHOD_(void, drawRectangle)         (THIS_ const Shape::Rectangle<float> &extents, IUnknown *brush, bool fillShape) PURE;
-        STDMETHOD_(void, drawRectangle)         (THIS_ const Shape::Rectangle<float> &extents, const Math::Float2 &cornerRadius, IUnknown *brush, bool fillShape) PURE;
+        STDMETHOD_(void, drawRectangle)         (THIS_ const Shapes::Rectangle<float> &extents, IUnknown *brush, bool fillShape) PURE;
+        STDMETHOD_(void, drawRectangle)         (THIS_ const Shapes::Rectangle<float> &extents, const Math::Float2 &cornerRadius, IUnknown *brush, bool fillShape) PURE;
 
-        STDMETHOD_(void, drawBitmap)            (THIS_ IUnknown *bitmap, const Shape::Rectangle<float> &destinationExtents, Video::InterpolationMode interpolationMode = Video::InterpolationMode::NearestNeighbor, float opacity = 1.0) PURE;
-        STDMETHOD_(void, drawBitmap)            (THIS_ IUnknown *bitmap, const Shape::Rectangle<float> &destinationExtents, const Shape::Rectangle<float> &sourceExtents, Video::InterpolationMode interpolationMode = Video::InterpolationMode::NearestNeighbor, float opacity = 1.0) PURE;
+        STDMETHOD_(void, drawBitmap)            (THIS_ IUnknown *bitmap, const Shapes::Rectangle<float> &destinationExtents, Video::InterpolationMode interpolationMode = Video::InterpolationMode::NearestNeighbor, float opacity = 1.0) PURE;
+        STDMETHOD_(void, drawBitmap)            (THIS_ IUnknown *bitmap, const Shapes::Rectangle<float> &destinationExtents, const Shapes::Rectangle<float> &sourceExtents, Video::InterpolationMode interpolationMode = Video::InterpolationMode::NearestNeighbor, float opacity = 1.0) PURE;
 
         STDMETHOD_(void, drawGeometry)          (THIS_ OverlayGeometry *geometry, IUnknown *brush, bool fillShape) PURE;
 

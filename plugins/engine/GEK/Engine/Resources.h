@@ -18,15 +18,15 @@ namespace Gek
         {
         }
 
-        void assign(UINT64 identifier)
-        {
-            this->identifier = TYPE(identifier);
-            isSet = true;
-        }
-
         bool isValid(void) const
         {
             return isSet;
+        }
+
+        void operator = (UINT64 identifier)
+        {
+            this->identifier = TYPE(identifier);
+            isSet = true;
         }
 
         bool operator == (const typename Handle<TYPE, UNIQUE> &handle) const

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "GEK\Math\Matrix4x4.h"
-#include "GEK\Shape\Plane.h"
+#include "GEK\Shapes\Plane.h"
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         struct Frustum
         {
@@ -26,5 +26,5 @@ namespace Gek
                 return true;
             }
         };
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

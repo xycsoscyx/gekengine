@@ -5,7 +5,7 @@
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         struct Plane
         {
@@ -35,5 +35,5 @@ namespace Gek
 
             float getDistance(const Math::Float3 &point) const;
         };
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

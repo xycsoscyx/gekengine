@@ -307,7 +307,11 @@ namespace Gek
             do
             {
                 resultValue = device->Poll();
-                resultValue = device->GetDeviceState(sizeof(DIJOYSTATE2), (void *)&joystickStates);
+                if (SUCCEEDED(resultValue))
+                {
+                    resultValue = device->GetDeviceState(sizeof(DIJOYSTATE2), (void *)&joystickStates);
+                }
+
                 if (FAILED(resultValue))
                 {
                     resultValue = device->Acquire();

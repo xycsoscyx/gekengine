@@ -155,7 +155,7 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                HRESULT resultValue = getContext()->createEachType(__uuidof(ProcessorType), [&](REFCLSID className, IUnknown *object) -> HRESULT
+                resultValue = getContext()->createEachType(__uuidof(ProcessorType), [&](REFCLSID className, IUnknown *object) -> HRESULT
                 {
                     HRESULT resultValue = E_FAIL;
                     CComQIPtr<Processor> system(object);
@@ -170,7 +170,6 @@ namespace Gek
 
                     return S_OK;
                 });
-
             }
 
             if (SUCCEEDED(resultValue))

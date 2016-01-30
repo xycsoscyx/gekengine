@@ -17,7 +17,7 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
-#include "GEK\Shape\Sphere.h"
+#include "GEK\Shapes\Sphere.h"
 #include <set>
 #include <ppl.h>
 
@@ -259,7 +259,7 @@ namespace Gek
                 cameraConstantData.projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraData.minimumDistance, cameraData.maximumDistance);
                 cameraConstantData.inverseProjectionMatrix = cameraConstantData.projectionMatrix.getInverse();
 
-                const Shape::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
+                const Shapes::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
                 drawCallList.clear();
                 ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
@@ -283,7 +283,7 @@ namespace Gek
                     {
                         auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
                         auto &lightComponent = lightEntity->getComponent<LightComponent>();
-                        if (viewFrustum.isVisible(Shape::Sphere(lightTransformComponent.position, lightComponent.range)))
+                        if (viewFrustum.isVisible(Shapes::Sphere(lightTransformComponent.position, lightComponent.range)))
                         {
                             auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
                             lightList.emplace_back((cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz, lightComponent.range, lightComponent.radius, lightColorComponent.value.xyz);

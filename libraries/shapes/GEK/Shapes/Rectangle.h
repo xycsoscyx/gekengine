@@ -2,7 +2,7 @@
 
 namespace Gek
 {
-    namespace Shape
+    namespace Shapes
     {
         template <typename TYPE>
         struct Rectangle
@@ -12,5 +12,5 @@ namespace Gek
             TYPE right;
             TYPE bottom;
         };
-    }; // namespace Shape
+    }; // namespace Shapes
 }; // namespace Gek

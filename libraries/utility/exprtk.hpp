@@ -4688,8 +4688,6 @@ namespace exprtk
 
          private:
 
-            array_vector_impl operator=(const array_vector_impl&);
-
             const Type* vec_;
             const std::size_t size_;
          };

@@ -1,7 +1,7 @@
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Vector3.h"
 #include "GEK\Math\Matrix4x4.h"
-#include "GEK\Shape\AlignedBox.h"
+#include "GEK\Shapes\AlignedBox.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Context\Common.h"
 #include <DirectXTex.h>
