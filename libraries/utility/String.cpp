@@ -32,6 +32,17 @@ namespace Gek
             return (swscanf_s(expression, L"%f,%f,%f,%f", &value.x, &value.y, &value.z, &value.w) == 4);
         }
 
+        bool to(LPCWSTR expression, Gek::Math::Color &value)
+        {
+            int values = swscanf_s(expression, L"%f,%f,%f,%f", &value.r, &value.g, &value.b, &value.a);
+            if (values == 3)
+            {
+                value.a = 1.0f;
+            }
+
+            return (values >= 3);
+        }
+
         bool to(LPCWSTR expression, Gek::Math::Quaternion &value)
         {
             int values = swscanf_s(expression, L"%f,%f,%f,%f", &value.x, &value.y, &value.z, &value.w);
@@ -110,6 +121,11 @@ namespace Gek
         CStringW from(const Gek::Math::Float4 &value)
         {
             return format(L"%f,%f,%f,%f", value.x, value.y, value.z, value.w);
+        }
+
+        CStringW from(const Gek::Math::Color &value)
+        {
+            return format(L"%f,%f,%f,%f", value.r, value.g, value.b, value.a);
         }
 
         CStringW from(const Gek::Math::Quaternion &value)

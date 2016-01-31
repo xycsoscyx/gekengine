@@ -123,14 +123,22 @@ namespace Gek
 
         bool get(LPCWSTR expression, Gek::Math::Float4 &result)
         {
+            return evaluateFloat.getVector(expression, result.data);
+        }
+
+        bool get(LPCWSTR expression, Gek::Math::Color &result)
+        {
             bool success = evaluateFloat.getVector(expression, result.data);
             if (!success)
             {
-                Math::Float3 part;
-                success = evaluateFloat.getVector(expression, part.data);
+                float rgb[3];
+                success = evaluateFloat.getVector(expression, rgb);
                 if (success)
                 {
-                    result = part.w(1.0f);
+                    result.r = rgb[0];
+                    result.g = rgb[1];
+                    result.b = rgb[2];
+                    result.a = 1.0f;
                 }
             }
 

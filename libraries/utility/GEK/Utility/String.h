@@ -3,6 +3,7 @@
 #include "GEK\Math\Vector2.h"
 #include "GEK\Math\Vector3.h"
 #include "GEK\Math\Vector4.h"
+#include "GEK\Math\Color.h"
 #include "GEK\Math\Quaternion.h"
 #include "GEK\Utility\Hash.h"
 #include <Windows.h>
@@ -18,6 +19,7 @@ namespace Gek
         bool to(LPCWSTR expression, Gek::Math::Float2 &value);
         bool to(LPCWSTR expression, Gek::Math::Float3 &value);
         bool to(LPCWSTR expression, Gek::Math::Float4 &value);
+        bool to(LPCWSTR expression, Gek::Math::Color &value);
         bool to(LPCWSTR expression, Gek::Math::Quaternion &value);
         bool to(LPCWSTR expression, INT32 &value);
         bool to(LPCWSTR expression, UINT32 &value);
@@ -38,6 +40,7 @@ namespace Gek
         CStringW from(const Gek::Math::Float2 &value);
         CStringW from(const Gek::Math::Float3 &value);
         CStringW from(const Gek::Math::Float4 &value);
+        CStringW from(const Gek::Math::Color &value);
         CStringW from(const Gek::Math::Quaternion &value);
         CStringW from(INT8 value);
         CStringW from(UINT8 value);

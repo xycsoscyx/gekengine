@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEK\Math\Common.h"
+#include "GEK\Math\Color.h"
 #include "GEK\Math\Vector4.h"
 #include "GEK\System\OverlaySystem.h"
 #include <atlbase.h>
@@ -391,7 +392,7 @@ namespace Gek
             float mipLevelBias;
             UINT32 maximumAnisotropy;
             ComparisonFunction comparisonFunction;
-            Math::Float4 borderColor;
+            Math::Color borderColor;
             float minimumMipLevel;
             float maximumMipLevel;
 
@@ -454,14 +455,14 @@ namespace Gek
         STDMETHOD_(void, setViewports)                      (THIS_ Video::ViewPort *viewPortList, UINT32 viewPortCount) PURE;
         STDMETHOD_(void, setScissorRect)                    (THIS_ Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount) PURE;
 
-        STDMETHOD_(void, clearRenderTarget)                 (THIS_ VideoTarget *renderTarget, const Math::Float4 &colorClear) PURE;
+        STDMETHOD_(void, clearRenderTarget)                 (THIS_ VideoTarget *renderTarget, const Math::Color &colorClear) PURE;
         STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ IUnknown *depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
         STDMETHOD_(void, clearUnorderedAccessBuffer)        (THIS_ VideoBuffer *buffer, float value) PURE;
         STDMETHOD_(void, setRenderTargets)                  (THIS_ VideoTarget **renderTargetList, UINT32 renderTargetCount, IUnknown *depthBuffer) PURE;
 
         STDMETHOD_(void, setRenderStates)                   (THIS_ IUnknown *renderStates) PURE;
         STDMETHOD_(void, setDepthStates)                    (THIS_ IUnknown *depthStates, UINT32 stencilReference) PURE;
-        STDMETHOD_(void, setBlendStates)                    (THIS_ IUnknown *blendStates, const Math::Float4 &blendFactor, UINT32 sampleMask) PURE;
+        STDMETHOD_(void, setBlendStates)                    (THIS_ IUnknown *blendStates, const Math::Color &blendFactor, UINT32 sampleMask) PURE;
 
         STDMETHOD_(void, setVertexBuffer)                   (THIS_ UINT32 slot, VideoBuffer *vertexBuffer, UINT32 offset) PURE;
         STDMETHOD_(void, setIndexBuffer)                    (THIS_ VideoBuffer *indexBuffer, UINT32 offset) PURE;
@@ -526,7 +527,7 @@ namespace Gek
         STDMETHOD(loadGeometryProgram)                      (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
         STDMETHOD(loadPixelProgram)                         (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
-        STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Float4 &colorClear) PURE;
+        STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Color &colorClear) PURE;
         STDMETHOD_(void, clearDefaultDepthStencilTarget)    (THIS_ DWORD flags, float depthClear, UINT32 stencilClear) PURE;
         STDMETHOD_(void, setDefaultTargets)                 (THIS_ VideoContext *context = nullptr, IUnknown *depthBuffer = nullptr) PURE;
 

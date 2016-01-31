@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEK\Math\Common.h"
+#include "GEK\Math\Color.h"
 #include "GEK\Math\Vector4.h"
 #include "GEK\Math\Matrix3x2.h"
 #include "GEK\Shapes\Rectangle.h"
@@ -29,7 +30,13 @@ namespace Gek
         struct GradientPoint
         {
             float position;
-            Math::Float4 color;
+            Math::Color color;
+
+            GradientPoint(float position, const Math::Color &color)
+                : position(position)
+                , color(color)
+            {
+            }
         };
     }; // namespace Video
 
@@ -49,7 +56,7 @@ namespace Gek
 
     DECLARE_INTERFACE_IID(OverlaySystem, "D3B65773-4EB1-46F8-A38D-009CA43CE77F") : virtual public IUnknown
     {
-        STDMETHOD(createBrush)                  (THIS_ IUnknown **returnObject, const Math::Float4 &color) PURE;
+        STDMETHOD(createBrush)                  (THIS_ IUnknown **returnObject, const Math::Color &color) PURE;
         STDMETHOD(createBrush)                  (THIS_ IUnknown **returnObject, const std::vector<Video::GradientPoint> &stopPoints, const Shapes::Rectangle<float> &extents) PURE;
 
         STDMETHOD(createFont)                   (THIS_ IUnknown **returnObject, LPCWSTR face, UINT32 weight, Video::FontStyle style, float size) PURE;

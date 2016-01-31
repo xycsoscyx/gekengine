@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GEK\Math\Color.h" />
     <ClInclude Include="GEK\Math\Common.h" />
     <ClInclude Include="GEK\Math\Matrix3x2.h" />
     <ClInclude Include="GEK\Math\Matrix4x4.h" />
@@ -20,6 +21,7 @@
     <ClInclude Include="GEK\Math\Vector4.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Color.cpp" />
     <ClCompile Include="Matrix3x2.cpp" />
     <ClCompile Include="Matrix4x4.cpp" />
     <ClCompile Include="Quaternion.cpp" />
@@ -82,6 +84,7 @@
       <EnablePREfast>false</EnablePREfast>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

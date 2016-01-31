@@ -14,7 +14,6 @@ namespace Gek
             union
             {
                 struct { float x, y, z, w; };
-                struct { float r, g, b, a; };
                 struct { float data[4]; };
                 struct { __m128 simd; };
             };

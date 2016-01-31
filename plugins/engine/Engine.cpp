@@ -179,10 +179,10 @@ namespace Gek
                 float consoleHeight = (height * 0.5f);
 
                 OverlaySystem *overlay = video->getOverlay();
-                resultValue = overlay->createBrush(&backgroundBrush, { { 0.0f, Math::Float4(0.5f, 0.0f, 0.0f, 1.0f) },{ 1.0f, Math::Float4(0.25f, 0.0f, 0.0f, 1.0f) } }, { 0.0f, 0.0f, 0.0f, consoleHeight });
+                resultValue = overlay->createBrush(&backgroundBrush, { Video::GradientPoint(0.0f, Math::Color(0.5f, 0.0f, 0.0f, 1.0f)), Video::GradientPoint(1.0f, Math::Color(0.25f, 0.0f, 0.0f, 1.0f)) }, Shapes::Rectangle<float>(0.0f, 0.0f, 0.0f, consoleHeight));
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = overlay->createBrush(&textBrush, Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+                    resultValue = overlay->createBrush(&textBrush, Math::Color(1.0f, 1.0f, 1.0f, 1.0f));
                 }
 
                 if (SUCCEEDED(resultValue))
@@ -192,22 +192,22 @@ namespace Gek
 
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = overlay->createBrush(&logTypeBrushList[0], Math::Float4(1.0f, 1.0f, 1.0f, 1.0f));
+                    resultValue = overlay->createBrush(&logTypeBrushList[0], Math::Color(1.0f, 1.0f, 1.0f, 1.0f));
                 }
 
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = overlay->createBrush(&logTypeBrushList[1], Math::Float4(1.0f, 1.0f, 0.0f, 1.0f));
+                    resultValue = overlay->createBrush(&logTypeBrushList[1], Math::Color(1.0f, 1.0f, 0.0f, 1.0f));
                 }
 
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = overlay->createBrush(&logTypeBrushList[2], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                    resultValue = overlay->createBrush(&logTypeBrushList[2], Math::Color(1.0f, 0.0f, 0.0f, 1.0f));
                 }
 
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = overlay->createBrush(&logTypeBrushList[3], Math::Float4(1.0f, 0.0f, 0.0f, 1.0f));
+                    resultValue = overlay->createBrush(&logTypeBrushList[3], Math::Color(1.0f, 0.0f, 0.0f, 1.0f));
                 }
             }
 
@@ -497,13 +497,13 @@ namespace Gek
                 transformMatrix.translation = Math::Float2(0.0f, consoleTop);
                 overlay->setTransform(transformMatrix);
 
-                overlay->drawRectangle({ 0.0f, 0.0f, width, consoleHeight }, backgroundBrush, true);
-                overlay->drawText({ 15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f) }, font, textBrush, currentCommand + ((GetTickCount() / 500 % 2) ? L"_" : L""));
+                overlay->drawRectangle(Shapes::Rectangle<float>(0.0f, 0.0f, width, consoleHeight), backgroundBrush, true);
+                overlay->drawText(Shapes::Rectangle<float>(15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f)), font, textBrush, currentCommand + ((GetTickCount() / 500 % 2) ? L"_" : L""));
 
                 float textPosition = (consoleHeight - 40.0f);
                 for (auto &command : commandLog)
                 {
-                    overlay->drawText({ 15.0f, (textPosition - 20.0f), (width - 15.0f), textPosition }, font, logTypeBrushList[0], command);
+                    overlay->drawText(Shapes::Rectangle<float>(15.0f, (textPosition - 20.0f), (width - 15.0f), textPosition), font, logTypeBrushList[0], command);
                     textPosition -= 20.0f;
                 }
 

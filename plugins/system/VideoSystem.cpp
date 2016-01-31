@@ -832,7 +832,7 @@ namespace Gek
             d3dDeviceContext->RSSetScissorRects(rectangleCount, (D3D11_RECT *)rectangleList);
         }
 
-        STDMETHODIMP_(void) clearRenderTarget(VideoTarget *renderTarget, const Math::Float4 &colorClear)
+        STDMETHODIMP_(void) clearRenderTarget(VideoTarget *renderTarget, const Math::Color &colorClear)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11RenderTargetView> d3dRenderTargetView(renderTarget);
@@ -905,7 +905,7 @@ namespace Gek
             d3dDeviceContext->OMSetDepthStencilState(d3dDepthStencilState, stencilReference);
         }
 
-        STDMETHODIMP_(void) setBlendStates(IUnknown *blendStates, const Math::Float4 &blendFactor, UINT32 mask)
+        STDMETHODIMP_(void) setBlendStates(IUnknown *blendStates, const Math::Color &blendFactor, UINT32 mask)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11BlendState> d3dBlendState(blendStates);
@@ -2564,7 +2564,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) clearDefaultRenderTarget(const Math::Float4 &colorClear)
+        STDMETHODIMP_(void) clearDefaultRenderTarget(const Math::Color &colorClear)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             REQUIRE_VOID_RETURN(d3dDefaultRenderTargetView);
@@ -2624,11 +2624,11 @@ namespace Gek
         }
 
         // OverlaySystem
-        STDMETHODIMP createBrush(IUnknown **returnObject, const Math::Float4 &color)
+        STDMETHODIMP createBrush(IUnknown **returnObject, const Math::Color &color)
         {
             REQUIRE_RETURN(d2dDeviceContext, E_INVALIDARG);
 
-            gekCheckScope(resultValue, color.xyz, color.w);
+            gekCheckScope(resultValue, color.r, color.g, color.b, color.a);
 
             CComPtr<ID2D1SolidColorBrush> d2dSolidBrush;
             gekCheckResult(resultValue = d2dDeviceContext->CreateSolidColorBrush(*(D2D1_COLOR_F *)&color, &d2dSolidBrush));

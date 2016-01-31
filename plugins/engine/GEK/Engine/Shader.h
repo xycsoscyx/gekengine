@@ -12,8 +12,8 @@ namespace Gek
     {
         STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
 
-        STDMETHOD_(void, loadResourceList)          (THIS_ LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::vector<ResourceHandle> &resourceList) PURE;
-        STDMETHOD_(void, setResourceList)           (THIS_ VideoContext *videoContext, const std::vector<ResourceHandle> &materialMapList) PURE;
+        STDMETHOD_(void, loadResourceList)          (THIS_ LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) PURE;
+        STDMETHOD_(void, setResourceList)           (THIS_ VideoContext *videoContext, const std::list<ResourceHandle> &materialMapList) PURE;
 
         STDMETHOD_(void, draw)                      (THIS_ VideoContext *videoContext,
             std::function<void(std::function<void(void)> drawPasses)> drawLights,

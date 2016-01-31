@@ -9,7 +9,7 @@ namespace Gek
         STDMETHOD(initialize)                                           (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
 
         STDMETHOD_(ShaderHandle, getShader)                             (THIS) PURE;
-        STDMETHOD_(const std::vector<ResourceHandle>, getResourceList)  (THIS) PURE;
+        STDMETHOD_(const std::list<ResourceHandle>, getResourceList)    (THIS) PURE;
     };
 
     DECLARE_INTERFACE_IID(MaterialRegistration, "0E7141AC-0CC5-4F5F-B96E-F10ED4155471");

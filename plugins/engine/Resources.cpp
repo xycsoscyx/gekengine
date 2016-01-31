@@ -262,7 +262,7 @@ namespace Gek
             });
         }
 
-        STDMETHODIMP_(void) loadResourceList(ShaderHandle shaderHandle, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::vector<ResourceHandle> &resourceList)
+        STDMETHODIMP_(void) loadResourceList(ShaderHandle shaderHandle, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList)
         {
             Shader *shader = shaderManager.getResource<Shader>(shaderHandle);
             if (shader)
@@ -608,7 +608,7 @@ namespace Gek
             videoContext->setDepthStates(depthStateManager.getResource<IUnknown>(depthStatesHandle), stencilReference);
         }
 
-        STDMETHODIMP_(void) setBlendStates(VideoContext *videoContext, BlendStatesHandle blendStatesHandle, const Math::Float4 &blendFactor, UINT32 sampleMask)
+        STDMETHODIMP_(void) setBlendStates(VideoContext *videoContext, BlendStatesHandle blendStatesHandle, const Math::Color &blendFactor, UINT32 sampleMask)
         {
             videoContext->setBlendStates(blendStateManager.getResource<IUnknown>(blendStatesHandle), blendFactor, sampleMask);
         }
@@ -643,7 +643,7 @@ namespace Gek
             videoContext->setIndexBuffer(resourceManager.getResource<VideoBuffer>(resourceHandle), offset);
         }
 
-        STDMETHODIMP_(void) clearRenderTarget(VideoContext *videoContext, ResourceHandle resourceHandle, const Math::Float4 &color)
+        STDMETHODIMP_(void) clearRenderTarget(VideoContext *videoContext, ResourceHandle resourceHandle, const Math::Color &color)
         {
             videoContext->clearRenderTarget(resourceManager.getResource<VideoTarget>(resourceHandle), color);
         }

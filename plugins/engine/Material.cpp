@@ -15,7 +15,7 @@ namespace Gek
     {
     private:
         Resources *resources;
-        std::vector<ResourceHandle> resourceList;
+        std::list<ResourceHandle> resourceList;
         ShaderHandle shader;
 
     public:
@@ -91,7 +91,7 @@ namespace Gek
             return shader;
         }
 
-        STDMETHODIMP_(const std::vector<ResourceHandle>) getResourceList(void)
+        STDMETHODIMP_(const std::list<ResourceHandle>) getResourceList(void)
         {
             return resourceList;
         }

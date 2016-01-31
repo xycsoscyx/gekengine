@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GEK\Math\Color.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Hash.h"
 #include "GEK\System\VideoSystem.h"
@@ -108,7 +109,7 @@ namespace Gek
         }
 
         STDMETHOD_(ShaderHandle, loadShader)                (THIS_ LPCWSTR fileName) PURE;
-        STDMETHOD_(void, loadResourceList)                  (THIS_ ShaderHandle shader, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::vector<ResourceHandle> &resourceList) PURE;
+        STDMETHOD_(void, loadResourceList)                  (THIS_ ShaderHandle shader, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) PURE;
         STDMETHOD_(ProgramHandle, loadComputeProgram)       (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
         STDMETHOD_(ProgramHandle, loadPixelProgram)         (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
@@ -122,10 +123,10 @@ namespace Gek
 
         STDMETHOD_(void, setRenderStates)                   (THIS_ VideoContext *videoContext, RenderStatesHandle renderStatesHandle) PURE;
         STDMETHOD_(void, setDepthStates)                    (THIS_ VideoContext *videoContext, DepthStatesHandle depthStatesHandle, UINT32 stencilReference) PURE;
-        STDMETHOD_(void, setBlendStates)                    (THIS_ VideoContext *videoContext, BlendStatesHandle blendStatesHandle, const Math::Float4 &blendFactor, UINT32 sampleMask) PURE;
+        STDMETHOD_(void, setBlendStates)                    (THIS_ VideoContext *videoContext, BlendStatesHandle blendStatesHandle, const Math::Color &blendFactor, UINT32 sampleMask) PURE;
         STDMETHOD_(void, setProgram)                        (THIS_ VideoPipeline *videoPipeline, ProgramHandle programHandle) PURE;
         STDMETHOD_(void, setRenderTargets)                  (THIS_ VideoContext *videoContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle depthBuffer) PURE;
-        STDMETHOD_(void, clearRenderTarget)                 (THIS_ VideoContext *videoContext, ResourceHandle resourceHandle  , const Math::Float4 &color) PURE;
+        STDMETHOD_(void, clearRenderTarget)                 (THIS_ VideoContext *videoContext, ResourceHandle resourceHandle  , const Math::Color &color) PURE;
         STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ VideoContext *videoContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
         STDMETHOD_(void, setDefaultTargets)                 (THIS_ VideoContext *videoContext, ResourceHandle depthBuffer) PURE;
     };
