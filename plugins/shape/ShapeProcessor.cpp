@@ -421,7 +421,8 @@ namespace Gek
         {
             Math::Float4x4 matrix;
             Math::Color color;
-            Math::Float4 scale;
+            Math::Float3 scale;
+            float buffer;
 
             InstanceData(const Math::Float4x4 &matrix, const Math::Color &color, const Math::Float3 &scale)
                 : matrix(matrix)
