@@ -4,6 +4,7 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
+#include "GEK\Utility\Allocator.h"
 #include "GEK\Context\Common.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
@@ -447,7 +448,7 @@ namespace Gek
         std::unordered_map<std::size_t, Shape> shapeMap;
         std::unordered_map<Entity *, EntityData> entityDataList;
 
-        typedef concurrency::concurrent_vector<InstanceData> InstanceList;
+        typedef concurrency::concurrent_vector<InstanceData, AlignedAllocator<InstanceData, 16>> InstanceList;
         typedef concurrency::concurrent_unordered_map<MaterialHandle, InstanceList> MaterialList;
         concurrency::concurrent_unordered_map<Shape *, MaterialList> visibleList;
 

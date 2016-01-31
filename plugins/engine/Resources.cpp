@@ -423,6 +423,7 @@ namespace Gek
 
                 float color1;
                 Math::Float2 color2;
+                Math::Float3 color3;
                 Math::Float4 color4;
                 if (Evaluator::get(value, color1))
                 {
@@ -436,6 +437,15 @@ namespace Gek
                     colorData[0] = UINT8(color2.x * 255.0f);
                     colorData[1] = UINT8(color2.y * 255.0f);
                     colorPitch = 2;
+                }
+                else if (Evaluator::get(value, color3))
+                {
+                    resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                    colorData[0] = UINT8(color3.x * 255.0f);
+                    colorData[1] = UINT8(color3.y * 255.0f);
+                    colorData[2] = UINT8(color3.z * 255.0f);
+                    colorData[3] = 255;
+                    colorPitch = 4;
                 }
                 else if (Evaluator::get(value, color4))
                 {

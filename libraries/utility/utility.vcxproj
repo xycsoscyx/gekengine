@@ -19,6 +19,7 @@
     <ClCompile Include="XML.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GEK\Utility\Allocator.h" />
     <ClInclude Include="GEK\Utility\Display.h" />
     <ClInclude Include="GEK\Utility\Evaluator.h" />
     <ClInclude Include="GEK\Utility\FileSystem.h" />

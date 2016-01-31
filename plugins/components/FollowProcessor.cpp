@@ -6,6 +6,7 @@
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Follow.h"
 #include "GEK\Math\Matrix4x4.h"
+#include "GEK\Utility\Allocator.h"
 #include <map>
 #include <unordered_map>
 
@@ -38,7 +39,7 @@ namespace Gek
         UINT32 updateHandle;
 
         std::map<UINT32, Entity *> entityOrderMap;
-        std::unordered_map<Entity *, Data> entityDataMap;
+        std::unordered_map<Entity *, Data, std::hash<Entity *>, std::equal_to<Entity *>, AlignedAllocator<Data, 16>> entityDataMap;
 
     public:
         FollowProcessorImplementation(void)

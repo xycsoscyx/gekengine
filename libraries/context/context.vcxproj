@@ -17,6 +17,7 @@
     <ClCompile Include="UnknownMixin.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\utility\GEK\Utility\Allocator.h" />
     <ClInclude Include="GEK\Context\Common.h" />
     <ClInclude Include="GEK\Context\Context.h" />
     <ClInclude Include="GEK\Context\ContextUser.h" />
