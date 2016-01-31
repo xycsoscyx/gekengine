@@ -295,8 +295,8 @@ namespace Gek
                         auto &lightComponent = lightEntity->getComponent<LightComponent>();
                         if (viewFrustum.isVisible(Shapes::Sphere(lightTransformComponent.position, lightComponent.range)))
                         {
-                            auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-                            lightList.emplace_back((cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz, lightComponent.range, lightComponent.radius, lightColorComponent.value.xyz);
+                            const Math::Color &color = lightEntity->getComponent<ColorComponent>();
+                            lightList.emplace_back((cameraConstantData.viewMatrix * lightTransformComponent.position.w(1.0f)).xyz, lightComponent.range, lightComponent.radius, Math::Float3(color.r, color.g, color.b));
                         }
                     });
 

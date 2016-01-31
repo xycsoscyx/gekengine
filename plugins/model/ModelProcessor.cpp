@@ -101,10 +101,10 @@ namespace Gek
         struct InstanceData
         {
             Math::Float4x4 matrix;
-            Math::Float4 color;
+            Math::Color color;
             Math::Float4 scale;
 
-            InstanceData(const Math::Float4x4 &matrix, const Math::Float4 &color, const Math::Float3 &scale)
+            InstanceData(const Math::Float4x4 &matrix, const Math::Color &color, const Math::Float3 &scale)
                 : matrix(matrix)
                 , color(color)
                 , scale(scale)
@@ -409,7 +409,7 @@ namespace Gek
 
                 if (viewFrustum->isVisible(orientedBox))
                 {
-                    Gek::Math::Float4 color(1.0f, 1.0f, 1.0f, 1.0f);
+                    Gek::Math::Color color(1.0f, 1.0f, 1.0f, 1.0f);
                     if (entity->hasComponent<ColorComponent>())
                     {
                         color = entity->getComponent<ColorComponent>();

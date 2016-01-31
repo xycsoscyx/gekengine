@@ -19,7 +19,7 @@ namespace Gek
 
     HRESULT ColorComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"", value, Evaluator::get<Math::Float4>);
+        setParameter(componentParameterList, L"", value, Evaluator::get<Math::Color>);
         return S_OK;
     }
 

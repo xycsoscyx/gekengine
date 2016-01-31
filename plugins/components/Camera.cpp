@@ -10,7 +10,6 @@ namespace Gek
         : fieldOfView(Math::convertDegreesToRadians(90.0f))
         , minimumDistance(1.0f)
         , maximumDistance(100.0f)
-        , viewPort(0.0f, 0.0f, 1.0f, 1.0f)
     {
     }
 
@@ -19,7 +18,6 @@ namespace Gek
         componentParameterList[L"field_of_view"] = String::from(fieldOfView);
         componentParameterList[L"minimum_distance"] = String::from(minimumDistance);
         componentParameterList[L"maximum_distance"] = String::from(maximumDistance);
-        componentParameterList[L"viewport"] = String::from(viewPort);
         return S_OK;
     }
 
@@ -28,7 +26,6 @@ namespace Gek
         setParameter(componentParameterList, L"field_of_view", fieldOfView, String::to<float>);
         setParameter(componentParameterList, L"minimum_distance", minimumDistance, String::to<float>);
         setParameter(componentParameterList, L"maximum_distance", maximumDistance, String::to<float>);
-        setParameter(componentParameterList, L"viewport", viewPort, String::to<Math::Float4>);
         return S_OK;
     }
 

@@ -10,20 +10,9 @@ namespace Gek
 {
     struct CameraComponent
     {
-        LPVOID operator new(size_t size)
-        {
-            return _mm_malloc(size * sizeof(CameraComponent), 16);
-        }
-
-        void operator delete(LPVOID data)
-        {
-            _mm_free(data);
-        }
-
         float fieldOfView;
         float minimumDistance;
         float maximumDistance;
-        Gek::Math::Float4 viewPort;
 
         CameraComponent(void);
         HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
