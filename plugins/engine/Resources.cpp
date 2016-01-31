@@ -18,8 +18,9 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Shapes\Sphere.h"
-#include <set>
+#include <concurrent_unordered_map.h>
 #include <ppl.h>
+#include <set>
 
 namespace Gek
 {
@@ -30,9 +31,9 @@ namespace Gek
     {
     private:
         UINT64 nextIdentifier;
-        std::unordered_map<std::size_t, HANDLE> hashMap;
-        std::unordered_map<HANDLE, CComPtr<IUnknown>> localResourceMap;
-        std::unordered_map<HANDLE, CComPtr<IUnknown>> globalResourceMap;
+        concurrency::concurrent_unordered_map<std::size_t, HANDLE> hashMap;
+        concurrency::concurrent_unordered_map<HANDLE, CComPtr<IUnknown>> localResourceMap;
+        concurrency::concurrent_unordered_map<HANDLE, CComPtr<IUnknown>> globalResourceMap;
 
     public:
         ObjectManager(void)
@@ -61,7 +62,7 @@ namespace Gek
                 CComPtr<IUnknown> resource;
                 if (SUCCEEDED(loadResource(&resource)) && resource)
                 {
-                    handle = InterlockedIncrement(&nextIdentifier);
+                    handle.assign(InterlockedIncrement(&nextIdentifier));
                     globalResourceMap[handle] = resource;
                 }
             }
@@ -70,7 +71,7 @@ namespace Gek
                 auto hashIterator = hashMap.find(hash);
                 if (hashIterator == hashMap.end())
                 {
-                    handle = InterlockedIncrement(&nextIdentifier);
+                    handle.assign(InterlockedIncrement(&nextIdentifier));
                     hashMap[hash] = handle;
                     localResourceMap[handle] = nullptr;
 
@@ -236,11 +237,7 @@ namespace Gek
                 return resultValue;
             });
 
-            MaterialHandle material;
-            material.identifier.shader = shader;
-            material.identifier.properties = properties;
-            material.isSet = true;
-            return material;
+            return MaterialHandle(shader, properties);
         }
 
         STDMETHODIMP_(ShaderHandle) loadShader(LPCWSTR fileName)

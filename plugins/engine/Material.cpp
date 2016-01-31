@@ -57,7 +57,7 @@ namespace Gek
                         {
                             CStringW shaderFileName = xmlShaderNode.getText();
                             shader = resources->loadShader(shaderFileName);
-                            if (shader.isValid())
+                            if (shader)
                             {
                                 resultValue = S_OK;
                             }

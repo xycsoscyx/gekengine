@@ -22,31 +22,31 @@
 
         <entity>
             <transform position="0,5,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,5,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r0_m1|1</model>
+            <shape skin="debug//r0_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,5,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r0_m2|1</model>
+            <shape skin="debug//r0_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,5,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r0_m3|1</model>
+            <shape skin="debug//r0_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,5,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r0_m4|1</model>
+            <shape skin="debug//r0_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,5,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r0_m5|1</model>
+            <shape skin="debug//r0_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,5,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r0_m6|1</model>
+            <shape skin="debug//r0_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,5,2" scale=".5,.5,.5" />
@@ -54,756 +54,756 @@
         </entity>
         <entity>
             <transform position="0,5,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r0_m8|1</model>
+            <shape skin="debug//r0_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,5,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r0_m9|1</model>
+            <shape skin="debug//r0_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,5,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r0_m10|1</model>
+            <shape skin="debug//r0_m10" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m0|1</model>
+            <shape skin="debug//r1_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m1|1</model>
+            <shape skin="debug//r1_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m2|1</model>
+            <shape skin="debug//r1_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m3|1</model>
+            <shape skin="debug//r1_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m4|1</model>
+            <shape skin="debug//r1_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m5|1</model>
+            <shape skin="debug//r1_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m6|1</model>
+            <shape skin="debug//r1_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m7|1</model>
+            <shape skin="debug//r1_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m8|1</model>
+            <shape skin="debug//r1_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m9|1</model>
+            <shape skin="debug//r1_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,6,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r1_m10|1</model>
+            <shape skin="debug//r1_m10" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m0|1</model>
+            <shape skin="debug//r2_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m1|1</model>
+            <shape skin="debug//r2_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m2|1</model>
+            <shape skin="debug//r2_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m3|1</model>
+            <shape skin="debug//r2_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m4|1</model>
+            <shape skin="debug//r2_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m5|1</model>
+            <shape skin="debug//r2_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m6|1</model>
+            <shape skin="debug//r2_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m7|1</model>
+            <shape skin="debug//r2_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m8|1</model>
+            <shape skin="debug//r2_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m9|1</model>
+            <shape skin="debug//r2_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,7,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r2_m10|1</model>
+            <shape skin="debug//r2_m10" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m0|1</model>
+            <shape skin="debug//r3_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m1|1</model>
+            <shape skin="debug//r3_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m2|1</model>
+            <shape skin="debug//r3_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m3|1</model>
+            <shape skin="debug//r3_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m4|1</model>
+            <shape skin="debug//r3_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m5|1</model>
+            <shape skin="debug//r3_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m6|1</model>
+            <shape skin="debug//r3_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m7|1</model>
+            <shape skin="debug//r3_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m8|1</model>
+            <shape skin="debug//r3_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m9|1</model>
+            <shape skin="debug//r3_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,8,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r3_m10|1</model>
+            <shape skin="debug//r3_m10" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m0|1</model>
+            <shape skin="debug//r4_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m1|1</model>
+            <shape skin="debug//r4_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m2|1</model>
+            <shape skin="debug//r4_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m3|1</model>
+            <shape skin="debug//r4_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m4|1</model>
+            <shape skin="debug//r4_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m5|1</model>
+            <shape skin="debug//r4_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m6|1</model>
+            <shape skin="debug//r4_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m7|1</model>
+            <shape skin="debug//r4_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m8|1</model>
+            <shape skin="debug//r4_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m9|1</model>
+            <shape skin="debug//r4_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,9,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r4_m10|1</model>
+            <shape skin="debug//r4_m10" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m0|1</model>
+            <shape skin="debug//r5_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m1|1</model>
+            <shape skin="debug//r5_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m2|1</model>
+            <shape skin="debug//r5_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m3|1</model>
+            <shape skin="debug//r5_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m4|1</model>
+            <shape skin="debug//r5_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m5|1</model>
+            <shape skin="debug//r5_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m6|1</model>
+            <shape skin="debug//r5_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m7|1</model>
+            <shape skin="debug//r5_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m8|1</model>
+            <shape skin="debug//r5_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m9|1</model>
+            <shape skin="debug//r5_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,10,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r5_m10|1</model>
+            <shape skin="debug//r5_m10" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m0|1</model>
+            <shape skin="debug//r6_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m1|1</model>
+            <shape skin="debug//r6_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m2|1</model>
+            <shape skin="debug//r6_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m3|1</model>
+            <shape skin="debug//r6_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m4|1</model>
+            <shape skin="debug//r6_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m5|1</model>
+            <shape skin="debug//r6_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m6|1</model>
+            <shape skin="debug//r6_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m7|1</model>
+            <shape skin="debug//r6_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m8|1</model>
+            <shape skin="debug//r6_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m9|1</model>
+            <shape skin="debug//r6_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,11,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r6_m10|1</model>
+            <shape skin="debug//r6_m10" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m0|1</model>
+            <shape skin="debug//r7_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m1|1</model>
+            <shape skin="debug//r7_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m2|1</model>
+            <shape skin="debug//r7_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m3|1</model>
+            <shape skin="debug//r7_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m4|1</model>
+            <shape skin="debug//r7_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m5|1</model>
+            <shape skin="debug//r7_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m6|1</model>
+            <shape skin="debug//r7_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m7|1</model>
+            <shape skin="debug//r7_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m8|1</model>
+            <shape skin="debug//r7_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m9|1</model>
+            <shape skin="debug//r7_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,12,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r7_m10|1</model>
+            <shape skin="debug//r7_m10" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m0|1</model>
+            <shape skin="debug//r8_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m1|1</model>
+            <shape skin="debug//r8_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m2|1</model>
+            <shape skin="debug//r8_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m3|1</model>
+            <shape skin="debug//r8_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m4|1</model>
+            <shape skin="debug//r8_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m5|1</model>
+            <shape skin="debug//r8_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m6|1</model>
+            <shape skin="debug//r8_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m7|1</model>
+            <shape skin="debug//r8_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m8|1</model>
+            <shape skin="debug//r8_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m9|1</model>
+            <shape skin="debug//r8_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,13,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r8_m10|1</model>
+            <shape skin="debug//r8_m10" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m0|1</model>
+            <shape skin="debug//r9_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m1|1</model>
+            <shape skin="debug//r9_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m2|1</model>
+            <shape skin="debug//r9_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m3|1</model>
+            <shape skin="debug//r9_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m4|1</model>
+            <shape skin="debug//r9_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m5|1</model>
+            <shape skin="debug//r9_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m6|1</model>
+            <shape skin="debug//r9_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m7|1</model>
+            <shape skin="debug//r9_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m8|1</model>
+            <shape skin="debug//r9_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m9|1</model>
+            <shape skin="debug//r9_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,14,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r9_m10|1</model>
+            <shape skin="debug//r9_m10" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,-5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m0|1</model>
+            <shape skin="debug//r10_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,-4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m1|1</model>
+            <shape skin="debug//r10_m1" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,-3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m2|1</model>
+            <shape skin="debug//r10_m2" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,-2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m3|1</model>
+            <shape skin="debug//r10_m3" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,-1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m4|1</model>
+            <shape skin="debug//r10_m4" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,0" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m5|1</model>
+            <shape skin="debug//r10_m5" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,1" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m6|1</model>
+            <shape skin="debug//r10_m6" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,2" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m7|1</model>
+            <shape skin="debug//r10_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,3" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m8|1</model>
+            <shape skin="debug//r10_m8" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,4" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m9|1</model>
+            <shape skin="debug//r10_m9" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="0,15,5" scale=".5,.5,.5" />
-            <model>*sphere|debug//r10_m10|1</model>
+            <shape skin="debug//r10_m10" parameters="1">sphere</shape>
         </entity>
 
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="rand(55), lerp(10, 30, arand(1)), rand(30)" />
             <light range="lerp(10, 20, arand(1))" radius="lerp(0.1, 1.0, arand(1))"/>
             <color>lerp(5, 15, arand(1)),lerp(5, 15, arand(1)),lerp(5, 15, arand(1))</color>
-            <model>*sphere|debug//r0_m0|1</model>
+            <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
 
     </population>

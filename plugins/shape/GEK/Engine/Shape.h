@@ -10,6 +10,7 @@ namespace Gek
     struct ShapeComponent
     {
         CStringW value;
+        CStringW parameters;
         CStringW skin;
 
         ShapeComponent(void);

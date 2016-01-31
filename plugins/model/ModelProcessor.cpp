@@ -48,19 +48,52 @@ namespace Gek
             ResourceHandle vertexBuffer;
             ResourceHandle indexBuffer;
             UINT32 indexCount;
+
+            SubModel(void)
+                : skin(false)
+                , indexCount(0)
+            {
+            }
+
+            SubModel(const SubModel &subModel)
+                : skin(subModel.skin)
+                , material(subModel.material)
+                , vertexBuffer(subModel.vertexBuffer)
+                , indexBuffer(subModel.indexBuffer)
+                , indexCount(subModel.indexCount)
+            {
+            }
         };
 
         struct Model
         {
             std::atomic<bool> loaded;
-
-            CStringW name;
             CStringW fileName;
             Shapes::AlignedBox alignedBox;
             std::vector<SubModel> subModelList;
 
             Model(void)
                 : loaded(false)
+            {
+            }
+
+            Model(const Model &model)
+                : loaded(model.loaded ? true : false)
+                , fileName(model.fileName)
+                , alignedBox(model.alignedBox)
+                , subModelList(model.subModelList)
+            {
+            }
+        };
+
+        struct EntityData
+        {
+            Model &model;
+            MaterialHandle skin;
+
+            EntityData(Model &model, MaterialHandle skin)
+                : model(model)
+                , skin(skin)
             {
             }
         };
@@ -89,11 +122,14 @@ namespace Gek
 
         std::future<void> loadModelRunning;
         concurrency::concurrent_queue<std::function<void(void)>> loadModelQueue;
-        concurrency::concurrent_unordered_map<CStringW, bool> loadModelSet;
+        concurrency::concurrent_unordered_map<std::size_t, bool> loadModelSet;
 
-        std::unordered_map<CStringW, Model> dataMap;
-        std::unordered_map<Entity *, Model *> dataEntityList;
-        concurrency::concurrent_unordered_map<Model *, concurrency::concurrent_vector<InstanceData>> visibleList;
+        std::unordered_map<std::size_t, Model> dataMap;
+        std::unordered_map<Entity *, EntityData> entityDataList;
+
+        typedef concurrency::concurrent_vector<InstanceData> InstanceList;
+        typedef concurrency::concurrent_unordered_map<MaterialHandle, InstanceList> MaterialList;
+        concurrency::concurrent_unordered_map<Model *, MaterialList> visibleList;
 
     public:
         ModelProcessorImplementation(void)
@@ -115,19 +151,16 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Processor)
         END_INTERFACE_LIST_USER
 
-        HRESULT loadBoundingBox(Model *data, LPCWSTR name)
+        HRESULT loadBoundingBox(Model &model, const CStringW &name)
         {
-            REQUIRE_RETURN(data, E_INVALIDARG);
-            REQUIRE_RETURN(name, E_INVALIDARG);
+            static const UINT32 PreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shapes::AlignedBox));
 
             gekCheckScope(resultValue, name);
 
-            data->name = name;
-            data->fileName.Format(L"%%root%%\\data\\models\\%s.gek", data->name.GetString());
-            static const UINT32 PreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shapes::AlignedBox));
+            model.fileName.Format(L"%%root%%\\data\\models\\%s.gek", name.GetString());
 
             std::vector<UINT8> fileData;
-            resultValue = Gek::FileSystem::load(data->fileName, fileData, PreReadSize);
+            resultValue = Gek::FileSystem::load(model.fileName, fileData, PreReadSize);
             if (SUCCEEDED(resultValue))
             {
                 UINT8 *rawFileData = fileData.data();
@@ -143,7 +176,7 @@ namespace Gek
                 resultValue = E_INVALIDARG;
                 if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 3)
                 {
-                    data->alignedBox = *(Gek::Shapes::AlignedBox *)rawFileData;
+                    model.alignedBox = *(Gek::Shapes::AlignedBox *)rawFileData;
                     resultValue = S_OK;
                 }
                 else
@@ -155,14 +188,12 @@ namespace Gek
             return resultValue;
         }
 
-        HRESULT loadModelWorker(Model *data)
+        HRESULT loadModelWorker(Model &model)
         {
-            REQUIRE_RETURN(data, E_INVALIDARG);
-
-            gekCheckScope(resultValue, data->name.GetString());
+            gekCheckScope(resultValue, model.fileName);
 
             std::vector<UINT8> fileData;
-            resultValue = Gek::FileSystem::load(data->fileName, fileData);
+            resultValue = Gek::FileSystem::load(model.fileName, fileData);
             if (SUCCEEDED(resultValue))
             {
                 UINT8 *rawFileData = fileData.data();
@@ -178,20 +209,20 @@ namespace Gek
                 resultValue = E_INVALIDARG;
                 if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 3)
                 {
-                    data->alignedBox = *(Gek::Shapes::AlignedBox *)rawFileData;
+                    model.alignedBox = *(Gek::Shapes::AlignedBox *)rawFileData;
                     rawFileData += sizeof(Gek::Shapes::AlignedBox);
 
                     UINT32 subModelCount = *((UINT32 *)rawFileData);
                     rawFileData += sizeof(UINT32);
 
                     resultValue = S_OK;
-                    data->subModelList.resize(subModelCount);
+                    model.subModelList.resize(subModelCount);
                     for (UINT32 modelIndex = 0; modelIndex < subModelCount; ++modelIndex)
                     {
                         CStringW materialName = LPCWSTR(rawFileData);
                         rawFileData += ((materialName.GetLength() + 1) * sizeof(wchar_t));
 
-                        SubModel &subModel = data->subModelList[modelIndex];
+                        SubModel &subModel = model.subModelList[modelIndex];
                         if (materialName.CompareNoCase(L"skin") == 0)
                         {
                             subModel.skin = true;
@@ -199,7 +230,7 @@ namespace Gek
                         else
                         {
                             subModel.material = resources->loadMaterial(materialName);
-                            if (!subModel.material.isValid())
+                            if (!subModel.material)
                             {
                                 resultValue = E_FAIL;
                                 break;
@@ -209,14 +240,14 @@ namespace Gek
                         UINT32 vertexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
-                        subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%d:%s", modelIndex, data->name.GetString()), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
+                        subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%p", &subModel), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
                         rawFileData += (sizeof(Vertex) * vertexCount);
 
                         UINT32 indexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
                         subModel.indexCount = indexCount;
-                        subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%d:%s", modelIndex, data->name.GetString()), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
+                        subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%p", &subModel), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
                         rawFileData += (sizeof(UINT16) * indexCount);
                     }
                 }
@@ -228,23 +259,22 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                data->loaded = true;
+                model.loaded = true;
             }
 
             return resultValue;
         }
 
-        HRESULT loadModel(Model *data)
+        HRESULT loadModel(Model &model)
         {
-            REQUIRE_RETURN(data, E_INVALIDARG);
-
-            if (loadModelSet.count(data->name) > 0)
+            std::size_t hash = std::hash<CStringW>()(model.fileName);
+            if (loadModelSet.count(hash) > 0)
             {
                 return S_OK;
             }
 
-            loadModelSet.insert(std::make_pair(data->name, true));
-            loadModelQueue.push(std::bind(&ModelProcessorImplementation::loadModelWorker, this, data));
+            loadModelSet.insert(std::make_pair(hash, true));
+            loadModelQueue.push(std::bind(&ModelProcessorImplementation::loadModelWorker, this, std::ref(model)));
             if (!loadModelRunning.valid() || (loadModelRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
             {
                 loadModelRunning = std::async(std::launch::async, [&](void) -> void
@@ -289,7 +319,7 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 plugin = resources->loadPlugin(L"model");
-                if (!plugin.isValid())
+                if (!plugin)
                 {
                     resultValue = E_FAIL;
                 }
@@ -298,7 +328,7 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 constantBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-                if (!constantBuffer.isValid())
+                if (!constantBuffer)
                 {
                     resultValue = E_FAIL;
                 }
@@ -326,55 +356,55 @@ namespace Gek
             }
 
             dataMap.clear();
-            dataEntityList.clear();
+            entityDataList.clear();
         }
 
         STDMETHODIMP_(void) onEntityCreated(Entity *entity)
         {
-            REQUIRE_VOID_RETURN(population);
+            REQUIRE_VOID_RETURN(resources);
+            REQUIRE_VOID_RETURN(entity);
 
             if (entity->hasComponents<ModelComponent, TransformComponent>())
             {
                 auto &modelComponent = entity->getComponent<ModelComponent>();
-                auto &transformComponent = entity->getComponent<TransformComponent>();
-                auto dataNameIterator = dataMap.find(modelComponent);
-                if (dataNameIterator != dataMap.end())
+                std::size_t hash = std::hash<CStringW>()(modelComponent.value);
+                auto pair = dataMap.insert(std::make_pair(hash, Model()));
+                if (pair.second)
                 {
-                    dataEntityList[entity] = &(*dataNameIterator).second;
+                    loadBoundingBox(pair.first->second, modelComponent);
                 }
-                else
-                {
-                    Model &data = dataMap[modelComponent];
-                    loadBoundingBox(&data, modelComponent);
-                    dataEntityList[entity] = &data;
-                }
+
+                entityDataList.insert(std::make_pair(entity, EntityData(pair.first->second, resources->loadMaterial(modelComponent.skin))));
             }
         }
 
         STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
         {
-            auto dataEntityIterator = dataEntityList.find(entity);
-            if (dataEntityIterator != dataEntityList.end())
+            REQUIRE_VOID_RETURN(entity);
+
+            auto dataEntityIterator = entityDataList.find(entity);
+            if (dataEntityIterator != entityDataList.end())
             {
-                dataEntityList.erase(dataEntityIterator);
+                entityDataList.erase(dataEntityIterator);
             }
         }
 
         // RenderObserver
         STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Gek::Shapes::Frustum *viewFrustum)
         {
-            REQUIRE_VOID_RETURN(population);
+            REQUIRE_VOID_RETURN(cameraEntity);
             REQUIRE_VOID_RETURN(viewFrustum);
 
             visibleList.clear();
-            std::for_each(dataEntityList.begin(), dataEntityList.end(), [&](const std::pair<Entity *, Model *> &dataEntity) -> void
+            std::for_each(entityDataList.begin(), entityDataList.end(), [&](const std::pair<Entity *, EntityData> &dataEntity) -> void
             {
                 Entity *entity = dataEntity.first;
-                Model &data = *dataEntity.second;
+                Model &data = dataEntity.second.model;
 
-                const auto &modelComponent = entity->getComponent<ModelComponent>();
                 const auto &transformComponent = entity->getComponent<TransformComponent>();
-                Shapes::OrientedBox orientedBox(data.alignedBox, transformComponent.rotation, transformComponent.position);
+                Math::Float4x4 matrix(transformComponent.getMatrix());
+
+                Shapes::OrientedBox orientedBox(data.alignedBox, matrix);
                 orientedBox.halfsize *= transformComponent.scale;
 
                 if (viewFrustum->isVisible(orientedBox))
@@ -385,41 +415,45 @@ namespace Gek
                         color = entity->getComponent<ColorComponent>();
                     }
 
-                    visibleList[&data].push_back(InstanceData(transformComponent.getMatrix(), color, transformComponent.scale));
+                    const auto &modelComponent = entity->getComponent<ModelComponent>();
+                    visibleList[&data][dataEntity.second.skin].push_back(InstanceData(matrix, color, transformComponent.scale));
                 }
             });
 
             for (auto &visible : visibleList)
             {
-                Model &data = *(visible.first);
+                Model &data = (*visible.first);
                 if (data.loaded)
                 {
-                    for (auto &instance : visible.second)
+                    for (auto &material : visible.second)
                     {
-                        static auto drawCall = [](VideoContext *videoContext, PluginResources *resources, SubModel *subModel, InstanceData *instance, ResourceHandle constantBuffer) -> void
+                        for (auto &instance : material.second)
                         {
-                            LPVOID instanceData;
-                            if (SUCCEEDED(resources->mapBuffer(constantBuffer, &instanceData)))
+                            static auto drawCall = [](VideoContext *videoContext, PluginResources *resources, SubModel *subModel, InstanceData *instance, ResourceHandle constantBuffer) -> void
                             {
-                                memcpy(instanceData, instance, sizeof(InstanceData));
-                                resources->unmapBuffer(constantBuffer);
+                                LPVOID instanceData;
+                                if (SUCCEEDED(resources->mapBuffer(constantBuffer, &instanceData)))
+                                {
+                                    memcpy(instanceData, instance, sizeof(InstanceData));
+                                    resources->unmapBuffer(constantBuffer);
 
-                                resources->setConstantBuffer(videoContext->vertexPipeline(), constantBuffer, 2);
-                                resources->setVertexBuffer(videoContext, 0, subModel->vertexBuffer, 0);
-                                resources->setIndexBuffer(videoContext, subModel->indexBuffer, 0);
-                                videoContext->drawIndexedPrimitive(subModel->indexCount, 0, 0);
+                                    resources->setConstantBuffer(videoContext->vertexPipeline(), constantBuffer, 2);
+                                    resources->setVertexBuffer(videoContext, 0, subModel->vertexBuffer, 0);
+                                    resources->setIndexBuffer(videoContext, subModel->indexBuffer, 0);
+                                    videoContext->drawIndexedPrimitive(subModel->indexCount, 0, 0);
+                                }
+                            };
+
+                            for (auto &subModel : data.subModelList)
+                            {
+                                render->queueDrawCall(plugin, (subModel.skin ? material.first : subModel.material), std::bind(drawCall, std::placeholders::_1, resources, &subModel, &instance, constantBuffer));
                             }
-                        };
-
-                        for (auto &subModel : data.subModelList)
-                        {
-                            render->queueDrawCall(plugin, subModel.material, std::bind(drawCall, std::placeholders::_1, resources, &subModel, &instance, constantBuffer));
                         }
                     }
                 }
                 else
                 {
-                    loadModel(&data);
+                    loadModel(data);
                 }
             }
         }

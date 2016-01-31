@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEK\Utility\XML.h"
+#include "GEK\Utility\Hash.h"
 #include "GEK\System\VideoSystem.h"
 #include <type_traits>
 #include <typeindex>
@@ -10,33 +11,36 @@ namespace Gek
     template <typename TYPE, int UNIQUE>
     struct Handle
     {
-        bool isSet;
         TYPE identifier;
 
         Handle(void)
-            : isSet(false)
+            : identifier(0)
         {
         }
 
-        bool isValid(void) const
-        {
-            return isSet;
-        }
-
-        void operator = (UINT64 identifier)
+        void assign(UINT64 identifier)
         {
             this->identifier = TYPE(identifier);
-            isSet = true;
+        }
+
+        operator bool() const
+        {
+            return (identifier != 0);
+        }
+
+        operator std::size_t() const
+        {
+            return identifier;
         }
 
         bool operator == (const typename Handle<TYPE, UNIQUE> &handle) const
         {
-            return (this->isSet && handle.isSet && this->identifier == handle.identifier);
+            return (this->identifier == handle.identifier);
         }
 
         bool operator != (const typename Handle<TYPE, UNIQUE> &handle) const
         {
-            return (!this->isSet || !handle.isSet || this->identifier != handle.identifier);
+            return (this->identifier != handle.identifier);
         }
     };
 
@@ -49,13 +53,26 @@ namespace Gek
     using PropertiesHandle = Handle<UINT16, __LINE__>;
     using ResourceHandle = Handle<UINT32, __LINE__>;
 
-    struct MaterialData
+    struct MaterialHandle
     {
         ShaderHandle shader;
         PropertiesHandle properties;
-    };
 
-    using MaterialHandle = Handle<MaterialData, __LINE__>;
+        MaterialHandle(void)
+        {
+        }
+
+        MaterialHandle(const ShaderHandle &shader, const PropertiesHandle &properties)
+            : shader(shader)
+            , properties(properties)
+        {
+        }
+
+        operator bool() const
+        {
+            return (shader && properties);
+        }
+    };
 
     DECLARE_INTERFACE_IID(PluginResources, "5E319AC8-2369-416E-B010-ED3E860405C4") : virtual public IUnknown
     {
@@ -124,6 +141,14 @@ namespace std
         size_t operator()(const Gek::Handle<TYPE, UNIQUE> &value) const
         {
             return value.identifier;
+        }
+    };
+    template <>
+    struct hash<Gek::MaterialHandle>
+    {
+        size_t operator()(const Gek::MaterialHandle &value) const
+        {
+            return value.properties;
         }
     };
 };

@@ -78,12 +78,24 @@ namespace Gek
 
             DrawCall onDraw;
 
+            DrawCallValue(const DrawCallValue &drawCallValue)
+                : value(drawCallValue.value)
+                , onDraw(drawCallValue.onDraw)
+            {
+            }
+
             DrawCallValue(PluginHandle plugin, MaterialHandle material, DrawCall onDraw)
                 : plugin(plugin)
-                , shader(material.identifier.shader)
-                , properties(material.identifier.properties)
+                , shader(material.shader)
+                , properties(material.properties)
                 , onDraw(onDraw)
             {
+            }
+
+            void operator = (const DrawCallValue &drawCallValue)
+            {
+                value = drawCallValue.value;
+                onDraw = drawCallValue.onDraw;
             }
         };
 
@@ -207,9 +219,7 @@ namespace Gek
         // Render
         STDMETHODIMP_(void) queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(VideoContext *)> draw)
         {
-            REQUIRE_VOID_RETURN(resources);
-
-            if (plugin.isValid() && material.isValid() && draw)
+            if (plugin && material && draw)
             {
                 drawCallList.emplace_back(plugin, material, draw);
             }
@@ -302,7 +312,15 @@ namespace Gek
                     for (UINT32 drawCallIndex = 0; drawCallIndex < drawCallCount; )
                     {
                         DrawCallValue &drawCall = drawCallList[drawCallIndex];
-                        Shader *shader = resources->getResource<Shader, ShaderHandle>(currentShader = drawCall.shader);
+                        
+                        currentShader = drawCall.shader;
+                        Shader *shader = resources->getResource<Shader, ShaderHandle>(currentShader);
+                        if (!shader)
+                        {
+                            drawCallIndex++;
+                            continue;
+                        }
+
                         auto drawLights = [&](std::function<void(void)> drawPasses) -> void
                         {
                             for (UINT32 lightBase = 0; lightBase < lightListCount; lightBase += MaxLightCount)
@@ -340,20 +358,26 @@ namespace Gek
                                 drawCall = drawCallList[drawCallIndex++];
                                 if (currentPlugin != drawCall.plugin)
                                 {
-                                    Plugin *plugin = resources->getResource<Plugin, PluginHandle>(currentPlugin = drawCall.plugin);
-                                    if (plugin)
+                                    currentPlugin = drawCall.plugin;
+                                    Plugin *plugin = resources->getResource<Plugin, PluginHandle>(currentPlugin);
+                                    if (!plugin)
                                     {
-                                        plugin->enable(videoContext);
+                                        continue;
                                     }
+
+                                    plugin->enable(videoContext);
                                 }
 
                                 if (currentProperties != drawCall.properties)
                                 {
-                                    Material *material = resources->getResource<Material, PropertiesHandle>(currentProperties = drawCall.properties);
-                                    if (material)
+                                    currentProperties = drawCall.properties;
+                                    Material *material = resources->getResource<Material, PropertiesHandle>(currentProperties);
+                                    if (!material)
                                     {
-                                        shader->setResourceList(videoContext, material->getResourceList());
+                                        continue;
                                     }
+        
+                                    shader->setResourceList(videoContext, material->getResourceList());
                                 }
 
                                 drawCall.onDraw(videoContext);

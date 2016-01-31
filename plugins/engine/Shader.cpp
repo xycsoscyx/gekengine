@@ -1035,7 +1035,7 @@ namespace Gek
                     map = resources->loadTexture(materialFileName, mapValue.flags);
                 }
 
-                if (!map.isValid())
+                if (!map)
                 {
                     map = resources->loadTexture(mapValue.defaultValue, 0);
                 }
@@ -1145,7 +1145,7 @@ namespace Gek
                                 resource = resourceIterator->second;
                             }
 
-                            if (resource.isValid())
+                            if (resource)
                             {
                                 if (pass.generateMipMaps.count(resourceName) > 0)
                                 {
