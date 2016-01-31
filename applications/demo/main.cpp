@@ -4,15 +4,13 @@
 #include "GEK\Utility\Display.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\Common.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Engine\Engine.h"
 #include <CommCtrl.h>
 #include "resource.h"
-#include <regex>
-#include <stack>
-#include <set>
 
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -165,681 +163,16 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
     return resultValue;
 }
 
-// https://blog.kallisti.net.nz/2008/02/extension-to-the-shunting-yard-algorithm-to-allow-variable-numbers-of-arguments-to-functions/
 template <typename TYPE>
-class ShuntingYard
+struct Evaluation
 {
-private:
-    enum class Associations : UINT8
+    LPCWSTR expression;
+    TYPE result;
+
+    bool operator()(const CStringW &expression, TYPE &value)
     {
-        Left = 0,
-        Right,
+        return Gek::Evaluator::get(expression, value);
     };
-
-    enum class TokenType : UINT8
-    {
-        Unknown = 0,
-        Number,
-        UnaryOperation,
-        BinaryOperation,
-        LeftParenthesis,
-        RightParenthesis,
-        Separator,
-        Function,
-    };
-
-    struct Token
-    {
-        TokenType type;
-        UINT32 parameterCount;
-        CStringW string;
-        TYPE value;
-
-        Token(void)
-            : type(TokenType::Unknown)
-            , parameterCount(0)
-        {
-        }
-
-        Token(TokenType type, const CStringW &string, UINT32 parameterCount = 0)
-            : type(type)
-            , string(string)
-            , parameterCount(parameterCount)
-        {
-        }
-
-        Token(TokenType type, TYPE value)
-            : type(type)
-            , value(value)
-        {
-        }
-    };
-
-    template <typename DATA>
-    struct Stack : public std::stack<DATA>
-    {
-        DATA popTop(void)
-        {
-            DATA topElement = top();
-            stack::pop();
-            return topElement;
-        }
-    };
-
-    struct Operation
-    {
-        int precedence;
-        Associations association;
-        std::function<TYPE(TYPE value)> unaryFunction;
-        std::function<TYPE(TYPE valueLeft, TYPE valueRight)> binaryFunction;
-    };
-
-    struct Function
-    {
-        UINT32 parameterCount;
-        std::function<TYPE(Stack<Token> &)> function;
-    };
-
-private:
-    std::map<CStringW, TYPE> variableMap;
-    std::map<CStringW, Operation> operationsMap;
-    std::map<CStringW, Function> functionsMap;
-    std::locale locale;
-
-public:
-    enum class Status : UINT8
-    {
-        Success = 0,
-        UnknownTokenType,
-        UnbalancedParenthesis,
-        InvalidEquation,
-        InvalidOperator,
-        InvalidOperand,
-        InvalidFunctionParameters,
-        NotEnoughFunctionParameters,
-        MissingFunctionParenthesis,
-        MisplacedSeparator,
-    };
-
-public:
-    ShuntingYard(void)
-        : locale("")
-    {
-        variableMap[L"pi"] = 3.14159265358979323846;
-        variableMap[L"e"] = 2.71828182845904523536;
-
-        operationsMap.insert({ L"^",{ 4, Associations::Right, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
-        {
-            return std::pow(valueLeft, valueRight);
-        } } });
-
-        operationsMap.insert({ L"*",{ 3, Associations::Left, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
-        {
-            return (valueLeft * valueRight);
-        } } });
-
-        operationsMap.insert({ L"/",{ 3, Associations::Left, nullptr, [](TYPE valueLeft, TYPE valueRight) -> TYPE
-        {
-            return (valueLeft / valueRight);
-        } } });
-
-        operationsMap.insert({ L"+",{ 2, Associations::Left, [](TYPE value) -> TYPE
-        {
-            return value;
-        }, [](TYPE valueLeft, TYPE valueRight) -> TYPE
-        {
-            return (valueLeft + valueRight);
-        } } });
-
-        operationsMap.insert({ L"-",{ 2, Associations::Left, [](TYPE value) -> TYPE
-        {
-            return -value;
-        }, [](TYPE valueLeft, TYPE valueRight) -> TYPE
-        {
-            return (valueLeft - valueRight);
-        } } });
-
-        functionsMap.insert({ L"sin",{ 1, [](Stack<Token> &stack) -> TYPE
-        {
-            TYPE value = stack.popTop().value;
-            return std::sin(value);
-        } } });
-
-        functionsMap.insert({ L"cos",{ 1, [](Stack<Token> &stack) -> TYPE
-        {
-            TYPE value = stack.popTop().value;
-            return std::cos(value);
-        } } });
-
-        functionsMap.insert({ L"tan",{ 1, [](Stack<Token> &stack) -> TYPE
-        {
-            TYPE value = stack.popTop().value;
-            return std::tan(value);
-        } } });
-
-        functionsMap.insert({ L"asin",{ 1, [](Stack<Token> &stack) -> TYPE
-        {
-            TYPE value = stack.popTop().value;
-            return std::asin(value);
-        } } });
-
-        functionsMap.insert({ L"acos",{ 1, [](Stack<Token> &stack) -> TYPE
-        {
-            TYPE value = stack.popTop().value;
-            return std::acos(value);
-        } } });
-
-        functionsMap.insert({ L"atan",{ 1, [](Stack<Token> &stack) -> TYPE
-        {
-            TYPE value = stack.popTop().value;
-            return std::atan(value);
-        } } });
-
-        functionsMap.insert({ L"min",{ 2, [](Stack<Token> &stack) -> TYPE
-        {
-            TYPE value2 = stack.popTop().value;
-            TYPE value1 = stack.popTop().value;
-            return std::min(value1, value2);
-        } } });
-
-        functionsMap.insert({ L"max",{ 2, [](Stack<Token> &stack) -> TYPE
-        {
-            TYPE value2 = stack.popTop().value;
-            TYPE value1 = stack.popTop().value;
-            return std::max(value1, value2);
-        } } });
-    }
-
-    Status evaluate(const CStringW &expression, TYPE &value)
-    {
-        std::vector<Token> infixTokenList = convertExpressionToInfix(expression);
-
-        std::vector<Token> rpnTokenList;
-        Status status = convertInfixToReversePolishNotation(infixTokenList, rpnTokenList);
-        if (status == Status::Success)
-        {
-            status = evaluateReversePolishNotation(rpnTokenList, value);
-        }
-
-        return status;
-    }
-
-private:
-    bool isNumber(const CStringW &token)
-    {
-        return std::regex_match(token.GetString(), std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$"));
-    }
-
-    bool isOperation(const CStringW &token)
-    {
-        return (operationsMap.count(token) > 0);
-    }
-
-    bool isFunction(const CStringW &token)
-    {
-        return (functionsMap.count(token) > 0);
-    }
-
-    bool isLeftParenthesis(const CStringW &token)
-    {
-        return token == L'(';
-    }
-
-    bool isRightParenthesis(const CStringW &token)
-    {
-        return token == L')';
-    }
-
-    bool isParenthesis(const CStringW &token)
-    {
-        return (isLeftParenthesis(token) || isRightParenthesis(token));
-    }
-
-    bool isSeparator(const CStringW &token)
-    {
-        return token == L',';
-    }
-
-    bool isAssociative(const CStringW &token, const Associations &type)
-    {
-        auto &p = operationsMap.find(token)->second;
-        return p.association == type;
-    }
-
-    int comparePrecedence(const CStringW &token1, const CStringW &token2)
-    {
-        auto &p1 = operationsMap.find(token1)->second;
-        auto &p2 = operationsMap.find(token2)->second;
-        return p1.precedence - p2.precedence;
-    }
-
-    TokenType getTokenType(const CStringW &token)
-    {
-        if (isNumber(token))
-        {
-            return TokenType::Number;
-        }
-        else if (isOperation(token))
-        {
-            return TokenType::BinaryOperation;
-        }
-        else if (isFunction(token))
-        {
-            return TokenType::Function;
-        }
-        else if (isSeparator(token))
-        {
-            return TokenType::Separator;
-        }
-        else if (isLeftParenthesis(token))
-        {
-            return TokenType::LeftParenthesis;
-        }
-        else if (isRightParenthesis(token))
-        {
-            return TokenType::RightParenthesis;
-        }
-
-        return TokenType::Unknown;
-    }
-
-private:
-    void insertToken(std::vector<Token> &infixTokenList, Token &token)
-    {
-        if (!infixTokenList.empty())
-        {
-            const Token &previous = infixTokenList.back();
-
-            // ) 2 or 2 2
-            if (token.type == TokenType::Number && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
-            {
-                infixTokenList.push_back(Token(TokenType::BinaryOperation, L"*"));
-            }
-            // 2 ( or ) (
-            else if (token.type == TokenType::LeftParenthesis && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
-            {
-                infixTokenList.push_back(Token(TokenType::BinaryOperation, L"*"));
-            }
-            // ) sin or 2 sin
-            else if (token.type == TokenType::Function && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
-            {
-                infixTokenList.push_back(Token(TokenType::BinaryOperation, L"*"));
-            }
-        }
-
-        if (token.type == TokenType::BinaryOperation)
-        {
-            if (token.string == L"-" || token.string == L"+")
-            {
-                // -3 or -sin
-                if (infixTokenList.empty())
-                {
-                    token.type = TokenType::UnaryOperation;
-                }
-                else
-                {
-                    const Token &previous = infixTokenList.back();
-
-                    // 2+-3 or sin(1)*-1
-                    if (previous.type == TokenType::BinaryOperation || previous.type == TokenType::UnaryOperation)
-                    {
-                        token.type = TokenType::UnaryOperation;
-                    }
-                    // (-3)
-                    else if (previous.type == TokenType::LeftParenthesis)
-                    {
-                        token.type = TokenType::UnaryOperation;
-                    }
-                }
-            }
-        }
-
-        infixTokenList.push_back(token);
-    }
-
-    bool replaceFirstVariable(std::vector<Token> &infixTokenList, CStringW &token)
-    {
-        for (auto &variable : variableMap)
-        {
-            if (token.Find(variable.first) == 0)
-            {
-                insertToken(infixTokenList, Token(TokenType::Number, variable.second));
-                token = token.Mid(variable.first.GetLength());
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool replaceFirstFunction(std::vector<Token> &infixTokenList, CStringW &token)
-    {
-        for (auto &function : functionsMap)
-        {
-            if (token.Find(function.first) == 0)
-            {
-                insertToken(infixTokenList, Token(TokenType::Function, function.first));
-                token = token.Mid(function.first.GetLength());
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    Status parseSubTokens(std::vector<Token> &infixTokenList, CStringW token)
-    {
-        while (!token.IsEmpty())
-        {
-            std::wcmatch matches;
-            if (std::regex_search(token.GetString(), matches, std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")))
-            {
-                CStringW value = matches[0].str().c_str();
-                insertToken(infixTokenList, Token(TokenType::Number, Gek::String::to<TYPE>(value)));
-                token = token.Mid(value.GetLength());
-                continue;
-            }
-
-            if (replaceFirstVariable(infixTokenList, token))
-            {
-                continue;
-            }
-
-            if (replaceFirstFunction(infixTokenList, token))
-            {
-                if (!token.IsEmpty())
-                {
-                    // function must be followed by a left parenthesis, so it has to be at the end of an implicit block
-                    return Status::MissingFunctionParenthesis;
-                }
-
-                continue;
-            }
-
-            if (!token.IsEmpty())
-            {
-                // nothing was replaced, yet we still have remaining characters?
-                return Status::UnknownTokenType;
-            }
-        };
-
-        return Status::Success;
-    }
-
-    std::vector<Token> convertExpressionToInfix(const CStringW &expression)
-    {
-        CStringW runningToken;
-        std::vector<Token> infixTokenList;
-        for (int index = 0; index < expression.GetLength(); ++index)
-        {
-            CStringW nextToken = expression.GetAt(index);
-            if (isOperation(nextToken) || isParenthesis(nextToken) || isSeparator(nextToken))
-            {
-                if (!runningToken.IsEmpty())
-                {
-                    parseSubTokens(infixTokenList, runningToken);
-                    runningToken.Empty();
-                }
-
-                insertToken(infixTokenList, Token(getTokenType(nextToken), nextToken));
-            }
-            else
-            {
-                if (nextToken == L" ")
-                {
-                    if (!runningToken.IsEmpty())
-                    {
-                        parseSubTokens(infixTokenList, runningToken);
-                        runningToken.Empty();
-                    }
-                }
-                else
-                {
-                    runningToken.Append(nextToken);
-                }
-            }
-        }
-
-        if (!runningToken.IsEmpty())
-        {
-            parseSubTokens(infixTokenList, runningToken);
-        }
-
-        return infixTokenList;
-    }
-
-    Status convertInfixToReversePolishNotation(const std::vector<Token> &infixTokenList, std::vector<Token> &rpnTokenList)
-    {
-        Stack<Token> stack;
-        Stack<bool> parameterExistsStack;
-        Stack<UINT32> parameterCountStack;
-        for (auto &token : infixTokenList)
-        {
-            switch (token.type)
-            {
-            case TokenType::Number:
-                rpnTokenList.push_back(token);
-                if (!parameterExistsStack.empty())
-                {
-                    parameterExistsStack.pop();
-                    parameterExistsStack.push(true);
-                }
-
-                break;
-
-            case TokenType::UnaryOperation:
-                stack.push(token);
-                break;
-
-            case TokenType::BinaryOperation:
-                while (!stack.empty() && (stack.top().type == TokenType::BinaryOperation &&
-                    (isAssociative(token.string, Associations::Left) && comparePrecedence(token.string, stack.top().string) == 0) ||
-                    (isAssociative(token.string, Associations::Right) && comparePrecedence(token.string, stack.top().string) < 0)))
-                {
-                    rpnTokenList.push_back(stack.popTop());
-                };
-
-                stack.push(token);
-                break;
-
-            case TokenType::LeftParenthesis:
-                if (!stack.empty() && (stack.top().type == TokenType::Function))
-                {
-                    parameterCountStack.push(0);
-                    if (!parameterExistsStack.empty())
-                    {
-                        parameterExistsStack.pop();
-                        parameterExistsStack.push(true);
-                    }
-
-                    parameterExistsStack.push(false);
-                }
-
-                stack.push(token);
-                break;
-
-            case TokenType::RightParenthesis:
-                if (stack.empty())
-                {
-                    // we can't have an ending parenthesis without a starting one
-                    return Status::UnbalancedParenthesis;
-                }
-
-                while (stack.top().type != TokenType::LeftParenthesis)
-                {
-                    rpnTokenList.push_back(stack.popTop());
-                    if (stack.empty())
-                    {
-                        // found a closing parenthesis without a starting one
-                        return Status::UnbalancedParenthesis;
-                    }
-                };
-
-                stack.pop();
-                if (!stack.empty() && stack.top().type == TokenType::Function)
-                {
-                    Token function = stack.popTop();
-                    function.parameterCount = parameterCountStack.popTop();
-                    if (parameterExistsStack.popTop())
-                    {
-                        function.parameterCount++;
-                    }
-
-                    rpnTokenList.push_back(function);
-                }
-
-                break;
-
-            case TokenType::Separator:
-                if (stack.empty() || parameterExistsStack.empty())
-                {
-                    // we can't not have values on the stack and find a parameter separator
-                    return Status::MisplacedSeparator;
-                }
-
-                while (stack.top().type != TokenType::LeftParenthesis)
-                {
-                    rpnTokenList.push_back(stack.popTop());
-                    if (stack.empty())
-                    {
-                        // found a separator with a starting parenthesis
-                        return Status::MisplacedSeparator;
-                    }
-                };
-
-                if (parameterExistsStack.top())
-                {
-                    parameterCountStack.top()++;
-                }
-
-                parameterExistsStack.pop();
-                parameterExistsStack.push(false);
-                break;
-
-            case TokenType::Function:
-                stack.push(token);
-                break;
-
-            default:
-                return Status::UnknownTokenType;
-            };
-        }
-
-        while (!stack.empty())
-        {
-            if (stack.top().type == TokenType::LeftParenthesis ||
-                stack.top().type == TokenType::RightParenthesis)
-            {
-                // all parenthesis should have been handled above
-                return Status::UnbalancedParenthesis;
-            }
-
-            rpnTokenList.push_back(stack.popTop());
-        };
-
-        return Status::Success;
-    }
-
-    Status evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, TYPE &value)
-    {
-        Stack<Token> stack;
-        for (auto &token : rpnTokenList)
-        {
-            switch (token.type)
-            {
-            case TokenType::Number:
-                stack.push(token);
-                break;
-
-            case TokenType::UnaryOperation:
-                if (true)
-                {
-                    auto &operation = operationsMap.find(token.string)->second;
-                    if (operation.unaryFunction)
-                    {
-                        if (!stack.empty() && (stack.top().type == TokenType::Number))
-                        {
-                            TYPE functionValue = stack.popTop().value;
-                            stack.push(Token(TokenType::Number, operation.unaryFunction(functionValue)));
-                        }
-                        else
-                        {
-                            return Status::InvalidOperand;
-                        }
-                    }
-                    else
-                    {
-                        return Status::InvalidOperator;
-                    }
-
-                    break;
-                }
-
-            case TokenType::BinaryOperation:
-                if (true)
-                {
-                    auto &operation = operationsMap.find(token.string)->second;
-                    if (operation.binaryFunction)
-                    {
-                        if (!stack.empty() && (stack.top().type == TokenType::Number))
-                        {
-                            TYPE functionValueRight = stack.popTop().value;
-                            if (!stack.empty() && (stack.top().type == TokenType::Number))
-                            {
-                                TYPE functionValueLeft = stack.popTop().value;
-                                stack.push(Token(TokenType::Number, operation.binaryFunction(functionValueLeft, functionValueRight)));
-                            }
-                            else
-                            {
-                                return Status::InvalidOperand;
-                            }
-                        }
-                        else
-                        {
-                            return Status::InvalidOperand;
-                        }
-                    }
-                    else
-                    {
-                        return Status::InvalidOperator;
-                    }
-
-                    break;
-                }
-
-            case TokenType::Function:
-                if (true)
-                {
-                    auto &function = functionsMap.find(token.string)->second;
-                    if (function.parameterCount != token.parameterCount)
-                    {
-                        return Status::InvalidFunctionParameters;
-                    }
-
-                    if (stack.size() < function.parameterCount)
-                    {
-                        return Status::NotEnoughFunctionParameters;
-                    }
-
-                    stack.push(Token(TokenType::Number, function.function(stack)));
-                    break;
-                }
-
-            default:
-                return Status::UnknownTokenType;
-            };
-        }
-
-        if (stack.size() == 1)
-        {
-            value = stack.top().value;
-            return Status::Success;
-        }
-        else
-        {
-            return Status::InvalidEquation;
-        }
-    }
 };
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
@@ -876,32 +209,71 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         }
     }
 
-    static const CStringW expressionList[] =
+    Evaluation<float> floatEvaluationList[] =
     {
-        L"(3,2)",
-        L"--3",
-        L"2--3",
-        L"2(--3)",
-        L"2^-3",
-        L"2pie3",
-        L"1(2(3(4+5)))",
-        L"(2)(3)",
-        L"3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3",
-        L"sin ( max ( 2 , 3 ) / 3 * 3.1415 )",
-        L"sin(max(2,3)/3*3.1415)",
-        L"   sin(max(2,3)/3*3.1415)",
-        L"   sin(max(2,3)/3*3.1415)   ",
-        L"sin(max(2,3)/3*3.1415)   ",
+        { L"(2)(3)", 6.0f },
+        { L"--3", 3.0f },
+        { L"2--3", 5.0f },
+        { L"2(--3)", 6.0f },
+        { L"2^-3", 0.125f },
+        { L"2pie3", 51.238403 },
+        { L"1(2(3(4+5)))", 54.0f },
+        { L"3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3", 3.000122f },
+        { L"sin ( max ( 2 , 3 ) / 3 * 3.1415 )", 9.26574066e-05f },
+        { L"sin(max(2,3)/3*3.1415)", 9.26574066e-05f },
+        { L"   sin(max(2,3)/3*3.1415)", 9.26574066e-05f },
+        { L"   sin(max(2,3)/3*3.1415)   ", 9.26574066e-05f },
+        { L"sin(max(2,3)/3*3.1415)   ", 9.26574066e-05f },
     };
 
-    ShuntingYard<float> shuntingYard;
-    for (auto &expression : expressionList)
+    for (auto &evaluation : floatEvaluationList)
     {
         float value = 0.0f;
-        if (shuntingYard.evaluate(expression, value) == ShuntingYard<float>::Status::Success)
-        {
-            OutputDebugString(L"yay");
-        }
+        bool parse = evaluation(evaluation.expression, value);
+        bool result = (value == evaluation.result);
+        OutputDebugString(Gek::String::format(L"Evaluation (%s): %s, %f %s %f\r\n", evaluation.expression, (parse ? L"Succeeded" : L"Failed"), value, (result ? L"==" : L"!="), evaluation.result));
+    }
+
+    Evaluation<Gek::Math::Float2> float2EvaluationList[] =
+    {
+        { L"(1, 2)", Gek::Math::Float2(1.0f, 2.0f) },
+        { L"(sin(pi), (4 * 6))", Gek::Math::Float2(-8.74227766e-08f, 24.0f) },
+    };
+
+    for (auto &evaluation : float2EvaluationList)
+    {
+        Gek::Math::Float2 value;
+        bool parse = evaluation(evaluation.expression, value);
+        bool result = (value == evaluation.result);
+        OutputDebugString(Gek::String::format(L"Evaluation (%s): %s, (%s) %s (%s)\r\n", evaluation.expression, (parse ? L"Succeeded" : L"Failed"), Gek::String::from(value), (result ? L"==" : L"!="), Gek::String::from(evaluation.result)));
+    }
+
+    Evaluation<Gek::Math::Float3> float3EvaluationList[] =
+    {
+        { L"(1, 2, 3)", Gek::Math::Float3(1.0f, 2.0f, 3.0f) },
+        { L"(2^3, pisin(pi/2), 1)", Gek::Math::Float3(8.0f, 3.14159274f, 1.0f) },
+    };
+
+    for (auto &evaluation : float3EvaluationList)
+    {
+        Gek::Math::Float3 value;
+        bool parse = evaluation(evaluation.expression, value);
+        bool result = (value == evaluation.result);
+        OutputDebugString(Gek::String::format(L"Evaluation (%s): %s, (%s) %s (%s)\r\n", evaluation.expression, (parse ? L"Succeeded" : L"Failed"), Gek::String::from(value), (result ? L"==" : L"!="), Gek::String::from(evaluation.result)));
+    }
+
+    Evaluation<Gek::Math::Float4> float4EvaluationList[] =
+    {
+        { L"(1, 2, 3, 4)", Gek::Math::Float4(1.0f, 2.0f, 3.0f, 4.0f) },
+        { L"(((((1)))), -3, -(2*3), tan(pi)2)", Gek::Math::Float4(1.0f, -3.0f, -6.0f, 1.74845553e-07f) },
+    };
+
+    for (auto &evaluation : float4EvaluationList)
+    {
+        Gek::Math::Float4 value;
+        bool parse = evaluation(evaluation.expression, value);
+        bool result = (value == evaluation.result);
+        OutputDebugString(Gek::String::format(L"Evaluation (%s): %s, (%s) %s (%s)\r\n", evaluation.expression, (parse ? L"Succeeded" : L"Failed"), Gek::String::from(value), (result ? L"==" : L"!="), Gek::String::from(evaluation.result)));
     }
 
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
@@ -918,7 +290,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
             context->addSearchPath(L"%root%\\Debug\\Plugins");
 #else
-            SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Release"));
+            SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Release")); 
             context->addSearchPath(L"%root%\\Release\\Plugins");
 #endif
 

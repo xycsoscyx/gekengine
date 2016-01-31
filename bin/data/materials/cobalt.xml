@@ -2,7 +2,7 @@
 <material>
     <shader>standard</shader>
     <maps>
-        <albedo>*color:0.662000, 0.655000, 0.634000</albedo>
+        <albedo>*color:(0.662000, 0.655000, 0.634000)</albedo>
         <normal>gradient_n</normal>
         <roughness>gradient_r</roughness>
         <metalness>gradient_m</metalness>
