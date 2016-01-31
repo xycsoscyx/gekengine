@@ -6,6 +6,7 @@ namespace Gek
 {
     namespace Math
     {
+        struct Float3;
         struct Float4;
 
         struct Color
@@ -46,6 +47,7 @@ namespace Gek
             {
             }
 
+            Color(const Float3 &vector);
             Color(const Float4 &vector);
 
             Color(float r, float g, float b, float a)
@@ -55,6 +57,11 @@ namespace Gek
                 , a(a)
             {
             }
+
+            Float3 getXYZ(void) const;
+            Float4 getXYZW(void) const;
+            __declspec(property(get = getXYZ)) Float3 xyz;
+            __declspec(property(get = getXYZW)) Float4 xyzw;
 
             inline void set(float value)
             {
@@ -77,6 +84,7 @@ namespace Gek
                 this->a = color.a;
             }
 
+            void set(const Float3 &vector);
             void set(const Float4 &vector);
 
             float dot(const Color &color) const;
