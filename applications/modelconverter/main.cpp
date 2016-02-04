@@ -124,20 +124,23 @@ namespace Gek
                     for (UINT32 vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
                     {
                         Vertex vertex;
-                        vertex.position.set(mesh->mVertices[vertexIndex].x,
+                        vertex.position.set(
+                            mesh->mVertices[vertexIndex].x,
                             mesh->mVertices[vertexIndex].y,
                             mesh->mVertices[vertexIndex].z);
                         boundingBox.extend(vertex.position);
 
                         if (mesh->mTextureCoords[0])
                         {
-                            vertex.texCoord.set(mesh->mTextureCoords[0][vertexIndex].x,
+                            vertex.texCoord.set(
+                                mesh->mTextureCoords[0][vertexIndex].x,
                                 mesh->mTextureCoords[0][vertexIndex].y);
                         }
 
                         if (mesh->mNormals)
                         {
-                            vertex.normal.set(mesh->mNormals[vertexIndex].x,
+                            vertex.normal.set(
+                                mesh->mNormals[vertexIndex].x,
                                 mesh->mNormals[vertexIndex].y,
                                 mesh->mNormals[vertexIndex].z);
                         }

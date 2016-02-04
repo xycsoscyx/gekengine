@@ -11,8 +11,11 @@
 
     <defines>
         <tileSize>32</tileSize>
-        <dispatchWidth>ceil(%displayWidth% / %tileSize%)</dispatchWidth>
-		<dispatchHeight>ceil(%displayHeight% / %tileSize%)</dispatchHeight>
+        <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
+		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
+        <bloomSigma>3</bloomSigma>
+        <bloomRadius>6</bloomRadius>
+        <bloomScale>2</bloomScale>
     </defines>
 
     <depth>D32</depth>
@@ -24,12 +27,12 @@
         <depthBuffer bind="float" flags="target">float</depthBuffer>
         <luminatedBuffer bind="float3" flags="target">float4</luminatedBuffer>
         <luminanceBuffer bind="float" flags="target, mipmaps">float</luminanceBuffer>
-        <previousLuminance bind="float" flags="unorderedAccess" width="1" height="1">float</previousLuminance>
-        <averageLuminance bind="float" flags="target, unorderedAccess" width="1" height="1">float</averageLuminance>
+        <averageLuminance bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminance>
+        <bloomBuffer bind="float3" flags="target, readWrite">byte4</bloomBuffer>
     </textures>
 
     <buffers>
-        <tileIndexList size="%dispatchWidth% * %dispatchHeight% * %maximumListSize%" flags="unorderedAccess">byte</tileIndexList>
+        <tileIndexList size="dispatchWidth * dispatchHeight * maximumListSize" flags="unorderedAccess">byte</tileIndexList>
     </buffers>
 
     <block>
@@ -56,9 +59,7 @@
                 <source>Standard\StoreDeferred</source>
             </program>
         </pass>
-    </block>
 
-    <block>
         <pass mode="deferred">
             <targets>
                 <luminatedBuffer />
@@ -90,8 +91,8 @@
 
             <program>
                 <compute>
-                    <width>%dispatchWidth%</width>
-                    <height>%dispatchHeight%</height>
+                    <width>dispatchWidth</width>
+                    <height>dispatchHeight</height>
                     <depth>1</depth>
                 </compute>
                 <entry>mainComputeProgram</entry>
@@ -139,18 +140,12 @@
                 <source>Standard\CalculateLuminance</source>
             </program>
         </pass>
-    </block>
 
-    <block>
         <pass mode="deferred">
             <resources>
-                <luminanceBuffer generateMipMaps="true" />
-                <previousLuminance copy="averageLuminance"/>
-            </resources>
-
-            <unorderedaccess>
+                <luminanceBuffer actions="generateMipMaps" />
                 <averageLuminance />
-            </unorderedaccess>
+            </resources>
 
             <targets>
                 <averageLuminance />
@@ -159,6 +154,60 @@
             <program>
                 <entry>mainPixelProgram</entry>
                 <source>Standard\AdaptiveLuminance</source>
+            </program>
+        </pass>
+
+        <pass mode="deferred">
+            <resources>
+                <luminatedBuffer />
+                <averageLuminance actions="flip" />
+            </resources>
+
+            <targets>
+                <bloomBuffer />
+            </targets>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\BloomEvaluator</source>
+            </program>
+        </pass>
+
+        <pass mode="deferred">
+            <resources>
+                <bloomBuffer actions="flip" />
+            </resources>
+
+            <targets>
+                <bloomBuffer />
+            </targets>
+
+            <defines>
+                <bloomAxis>float2(bloomScale, 0)</bloomAxis>
+            </defines>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\BloomBlur</source>
+            </program>
+        </pass>
+
+        <pass mode="deferred">
+            <resources>
+                <bloomBuffer actions="flip" />
+            </resources>
+
+            <targets>
+                <bloomBuffer />
+            </targets>
+
+            <defines>
+                <bloomAxis>float2(0, bloomScale)</bloomAxis>
+            </defines>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\BloomBlur</source>
             </program>
         </pass>
     </block>
@@ -172,6 +221,7 @@
                 <materialBuffer />
                 <normalBuffer />
                 <depthBuffer />
+                <bloomBuffer actions="flip" />
             </resources>
 
             <program>

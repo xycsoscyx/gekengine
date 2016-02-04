@@ -280,8 +280,8 @@ namespace Gek
             ConvexRayFilter filterData(newtonBody);
             NewtonWorldConvexRayCast(newtonWorld, newtonCastingShape, castMatrix.data, destination.data, ConvexRayFilter::filter, &filterData, ConvexCastPreFilter::preFilter, threadHandle);
 
-            groundNormal.set(0.0f);
-            groundVelocity.set(0.0f);
+            groundNormal = 0.0f;
+            groundVelocity = 0.0f;
             if (filterData.hitBody)
             {
                 isJumpingState = false;
@@ -555,7 +555,7 @@ namespace Gek
                     auto setBounceData = [&](const NewtonWorldConvexCastReturnInfo &castInfo) -> void
                     {
                         speedDeltaList[bounceCount] = 0.0f;
-                        bounceNormalList[bounceCount].set(castInfo.m_normal);
+                        bounceNormalList[bounceCount] = castInfo.m_normal;
                         bounceSpeedList[bounceCount] = calculateContactKinematics(velocity, &castInfo);
                         bounceCount++;
                     };

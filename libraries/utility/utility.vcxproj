@@ -14,6 +14,7 @@
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="FileSystem.cpp" />
+    <ClCompile Include="ShuntingYard.cpp" />
     <ClCompile Include="String.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="XML.cpp" />
@@ -24,6 +25,7 @@
     <ClInclude Include="GEK\Utility\Evaluator.h" />
     <ClInclude Include="GEK\Utility\FileSystem.h" />
     <ClInclude Include="GEK\Utility\Hash.h" />
+    <ClInclude Include="GEK\Utility\ShuntingYard.h" />
     <ClInclude Include="GEK\Utility\String.h" />
     <ClInclude Include="GEK\Utility\Timer.h" />
     <ClInclude Include="GEK\Utility\XML.h" />

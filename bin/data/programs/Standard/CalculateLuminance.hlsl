@@ -9,6 +9,6 @@ float CalculateLuminance(float3 color)
 
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float3 color = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord).rgb;
+    float3 color = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     return log2(max(CalculateLuminance(color), 0.00001f));
 }

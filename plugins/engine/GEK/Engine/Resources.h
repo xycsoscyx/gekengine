@@ -75,6 +75,14 @@ namespace Gek
         }
     };
 
+    namespace TextureFlags
+    {
+        enum
+        {
+            ReadWrite = 1 << 10,
+        };
+    }; // TextureFlags
+
     DECLARE_INTERFACE_IID(PluginResources, "5E319AC8-2369-416E-B010-ED3E860405C4") : virtual public IUnknown
     {
         STDMETHOD_(PluginHandle, loadPlugin)                (THIS_ LPCWSTR fileName) PURE;
@@ -118,6 +126,7 @@ namespace Gek
         STDMETHOD_(BlendStatesHandle, createBlendStates)    (THIS_ const Video::UnifiedBlendStates &blendStates) PURE;
         STDMETHOD_(BlendStatesHandle, createBlendStates)    (THIS_ const Video::IndependentBlendStates &blendStates) PURE;
 
+        STDMETHOD_(void, flip)                              (THIS_ ResourceHandle resourceHandle) PURE;
         STDMETHOD_(void, generateMipMaps)                   (THIS_ VideoContext *videoContext, ResourceHandle resourceHandle) PURE;
         STDMETHOD_(void, copyResource)                      (THIS_ ResourceHandle destinationHandle, ResourceHandle sourceHandle) PURE;
 

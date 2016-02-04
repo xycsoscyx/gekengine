@@ -23,15 +23,17 @@ float3 ToneMapFilmicALU(float3 color)
     return pow(color, 2.2f);
 }
 
-float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
+float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float threshold = 0.0;
     float exposure = 0.0;
 
     float averageLuminance = Resources::averageLuminance.Load(uint3(0, 0, 0));
-    float3 baseColor = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord).rgb;
+    float3 baseColor = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float3 exposedColor = CalculateExposedColor(baseColor, averageLuminance, threshold, exposure);
     float3 finalColor = ToneMapFilmicALU(exposedColor);
 
-    return float4(finalColor, 1.0);
+    float3 bloomColor = Resources::bloomBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+
+    return finalColor + bloomColor;
 }

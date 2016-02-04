@@ -57,19 +57,9 @@ namespace Gek
             Float3 getXYZ(void) const;
             __declspec(property(get = getXYZ)) Float3 xyz;
 
-            inline void set(float value)
-            {
-                simd = _mm_set1_ps(value);
-            }
-
             inline void set(float x, float y, float z, float w)
             {
                 simd = _mm_setr_ps(x, y, z, w);
-            }
-
-            inline void set(const Float4 &vector)
-            {
-                simd = vector.simd;
             }
 
             float getLengthSquared(void) const;

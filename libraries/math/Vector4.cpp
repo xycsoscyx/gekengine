@@ -44,7 +44,7 @@ namespace Gek
 
         void Float4::normalize(void)
         {
-            (*this).set(getNormal());
+            (*this) = getNormal();
         }
 
         bool Float4::operator < (const Float4 &vector) const

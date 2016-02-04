@@ -145,19 +145,19 @@ namespace Gek
 
                 if (followComponent.mode.CompareNoCase(L"offset") == 0)
                 {
-                    transformComponent.position.set(targetTransformComponent.position + (targetTransformComponent.rotation * followComponent.distance));
-                    transformComponent.rotation.set(targetTransformComponent.rotation);
+                    transformComponent.position = (targetTransformComponent.position + (targetTransformComponent.rotation * followComponent.distance));
+                    transformComponent.rotation = targetTransformComponent.rotation;
                 }
                 else
                 {
-                    //data.rotation.set(data.rotation.slerp(targetTransformComponent.rotation, followComponent.speed * frameTime));
+                    //data.rotation = data.rotation.slerp(targetTransformComponent.rotation, followComponent.speed * frameTime);
                     data.rotation = targetTransformComponent.rotation;
 
-                    transformComponent.position.set(targetTransformComponent.position + (data.rotation * followComponent.distance));
+                    transformComponent.position = (targetTransformComponent.position + (data.rotation * followComponent.distance));
 
                     Math::Float4x4 lookAtMatrix;
                     lookAtMatrix.setLookAt(transformComponent.position, targetTransformComponent.position, Math::Float3(0.0f, 1.0f, 0.0f));
-                    transformComponent.rotation.set(lookAtMatrix.getQuaternion());
+                    transformComponent.rotation = lookAtMatrix.getQuaternion();
                 }
             }
         }

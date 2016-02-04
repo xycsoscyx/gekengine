@@ -29,10 +29,28 @@ namespace Gek
     template <class HANDLE>
     class ObjectManager
     {
+    public:
+        struct ReadWrite
+        {
+            CComPtr<IUnknown> read;
+            CComPtr<IUnknown> write;
+
+            ReadWrite(void)
+            {
+            }
+
+            ReadWrite(CComPtr<IUnknown> read, CComPtr<IUnknown> write)
+                : read(read)
+                , write(write)
+            {
+            }
+        };
+
     private:
         UINT64 nextIdentifier;
         concurrency::concurrent_unordered_map<std::size_t, HANDLE> hashMap;
         concurrency::concurrent_unordered_map<HANDLE, CComPtr<IUnknown>> localResourceMap;
+        concurrency::concurrent_unordered_map<HANDLE, ReadWrite> readWriteResourceMap;
         concurrency::concurrent_unordered_map<HANDLE, CComPtr<IUnknown>> globalResourceMap;
 
     public:
@@ -45,16 +63,14 @@ namespace Gek
         {
         }
 
-        BEGIN_INTERFACE_LIST(ObjectManager)
-        END_INTERFACE_LIST_USER
-
         void clearResources(void)
         {
             hashMap.clear();
             localResourceMap.clear();
+            readWriteResourceMap.clear();
         }
 
-        HANDLE getResourceHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource)
+        HANDLE getResourceHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
         {
             HANDLE handle;
             if (hash == 0)
@@ -73,12 +89,26 @@ namespace Gek
                 {
                     handle.assign(InterlockedIncrement(&nextIdentifier));
                     hashMap[hash] = handle;
-                    localResourceMap[handle] = nullptr;
-
-                    CComPtr<IUnknown> resource;
-                    if (SUCCEEDED(loadResource(&resource)) && resource)
+                    if (readWrite)
                     {
-                        localResourceMap[handle] = resource;
+                        readWriteResourceMap[handle] = ReadWrite();
+
+                        CComPtr<IUnknown> read, write;
+                        if (SUCCEEDED(loadResource(&read)) && read &&
+                            SUCCEEDED(loadResource(&write)) && write)
+                        {
+                            readWriteResourceMap[handle] = ReadWrite(read, write);
+                        }
+                    }
+                    else
+                    {
+                        localResourceMap[handle] = nullptr;
+
+                        CComPtr<IUnknown> resource;
+                        if (SUCCEEDED(loadResource(&resource)) && resource)
+                        {
+                            localResourceMap[handle] = resource;
+                        }
                     }
                 }
                 else
@@ -90,7 +120,7 @@ namespace Gek
             return handle;
         }
 
-        IUnknown *getResource(HANDLE handle)
+        IUnknown *getResource(HANDLE handle, bool writable = false)
         {
             auto globalIterator = globalResourceMap.find(handle);
             if (globalIterator != globalResourceMap.end())
@@ -104,13 +134,30 @@ namespace Gek
                 return localIterator->second.p;
             }
 
+            auto readWriteIterator = readWriteResourceMap.find(handle);
+            if (readWriteIterator != readWriteResourceMap.end())
+            {
+                auto &resource = readWriteIterator->second;
+                return (writable ? resource.write : resource.read);
+            }
+
             return nullptr;
         }
 
         template <typename TYPE>
-        TYPE *getResource(HANDLE handle)
+        TYPE *getResource(HANDLE handle, bool writable = false)
         {
-            return dynamic_cast<TYPE *>(getResource(handle));
+            return dynamic_cast<TYPE *>(getResource(handle, writable));
+        }
+
+        void flipResource(HANDLE handle)
+        {
+            auto readWriteIterator = readWriteResourceMap.find(handle);
+            if (readWriteIterator != readWriteResourceMap.end())
+            {
+                auto &resource = readWriteIterator->second;
+                std::swap(resource.read, resource.write);
+            }
         }
     };
 
@@ -365,7 +412,7 @@ namespace Gek
                 }
 
                 return resultValue;
-            });
+            }, (flags & TextureFlags::ReadWrite ? true : false));
         }
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
@@ -381,7 +428,7 @@ namespace Gek
                 }
 
                 return resultValue;
-            });
+            }, (flags & TextureFlags::ReadWrite ? true : false));
         }
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
@@ -402,7 +449,7 @@ namespace Gek
                 }
 
                 return resultValue;
-            });
+            }, (flags & TextureFlags::ReadWrite ? true : false));
         }
 
         HRESULT createTexture(VideoTexture **returnObject, CStringW parameters, UINT32 flags)
@@ -598,6 +645,11 @@ namespace Gek
             video->unmapBuffer(resourceManager.getResource<VideoBuffer>(buffer));
         }
 
+        STDMETHODIMP_(void) flip(ResourceHandle resourceHandle)
+        {
+            resourceManager.flipResource(resourceHandle);
+        }
+
         STDMETHODIMP_(void) generateMipMaps(VideoContext *videoContext, ResourceHandle resourceHandle)
         {
             videoContext->generateMipMaps(resourceManager.getResource<VideoTexture>(resourceHandle));
@@ -630,7 +682,7 @@ namespace Gek
 
         STDMETHODIMP_(void) setUnorderedAccess(VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage)
         {
-            videoPipeline->setUnorderedAccess(resourceManager.getResource<IUnknown>(resourceHandle), stage);
+            videoPipeline->setUnorderedAccess(resourceManager.getResource<IUnknown>(resourceHandle, true), stage);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage)
@@ -655,7 +707,7 @@ namespace Gek
 
         STDMETHODIMP_(void) clearRenderTarget(VideoContext *videoContext, ResourceHandle resourceHandle, const Math::Color &color)
         {
-            videoContext->clearRenderTarget(resourceManager.getResource<VideoTarget>(resourceHandle), color);
+            videoContext->clearRenderTarget(resourceManager.getResource<VideoTarget>(resourceHandle, true), color);
         }
 
         STDMETHODIMP_(void) clearDepthStencilTarget(VideoContext *videoContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear)
@@ -669,7 +721,7 @@ namespace Gek
             static VideoTarget *renderTargetList[8];
             for (UINT32 renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
             {
-                renderTargetList[renderTarget] = resourceManager.getResource<VideoTarget>(renderTargetHandleList[renderTarget]);
+                renderTargetList[renderTarget] = resourceManager.getResource<VideoTarget>(renderTargetHandleList[renderTarget], true);
                 viewPortList[renderTarget] = renderTargetList[renderTarget]->getViewPort();
             }
 

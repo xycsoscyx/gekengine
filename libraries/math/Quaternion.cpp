@@ -92,7 +92,7 @@ namespace Gek
 
         void Quaternion::normalize(void)
         {
-            (*this).set(getNormal());
+            (*this) = getNormal();
         }
 
         float Quaternion::dot(const Quaternion &rotation) const

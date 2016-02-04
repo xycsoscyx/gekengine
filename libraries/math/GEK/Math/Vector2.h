@@ -45,21 +45,10 @@ namespace Gek
             {
             }
 
-            inline void set(float value)
-            {
-                this->x = this->y = value;
-            }
-
             inline void set(float x, float y)
             {
                 this->x = x;
                 this->y = y;
-            }
-
-            inline void set(const Float2 &vector)
-            {
-                this->x = vector.x;
-                this->y = vector.y;
             }
 
             float getLengthSquared(void) const;

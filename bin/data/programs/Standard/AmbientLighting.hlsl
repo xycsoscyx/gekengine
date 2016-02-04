@@ -3,7 +3,7 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-static const float AmbientLevel = 0.001;
+static const float AmbientLevel = 0.00025;
 
 static const float3 SkyColor = float3((88.0 / 255.0), (58.0 / 255.0), (129.0 / 25.0));
 static const float3 HorizonColor = float3(0, 0, 0);

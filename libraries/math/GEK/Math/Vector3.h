@@ -48,23 +48,11 @@ namespace Gek
 
             Float4 w(float w) const;
 
-            inline void set(float value)
-            {
-                this->x = this->y = this->z = value;
-            }
-
             inline void set(float x, float y, float z)
             {
                 this->x = x;
                 this->y = y;
                 this->z = z;
-            }
-
-            inline void set(const Float3 &vector)
-            {
-                this->x = vector.x;
-                this->y = vector.y;
-                this->z = vector.z;
             }
 
             float getLengthSquared(void) const;

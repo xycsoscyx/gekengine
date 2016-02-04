@@ -178,7 +178,7 @@ namespace Gek
                 resultValue = E_INVALIDARG;
                 if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 3)
                 {
-                    model.alignedBox = *(Gek::Shapes::AlignedBox *)rawFileData;
+                    model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
                     resultValue = S_OK;
                 }
                 else
@@ -211,8 +211,8 @@ namespace Gek
                 resultValue = E_INVALIDARG;
                 if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 3)
                 {
-                    model.alignedBox = *(Gek::Shapes::AlignedBox *)rawFileData;
-                    rawFileData += sizeof(Gek::Shapes::AlignedBox);
+                    model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
+                    rawFileData += sizeof(Shapes::AlignedBox);
 
                     UINT32 subModelCount = *((UINT32 *)rawFileData);
                     rawFileData += sizeof(UINT32);
@@ -392,7 +392,7 @@ namespace Gek
         }
 
         // RenderObserver
-        STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Gek::Shapes::Frustum *viewFrustum)
+        STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Shapes::Frustum *viewFrustum)
         {
             REQUIRE_VOID_RETURN(cameraEntity);
             REQUIRE_VOID_RETURN(viewFrustum);

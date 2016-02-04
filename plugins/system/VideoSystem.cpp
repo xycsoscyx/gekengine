@@ -1795,12 +1795,12 @@ namespace Gek
             flags |= D3DCOMPILE_DEBUG;
 #endif
 
-            std::vector<D3D10_SHADER_MACRO> d3dShaderMacroList;
+            std::vector<D3D_SHADER_MACRO> d3dShaderMacroList;
             if (defineList != nullptr)
             {
                 for (auto &define : (*defineList))
                 {
-                    D3D10_SHADER_MACRO d3dShaderMacro = { define.first.GetString(), define.second.GetString() };
+                    D3D_SHADER_MACRO d3dShaderMacro = { define.first.GetString(), define.second.GetString() };
                     d3dShaderMacroList.push_back(d3dShaderMacro);
                 }
             }
@@ -1842,12 +1842,12 @@ namespace Gek
             flags |= D3DCOMPILE_DEBUG;
 #endif
 
-            std::vector<D3D10_SHADER_MACRO> d3dShaderMacroList;
+            std::vector<D3D_SHADER_MACRO> d3dShaderMacroList;
             if (defineList != nullptr)
             {
                 for (auto &kPair : (*defineList))
                 {
-                    D3D10_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
+                    D3D_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
                     d3dShaderMacroList.push_back(d3dShaderMacro);
                 }
             }
@@ -1946,12 +1946,12 @@ namespace Gek
             flags |= D3DCOMPILE_DEBUG;
 #endif
 
-            std::vector<D3D10_SHADER_MACRO> d3dShaderMacroList;
+            std::vector<D3D_SHADER_MACRO> d3dShaderMacroList;
             if (defineList != nullptr)
             {
                 for (auto &kPair : (*defineList))
                 {
-                    D3D10_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
+                    D3D_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
                     d3dShaderMacroList.push_back(d3dShaderMacro);
                 }
             }
@@ -1993,12 +1993,12 @@ namespace Gek
             flags |= D3DCOMPILE_DEBUG;
 #endif
 
-            std::vector<D3D10_SHADER_MACRO> d3dShaderMacroList;
+            std::vector<D3D_SHADER_MACRO> d3dShaderMacroList;
             if (defineList != nullptr)
             {
                 for (auto &kPair : (*defineList))
                 {
-                    D3D10_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
+                    D3D_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
                     d3dShaderMacroList.push_back(d3dShaderMacro);
                 }
             }
