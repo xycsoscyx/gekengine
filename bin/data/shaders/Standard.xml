@@ -13,8 +13,8 @@
         <tileSize>32</tileSize>
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
 		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
-        <bloomSigma>3</bloomSigma>
-        <bloomRadius>6</bloomRadius>
+        <bloomSigma>1.75</bloomSigma>
+        <bloomRadius>7</bloomRadius>
         <bloomScale>2</bloomScale>
     </defines>
 
@@ -27,8 +27,8 @@
         <depthBuffer bind="float" flags="target">float</depthBuffer>
         <luminatedBuffer bind="float3" flags="target">float4</luminatedBuffer>
         <luminanceBuffer bind="float" flags="target, mipmaps">float</luminanceBuffer>
+        <effectsBuffer bind="float4" flags="target, readWrite">byte4</effectsBuffer>
         <averageLuminance bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminance>
-        <bloomBuffer bind="float3" flags="target, readWrite">byte4</bloomBuffer>
     </textures>
 
     <buffers>
@@ -129,15 +129,57 @@
         <pass mode="deferred">
             <resources>
                 <luminatedBuffer />
+                <averageLuminance actions="flip" />
+                <normalBuffer />
+                <depthBuffer />
             </resources>
 
             <targets>
+                <effectsBuffer />
                 <luminanceBuffer />
             </targets>
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\CalculateLuminance</source>
+                <source>Standard\PrepareEffects</source>
+            </program>
+        </pass>
+
+        <pass mode="deferred">
+            <resources>
+                <effectsBuffer actions="flip" />
+            </resources>
+
+            <targets>
+                <effectsBuffer />
+            </targets>
+
+            <defines>
+                <bloomAxis>float2(1, 0)</bloomAxis>
+            </defines>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\BlurEffects</source>
+            </program>
+        </pass>
+
+        <pass mode="deferred">
+            <resources>
+                <effectsBuffer actions="flip" />
+            </resources>
+
+            <targets>
+                <effectsBuffer />
+            </targets>
+
+            <defines>
+                <bloomAxis>float2(0, 1)</bloomAxis>
+            </defines>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\BlurEffects</source>
             </program>
         </pass>
 
@@ -156,60 +198,6 @@
                 <source>Standard\AdaptiveLuminance</source>
             </program>
         </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <luminatedBuffer />
-                <averageLuminance actions="flip" />
-            </resources>
-
-            <targets>
-                <bloomBuffer />
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\BloomEvaluator</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <bloomBuffer actions="flip" />
-            </resources>
-
-            <targets>
-                <bloomBuffer />
-            </targets>
-
-            <defines>
-                <bloomAxis>float2(bloomScale, 0)</bloomAxis>
-            </defines>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\BloomBlur</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <bloomBuffer actions="flip" />
-            </resources>
-
-            <targets>
-                <bloomBuffer />
-            </targets>
-
-            <defines>
-                <bloomAxis>float2(0, bloomScale)</bloomAxis>
-            </defines>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\BloomBlur</source>
-            </program>
-        </pass>
     </block>
 
     <block>
@@ -221,12 +209,12 @@
                 <materialBuffer />
                 <normalBuffer />
                 <depthBuffer />
-                <bloomBuffer actions="flip" />
+                <effectsBuffer actions="flip" />
             </resources>
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\ToneMap</source>
+                <source>Standard\PresentEffects</source>
             </program>
         </pass>
     </block>

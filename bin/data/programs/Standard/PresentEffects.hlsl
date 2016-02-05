@@ -10,7 +10,7 @@ float3 CalculateExposedColor(float3 color, float avgLuminance, float threshold, 
     avgLuminance = max(avgLuminance, 0.001f);
     float keyValue = KeyValue;
     float linearExposure = (KeyValue / avgLuminance);
-    exposure = log2(max(linearExposure, 0.0001f));
+    exposure = log2(max(linearExposure, Math::Epsilon));
     exposure -= threshold;
     return exp2(exposure) * color;
 }
@@ -29,11 +29,11 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float exposure = 0.0;
 
     float averageLuminance = Resources::averageLuminance.Load(uint3(0, 0, 0));
-    float3 baseColor = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+    float4 effectsColor = Resources::effectsBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+    return effectsColor.w;
+    float3 baseColor = (Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord) * effectsColor.w);
     float3 exposedColor = CalculateExposedColor(baseColor, averageLuminance, threshold, exposure);
     float3 finalColor = ToneMapFilmicALU(exposedColor);
 
-    float3 bloomColor = Resources::bloomBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
-
-    return finalColor + bloomColor;
+    return (finalColor + (effectsColor.xyz * bloomScale));
 }

@@ -70,6 +70,35 @@ namespace Gek
             readWriteResourceMap.clear();
         }
 
+        HANDLE getUniqueResourceHandle(std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
+        {
+            HANDLE handle;
+            handle.assign(InterlockedIncrement(&nextIdentifier));
+            if (readWrite)
+            {
+                readWriteResourceMap[handle] = ReadWrite();
+
+                CComPtr<IUnknown> read, write;
+                if (SUCCEEDED(loadResource(&read)) && read &&
+                    SUCCEEDED(loadResource(&write)) && write)
+                {
+                    readWriteResourceMap[handle] = ReadWrite(read, write);
+                }
+            }
+            else
+            {
+                localResourceMap[handle] = nullptr;
+
+                CComPtr<IUnknown> resource;
+                if (SUCCEEDED(loadResource(&resource)) && resource)
+                {
+                    localResourceMap[handle] = resource;
+                }
+            }
+
+            return handle;
+        }
+
         HANDLE getResourceHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
         {
             HANDLE handle;
@@ -600,16 +629,7 @@ namespace Gek
 
         STDMETHODIMP_(ProgramHandle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
-            std::size_t hash = std::hash_combine(fileName, entryFunction);
-            if (defineList)
-            {
-                for (auto &define : (*defineList))
-                {
-                    hash = std::hash_combine(hash, std::hash_combine(define.first, define.second));
-                }
-            }
-
-            return programManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return programManager.getUniqueResourceHandle([&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
                 return resultValue;
@@ -618,16 +638,7 @@ namespace Gek
 
         STDMETHODIMP_(ProgramHandle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
-            std::size_t hash = std::hash_combine(fileName, entryFunction);
-            if (defineList)
-            {
-                for (auto &define : (*defineList))
-                {
-                    hash = std::hash_combine(hash, std::hash_combine(define.first, define.second));
-                }
-            }
-
-            return programManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return programManager.getUniqueResourceHandle([&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
                 resultValue = video->loadPixelProgram(returnObject, fileName, entryFunction, onInclude, defineList);
