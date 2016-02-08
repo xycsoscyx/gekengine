@@ -3,27 +3,42 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-float calculateLuminance(float3 color)
+float calculateLuminance(float3 pixelColor)
 {
-    return max(dot(color, float3(0.299, 0.587, 0.114)), Math::Epsilon);
+    return max(dot(pixelColor, float3(0.299, 0.587, 0.114)), Math::Epsilon);
+}
+
+float3 calculateExposedColor(float3 pixelColor, float averageLuminance, float threshold, out float exposure)
+{
+    float KeyValue = 0.2f;
+
+    // Use geometric mean
+    averageLuminance = max(averageLuminance, 0.001f);
+    float keyValue = KeyValue;
+    float linearExposure = (KeyValue / averageLuminance);
+    exposure = log2(max(linearExposure, Math::Epsilon));
+    exposure -= threshold;
+    return exp2(exposure) * pixelColor;
 }
 
 float3 calculateBrightSpots(InputPixel inputPixel, float3 pixelColor, float pixelLuminance)
 {
     float averageLuminance = Resources::averageLuminance.Load(uint3(0, 0, 0));
-    float3 deltaColor = (pixelColor * (pixelLuminance / averageLuminance));
-    return max(0.0f, (deltaColor - pixelColor));
+
+    float exposure = 0.0;
+    pixelColor = calculateExposedColor(pixelColor, averageLuminance, bloomThreshold, exposure);
+    if (dot(pixelColor, 0.333) <= 0.001)
+    {
+        pixelColor = 0.0;
+    }
+
+    return float4(pixelColor, 1.0);
 }
 
 float calculateLuminance(InputPixel inputPixel, float pixelLuminance)
 {
     return log2(max(pixelLuminance, Math::Epsilon));
 }
-
-static const float ambientOcclusionRadius = 2.0;
-static const float ambientOcclusionStrength = 1.0;
-static const uint ambientOcclusionTapCount = 12;
-static const float ambientOcclusionSpiralCount = 1.0;
 
 static const float inverseAmbientOcclusionSampleCount = rcp(ambientOcclusionTapCount);
 
@@ -41,7 +56,7 @@ float calculateAmbientOcclusion(InputPixel inputPixel)
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
     int2 pixelCoordinate = inputPixel.position.xy;
-    float randomAngle = (3.0 * pixelCoordinate.x ^ pixelCoordinate.y + pixelCoordinate.x * pixelCoordinate.y) * 10.0;
+    float randomAngle = (3 * pixelCoordinate.x ^ pixelCoordinate.y + pixelCoordinate.x * pixelCoordinate.y) * 10;
     float sampleRadius = ambientOcclusionRadius / (2.0 * (surfaceDepth * Camera::maximumDistance) * Camera::fieldOfView.x);
 
     float totalOcclusion = 0.0;
@@ -57,7 +72,7 @@ float calculateAmbientOcclusion(InputPixel inputPixel)
         float3 tapDelta = tapPosition - surfacePosition;
         float deltaMagnitude = dot(tapDelta, tapDelta);
         float deltaAngle = dot(tapDelta, surfaceNormal);
-        totalOcclusion += max(0.0, deltaAngle + surfaceDepth * 0.001) / (deltaMagnitude + Math::Epsilon);
+        totalOcclusion += max(0.0, deltaAngle + surfaceDepth * 0.001) / (deltaMagnitude + 0.1);
     }
 
     totalOcclusion *= Math::Tau * ambientOcclusionRadius * ambientOcclusionStrength / ambientOcclusionTapCount;
@@ -81,7 +96,7 @@ float calculateAmbientOcclusion(InputPixel inputPixel)
 
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
-    float3 pixelColor = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+    float3 pixelColor = Resources::luminatedBuffer.Sample(Global::linearSampler, inputPixel.texCoord);
     float pixelLuminance = calculateLuminance(pixelColor);
 
     OutputPixel output;

@@ -2,38 +2,36 @@
 
 #include "GEKGlobal.h"
 
-float3 CalculateExposedColor(float3 color, float avgLuminance, float threshold, out float exposure)
+float3 calculateExposedColor(float3 pixelColor, float averageLuminance, float threshold, out float exposure)
 {
     float KeyValue = 0.2f;
 
     // Use geometric mean
-    avgLuminance = max(avgLuminance, 0.001f);
+    averageLuminance = max(averageLuminance, 0.001f);
     float keyValue = KeyValue;
-    float linearExposure = (KeyValue / avgLuminance);
+    float linearExposure = (KeyValue / averageLuminance);
     exposure = log2(max(linearExposure, Math::Epsilon));
     exposure -= threshold;
-    return exp2(exposure) * color;
+    return exp2(exposure) * pixelColor;
 }
 
-float3 ToneMapFilmicALU(float3 color)
+float3 toneMapFilmicALU(float3 pixelColor)
 {
-    color = max(0, color - 0.004f);
-    color = (color * (6.2f * color + 0.5f)) / (color * (6.2f * color + 1.7f) + 0.06f);
+    pixelColor = max(0, pixelColor - 0.004f);
+    pixelColor = (pixelColor * (6.2f * pixelColor + 0.5f)) / (pixelColor * (6.2f * pixelColor + 1.7f) + 0.06f);
     // result has 1/2.2 baked in
-    return pow(color, 2.2f);
+    return pow(pixelColor, 2.2f);
 }
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float threshold = 0.0;
-    float exposure = 0.0;
-
     float averageLuminance = Resources::averageLuminance.Load(uint3(0, 0, 0));
     float4 effectsColor = Resources::effectsBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
-    return effectsColor.w;
-    float3 baseColor = (Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord) * effectsColor.w);
-    float3 exposedColor = CalculateExposedColor(baseColor, averageLuminance, threshold, exposure);
-    float3 finalColor = ToneMapFilmicALU(exposedColor);
+    float3 baseColor = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
-    return (finalColor + (effectsColor.xyz * bloomScale));
+    float exposure = 0.0;
+    float3 exposedColor = calculateExposedColor(baseColor, averageLuminance, toneMappingThreshold, exposure);
+    float3 finalColor = toneMapFilmicALU((exposedColor * effectsColor.w) + effectsColor.xyz);
+
+    return finalColor;
 }
