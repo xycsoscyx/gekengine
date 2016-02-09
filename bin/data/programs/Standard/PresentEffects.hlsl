@@ -27,6 +27,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float averageLuminance = Resources::averageLuminance.Load(uint3(0, 0, 0));
     float4 effectsColor = Resources::effectsBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+    return effectsColor.w;
     float3 baseColor = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
     float exposure = 0.0;

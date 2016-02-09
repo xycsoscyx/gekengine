@@ -49,14 +49,19 @@ float2 getTapLocation(float tap, float randomAngle)
     return alpha * float2(cos(angle), sin(angle));
 }
 
-float calculateAmbientOcclusion(InputPixel inputPixel)
+float rand(float2 co)
+{
+    return 0.5 + (frac(sin(dot(co.xy, float2(12.9898, 78.233))) * 43758.5453)) * 0.5;
+}
+
+// http://graphics.cs.williams.edu/papers/SAOHPG12/
+float calculateScalableAmbientObscurance(InputPixel inputPixel)
 {
     float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float3 surfacePosition = getViewPosition(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
-    int2 pixelCoordinate = inputPixel.position.xy;
-    float randomAngle = (3 * pixelCoordinate.x ^ pixelCoordinate.y + pixelCoordinate.x * pixelCoordinate.y) * 10;
+    float randomAngle = rand(inputPixel.position.xy);
     float sampleRadius = ambientOcclusionRadius / (2.0 * (surfaceDepth * Camera::maximumDistance) * Camera::fieldOfView.x);
 
     float totalOcclusion = 0.0;
@@ -83,12 +88,14 @@ float calculateAmbientOcclusion(InputPixel inputPixel)
     // (the difference that this makes is subtle)
     if (abs(ddx(surfacePosition.z)) < 0.02)
     {
-        totalOcclusion -= ddx(totalOcclusion) * ((pixelCoordinate.x & 1) - 0.5);
+        int pixelCoordinate = inputPixel.position.x;
+        totalOcclusion -= ddx(totalOcclusion) * ((pixelCoordinate & 1) - 0.5);
     }
 
     if (abs(ddy(surfacePosition.z)) < 0.02)
     {
-        totalOcclusion -= ddy(totalOcclusion) * ((pixelCoordinate.y & 1) - 0.5);
+        int pixelCoordinate = inputPixel.position.y;
+        totalOcclusion -= ddy(totalOcclusion) * ((pixelCoordinate & 1) - 0.5);
     }
 
     return totalOcclusion;
@@ -101,7 +108,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     OutputPixel output;
     output.effectsBuffer.xyz = calculateBrightSpots(inputPixel, pixelColor, pixelLuminance);
-    output.effectsBuffer.w = calculateAmbientOcclusion(inputPixel);
+    output.effectsBuffer.w = calculateScalableAmbientObscurance(inputPixel);
     output.luminanceBuffer = calculateLuminance(inputPixel, pixelLuminance);
     return output;
 }

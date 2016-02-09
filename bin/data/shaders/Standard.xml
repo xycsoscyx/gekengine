@@ -34,10 +34,7 @@
         <depthBuffer bind="float" flags="target">float</depthBuffer>
         <luminatedBuffer bind="float3" flags="target">float4</luminatedBuffer>
         <luminanceBuffer bind="float" flags="target, mipmaps">float</luminanceBuffer>
-        <effectsBuffer bind="float4" flags="target">byte4</effectsBuffer>
-        <effectsBufferHalf bind="float4" flags="target" width="displayWidth/2" height="displayHeight/2">byte4</effectsBufferHalf>
-        <effectsBufferQuarter bind="float4" flags="target" width="displayWidth/4" height="displayHeight/4">byte4</effectsBufferQuarter>
-        <effectsBufferEighth bind="float4" flags="target, readWrite" width="displayWidth/8" height="displayHeight/8">byte4</effectsBufferEighth>
+        <effectsBuffer bind="float4" flags="target, readWrite">byte4</effectsBuffer>
         <averageLuminance bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminance>
     </textures>
 
@@ -139,7 +136,7 @@
         <pass mode="deferred">
             <resources>
                 <luminatedBuffer />
-                <averageLuminance actions="flip" />
+                <averageLuminance />
                 <normalBuffer />
                 <depthBuffer />
             </resources>
@@ -157,42 +154,12 @@
 
         <pass mode="deferred">
             <resources>
-                <effectsBuffer/>
-            </resources>
-
-            <targets>
-                <effectsBufferHalf />
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\Scale</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <effectsBufferHalf/>
-            </resources>
-
-            <targets>
-                <effectsBufferEighth />
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\Scale</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <effectsBufferEighth actions="flip" />
+                <effectsBuffer actions="flip" />
                 <depthBuffer />
             </resources>
 
             <targets>
-                <effectsBufferEighth />
+                <effectsBuffer />
             </targets>
 
             <defines>
@@ -207,12 +174,12 @@
 
         <pass mode="deferred">
             <resources>
-                <effectsBufferEighth actions="flip" />
+                <effectsBuffer actions="flip" />
                 <depthBuffer />
             </resources>
 
             <targets>
-                <effectsBufferEighth />
+                <effectsBuffer />
             </targets>
 
             <defines>
@@ -223,36 +190,6 @@
                 
                 <entry>mainPixelProgram</entry>
                 <source>Standard\BlurEffects</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <effectsBufferEighth />
-            </resources>
-
-            <targets>
-                <effectsBufferHalf/>
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\Scale</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <effectsBufferHalf />
-            </resources>
-
-            <targets>
-                <effectsBuffer/>
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\Scale</source>
             </program>
         </pass>
 
@@ -277,12 +214,12 @@
         <pass mode="deferred">
             <resources>
                 <luminatedBuffer />
-                <averageLuminance />
+                <averageLuminance actions="flip" />
                 <albedoBuffer />
                 <materialBuffer />
                 <normalBuffer />
                 <depthBuffer />
-                <effectsBuffer/>
+                <effectsBuffer actions="flip" />
             </resources>
 
             <program>
