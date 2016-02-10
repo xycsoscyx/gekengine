@@ -34,6 +34,7 @@ namespace Gek
         else if (_wcsicmp(formatString, L"INT4") == 0) return Video::Format::Int4;
         else if (_wcsicmp(formatString, L"HALF") == 0) return Video::Format::Half;
         else if (_wcsicmp(formatString, L"HALF2") == 0) return Video::Format::Half2;
+        else if (_wcsicmp(formatString, L"HALF3") == 0) return Video::Format::Half3;
         else if (_wcsicmp(formatString, L"HALF4") == 0) return Video::Format::Half4;
         else if (_wcsicmp(formatString, L"FLOAT") == 0) return Video::Format::Float;
         else if (_wcsicmp(formatString, L"FLOAT2") == 0) return Video::Format::Float2;

@@ -17,11 +17,9 @@
         <guassianRadius>6</guassianRadius>
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
         <ambientOcclusionRadius>1.0</ambientOcclusionRadius>
-        <ambientOcclusionStrength>0.4</ambientOcclusionStrength>
-        <ambientOcclusionTapCount>32</ambientOcclusionTapCount>
+        <ambientOcclusionStrength>0.2</ambientOcclusionStrength>
+        <ambientOcclusionTapCount>16</ambientOcclusionTapCount>
         <ambientOcclusionSpiralCount>12</ambientOcclusionSpiralCount>
-        <bloomScale>1</bloomScale>
-        <bloomThreshold>1.0</bloomThreshold>
         <toneMappingThreshold>1.0</toneMappingThreshold>
     </defines>
 
@@ -32,9 +30,9 @@
         <materialBuffer bind="float2" flags="target">byte2</materialBuffer>
         <normalBuffer bind="half2" flags="target">half2</normalBuffer>
         <depthBuffer bind="float" flags="target">float</depthBuffer>
-        <luminatedBuffer bind="float3" flags="target">float4</luminatedBuffer>
-        <luminanceBuffer bind="float" flags="target, mipmaps">float</luminanceBuffer>
-        <effectsBuffer bind="float4" flags="target, readWrite">byte4</effectsBuffer>
+        <luminatedBuffer bind="float3" flags="target">half3</luminatedBuffer>
+        <luminanceBuffer bind="float" flags="target" mipmaps="0">float</luminanceBuffer>
+        <ambientOcclusionBuffer bind="float4" flags="target, readWrite">byte</ambientOcclusionBuffer>
         <averageLuminance bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminance>
     </textures>
 
@@ -68,16 +66,16 @@
         </pass>
 
         <pass mode="deferred">
-            <targets>
-                <luminatedBuffer />
-            </targets>
-
             <resources>
                 <albedoBuffer />
                 <materialBuffer />
                 <normalBuffer />
                 <depthBuffer />
             </resources>
+
+            <targets>
+                <luminatedBuffer />
+            </targets>
 
             <program>
                 <entry>mainPixelProgram</entry>
@@ -113,10 +111,6 @@
                 <writemask>rgb</writemask>
             </blendstates>
 
-            <targets>
-                <luminatedBuffer />
-            </targets>
-
             <resources>
                 <tileIndexList />
                 <albedoBuffer />
@@ -124,6 +118,10 @@
                 <normalBuffer />
                 <depthBuffer />
             </resources>
+
+            <targets>
+                <luminatedBuffer />
+            </targets>
 
             <program>
                 <entry>mainPixelProgram</entry>
@@ -142,7 +140,7 @@
             </resources>
 
             <targets>
-                <effectsBuffer />
+                <ambientOcclusionBuffer />
                 <luminanceBuffer />
             </targets>
 
@@ -153,43 +151,42 @@
         </pass>
 
         <pass mode="deferred">
+            <defines>
+                <blurAxis>float2(1, 0)</blurAxis>
+            </defines>
+
             <resources>
-                <effectsBuffer actions="flip" />
+                <ambientOcclusionBuffer actions="flip" />
                 <depthBuffer />
             </resources>
 
             <targets>
-                <effectsBuffer />
+                <ambientOcclusionBuffer />
             </targets>
-
-            <defines>
-                <bloomAxis>float2(1, 0)</bloomAxis>
-            </defines>
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\BlurEffects</source>
+                <source>Standard\BilateralBlur</source>
             </program>
         </pass>
 
         <pass mode="deferred">
+            <defines>
+                <blurAxis>float2(0, 1)</blurAxis>
+            </defines>
+
             <resources>
-                <effectsBuffer actions="flip" />
+                <ambientOcclusionBuffer actions="flip" />
                 <depthBuffer />
             </resources>
 
             <targets>
-                <effectsBuffer />
+                <ambientOcclusionBuffer />
             </targets>
 
-            <defines>
-                <bloomAxis>float2(0, 1)</bloomAxis>
-            </defines>
-
             <program>
-                
                 <entry>mainPixelProgram</entry>
-                <source>Standard\BlurEffects</source>
+                <source>Standard\BilateralBlur</source>
             </program>
         </pass>
 
@@ -215,11 +212,7 @@
             <resources>
                 <luminatedBuffer />
                 <averageLuminance actions="flip" />
-                <albedoBuffer />
-                <materialBuffer />
-                <normalBuffer />
-                <depthBuffer />
-                <effectsBuffer actions="flip" />
+                <ambientOcclusionBuffer actions="flip" />
             </resources>
 
             <program>

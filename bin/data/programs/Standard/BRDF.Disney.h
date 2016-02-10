@@ -46,7 +46,7 @@ float smithG_GGX(float angle, float alpha)
     return 1 / (angle + sqrt(alphaSquared + angleSquared - alphaSquared * angleSquared));
 }
 
-float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
+float3 getSpecularBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
     float NdotV = dot(surfaceNormal, viewDirection);
 

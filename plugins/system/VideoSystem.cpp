@@ -46,6 +46,7 @@ namespace Gek
             DXGI_FORMAT_R32G32B32A32_UINT,
             DXGI_FORMAT_R16_FLOAT,
             DXGI_FORMAT_R16G16_FLOAT,
+            DXGI_FORMAT_R11G11B10_FLOAT,
             DXGI_FORMAT_R16G16B16A16_FLOAT,
             DXGI_FORMAT_R32_FLOAT,
             DXGI_FORMAT_R32G32_FLOAT,
@@ -76,6 +77,7 @@ namespace Gek
             DXGI_FORMAT_R32G32B32A32_UINT,
             DXGI_FORMAT_R16_FLOAT,
             DXGI_FORMAT_R16G16_FLOAT,
+            DXGI_FORMAT_R11G11B10_FLOAT,
             DXGI_FORMAT_R16G16B16A16_FLOAT,
             DXGI_FORMAT_R32_FLOAT,
             DXGI_FORMAT_R32G32_FLOAT,
@@ -105,6 +107,7 @@ namespace Gek
             (sizeof(UINT32) * 3),
             (sizeof(UINT32) * 4),
             (sizeof(float) / 2),
+            ((sizeof(float) / 2) * 3),
             ((sizeof(float) / 2) * 2),
             ((sizeof(float) / 2) * 4),
             sizeof(float),
@@ -842,7 +845,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) clearDepthStencilTarget(IUnknown *depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear)
+        STDMETHODIMP_(void) clearDepthStencilTarget(IUnknown *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             CComQIPtr<ID3D11DepthStencilView> d3dDepthStencilView(depthBuffer);
@@ -1576,7 +1579,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID data)
+        STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
         {
             REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
             REQUIRE_RETURN(stride > 0, E_INVALIDARG);
@@ -1716,12 +1719,12 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP createBuffer(VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID data)
+        STDMETHODIMP createBuffer(VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
         {
             return createBuffer(returnObject, Video::Format::Unknown, stride, count, type, flags, data);
         }
 
-        STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID data)
+        STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
         {
             UINT32 stride = DirectX::FormatStrideList[static_cast<UINT8>(format)];
             return createBuffer(returnObject, format, stride, count, type, flags, data);
@@ -1790,7 +1793,7 @@ namespace Gek
 
             gekCheckScope(resultValue, fileName, entryFunction);
 
-            DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+            UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -1837,7 +1840,7 @@ namespace Gek
 
             gekCheckScope(resultValue, fileName, entryFunction);
 
-            DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+            UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -1941,7 +1944,7 @@ namespace Gek
 
             gekCheckScope(resultValue, fileName, entryFunction);
 
-            DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+            UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -1988,7 +1991,7 @@ namespace Gek
 
             gekCheckScope(resultValue, fileName, entryFunction);
 
-            DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+            UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -2118,52 +2121,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP createDepthTarget(IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 flags)
-        {
-            REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
-            REQUIRE_RETURN(width > 0, E_INVALIDARG);
-            REQUIRE_RETURN(height > 0, E_INVALIDARG);
-
-            gekCheckScope(resultValue, UINT32(format),
-                width,
-                height);
-
-            D3D11_TEXTURE2D_DESC depthDescription;
-            depthDescription.Format = DXGI_FORMAT_UNKNOWN;
-            depthDescription.Width = width;
-            depthDescription.Height = height;
-            depthDescription.MipLevels = ((flags & Video::TextureFlags::MipMaps) ? 0 : 1);
-            depthDescription.ArraySize = 1;
-            depthDescription.SampleDesc.Count = 1;
-            depthDescription.SampleDesc.Quality = 0;
-            depthDescription.Usage = D3D11_USAGE_DEFAULT;
-            depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-            depthDescription.CPUAccessFlags = 0;
-            depthDescription.MiscFlags = ((flags & Video::TextureFlags::MipMaps) ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
-            depthDescription.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
-
-            CComPtr<ID3D11Texture2D> texture2D;
-            gekCheckResult(resultValue = d3dDevice->CreateTexture2D(&depthDescription, nullptr, &texture2D));
-            if (texture2D)
-            {
-                D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
-                depthStencilDescription.Format = depthDescription.Format;
-                depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-                depthStencilDescription.Flags = 0;
-                depthStencilDescription.Texture2D.MipSlice = 0;
-
-                CComPtr<ID3D11DepthStencilView> depthStencilView;
-                gekCheckResult(resultValue = d3dDevice->CreateDepthStencilView(texture2D, &depthStencilDescription, &depthStencilView));
-                if (depthStencilView)
-                {
-                    gekCheckResult(resultValue = depthStencilView->QueryInterface(IID_PPV_ARGS(returnObject)));
-                }
-            }
-
-            return resultValue;
-        }
-
-        STDMETHODIMP createTexture(VideoTexture **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags)
+        STDMETHODIMP createTexture(VideoTexture **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps)
         {
             REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
 
@@ -2171,7 +2129,8 @@ namespace Gek
                 width,
                 height,
                 depth,
-                flags);
+                flags,
+                mipmaps);
 
             UINT32 bindFlags = 0;
             if (flags & Video::TextureFlags::RenderTarget)
@@ -2216,7 +2175,7 @@ namespace Gek
                 D3D11_TEXTURE2D_DESC textureDescription;
                 textureDescription.Width = width;
                 textureDescription.Height = height;
-                textureDescription.MipLevels = ((flags & Video::TextureFlags::MipMaps) ? 0 : 1);
+                textureDescription.MipLevels = mipmaps;
                 textureDescription.Format = d3dFormat;
                 textureDescription.ArraySize = 1;
                 textureDescription.SampleDesc.Count = 1;
@@ -2224,7 +2183,7 @@ namespace Gek
                 textureDescription.Usage = D3D11_USAGE_DEFAULT;
                 textureDescription.BindFlags = bindFlags;
                 textureDescription.CPUAccessFlags = 0;
-                textureDescription.MiscFlags = ((flags & Video::TextureFlags::MipMaps) ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
+                textureDescription.MiscFlags = (mipmaps == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
 
                 CComPtr<ID3D11Texture2D> texture2D;
                 gekCheckResult(resultValue = d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D));
@@ -2239,12 +2198,12 @@ namespace Gek
                 textureDescription.Width = width;
                 textureDescription.Height = height;
                 textureDescription.Depth = depth;
-                textureDescription.MipLevels = ((flags & Video::TextureFlags::MipMaps) ? 0 : 1);
+                textureDescription.MipLevels = mipmaps;
                 textureDescription.Format = d3dFormat;
                 textureDescription.Usage = D3D11_USAGE_DEFAULT;
                 textureDescription.BindFlags = bindFlags;
                 textureDescription.CPUAccessFlags = 0;
-                textureDescription.MiscFlags = ((flags & Video::TextureFlags::MipMaps) ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0);
+                textureDescription.MiscFlags = (mipmaps == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
 
                 CComPtr<ID3D11Texture3D> texture2D;
                 gekCheckResult(resultValue = d3dDevice->CreateTexture3D(&textureDescription, nullptr, &texture2D));
@@ -2329,7 +2288,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP loadTexture(VideoTexture **returnObject, LPCWSTR fileName, DWORD flags)
+        STDMETHODIMP loadTexture(VideoTexture **returnObject, LPCWSTR fileName, UINT32 flags)
         {
             REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
             REQUIRE_RETURN(fileName, E_INVALIDARG);
@@ -2418,7 +2377,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP loadCubeMap(VideoTexture **returnObject, LPCWSTR fileNameList[6], DWORD flags)
+        STDMETHODIMP loadCubeMap(VideoTexture **returnObject, LPCWSTR fileNameList[6], UINT32 flags)
         {
             REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
 
@@ -2571,7 +2530,7 @@ namespace Gek
             d3dDeviceContext->ClearRenderTargetView(d3dDefaultRenderTargetView, colorClear.data);
         }
 
-        STDMETHODIMP_(void) clearDefaultDepthStencilTarget(DWORD flags, float depthClear, UINT32 stencilClear)
+        STDMETHODIMP_(void) clearDefaultDepthStencilTarget(UINT32 flags, float depthClear, UINT32 stencilClear)
         {
             REQUIRE_VOID_RETURN(d3dDeviceContext);
             REQUIRE_VOID_RETURN(d3dDefaultDepthStencilView);

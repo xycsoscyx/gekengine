@@ -3,43 +3,6 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-float calculateLuminance(float3 pixelColor)
-{
-    return max(dot(pixelColor, float3(0.299, 0.587, 0.114)), Math::Epsilon);
-}
-
-float3 calculateExposedColor(float3 pixelColor, float averageLuminance, float threshold, out float exposure)
-{
-    float KeyValue = 0.2f;
-
-    // Use geometric mean
-    averageLuminance = max(averageLuminance, 0.001f);
-    float keyValue = KeyValue;
-    float linearExposure = (KeyValue / averageLuminance);
-    exposure = log2(max(linearExposure, Math::Epsilon));
-    exposure -= threshold;
-    return exp2(exposure) * pixelColor;
-}
-
-float3 calculateBrightSpots(InputPixel inputPixel, float3 pixelColor, float pixelLuminance)
-{
-    float averageLuminance = Resources::averageLuminance.Load(uint3(0, 0, 0));
-
-    float exposure = 0.0;
-    pixelColor = calculateExposedColor(pixelColor, averageLuminance, bloomThreshold, exposure);
-    if (dot(pixelColor, 0.333) <= 0.001)
-    {
-        pixelColor = 0.0;
-    }
-
-    return float4(pixelColor, 1.0);
-}
-
-float calculateLuminance(InputPixel inputPixel, float pixelLuminance)
-{
-    return log2(max(pixelLuminance, Math::Epsilon));
-}
-
 static const float inverseAmbientOcclusionSampleCount = rcp(ambientOcclusionTapCount);
 
 float2 getTapLocation(float tap, float randomAngle)
@@ -101,14 +64,17 @@ float calculateScalableAmbientObscurance(InputPixel inputPixel)
     return totalOcclusion;
 }
 
+float calculateLuminance(float3 pixelColor)
+{
+    return max(dot(pixelColor, float3(0.299, 0.587, 0.114)), Math::Epsilon);
+}
+
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     float3 pixelColor = Resources::luminatedBuffer.Sample(Global::linearSampler, inputPixel.texCoord);
-    float pixelLuminance = calculateLuminance(pixelColor);
 
     OutputPixel output;
-    output.effectsBuffer.xyz = calculateBrightSpots(inputPixel, pixelColor, pixelLuminance);
-    output.effectsBuffer.w = calculateScalableAmbientObscurance(inputPixel);
-    output.luminanceBuffer = calculateLuminance(inputPixel, pixelLuminance);
+    output.ambientOcclusionBuffer = calculateScalableAmbientObscurance(inputPixel);
+    output.luminanceBuffer = calculateLuminance(pixelColor);
     return output;
 }

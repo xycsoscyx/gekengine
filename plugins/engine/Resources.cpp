@@ -24,8 +24,6 @@
 
 namespace Gek
 {
-    static const UINT32 MaxLightCount = 255;
-
     template <class HANDLE>
     class ObjectManager
     {
@@ -428,13 +426,13 @@ namespace Gek
             });
         }
 
-        STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags)
+        STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps)
         {
             std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
             return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoTexture> texture;
-                HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags);
+                HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
                 if (SUCCEEDED(resultValue) && texture)
                 {
                     resultValue = texture->QueryInterface(returnObject);

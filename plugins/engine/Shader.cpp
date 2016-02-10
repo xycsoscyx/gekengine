@@ -296,11 +296,7 @@ namespace Gek
             {
                 createFlag.MakeLower();
                 createFlag.Remove(L' ');
-                if (createFlag.CompareNoCase(L"mipmaps") == 0)
-                {
-                    flags |= Video::TextureFlags::MipMaps;
-                }
-                else if (createFlag.CompareNoCase(L"target") == 0)
+                if (createFlag.CompareNoCase(L"target") == 0)
                 {
                     flags |= Video::TextureFlags::RenderTarget;
                 }
@@ -610,34 +606,40 @@ namespace Gek
                             depthBuffer = resources->createTexture(String::format(L"%s:depth", fileName), format, width, height, 1, Video::TextureFlags::DepthTarget);
                         }
 
-                        Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"textures");
-                        if (xmlTargetsNode)
+                        Gek::XmlNode xmlTexturesNode = xmlShaderNode.firstChildElement(L"textures");
+                        if (xmlTexturesNode)
                         {
-                            Gek::XmlNode xmlTargetNode = xmlTargetsNode.firstChildElement();
-                            while (xmlTargetNode)
+                            Gek::XmlNode xmlTextureNode = xmlTexturesNode.firstChildElement();
+                            while (xmlTextureNode)
                             {
-                                CStringW name(xmlTargetNode.getType());
-                                Video::Format format = getFormat(xmlTargetNode.getText());
-                                BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
-                                UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
+                                CStringW name(xmlTextureNode.getType());
+                                Video::Format format = getFormat(xmlTextureNode.getText());
+                                BindType bindType = getBindType(xmlTextureNode.getAttribute(L"bind"));
+                                UINT32 flags = getTextureCreateFlags(xmlTextureNode.getAttribute(L"flags"));
+
+                                UINT32 mipmaps = 1;
+                                if (xmlTextureNode.hasAttribute(L"mipmaps"))
+                                {
+                                    mipmaps = String::to<UINT32>(xmlTextureNode.getAttribute(L"mipmaps"));
+                                }
 
                                 int textureWidth = width;
-                                if (xmlTargetNode.hasAttribute(L"width"))
+                                if (xmlTextureNode.hasAttribute(L"width"))
                                 {
-                                    textureWidth = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"width")));
+                                    textureWidth = String::to<UINT32>(evaluate(xmlTextureNode.getAttribute(L"width")));
                                 }
 
                                 int textureHeight = height;
-                                if (xmlTargetNode.hasAttribute(L"height"))
+                                if (xmlTextureNode.hasAttribute(L"height"))
                                 {
-                                    textureHeight = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"height")));
+                                    textureHeight = String::to<UINT32>(evaluate(xmlTextureNode.getAttribute(L"height")));
                                 }
 
-                                resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, textureWidth, textureHeight, 1, flags);
+                                resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, textureWidth, textureHeight, 1, flags, mipmaps);
 
                                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
-                                xmlTargetNode = xmlTargetNode.nextSiblingElement();
+                                xmlTextureNode = xmlTextureNode.nextSiblingElement();
                             };
                         }
 

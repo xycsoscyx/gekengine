@@ -31,6 +31,7 @@ namespace Gek
             Int4,
             Half,
             Half2,
+            Half3,
             Half4,
             Float,
             Float2,
@@ -202,7 +203,6 @@ namespace Gek
                 DepthTarget = 1 << 1,
                 Resource = 1 << 2,
                 UnorderedAccess = 1 << 3,
-                MipMaps = 1 << 4,
             };
         }; // TextureFlags
 
@@ -456,7 +456,7 @@ namespace Gek
         STDMETHOD_(void, setScissorRect)                    (THIS_ Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount) PURE;
 
         STDMETHOD_(void, clearRenderTarget)                 (THIS_ VideoTarget *renderTarget, const Math::Color &colorClear) PURE;
-        STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ IUnknown *depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
+        STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ IUnknown *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear) PURE;
         STDMETHOD_(void, clearUnorderedAccessBuffer)        (THIS_ VideoBuffer *buffer, float value) PURE;
         STDMETHOD_(void, setRenderTargets)                  (THIS_ VideoTarget **renderTargetList, UINT32 renderTargetCount, IUnknown *depthBuffer) PURE;
 
@@ -504,13 +504,13 @@ namespace Gek
         STDMETHOD(createBlendStates)                        (THIS_ IUnknown **returnObject, const Video::IndependentBlendStates &blendStates) PURE;
         STDMETHOD(createSamplerStates)                      (THIS_ IUnknown **returnObject, const Video::SamplerStates &samplerStates) PURE;
 
-        STDMETHOD(createTexture)                            (THIS_ VideoTexture **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags) PURE;
-        STDMETHOD(loadTexture)                              (THIS_ VideoTexture **returnObject, LPCWSTR fileName, DWORD flags) PURE;
-        STDMETHOD(loadCubeMap)                              (THIS_ VideoTexture **returnObject, LPCWSTR fileNameList[6], DWORD flags) PURE;
+        STDMETHOD(createTexture)                            (THIS_ VideoTexture **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps = 1) PURE;
+        STDMETHOD(loadTexture)                              (THIS_ VideoTexture **returnObject, LPCWSTR fileName, UINT32 flags) PURE;
+        STDMETHOD(loadCubeMap)                              (THIS_ VideoTexture **returnObject, LPCWSTR fileNameList[6], UINT32 flags) PURE;
         STDMETHOD_(void, updateTexture)                     (THIS_ VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *rectangle = nullptr) PURE;
 
-        STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
-        STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
+        STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) PURE;
+        STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) PURE;
         STDMETHOD_(void, updateBuffer)                      (THIS_ VideoBuffer *buffer, LPCVOID data) PURE;
         STDMETHOD(mapBuffer)                                (THIS_ VideoBuffer *buffer, LPVOID *data, Video::Map mapping = Video::Map::WriteDiscard) PURE;
         STDMETHOD_(void, unmapBuffer)                       (THIS_ VideoBuffer *buffer) PURE;
@@ -528,7 +528,7 @@ namespace Gek
         STDMETHOD(loadPixelProgram)                         (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
 
         STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Color &colorClear) PURE;
-        STDMETHOD_(void, clearDefaultDepthStencilTarget)    (THIS_ DWORD flags, float depthClear, UINT32 stencilClear) PURE;
+        STDMETHOD_(void, clearDefaultDepthStencilTarget)    (THIS_ UINT32 flags, float depthClear, UINT32 stencilClear) PURE;
         STDMETHOD_(void, setDefaultTargets)                 (THIS_ VideoContext *context = nullptr, IUnknown *depthBuffer = nullptr) PURE;
 
         STDMETHOD_(void, executeCommandList)                (THIS_ IUnknown *commandList) PURE;

@@ -25,7 +25,7 @@ float getSchlickGGX(float alpha, float NdotV)
     return NdotV / (NdotV * (1 - k) + k);
 }
 
-float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
+float3 getSpecularBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
     float3 diffuseColor = lerp(materialAlbedo, 0.0, materialMetalness);
 
