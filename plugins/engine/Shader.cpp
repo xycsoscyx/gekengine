@@ -296,11 +296,7 @@ namespace Gek
             {
                 createFlag.MakeLower();
                 createFlag.Remove(L' ');
-                if (createFlag.CompareNoCase(L"mipmaps") == 0)
-                {
-                    flags |= Video::TextureFlags::MipMaps;
-                }
-                else if (createFlag.CompareNoCase(L"target") == 0)
+                if (createFlag.CompareNoCase(L"target") == 0)
                 {
                     flags |= Video::TextureFlags::RenderTarget;
                 }
@@ -631,7 +627,13 @@ namespace Gek
                                     textureHeight = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"height")));
                                 }
 
-                                resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, textureWidth, textureHeight, 1, flags);
+                                int textureMipMaps = 1;
+                                if (xmlTargetNode.hasAttribute(L"mipmaps"))
+                                {
+                                    textureMipMaps = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"mipmaps")));
+                                }
+
+                                resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
 
                                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
