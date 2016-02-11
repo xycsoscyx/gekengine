@@ -1,10 +1,10 @@
 namespace Math
 {
-    static const float Pi = 3.14159265;
+    static const float Pi = 3.14159265358979323846;
     static const float Tau = (2.0 * Pi);
-    static const float ReciprocalPi = rcp(Pi);
+    static const float ReciprocalPi = (1.0 / Pi);
     static const float InversePi = (1.0 - Pi);
-    static const float Epsilon = 0.00001;
+    static const float Epsilon = 0.0001;
 };
 
 namespace Global

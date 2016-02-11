@@ -1,0 +1,9 @@
+    radiance.coefficients[0] = float3(1.901116, 1.894303, 1.729063);
+    radiance.coefficients[1] = float3(-0.568532, -0.623005, -0.679481);
+    radiance.coefficients[2] = float3(-0.010025, 0.013895, -0.144068);
+    radiance.coefficients[3] = float3(-0.018566, 0.007068, -0.033840);
+    radiance.coefficients[4] = float3(0.006761, 0.004779, -0.007632);
+    radiance.coefficients[5] = float3(0.011527, 0.007639, 0.041076);
+    radiance.coefficients[6] = float3(-0.733570, -0.624379, -0.662012);
+    radiance.coefficients[7] = float3(0.021308, -0.011994, -0.016792);
+    radiance.coefficients[8] = float3(-0.335558, -0.365802, -0.398969);

@@ -13,11 +13,11 @@
         <tileSize>32</tileSize>
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
 		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
-        <blurSigma>1.3</blurSigma>
+        <gaussianSigma>1.3</gaussianSigma>
         <guassianRadius>6</guassianRadius>
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
         <ambientOcclusionRadius>1.0</ambientOcclusionRadius>
-        <ambientOcclusionStrength>0.2</ambientOcclusionStrength>
+        <ambientOcclusionStrength>0.35</ambientOcclusionStrength>
         <ambientOcclusionTapCount>16</ambientOcclusionTapCount>
         <ambientOcclusionSpiralCount>12</ambientOcclusionSpiralCount>
         <toneMappingThreshold>1.0</toneMappingThreshold>
@@ -30,10 +30,10 @@
         <materialBuffer bind="float2" flags="target">byte2</materialBuffer>
         <normalBuffer bind="half2" flags="target">half2</normalBuffer>
         <depthBuffer bind="float" flags="target">float</depthBuffer>
-        <luminatedBuffer bind="float3" flags="target">half3</luminatedBuffer>
-        <luminanceBuffer bind="float" flags="target" mipmaps="0">float</luminanceBuffer>
-        <ambientOcclusionBuffer bind="float4" flags="target, readWrite">byte</ambientOcclusionBuffer>
+        <luminatedBuffer bind="float3" flags="target">float4</luminatedBuffer>
+        <luminanceBuffer bind="float" flags="target, mipmaps">float</luminanceBuffer>
         <averageLuminance bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminance>
+        <ambientObscuranceBuffer bind="float" flags="target, readWrite">byte</ambientObscuranceBuffer>
     </textures>
 
     <buffers>
@@ -134,59 +134,18 @@
         <pass mode="deferred">
             <resources>
                 <luminatedBuffer />
-                <averageLuminance />
                 <normalBuffer />
                 <depthBuffer />
             </resources>
 
             <targets>
-                <ambientOcclusionBuffer />
                 <luminanceBuffer />
+                <ambientObscuranceBuffer />
             </targets>
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\PrepareEffects</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <defines>
-                <blurAxis>float2(1, 0)</blurAxis>
-            </defines>
-
-            <resources>
-                <ambientOcclusionBuffer actions="flip" />
-                <depthBuffer />
-            </resources>
-
-            <targets>
-                <ambientOcclusionBuffer />
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\BilateralBlur</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <defines>
-                <blurAxis>float2(0, 1)</blurAxis>
-            </defines>
-
-            <resources>
-                <ambientOcclusionBuffer actions="flip" />
-                <depthBuffer />
-            </resources>
-
-            <targets>
-                <ambientOcclusionBuffer />
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\BilateralBlur</source>
+                <source>Standard\PrepareFinal</source>
             </program>
         </pass>
 
@@ -205,19 +164,17 @@
                 <source>Standard\AdaptiveLuminance</source>
             </program>
         </pass>
-    </block>
 
-    <block>
         <pass mode="deferred">
             <resources>
                 <luminatedBuffer />
                 <averageLuminance actions="flip" />
-                <ambientOcclusionBuffer actions="flip" />
+                <ambientObscuranceBuffer actions="flip" />
             </resources>
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\PresentEffects</source>
+                <source>Standard\PresentFinal</source>
             </program>
         </pass>
     </block>

@@ -25,7 +25,7 @@ float getSchlickGGX(float alpha, float NdotV)
     return NdotV / (NdotV * (1 - k) + k);
 }
 
-float3 getSpecularBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
+float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
     float3 diffuseColor = lerp(materialAlbedo, 0.0, materialMetalness);
 
@@ -38,10 +38,10 @@ float3 getSpecularBRDF(float3 materialAlbedo, float materialRoughness, float mat
 
     float alpha = sqr(materialRoughness);
 
-    float NdotH = clamp(dot(surfaceNormal, halfAngle), Math::Epsilon, 1.0);
+    float NdotH = clamp(dot(surfaceNormal, halfAngle), 0.0001f, 1.0);
     float D = getGGX(alpha, NdotH);
 
-    float NdotV = clamp(dot(surfaceNormal, viewDirection), Math::Epsilon, 1.0);
+    float NdotV = clamp(dot(surfaceNormal, viewDirection), 0.0001f, 1.0);
     float G = getSchlickGGX(alpha, NdotV);
 
     return (Math::ReciprocalPi * diffuseColor) + (specularColor * (0.25 * D * G) / (NdotL * NdotV));

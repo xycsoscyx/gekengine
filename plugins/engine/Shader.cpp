@@ -159,11 +159,11 @@ namespace Gek
             RenderStatesHandle renderStates;
             Math::Color blendFactor;
             BlendStatesHandle blendStates;
-            std::list<std::pair<CStringW, CStringW>> renderTargetList;
-            std::list<std::pair<CStringW, CStringW>> resourceList;
+            std::list<CStringW> renderTargetList;
+            std::list<CStringW> resourceList;
             std::unordered_map<CStringW, std::set<CStringW>> actionMap;
             std::unordered_map<CStringW, CStringW> copyResourceMap;
-            std::list<std::pair<CStringW, CStringW>> unorderedAccessList;
+            std::list<CStringW> unorderedAccessList;
             ProgramHandle program;
             UINT32 dispatchWidth;
             UINT32 dispatchHeight;
@@ -296,7 +296,11 @@ namespace Gek
             {
                 createFlag.MakeLower();
                 createFlag.Remove(L' ');
-                if (createFlag.CompareNoCase(L"target") == 0)
+                if (createFlag.CompareNoCase(L"mipmaps") == 0)
+                {
+                    flags |= Video::TextureFlags::MipMaps;
+                }
+                else if (createFlag.CompareNoCase(L"target") == 0)
                 {
                     flags |= Video::TextureFlags::RenderTarget;
                 }
@@ -446,28 +450,26 @@ namespace Gek
             }
         }
 
-        std::list<std::pair<CStringW, CStringW>> loadChildList(Gek::XmlNode &xmlParentNode)
+        std::list<CStringW> loadChildList(Gek::XmlNode &xmlChildNode)
         {
-            std::list<std::pair<CStringW, CStringW>> childList;
-            Gek::XmlNode xmlChildNode = xmlParentNode.firstChildElement();
-            while (xmlChildNode)
+            std::list<CStringW> childList;
+            Gek::XmlNode xmlResourceNode = xmlChildNode.firstChildElement();
+            while (xmlResourceNode)
             {
-                CStringW type(xmlChildNode.getType());
-                CStringW text(xmlChildNode.getText());
-                childList.push_back(std::make_pair(type, (text.IsEmpty() ? type : text)));
-                xmlChildNode = xmlChildNode.nextSiblingElement();
+                childList.push_back(xmlResourceNode.getType());
+                xmlResourceNode = xmlResourceNode.nextSiblingElement();
             };
 
             return childList;
         }
 
-        std::list<std::pair<CStringW, CStringW>> loadChildList(Gek::XmlNode &xmlRootNode, LPCWSTR name)
+        std::list<CStringW> loadChildList(Gek::XmlNode &xmlProgramNode, LPCWSTR name)
         {
-            std::list<std::pair<CStringW, CStringW>> childList;
-            if (xmlRootNode.hasChildElement(name))
+            std::list<CStringW> childList;
+            if (xmlProgramNode.hasChildElement(name))
             {
-                Gek::XmlNode xmlParentNode = xmlRootNode.firstChildElement(name);
-                childList = loadChildList(xmlParentNode);
+                Gek::XmlNode xmlChildNode = xmlProgramNode.firstChildElement(name);
+                childList = loadChildList(xmlChildNode);
             }
 
             return childList;
@@ -606,40 +608,34 @@ namespace Gek
                             depthBuffer = resources->createTexture(String::format(L"%s:depth", fileName), format, width, height, 1, Video::TextureFlags::DepthTarget);
                         }
 
-                        Gek::XmlNode xmlTexturesNode = xmlShaderNode.firstChildElement(L"textures");
-                        if (xmlTexturesNode)
+                        Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"textures");
+                        if (xmlTargetsNode)
                         {
-                            Gek::XmlNode xmlTextureNode = xmlTexturesNode.firstChildElement();
-                            while (xmlTextureNode)
+                            Gek::XmlNode xmlTargetNode = xmlTargetsNode.firstChildElement();
+                            while (xmlTargetNode)
                             {
-                                CStringW name(xmlTextureNode.getType());
-                                Video::Format format = getFormat(xmlTextureNode.getText());
-                                BindType bindType = getBindType(xmlTextureNode.getAttribute(L"bind"));
-                                UINT32 flags = getTextureCreateFlags(xmlTextureNode.getAttribute(L"flags"));
-
-                                UINT32 mipmaps = 1;
-                                if (xmlTextureNode.hasAttribute(L"mipmaps"))
-                                {
-                                    mipmaps = String::to<UINT32>(xmlTextureNode.getAttribute(L"mipmaps"));
-                                }
+                                CStringW name(xmlTargetNode.getType());
+                                Video::Format format = getFormat(xmlTargetNode.getText());
+                                BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
+                                UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
 
                                 int textureWidth = width;
-                                if (xmlTextureNode.hasAttribute(L"width"))
+                                if (xmlTargetNode.hasAttribute(L"width"))
                                 {
-                                    textureWidth = String::to<UINT32>(evaluate(xmlTextureNode.getAttribute(L"width")));
+                                    textureWidth = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"width")));
                                 }
 
                                 int textureHeight = height;
-                                if (xmlTextureNode.hasAttribute(L"height"))
+                                if (xmlTargetNode.hasAttribute(L"height"))
                                 {
-                                    textureHeight = String::to<UINT32>(evaluate(xmlTextureNode.getAttribute(L"height")));
+                                    textureHeight = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"height")));
                                 }
 
-                                resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, textureWidth, textureHeight, 1, flags, mipmaps);
+                                resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, textureWidth, textureHeight, 1, flags);
 
                                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
-                                xmlTextureNode = xmlTextureNode.nextSiblingElement();
+                                xmlTargetNode = xmlTargetNode.nextSiblingElement();
                             };
                         }
 
@@ -781,9 +777,7 @@ namespace Gek
                                         Gek::XmlNode xmlResourceNode = xmlResourcesNode.firstChildElement();
                                         while (xmlResourceNode)
                                         {
-                                            CStringW type(xmlResourceNode.getType());
-                                            CStringW text(xmlResourceNode.getText());
-                                            pass.resourceList.push_back(std::make_pair(type, (text.IsEmpty() ? type : text)));
+                                            pass.resourceList.push_back(xmlResourceNode.getType());
                                             if (xmlResourceNode.hasAttribute(L"actions"))
                                             {
                                                 auto &actionMap = pass.actionMap[xmlResourceNode.getType()];
@@ -872,12 +866,12 @@ namespace Gek
 
                                     UINT32 stage = 0;
                                     CStringA outputData;
-                                    for(auto &resourcePair : pass.renderTargetList)
+                                    for(auto &resourceName : pass.renderTargetList)
                                     {
-                                        auto resourceIterator = resourceList.find(resourcePair.first);
+                                        auto resourceIterator = resourceList.find(resourceName);
                                         if (resourceIterator != resourceList.end())
                                         {
-                                            outputData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resourcePair.second.GetString(), stage++);
+                                            outputData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resourceName.GetString(), stage++);
                                         }
                                     }
 
@@ -902,13 +896,13 @@ namespace Gek
                                         }
                                     }
 
-                                    for (auto &resourcedPair : pass.resourceList)
+                                    for (auto &resourceName : pass.resourceList)
                                     {
-                                        auto resourceIterator = resourceList.find(resourcedPair.first);
+                                        auto resourceIterator = resourceList.find(resourceName);
                                         if (resourceIterator != resourceList.end())
                                         {
                                             auto &resource = (*resourceIterator).second;
-                                            resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourcedPair.second.GetString(), resourceStage++);
+                                            resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName.GetString(), resourceStage++);
                                         }
                                     }
 
@@ -983,12 +977,12 @@ namespace Gek
                                         {
                                             UINT32 stage = 0;
                                             CStringA unorderedAccessData;
-                                            for (auto &resourcePair : pass.unorderedAccessList)
+                                            for (auto &resourceName : pass.unorderedAccessList)
                                             {
-                                                auto resourceIterator = resourceList.find(resourcePair.first);
+                                                auto resourceIterator = resourceList.find(resourceName);
                                                 if (resourceIterator != resourceList.end())
                                                 {
-                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second.GetString(), stage++);
+                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourceName.GetString(), stage++);
                                                 }
                                             }
 
@@ -1009,12 +1003,12 @@ namespace Gek
                                         {
                                             CStringA unorderedAccessData;
                                             UINT32 stage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
-                                            for (auto &resourcePair : pass.unorderedAccessList)
+                                            for (auto &resourceName : pass.unorderedAccessList)
                                             {
-                                                auto resourceIterator = resourceList.find(resourcePair.first);
+                                                auto resourceIterator = resourceList.find(resourceName);
                                                 if (resourceIterator != resourceList.end())
                                                 {
-                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second.GetString(), stage++);
+                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourceName.GetString(), stage++);
                                                 }
                                             }
 
@@ -1149,10 +1143,10 @@ namespace Gek
                             enableLights(videoPipeline);
                         }
 
-                        for (auto &resourcePair : pass.resourceList)
+                        for (auto &resourceName : pass.resourceList)
                         {
                             ResourceHandle resource;
-                            auto resourceIterator = resourceMap.find(resourcePair.first);
+                            auto resourceIterator = resourceMap.find(resourceName);
                             if (resourceIterator != resourceMap.end())
                             {
                                 resource = resourceIterator->second;
@@ -1160,7 +1154,7 @@ namespace Gek
 
                             if (resource)
                             {
-                                auto actionIterator = pass.actionMap.find(resourcePair.first);
+                                auto actionIterator = pass.actionMap.find(resourceName);
                                 if (actionIterator != pass.actionMap.end())
                                 {
                                     auto &actionMap = actionIterator->second;
@@ -1175,7 +1169,7 @@ namespace Gek
                                     }
                                 }
 
-                                auto copyResourceIterator = pass.copyResourceMap.find(resourcePair.first);
+                                auto copyResourceIterator = pass.copyResourceMap.find(resourceName);
                                 if (copyResourceIterator != pass.copyResourceMap.end())
                                 {
                                     CStringW &copyFrom = copyResourceIterator->second;
@@ -1194,7 +1188,7 @@ namespace Gek
                         for (auto &unorderedAccessName : pass.unorderedAccessList)
                         {
                             ResourceHandle resource;
-                            auto resourceIterator = resourceMap.find(unorderedAccessName.first);
+                            auto resourceIterator = resourceMap.find(unorderedAccessName);
                             if (resourceIterator != resourceMap.end())
                             {
                                 resource = resourceIterator->second;
@@ -1224,10 +1218,10 @@ namespace Gek
                             {
                                 UINT32 stage = 0;
                                 static ResourceHandle renderTargetList[8];
-                                for (auto &resourcePair : pass.renderTargetList)
+                                for (auto &resourceName : pass.renderTargetList)
                                 {
                                     ResourceHandle renderTargetHandle;
-                                    auto resourceIterator = resourceMap.find(resourcePair.first);
+                                    auto resourceIterator = resourceMap.find(resourceName);
                                     if (resourceIterator != resourceMap.end())
                                     {
                                         renderTargetHandle = (*resourceIterator).second;

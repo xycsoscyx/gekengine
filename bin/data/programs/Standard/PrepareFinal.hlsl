@@ -12,11 +12,6 @@ float2 getTapLocation(float tap, float randomAngle)
     return alpha * float2(cos(angle), sin(angle));
 }
 
-float rand(float2 co)
-{
-    return 0.5 + (frac(sin(dot(co.xy, float2(12.9898, 78.233))) * 43758.5453)) * 0.5;
-}
-
 // http://graphics.cs.williams.edu/papers/SAOHPG12/
 float calculateScalableAmbientObscurance(InputPixel inputPixel)
 {
@@ -64,17 +59,12 @@ float calculateScalableAmbientObscurance(InputPixel inputPixel)
     return totalOcclusion;
 }
 
-float calculateLuminance(float3 pixelColor)
-{
-    return max(dot(pixelColor, float3(0.299, 0.587, 0.114)), Math::Epsilon);
-}
-
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     float3 pixelColor = Resources::luminatedBuffer.Sample(Global::linearSampler, inputPixel.texCoord);
 
     OutputPixel output;
-    output.ambientOcclusionBuffer = calculateScalableAmbientObscurance(inputPixel);
-    output.luminanceBuffer = calculateLuminance(pixelColor);
+    output.ambientObscuranceBuffer = calculateScalableAmbientObscurance(inputPixel);
+    output.luminanceBuffer = log2(getLuminance(pixelColor));
     return output;
 }

@@ -24,6 +24,8 @@
 
 namespace Gek
 {
+    static const UINT32 MaxLightCount = 255;
+
     template <class HANDLE>
     class ObjectManager
     {
@@ -66,35 +68,6 @@ namespace Gek
             hashMap.clear();
             localResourceMap.clear();
             readWriteResourceMap.clear();
-        }
-
-        HANDLE getUniqueResourceHandle(std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
-        {
-            HANDLE handle;
-            handle.assign(InterlockedIncrement(&nextIdentifier));
-            if (readWrite)
-            {
-                readWriteResourceMap[handle] = ReadWrite();
-
-                CComPtr<IUnknown> read, write;
-                if (SUCCEEDED(loadResource(&read)) && read &&
-                    SUCCEEDED(loadResource(&write)) && write)
-                {
-                    readWriteResourceMap[handle] = ReadWrite(read, write);
-                }
-            }
-            else
-            {
-                localResourceMap[handle] = nullptr;
-
-                CComPtr<IUnknown> resource;
-                if (SUCCEEDED(loadResource(&resource)) && resource)
-                {
-                    localResourceMap[handle] = resource;
-                }
-            }
-
-            return handle;
         }
 
         HANDLE getResourceHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
@@ -426,13 +399,13 @@ namespace Gek
             });
         }
 
-        STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps)
+        STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags)
         {
             std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
             return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoTexture> texture;
-                HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
+                HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags);
                 if (SUCCEEDED(resultValue) && texture)
                 {
                     resultValue = texture->QueryInterface(returnObject);
@@ -627,7 +600,16 @@ namespace Gek
 
         STDMETHODIMP_(ProgramHandle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
-            return programManager.getUniqueResourceHandle([&](IUnknown **returnObject) -> HRESULT
+            std::size_t hash = std::hash_combine(fileName, entryFunction);
+            if (defineList)
+            {
+                for (auto &define : (*defineList))
+                {
+                    hash = std::hash_combine(hash, std::hash_combine(define.first, define.second));
+                }
+            }
+
+            return programManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
                 return resultValue;
@@ -636,7 +618,16 @@ namespace Gek
 
         STDMETHODIMP_(ProgramHandle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
-            return programManager.getUniqueResourceHandle([&](IUnknown **returnObject) -> HRESULT
+            std::size_t hash = std::hash_combine(fileName, entryFunction);
+            if (defineList)
+            {
+                for (auto &define : (*defineList))
+                {
+                    hash = std::hash_combine(hash, std::hash_combine(define.first, define.second));
+                }
+            }
+
+            return programManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
                 resultValue = video->loadPixelProgram(returnObject, fileName, entryFunction, onInclude, defineList);
