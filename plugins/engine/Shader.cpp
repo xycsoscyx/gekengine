@@ -159,11 +159,11 @@ namespace Gek
             RenderStatesHandle renderStates;
             Math::Color blendFactor;
             BlendStatesHandle blendStates;
-            std::list<CStringW> renderTargetList;
-            std::list<CStringW> resourceList;
+            std::unordered_map<CStringW, CStringW> renderTargetList;
+            std::unordered_map<CStringW, CStringW> resourceList;
             std::unordered_map<CStringW, std::set<CStringW>> actionMap;
             std::unordered_map<CStringW, CStringW> copyResourceMap;
-            std::list<CStringW> unorderedAccessList;
+            std::unordered_map<CStringW, CStringW> unorderedAccessList;
             ProgramHandle program;
             UINT32 dispatchWidth;
             UINT32 dispatchHeight;
@@ -446,29 +446,31 @@ namespace Gek
             }
         }
 
-        std::list<CStringW> loadChildList(Gek::XmlNode &xmlChildNode)
+        std::unordered_map<CStringW, CStringW> loadChildMap(Gek::XmlNode &xmlParentNode)
         {
-            std::list<CStringW> childList;
-            Gek::XmlNode xmlResourceNode = xmlChildNode.firstChildElement();
-            while (xmlResourceNode)
+            std::unordered_map<CStringW, CStringW> childMap;
+            Gek::XmlNode xmlChildNode = xmlParentNode.firstChildElement();
+            while (xmlChildNode)
             {
-                childList.push_back(xmlResourceNode.getType());
-                xmlResourceNode = xmlResourceNode.nextSiblingElement();
+                CStringW type(xmlChildNode.getType());
+                CStringW text(xmlChildNode.getText());
+                childMap.insert(std::make_pair(type, text.IsEmpty() ? type : text));
+                xmlChildNode = xmlChildNode.nextSiblingElement();
             };
 
-            return childList;
+            return childMap;
         }
 
-        std::list<CStringW> loadChildList(Gek::XmlNode &xmlProgramNode, LPCWSTR name)
+        std::unordered_map<CStringW, CStringW> loadChildMap(Gek::XmlNode &xmlRootNode, LPCWSTR name)
         {
-            std::list<CStringW> childList;
-            if (xmlProgramNode.hasChildElement(name))
+            std::unordered_map<CStringW, CStringW> childMap;
+            if (xmlRootNode.hasChildElement(name))
             {
-                Gek::XmlNode xmlChildNode = xmlProgramNode.firstChildElement(name);
-                childList = loadChildList(xmlChildNode);
+                Gek::XmlNode xmlParentNode = xmlRootNode.firstChildElement(name);
+                childMap = loadChildMap(xmlParentNode);
             }
 
-            return childList;
+            return childMap;
         }
 
         bool replaceDefines(CStringW &value)
@@ -752,7 +754,7 @@ namespace Gek
 
                                 if (xmlPassNode.hasChildElement(L"targets"))
                                 {
-                                    pass.renderTargetList = loadChildList(xmlPassNode, L"targets");
+                                    pass.renderTargetList = loadChildMap(xmlPassNode, L"targets");
                                 }
 
                                 if (SUCCEEDED(resultValue))
@@ -772,14 +774,15 @@ namespace Gek
 
                                 if (SUCCEEDED(resultValue))
                                 {
-                                    std::list<CStringW> childList;
                                     if (xmlPassNode.hasChildElement(L"resources"))
                                     {
                                         Gek::XmlNode xmlResourcesNode = xmlPassNode.firstChildElement(L"resources");
                                         Gek::XmlNode xmlResourceNode = xmlResourcesNode.firstChildElement();
                                         while (xmlResourceNode)
                                         {
-                                            pass.resourceList.push_back(xmlResourceNode.getType());
+                                            CStringW type(xmlResourceNode.getType());
+                                            CStringW text(xmlResourceNode.getText());
+                                            pass.resourceList.insert(std::make_pair(type, text.IsEmpty() ? type : text));
                                             if (xmlResourceNode.hasAttribute(L"actions"))
                                             {
                                                 auto &actionMap = pass.actionMap[xmlResourceNode.getType()];
@@ -805,7 +808,7 @@ namespace Gek
                                         };
                                     }
 
-                                    pass.unorderedAccessList = loadChildList(xmlPassNode, L"unorderedaccess");
+                                    pass.unorderedAccessList = loadChildMap(xmlPassNode, L"unorderedaccess");
 
                                     CStringA engineData;
                                     if (pass.mode != PassMode::Compute)
@@ -868,12 +871,12 @@ namespace Gek
 
                                     UINT32 stage = 0;
                                     CStringA outputData;
-                                    for(auto &resourceName : pass.renderTargetList)
+                                    for(auto &resourcePair : pass.renderTargetList)
                                     {
-                                        auto resourceIterator = resourceList.find(resourceName);
+                                        auto resourceIterator = resourceList.find(resourcePair.first);
                                         if (resourceIterator != resourceList.end())
                                         {
-                                            outputData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resourceName.GetString(), stage++);
+                                            outputData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resourcePair.second.GetString(), stage++);
                                         }
                                     }
 
@@ -898,13 +901,13 @@ namespace Gek
                                         }
                                     }
 
-                                    for (auto &resourceName : pass.resourceList)
+                                    for (auto &resourcePair : pass.resourceList)
                                     {
-                                        auto resourceIterator = resourceList.find(resourceName);
+                                        auto resourceIterator = resourceList.find(resourcePair.first);
                                         if (resourceIterator != resourceList.end())
                                         {
                                             auto &resource = (*resourceIterator).second;
-                                            resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName.GetString(), resourceStage++);
+                                            resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second.GetString(), resourceStage++);
                                         }
                                     }
 
@@ -979,12 +982,12 @@ namespace Gek
                                         {
                                             UINT32 stage = 0;
                                             CStringA unorderedAccessData;
-                                            for (auto &resourceName : pass.unorderedAccessList)
+                                            for (auto &resourcePair : pass.unorderedAccessList)
                                             {
-                                                auto resourceIterator = resourceList.find(resourceName);
+                                                auto resourceIterator = resourceList.find(resourcePair.first);
                                                 if (resourceIterator != resourceList.end())
                                                 {
-                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourceName.GetString(), stage++);
+                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second.GetString(), stage++);
                                                 }
                                             }
 
@@ -1005,12 +1008,12 @@ namespace Gek
                                         {
                                             CStringA unorderedAccessData;
                                             UINT32 stage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
-                                            for (auto &resourceName : pass.unorderedAccessList)
+                                            for (auto &resourcePair : pass.unorderedAccessList)
                                             {
-                                                auto resourceIterator = resourceList.find(resourceName);
+                                                auto resourceIterator = resourceList.find(resourcePair.first);
                                                 if (resourceIterator != resourceList.end())
                                                 {
-                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourceName.GetString(), stage++);
+                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second.GetString(), stage++);
                                                 }
                                             }
 
@@ -1145,10 +1148,10 @@ namespace Gek
                             enableLights(videoPipeline);
                         }
 
-                        for (auto &resourceName : pass.resourceList)
+                        for (auto &resourcePair : pass.resourceList)
                         {
                             ResourceHandle resource;
-                            auto resourceIterator = resourceMap.find(resourceName);
+                            auto resourceIterator = resourceMap.find(resourcePair.first);
                             if (resourceIterator != resourceMap.end())
                             {
                                 resource = resourceIterator->second;
@@ -1156,7 +1159,7 @@ namespace Gek
 
                             if (resource)
                             {
-                                auto actionIterator = pass.actionMap.find(resourceName);
+                                auto actionIterator = pass.actionMap.find(resourcePair.first);
                                 if (actionIterator != pass.actionMap.end())
                                 {
                                     auto &actionMap = actionIterator->second;
@@ -1171,7 +1174,7 @@ namespace Gek
                                     }
                                 }
 
-                                auto copyResourceIterator = pass.copyResourceMap.find(resourceName);
+                                auto copyResourceIterator = pass.copyResourceMap.find(resourcePair.first);
                                 if (copyResourceIterator != pass.copyResourceMap.end())
                                 {
                                     CStringW &copyFrom = copyResourceIterator->second;
@@ -1187,10 +1190,10 @@ namespace Gek
                         }
 
                         stage = (pass.renderTargetList.empty() ? 0 : pass.renderTargetList.size());
-                        for (auto &unorderedAccessName : pass.unorderedAccessList)
+                        for (auto &resourcePair : pass.unorderedAccessList)
                         {
                             ResourceHandle resource;
-                            auto resourceIterator = resourceMap.find(unorderedAccessName);
+                            auto resourceIterator = resourceMap.find(resourcePair.first);
                             if (resourceIterator != resourceMap.end())
                             {
                                 resource = resourceIterator->second;
@@ -1220,10 +1223,10 @@ namespace Gek
                             {
                                 UINT32 stage = 0;
                                 static ResourceHandle renderTargetList[8];
-                                for (auto &resourceName : pass.renderTargetList)
+                                for (auto &resourcePair : pass.renderTargetList)
                                 {
                                     ResourceHandle renderTargetHandle;
-                                    auto resourceIterator = resourceMap.find(resourceName);
+                                    auto resourceIterator = resourceMap.find(resourcePair.first);
                                     if (resourceIterator != resourceMap.end())
                                     {
                                         renderTargetHandle = (*resourceIterator).second;
