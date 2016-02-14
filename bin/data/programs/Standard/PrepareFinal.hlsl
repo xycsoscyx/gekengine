@@ -3,29 +3,30 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
-static const float inverseAmbientOcclusionSampleCount = rcp(ambientOcclusionTapCount);
+static const float inverseShadowTapCount = rcp(shadowTapCount);
 
 float2 getTapLocation(float tap, float randomAngle)
 {
-    float alpha = (tap + 0.5) * inverseAmbientOcclusionSampleCount;
-    float angle = alpha * (ambientOcclusionSpiralCount * Math::Tau) + randomAngle;
+    float alpha = (tap + 0.5) * inverseShadowTapCount;
+    float angle = alpha * (shadowSpiralCount * Math::Tau) + randomAngle;
     return alpha * float2(cos(angle), sin(angle));
 }
 
+// Scalable Ambient Obscurance
 // http://graphics.cs.williams.edu/papers/SAOHPG12/
-float calculateScalableAmbientObscurance(InputPixel inputPixel)
+float getShadowFactor(InputPixel inputPixel)
 {
     float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float3 surfacePosition = getViewPosition(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
     float randomAngle = rand(inputPixel.position.xy);
-    float sampleRadius = ambientOcclusionRadius / (2.0 * (surfaceDepth * Camera::maximumDistance) * Camera::fieldOfView.x);
+    float sampleRadius = shadowRadius / (2.0 * (surfaceDepth * Camera::maximumDistance) * Camera::fieldOfView.x);
 
     float totalOcclusion = 0.0;
 
     [unroll]
-    for (int tap = 0; tap < ambientOcclusionTapCount; tap++)
+    for (int tap = 0; tap < shadowTapCount; tap++)
     {
         float2 tapOffset = getTapLocation(tap, randomAngle);
         float2 tapCoord = inputPixel.texCoord + (tapOffset * sampleRadius);
@@ -38,7 +39,7 @@ float calculateScalableAmbientObscurance(InputPixel inputPixel)
         totalOcclusion += max(0.0, deltaAngle + surfaceDepth * 0.001) / (deltaMagnitude + 0.1);
     }
 
-    totalOcclusion *= Math::Tau * ambientOcclusionRadius * ambientOcclusionStrength / ambientOcclusionTapCount;
+    totalOcclusion *= Math::Tau * shadowRadius * shadowStrength / shadowTapCount;
     totalOcclusion = min(1.0, max(0.0, 1.0 - totalOcclusion));
 
     // Below is directly from the Alchemy SSAO
@@ -61,10 +62,11 @@ float calculateScalableAmbientObscurance(InputPixel inputPixel)
 
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
-    float3 pixelColor = Resources::luminatedBuffer.Sample(Global::linearSampler, inputPixel.texCoord);
+    float3 pixelColor = Resources::luminatedBuffer.Sample(Global::linearClampSampler, inputPixel.texCoord);
 
     OutputPixel output;
-    output.ambientObscuranceBuffer = calculateScalableAmbientObscurance(inputPixel);
+    output.effectsBuffer.xyz = 0.0;
+    output.effectsBuffer.w = getShadowFactor(inputPixel);
     output.luminanceBuffer = log2(getLuminance(pixelColor));
     return output;
 }

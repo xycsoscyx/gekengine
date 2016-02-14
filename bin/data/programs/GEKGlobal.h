@@ -10,7 +10,8 @@ namespace Math
 namespace Global
 {
     SamplerState pointSampler : register(s0);
-    SamplerState linearSampler : register(s1);
+    SamplerState linearClampSampler : register(s1);
+    SamplerState linearWrapSampler : register(s2);
 };
 
 namespace Camera

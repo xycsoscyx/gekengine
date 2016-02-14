@@ -70,7 +70,36 @@ namespace Gek
             readWriteResourceMap.clear();
         }
 
-        HANDLE getResourceHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
+        HANDLE getUniqueHandle(std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
+        {
+            HANDLE handle;
+            handle.assign(InterlockedIncrement(&nextIdentifier));
+            if (readWrite)
+            {
+                readWriteResourceMap[handle] = ReadWrite();
+
+                CComPtr<IUnknown> read, write;
+                if (SUCCEEDED(loadResource(&read)) && read &&
+                    SUCCEEDED(loadResource(&write)) && write)
+                {
+                    readWriteResourceMap[handle] = ReadWrite(read, write);
+                }
+            }
+            else
+            {
+                localResourceMap[handle] = nullptr;
+
+                CComPtr<IUnknown> resource;
+                if (SUCCEEDED(loadResource(&resource)) && resource)
+                {
+                    localResourceMap[handle] = resource;
+                }
+            }
+
+            return handle;
+        }
+
+        HANDLE getHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
         {
             HANDLE handle;
             if (hash == 0)
@@ -242,7 +271,7 @@ namespace Gek
         STDMETHODIMP_(PluginHandle) loadPlugin(LPCWSTR fileName)
         {
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
-            return pluginManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return pluginManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
@@ -265,7 +294,7 @@ namespace Gek
         {
             ShaderHandle shader;
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
-            PropertiesHandle properties = materialManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            PropertiesHandle properties = materialManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
@@ -290,7 +319,7 @@ namespace Gek
         STDMETHODIMP_(ShaderHandle) loadShader(LPCWSTR fileName)
         {
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
-            return shaderManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return shaderManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
@@ -330,7 +359,7 @@ namespace Gek
                 renderStates.scissorEnable,
                 renderStates.multisampleEnable,
                 renderStates.antialiasedLineEnable);
-            return renderStateManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return renderStateManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = video->createRenderStates(returnObject, renderStates);
                 return resultValue;
@@ -353,7 +382,7 @@ namespace Gek
                 static_cast<UINT8>(depthStates.stencilBackStates.depthFailOperation),
                 static_cast<UINT8>(depthStates.stencilBackStates.passOperation),
                 static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction));
-            return depthStateManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return depthStateManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = video->createDepthStates(returnObject, depthStates);
                 return resultValue;
@@ -370,7 +399,7 @@ namespace Gek
                 static_cast<UINT8>(blendStates.alphaDestination),
                 static_cast<UINT8>(blendStates.alphaOperation),
                 blendStates.writeMask);
-            return blendStateManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return blendStateManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = video->createBlendStates(returnObject, blendStates);
                 return resultValue;
@@ -392,7 +421,7 @@ namespace Gek
                     blendStates.targetStates[renderTarget].writeMask));
             }
 
-            return blendStateManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return blendStateManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = video->createBlendStates(returnObject, blendStates);
                 return resultValue;
@@ -402,7 +431,7 @@ namespace Gek
         STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps)
         {
             std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
-            return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return resourceManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoTexture> texture;
                 HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
@@ -418,7 +447,7 @@ namespace Gek
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
             std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
-            return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return resourceManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoBuffer> buffer;
                 HRESULT resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
@@ -434,7 +463,7 @@ namespace Gek
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
             std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
-            return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return resourceManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoBuffer> buffer;
                 HRESULT resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
@@ -573,7 +602,7 @@ namespace Gek
         STDMETHODIMP_(ResourceHandle) loadTexture(LPCWSTR fileName, UINT32 flags)
         {
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
-            return resourceManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return resourceManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -600,16 +629,7 @@ namespace Gek
 
         STDMETHODIMP_(ProgramHandle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
-            std::size_t hash = std::hash_combine(fileName, entryFunction);
-            if (defineList)
-            {
-                for (auto &define : (*defineList))
-                {
-                    hash = std::hash_combine(hash, std::hash_combine(define.first, define.second));
-                }
-            }
-
-            return programManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return programManager.getUniqueHandle([&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
                 return resultValue;
@@ -618,16 +638,7 @@ namespace Gek
 
         STDMETHODIMP_(ProgramHandle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
-            std::size_t hash = std::hash_combine(fileName, entryFunction);
-            if (defineList)
-            {
-                for (auto &define : (*defineList))
-                {
-                    hash = std::hash_combine(hash, std::hash_combine(define.first, define.second));
-                }
-            }
-
-            return programManager.getResourceHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return programManager.getUniqueHandle([&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
                 resultValue = video->loadPixelProgram(returnObject, fileName, entryFunction, onInclude, defineList);

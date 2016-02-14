@@ -108,7 +108,8 @@ namespace Gek
         UINT32 updateHandle;
 
         CComPtr<IUnknown> pointSamplerStates;
-        CComPtr<IUnknown> linearSamplerStates;
+        CComPtr<IUnknown> linearClampSamplerStates;
+        CComPtr<IUnknown> linearWrapSamplerStates;
         CComPtr<VideoBuffer> cameraConstantBuffer;
         CComPtr<VideoBuffer> lightConstantBuffer;
         CComPtr<VideoBuffer> lightDataBuffer;
@@ -173,9 +174,19 @@ namespace Gek
                 Video::SamplerStates samplerStates;
                 samplerStates.maximumAnisotropy = 8;
                 samplerStates.filterMode = Video::FilterMode::Anisotropic;
+                samplerStates.addressModeU = Video::AddressMode::Clamp;
+                samplerStates.addressModeV = Video::AddressMode::Clamp;
+                resultValue = video->createSamplerStates(&linearClampSamplerStates, samplerStates);
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
+                Video::SamplerStates samplerStates;
+                samplerStates.maximumAnisotropy = 8;
+                samplerStates.filterMode = Video::FilterMode::Anisotropic;
                 samplerStates.addressModeU = Video::AddressMode::Wrap;
                 samplerStates.addressModeV = Video::AddressMode::Wrap;
-                resultValue = video->createSamplerStates(&linearSamplerStates, samplerStates);
+                resultValue = video->createSamplerStates(&linearWrapSamplerStates, samplerStates);
             }
 
             if (SUCCEEDED(resultValue))
@@ -297,7 +308,8 @@ namespace Gek
 
                 UINT32 lightListCount = lightList.size();
                 videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
-                videoContext->pixelPipeline()->setSamplerStates(linearSamplerStates, 1);
+                videoContext->pixelPipeline()->setSamplerStates(linearClampSamplerStates, 1);
+                videoContext->pixelPipeline()->setSamplerStates(linearWrapSamplerStates, 2);
                 videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
                 ShaderHandle currentShader;

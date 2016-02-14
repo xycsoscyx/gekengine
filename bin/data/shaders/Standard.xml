@@ -16,10 +16,10 @@
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
         <gaussianSigma>1.3</gaussianSigma>
         <guassianRadius>6</guassianRadius>
-        <ambientOcclusionRadius>1.0</ambientOcclusionRadius>
-        <ambientOcclusionStrength>0.35</ambientOcclusionStrength>
-        <ambientOcclusionTapCount>16</ambientOcclusionTapCount>
-        <ambientOcclusionSpiralCount>12</ambientOcclusionSpiralCount>
+        <shadowRadius>1.0</shadowRadius>
+        <shadowStrength>0.5</shadowStrength>
+        <shadowTapCount>16</shadowTapCount>
+        <shadowSpiralCount>12</shadowSpiralCount>
         <toneMappingThreshold>1.0</toneMappingThreshold>
     </defines>
 
@@ -33,9 +33,9 @@
         <luminatedBuffer bind="float3" flags="target">float4</luminatedBuffer>
         <luminanceBuffer bind="float" flags="target" mipmaps="0">float</luminanceBuffer>
         <averageLuminance bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminance>
-        <ambientObscuranceBuffer bind="float" flags="target">byte</ambientObscuranceBuffer>
-        <ambientObscuranceBuffer2 bind="float" flags="target" width="displayWidth/2" height="displayHeight/2">byte</ambientObscuranceBuffer2>
-        <ambientObscuranceBuffer4 bind="float" flags="target, readWrite" width="displayWidth/4" height="displayHeight/4">byte</ambientObscuranceBuffer4>
+        <effectsBuffer bind="float4" flags="target">byte4</effectsBuffer>
+        <effectsBuffer2 bind="float4" flags="target" width="displayWidth/4" height="displayHeight/4">byte4</effectsBuffer2>
+        <effectsBuffer4 bind="float4" flags="target, readWrite" width="displayWidth/8" height="displayHeight/8">byte4</effectsBuffer4>
     </textures>
 
     <buffers>
@@ -142,7 +142,7 @@
 
             <targets>
                 <luminanceBuffer />
-                <ambientObscuranceBuffer />
+                <effectsBuffer />
             </targets>
 
             <program>
@@ -153,11 +153,11 @@
 
         <pass mode="deferred">
             <resources>
-                <ambientObscuranceBuffer>source</ambientObscuranceBuffer>
+                <effectsBuffer>source</effectsBuffer>
             </resources>
 
             <targets>
-                <ambientObscuranceBuffer2>destination</ambientObscuranceBuffer2>
+                <effectsBuffer2>destination</effectsBuffer2>
             </targets>
 
             <program>
@@ -168,11 +168,11 @@
 
         <pass mode="deferred">
             <resources>
-                <ambientObscuranceBuffer2>source</ambientObscuranceBuffer2>
+                <effectsBuffer2>source</effectsBuffer2>
             </resources>
 
             <targets>
-                <ambientObscuranceBuffer4>destination</ambientObscuranceBuffer4>
+                <effectsBuffer4>destination</effectsBuffer4>
             </targets>
 
             <program>
@@ -187,12 +187,12 @@
             </defines>
 
             <resources>
-                <ambientObscuranceBuffer4 actions="flip">ambientObscuranceBuffer</ambientObscuranceBuffer4>
+                <effectsBuffer4 actions="flip">effectsBuffer</effectsBuffer4>
                 <depthBuffer />
             </resources>
 
             <targets>
-                <ambientObscuranceBuffer4>ambientObscuranceBuffer</ambientObscuranceBuffer4>
+                <effectsBuffer4>effectsBuffer</effectsBuffer4>
             </targets>
 
             <program>
@@ -207,12 +207,12 @@
             </defines>
 
             <resources>
-                <ambientObscuranceBuffer4 actions="flip">ambientObscuranceBuffer</ambientObscuranceBuffer4>
+                <effectsBuffer4 actions="flip">effectsBuffer</effectsBuffer4>
                 <depthBuffer />
             </resources>
 
             <targets>
-                <ambientObscuranceBuffer4>ambientObscuranceBuffer</ambientObscuranceBuffer4>
+                <effectsBuffer4>effectsBuffer</effectsBuffer4>
             </targets>
 
             <program>
@@ -223,11 +223,11 @@
 
         <pass mode="deferred">
             <resources>
-                <ambientObscuranceBuffer4 actions="flip">source</ambientObscuranceBuffer4>
+                <effectsBuffer4 actions="flip">source</effectsBuffer4>
             </resources>
 
             <targets>
-                <ambientObscuranceBuffer2>destination</ambientObscuranceBuffer2>
+                <effectsBuffer2>destination</effectsBuffer2>
             </targets>
 
             <program>
@@ -238,11 +238,11 @@
 
         <pass mode="deferred">
             <resources>
-                <ambientObscuranceBuffer2>source</ambientObscuranceBuffer2>
+                <effectsBuffer2>source</effectsBuffer2>
             </resources>
 
             <targets>
-                <ambientObscuranceBuffer>destination</ambientObscuranceBuffer>
+                <effectsBuffer>destination</effectsBuffer>
             </targets>
 
             <program>
@@ -271,7 +271,8 @@
             <resources>
                 <luminatedBuffer />
                 <averageLuminance actions="flip" />
-                <ambientObscuranceBuffer />
+                <effectsBuffer />
+                <depthBuffer />
             </resources>
 
             <program>

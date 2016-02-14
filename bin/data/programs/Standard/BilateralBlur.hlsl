@@ -10,15 +10,15 @@ float calculateGaussianWeight(int offset)
     return (g * exp(-sqr(offset) / d));
 }
 
-float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
+float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float2 pixelSize;
-    Resources::ambientObscuranceBuffer.GetDimensions(pixelSize.x, pixelSize.y);
+    Resources::effectsBuffer.GetDimensions(pixelSize.x, pixelSize.y);
     pixelSize = rcp(pixelSize);
 
     float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
-    float finalOcclusion = 0.0;
+    float4 finalEffects = 0.0;
     float totalWeight = 0.0;
 
     [unroll]
@@ -26,15 +26,16 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     {
         float2 sampleTexCoord = (inputPixel.texCoord + (offset * pixelSize * blurAxis));
         float sampleDepth = Resources::depthBuffer.Sample(Global::pointSampler, sampleTexCoord);
-        float sampleOcclusion = Resources::ambientObscuranceBuffer.Sample(Global::linearSampler, sampleTexCoord);
+        float4 sampleEffects = Resources::effectsBuffer.Sample(Global::linearClampSampler, sampleTexCoord);
 
-        float sampleWeight = calculateGaussianWeight(offset);
+        float4 sampleWeight = calculateGaussianWeight(offset);
         // range doma(the "bilateral" weight). As depth difference increases, decrease weight.
-        sampleWeight *= rcp(Math::Epsilon + bilateralEdgeSharpness * abs(surfaceDepth - sampleDepth));
+        sampleWeight.w *= rcp(Math::Epsilon + bilateralEdgeSharpness * abs(surfaceDepth - sampleDepth));
 
-        finalOcclusion += (sampleOcclusion * sampleWeight);
-        totalWeight += sampleWeight;
+        finalEffects += (sampleEffects * sampleWeight);
+        totalWeight += sampleWeight.w;
     }
 
-    return (finalOcclusion * rcp(totalWeight + Math::Epsilon));
+    finalEffects.w *= rcp(totalWeight + Math::Epsilon);
+    return finalEffects;
 }
