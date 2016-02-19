@@ -1069,24 +1069,19 @@ namespace Gek
 
             for (auto &mapValue : mapList)
             {
-                ResourceHandle map;
-                auto materialMapIterator = materialDataMap.find(mapValue.name);
-                if (materialMapIterator != materialDataMap.end())
+                ResourceHandle resource;
+                auto dataIterator = materialDataMap.find(mapValue.name);
+                if (dataIterator != materialDataMap.end())
                 {
-                    CStringW materialFileName = (*materialMapIterator).second;
-                    materialFileName.MakeLower();
-                    materialFileName.Replace(L"%directory%", LPCWSTR(filePath));
-                    materialFileName.Replace(L"%filename%", LPCWSTR(fileSpec));
-                    materialFileName.Replace(L"%material%", materialName);
-                    map = resources->loadTexture(materialFileName, mapValue.flags);
+                    CStringW dataName = (*dataIterator).second;
+                    dataName.MakeLower();
+                    dataName.Replace(L"%directory%", LPCWSTR(filePath));
+                    dataName.Replace(L"%filename%", LPCWSTR(fileSpec));
+                    dataName.Replace(L"%material%", materialName);
+                    resource = resources->loadTexture(dataName, mapValue.defaultValue, mapValue.flags);
                 }
 
-                if (!map)
-                {
-                    map = resources->loadTexture(mapValue.defaultValue, 0);
-                }
-
-                resourceList.push_back(map);
+                resourceList.push_back(resource);
             }
         }
 

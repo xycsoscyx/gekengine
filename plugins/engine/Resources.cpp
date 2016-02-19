@@ -19,6 +19,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Shapes\Sphere.h"
 #include <concurrent_unordered_map.h>
+#include <concurrent_unordered_set.h>
 #include <ppl.h>
 #include <set>
 
@@ -48,7 +49,8 @@ namespace Gek
 
     private:
         UINT64 nextIdentifier;
-        concurrency::concurrent_unordered_map<std::size_t, HANDLE> hashMap;
+        concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
+        concurrency::concurrent_unordered_map<std::size_t, HANDLE> resourceHandleMap;
         concurrency::concurrent_unordered_map<HANDLE, CComPtr<IUnknown>> localResourceMap;
         concurrency::concurrent_unordered_map<HANDLE, ReadWrite> readWriteResourceMap;
         concurrency::concurrent_unordered_map<HANDLE, CComPtr<IUnknown>> globalResourceMap;
@@ -65,9 +67,24 @@ namespace Gek
 
         void clearResources(void)
         {
-            hashMap.clear();
+            requestedLoadSet.clear();
+            resourceHandleMap.clear();
             localResourceMap.clear();
             readWriteResourceMap.clear();
+        }
+
+        HANDLE getGlobalHandle(std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
+        {
+            HANDLE handle;
+            handle.assign(InterlockedIncrement(&nextIdentifier));
+
+            CComPtr<IUnknown> resource;
+            if (SUCCEEDED(loadResource(&resource)) && resource)
+            {
+                globalResourceMap[handle] = resource;
+            }
+
+            return handle;
         }
 
         HANDLE getUniqueHandle(std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
@@ -102,47 +119,40 @@ namespace Gek
         HANDLE getHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
         {
             HANDLE handle;
-            if (hash == 0)
+            if (requestedLoadSet.count(hash) > 0)
             {
-                CComPtr<IUnknown> resource;
-                if (SUCCEEDED(loadResource(&resource)) && resource)
+                auto resourceIterator = resourceHandleMap.find(hash);
+                if (resourceIterator != resourceHandleMap.end())
                 {
-                    handle.assign(InterlockedIncrement(&nextIdentifier));
-                    globalResourceMap[handle] = resource;
+                    handle = resourceIterator->second;
                 }
             }
             else
             {
-                auto hashIterator = hashMap.find(hash);
-                if (hashIterator == hashMap.end())
+                requestedLoadSet.insert(hash);
+                handle.assign(InterlockedIncrement(&nextIdentifier));
+                resourceHandleMap[hash] = handle;
+
+                if (readWrite)
                 {
-                    handle.assign(InterlockedIncrement(&nextIdentifier));
-                    hashMap[hash] = handle;
-                    if (readWrite)
-                    {
-                        readWriteResourceMap[handle] = ReadWrite();
+                    readWriteResourceMap[handle] = ReadWrite();
 
-                        CComPtr<IUnknown> read, write;
-                        if (SUCCEEDED(loadResource(&read)) && read &&
-                            SUCCEEDED(loadResource(&write)) && write)
-                        {
-                            readWriteResourceMap[handle] = ReadWrite(read, write);
-                        }
-                    }
-                    else
+                    CComPtr<IUnknown> read, write;
+                    if (SUCCEEDED(loadResource(&read)) && read &&
+                        SUCCEEDED(loadResource(&write)) && write)
                     {
-                        localResourceMap[handle] = nullptr;
-
-                        CComPtr<IUnknown> resource;
-                        if (SUCCEEDED(loadResource(&resource)) && resource)
-                        {
-                            localResourceMap[handle] = resource;
-                        }
+                        readWriteResourceMap[handle] = ReadWrite(read, write);
                     }
                 }
                 else
                 {
-                    handle = hashIterator->second;
+                    localResourceMap[handle] = nullptr;
+
+                    CComPtr<IUnknown> resource;
+                    if (SUCCEEDED(loadResource(&resource)) && resource)
+                    {
+                        localResourceMap[handle] = resource;
+                    }
                 }
             }
 
@@ -270,8 +280,7 @@ namespace Gek
 
         STDMETHODIMP_(PluginHandle) loadPlugin(LPCWSTR fileName)
         {
-            std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
-            return pluginManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            return pluginManager.getGlobalHandle([&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
@@ -430,8 +439,7 @@ namespace Gek
 
         STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps)
         {
-            std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
-            return resourceManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            auto createFunction = [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoTexture> texture;
                 HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
@@ -441,13 +449,22 @@ namespace Gek
                 }
 
                 return resultValue;
-            }, (flags & TextureFlags::ReadWrite ? true : false));
+            };
+
+            if (name)
+            {
+                std::size_t hash = std::hash<LPCWSTR>()(name);
+                return resourceManager.getHandle(hash, createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+            }
+            else
+            {
+                return resourceManager.getGlobalHandle(createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+            }
         }
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
-            std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
-            return resourceManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            auto createFunction = [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoBuffer> buffer;
                 HRESULT resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
@@ -457,13 +474,22 @@ namespace Gek
                 }
 
                 return resultValue;
-            }, (flags & TextureFlags::ReadWrite ? true : false));
+            };
+
+            if (name)
+            {
+                std::size_t hash = std::hash<LPCWSTR>()(name);
+                return resourceManager.getHandle(hash, createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+            }
+            else
+            {
+                return resourceManager.getGlobalHandle(createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+            }
         }
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
-            std::size_t hash = (name ? std::hash<LPCWSTR>()(name) : 0);
-            return resourceManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            auto createFunction = [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoBuffer> buffer;
                 HRESULT resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
@@ -478,14 +504,24 @@ namespace Gek
                 }
 
                 return resultValue;
-            }, (flags & TextureFlags::ReadWrite ? true : false));
+            };
+
+            if (name)
+            {
+                std::size_t hash = std::hash<LPCWSTR>()(name);
+                return resourceManager.getHandle(hash, createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+            }
+            else
+            {
+                return resourceManager.getGlobalHandle(createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+            }
         }
 
         HRESULT createTexture(VideoTexture **returnObject, CStringW parameters, UINT32 flags)
         {
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
-            gekCheckScope(resultValue, parameters, flags);
+            HRESULT resultValue = E_FAIL;
 
             CComPtr<VideoTexture> texture;
 
@@ -564,7 +600,7 @@ namespace Gek
             REQUIRE_RETURN(returnObject, E_INVALIDARG);
             REQUIRE_RETURN(fileName, E_INVALIDARG);
 
-            gekCheckScope(resultValue, fileName, flags);
+            HRESULT resultValue = E_FAIL;
 
             // iterate over formats in case the texture name has no extension
             static LPCWSTR formatList[] =
@@ -599,14 +635,14 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP_(ResourceHandle) loadTexture(LPCWSTR fileName, UINT32 flags)
+        STDMETHODIMP_(ResourceHandle) loadTexture(LPCWSTR fileName, LPCWSTR fallback, UINT32 flags)
         {
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
             return resourceManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 REQUIRE_RETURN(fileName, E_INVALIDARG);
 
-                gekCheckScope(resultValue, fileName, flags);
+                gekCheckScope(resultValue, fileName, fallback, flags);
 
                 CComPtr<VideoTexture> texture;
                 if ((*fileName) && (*fileName) == L'*')
@@ -616,6 +652,10 @@ namespace Gek
                 else
                 {
                     resultValue = loadTexture(&texture, fileName, flags);
+                    if ((FAILED(resultValue) || !texture) && fallback && (*fallback) == L'*')
+                    {
+                        resultValue = createTexture(&texture, &fallback[1], flags);
+                    }
                 }
 
                 if (texture)

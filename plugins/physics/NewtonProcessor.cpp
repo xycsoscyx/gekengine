@@ -24,11 +24,7 @@
 #include <map>
 #include <set>
 
-#ifdef _DEBUG
 #pragma comment(lib, "newton.lib")
-#else
-#pragma comment(lib, "newton.lib")
-#endif
 
 static void deSerializeCollision(void* const serializeHandle, void* const buffer, int size)
 {
@@ -495,7 +491,7 @@ namespace Gek
             NewtonWorldAddPostListener(newtonWorld, "__gek_post_listener__", this, newtonWorldPostUpdate, nullptr);
 
             int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
-            NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, NULL, newtonOnAABBOverlap, newtonOnContactFriction);
+            NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
 
             newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
             if (newtonStaticScene)

@@ -87,7 +87,7 @@ namespace Gek
     {
         STDMETHOD_(PluginHandle, loadPlugin)                (THIS_ LPCWSTR fileName) PURE;
         STDMETHOD_(MaterialHandle, loadMaterial)            (THIS_ LPCWSTR fileName) PURE;
-        STDMETHOD_(ResourceHandle, loadTexture)             (THIS_ LPCWSTR fileName, UINT32 flags) PURE;
+        STDMETHOD_(ResourceHandle, loadTexture)             (THIS_ LPCWSTR fileName, LPCWSTR fallback, UINT32 flags) PURE;
 
         STDMETHOD_(ResourceHandle, createTexture)           (THIS_ LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps = 1) PURE;
         STDMETHOD_(ResourceHandle, createBuffer)            (THIS_ LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;

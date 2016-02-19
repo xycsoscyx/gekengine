@@ -10,11 +10,7 @@
 #include <map>
 
 #include <Newton.h>
-#ifdef _DEBUG
-#pragma comment(lib, "newton_d.lib")
-#else
 #pragma comment(lib, "newton.lib")
-#endif
 
 #include <assimp/config.h>
 #include <assimp/cimport.h>

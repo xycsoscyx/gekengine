@@ -376,7 +376,10 @@ namespace Gek
                     loadBoundingBox(pair.first->second, modelComponent);
                 }
 
-                entityDataList.insert(std::make_pair(entity, EntityData(pair.first->second, resources->loadMaterial(modelComponent.skin))));
+                if (!modelComponent.skin.IsEmpty())
+                {
+                    entityDataList.insert(std::make_pair(entity, EntityData(pair.first->second, resources->loadMaterial(modelComponent.skin))));
+                }
             }
         }
 
