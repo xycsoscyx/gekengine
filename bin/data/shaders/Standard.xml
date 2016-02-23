@@ -19,7 +19,7 @@
         <shadowRadius>1.0</shadowRadius>
         <shadowStrength>0.5</shadowStrength>
         <shadowTapCount>16</shadowTapCount>
-        <shadowSpiralCount>12</shadowSpiralCount>
+        <shadowSpiralCount>7</shadowSpiralCount>
         <toneMappingThreshold>1.0</toneMappingThreshold>
     </defines>
 
@@ -29,13 +29,11 @@
         <albedoBuffer bind="float3" flags="target">byte4</albedoBuffer>
         <materialBuffer bind="float2" flags="target">byte2</materialBuffer>
         <normalBuffer bind="half2" flags="target">half2</normalBuffer>
-        <depthBuffer bind="float" flags="target">float</depthBuffer>
+        <depthBuffer bind="float" flags="target" mipmaps="0">float</depthBuffer>
         <luminatedBuffer bind="float3" flags="target">float4</luminatedBuffer>
         <luminanceBuffer bind="float" flags="target" mipmaps="0">float</luminanceBuffer>
         <averageLuminance bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminance>
-        <effectsBuffer bind="float4" flags="target">byte4</effectsBuffer>
-        <effectsBuffer2 bind="float4" flags="target" width="displayWidth/4" height="displayHeight/4">byte4</effectsBuffer2>
-        <effectsBuffer4 bind="float4" flags="target, readWrite" width="displayWidth/8" height="displayHeight/8">byte4</effectsBuffer4>
+        <ambientOcclusionBuffer bind="float" flags="target, readWrite">byte</ambientOcclusionBuffer>
     </textures>
 
     <buffers>
@@ -137,12 +135,12 @@
             <resources>
                 <luminatedBuffer />
                 <normalBuffer />
-                <depthBuffer />
+                <depthBuffer actions="generateMipMaps" />
             </resources>
 
             <targets>
                 <luminanceBuffer />
-                <effectsBuffer />
+                <ambientOcclusionBuffer />
             </targets>
 
             <program>
@@ -152,47 +150,17 @@
         </pass>
 
         <pass mode="deferred">
-            <resources>
-                <effectsBuffer>source</effectsBuffer>
-            </resources>
-
-            <targets>
-                <effectsBuffer2>destination</effectsBuffer2>
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\ScaleBuffer</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <effectsBuffer2>source</effectsBuffer2>
-            </resources>
-
-            <targets>
-                <effectsBuffer4>destination</effectsBuffer4>
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\ScaleBuffer</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
             <defines>
                 <blurAxis>float2(1, 0)</blurAxis>
             </defines>
 
             <resources>
-                <effectsBuffer4 actions="flip">effectsBuffer</effectsBuffer4>
+                <ambientOcclusionBuffer actions="flip" />
                 <depthBuffer />
             </resources>
 
             <targets>
-                <effectsBuffer4>effectsBuffer</effectsBuffer4>
+                <ambientOcclusionBuffer />
             </targets>
 
             <program>
@@ -207,47 +175,17 @@
             </defines>
 
             <resources>
-                <effectsBuffer4 actions="flip">effectsBuffer</effectsBuffer4>
+                <ambientOcclusionBuffer actions="flip" />
                 <depthBuffer />
             </resources>
 
             <targets>
-                <effectsBuffer4>effectsBuffer</effectsBuffer4>
+                <ambientOcclusionBuffer />
             </targets>
 
             <program>
                 <entry>mainPixelProgram</entry>
                 <source>Standard\BilateralBlur</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <effectsBuffer4 actions="flip">source</effectsBuffer4>
-            </resources>
-
-            <targets>
-                <effectsBuffer2>destination</effectsBuffer2>
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\ScaleBuffer</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <effectsBuffer2>source</effectsBuffer2>
-            </resources>
-
-            <targets>
-                <effectsBuffer>destination</effectsBuffer>
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\ScaleBuffer</source>
             </program>
         </pass>
 
@@ -271,7 +209,7 @@
             <resources>
                 <luminatedBuffer />
                 <averageLuminance actions="flip" />
-                <effectsBuffer />
+                <ambientOcclusionBuffer actions="flip" />
                 <depthBuffer />
             </resources>
 
