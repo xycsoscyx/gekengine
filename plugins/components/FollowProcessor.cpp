@@ -1,6 +1,7 @@
 ﻿#include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Engine\Processor.h"
+#include "GEK\Engine\ProcessorMixin.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Components\Transform.h"
@@ -13,8 +14,7 @@
 namespace Gek
 {
     class FollowProcessorImplementation : public ContextUserMixin
-        , public PopulationObserver
-        , public Processor
+        , public ProcessorMixin<FollowComponent, TransformComponent>
     {
     public:
         struct Data
@@ -77,54 +77,42 @@ namespace Gek
             return resultValue;
         };
 
-        // PopulationObserver
-        STDMETHODIMP_(void) onLoadBegin(void)
-        {
-        }
-
-        STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
-        {
-            if (FAILED(resultValue))
-            {
-                onFree();
-            }
-        }
-
-        STDMETHODIMP_(void) onFree(void)
+        // ProcessorMixin
+        STDMETHODIMP_(void) onMixinFree(void)
         {
             entityOrderMap.clear();
             entityDataMap.clear();
         }
 
-        STDMETHODIMP_(void) onEntityCreated(Entity *entity)
+        STDMETHODIMP_(void) onMixinEntityCreated(Entity *entity)
         {
             REQUIRE_VOID_RETURN(population);
+            REQUIRE_VOID_RETURN(entity);
 
-            if (entity->hasComponents<FollowComponent, TransformComponent>())
+            auto &followComponent = entity->getComponent<FollowComponent>();
+
+            Entity *target = population->getNamedEntity(followComponent.target);
+            if (target)
             {
-                auto &followComponent = entity->getComponent<FollowComponent>();
-
-                Entity *target = population->getNamedEntity(followComponent.target);
-                if (target)
+                if (target->hasComponent<TransformComponent>())
                 {
-                    if (target->hasComponent<TransformComponent>())
-                    {
-                        auto &transformComponent = entity->getComponent<TransformComponent>();
-                        auto &targetTransformComponent = target->getComponent<TransformComponent>();
-                        transformComponent.position = targetTransformComponent.position;
-                        transformComponent.rotation = targetTransformComponent.rotation;
-                        entityDataMap[entity] = Data(target);
+                    auto &transformComponent = entity->getComponent<TransformComponent>();
+                    auto &targetTransformComponent = target->getComponent<TransformComponent>();
+                    transformComponent.position = targetTransformComponent.position;
+                    transformComponent.rotation = targetTransformComponent.rotation;
+                    entityDataMap[entity] = Data(target);
 
-                        static UINT32 nextOrder = 0;
-                        UINT32 order = InterlockedIncrement(&nextOrder);
-                        entityOrderMap[order] = entity;
-                    }
+                    static UINT32 nextOrder = 0;
+                    UINT32 order = InterlockedIncrement(&nextOrder);
+                    entityOrderMap[order] = entity;
                 }
             }
         }
 
-        STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
+        STDMETHODIMP_(void) onMixinEntityDestroyed(Entity *entity)
         {
+            REQUIRE_VOID_RETURN(entity);
+
             auto entityIterator = entityDataMap.find(entity);
             if (entityIterator != entityDataMap.end())
             {
@@ -132,6 +120,7 @@ namespace Gek
             }
         }
 
+        // PopulationObserver
         STDMETHODIMP_(void) onUpdate(float frameTime)
         {
             for (auto &entityOrderPair : entityOrderMap)
