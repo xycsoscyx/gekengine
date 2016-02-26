@@ -371,7 +371,7 @@ namespace Gek
                 if (consoleActive)
                 {
                     consolePosition = std::min(1.0f, (consolePosition + float(updateTime * 4.0)));
-                    population->update();
+                    population->idle();
                 }
                 else
                 {
@@ -398,7 +398,7 @@ namespace Gek
         }
 
         // PopulationObserver
-        STDMETHODIMP_(void) onUpdate(void)
+        void refresh(void)
         {
             std::list<std::pair<CStringW, std::vector<CStringW>>> commandCopy;
             if (true)
@@ -474,6 +474,16 @@ namespace Gek
                     break;
                 };
             }
+        }
+
+        STDMETHODIMP_(void) onIdle(void)
+        {
+            refresh();
+        }
+
+        STDMETHODIMP_(void) onUpdate(void)
+        {
+            refresh();
         }
 
         // RenderObserver

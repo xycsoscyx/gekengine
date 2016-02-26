@@ -20,6 +20,7 @@ namespace Gek
         STDMETHOD_(float, getWorldTime)             (THIS) PURE;
         STDMETHOD_(float, getFrameTime)             (THIS) PURE;
 
+        STDMETHOD_(void, idle)                      (THIS_ void) PURE;
         STDMETHOD_(void, update)                    (THIS_ float frameTime = 0.0f) PURE;
 
         STDMETHOD(load)                             (THIS_ LPCWSTR fileName) PURE;
@@ -57,6 +58,7 @@ namespace Gek
         STDMETHOD_(void, onEntityCreated)           (THIS_ Entity *entity) { };
         STDMETHOD_(void, onEntityDestroyed)         (THIS_ Entity *entity) { };
 
+        STDMETHOD_(void, onIdle)                    (THIS) { };
         STDMETHOD_(void, onUpdate)                  (THIS) { };
     };
 

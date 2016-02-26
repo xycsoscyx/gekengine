@@ -99,6 +99,7 @@ namespace Gek
             }
         };
 
+        __declspec(align(16))
         struct InstanceData
         {
             Math::Float4x4 matrix;
@@ -445,7 +446,7 @@ namespace Gek
                                     memcpy(instanceData, instance, sizeof(InstanceData));
                                     resources->unmapBuffer(constantBuffer);
 
-                                    resources->setConstantBuffer(videoContext->vertexPipeline(), constantBuffer, 2);
+                                    resources->setConstantBuffer(videoContext->vertexPipeline(), constantBuffer, 4);
                                     resources->setVertexBuffer(videoContext, 0, subModel->vertexBuffer, 0);
                                     resources->setIndexBuffer(videoContext, subModel->indexBuffer, 0);
                                     videoContext->drawIndexedPrimitive(subModel->indexCount, 0, 0);

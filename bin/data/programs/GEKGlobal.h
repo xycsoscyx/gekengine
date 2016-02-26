@@ -18,8 +18,9 @@ namespace Engine
 {
     cbuffer buffer : register(b0)
     {
-        float    worldTime               : packoffset(c0);
-        float    frameTime               : packoffset(c0.y);
+        float worldTime;
+        float frameTime;
+        float buffer[2];
     };
 };
 
@@ -27,12 +28,12 @@ namespace Camera
 {
     cbuffer buffer : register(b1)
     {
-        float2   fieldOfView             : packoffset(c0);
-        float    minimumDistance         : packoffset(c0.z);
-        float    maximumDistance         : packoffset(c0.w);
-        float4x4 viewMatrix              : packoffset(c1);
-        float4x4 projectionMatrix        : packoffset(c5);
-        float4x4 inverseProjectionMatrix : packoffset(c9);
+        float2 fieldOfView;
+        float minimumDistance;
+        float maximumDistance;
+        float4x4 viewMatrix;
+        float4x4 projectionMatrix;
+        float4x4 inverseProjectionMatrix;
     };
 };
 
@@ -40,7 +41,9 @@ namespace Shader
 {
     cbuffer buffer : register(b2)
     {
-        float    width                   : packoffset(c0);
-        float    height                  : packoffset(c0.y);
+        float defaultWidth;
+        float defaultHeight;
+        float width;
+        float height;
     };
 };

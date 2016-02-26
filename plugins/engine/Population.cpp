@@ -142,6 +142,14 @@ namespace Gek
             return worldTime;
         }
 
+        STDMETHODIMP_(void) idle(void)
+        {
+            for (auto &priorityPair : updatePriorityMap)
+            {
+                priorityPair.second->onIdle();
+            }
+        }
+
         STDMETHODIMP_(void) update(float frameTime)
         {
             this->frameTime = frameTime;

@@ -36,6 +36,7 @@ namespace Gek
         {
             float worldTime;
             float frameTime;
+            float buffer[2];
         };
 
         __declspec(align(16))
@@ -303,14 +304,15 @@ namespace Gek
             ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
             if (!drawCallList.empty())
             {
-                video->updateBuffer(engineConstantBuffer, &engineConstantData);
-                video->updateBuffer(cameraConstantBuffer, &cameraConstantData);
-
                 VideoContext *videoContext = video->getDefaultContext();
+
+                video->updateBuffer(engineConstantBuffer, &engineConstantData);
                 videoContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer, 0);
                 videoContext->vertexPipeline()->setConstantBuffer(engineConstantBuffer, 0);
                 videoContext->pixelPipeline()->setConstantBuffer(engineConstantBuffer, 0);
                 videoContext->computePipeline()->setConstantBuffer(engineConstantBuffer, 0);
+
+                video->updateBuffer(cameraConstantBuffer, &cameraConstantData);
                 videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
                 videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
                 videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
@@ -434,7 +436,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onUpdate(void)
+        void render(void)
         {
             REQUIRE_VOID_RETURN(population);
             REQUIRE_VOID_RETURN(resources);
@@ -456,6 +458,16 @@ namespace Gek
             ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderOverlay, std::placeholders::_1)));
 
             video->present(true);
+        }
+
+        STDMETHODIMP_(void) onUpdate(void)
+        {
+            render();
+        }
+
+        STDMETHODIMP_(void) onIdle(void)
+        {
+            render();
         }
     };
 

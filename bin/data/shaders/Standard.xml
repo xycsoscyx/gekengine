@@ -18,8 +18,8 @@
         <guassianRadius>7</guassianRadius>
         <shadowRadius>1</shadowRadius>
         <shadowStrength>0.25</shadowStrength>
-        <shadowTapCount>16</shadowTapCount>
-        <shadowSpiralCount>9</shadowSpiralCount>
+        <shadowTapCount>12</shadowTapCount>
+        <shadowSpiralCount>13</shadowSpiralCount>
         <toneMappingThreshold>1.0</toneMappingThreshold>
     </defines>
 
@@ -29,7 +29,7 @@
         <albedoBuffer bind="float3" flags="target">byte4</albedoBuffer>
         <materialBuffer bind="float2" flags="target">byte2</materialBuffer>
         <normalBuffer bind="half2" flags="target">half2</normalBuffer>
-        <depthBuffer bind="float" flags="target" mipmaps="0">float</depthBuffer>
+        <depthBuffer bind="float" flags="target">float</depthBuffer>
         <luminatedBuffer bind="float3" flags="target">float4</luminatedBuffer>
         <luminanceBuffer bind="float" flags="target" mipmaps="0">float</luminanceBuffer>
         <averageLuminance bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminance>
@@ -135,7 +135,7 @@
             <resources>
                 <luminatedBuffer />
                 <normalBuffer />
-                <depthBuffer actions="generateMipMaps" />
+                <depthBuffer />
             </resources>
 
             <targets>

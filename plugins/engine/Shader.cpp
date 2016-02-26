@@ -197,6 +197,8 @@ namespace Gek
         __declspec(align(16))
         struct ShaderConstantData
         {
+            float defaultWidth;
+            float defaultHeight;
             float width;
             float height;
         };
@@ -205,8 +207,6 @@ namespace Gek
         VideoSystem *video;
         Resources *resources;
         CComPtr<VideoBuffer> shaderConstantBuffer;
-        UINT32 width;
-        UINT32 height;
         std::list<Map> mapList;
         std::unordered_map<CStringW, CStringW> globalDefinesList;
         ResourceHandle depthBuffer;
@@ -522,8 +522,6 @@ namespace Gek
         ShaderImplementation(void)
             : video(nullptr)
             , resources(nullptr)
-            , width(0)
-            , height(0)
         {
         }
 
@@ -559,9 +557,6 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                width = video->getWidth();
-                height = video->getHeight();
-
                 Gek::XmlDocument xmlDocument;
                 gekCheckResult(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\shaders\\%s.xml", fileName)));
                 if (SUCCEEDED(resultValue))
@@ -570,16 +565,6 @@ namespace Gek
                     Gek::XmlNode xmlShaderNode = xmlDocument.getRoot();
                     if (xmlShaderNode && xmlShaderNode.getType().CompareNoCase(L"shader") == 0)
                     {
-                        if (xmlShaderNode.hasAttribute(L"width"))
-                        {
-                            width = String::to<UINT32>(evaluate(xmlShaderNode.getAttribute(L"width")));
-                        }
-
-                        if (xmlShaderNode.hasAttribute(L"height"))
-                        {
-                            height = String::to<UINT32>(evaluate(xmlShaderNode.getAttribute(L"height")));
-                        }
-
                         std::unordered_map<CStringW, std::pair<MapType, BindType>> resourceList;
                         Gek::XmlNode xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
                         if (xmlMaterialNode)
@@ -620,7 +605,7 @@ namespace Gek
                         if (xmlDepthNode)
                         {
                             Video::Format format = getFormat(xmlDepthNode.getText());
-                            depthBuffer = resources->createTexture(String::format(L"%s:depth", fileName), format, width, height, 1, Video::TextureFlags::DepthTarget);
+                            depthBuffer = resources->createTexture(String::format(L"%s:depth", fileName), format, video->getWidth(), video->getHeight(), 1, Video::TextureFlags::DepthTarget);
                         }
 
                         Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"textures");
@@ -634,13 +619,13 @@ namespace Gek
                                 BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
                                 UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
 
-                                int textureWidth = width;
+                                int textureWidth = video->getWidth();
                                 if (xmlTargetNode.hasAttribute(L"width"))
                                 {
                                     textureWidth = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"width")));
                                 }
 
-                                int textureHeight = height;
+                                int textureHeight = video->getHeight();
                                 if (xmlTargetNode.hasAttribute(L"height"))
                                 {
                                     textureHeight = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"height")));
@@ -864,26 +849,26 @@ namespace Gek
                                     if (block.lighting)
                                     {
                                         engineData +=
-                                            "namespace Lighting                                     \r\n" \
-                                            "{                                                      \r\n" \
-                                            "    struct Data                                        \r\n" \
-                                            "    {                                                  \r\n" \
-                                            "        float3  position;                              \r\n" \
-                                            "        float   range;                                 \r\n" \
-                                            "        float   radius;                                \r\n" \
-                                            "        float3  color;                                 \r\n" \
-                                            "    };                                                 \r\n" \
-                                            "                                                       \r\n" \
-                                            "    cbuffer Parameters : register(b3)                  \r\n" \
-                                            "    {                                                  \r\n" \
-                                            "        uint    count   : packoffset(c0);              \r\n" \
-                                            "        uint3   padding : packoffset(c0.y);            \r\n" \
-                                            "    };                                                 \r\n" \
-                                            "                                                       \r\n" \
-                                            "    StructuredBuffer<Data> list : register(t0);        \r\n" \
-                                            "    static const uint maximumListSize = 255;           \r\n" \
-                                            "};                                                     \r\n" \
-                                            "                                                       \r\n";
+                                            "namespace Lighting                                         \r\n" \
+                                            "{                                                          \r\n" \
+                                            "    struct Data                                            \r\n" \
+                                            "    {                                                      \r\n" \
+                                            "        float3  position;                                  \r\n" \
+                                            "        float   range;                                     \r\n" \
+                                            "        float   radius;                                    \r\n" \
+                                            "        float3  color;                                     \r\n" \
+                                            "    };                                                     \r\n" \
+                                            "                                                           \r\n" \
+                                            "    cbuffer Parameters : register(b3)                      \r\n" \
+                                            "    {                                                      \r\n" \
+                                            "        uint    count;                                     \r\n" \
+                                            "        uint3   padding;                                   \r\n" \
+                                            "    };                                                     \r\n" \
+                                            "                                                           \r\n" \
+                                            "    StructuredBuffer<Data> list : register(t0);            \r\n" \
+                                            "    static const uint maximumListSize = 255;               \r\n" \
+                                            "};                                                         \r\n" \
+                                            "                                                           \r\n";
                                     }
 
                                     UINT32 stage = 0;
@@ -1217,12 +1202,9 @@ namespace Gek
                         resources->setProgram(videoPipeline, pass.program);
 
                         ShaderConstantData shaderConstantData;
-                        if (pass.mode == PassMode::Compute)
-                        {
-                            shaderConstantData.width = width;
-                            shaderConstantData.width = height;
-                        }
-                        else
+                        shaderConstantData.defaultWidth = float(video->getWidth());
+                        shaderConstantData.defaultHeight = float(video->getHeight());
+                        if (pass.mode != PassMode::Compute)
                         {
                             resources->setDepthStates(videoContext, pass.depthStates, 0x0);
                             resources->setRenderStates(videoContext, pass.renderStates);
@@ -1236,8 +1218,8 @@ namespace Gek
                             if (pass.renderTargetList.empty())
                             {
                                 resources->setDefaultTargets(videoContext, depthBuffer);
-                                shaderConstantData.width = width;
-                                shaderConstantData.height = height;
+                                shaderConstantData.width = float(video->getWidth());
+                                shaderConstantData.height = float(video->getHeight());
                             }
                             else
                             {
@@ -1253,8 +1235,8 @@ namespace Gek
                                         VideoTarget *target = resources->getResource<VideoTarget>(renderTargetHandle);
                                         if (target)
                                         {
-                                            shaderConstantData.width = target->getWidth();
-                                            shaderConstantData.height = target->getHeight();
+                                            shaderConstantData.width = float(target->getWidth());
+                                            shaderConstantData.height = float(target->getHeight());
                                         }
                                     }
 
@@ -1263,10 +1245,9 @@ namespace Gek
 
                                 resources->setRenderTargets(videoContext, renderTargetList, stage, depthBuffer);
                             }
-
-                            video->updateBuffer(shaderConstantBuffer, &shaderConstantData);
                         }
 
+                        video->updateBuffer(shaderConstantBuffer, &shaderConstantData);
                         videoContext->geometryPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
                         videoContext->vertexPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
                         videoContext->pixelPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
