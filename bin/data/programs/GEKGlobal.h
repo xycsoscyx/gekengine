@@ -14,9 +14,18 @@ namespace Global
     SamplerState linearWrapSampler : register(s2);
 };
 
-namespace Camera
+namespace Engine
 {
     cbuffer buffer : register(b0)
+    {
+        float    worldTime               : packoffset(c0);
+        float    frameTime               : packoffset(c0.y);
+    };
+};
+
+namespace Camera
+{
+    cbuffer buffer : register(b1)
     {
         float2   fieldOfView             : packoffset(c0);
         float    minimumDistance         : packoffset(c0.z);
@@ -24,5 +33,14 @@ namespace Camera
         float4x4 viewMatrix              : packoffset(c1);
         float4x4 projectionMatrix        : packoffset(c5);
         float4x4 inverseProjectionMatrix : packoffset(c9);
+    };
+};
+
+namespace Shader
+{
+    cbuffer buffer : register(b2)
+    {
+        float    width                   : packoffset(c0);
+        float    height                  : packoffset(c0.y);
     };
 };

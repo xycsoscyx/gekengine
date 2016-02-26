@@ -16,7 +16,10 @@ namespace Gek
     DECLARE_INTERFACE_IID(Population, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B") : virtual public IUnknown
     {
         STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
-                
+
+        STDMETHOD_(float, getWorldTime)             (THIS) PURE;
+        STDMETHOD_(float, getFrameTime)             (THIS) PURE;
+
         STDMETHOD_(void, update)                    (THIS_ float frameTime = 0.0f) PURE;
 
         STDMETHOD(load)                             (THIS_ LPCWSTR fileName) PURE;
@@ -54,7 +57,7 @@ namespace Gek
         STDMETHOD_(void, onEntityCreated)           (THIS_ Entity *entity) { };
         STDMETHOD_(void, onEntityDestroyed)         (THIS_ Entity *entity) { };
 
-        STDMETHOD_(void, onUpdate)                  (THIS_ float frameTime) { };
+        STDMETHOD_(void, onUpdate)                  (THIS) { };
     };
 
     DECLARE_INTERFACE_IID(PopulationRegistration, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5");

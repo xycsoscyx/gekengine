@@ -31,6 +31,14 @@ namespace Gek
         , public Render
     {
     public:
+        __declspec(align(16))
+        struct EngineConstantData
+        {
+            float worldTime;
+            float frameTime;
+        };
+
+        __declspec(align(16))
         struct CameraConstantData
         {
             Math::Float2 fieldOfView;
@@ -41,7 +49,8 @@ namespace Gek
             Math::Float4x4 inverseProjectionMatrix;
         };
 
-        struct LightConstants
+        __declspec(align(16))
+        struct LightConstantData
         {
             UINT32 count;
             UINT32 padding[3];
@@ -110,6 +119,7 @@ namespace Gek
         CComPtr<IUnknown> pointSamplerStates;
         CComPtr<IUnknown> linearClampSamplerStates;
         CComPtr<IUnknown> linearWrapSamplerStates;
+        CComPtr<VideoBuffer> engineConstantBuffer;
         CComPtr<VideoBuffer> cameraConstantBuffer;
         CComPtr<VideoBuffer> lightConstantBuffer;
         CComPtr<VideoBuffer> lightDataBuffer;
@@ -191,12 +201,17 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
+                resultValue = video->createBuffer(&engineConstantBuffer, sizeof(EngineConstantData), 1, Video::BufferType::Constant, 0);
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
                 resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
             }
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&lightConstantBuffer, sizeof(LightConstants), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+                resultValue = video->createBuffer(&lightConstantBuffer, sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
             }
 
             if (SUCCEEDED(resultValue))
@@ -259,10 +274,17 @@ namespace Gek
 
         STDMETHODIMP_(void) render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix)
         {
+            REQUIRE_VOID_RETURN(population);
+            REQUIRE_VOID_RETURN(cameraEntity);
+
             auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
             Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
 
             auto &cameraData = cameraEntity->getComponent<CameraComponent>();
+
+            EngineConstantData engineConstantData;
+            engineConstantData.frameTime = population->getFrameTime();
+            engineConstantData.worldTime = population->getWorldTime();
 
             CameraConstantData cameraConstantData;
             float displayAspectRatio = (float(video->getWidth()) / float(video->getHeight()));
@@ -281,13 +303,18 @@ namespace Gek
             ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &viewFrustum)));
             if (!drawCallList.empty())
             {
+                video->updateBuffer(engineConstantBuffer, &engineConstantData);
                 video->updateBuffer(cameraConstantBuffer, &cameraConstantData);
 
                 VideoContext *videoContext = video->getDefaultContext();
-                videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
-                videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
-                videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer, 0);
-                videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer, 0);
+                videoContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer, 0);
+                videoContext->vertexPipeline()->setConstantBuffer(engineConstantBuffer, 0);
+                videoContext->pixelPipeline()->setConstantBuffer(engineConstantBuffer, 0);
+                videoContext->computePipeline()->setConstantBuffer(engineConstantBuffer, 0);
+                videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
+                videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
+                videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
+                videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer, 1);
 
                 concurrency::parallel_sort(drawCallList.begin(), drawCallList.end(), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
                 {
@@ -334,7 +361,7 @@ namespace Gek
                         {
                             UINT32 lightCount = std::min((lightListCount - lightBase), MaxLightCount);
 
-                            LightConstants *lightConstants = nullptr;
+                            LightConstantData *lightConstants = nullptr;
                             if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (LPVOID *)&lightConstants)))
                             {
                                 lightConstants->count = lightCount;
@@ -355,7 +382,7 @@ namespace Gek
                     auto enableLights = [&](VideoPipeline *videoPipeline) -> void
                     {
                         videoPipeline->setResource(lightDataBuffer, 0);
-                        videoPipeline->setConstantBuffer(lightConstantBuffer, 1);
+                        videoPipeline->setConstantBuffer(lightConstantBuffer, 3);
                     };
 
                     auto drawForward = [&](void) -> void
@@ -407,7 +434,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onUpdate(float frameTime)
+        STDMETHODIMP_(void) onUpdate(void)
         {
             REQUIRE_VOID_RETURN(population);
             REQUIRE_VOID_RETURN(resources);

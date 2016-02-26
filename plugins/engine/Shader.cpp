@@ -194,9 +194,17 @@ namespace Gek
             }
         };
 
+        __declspec(align(16))
+        struct ShaderConstantData
+        {
+            float width;
+            float height;
+        };
+
     private:
         VideoSystem *video;
         Resources *resources;
+        CComPtr<VideoBuffer> shaderConstantBuffer;
         UINT32 width;
         UINT32 height;
         std::list<Map> mapList;
@@ -541,7 +549,16 @@ namespace Gek
             {
                 this->video = video;
                 this->resources = resources;
+                resultValue = (this->video && this->resources ? S_OK : E_FAIL);
+            }
 
+            if (SUCCEEDED(resultValue))
+            {
+                resultValue = video->createBuffer(&shaderConstantBuffer, sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
                 width = video->getWidth();
                 height = video->getHeight();
 
@@ -857,7 +874,7 @@ namespace Gek
                                             "        float3  color;                                 \r\n" \
                                             "    };                                                 \r\n" \
                                             "                                                       \r\n" \
-                                            "    cbuffer Parameters : register(b1)                  \r\n" \
+                                            "    cbuffer Parameters : register(b3)                  \r\n" \
                                             "    {                                                  \r\n" \
                                             "        uint    count   : packoffset(c0);              \r\n" \
                                             "        uint3   padding : packoffset(c0.y);            \r\n" \
@@ -1199,7 +1216,13 @@ namespace Gek
 
                         resources->setProgram(videoPipeline, pass.program);
 
-                        if (pass.mode != PassMode::Compute)
+                        ShaderConstantData shaderConstantData;
+                        if (pass.mode == PassMode::Compute)
+                        {
+                            shaderConstantData.width = width;
+                            shaderConstantData.width = height;
+                        }
+                        else
                         {
                             resources->setDepthStates(videoContext, pass.depthStates, 0x0);
                             resources->setRenderStates(videoContext, pass.renderStates);
@@ -1213,6 +1236,8 @@ namespace Gek
                             if (pass.renderTargetList.empty())
                             {
                                 resources->setDefaultTargets(videoContext, depthBuffer);
+                                shaderConstantData.width = width;
+                                shaderConstantData.height = height;
                             }
                             else
                             {
@@ -1225,6 +1250,12 @@ namespace Gek
                                     if (resourceIterator != resourceMap.end())
                                     {
                                         renderTargetHandle = (*resourceIterator).second;
+                                        VideoTarget *target = resources->getResource<VideoTarget>(renderTargetHandle);
+                                        if (target)
+                                        {
+                                            shaderConstantData.width = target->getWidth();
+                                            shaderConstantData.height = target->getHeight();
+                                        }
                                     }
 
                                     renderTargetList[stage++] = renderTargetHandle;
@@ -1232,8 +1263,14 @@ namespace Gek
 
                                 resources->setRenderTargets(videoContext, renderTargetList, stage, depthBuffer);
                             }
+
+                            video->updateBuffer(shaderConstantBuffer, &shaderConstantData);
                         }
 
+                        videoContext->geometryPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+                        videoContext->vertexPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+                        videoContext->pixelPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+                        videoContext->computePipeline()->setConstantBuffer(shaderConstantBuffer, 2);
                         switch (pass.mode)
                         {
                         case PassMode::Forward:

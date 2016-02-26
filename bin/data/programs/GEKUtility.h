@@ -3,9 +3,9 @@ float sqr(float x)
     return x * x;
 }
 
-float rand(float2 co)
+float rand(int2 position)
 {
-    return 0.5 + (frac(sin(dot(co.xy, float2(12.9898, 78.233))) * 43758.5453)) * 0.5;
+    return (61.111231231 * Engine::worldTime + (9.2735171213125 * position.x + -7.235171213125 * position.y + 1.53713171123412415411 * (position.x ^ position.y)));
 }
 
 float getLuminance(float3 color)

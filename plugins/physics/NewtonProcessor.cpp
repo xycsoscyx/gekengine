@@ -613,11 +613,13 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onUpdate(float frameTime)
+        STDMETHODIMP_(void) onUpdate(void)
         {
-            if (newtonWorld && frameTime > 0.0f)
+            REQUIRE_VOID_RETURN(population);
+
+            if (newtonWorld)
             {
-                NewtonUpdateAsync(newtonWorld, frameTime);
+                NewtonUpdateAsync(newtonWorld, population->getFrameTime());
             }
         }
     };

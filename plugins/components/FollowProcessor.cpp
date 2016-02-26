@@ -132,7 +132,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onUpdate(float frameTime)
+        STDMETHODIMP_(void) onUpdate(void)
         {
             for (auto &entityOrderPair : entityOrderMap)
             {

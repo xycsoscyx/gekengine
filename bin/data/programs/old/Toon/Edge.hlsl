@@ -12,10 +12,8 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 	float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texCoord);
     float nScaleDepth = (1 - saturate(nCenterDepth * 1.5));
 
-    float2 nSize;
-    gs_pDepthBuffer.GetDimensions(nSize.x, nSize.y);
-    nSize = rcp(nSize);
-                
+    float2 nSixelSize = rcp(float2(Shader::width, Shader::height));
+
     float2 nOffset = (gs_nRadius * nSize * nScaleDepth);
     nOffset = max(nOffset, nSize);
 

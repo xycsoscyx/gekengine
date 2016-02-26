@@ -67,6 +67,9 @@ namespace Gek
         , public Population
     {
     private:
+        float worldTime;
+        float frameTime;
+
         std::unordered_map<CStringW, std::type_index> componentNameList;
         std::unordered_map<std::type_index, CComPtr<Component>> componentList;
 
@@ -129,8 +132,20 @@ namespace Gek
             return resultValue;
         }
 
+        STDMETHODIMP_(float) getFrameTime(void)
+        {
+            return frameTime;
+        }
+
+        STDMETHODIMP_(float) getWorldTime(void)
+        {
+            return worldTime;
+        }
+
         STDMETHODIMP_(void) update(float frameTime)
         {
+            this->frameTime = frameTime;
+            worldTime += frameTime;
             if (loadScene)
             {
                 loadScene();
@@ -139,7 +154,7 @@ namespace Gek
 
             for (auto &priorityPair : updatePriorityMap)
             {
-                priorityPair.second->onUpdate(frameTime);
+                priorityPair.second->onUpdate();
             }
 
             for (auto const &killEntity : killEntityList)
@@ -239,6 +254,8 @@ namespace Gek
                     gekLogMessage(L"[error] Unable to load population");
                 }
 
+                frameTime = 0.0f;
+                worldTime = 0.0f;
                 ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadEnd, std::placeholders::_1, resultValue)));
                 return resultValue;
             }, CStringW(fileName));

@@ -398,7 +398,7 @@ namespace Gek
         }
 
         // PopulationObserver
-        STDMETHODIMP_(void) onUpdate(float frameTime)
+        STDMETHODIMP_(void) onUpdate(void)
         {
             std::list<std::pair<CStringW, std::vector<CStringW>>> commandCopy;
             if (true)

@@ -36,8 +36,7 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
     [branch]
     if (pixelIndex == 0)
     {
-        float2 depthBufferSize;
-        Resources::depthBuffer.GetDimensions(depthBufferSize.x, depthBufferSize.y);
+        float2 depthBufferSize = float2(Shader::width, Shader::height);
         float2 tileScale = depthBufferSize * rcp(float(2 * tileSize));
         float2 tileBias = tileScale - float2(tilePosition.xy);
 
