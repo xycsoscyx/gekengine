@@ -3,7 +3,7 @@
     <shader>standard</shader>
     <maps>
         <albedo>*color:(7.0196, 8.90196, 8.43137)</albedo>
-        <normal>*normal:(0, 0, 1)</normal>
+        <normal>*pattern:flat</normal>
         <roughness>*color:1</roughness>
         <metalness>*color:0</metalness>
     </maps>

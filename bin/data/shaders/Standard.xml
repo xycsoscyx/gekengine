@@ -2,9 +2,9 @@
 <shader>
     <material>
         <maps>
-            <albedo bind="float4" default="*color:(1,0,1,1)">Texture2D</albedo>
-            <normal bind="float2" default="*normal:(0,0,1)">Texture2D</normal>
-            <roughness bind="float" default="*color:.25">Texture2D</roughness>
+            <albedo bind="float4" default="*pattern:debug">Texture2D</albedo>
+            <normal bind="float2" default="*pattern:flat">Texture2D</normal>
+            <roughness bind="float" default="*color:.1">Texture2D</roughness>
             <metalness bind="float" default="*color:0">Texture2D</metalness>
         </maps>
     </material>

@@ -580,10 +580,47 @@ namespace Gek
                 if (texture)
                 {
                     Math::Float3 normal((Evaluator::get<Math::Float3>(value).getNormal() + 1.0f) * 0.5f);
-                    UINT32 normalValue = UINT32(UINT8(normal.x * 255.0f)) |
-                                         UINT32(UINT8(normal.y * 255.0f) << 8) |
-                                         UINT32(UINT8(normal.z * 255.0f) << 16);
-                    video->updateTexture(texture, &normalValue, 4);
+                    UINT8 normalData[4] = 
+                    {
+                        UINT8(normal.x * 255.0f),
+                        UINT8(normal.y * 255.0f),
+                        UINT8(normal.z * 255.0f),
+                        255,
+                    };
+
+                    video->updateTexture(texture, normalData, 4);
+                }
+            }
+            else if (type.CompareNoCase(L"pattern") == 0)
+            {
+                if (value.CompareNoCase(L"debug") == 0)
+                {
+                    resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                    if (texture)
+                    {
+                        UINT8 data[] =
+                        {
+                            255, 0, 255, 255,
+                        };
+
+                        video->updateTexture(texture, data, 4);
+                    }
+                }
+                else if (value.CompareNoCase(L"flat") == 0)
+                {
+                    resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                    if (texture)
+                    {
+                        UINT8 normalData[4] =
+                        {
+                            127,
+                            127,
+                            255,
+                            255,
+                        };
+
+                        video->updateTexture(texture, normalData, 4);
+                    }
                 }
             }
 
