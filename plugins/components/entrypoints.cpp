@@ -7,8 +7,14 @@
 
 namespace Gek
 {
-    DECLARE_REGISTERED_CLASS(CameraImplementation);
-    DECLARE_INTERFACE_IID(CameraRegistration, "4C33007B-108F-4C05-8A36-024888884AB7");
+    DECLARE_REGISTERED_CLASS(FirstPersonCameraImplementation);
+    DECLARE_INTERFACE_IID(FirstPersonCameraRegistration, "4C33007B-108F-4C05-8A36-024888884AB7");
+
+    DECLARE_REGISTERED_CLASS(ThirdPersonCameraImplementation);
+    DECLARE_INTERFACE_IID(ThirdPersonCameraRegistration, "99AC75D7-6BF9-4065-B044-C16627C65349");
+
+    DECLARE_REGISTERED_CLASS(CameraProcessorImplementation);
+    DECLARE_INTERFACE_IID(CameraProcessorRegistration, "3EEB7CC0-94FB-4630-82DB-00281B00A28E");
 
     DECLARE_REGISTERED_CLASS(ColorImplementation);
     DECLARE_INTERFACE_IID(ColorRegistration, "A46EA40F-6325-4B4A-A20E-DD8B904D9EC3");
@@ -18,17 +24,17 @@ namespace Gek
 
     DECLARE_REGISTERED_CLASS(TransformImplementation);
     DECLARE_INTERFACE_IID(TransformRegistration, "62BAFD17-E5CB-4CA0-84B2-963836AE9836");
-
-    DECLARE_REGISTERED_CLASS(FollowImplementation);
-    DECLARE_INTERFACE_IID(FollowRegistration, "99AC75D7-6BF9-4065-B044-C16627C65349");
-
-    DECLARE_REGISTERED_CLASS(FollowProcessorImplementation);
-    DECLARE_INTERFACE_IID(FollowProcessorRegistration, "3EEB7CC0-94FB-4630-82DB-00281B00A28E");
 }; // namespace Gek
 
 DECLARE_CONTEXT_SOURCE(Components)
-    ADD_CONTEXT_CLASS(Gek::CameraRegistration, Gek::CameraImplementation)
+    ADD_CONTEXT_CLASS(Gek::FirstPersonCameraRegistration, Gek::FirstPersonCameraImplementation)
         ADD_CLASS_TYPE(Gek::ComponentType)
+
+    ADD_CONTEXT_CLASS(Gek::ThirdPersonCameraRegistration, Gek::ThirdPersonCameraImplementation)
+        ADD_CLASS_TYPE(Gek::ComponentType)
+
+    ADD_CONTEXT_CLASS(Gek::CameraProcessorRegistration, Gek::CameraProcessorImplementation)
+        ADD_CLASS_TYPE(Gek::ProcessorType)
 
     ADD_CONTEXT_CLASS(Gek::ColorRegistration, Gek::ColorImplementation)
         ADD_CLASS_TYPE(Gek::ComponentType)
@@ -38,10 +44,4 @@ DECLARE_CONTEXT_SOURCE(Components)
 
     ADD_CONTEXT_CLASS(Gek::TransformRegistration, Gek::TransformImplementation)
         ADD_CLASS_TYPE(Gek::ComponentType)
-
-    ADD_CONTEXT_CLASS(Gek::FollowRegistration, Gek::FollowImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
-
-    ADD_CONTEXT_CLASS(Gek::FollowProcessorRegistration, Gek::FollowProcessorImplementation)
-        ADD_CLASS_TYPE(Gek::ProcessorType)
 END_CONTEXT_SOURCE

@@ -165,10 +165,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraProcessor.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Follow.cpp" />
-    <ClCompile Include="FollowProcessor.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
@@ -178,7 +177,6 @@
   <ItemGroup>
     <ClInclude Include="GEK\Components\Camera.h" />
     <ClInclude Include="GEK\Components\Color.h" />
-    <ClInclude Include="GEK\Components\Follow.h" />
     <ClInclude Include="GEK\Components\Light.h" />
     <ClInclude Include="GEK\Components\Transform.h" />
   </ItemGroup>

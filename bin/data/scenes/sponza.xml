@@ -8,7 +8,7 @@
             <static_body>sponza</static_body>
         </entity>
 
-        <entity name="player">
+        <entity name="player_body">
             <transform position="(0, 30, 0)" rotation="(0, 0, 0)" scale="(1.5,3,1.5)"/>
             <player_body outer_radius="1.5" inner_radius=".5" half_height="3" stair_step="1.5" />
             <mass>250</mass>
@@ -16,8 +16,7 @@
 
         <entity name="player_head">
             <transform scale="(.8,.8,.8)"/>
-            <follow distance="(0, 5.5, 0)" mode="offset">player</follow>
-            <camera type="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200" />
+            <camera mode="perspective" type="first_person" field_of_view="90" minimum_distance="0.5" maximum_distance="200" body="player_body"/>
         </entity>
 
         <entity>
