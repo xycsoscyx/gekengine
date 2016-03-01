@@ -283,7 +283,8 @@ namespace Gek
                 messageEvent.line = line;
                 messageEvent.message = message;
                 Context::sendEvent(messageEvent);
-                ObservableMixin::sendEvent(Event<ContextObserver>(std::bind(&ContextObserver::onLogMessage, std::placeholders::_1, file, line, message.GetString())));            }
+                ObservableMixin::sendEvent(Event<ContextObserver>(std::bind(&ContextObserver::onLogMessage, std::placeholders::_1, file, line, message.GetString())));
+            }
         }
     };
 

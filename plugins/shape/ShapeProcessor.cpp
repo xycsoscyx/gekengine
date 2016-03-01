@@ -528,7 +528,7 @@ namespace Gek
 
         HRESULT loadShape(Shape &shape)
         {
-            std::size_t hash = std::hash_combine(static_cast<UINT8>(shape.type), shape.parameters);
+            std::size_t hash = std::hash<LPCVOID>()(&shape);
             if (loadShapeSet.count(hash) > 0)
             {
                 return S_OK;
@@ -628,7 +628,7 @@ namespace Gek
             if (entity->hasComponents<ShapeComponent, TransformComponent>())
             {
                 auto &shapeComponent = entity->getComponent<ShapeComponent>();
-                std::size_t hash = std::hash_combine(shapeComponent.value, shapeComponent.parameters);
+                std::size_t hash = std::hash<CStringW>()(shapeComponent.parameters + shapeComponent.value);
                 auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
                 if (pair.second)
                 {
