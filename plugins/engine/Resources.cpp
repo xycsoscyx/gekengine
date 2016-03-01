@@ -25,8 +25,6 @@
 
 namespace Gek
 {
-    static const UINT32 MaxLightCount = 255;
-
     template <class HANDLE>
     class ObjectManager
     {
@@ -738,9 +736,9 @@ namespace Gek
             resourceManager.flipResource(resourceHandle);
         }
 
-        STDMETHODIMP_(void) generateMipMaps(VideoContext *videoContext, ResourceHandle resourceHandle)
+        STDMETHODIMP_(void) generateMipMaps(RenderContext *renderContext, ResourceHandle resourceHandle)
         {
-            videoContext->generateMipMaps(resourceManager.getResource<VideoTexture>(resourceHandle));
+            renderContext->getContext()->generateMipMaps(resourceManager.getResource<VideoTexture>(resourceHandle));
         }
 
         STDMETHODIMP_(void) copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
@@ -748,62 +746,62 @@ namespace Gek
             video->copyResource(resourceManager.getResource(destinationHandle), resourceManager.getResource(sourceHandle));
         }
 
-        STDMETHODIMP_(void) setRenderStates(VideoContext *videoContext, RenderStatesHandle renderStatesHandle)
+        STDMETHODIMP_(void) setRenderStates(RenderContext *renderContext, RenderStatesHandle renderStatesHandle)
         {
-            videoContext->setRenderStates(renderStateManager.getResource<IUnknown>(renderStatesHandle));
+            renderContext->getContext()->setRenderStates(renderStateManager.getResource<IUnknown>(renderStatesHandle));
         }
 
-        STDMETHODIMP_(void) setDepthStates(VideoContext *videoContext, DepthStatesHandle depthStatesHandle, UINT32 stencilReference)
+        STDMETHODIMP_(void) setDepthStates(RenderContext *renderContext, DepthStatesHandle depthStatesHandle, UINT32 stencilReference)
         {
-            videoContext->setDepthStates(depthStateManager.getResource<IUnknown>(depthStatesHandle), stencilReference);
+            renderContext->getContext()->setDepthStates(depthStateManager.getResource<IUnknown>(depthStatesHandle), stencilReference);
         }
 
-        STDMETHODIMP_(void) setBlendStates(VideoContext *videoContext, BlendStatesHandle blendStatesHandle, const Math::Color &blendFactor, UINT32 sampleMask)
+        STDMETHODIMP_(void) setBlendStates(RenderContext *renderContext, BlendStatesHandle blendStatesHandle, const Math::Color &blendFactor, UINT32 sampleMask)
         {
-            videoContext->setBlendStates(blendStateManager.getResource<IUnknown>(blendStatesHandle), blendFactor, sampleMask);
+            renderContext->getContext()->setBlendStates(blendStateManager.getResource<IUnknown>(blendStatesHandle), blendFactor, sampleMask);
         }
 
-        STDMETHODIMP_(void) setResource(VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage)
+        STDMETHODIMP_(void) setResource(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage)
         {
-            videoPipeline->setResource(resourceManager.getResource<IUnknown>(resourceHandle), stage);
+            renderPipeline->getPipeline()->setResource(resourceManager.getResource<IUnknown>(resourceHandle), stage);
         }
 
-        STDMETHODIMP_(void) setUnorderedAccess(VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage)
+        STDMETHODIMP_(void) setUnorderedAccess(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage)
         {
-            videoPipeline->setUnorderedAccess(resourceManager.getResource<IUnknown>(resourceHandle, true), stage);
+            renderPipeline->getPipeline()->setUnorderedAccess(resourceManager.getResource<IUnknown>(resourceHandle, true), stage);
         }
 
-        STDMETHODIMP_(void) setConstantBuffer(VideoPipeline *videoPipeline, ResourceHandle resourceHandle, UINT32 stage)
+        STDMETHODIMP_(void) setConstantBuffer(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage)
         {
-            videoPipeline->setConstantBuffer(resourceManager.getResource<VideoBuffer>(resourceHandle), stage);
+            renderPipeline->getPipeline()->setConstantBuffer(resourceManager.getResource<VideoBuffer>(resourceHandle), stage);
         }
 
-        STDMETHODIMP_(void) setProgram(VideoPipeline *videoPipeline, ProgramHandle programHandle)
+        STDMETHODIMP_(void) setProgram(RenderPipeline *renderPipeline, ProgramHandle programHandle)
         {
-            videoPipeline->setProgram(programManager.getResource<IUnknown>(programHandle));
+            renderPipeline->getPipeline()->setProgram(programManager.getResource<IUnknown>(programHandle));
         }
 
-        STDMETHODIMP_(void) setVertexBuffer(VideoContext *videoContext, UINT32 slot, ResourceHandle resourceHandle, UINT32 offset)
+        STDMETHODIMP_(void) setVertexBuffer(RenderContext *renderContext, UINT32 slot, ResourceHandle resourceHandle, UINT32 offset)
         {
-            videoContext->setVertexBuffer(slot, resourceManager.getResource<VideoBuffer>(resourceHandle), offset);
+            renderContext->getContext()->setVertexBuffer(slot, resourceManager.getResource<VideoBuffer>(resourceHandle), offset);
         }
 
-        STDMETHODIMP_(void) setIndexBuffer(VideoContext *videoContext, ResourceHandle resourceHandle, UINT32 offset)
+        STDMETHODIMP_(void) setIndexBuffer(RenderContext *renderContext, ResourceHandle resourceHandle, UINT32 offset)
         {
-            videoContext->setIndexBuffer(resourceManager.getResource<VideoBuffer>(resourceHandle), offset);
+            renderContext->getContext()->setIndexBuffer(resourceManager.getResource<VideoBuffer>(resourceHandle), offset);
         }
 
-        STDMETHODIMP_(void) clearRenderTarget(VideoContext *videoContext, ResourceHandle resourceHandle, const Math::Color &color)
+        STDMETHODIMP_(void) clearRenderTarget(RenderContext *renderContext, ResourceHandle resourceHandle, const Math::Color &color)
         {
-            videoContext->clearRenderTarget(resourceManager.getResource<VideoTarget>(resourceHandle, true), color);
+            renderContext->getContext()->clearRenderTarget(resourceManager.getResource<VideoTarget>(resourceHandle, true), color);
         }
 
-        STDMETHODIMP_(void) clearDepthStencilTarget(VideoContext *videoContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear)
+        STDMETHODIMP_(void) clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear)
         {
-            videoContext->clearDepthStencilTarget(resourceManager.getResource<IUnknown>(depthBuffer), flags, depthClear, stencilClear);
+            renderContext->getContext()->clearDepthStencilTarget(resourceManager.getResource<IUnknown>(depthBuffer), flags, depthClear, stencilClear);
         }
 
-        STDMETHODIMP_(void) setRenderTargets(VideoContext *videoContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle depthBuffer)
+        STDMETHODIMP_(void) setRenderTargets(RenderContext *renderContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle depthBuffer)
         {
             static Video::ViewPort viewPortList[8];
             static VideoTarget *renderTargetList[8];
@@ -813,13 +811,13 @@ namespace Gek
                 viewPortList[renderTarget] = renderTargetList[renderTarget]->getViewPort();
             }
 
-            videoContext->setRenderTargets(renderTargetList, renderTargetHandleCount, resourceManager.getResource<IUnknown>(depthBuffer));
-            videoContext->setViewports(viewPortList, renderTargetHandleCount);
+            renderContext->getContext()->setRenderTargets(renderTargetList, renderTargetHandleCount, resourceManager.getResource<IUnknown>(depthBuffer));
+            renderContext->getContext()->setViewports(viewPortList, renderTargetHandleCount);
         }
 
-        STDMETHODIMP_(void) setDefaultTargets(VideoContext *videoContext, ResourceHandle depthBuffer)
+        STDMETHODIMP_(void) setDefaultTargets(RenderContext *renderContext, ResourceHandle depthBuffer)
         {
-            video->setDefaultTargets(videoContext, resourceManager.getResource<IUnknown>(depthBuffer));
+            video->setDefaultTargets(renderContext->getContext(), resourceManager.getResource<IUnknown>(depthBuffer));
         }
 
     };

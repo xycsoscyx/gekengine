@@ -25,6 +25,58 @@ namespace Gek
 {
     static const UINT32 MaxLightCount = 255;
 
+    class RenderPipelineImplementation : public UnknownMixin
+        , public RenderPipeline
+    {
+    private:
+        VideoPipeline *videoPipeline;
+
+    public:
+        RenderPipelineImplementation(VideoPipeline *videoPipeline)
+            : videoPipeline(videoPipeline)
+        {
+        }
+
+        BEGIN_INTERFACE_LIST(RenderPipelineImplementation)
+            INTERFACE_LIST_ENTRY_COM(RenderPipeline)
+        END_INTERFACE_LIST_UNKNOWN
+
+        // RenderPipeline
+        STDMETHODIMP_(VideoPipeline *) getPipeline(void) { return videoPipeline; };
+    };
+
+    class RenderContextImplementation : public UnknownMixin
+        , public RenderContext
+    {
+    private:
+        VideoContext *videoContext;
+        CComPtr<RenderPipeline> computePipelineHandler;
+        CComPtr<RenderPipeline> vertexPipelineHandler;
+        CComPtr<RenderPipeline> geometryPipelineHandler;
+        CComPtr<RenderPipeline> pixelPipelineHandler;
+
+    public:
+        RenderContextImplementation(VideoContext *videoContext)
+            : videoContext(videoContext)
+            , computePipelineHandler(new RenderPipelineImplementation(videoContext->computePipeline()))
+            , vertexPipelineHandler(new RenderPipelineImplementation(videoContext->vertexPipeline()))
+            , geometryPipelineHandler(new RenderPipelineImplementation(videoContext->geometryPipeline()))
+            , pixelPipelineHandler(new RenderPipelineImplementation(videoContext->pixelPipeline()))
+        {
+        }
+
+        BEGIN_INTERFACE_LIST(RenderContextImplementation)
+            INTERFACE_LIST_ENTRY_COM(RenderContext)
+        END_INTERFACE_LIST_UNKNOWN
+
+        // RenderContext
+        STDMETHODIMP_(VideoContext *) getContext(void) { return videoContext; };
+        STDMETHODIMP_(RenderPipeline *) computePipeline(void) { return computePipelineHandler.p; };
+        STDMETHODIMP_(RenderPipeline *) vertexPipeline(void) { return vertexPipelineHandler.p; };
+        STDMETHODIMP_(RenderPipeline *) geometryPipeline(void) { return geometryPipelineHandler.p; };
+        STDMETHODIMP_(RenderPipeline *) pixelPipeline(void) { return pixelPipelineHandler.p; };
+    };
+
     class RenderImplementation : public ContextUserMixin
         , public ObservableMixin
         , public PopulationObserver
@@ -73,7 +125,7 @@ namespace Gek
             }
         };
 
-        typedef std::function<void(VideoContext *)> DrawCall;
+        typedef std::function<void(RenderContext *renderContext)> DrawCall;
         struct DrawCallValue
         {
             union
@@ -245,7 +297,7 @@ namespace Gek
         }
 
         // Render
-        STDMETHODIMP_(void) queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(VideoContext *)> draw)
+        STDMETHODIMP_(void) queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw)
         {
             if (plugin && material && draw)
             {
@@ -305,6 +357,7 @@ namespace Gek
             if (!drawCallList.empty())
             {
                 VideoContext *videoContext = video->getDefaultContext();
+                CComPtr<RenderContext> renderContext(new RenderContextImplementation(videoContext));
 
                 video->updateBuffer(engineConstantBuffer, &engineConstantData);
                 videoContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer, 0);
@@ -381,10 +434,10 @@ namespace Gek
                         }
                     };
 
-                    auto enableLights = [&](VideoPipeline *videoPipeline) -> void
+                    auto enableLights = [&](RenderPipeline *renderPipeline) -> void
                     {
-                        videoPipeline->setResource(lightDataBuffer, 0);
-                        videoPipeline->setConstantBuffer(lightConstantBuffer, 3);
+                        renderPipeline->getPipeline()->setResource(lightDataBuffer, 0);
+                        renderPipeline->getPipeline()->setConstantBuffer(lightConstantBuffer, 3);
                     };
 
                     auto drawForward = [&](void) -> void
@@ -413,10 +466,10 @@ namespace Gek
                                     continue;
                                 }
 
-                                shader->setResourceList(videoContext, material->getResourceList());
+                                shader->setResourceList(renderContext, material->getResourceList());
                             }
 
-                            drawCall.onDraw(videoContext);
+                            drawCall.onDraw(renderContext);
                         };
                     };
 
@@ -431,7 +484,7 @@ namespace Gek
                         videoContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
                     };
 
-                    shader->draw(videoContext, drawLights, enableLights, drawForward, drawDeferred, runCompute);
+                    shader->draw(renderContext, drawLights, enableLights, drawForward, drawDeferred, runCompute);
                 }
             }
         }

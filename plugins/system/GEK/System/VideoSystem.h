@@ -432,7 +432,7 @@ namespace Gek
         STDMETHOD_(const Video::ViewPort &, getViewPort)    (THIS) PURE;
     };
 
-    DECLARE_INTERFACE(VideoPipeline)
+    DECLARE_INTERFACE_IID(VideoPipeline, "02FD846D-C3C8-4B13-8066-9F5AA612AEBE") : virtual public IUnknown
     {
         STDMETHOD_(void, setProgram)                        (THIS_ IUnknown *program) PURE;
         STDMETHOD_(void, setConstantBuffer)                 (THIS_ VideoBuffer *constantBuffer, UINT32 stage) PURE;

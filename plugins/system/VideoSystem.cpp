@@ -559,7 +559,7 @@ namespace Gek
         }
     };
 
-    class PipelineImplementation
+    class PipelineImplementation : public UnknownMixin
     {
     protected:
         ID3D11DeviceContext *d3dDeviceContext;
@@ -579,6 +579,10 @@ namespace Gek
             : PipelineImplementation(d3dDeviceContext)
         {
         }
+
+        BEGIN_INTERFACE_LIST(ComputePipelineImplementation)
+            INTERFACE_LIST_ENTRY_COM(VideoPipeline)
+        END_INTERFACE_LIST_UNKNOWN
 
         // VideoPipeline
         STDMETHODIMP_(void) setProgram(IUnknown *program)
@@ -626,6 +630,10 @@ namespace Gek
         {
         }
 
+        BEGIN_INTERFACE_LIST(VertexPipelineImplementation)
+            INTERFACE_LIST_ENTRY_COM(VideoPipeline)
+        END_INTERFACE_LIST_UNKNOWN
+
         // VideoPipeline
         STDMETHODIMP_(void) setProgram(IUnknown *program)
         {
@@ -669,6 +677,10 @@ namespace Gek
         {
         }
 
+        BEGIN_INTERFACE_LIST(GeometryPipelineImplementation)
+            INTERFACE_LIST_ENTRY_COM(VideoPipeline)
+        END_INTERFACE_LIST_UNKNOWN
+
         // VideoPipeline
         STDMETHODIMP_(void) setProgram(IUnknown *program)
         {
@@ -708,6 +720,10 @@ namespace Gek
         {
         }
 
+        BEGIN_INTERFACE_LIST(PixelPipelineImplementation)
+            INTERFACE_LIST_ENTRY_COM(VideoPipeline)
+        END_INTERFACE_LIST_UNKNOWN
+
         // VideoPipeline
         STDMETHODIMP_(void) setProgram(IUnknown *program)
         {
@@ -743,10 +759,10 @@ namespace Gek
     {
     protected:
         CComPtr<ID3D11DeviceContext> d3dDeviceContext;
-        std::unique_ptr<VideoPipeline> computeSystemHandler;
-        std::unique_ptr<VideoPipeline> vertexSystemHandler;
-        std::unique_ptr<VideoPipeline> geomtrySystemHandler;
-        std::unique_ptr<VideoPipeline> pixelSystemHandler;
+        CComPtr<VideoPipeline> computeSystemHandler;
+        CComPtr<VideoPipeline> vertexSystemHandler;
+        CComPtr<VideoPipeline> geomtrySystemHandler;
+        CComPtr<VideoPipeline> pixelSystemHandler;
 
     public:
         VideoContextImplementation(void)
@@ -771,25 +787,25 @@ namespace Gek
         STDMETHODIMP_(VideoPipeline *) computePipeline(void)
         {
             REQUIRE_RETURN(computeSystemHandler, nullptr);
-            return computeSystemHandler.get();
+            return computeSystemHandler.p;
         }
 
         STDMETHODIMP_(VideoPipeline *) vertexPipeline(void)
         {
             REQUIRE_RETURN(vertexSystemHandler, nullptr);
-            return vertexSystemHandler.get();
+            return vertexSystemHandler.p;
         }
 
         STDMETHODIMP_(VideoPipeline *) geometryPipeline(void)
         {
             REQUIRE_RETURN(geomtrySystemHandler, nullptr);
-            return geomtrySystemHandler.get();
+            return geomtrySystemHandler.p;
         }
 
         STDMETHODIMP_(VideoPipeline *) pixelPipeline(void)
         {
             REQUIRE_RETURN(pixelSystemHandler, nullptr);
-            return pixelSystemHandler.get();
+            return pixelSystemHandler.p;
         }
 
         STDMETHODIMP_(void) generateMipMaps(VideoTexture *texture)
@@ -1197,10 +1213,10 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                computeSystemHandler.reset(new ComputePipelineImplementation(d3dDeviceContext));
-                vertexSystemHandler.reset(new VertexPipelineImplementation(d3dDeviceContext));
-                geomtrySystemHandler.reset(new GeometryPipelineImplementation(d3dDeviceContext));
-                pixelSystemHandler.reset(new PixelPipelineImplementation(d3dDeviceContext));
+                computeSystemHandler = new ComputePipelineImplementation(d3dDeviceContext);
+                vertexSystemHandler = new VertexPipelineImplementation(d3dDeviceContext);
+                geomtrySystemHandler = new GeometryPipelineImplementation(d3dDeviceContext);
+                pixelSystemHandler = new PixelPipelineImplementation(d3dDeviceContext);
             }
 
             if (SUCCEEDED(resultValue) && fullScreen && !isChildWindow)

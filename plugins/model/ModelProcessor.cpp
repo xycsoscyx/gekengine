@@ -438,7 +438,7 @@ namespace Gek
                     {
                         for (auto &instance : material.second)
                         {
-                            static auto drawCall = [](VideoContext *videoContext, PluginResources *resources, SubModel *subModel, InstanceData *instance, ResourceHandle constantBuffer) -> void
+                            static auto drawCall = [](RenderContext *renderContext, PluginResources *resources, SubModel *subModel, InstanceData *instance, ResourceHandle constantBuffer) -> void
                             {
                                 LPVOID instanceData;
                                 if (SUCCEEDED(resources->mapBuffer(constantBuffer, &instanceData)))
@@ -446,10 +446,10 @@ namespace Gek
                                     memcpy(instanceData, instance, sizeof(InstanceData));
                                     resources->unmapBuffer(constantBuffer);
 
-                                    resources->setConstantBuffer(videoContext->vertexPipeline(), constantBuffer, 4);
-                                    resources->setVertexBuffer(videoContext, 0, subModel->vertexBuffer, 0);
-                                    resources->setIndexBuffer(videoContext, subModel->indexBuffer, 0);
-                                    videoContext->drawIndexedPrimitive(subModel->indexCount, 0, 0);
+                                    resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
+                                    resources->setVertexBuffer(renderContext, 0, subModel->vertexBuffer, 0);
+                                    resources->setIndexBuffer(renderContext, subModel->indexBuffer, 0);
+                                    renderContext->getContext()->drawIndexedPrimitive(subModel->indexCount, 0, 0);
                                 }
                             };
 

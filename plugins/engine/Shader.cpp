@@ -1,5 +1,6 @@
 #include "GEK\Engine\Shader.h"
 #include "GEK\Engine\Resources.h"
+#include "GEK\Engine\Render.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Utility\FileSystem.h"
@@ -1089,7 +1090,7 @@ namespace Gek
 
         Block *currentBlock;
         Pass *currentPass;
-        STDMETHODIMP_(void) setResourceList(VideoContext *videoContext, const std::list<ResourceHandle> &resourceList)
+        STDMETHODIMP_(void) setResourceList(RenderContext *renderContext, const std::list<ResourceHandle> &resourceList)
         {
             REQUIRE_VOID_RETURN(currentBlock);
             REQUIRE_VOID_RETURN(currentPass);
@@ -1100,16 +1101,16 @@ namespace Gek
                 firstStage = 1;
             }
 
-            VideoPipeline *videoPipeline = (currentPass->mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
+            RenderPipeline *renderPipeline = (currentPass->mode == PassMode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
             for (auto &resource : resourceList)
             {
-                resources->setResource(videoPipeline, resource, firstStage++);
+                resources->setResource(renderPipeline, resource, firstStage++);
             }
         }
 
-        STDMETHODIMP_(void) draw(VideoContext *videoContext,
+        STDMETHODIMP_(void) draw(RenderContext *renderContext,
             std::function<void(std::function<void(void)> drawPasses)> drawLights,
-            std::function<void(VideoPipeline *videoPipeline)> enableLights,
+            std::function<void(RenderPipeline *renderPipeline)> enableLights,
             std::function<void(void)> drawForward,
             std::function<void(void)> drawDeferred,
             std::function<void(UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> runCompute)
@@ -1123,7 +1124,7 @@ namespace Gek
                     auto resourceIterator = resourceMap.find(clearTarget.first);
                     if (resourceIterator != resourceMap.end())
                     {
-                        resources->clearRenderTarget(videoContext, resourceIterator->second, clearTarget.second);
+                        resources->clearRenderTarget(renderContext, resourceIterator->second, clearTarget.second);
                     }
                 }
 
@@ -1139,10 +1140,10 @@ namespace Gek
                             stage = 1;
                         }
 
-                        VideoPipeline *videoPipeline = (pass.mode == PassMode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
+                        RenderPipeline *renderPipeline = (pass.mode == PassMode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
                         if (block.lighting)
                         {
-                            enableLights(videoPipeline);
+                            enableLights(renderPipeline);
                         }
 
                         for (auto &resourcePair : pass.resourceList)
@@ -1162,7 +1163,7 @@ namespace Gek
                                     auto &actionMap = actionIterator->second;
                                     if (actionMap.count(L"generatemipmaps") > 0)
                                     {
-                                        resources->generateMipMaps(videoContext, resource);
+                                        resources->generateMipMaps(renderContext, resource);
                                     }
 
                                     if (actionMap.count(L"flip") > 0)
@@ -1183,7 +1184,7 @@ namespace Gek
                                 }
                             }
 
-                            resources->setResource(videoPipeline, resource, stage++);
+                            resources->setResource(renderPipeline, resource, stage++);
                         }
 
                         stage = (pass.renderTargetList.empty() ? 0 : pass.renderTargetList.size());
@@ -1196,28 +1197,28 @@ namespace Gek
                                 resource = resourceIterator->second;
                             }
 
-                            resources->setUnorderedAccess(videoPipeline, resource, stage++);
+                            resources->setUnorderedAccess(renderPipeline, resource, stage++);
                         }
 
-                        resources->setProgram(videoPipeline, pass.program);
+                        resources->setProgram(renderPipeline, pass.program);
 
                         ShaderConstantData shaderConstantData;
                         shaderConstantData.defaultWidth = float(video->getWidth());
                         shaderConstantData.defaultHeight = float(video->getHeight());
                         if (pass.mode != PassMode::Compute)
                         {
-                            resources->setDepthStates(videoContext, pass.depthStates, 0x0);
-                            resources->setRenderStates(videoContext, pass.renderStates);
-                            resources->setBlendStates(videoContext, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
+                            resources->setDepthStates(renderContext, pass.depthStates, 0x0);
+                            resources->setRenderStates(renderContext, pass.renderStates);
+                            resources->setBlendStates(renderContext, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
 
                             if (pass.depthClearFlags > 0)
                             {
-                                resources->clearDepthStencilTarget(videoContext, depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
+                                resources->clearDepthStencilTarget(renderContext, depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
                             }
 
                             if (pass.renderTargetList.empty())
                             {
-                                resources->setDefaultTargets(videoContext, depthBuffer);
+                                resources->setDefaultTargets(renderContext, depthBuffer);
                                 shaderConstantData.width = float(video->getWidth());
                                 shaderConstantData.height = float(video->getHeight());
                             }
@@ -1243,15 +1244,15 @@ namespace Gek
                                     renderTargetList[stage++] = renderTargetHandle;
                                 }
 
-                                resources->setRenderTargets(videoContext, renderTargetList, stage, depthBuffer);
+                                resources->setRenderTargets(renderContext, renderTargetList, stage, depthBuffer);
                             }
                         }
 
                         video->updateBuffer(shaderConstantBuffer, &shaderConstantData);
-                        videoContext->geometryPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
-                        videoContext->vertexPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
-                        videoContext->pixelPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
-                        videoContext->computePipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+                        renderContext->getContext()->geometryPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+                        renderContext->getContext()->vertexPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+                        renderContext->getContext()->pixelPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+                        renderContext->getContext()->computePipeline()->setConstantBuffer(shaderConstantBuffer, 2);
                         switch (pass.mode)
                         {
                         case PassMode::Forward:
@@ -1267,7 +1268,7 @@ namespace Gek
                             break;
                         };
 
-                        videoContext->clearResources();
+                        renderContext->getContext()->clearResources();
                         currentPass = nullptr;
                     }
                 };
