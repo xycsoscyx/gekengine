@@ -363,8 +363,6 @@ namespace Gek
         }
     };
 
-    static const UINT32 MaxInstanceCount = 500;
-
     class ShapeProcessorImplementation : public ContextUserMixin
         , public PopulationObserver
         , public RenderObserver
