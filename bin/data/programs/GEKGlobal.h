@@ -16,7 +16,7 @@ namespace Global
 
 namespace Engine
 {
-    cbuffer buffer : register(b0)
+    cbuffer Constants : register(b0)
     {
         float worldTime;
         float frameTime;
@@ -26,7 +26,7 @@ namespace Engine
 
 namespace Camera
 {
-    cbuffer buffer : register(b1)
+    cbuffer Constants : register(b1)
     {
         float2 fieldOfView;
         float minimumDistance;
@@ -39,7 +39,7 @@ namespace Camera
 
 namespace Shader
 {
-    cbuffer buffer : register(b2)
+    cbuffer Constants : register(b2)
     {
         float defaultWidth;
         float defaultHeight;

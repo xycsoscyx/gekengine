@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<plugin>
+    <layout>
+    </layout>
+    <vertex>
+        <program>particles</program>
+    </vertex>
+</plugin>
