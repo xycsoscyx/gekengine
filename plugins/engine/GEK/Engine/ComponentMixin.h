@@ -5,14 +5,20 @@
 
 namespace Gek
 {
-    template <typename TYPE, typename CONVERTER>
-    void setParameter(const std::unordered_map<CStringW, CStringW> &list, LPCWSTR name, TYPE &value, CONVERTER convert)
+    template <typename TYPE>
+    void setParameter(const std::unordered_map<CStringW, CStringW> &list, LPCWSTR name, TYPE &value)
     {
         auto iterator = list.find(name);
         if (iterator != list.end())
         {
-            value = convert((*iterator).second);
+            value = String::to<TYPE>((*iterator).second);
         }
+    }
+
+    template <typename TYPE>
+    void getParameter(std::unordered_map<CStringW, CStringW> &list, LPCWSTR name, const TYPE &value)
+    {
+        list[name] = String::from(value);
     }
 
     template <class DATA>

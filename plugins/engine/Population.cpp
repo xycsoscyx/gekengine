@@ -100,7 +100,7 @@ namespace Gek
             REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
             gekCheckScope(resultValue);
-            gekLogMessage(L"Loading Components...");
+            gekLogMessage("Loading Components...");
 
             resultValue = getContext()->createEachType(__uuidof(ComponentType), [&](REFCLSID className, IUnknown *object) -> HRESULT
             {
@@ -113,16 +113,16 @@ namespace Gek
                     auto identifierIterator = componentList.insert(std::make_pair(component->getIdentifier(), component));
                     if (identifierIterator.second)
                     {
-                        gekLogMessage(L"Component Found : ID(0x % 08X), Name(%s)", component->getIdentifier(), lowerCaseName.GetString());
+                        gekLogMessage("Component Found : ID(0x % 08X), Name(%S)", component->getIdentifier(), lowerCaseName.GetString());
                         if (!componentNameList.insert(std::make_pair(lowerCaseName, component->getIdentifier())).second)
                         {
                             componentList.erase(identifierIterator.first);
-                            gekLogMessage(L"[error] Component Name Already Used: %s", lowerCaseName.GetString());
+                            gekLogMessage("[error] Component Name Already Used: %S", lowerCaseName.GetString());
                         }
                     }
                     else
                     {
-                        gekLogMessage(L"[error] Component ID Already Used: 0x%08X", component->getIdentifier());
+                        gekLogMessage("[error] Component ID Already Used: 0x%08X", component->getIdentifier());
                     }
                 }
 
@@ -247,19 +247,19 @@ namespace Gek
                         }
                         else
                         {
-                            gekLogMessage(L"[error] Unable to locate \"population\" node");
+                            gekLogMessage("[error] Unable to locate \"population\" node");
                             resultValue = E_UNEXPECTED;
                         }
                     }
                     else
                     {
-                        gekLogMessage(L"[error] Unable to locate \"world\" node");
+                        gekLogMessage("[error] Unable to locate \"world\" node");
                         resultValue = E_UNEXPECTED;
                     }
                 }
                 else
                 {
-                    gekLogMessage(L"[error] Unable to load population");
+                    gekLogMessage("[error] Unable to load population");
                 }
 
                 frameTime = 0.0f;
@@ -309,7 +309,7 @@ namespace Gek
                     auto componentIdentifierPair = componentNameList.find(componentName);
                     if (componentIdentifierPair == componentNameList.end())
                     {
-                        gekLogMessage(L"Unable to find component name: %s", componentName.GetString());
+                        gekLogMessage("Unable to find component name: %S", componentName.GetString());
                     }
                     else
                     {
@@ -317,7 +317,7 @@ namespace Gek
                         auto componentPair = componentList.find(componentIdentifier);
                         if (componentPair == componentList.end())
                         {
-                            gekLogMessage(L"Unable to find component identifier: 0x%08X", componentIdentifier.hash_code());
+                            gekLogMessage("Unable to find component identifier: 0x%08X", componentIdentifier.hash_code());
                         }
                         else
                         {

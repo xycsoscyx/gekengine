@@ -750,7 +750,7 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        gekLogMessage(L"Invalid pass mode encountered: %s", modeString.GetString());
+                                        gekLogMessage("Invalid pass mode encountered: %S", modeString.GetString());
                                         resultValue = E_INVALIDARG;
                                     }
                                 }

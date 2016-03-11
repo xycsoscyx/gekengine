@@ -1,102 +1,29 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\Evaluator.h"
+#include <locale>
+#include <vector>
 
 namespace Gek
 {
     namespace String
     {
-        bool to(LPCWSTR expression, double &value)
+        template <typename TYPE>
+        struct csv_reader : std::ctype<TYPE>
         {
-            value = 0.0;
-            return (swscanf_s(expression, L"%lf", &value) == 1);
-        }
-
-        bool to(LPCWSTR expression, float &value)
-        {
-            value = 0.0f;
-            return (swscanf_s(expression, L"%f", &value) == 1);
-        }
-
-        bool to(LPCWSTR expression, Gek::Math::Float2 &value)
-        {
-            return (swscanf_s(expression, L"%f,%f", &value.x, &value.y) == 2);
-        }
-
-        bool to(LPCWSTR expression, Gek::Math::Float3 &value)
-        {
-            return (swscanf_s(expression, L"%f,%f,%f", &value.x, &value.y, &value.z) == 3);
-        }
-
-        bool to(LPCWSTR expression, Gek::Math::Float4 &value)
-        {
-            return (swscanf_s(expression, L"%f,%f,%f,%f", &value.x, &value.y, &value.z, &value.w) == 4);
-        }
-
-        bool to(LPCWSTR expression, Gek::Math::Color &value)
-        {
-            int values = swscanf_s(expression, L"%f,%f,%f,%f", &value.r, &value.g, &value.b, &value.a);
-            if (values == 3)
+            csv_reader() : std::ctype<TYPE>(get_table())
             {
-                value.a = 1.0f;
             }
 
-            return (values >= 3);
-        }
-
-        bool to(LPCWSTR expression, Gek::Math::Quaternion &value)
-        {
-            int values = swscanf_s(expression, L"%f,%f,%f,%f", &value.x, &value.y, &value.z, &value.w);
-            if (values == 3)
+            static std::ctype_base::mask const* get_table()
             {
-                value.setEulerRotation(value.x, value.y, value.z);
-                values = 4;
+                static std::vector<std::ctype_base::mask> rc(table_size, std::ctype_base::mask());
+
+                rc[','] = std::ctype_base::space;
+                rc['\n'] = std::ctype_base::space;
+                rc[' '] = std::ctype_base::space;
+                return &rc[0];
             }
-
-            return (values == 4);
-        }
-
-        bool to(LPCWSTR expression, INT32 &value)
-        {
-            value = 0;
-            return (swscanf_s(expression, L"%d", &value) == 1);
-        }
-
-        bool to(LPCWSTR expression, UINT32 &value)
-        {
-            value = 0;
-            return (swscanf_s(expression, L"%u", &value) == 1);
-        }
-
-        bool to(LPCWSTR expression, INT64 &value)
-        {
-            value = 0;
-            return (swscanf_s(expression, L"%lld", &value) == 1);
-        }
-
-        bool to(LPCWSTR expression, UINT64 &value)
-        {
-            value = 0;
-            return (swscanf_s(expression, L"%llu", &value) == 1);
-        }
-
-        bool to(LPCWSTR expression, bool &value)
-        {
-            if (_wcsicmp(expression, L"true") == 0 ||
-                _wcsicmp(expression, L"yes") == 0)
-            {
-                value = true;
-                return true;
-            }
-
-            INT32 integerValue = 0;
-            if (to(expression, integerValue))
-            {
-                value = (integerValue == 0 ? false : true);
-                return true;
-            }
-
-            return false;
-        }
+        };
 
         CStringW from(double value)
         {
@@ -194,6 +121,11 @@ namespace Gek
         }
 
         CStringW from(LPCWSTR value)
+        {
+            return value;
+        }
+
+        CStringW from(const CStringW &value)
         {
             return value;
         }

@@ -362,7 +362,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                             ShowWindow(window, SW_SHOW);
                             UpdateWindow(window);
 
-                            context->logMessage(__FILE__, __LINE__, 1, L"[entering] Game Loop");
+                            context->logMessage(__FILE__, __LINE__, 1, "[entering] Game Loop");
 
                             MSG message = { 0 };
                             while (message.message != WM_QUIT)
@@ -379,7 +379,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                                 }
                             };
 
-                            context->logMessage(__FILE__, __LINE__, -1, L"[entering] Game Loop");
+                            context->logMessage(__FILE__, __LINE__, -1, "[entering] Game Loop");
 
                             SetWindowLongPtr(window, GWLP_USERDATA, 0);
                             engineCore.Release();
@@ -388,12 +388,12 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                     }
                     else
                     {
-                        context->logMessage(__FILE__, __LINE__, 0, L"Unable to create window: %d", GetLastError());
+                        context->logMessage(__FILE__, __LINE__, 0, "Unable to create window: %d", GetLastError());
                     }
                 }
                 else
                 {
-                    context->logMessage(__FILE__, __LINE__, 0, L"Unable to register window class: %d", GetLastError());
+                    context->logMessage(__FILE__, __LINE__, 0, "Unable to register window class: %d", GetLastError());
                 }
             }
         }

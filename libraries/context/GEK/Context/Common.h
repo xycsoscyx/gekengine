@@ -9,6 +9,8 @@
 #include <atlstr.h>
 #include <varargs.h>
 #include <unordered_map>
+#include <string>
+#include <json.hpp>
 
 #define REQUIRE_VOID_RETURN(CHECK)          do { if ((CHECK) == false) { _ASSERTE(CHECK); return; } } while (false)
 #define REQUIRE_RETURN(CHECK, RETURN)       do { if ((CHECK) == false) { _ASSERTE(CHECK); return (RETURN); } } while (false)
@@ -17,50 +19,6 @@
 
 namespace Gek
 {
-    class Exception
-    {
-    private:
-        LPCSTR file;
-        LPCSTR function;
-        UINT32 line;
-        CStringW error;
-
-    public:
-        Exception(LPCSTR file, LPCSTR function, UINT32 line, LPCWSTR format, ...)
-            : file(file)
-            , function(function)
-            , line(line)
-        {
-            if (format)
-            {
-                va_list variableList;
-                va_start(variableList, format);
-                error.FormatV(format, variableList);
-                va_end(variableList);
-            }
-        }
-
-        LPCSTR getFile(void)
-        {
-            return file;
-        }
-
-        LPCSTR getFunction(void)
-        {
-            return function;
-        }
-
-        UINT32 getLine(void)
-        {
-            return line;
-        }
-
-        LPCWSTR getError(void)
-        {
-            return error.GetString();
-        }
-    };
-
     class LoggingScope
     {
     private:
@@ -68,44 +26,106 @@ namespace Gek
         HRESULT *returnValue;
         LPCSTR file;
         UINT32 line;
-        CStringW call;
+        std::string call;
 
         UINT32 startTime;
 
     public:
-        LoggingScope(Context *context, HRESULT *returnValue, LPCSTR file, UINT32 line, const CStringW &call);
+        LoggingScope(Context *context, HRESULT *returnValue, LPCSTR file, UINT32 line, const std::string &call);
         ~LoggingScope(void);
     };
 
-    CStringW inline compileParameters(void)
+    void inline getParameters(std::unordered_map<std::string, std::string> &parameters)
     {
-        return L"";
+    }
+
+    void inline getParameters(std::unordered_map<std::string, std::string> &parameters, LPCSTR name)
+    {
+        _ASSERTE(false && "Parameter name passed to trace without value");
     }
 
     template<typename VALUE>
-    CStringW compileParameters(VALUE& value)
+    void inline getParameters(std::unordered_map<std::string, std::string> &parameters, const VALUE &value)
     {
-        return String::from(value);
+        _ASSERTE(false && "Parameter value passed to trace without name");
+    }
+
+    template<typename VALUE>
+    void getParameters(std::unordered_map<std::string, std::string> &parameters, LPCSTR name, const VALUE& value)
+    {
+        parameters[name] = String::from(value);
     }
 
     template<typename VALUE, typename... ARGS>
-    CStringW compileParameters(VALUE& value, ARGS&... args)
+    void getParameters(std::unordered_map<std::string, std::string> &parameters, LPCSTR name, const VALUE& value, ARGS&... args)
     {
-        return String::from(value) + L", " + compileParameters(args...);
+        parameters[name] = String::from(value);
+        getParameters(parameters, args...);
     }
 
     template<typename... ARGS>
-    CStringW compileFunction(LPCSTR function, ARGS... args)
+    LPCSTR compileFunction(LPCSTR function, ARGS... args)
     {
-        return String::format(L"%S(%s)", function, compileParameters(args...).GetString());
+        return "";
     }
-};
+
+    template<typename... ARGS>
+    void trace(LPCSTR type, LPCSTR category, ULONGLONG timeStamp, LPCSTR function, LPCSTR color, ARGS&... args)
+    {
+        nlohmann::json profileData = {
+            { "name", function },
+            { "cat", category },
+            { "ph", type },
+            { "ts", timeStamp },
+            { "pid", GetCurrentProcessId() },
+            { "tid", GetCurrentThreadId() },
+        };
+
+        std::unordered_map<std::string, std::string> parameters;
+        getParameters(parameters, args...);
+        if (!parameters.empty())
+        {
+            profileData["args"] = parameters;
+        }
+
+        FILE *file = nullptr;
+        fopen_s(&file, "profile.json", "a+b");
+        if (file)
+        {
+            fprintf(file, profileData.dump(4).data());
+            fclose(file);
+        }
+    }
+
+    class TraceScope
+    {
+    private:
+        LPCSTR category;
+        LPCSTR function;
+        LPCSTR color;
+
+    public:
+        template<typename VALUE, typename... ARGS>
+        TraceScope(LPCSTR category, LPCSTR function, LPCSTR color, ARGS &... args)
+            : category(category)
+            , function(function)
+            , color(color)
+        {
+            trace("B", CATEGORY, GetTickCount64(), function, color, args...);
+        }
+
+        ~TraceScope(void)
+        {
+            trace("E", category, GetTickCount64(), function, color);
+        }
+    };
+}; // namespace Gek
 
 inline bool gekCheckResultDirectly(Gek::Context *context, HRESULT resultValue, LPCSTR call, LPCSTR file, UINT32 line)
 {
     if (FAILED(resultValue))
     {
-        context->logMessage(file, line, 0, L"Call Failed: 0x%08X, %S", resultValue, call);
+        context->logMessage(file, line, 0, "Call Failed: 0x%08X, %s", resultValue, call);
         return false;
     }
     else
@@ -114,11 +134,16 @@ inline bool gekCheckResultDirectly(Gek::Context *context, HRESULT resultValue, L
     }
 }
 
+#define gekTraceCreate()
+#define gekTraceDestroy()
+
+#define gekTraceFunction(CATEGORY, COLOR, ...)      Gek::TraceScope(CATEGORY, __FUNCTION__, COLOR, __VA_ARGS__)
+#define gekTraceEvent(CATEGORY, COLOR, ...)         Gek::trace("i", CATEGORY, GetTickCount64(), __FUNCTION__, COLOR, __VA_ARGS__)
+
 #define gekLogScope(...)                            Gek::LoggingScope functionScope(getContext(), nullptr, __FILE__, __LINE__, Gek::compileFunction(__FUNCTION__, __VA_ARGS__));
 #define gekCheckScope(RESULT, ...)                  HRESULT RESULT = E_FAIL; Gek::LoggingScope functionScope(getContext(), &RESULT, __FILE__, __LINE__, Gek::compileFunction(__FUNCTION__, __VA_ARGS__));
 #define gekLogMessage(FORMAT, ...)                  getContext()->logMessage(__FILE__, __LINE__, 0, FORMAT, __VA_ARGS__)
 #define gekCheckResult(FUNCTION)                    gekCheckResultDirectly(getContext(), FUNCTION, #FUNCTION, __FILE__, __LINE__)
-#define gekException(FORMAT, ...)                   Gek::Exception(__FILE__, __FUNCTION__, __LINE__, FORMAT, __VA_ARGS__)
 
 #define DECLARE_UNKNOWN(CLASS)                                                                      \
     public:                                                                                         \

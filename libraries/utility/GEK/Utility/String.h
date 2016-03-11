@@ -9,29 +9,165 @@
 #include <Windows.h>
 #include <atlbase.h>
 #include <atlstr.h>
+#include <sstream>
 
 namespace Gek
 {
     namespace String
     {
-        bool to(LPCWSTR expression, double &value);
-        bool to(LPCWSTR expression, float &value);
-        bool to(LPCWSTR expression, Gek::Math::Float2 &value);
-        bool to(LPCWSTR expression, Gek::Math::Float3 &value);
-        bool to(LPCWSTR expression, Gek::Math::Float4 &value);
-        bool to(LPCWSTR expression, Gek::Math::Color &value);
-        bool to(LPCWSTR expression, Gek::Math::Quaternion &value);
-        bool to(LPCWSTR expression, INT32 &value);
-        bool to(LPCWSTR expression, UINT32 &value);
-        bool to(LPCWSTR expression, INT64 &value);
-        bool to(LPCWSTR expression, UINT64 &value);
-        bool to(LPCWSTR expression, bool &value);
+        template <typename CHAR>
+        bool to(const CHAR *expression, double &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value;
+            return !stream.fail();
+        }
 
-        template <typename TYPE>
-        TYPE to(LPCWSTR expression)
+        template <typename CHAR>
+        bool to(const CHAR *expression, float &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value;
+            return !stream.fail();
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, Gek::Math::Float2 &value)
+        {
+            CHAR comma;
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value.x >> comma >> value.y;
+            return !stream.fail();
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, Gek::Math::Float3 &value)
+        {
+            CHAR comma;
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value.x >> comma >> value.y >> comma >> value.z >> comma;
+            return !stream.fail();
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, Gek::Math::Float4 &value)
+        {
+            CHAR comma;
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value.x >> comma >> value.y >> comma >> value.z >> comma >> value.w;
+            return !stream.fail();
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, Gek::Math::Color &value)
+        {
+            CHAR comma;
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value.r >> comma >> value.g >> comma >> value.b;
+            bool failed = stream.fail();
+            if (!failed)
+            {
+                value.a = 1.0f;
+                stream >> comma >> value.a;
+            }
+
+            return failed;
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, Gek::Math::Quaternion &value)
+        {
+            CHAR comma;
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value.x >> comma >> value.y >> comma >> value.z;
+            bool failed = stream.fail();
+            if (!failed)
+            {
+                stream >> comma >> value.w;
+                if (stream.fail())
+                {
+                    value.setEulerRotation(value.x, value.y, value.z);
+                }
+            }
+
+            return failed;
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, INT32 &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value;
+            return !stream.fail();
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, UINT32 &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value;
+            return !stream.fail();
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, INT64 &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value;
+            return !stream.fail();
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, UINT64 &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> value;
+            return !stream.fail();
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, bool &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
+            stream >> std::boolalpha >> value;
+            return !stream.fail();
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> &value)
+        {
+            value = expression;
+            return true;
+        }
+
+        template <typename CHAR>
+        bool to(const CHAR *expression, std::basic_string<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> &value)
+        {
+            value = expression;
+            return true;
+        }
+
+        template <typename TYPE, typename CHAR>
+        TYPE to(const CHAR *expression)
         {
             TYPE value = {};
             to(expression, value);
+            return value;
+        }
+
+        template <typename TYPE, typename CHAR>
+        TYPE to(const CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> &expression)
+        {
+            TYPE value = {};
+            to(expression.GetString(), value);
+            return value;
+        }
+
+        template <typename TYPE, typename CHAR>
+        TYPE to(const std::basic_string<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> &expression)
+        {
+            TYPE value = {};
+            to(expression.data(), value);
             return value;
         }
 
@@ -55,8 +191,10 @@ namespace Gek
         CStringW from(bool value);
         CStringW from(LPCSTR value, bool fromUTF8 = false);
         CStringW from(LPCWSTR value);
+        CStringW from(const CStringW &value);
+
+        CStringW format(LPCWSTR format, ...);
 
         CStringA format(LPCSTR format, ...);
-        CStringW format(LPCWSTR format, ...);
     }; // namespace String
 }; // namespace Gek

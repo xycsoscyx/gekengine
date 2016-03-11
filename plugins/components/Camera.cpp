@@ -15,17 +15,17 @@ namespace Gek
 
     HRESULT CameraComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        componentParameterList[L"field_of_view"] = String::from(fieldOfView);
-        componentParameterList[L"minimum_distance"] = String::from(minimumDistance);
-        componentParameterList[L"maximum_distance"] = String::from(maximumDistance);
+        getParameter(componentParameterList, L"field_of_view", fieldOfView);
+        getParameter(componentParameterList, L"minimum_distance", minimumDistance);
+        getParameter(componentParameterList, L"maximum_distance", maximumDistance);
         return S_OK;
     }
 
     HRESULT CameraComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"field_of_view", fieldOfView, String::to<float>);
-        setParameter(componentParameterList, L"minimum_distance", minimumDistance, String::to<float>);
-        setParameter(componentParameterList, L"maximum_distance", maximumDistance, String::to<float>);
+        setParameter(componentParameterList, L"field_of_view", fieldOfView);
+        setParameter(componentParameterList, L"minimum_distance", minimumDistance);
+        setParameter(componentParameterList, L"maximum_distance", maximumDistance);
         return S_OK;
     }
 
@@ -51,17 +51,17 @@ namespace Gek
 
     HRESULT ThirdPersonCameraComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        componentParameterList[L"body"] = body;
-        componentParameterList[L"offset"] = String::from(offset);
-        componentParameterList[L"distance"] = String::from(distance);
+        getParameter(componentParameterList, L"body", body);
+        getParameter(componentParameterList, L"offset", offset);
+        getParameter(componentParameterList, L"distance", distance);
         return CameraComponent::save(componentParameterList);
     }
 
     HRESULT ThirdPersonCameraComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"body", body, [](LPCWSTR value) -> LPCWSTR { return value; });
-        setParameter(componentParameterList, L"offset", offset, String::to<Math::Float3>);
-        setParameter(componentParameterList, L"distance", distance, String::to<Math::Float3>);
+        setParameter(componentParameterList, L"body", body);
+        setParameter(componentParameterList, L"offset", offset);
+        setParameter(componentParameterList, L"distance", distance);
         return CameraComponent::load(componentParameterList);
     }
 

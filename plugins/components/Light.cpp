@@ -14,15 +14,15 @@ namespace Gek
 
     HRESULT PointLightComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        componentParameterList[L"range"] = String::from(range);
-        componentParameterList[L"radius"] = String::from(radius);
+        getParameter(componentParameterList, L"range", range);
+        getParameter(componentParameterList, L"radius", radius);
         return S_OK;
     }
 
     HRESULT PointLightComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"range", range, Evaluator::get<float>);
-        setParameter(componentParameterList, L"radius", radius, Evaluator::get<float>);
+        setParameter(componentParameterList, L"range", range);
+        setParameter(componentParameterList, L"radius", radius);
         return S_OK;
     }
 
@@ -36,19 +36,19 @@ namespace Gek
 
     HRESULT SpotLightComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        componentParameterList[L"range"] = String::from(range);
-        componentParameterList[L"radius"] = String::from(radius);
-        componentParameterList[L"inner_angle"] = String::from(innerAngle);
-        componentParameterList[L"outer_angle"] = String::from(outerAngle);
+        getParameter(componentParameterList, L"range", range);
+        getParameter(componentParameterList, L"radius", radius);
+        getParameter(componentParameterList, L"inner_angle", innerAngle);
+        getParameter(componentParameterList, L"outer_angle", outerAngle);
         return S_OK;
     }
 
     HRESULT SpotLightComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"range", range, Evaluator::get<float>);
-        setParameter(componentParameterList, L"radius", radius, Evaluator::get<float>);
-        setParameter(componentParameterList, L"inner_angle", innerAngle, Evaluator::get<float>);
-        setParameter(componentParameterList, L"outer_angle", outerAngle, Evaluator::get<float>);
+        setParameter(componentParameterList, L"range", range);
+        setParameter(componentParameterList, L"radius", radius);
+        setParameter(componentParameterList, L"inner_angle", innerAngle);
+        setParameter(componentParameterList, L"outer_angle", outerAngle);
         return S_OK;
     }
 

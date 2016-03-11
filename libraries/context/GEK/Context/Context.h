@@ -31,14 +31,14 @@ namespace Gek
         {
             LPCSTR file;
             UINT32 line;
-            LPCWSTR message;
+            LPCSTR message;
         };
 
-        STDMETHOD_(void, logMessage)        (THIS_ LPCSTR file, UINT32 line, INT32 changeIndent, LPCWSTR format, ...) PURE;
+        STDMETHOD_(void, logMessage)        (THIS_ LPCSTR file, UINT32 line, INT32 changeIndent, LPCSTR format, ...) PURE;
     };
 
     DECLARE_INTERFACE_IID(ContextObserver, "4678440B-94FC-4671-9622-0D4030F8CE94") : virtual public Observer
     {
-        STDMETHOD_(void, onLogMessage)      (THIS_ LPCSTR file, UINT32 line, LPCWSTR message) PURE;
+        STDMETHOD_(void, onLogMessage)      (THIS_ LPCSTR file, UINT32 line, LPCSTR message) PURE;
     };
 }; // namespace Gek

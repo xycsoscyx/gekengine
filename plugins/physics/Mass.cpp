@@ -14,13 +14,13 @@ namespace Gek
 
     HRESULT MassComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        componentParameterList[L""] = String::from(value);
+        getParameter(componentParameterList, L"", value);
         return S_OK;
     }
 
     HRESULT MassComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"", value, Evaluator::get<float>);
+        setParameter(componentParameterList, L"", value);
         return S_OK;
     }
 
@@ -34,7 +34,7 @@ namespace Gek
 
         BEGIN_INTERFACE_LIST(MassImplementation)
             INTERFACE_LIST_ENTRY_COM(Component)
-            END_INTERFACE_LIST_USER
+        END_INTERFACE_LIST_USER
 
         // Component
         STDMETHODIMP_(LPCWSTR) getName(void) const

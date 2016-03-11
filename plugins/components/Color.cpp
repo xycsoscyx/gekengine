@@ -13,13 +13,13 @@ namespace Gek
 
     HRESULT ColorComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        componentParameterList[L""] = String::from(value);
+        getParameter(componentParameterList, L"", value);
         return S_OK;
     }
 
     HRESULT ColorComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"", value, Evaluator::get<Math::Color>);
+        setParameter(componentParameterList, L"", value);
         return S_OK;
     }
 

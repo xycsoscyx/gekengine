@@ -1841,7 +1841,7 @@ namespace Gek
             }
             else if (d3dCompilerErrors)
             {
-                gekLogMessage(L"[error] %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                gekLogMessage("[error] %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
             }
 
             return resultValue;
@@ -1945,7 +1945,7 @@ namespace Gek
             }
             else if (d3dCompilerErrors)
             {
-                gekLogMessage(L"[error] %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                gekLogMessage("[error] %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
             }
 
             return resultValue;
@@ -1992,7 +1992,7 @@ namespace Gek
             }
             else if (d3dCompilerErrors)
             {
-                gekLogMessage(L"[error] %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                gekLogMessage("[error] %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
             }
 
             return resultValue;
@@ -2039,7 +2039,7 @@ namespace Gek
             }
             else if (d3dCompilerErrors)
             {
-                gekLogMessage(L"[error] %S", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
+                gekLogMessage("[error] %s", (LPCSTR)d3dCompilerErrors->GetBufferPointer());
             }
 
             return resultValue;

@@ -902,19 +902,19 @@ namespace Gek
 
     HRESULT PlayerBodyComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        componentParameterList[L"outer_radius"] = String::from(outerRadius);
-        componentParameterList[L"inner_radius"] = String::from(innerRadius);
-        componentParameterList[L"half_height"] = String::from(halfHeight);
-        componentParameterList[L"stair_step"] = String::from(stairStep);
+        getParameter(componentParameterList, L"outer_radius", outerRadius);
+        getParameter(componentParameterList, L"inner_radius", innerRadius);
+        getParameter(componentParameterList, L"half_height", halfHeight);
+        getParameter(componentParameterList, L"stair_step", stairStep);
         return S_OK;
     }
 
     HRESULT PlayerBodyComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"outer_radius", outerRadius, Evaluator::get<float>);
-        setParameter(componentParameterList, L"inner_radius", innerRadius, Evaluator::get<float>);
-        setParameter(componentParameterList, L"half_height", halfHeight, Evaluator::get<float>);
-        setParameter(componentParameterList, L"stair_step", stairStep, Evaluator::get<float>);
+        setParameter(componentParameterList, L"outer_radius", outerRadius);
+        setParameter(componentParameterList, L"inner_radius", innerRadius);
+        setParameter(componentParameterList, L"half_height", halfHeight);
+        setParameter(componentParameterList, L"stair_step", stairStep);
         return S_OK;
     }
 

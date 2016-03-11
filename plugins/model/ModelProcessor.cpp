@@ -184,7 +184,7 @@ namespace Gek
                 }
                 else
                 {
-                    gekLogMessage(L"Invalid GEK model data found: ID(%d) Type(%d) Version(%d)", gekIdentifier, gekModelType, gekModelVersion);
+                    gekLogMessage("Invalid GEK model data found: ID(%d) Type(%d) Version(%d)", gekIdentifier, gekModelType, gekModelVersion);
                 }
             }
 
@@ -256,7 +256,7 @@ namespace Gek
                 }
                 else
                 {
-                    gekLogMessage(L"Invalid GEK model data found: ID(%d) Type(%d) Version(%d)", gekIdentifier, gekModelType, gekModelVersion);
+                    gekLogMessage("Invalid GEK model data found: ID(%d) Type(%d) Version(%d)", gekIdentifier, gekModelType, gekModelVersion);
                 }
             }
 
