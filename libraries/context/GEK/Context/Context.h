@@ -15,30 +15,5 @@ namespace Gek
 
         STDMETHOD(createInstance)           (THIS_ REFCLSID className, REFIID interfaceType, LPVOID FAR *returnObject) PURE;
         STDMETHOD(createEachType)           (THIS_ REFCLSID typeName, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance) PURE;
-
-        STDMETHOD_(UINT32, addListener)     (THIS_ std::type_index type, std::function<void(LPVOID)> onEvent) PURE;
-        STDMETHOD_(void, removeListener)    (THIS_ UINT32 listenerIdentifier) PURE;
-
-        STDMETHOD_(void, sendEvent)         (THIS_ const std::type_index &type, LPVOID data) PURE;
-
-        template<typename HANDLE>
-        void sendEvent(HANDLE &data)
-        {
-            sendEvent(typeid(HANDLE), LPVOID(&data));
-        }
-
-        struct MessageEvent
-        {
-            LPCSTR file;
-            UINT32 line;
-            LPCSTR message;
-        };
-
-        STDMETHOD_(void, logMessage)        (THIS_ LPCSTR file, UINT32 line, INT32 changeIndent, LPCSTR format, ...) PURE;
-    };
-
-    DECLARE_INTERFACE_IID(ContextObserver, "4678440B-94FC-4671-9622-0D4030F8CE94") : virtual public Observer
-    {
-        STDMETHOD_(void, onLogMessage)      (THIS_ LPCSTR file, UINT32 line, LPCSTR message) PURE;
     };
 }; // namespace Gek

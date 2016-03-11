@@ -6,7 +6,8 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\XML.h"
-#include "GEK\Context\Common.h"
+#include "GEK\Context\Trace.h"
+#include "GEK\Context\COM.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Engine\Engine.h"
 #include <CommCtrl.h>
@@ -278,6 +279,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
+        Gek::traceInitialize();
+
         //_clearfp();
         //unsigned unused_current_word = 0;
         //_controlfp_s(&unused_current_word, 0, _EM_ZERODIVIDE | _EM_INVALID);
@@ -362,8 +365,6 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                             ShowWindow(window, SW_SHOW);
                             UpdateWindow(window);
 
-                            context->logMessage(__FILE__, __LINE__, 1, "[entering] Game Loop");
-
                             MSG message = { 0 };
                             while (message.message != WM_QUIT)
                             {
@@ -379,8 +380,6 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                                 }
                             };
 
-                            context->logMessage(__FILE__, __LINE__, -1, "[entering] Game Loop");
-
                             SetWindowLongPtr(window, GWLP_USERDATA, 0);
                             engineCore.Release();
                             DestroyWindow(window);
@@ -388,16 +387,15 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                     }
                     else
                     {
-                        context->logMessage(__FILE__, __LINE__, 0, "Unable to create window: %d", GetLastError());
                     }
                 }
                 else
                 {
-                    context->logMessage(__FILE__, __LINE__, 0, "Unable to register window class: %d", GetLastError());
                 }
             }
         }
 
+        Gek::traceShutDown();
         return 0;
     }
 

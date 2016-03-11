@@ -1,7 +1,7 @@
 #include <initguid.h>
 #include <cguid.h>
 
-#include "GEK\Context\Common.h"
+#include "GEK\Context\COM.h"
 #include "GEK\Engine\Component.h"
 #include "GEK\Engine\Processor.h"
 

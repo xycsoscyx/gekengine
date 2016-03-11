@@ -537,11 +537,10 @@ namespace Gek
         // Shader
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
-            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
-            REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
-            gekCheckScope(resultValue, fileName);
-
+            HRESULT resultValue = E_FAIL;
             CComQIPtr<VideoSystem> video(initializerContext);
             CComQIPtr<Resources> resources(initializerContext);
             if (video && resources)
@@ -559,7 +558,7 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 Gek::XmlDocument xmlDocument;
-                gekCheckResult(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\shaders\\%s.xml", fileName)));
+                resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\shaders\\%s.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = E_INVALIDARG;
@@ -750,7 +749,6 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        gekLogMessage("Invalid pass mode encountered: %S", modeString.GetString());
                                         resultValue = E_INVALIDARG;
                                     }
                                 }
@@ -1057,7 +1055,6 @@ namespace Gek
                 }
             }
 
-            gekCheckResult(resultValue);
             return resultValue;
         }
 
@@ -1092,8 +1089,8 @@ namespace Gek
         Pass *currentPass;
         STDMETHODIMP_(void) setResourceList(RenderContext *renderContext, const std::list<ResourceHandle> &resourceList)
         {
-            REQUIRE_VOID_RETURN(currentBlock);
-            REQUIRE_VOID_RETURN(currentPass);
+            GEK_REQUIRE_VOID_RETURN(currentBlock);
+            GEK_REQUIRE_VOID_RETURN(currentPass);
 
             UINT32 firstStage = 0;
             if (currentBlock->lighting)

@@ -10,7 +10,7 @@
 #include "GEK\Components\Camera.h"
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
-#include "GEK\Context\Common.h"
+#include "GEK\Context\COM.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\FileSystem.h"
@@ -233,7 +233,7 @@ namespace Gek
         // Resources
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<VideoSystem> video(initializerContext);
@@ -517,7 +517,7 @@ namespace Gek
 
         HRESULT createTexture(VideoTexture **returnObject, CStringW parameters, UINT32 flags)
         {
-            REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
 
@@ -632,8 +632,8 @@ namespace Gek
 
         HRESULT loadTexture(VideoTexture **returnObject, LPCWSTR fileName, UINT32 flags)
         {
-            REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
 
@@ -675,10 +675,9 @@ namespace Gek
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
             return resourceManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
-                REQUIRE_RETURN(fileName, E_INVALIDARG);
+                GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
-                gekCheckScope(resultValue, fileName, fallback, flags);
-
+                HRESULT resultValue = E_FAIL;
                 CComPtr<VideoTexture> texture;
                 if ((*fileName) && (*fileName) == L'*')
                 {

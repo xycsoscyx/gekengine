@@ -7,24 +7,6 @@ namespace Gek
 {
     namespace String
     {
-        template <typename TYPE>
-        struct csv_reader : std::ctype<TYPE>
-        {
-            csv_reader() : std::ctype<TYPE>(get_table())
-            {
-            }
-
-            static std::ctype_base::mask const* get_table()
-            {
-                static std::vector<std::ctype_base::mask> rc(table_size, std::ctype_base::mask());
-
-                rc[','] = std::ctype_base::space;
-                rc['\n'] = std::ctype_base::space;
-                rc[' '] = std::ctype_base::space;
-                return &rc[0];
-            }
-        };
-
         CStringW from(double value)
         {
             return format(L"%f", value);
@@ -130,32 +112,9 @@ namespace Gek
             return value;
         }
 
-        CStringA format(LPCSTR format, ...)
+        CStringW from(const GUID &value)
         {
-            CStringA result;
-            if (format != nullptr)
-            {
-                va_list variableList;
-                va_start(variableList, format);
-                result.FormatV(format, variableList);
-                va_end(variableList);
-            }
-
-            return result;
-        }
-
-        CStringW format(LPCWSTR format, ...)
-        {
-            CStringW result;
-            if (format != nullptr)
-            {
-                va_list variableList;
-                va_start(variableList, format);
-                result.FormatV(format, variableList);
-                va_end(variableList);
-            }
-
-            return result;
+            return LPCWSTR(CComBSTR(value));
         }
     }; // namespace String
 }; // namespace Gek

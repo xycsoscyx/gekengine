@@ -97,11 +97,9 @@ namespace Gek
         // Population
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
-            gekCheckScope(resultValue);
-            gekLogMessage("Loading Components...");
-
+            HRESULT resultValue = E_FAIL;
             resultValue = getContext()->createEachType(__uuidof(ComponentType), [&](REFCLSID className, IUnknown *object) -> HRESULT
             {
                 CComQIPtr<Component> component(object);
@@ -113,16 +111,13 @@ namespace Gek
                     auto identifierIterator = componentList.insert(std::make_pair(component->getIdentifier(), component));
                     if (identifierIterator.second)
                     {
-                        gekLogMessage("Component Found : ID(0x % 08X), Name(%S)", component->getIdentifier(), lowerCaseName.GetString());
                         if (!componentNameList.insert(std::make_pair(lowerCaseName, component->getIdentifier())).second)
                         {
                             componentList.erase(identifierIterator.first);
-                            gekLogMessage("[error] Component Name Already Used: %S", lowerCaseName.GetString());
                         }
                     }
                     else
                     {
-                        gekLogMessage("[error] Component ID Already Used: 0x%08X", component->getIdentifier());
                     }
                 }
 
@@ -201,7 +196,7 @@ namespace Gek
         {
             loadScene = std::bind([&](const CStringW &fileName) -> HRESULT
             {
-                gekCheckScope(resultValue, fileName);
+                HRESULT resultValue = E_FAIL;
 
                 free();
                 ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
@@ -247,19 +242,16 @@ namespace Gek
                         }
                         else
                         {
-                            gekLogMessage("[error] Unable to locate \"population\" node");
                             resultValue = E_UNEXPECTED;
                         }
                     }
                     else
                     {
-                        gekLogMessage("[error] Unable to locate \"world\" node");
                         resultValue = E_UNEXPECTED;
                     }
                 }
                 else
                 {
-                    gekLogMessage("[error] Unable to load population");
                 }
 
                 frameTime = 0.0f;
@@ -296,8 +288,6 @@ namespace Gek
 
         STDMETHODIMP_(Entity *) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
         {
-            gekLogScope();
-
             CComPtr<EntityImplementation> entity = new EntityImplementation();
             if (entity)
             {
@@ -309,7 +299,6 @@ namespace Gek
                     auto componentIdentifierPair = componentNameList.find(componentName);
                     if (componentIdentifierPair == componentNameList.end())
                     {
-                        gekLogMessage("Unable to find component name: %S", componentName.GetString());
                     }
                     else
                     {
@@ -317,7 +306,6 @@ namespace Gek
                         auto componentPair = componentList.find(componentIdentifier);
                         if (componentPair == componentList.end())
                         {
-                            gekLogMessage("Unable to find component identifier: 0x%08X", componentIdentifier.hash_code());
                         }
                         else
                         {
@@ -350,7 +338,7 @@ namespace Gek
 
         STDMETHODIMP_(Entity *) getNamedEntity(LPCWSTR name)
         {
-            REQUIRE_RETURN(name, nullptr);
+            GEK_REQUIRE_RETURN(name, nullptr);
 
             Entity* entity = nullptr;
             auto namedEntity = namedEntityList.find(name);

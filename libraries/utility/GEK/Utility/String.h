@@ -192,9 +192,58 @@ namespace Gek
         CStringW from(LPCSTR value, bool fromUTF8 = false);
         CStringW from(LPCWSTR value);
         CStringW from(const CStringW &value);
+        CStringW from(const GUID &value);
 
-        CStringW format(LPCWSTR format, ...);
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> format(const CHAR *formatting)
+        {
+            CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> result;
+            while (*formatting)
+            {
+                if (*formatting == '%')
+                {
+                    if (*(formatting + 1) == '%')
+                    {
+                        ++formatting;
+                    }
+                    else
+                    {
+                        throw std::runtime_error("invalid format string: missing arguments");
+                    }
+                }
 
-        CStringA format(LPCSTR format, ...);
+                result += *formatting++;
+            };
+
+            return result;
+        }
+
+        template<typename CHAR, typename TYPE, typename... ARGS>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> format(const CHAR *formatting, TYPE value, ARGS... args)
+        {
+            CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> result;
+            while (*formatting)
+            {
+                if (*formatting == '%')
+                {
+                    if (*(formatting + 1) == '%')
+                    {
+                        ++formatting;
+                    }
+                    else
+                    {
+                        std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+                        stream << value;
+                        result += stream.str().c_str();
+                        result += format(formatting + 1, args...);
+                        return result;
+                    }
+                }
+
+                result += *formatting++;
+            }
+            
+            throw std::logic_error("extra arguments provided to printf");
+        }
     }; // namespace String
 }; // namespace Gek

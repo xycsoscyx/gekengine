@@ -390,15 +390,16 @@ namespace Gek
 
         void addJoystick(LPCDIDEVICEINSTANCE deviceObjectInstance)
         {
-            gekCheckScope(resultValue);
+            HRESULT resultValue = E_FAIL;
             CComPtr<JoystickImplementation> joystick = new JoystickImplementation();
             if (joystick != nullptr)
             {
-                if (gekCheckResult(resultValue = joystick->initialize(directInput, window, deviceObjectInstance->guidInstance)))
+                resultValue = joystick->initialize(directInput, window, deviceObjectInstance->guidInstance);
+                if (SUCCEEDED(resultValue))
                 {
                     CComPtr<InputDevice> joystickDevice;
-                    gekCheckResult(resultValue = joystickDevice->QueryInterface(IID_PPV_ARGS(&joystickDevice)));
-                    if (joystickDevice != nullptr)
+                    resultValue = joystickDevice->QueryInterface(IID_PPV_ARGS(&joystickDevice));
+                    if (SUCCEEDED(resultValue) && joystickDevice != nullptr)
                     {
                         joystickDeviceList.push_back(joystickDevice);
                     }
@@ -424,17 +425,19 @@ namespace Gek
         // Interface
         STDMETHODIMP initialize(HWND window)
         {
-            gekCheckScope(resultValue, LPCVOID(window));
+            GEK_REQUIRE_RETURN(window, E_INVALIDARG);
 
+            HRESULT resultValue = E_FAIL;
             this->window = window;
-            gekCheckResult(resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr));
-            if (directInput != nullptr)
+            resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr);
+            if (SUCCEEDED(resultValue) && directInput != nullptr)
             {
                 resultValue = E_OUTOFMEMORY;
                 CComPtr<KeyboardImplementation> keyboard = new KeyboardImplementation();
                 if (keyboard != nullptr)
                 {
-                    if (gekCheckResult(resultValue = keyboard->initialize(directInput, window)))
+                    resultValue = keyboard->initialize(directInput, window);
+                    if (SUCCEEDED(resultValue))
                     {
                         resultValue = keyboard->QueryInterface(IID_PPV_ARGS(&keyboardDevice));
                     }
@@ -446,7 +449,8 @@ namespace Gek
                     CComPtr<MouseImplementation> mouse = new MouseImplementation();
                     if (mouse != nullptr)
                     {
-                        if (gekCheckResult(resultValue = mouse->initialize(directInput, window)))
+                        resultValue = mouse->initialize(directInput, window);
+                        if (SUCCEEDED(resultValue))
                         {
                             resultValue = mouse->QueryInterface(IID_PPV_ARGS(&mouseDevice));
                         }
@@ -464,13 +468,13 @@ namespace Gek
 
         STDMETHODIMP_(InputDevice *) getKeyboard(void)
         {
-            REQUIRE_RETURN(keyboardDevice, nullptr);
+            GEK_REQUIRE_RETURN(keyboardDevice, nullptr);
             return keyboardDevice;
         }
 
         STDMETHODIMP_(InputDevice *) getMouse(void)
         {
-            REQUIRE_RETURN(mouseDevice, nullptr);
+            GEK_REQUIRE_RETURN(mouseDevice, nullptr);
             return mouseDevice;
         }
 
@@ -491,8 +495,8 @@ namespace Gek
 
         STDMETHODIMP update(void)
         {
-            REQUIRE_RETURN(keyboardDevice, E_INVALIDARG);
-            REQUIRE_RETURN(mouseDevice, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(keyboardDevice, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(mouseDevice, E_INVALIDARG);
 
             mouseDevice->update();
             keyboardDevice->update();

@@ -754,7 +754,7 @@ namespace Gek
         // State
         STDMETHODIMP_(std::shared_ptr<State>) onUpdate(float frameTime)
         {
-            REQUIRE_RETURN(playerBody, nullptr);
+            GEK_REQUIRE_RETURN(playerBody, nullptr);
 
             float lateralSpeed = (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f);
             float strafeSpeed = (((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * 5.0f);
@@ -808,14 +808,14 @@ namespace Gek
             : PlayerStateMixin(playerBody)
             , jumpVelocity(10.0f)
         {
-            REQUIRE_VOID_RETURN(playerBody);
+            GEK_REQUIRE_VOID_RETURN(playerBody);
             playerBody->setJumping();
         }
 
         // State
         STDMETHODIMP_(std::shared_ptr<State>) onUpdate(float frameTime)
         {
-            REQUIRE_RETURN(playerBody, nullptr);
+            GEK_REQUIRE_RETURN(playerBody, nullptr);
 
             playerBody->addPlayerVelocity(0.0f, 0.0f, jumpVelocity);
             jumpVelocity = 0.0f;
@@ -841,13 +841,13 @@ namespace Gek
         FallingState(PlayerNewtonBody *playerBody)
             : PlayerStateMixin(playerBody)
         {
-            REQUIRE_VOID_RETURN(playerBody);
+            GEK_REQUIRE_VOID_RETURN(playerBody);
         }
 
         // State
         STDMETHODIMP_(std::shared_ptr<State>) onUpdate(float frameTime)
         {
-            REQUIRE_RETURN(playerBody, nullptr);
+            GEK_REQUIRE_RETURN(playerBody, nullptr);
 
             playerBody->addPlayerVelocity(0.0f, 0.0f, 0.0f);
 

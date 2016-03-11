@@ -112,10 +112,10 @@ namespace Gek
         // Plugin
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
-            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
-            REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
-            gekCheckScope(resultValue, fileName);
+            HRESULT resultValue = E_FAIL;
             CComQIPtr<VideoSystem> video(initializerContext);
             if (video)
             {
@@ -126,7 +126,7 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 Gek::XmlDocument xmlDocument;
-                gekCheckResult(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\plugins\\%s.xml", fileName)));
+                resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\plugins\\%s.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = E_INVALIDARG;
@@ -275,7 +275,7 @@ namespace Gek
                                         CStringW programPath(L"%root%\\data\\programs\\" + xmlProgramNode.getText() + L".hlsl");
 
                                         CStringA progamScript;
-                                        gekCheckResult(resultValue = Gek::FileSystem::load(programPath, progamScript));
+                                        resultValue = Gek::FileSystem::load(programPath, progamScript);
                                         if (SUCCEEDED(resultValue))
                                         {
                                             auto getIncludeData = [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
@@ -315,7 +315,6 @@ namespace Gek
                 }
             }
 
-            gekCheckResult(resultValue);
             return resultValue;
         }
 

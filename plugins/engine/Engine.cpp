@@ -105,7 +105,7 @@ namespace Gek
         // Engine
         STDMETHODIMP initialize(HWND window)
         {
-            REQUIRE_RETURN(window, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(window, E_INVALIDARG);
 
             HRESULT resultValue = CoInitialize(nullptr);
             if (SUCCEEDED(resultValue))

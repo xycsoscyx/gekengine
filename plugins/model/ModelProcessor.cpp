@@ -5,7 +5,7 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
-#include "GEK\Context\Common.h"
+#include "GEK\Context\COM.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoSystem.h"
@@ -158,7 +158,7 @@ namespace Gek
         {
             static const UINT32 PreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shapes::AlignedBox));
 
-            gekCheckScope(resultValue, name);
+            HRESULT resultValue = E_FAIL;
 
             model.fileName.Format(L"%%root%%\\data\\models\\%s.gek", name.GetString());
 
@@ -184,7 +184,6 @@ namespace Gek
                 }
                 else
                 {
-                    gekLogMessage("Invalid GEK model data found: ID(%d) Type(%d) Version(%d)", gekIdentifier, gekModelType, gekModelVersion);
                 }
             }
 
@@ -193,7 +192,7 @@ namespace Gek
 
         HRESULT loadModelWorker(Model &model)
         {
-            gekCheckScope(resultValue, model.fileName);
+            HRESULT resultValue = E_FAIL;
 
             std::vector<UINT8> fileData;
             resultValue = Gek::FileSystem::load(model.fileName, fileData);
@@ -256,7 +255,6 @@ namespace Gek
                 }
                 else
                 {
-                    gekLogMessage("Invalid GEK model data found: ID(%d) Type(%d) Version(%d)", gekIdentifier, gekModelType, gekModelVersion);
                 }
             }
 
@@ -299,10 +297,9 @@ namespace Gek
         // System::Interface
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
-            gekCheckScope(resultValue);
-
+            HRESULT resultValue = E_FAIL;
             CComQIPtr<PluginResources> resources(initializerContext);
             CComQIPtr<Render> render(initializerContext);
             CComQIPtr<Population> population(initializerContext);
@@ -364,8 +361,8 @@ namespace Gek
 
         STDMETHODIMP_(void) onEntityCreated(Entity *entity)
         {
-            REQUIRE_VOID_RETURN(resources);
-            REQUIRE_VOID_RETURN(entity);
+            GEK_REQUIRE_VOID_RETURN(resources);
+            GEK_REQUIRE_VOID_RETURN(entity);
 
             if (entity->hasComponents<ModelComponent, TransformComponent>())
             {
@@ -389,7 +386,7 @@ namespace Gek
 
         STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
         {
-            REQUIRE_VOID_RETURN(entity);
+            GEK_REQUIRE_VOID_RETURN(entity);
 
             auto dataEntityIterator = entityDataList.find(entity);
             if (dataEntityIterator != entityDataList.end())
@@ -401,8 +398,8 @@ namespace Gek
         // RenderObserver
         STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Shapes::Frustum *viewFrustum)
         {
-            REQUIRE_VOID_RETURN(cameraEntity);
-            REQUIRE_VOID_RETURN(viewFrustum);
+            GEK_REQUIRE_VOID_RETURN(cameraEntity);
+            GEK_REQUIRE_VOID_RETURN(viewFrustum);
 
             visibleList.clear();
             std::for_each(entityDataList.begin(), entityDataList.end(), [&](const std::pair<Entity *, EntityData> &dataEntity) -> void

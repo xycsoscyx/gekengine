@@ -43,10 +43,9 @@ namespace Gek
         // System::Interface
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
-            gekCheckScope(resultValue);
-
+            HRESULT resultValue = E_FAIL;
             CComQIPtr<Population> population(initializerContext);
             if (population)
             {
@@ -77,7 +76,7 @@ namespace Gek
 
         STDMETHODIMP_(void) onEntityCreated(Entity *head)
         {
-            REQUIRE_VOID_RETURN(population);
+            GEK_REQUIRE_VOID_RETURN(population);
         }
 
         STDMETHODIMP_(void) onEntityDestroyed(Entity *head)

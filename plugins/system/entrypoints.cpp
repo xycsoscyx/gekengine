@@ -1,7 +1,7 @@
 #include <initguid.h>
 #include <cguid.h>
 
-#include "GEK\Context\Common.h"
+#include "GEK\Context\COM.h"
 #include "GEK\System\InputSystem.h"
 #include "GEK\System\AudioSystem.h"
 #include "GEK\System\VideoSystem.h"

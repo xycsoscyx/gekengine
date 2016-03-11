@@ -5,7 +5,7 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
-#include "GEK\Context\Common.h"
+#include "GEK\Context\COM.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoSystem.h"
@@ -66,10 +66,9 @@ namespace Gek
         // System::Interface
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
-            gekCheckScope(resultValue);
-
+            HRESULT resultValue = E_FAIL;
             CComQIPtr<PluginResources> resources(initializerContext);
             CComQIPtr<Render> render(initializerContext);
             CComQIPtr<Population> population(initializerContext);
@@ -113,20 +112,20 @@ namespace Gek
 
         STDMETHODIMP_(void) onEntityCreated(Entity *entity)
         {
-            REQUIRE_VOID_RETURN(resources);
-            REQUIRE_VOID_RETURN(entity);
+            GEK_REQUIRE_VOID_RETURN(resources);
+            GEK_REQUIRE_VOID_RETURN(entity);
         }
 
         STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
         {
-            REQUIRE_VOID_RETURN(entity);
+            GEK_REQUIRE_VOID_RETURN(entity);
         }
 
         // RenderObserver
         STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Shapes::Frustum *viewFrustum)
         {
-            REQUIRE_VOID_RETURN(cameraEntity);
-            REQUIRE_VOID_RETURN(viewFrustum);
+            GEK_REQUIRE_VOID_RETURN(cameraEntity);
+            GEK_REQUIRE_VOID_RETURN(viewFrustum);
         }
     };
 

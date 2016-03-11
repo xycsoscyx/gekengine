@@ -35,11 +35,10 @@ namespace Gek
         // Interface
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
-            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
-            REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
-            gekCheckScope(resultValue, fileName);
-
+            HRESULT resultValue = E_FAIL;
             CComQIPtr<Resources> resources(initializerContext);
             if (resources)
             {

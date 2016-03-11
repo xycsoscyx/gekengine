@@ -33,7 +33,7 @@ namespace Gek
             , transformComponent(transformComponent)
             , massComponent(massComponent)
         {
-            REQUIRE_VOID_RETURN(newtonBody);
+            GEK_REQUIRE_VOID_RETURN(newtonBody);
             NewtonBodySetMassProperties(newtonBody, massComponent, newtonCollision);
             NewtonBodySetMatrix(newtonBody, transformComponent.getMatrix().data);
             NewtonBodySetUserData(newtonBody, dynamic_cast<NewtonEntity *>(this));

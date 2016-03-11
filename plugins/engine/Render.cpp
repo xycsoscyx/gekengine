@@ -10,7 +10,7 @@
 #include "GEK\Components\Camera.h"
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
-#include "GEK\Context\Common.h"
+#include "GEK\Context\COM.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\Evaluator.h"
@@ -232,7 +232,7 @@ namespace Gek
         // Render/Resources
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<VideoSystem> video(initializerContext);
@@ -345,15 +345,15 @@ namespace Gek
 
         STDMETHODIMP_(void) onFree(void)
         {
-            REQUIRE_VOID_RETURN(resources);
+            GEK_REQUIRE_VOID_RETURN(resources);
 
             resources->clearLocal();
         }
 
         STDMETHODIMP_(void) render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix)
         {
-            REQUIRE_VOID_RETURN(population);
-            REQUIRE_VOID_RETURN(cameraEntity);
+            GEK_REQUIRE_VOID_RETURN(population);
+            GEK_REQUIRE_VOID_RETURN(cameraEntity);
 
             auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
             Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
@@ -538,9 +538,9 @@ namespace Gek
 
         void render(void)
         {
-            REQUIRE_VOID_RETURN(population);
-            REQUIRE_VOID_RETURN(resources);
-            REQUIRE_VOID_RETURN(video);
+            GEK_REQUIRE_VOID_RETURN(population);
+            GEK_REQUIRE_VOID_RETURN(resources);
+            GEK_REQUIRE_VOID_RETURN(video);
 
             population->listEntities<TransformComponent, CameraComponent>([&](Entity *cameraEntity) -> void
             {

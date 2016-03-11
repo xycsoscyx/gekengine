@@ -1,4 +1,4 @@
-#include "GEK\Context\Common.h"
+#include "GEK\Context\COM.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\FileSystem.h"
@@ -148,7 +148,7 @@ namespace Gek
 
         UINT32 loadSurface(LPCWSTR fileName)
         {
-            REQUIRE_RETURN(fileName, 0);
+            GEK_REQUIRE_RETURN(fileName, 0);
 
             UINT32 surfaceIndex = 0;
             std::size_t fileNameHash = std::hash<CStringW>()(fileName);
@@ -159,7 +159,7 @@ namespace Gek
             }
             else
             {
-                gekCheckScope(resultValue, fileName);
+                HRESULT resultValue = E_FAIL;
 
                 surfaceIndexList[fileNameHash] = 0;
 
@@ -210,7 +210,7 @@ namespace Gek
 
         NewtonCollision *createCollision(Entity *entity, const CStringW &shape)
         {
-            REQUIRE_RETURN(population, nullptr);
+            GEK_REQUIRE_RETURN(population, nullptr);
 
             NewtonCollision *newtonCollision = nullptr;
             std::size_t collisionHash = std::hash<CStringW>()(shape);
@@ -224,8 +224,6 @@ namespace Gek
             }
             else
             {
-                gekLogScope(shape);
-
                 int position = 0;
                 CStringW shapeType(shape.Tokenize(L"|", position));
                 CStringW parameters(shape.Tokenize(L"|", position));
@@ -301,8 +299,6 @@ namespace Gek
                 }
                 else
                 {
-                    gekLogScope(shape);
-
                     CStringW fileName(FileSystem::expandPath(String::format(L"%%root%%\\data\\models\\%s.bin", shape.GetString())));
 
                     FILE *file = nullptr;
@@ -370,10 +366,9 @@ namespace Gek
         // Processor
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
-            gekCheckScope(resultValue);
-
+            HRESULT resultValue = E_FAIL;
             CComQIPtr<Population> population(initializerContext);
             if (population)
             {
@@ -551,12 +546,12 @@ namespace Gek
                 newtonWorld = nullptr;
             }
 
-            REQUIRE_VOID_RETURN(NewtonGetMemoryUsed() == 0);
+            GEK_REQUIRE_VOID_RETURN(NewtonGetMemoryUsed() == 0);
         }
 
         STDMETHODIMP_(void) onEntityCreated(Entity *entity)
         {
-            REQUIRE_VOID_RETURN(entity);
+            GEK_REQUIRE_VOID_RETURN(entity);
 
             if (entity->hasComponents<TransformComponent>())
             {
@@ -615,7 +610,7 @@ namespace Gek
 
         STDMETHODIMP_(void) onUpdate(void)
         {
-            REQUIRE_VOID_RETURN(population);
+            GEK_REQUIRE_VOID_RETURN(population);
 
             if (newtonWorld)
             {

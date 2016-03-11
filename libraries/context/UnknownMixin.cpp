@@ -30,7 +30,7 @@ namespace Gek
 
     STDMETHODIMP UnknownMixin::QueryInterface(REFIID interfaceType, LPVOID FAR *returnObject)
     {
-        REQUIRE_RETURN(returnObject, E_INVALIDARG);
+        GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
         HRESULT resultValue = E_INVALIDARG;
         if (IsEqualIID(IID_IUnknown, interfaceType))
