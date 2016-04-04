@@ -16,21 +16,18 @@
     <ClCompile Include="NewtonProcessor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RigidBody.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="StaticBody.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PlayerBody.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RigidBody.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEK\Newton\Mass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Newton\RigidBody.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Newton\StaticBody.h">
@@ -43,6 +40,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Newton\NewtonProcessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Newton\RigidBody.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

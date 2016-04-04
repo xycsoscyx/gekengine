@@ -504,6 +504,7 @@ namespace Gek
                 float consoleTop = -((1.0f - consolePosition) * consoleHeight);
 
                 Math::Float3x2 transformMatrix;
+                transformMatrix.setRotationIdentity();
                 transformMatrix.translation = Math::Float2(0.0f, consoleTop);
                 overlay->setTransform(transformMatrix);
 

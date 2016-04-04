@@ -18,7 +18,7 @@ namespace Gek
     template <typename TYPE>
     void getParameter(std::unordered_map<CStringW, CStringW> &list, LPCWSTR name, const TYPE &value)
     {
-        list[name] = String::from(value);
+        list[name] = String::from<wchar_t>(value);
     }
 
     template <class DATA>

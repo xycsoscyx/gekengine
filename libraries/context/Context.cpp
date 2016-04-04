@@ -1,11 +1,11 @@
-#include "GEK\Context\Trace.h"
+#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\COM.h"
 #include "GEK\Context\UnknownMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Context\ContextUser.h"
-#include "GEK\Utility\FileSystem.h"
-#include "GEK\Utility\String.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <atlpath.h>
@@ -14,50 +14,6 @@
 
 namespace Gek
 {
-    void traceInitialize(void)
-    {
-        FILE *file = nullptr;
-        _wfopen_s(&file, FileSystem::expandPath(L"%root%\\profile.json"), L"wb");
-        if (file)
-        {
-            fprintf(file, "{\"traceEvents\":[\r\n");
-            fclose(file);
-        }
-    }
-
-    void traceShutDown(void)
-    {
-        FILE *file = nullptr;
-        _wfopen_s(&file, FileSystem::expandPath(L"%root%\\profile.json"), L"ab");
-        if (file)
-        {
-            fprintf(file, "] }\r\n");
-            fclose(file);
-        }
-    }
-
-    void trace(LPCSTR string)
-    {
-        FILE *file = nullptr;
-        _wfopen_s(&file, FileSystem::expandPath(L"%root%\\profile.json"), L"ab");
-        if (file)
-        {
-            static bool prependComma = false;
-            if (!prependComma)
-            {
-                prependComma = true;
-            }
-            else
-            {
-                fprintf(file, ",");
-            }
-
-            fprintf(file, "\r\n");
-            fwrite(string, 1, strlen(string), file);
-            fclose(file);
-        }
-    }
-
     class ContextImplementation : virtual public UnknownMixin
         , virtual public ObservableMixin
         , virtual public Context

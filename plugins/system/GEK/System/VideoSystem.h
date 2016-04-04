@@ -231,8 +231,6 @@ namespace Gek
             float farDepth;
 
             ViewPort(void)
-                : nearDepth(0.0f)
-                , farDepth(1.0f)
             {
             }
 

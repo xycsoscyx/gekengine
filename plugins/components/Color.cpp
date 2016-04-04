@@ -7,7 +7,7 @@
 namespace Gek
 {
     ColorComponent::ColorComponent(void)
-        : value(1.0f, 1.0f, 1.0f, 1.0f)
+        : value(1.0f)
     {
     }
 

@@ -503,19 +503,19 @@ namespace Gek
 
             if (finalValue.Find(L"float2") == 0)
             {
-                return String::format(L"float2(%s)", String::from(Evaluator::get<Math::Float2>(finalValue.Mid(6))).GetString());
+                return String::format(L"float2(%s)", String::from<wchar_t>(Evaluator::get<Math::Float2>(finalValue.Mid(6))).GetString());
             }
             else if (finalValue.Find(L"float3") == 0)
             {
-                return String::format(L"float3(%s)", String::from(Evaluator::get<Math::Float3>(finalValue.Mid(6))).GetString());
+                return String::format(L"float3(%s)", String::from<wchar_t>(Evaluator::get<Math::Float3>(finalValue.Mid(6))).GetString());
             }
             else if (finalValue.Find(L"float4") == 0)
             {
-                return String::format(L"float4(%s)", String::from(Evaluator::get<Math::Float4>(finalValue.Mid(6))).GetString());
+                return String::format(L"float4(%s)", String::from<wchar_t>(Evaluator::get<Math::Float4>(finalValue.Mid(6))).GetString());
             }
             else
             {
-                return String::from(Evaluator::get<float>(finalValue));
+                return String::from<wchar_t>(Evaluator::get<float>(finalValue));
             }
         }
 

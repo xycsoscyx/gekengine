@@ -1,10 +1,11 @@
 #pragma warning(disable : 4005)
 
+#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\COM.h"
 #include "GEK\Context\UnknownMixin.h"
 #include "GEK\Context\ContextUserMixin.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\FileSystem.h"
 #include "GEK\System\VideoSystem.h"
 #include <atlbase.h>
 #include <atlpath.h>
@@ -1125,6 +1126,8 @@ namespace Gek
         // VideoSystem
         STDMETHODIMP initialize(HWND window, bool fullScreen, Video::Format depthFormat)
         {
+            GEK_TRACE_FUNCTION(VideoSystem);
+
             GEK_REQUIRE_RETURN(window, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;

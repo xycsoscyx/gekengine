@@ -247,22 +247,22 @@ namespace Gek
                 else if (shapeType.CompareNoCase(L"*capsule") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
-                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*cylinder") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
-                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*tapered_capsule") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
-                    newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
+                    //newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*tapered_cylinder") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
-                    newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
+                    //newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*chamfer_cylinder") == 0)
                 {
@@ -324,7 +324,7 @@ namespace Gek
                             {
                                 UINT32 materialCount = 0;
                                 fread(&materialCount, sizeof(UINT32), 1, file);
-                                for (int materialIndex = 0; materialIndex < materialCount; materialIndex++)
+                                for (UINT32 materialIndex = 0; materialIndex < materialCount; materialIndex++)
                                 {
                                     CStringW materialName;
                                     wchar_t letter = 0;

@@ -8,10 +8,6 @@ namespace Gek
     namespace Math
     {
         Float4x4::Float4x4(void)
-            : data{ 1.0f, 0.0f, 0.0f, 0.0f,
-                    0.0f, 1.0f, 0.0f, 0.0f,
-                    0.0f, 0.0f, 1.0f, 0.0f,
-                    0.0f, 0.0f, 0.0f, 1.0f }
         {
         }
 
@@ -41,6 +37,21 @@ namespace Gek
         {
         }
 
+        void Float4x4::setIdentity(void)
+        {
+            simd[0] = _mm_setr_ps(1.0f, 0.0f, 0.0f, 0.0f);
+            simd[1] = _mm_setr_ps(0.0f, 1.0f, 0.0f, 0.0f);
+            simd[2] = _mm_setr_ps(0.0f, 0.0f, 1.0f, 0.0f);
+            simd[3] = _mm_setr_ps(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        void Float4x4::setRotationIdentity(void)
+        {
+            simd[0] = _mm_setr_ps(1.0f, 0.0f, 0.0f, 0.0f);
+            simd[1] = _mm_setr_ps(0.0f, 1.0f, 0.0f, 0.0f);
+            simd[2] = _mm_setr_ps(0.0f, 0.0f, 1.0f, 0.0f);
+        }
+
         void Float4x4::setScaling(float scalar)
         {
             _11 = scalar;
@@ -66,9 +77,10 @@ namespace Gek
             float cosPitchSinYaw(cosPitch * sinYaw);
             float sinPitchSinYaw(sinPitch * sinYaw);
 
-            nx.set((cosYaw * cosRoll), (-cosYaw * sinRoll), sinYaw);
-            ny.set((sinPitchSinYaw * cosRoll + cosPitch * sinRoll), (-sinPitchSinYaw * sinRoll + cosPitch * cosRoll), (-sinPitch * cosYaw));
-            nz.set((-cosPitchSinYaw * cosRoll + sinPitch * sinRoll), (cosPitchSinYaw * sinRoll + sinPitch * cosRoll), (cosPitch * cosYaw));
+            rx.set((cosYaw * cosRoll), (-cosYaw * sinRoll), sinYaw, 0.0f);
+            ry.set((sinPitchSinYaw * cosRoll + cosPitch * sinRoll), (-sinPitchSinYaw * sinRoll + cosPitch * cosRoll), (-sinPitch * cosYaw), 0.0f);
+            rz.set((-cosPitchSinYaw * cosRoll + sinPitch * sinRoll), (cosPitchSinYaw * sinRoll + sinPitch * cosRoll), (cosPitch * cosYaw), 0.0f);
+            rw.set(0.0f, 0.0f, 0.0f, 1.0f);
         }
 
         void Float4x4::setAngularRotation(const Float3 &axis, float radians)
@@ -76,9 +88,10 @@ namespace Gek
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
 
-            nx.set((cosAngle + axis.x * axis.x * (1.0f - cosAngle)), (axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle)), (-axis.y * sinAngle + axis.z * axis.x * (1.0f - cosAngle)));
-            ny.set((-axis.z * sinAngle + axis.x * axis.y * (1.0f - cosAngle)), (cosAngle + axis.y * axis.y * (1.0f - cosAngle)), (axis.x * sinAngle + axis.z * axis.y * (1.0f - cosAngle)));
-            nz.set((axis.y * sinAngle + axis.x * axis.z * (1.0f - cosAngle)), (-axis.x * sinAngle + axis.y * axis.z * (1.0f - cosAngle)), (cosAngle + axis.z * axis.z * (1.0f - cosAngle)));
+            rx.set((cosAngle + axis.x * axis.x * (1.0f - cosAngle)), (axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle)), (-axis.y * sinAngle + axis.z * axis.x * (1.0f - cosAngle)), 0.0f);
+            ry.set((-axis.z * sinAngle + axis.x * axis.y * (1.0f - cosAngle)), (cosAngle + axis.y * axis.y * (1.0f - cosAngle)), (axis.x * sinAngle + axis.z * axis.y * (1.0f - cosAngle)), 0.0f);
+            rz.set((axis.y * sinAngle + axis.x * axis.z * (1.0f - cosAngle)), (-axis.x * sinAngle + axis.y * axis.z * (1.0f - cosAngle)), (cosAngle + axis.z * axis.z * (1.0f - cosAngle)), 0.0f);
+            rw.set(0.0f, 0.0f, 0.0f, 1.0f);
         }
 
         void Float4x4::setPitchRotation(float radians)
@@ -86,9 +99,10 @@ namespace Gek
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
 
-            nx.set(1.0f, 0.0f, 0.0f);
-            ny.set(0.0f, cosAngle, sinAngle);
-            nz.set(0.0f, -sinAngle, cosAngle);
+            rx.set(1.0f, 0.0f, 0.0f, 0.0f);
+            ry.set(0.0f, cosAngle, sinAngle, 0.0f);
+            rz.set(0.0f, -sinAngle, cosAngle, 0.0f);
+            rw.set(0.0f, 0.0f, 0.0f, 1.0f);
         }
 
         void Float4x4::setYawRotation(float radians)
@@ -96,9 +110,10 @@ namespace Gek
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
 
-            nx.set(cosAngle, 0.0f, -sinAngle);
-            ny.set(0.0f, 1.0f, 0.0f);
-            nz.set(sinAngle, 0.0f, cosAngle);
+            rx.set(cosAngle, 0.0f, -sinAngle, 0.0f);
+            ry.set(0.0f, 1.0f, 0.0f, 0.0f);
+            rz.set(sinAngle, 0.0f, cosAngle, 0.0f);
+            rw.set(0.0f, 0.0f, 0.0f, 1.0f);
         }
 
         void Float4x4::setRollRotation(float radians)
@@ -106,9 +121,10 @@ namespace Gek
             float cosAngle(std::cos(radians));
             float sinAngle(std::sin(radians));
 
-            nx.set(cosAngle, sinAngle, 0.0f);
-            ny.set(-sinAngle, cosAngle, 0.0f);
-            nz.set(0.0f, 0.0f, 1.0f);
+            rx.set(cosAngle, sinAngle, 0.0f, 0.0f);
+            ry.set(-sinAngle, cosAngle, 0.0f, 0.0f);
+            rz.set(0.0f, 0.0f, 1.0f, 0.0f);
+            rw.set(0.0f, 0.0f, 0.0f, 1.0f);
         }
 
         void Float4x4::setOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth)
@@ -138,9 +154,10 @@ namespace Gek
 
         void Float4x4::setLookAt(const Float3 &direction, const Float3 &worldUpVector)
         {
-            nz = direction.getNormal();
-            nx = worldUpVector.cross(nz).getNormal();
-            ny = nz.cross(nx).getNormal();
+            rz = direction.getNormal().w(0.0f);
+            rx = worldUpVector.cross(nz).getNormal().w(0.0f);
+            ry = nz.cross(nx).getNormal().w(0.0f);
+            rw.set(0.0f, 0.0f, 0.0f, 1.0f);
         }
 
         Quaternion Float4x4::getQuaternion(void) const

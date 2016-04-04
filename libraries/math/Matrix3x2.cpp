@@ -7,9 +7,6 @@ namespace Gek
     namespace Math
     {
         Float3x2::Float3x2(void)
-            : data{ 1.0f, 0.0f,
-                    0.0f, 1.0f,
-                    0.0f, 0.0f }
         {
         }
 
@@ -32,6 +29,19 @@ namespace Gek
                     matrix.rows[1],
                     matrix.rows[2] }
         {
+        }
+
+        void Float3x2::setIdentity(void)
+        {
+            rows[0] = Math::Float2(1.0f, 0.0f);
+            rows[1] = Math::Float2(0.0f, 1.0f);
+            rows[2] = Math::Float2(0.0f, 0.0f);
+        }
+
+        void Float3x2::setRotationIdentity(void)
+        {
+            rows[0] = Math::Float2(1.0f, 0.0f);
+            rows[1] = Math::Float2(0.0f, 1.0f);
         }
 
         void Float3x2::setScaling(float scalar)

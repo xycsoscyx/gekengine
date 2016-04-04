@@ -9,14 +9,10 @@
         </entity>
 
         <entity name="player_body">
+            <first_person_camera mode="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200"/>
             <transform position="(0, 30, 0)" rotation="(0, 0, 0)" scale="(1.5,3,1.5)"/>
             <player_body outer_radius="1.5" inner_radius=".5" half_height="3" stair_step="1.5" />
             <mass>250</mass>
-        </entity>
-
-        <entity name="player_head">
-            <transform scale="(.8,.8,.8)"/>
-            <camera mode="perspective" type="first_person" field_of_view="90" minimum_distance="0.5" maximum_distance="200" body="player_body"/>
         </entity>
 
         <entity>
@@ -506,301 +502,301 @@
 
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(random(-55, 55), random(0, 30), random(-30, 30))" />
-            <light range="random(10, 20)" radius="random(0.1, 0.5)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
             <color>(random(0,1), random(0,1), random(0,1))</color>
             <shape skin="debug//r0_m0" parameters="1">sphere</shape>
         </entity>

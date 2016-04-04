@@ -47,9 +47,6 @@
     <ClInclude Include="..\utility\GEK\Utility\Allocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Context\Trace.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Context\COM.h">
       <Filter>Header Files</Filter>
     </ClInclude>

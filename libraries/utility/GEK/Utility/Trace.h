@@ -1,13 +1,6 @@
 #pragma once
 
-#include "GEK\Context\Context.h"
-#include "GEK\Context\ContextUser.h"
 #include "GEK\Utility\String.h"
-#include <assert.h>
-#include <atlbase.h>
-#include <atlstr.h>
-#include <varargs.h>
-#include <unordered_map>
 #include <string>
 #include <json.hpp>
 
@@ -24,7 +17,7 @@ namespace Gek
     template<typename VALUE, typename... ARGS>
     void getParameters(nlohmann::json &json, std::pair<LPCSTR, VALUE> &value, ARGS&... args)
     {
-        json["args"][value.first] = LPCSTR(CW2A(String::from(value.second)));
+        json["args"][value.first] = String::from<char>(value.second);
         getParameters(json, args...);
     }
 
@@ -46,7 +39,7 @@ namespace Gek
             profileData["args"]["message"] = message;
         }
 
-        trace(profileData.dump(4).c_str());
+        trace((profileData.dump(4) + ",\r\n").c_str());
     }
 
     class TraceScope

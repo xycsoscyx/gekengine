@@ -1,12 +1,12 @@
 #include <initguid.h>
 #include <cguid.h>
 
+#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\Display.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\XML.h"
-#include "GEK\Context\Trace.h"
 #include "GEK\Context\COM.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Engine\Engine.h"
@@ -164,6 +164,17 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
     return resultValue;
 }
 
+bool fct(int nb, char c, int nb2, LPCSTR text)
+{
+    return true;
+}
+
+template <typename RETURN, typename... Args>
+RETURN call(LPVOID function, Args... args)
+{
+    return (reinterpret_cast<RETURN(*)(Args...)>(function))(args...);
+}
+
 template <typename TYPE>
 struct Evaluation
 {
@@ -178,6 +189,10 @@ struct Evaluation
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
 {
+    LPVOID function = LPVOID(fct);
+    bool result = call<bool>(function, 42, 'c', 19, "foobar");
+    result = call<bool>(function, false, 'c', 19, "foobar");
+
     static const LPCWSTR materialFormat = \
         L"<?xml version=\"1.0\"?>\r\n" \
         L"<material>\r\n" \
@@ -210,192 +225,147 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         }
     }
 
-    Evaluation<float> floatEvaluationList[] =
-    {
-        { L"(2)(3)", 6.0f },
-        { L"--3", 3.0f },
-        { L"2--3", 5.0f },
-        { L"2(--3)", 6.0f },
-        { L"2^-3", 0.125f },
-        { L"2pie3", 51.238403 },
-        { L"1(2(3(4+5)))", 54.0f },
-        { L"3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3", 3.000122f },
-        { L"sin ( max ( 2 , 3 ) / 3 * 3.1415 )", 9.26574066e-05f },
-        { L"sin(max(2,3)/3*3.1415)", 9.26574066e-05f },
-        { L"   sin(max(2,3)/3*3.1415)", 9.26574066e-05f },
-        { L"   sin(max(2,3)/3*3.1415)   ", 9.26574066e-05f },
-        { L"sin(max(2,3)/3*3.1415)   ", 9.26574066e-05f },
-    };
-
-    for (auto &evaluation : floatEvaluationList)
-    {
-        float value = 0.0f;
-        bool parse = evaluation(evaluation.expression, value);
-        bool result = (value == evaluation.result);
-        OutputDebugString(Gek::String::format(L"Evaluation (%s): %s, %f %s %f\r\n", evaluation.expression, (parse ? L"Succeeded" : L"Failed"), value, (result ? L"==" : L"!="), evaluation.result));
-    }
-
-    Evaluation<Gek::Math::Float2> float2EvaluationList[] =
-    {
-        { L"(1, 2)", Gek::Math::Float2(1.0f, 2.0f) },
-        { L"(sin(pi), (4 * 6))", Gek::Math::Float2(-8.74227766e-08f, 24.0f) },
-    };
-
-    for (auto &evaluation : float2EvaluationList)
-    {
-        Gek::Math::Float2 value;
-        bool parse = evaluation(evaluation.expression, value);
-        bool result = (value == evaluation.result);
-        OutputDebugString(Gek::String::format(L"Evaluation (%s): %s, (%s) %s (%s)\r\n", evaluation.expression, (parse ? L"Succeeded" : L"Failed"), Gek::String::from(value), (result ? L"==" : L"!="), Gek::String::from(evaluation.result)));
-    }
-
-    Evaluation<Gek::Math::Float3> float3EvaluationList[] =
-    {
-        { L"(1, 2, 3)", Gek::Math::Float3(1.0f, 2.0f, 3.0f) },
-        { L"(2^3, pisin(pi/2), 1)", Gek::Math::Float3(8.0f, 3.14159274f, 1.0f) },
-    };
-
-    for (auto &evaluation : float3EvaluationList)
-    {
-        Gek::Math::Float3 value;
-        bool parse = evaluation(evaluation.expression, value);
-        bool result = (value == evaluation.result);
-        OutputDebugString(Gek::String::format(L"Evaluation (%s): %s, (%s) %s (%s)\r\n", evaluation.expression, (parse ? L"Succeeded" : L"Failed"), Gek::String::from(value), (result ? L"==" : L"!="), Gek::String::from(evaluation.result)));
-    }
-
-    Evaluation<Gek::Math::Float4> float4EvaluationList[] =
-    {
-        { L"(1, 2, 3, 4)", Gek::Math::Float4(1.0f, 2.0f, 3.0f, 4.0f) },
-        { L"(((((1)))), -3, -(2*3), tan(pi)2)", Gek::Math::Float4(1.0f, -3.0f, -6.0f, 1.74845553e-07f) },
-    };
-
-    for (auto &evaluation : float4EvaluationList)
-    {
-        Gek::Math::Float4 value;
-        bool parse = evaluation(evaluation.expression, value);
-        bool result = (value == evaluation.result);
-        OutputDebugString(Gek::String::format(L"Evaluation (%s): %s, (%s) %s (%s)\r\n", evaluation.expression, (parse ? L"Succeeded" : L"Failed"), Gek::String::from(value), (result ? L"==" : L"!="), Gek::String::from(evaluation.result)));
-    }
-
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
-        Gek::traceInitialize();
-
-        //_clearfp();
-        //unsigned unused_current_word = 0;
-        //_controlfp_s(&unused_current_word, 0, _EM_ZERODIVIDE | _EM_INVALID);
-
-        CComPtr<Gek::Context> context;
-        Gek::Context::create(&context);
-        if (context)
+        try
         {
+            Gek::traceInitialize();
+
+            //_clearfp();
+            //unsigned unused_current_word = 0;
+            //_controlfp_s(&unused_current_word, 0, _EM_ZERODIVIDE | _EM_INVALID);
+
+            CComPtr<Gek::Context> context;
+            Gek::Context::create(&context);
+            if (context)
+            {
 #ifdef _DEBUG
-            SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
-            context->addSearchPath(L"%root%\\Debug\\Plugins");
+                SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
+                context->addSearchPath(L"%root%\\Debug\\Plugins");
 #else
-            SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Release")); 
-            context->addSearchPath(L"%root%\\Release\\Plugins");
+                SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Release"));
+                context->addSearchPath(L"%root%\\Release\\Plugins");
 #endif
 
-            context->initialize();
-            CComPtr<Gek::Engine> engineCore;
-            context->createInstance(CLSID_IID_PPV_ARGS(Gek::EngineRegistration, &engineCore));
-            if (engineCore)
-            {
-                WNDCLASS kClass;
-                kClass.style = 0;
-                kClass.lpfnWndProc = WindowProc;
-                kClass.cbClsExtra = 0;
-                kClass.cbWndExtra = 0;
-                kClass.hInstance = GetModuleHandle(nullptr);
-                kClass.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(103));
-                kClass.hCursor = nullptr;
-                kClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-                kClass.lpszMenuName = nullptr;
-                kClass.lpszClassName = L"GEKvX_Engine_Demo";
-                if (RegisterClass(&kClass))
+                context->initialize();
+                CComPtr<Gek::Engine> engineCore;
+                context->createInstance(CLSID_IID_PPV_ARGS(Gek::EngineRegistration, &engineCore));
+                if (engineCore)
                 {
-                    UINT32 width = 800;
-                    UINT32 height = 600;
-                    bool windowed = true;
-
-                    Gek::XmlDocument xmlDocument;
-                    if (SUCCEEDED(xmlDocument.load(L"%root%\\config.xml")))
+                    WNDCLASS kClass;
+                    kClass.style = 0;
+                    kClass.lpfnWndProc = WindowProc;
+                    kClass.cbClsExtra = 0;
+                    kClass.cbWndExtra = 0;
+                    kClass.hInstance = GetModuleHandle(nullptr);
+                    kClass.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(103));
+                    kClass.hCursor = nullptr;
+                    kClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+                    kClass.lpszMenuName = nullptr;
+                    kClass.lpszClassName = L"GEKvX_Engine_Demo";
+                    if (RegisterClass(&kClass))
                     {
-                        Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
-                        if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
+                        UINT32 width = 800;
+                        UINT32 height = 600;
+                        bool windowed = true;
+
+                        Gek::XmlDocument xmlDocument;
+                        if (SUCCEEDED(xmlDocument.load(L"%root%\\config.xml")))
                         {
-                            Gek::XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
-                            if (xmlDisplayNode)
+                            Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
+                            if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
                             {
-                                if (xmlDisplayNode.hasAttribute(L"width"))
+                                Gek::XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
+                                if (xmlDisplayNode)
                                 {
-                                    width = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"width"));
-                                }
+                                    if (xmlDisplayNode.hasAttribute(L"width"))
+                                    {
+                                        width = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"width"));
+                                    }
 
-                                if (xmlDisplayNode.hasAttribute(L"height"))
-                                {
-                                    height = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
-                                }
+                                    if (xmlDisplayNode.hasAttribute(L"height"))
+                                    {
+                                        height = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
+                                    }
 
-                                if (xmlDisplayNode.hasAttribute(L"windowed"))
-                                {
-                                    windowed = Gek::String::to<bool>(xmlDisplayNode.getAttribute(L"windowed"));
+                                    if (xmlDisplayNode.hasAttribute(L"windowed"))
+                                    {
+                                        windowed = Gek::String::to<bool>(xmlDisplayNode.getAttribute(L"windowed"));
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    RECT clientRect;
-                    clientRect.left = 0;
-                    clientRect.top = 0;
-                    clientRect.right = width;
-                    clientRect.bottom = height;
-                    AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, false);
-                    int windowWidth = (clientRect.right - clientRect.left);
-                    int windowHeight = (clientRect.bottom - clientRect.top);
-                    int centerPositionX = (windowed ? (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2) : 0);
-                    int centerPositionY = (windowed ? (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2) : 0);
-                    HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Engine - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
-                    if (window)
-                    {
-                        if (SUCCEEDED(engineCore->initialize(window)))
+                        RECT clientRect;
+                        clientRect.left = 0;
+                        clientRect.top = 0;
+                        clientRect.right = width;
+                        clientRect.bottom = height;
+                        AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, false);
+                        int windowWidth = (clientRect.right - clientRect.left);
+                        int windowHeight = (clientRect.bottom - clientRect.top);
+                        int centerPositionX = (windowed ? (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2) : 0);
+                        int centerPositionY = (windowed ? (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2) : 0);
+                        HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Engine - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
+                        if (window)
                         {
-                            SetWindowLongPtr(window, GWLP_USERDATA, LONG((Gek::Engine *)engineCore));
-                            ShowWindow(window, SW_SHOW);
-                            UpdateWindow(window);
-
-                            MSG message = { 0 };
-                            while (message.message != WM_QUIT)
+                            if (SUCCEEDED(engineCore->initialize(window)))
                             {
-                                while (PeekMessage(&message, nullptr, 0U, 0U, PM_REMOVE))
+                                SetWindowLongPtr(window, GWLP_USERDATA, LONG((Gek::Engine *)engineCore));
+                                ShowWindow(window, SW_SHOW);
+                                UpdateWindow(window);
+
+                                MSG message = { 0 };
+                                while (message.message != WM_QUIT)
                                 {
-                                    TranslateMessage(&message);
-                                    DispatchMessage(&message);
+                                    while (PeekMessage(&message, nullptr, 0U, 0U, PM_REMOVE))
+                                    {
+                                        TranslateMessage(&message);
+                                        DispatchMessage(&message);
+                                    };
+
+                                    if (!engineCore->update())
+                                    {
+                                        break;
+                                    }
                                 };
 
-                                if (!engineCore->update())
-                                {
-                                    break;
-                                }
-                            };
-
-                            SetWindowLongPtr(window, GWLP_USERDATA, 0);
-                            engineCore.Release();
-                            DestroyWindow(window);
+                                SetWindowLongPtr(window, GWLP_USERDATA, 0);
+                                engineCore.Release();
+                                DestroyWindow(window);
+                            }
+                        }
+                        else
+                        {
+                            //GEKEXCEPTION(L"Unable to create main application window");
                         }
                     }
                     else
                     {
+                        //GEKEXCEPTION("Unable to register main application window class");
                     }
                 }
                 else
                 {
+                    //GEKEXCEPTION("Unable to create instance of core engine class");
                 }
             }
-        }
+            else
+            {
+                //GEKEXCEPTION("Unable to create instance of engine context manager");
+            }
 
-        Gek::traceShutDown();
+            Gek::traceShutDown();
+        }
+        catch (const Gek::Exception<char> &exception)
+        {
+            MessageBoxA(NULL, exception.message, "GEK Exception", MB_OK | MB_ICONWARNING);
+        }
+        catch (const Gek::Exception<wchar_t> &exception)
+        {
+            MessageBoxW(NULL, exception.message, L"GEK Exception", MB_OK | MB_ICONWARNING);
+        };
+
         return 0;
     }
 

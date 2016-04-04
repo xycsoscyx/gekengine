@@ -16,7 +16,6 @@ namespace Gek
 
         public:
             Float2(void)
-                : data{ 0.0f, 0.0f }
             {
             }
 

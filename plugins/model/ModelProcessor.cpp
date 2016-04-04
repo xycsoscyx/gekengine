@@ -415,7 +415,7 @@ namespace Gek
 
                 if (viewFrustum->isVisible(orientedBox))
                 {
-                    Gek::Math::Color color(1.0f, 1.0f, 1.0f, 1.0f);
+                    Gek::Math::Color color(1.0f);
                     if (entity->hasComponent<ColorComponent>())
                     {
                         color = entity->getComponent<ColorComponent>();

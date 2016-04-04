@@ -165,11 +165,11 @@ namespace Gek
 
         Math::Quaternion integrateOmega(const Math::Quaternion &rotation, const Math::Float3& omega, float frameTime) const
         {
-            Math::Quaternion deltaRotation;
-            Math::Float3 theta = (omega * frameTime * 0.5f);
+            Math::Float3 theta(omega * frameTime * 0.5f);
             float thetaMagnitideSquared = theta.getLengthSquared();
 
             float angle;
+            Math::Quaternion deltaRotation;
             if (thetaMagnitideSquared * thetaMagnitideSquared / 24.0f < Math::Epsilon)
             {
                 deltaRotation.w = 1.0f - thetaMagnitideSquared / 2.0f;
@@ -277,17 +277,18 @@ namespace Gek
 
         void updateGroundPlane(Math::Float4x4& matrix, const Math::Float4x4& castMatrix, const Math::Float3& destination, int threadHandle)
         {
-            ConvexRayFilter filterData(newtonBody);
-            NewtonWorldConvexRayCast(newtonWorld, newtonCastingShape, castMatrix.data, destination.data, ConvexRayFilter::filter, &filterData, ConvexCastPreFilter::preFilter, threadHandle);
-
             groundNormal = 0.0f;
             groundVelocity = 0.0f;
-            if (filterData.hitBody)
+
+            float parameter = 10.0f;
+            NewtonWorldConvexCastReturnInfo info;
+            ConvexRayFilter filterData(newtonBody);
+            if (NewtonWorldConvexCast(newtonWorld, castMatrix.data, destination.data, newtonCastingShape, &parameter, &filterData, ConvexCastPreFilter::preFilter, &info, 1, threadHandle) > 0 && parameter <= 1.0f)
             {
                 isJumpingState = false;
-                groundNormal = filterData.hitNormal;
+                groundNormal.set(info.m_normal[0], info.m_normal[1], info.m_normal[2]);
                 Math::Float3 supportPoint(castMatrix.translation + ((destination - castMatrix.translation) * filterData.intersectionDistance));
-                NewtonBodyGetPointVelocity(filterData.hitBody, supportPoint.data, groundVelocity.data);
+                NewtonBodyGetPointVelocity(info.m_hitBody, supportPoint.data, groundVelocity.data);
                 matrix.translation = supportPoint;
             }
         }
@@ -366,7 +367,7 @@ namespace Gek
             float capsuleHeight = (playerBodyComponent.halfHeight - playerBodyComponent.stairStep);
             sphereCastOrigin = ((capsuleHeight * 0.5f) + playerBodyComponent.stairStep);
             outerShapeMatrix.translation = (outerShapeMatrix.ny * sphereCastOrigin);
-            NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.5f, 0, outerShapeMatrix.data);
+            NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.25f, 0.5f, 0, outerShapeMatrix.data);
             NewtonCollisionSetScale(bodyCapsule, capsuleHeight, (playerBodyComponent.outerRadius * 4.0f), (playerBodyComponent.outerRadius * 4.0f));
 
             // compound collision player controller
@@ -576,7 +577,7 @@ namespace Gek
                     }
 
                     float residualSpeed = 10.0f;
-                    Math::Float3 auxiliaryBounceVelocity;
+                    Math::Float3 auxiliaryBounceVelocity(0.0f);
                     for (int currentContact = 0; ((currentContact < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residualSpeed > PLAYER_EPSILON)); currentContact++)
                     {
                         residualSpeed = 0.0f;
@@ -597,7 +598,7 @@ namespace Gek
                         }
                     }
 
-                    Math::Float3 velocityStep;
+                    Math::Float3 velocityStep(0.0f);
                     for (int currentContact = 0; currentContact < bounceCount; currentContact++)
                     {
                         Math::Float3 normal(bounceNormalList[currentContact]);

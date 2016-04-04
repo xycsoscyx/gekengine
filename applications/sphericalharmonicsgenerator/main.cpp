@@ -352,7 +352,7 @@ namespace Gek
         dirSH[7] *= CosineA2;
         dirSH[8] *= CosineA2;
 
-        Math::Float4 result;
+        Math::Float4 result(0.0f);
         for (int i = 0; i < 9; ++i)
         {
             result += sh[i] * dirSH[i];
@@ -365,34 +365,31 @@ namespace Gek
     Math::Float3 MapXYSToDirection(int face, float u, float v)
     {
         v *= -1.0f;
-
-        Math::Float3 dir = 0.0f;
-
-        // +x, -x, +y, -y, +z, -z
+        Math::Float3 dir;
         switch (face)
         {
-        case 0:
-            dir = Math::Float3(1.0f, v, -u);
+        case 0: // +x
+            dir.set(1.0f, v, -u);
             break;
 
-        case 1:
-            dir = Math::Float3(-1.0f, v, u);
+        case 1: // -x
+            dir.set(-1.0f, v, u);
             break;
 
-        case 2:
-            dir = Math::Float3(u, 1.0f, -v);
+        case 2: // +y
+            dir.set(u, 1.0f, -v);
             break;
 
-        case 3:
-            dir = Math::Float3(u, -1.0f, v);
+        case 3: // -y
+            dir.set(u, -1.0f, v);
             break;
 
-        case 4:
-            dir = Math::Float3(u, v, 1.0f);
+        case 4: // +z
+            dir.set(u, v, 1.0f);
             break;
 
-        case 5:
-            dir = Math::Float3(-u, v, -1.0f);
+        case 5: // -z
+            dir.set(-u, v, -1.0f);
             break;
         };
 
@@ -418,10 +415,7 @@ namespace Gek
                 {
                     float u = (((x + 0.5f) / imageSizeFloat) * 2.0f) - 1.0f;
 
-                    Math::Float4 sample;
-                    sample.x = pixels[x * 4 + 0];
-                    sample.y = pixels[x * 4 + 1];
-                    sample.z = pixels[x * 4 + 2];
+                    Math::Float4 sample(&pixels[x * 4]);
 
                     const float temp = 1.0f + u * u + v * v;
                     const float weight = 4.0f / (std::sqrt(temp) * temp);

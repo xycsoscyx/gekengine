@@ -30,6 +30,9 @@
     <ClCompile Include="ShuntingYard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Trace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEK\Utility\Timer.h">
@@ -57,6 +60,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Utility\ShuntingYard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Utility\Trace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

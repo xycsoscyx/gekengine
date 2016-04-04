@@ -20,7 +20,6 @@ namespace Gek
 
         public:
             Float4(void)
-                : simd(_mm_set1_ps(0.0f))
             {
             }
 

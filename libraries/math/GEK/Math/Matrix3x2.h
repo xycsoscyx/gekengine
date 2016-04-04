@@ -41,6 +41,8 @@ namespace Gek
                 setRotation(radians);
             }
 
+            void setIdentity(void);
+            void setRotationIdentity(void);
             void setScaling(float scalar);
             void setScaling(const Float2 &vector);
             void setRotation(float radians);

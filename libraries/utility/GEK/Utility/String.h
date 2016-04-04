@@ -171,28 +171,181 @@ namespace Gek
             return value;
         }
 
-        CStringW from(double value);
-        CStringW from(float value);
-        CStringW from(const Gek::Math::Float2 &value);
-        CStringW from(const Gek::Math::Float3 &value);
-        CStringW from(const Gek::Math::Float4 &value);
-        CStringW from(const Gek::Math::Color &value);
-        CStringW from(const Gek::Math::Quaternion &value);
-        CStringW from(INT8 value);
-        CStringW from(UINT8 value);
-        CStringW from(INT16 value);
-        CStringW from(UINT16 value);
-        CStringW from(INT32 value);
-        CStringW from(UINT32 value);
-        CStringW from(DWORD value);
-        CStringW from(LPCVOID value);
-        CStringW from(INT64 value);
-        CStringW from(UINT64 value);
-        CStringW from(bool value);
-        CStringW from(LPCSTR value, bool fromUTF8 = false);
-        CStringW from(LPCWSTR value);
-        CStringW from(const CStringW &value);
-        CStringW from(const GUID &value);
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(double value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(float value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const Gek::Math::Float2 &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value.x << ',' << value.y;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const Gek::Math::Float3 &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value.x << ',' << value.y << ',' << value.z;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const Gek::Math::Float4 &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value.x << ',' << value.y << ',' << value.z << ',' << value.w;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const Gek::Math::Color &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value.r << ',' << value.g << ',' << value.b << ',' << value.a;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const Gek::Math::Quaternion &value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value.x << ',' << value.y << ',' << value.z << ',' << value.w;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(INT8 value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(UINT8 value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(INT16 value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(UINT16 value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(INT32 value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(UINT32 value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(DWORD value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(LPCVOID value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(INT64 value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(UINT64 value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(bool value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << std::boolalpha << value;
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(LPCSTR value)
+        {
+            if (std::is_same<CHAR, wchar_t>::value)
+            {
+                return CA2W(value, CP_UTF8).m_psz;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(LPCWSTR value)
+        {
+            if (std::is_same<CHAR, char>::value)
+            {
+                return CW2A(value, CP_UTF8).m_psz;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const GUID &value)
+        {
+            return CComBSTR(value).m_str;
+        }
 
         template <typename CHAR>
         CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> format(const CHAR *formatting)
@@ -202,17 +355,20 @@ namespace Gek
             {
                 if (*formatting == '%')
                 {
-                    if (*(formatting + 1) == '%')
+                    ++formatting;
+                    if (*formatting == '%')
                     {
-                        ++formatting;
+                        result += *formatting++;
                     }
                     else
                     {
                         throw std::runtime_error("invalid format string: missing arguments");
                     }
                 }
-
-                result += *formatting++;
+                else
+                {
+                    result += *formatting++;
+                }
             };
 
             return result;
@@ -226,24 +382,46 @@ namespace Gek
             {
                 if (*formatting == '%')
                 {
-                    if (*(formatting + 1) == '%')
+                    ++formatting;
+                    if (*formatting == '%')
                     {
-                        ++formatting;
+                        result += *formatting++;
                     }
                     else
                     {
-                        std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
-                        stream << value;
-                        result += stream.str().c_str();
-                        result += format(formatting + 1, args...);
+                        ++formatting;
+                        // Should verify format type here
+                        result += from<CHAR>(value).GetString();
+                        result += format(formatting, args...);
                         return result;
                     }
                 }
-
-                result += *formatting++;
+                else
+                {
+                    result += *formatting++;
+                }
             }
             
-            throw std::logic_error("extra arguments provided to printf");
+            throw std::logic_error("extra arguments provided to format");
         }
     }; // namespace String
+
+    template<typename CHAR, typename... ARGS>
+    class Exception
+    {
+    public:
+        LPCSTR file;
+        UINT32 line;
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> message;
+
+    public:
+        Exception(LPCSTR file, UINT32 line, const CHAR *format, ARGS... args)
+            : file(file)
+            , line(line)
+        {
+            message = String::format(format, args...);
+        }
+    };
 }; // namespace Gek
+
+#define GEKEXCEPTION(FORMAT, ...)  throw Gek::Exception<std::remove_const<std::remove_reference<decltype(FORMAT[0])>::type>::type>(__FILE__, __LINE__, FORMAT, __VA_ARGS__)

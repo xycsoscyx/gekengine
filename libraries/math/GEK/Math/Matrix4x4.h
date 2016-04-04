@@ -77,6 +77,8 @@ namespace Gek
                 setAngularRotation(axis, radians);
             }
 
+            void setIdentity(void);
+            void setRotationIdentity(void);
             void setScaling(float scalar);
             void setScaling(const Float3 &vector);
             void setEulerRotation(float pitch, float yaw, float roll);
