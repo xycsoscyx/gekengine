@@ -1,4 +1,9 @@
 ﻿#include "GEK\Engine\Render.h"
+#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\Evaluator.h"
+#include "GEK\Utility\FileSystem.h"
+#include "GEK\Utility\XML.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Plugin.h"
 #include "GEK\Engine\Shader.h"
@@ -13,10 +18,6 @@
 #include "GEK\Context\COM.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
-#include "GEK\Utility\Evaluator.h"
-#include "GEK\Utility\FileSystem.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\XML.h"
 #include "GEK\Shapes\Sphere.h"
 #include <set>
 #include <ppl.h>
@@ -232,6 +233,8 @@ namespace Gek
         // Render/Resources
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
+            GEK_TRACE_FUNCTION(Render);
+
             GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
@@ -352,6 +355,8 @@ namespace Gek
 
         STDMETHODIMP_(void) render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix)
         {
+            GEK_TRACE_FUNCTION(Render);
+
             GEK_REQUIRE_VOID_RETURN(population);
             GEK_REQUIRE_VOID_RETURN(cameraEntity);
 
@@ -538,6 +543,8 @@ namespace Gek
 
         void render(void)
         {
+            GEK_TRACE_FUNCTION(Render);
+
             GEK_REQUIRE_VOID_RETURN(population);
             GEK_REQUIRE_VOID_RETURN(resources);
             GEK_REQUIRE_VOID_RETURN(video);

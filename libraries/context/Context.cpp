@@ -105,7 +105,7 @@ namespace Gek
 
         STDMETHODIMP createInstance(REFGUID className, REFIID interfaceType, LPVOID FAR *returnObject)
         {
-            GEK_TRACE_FUNCTION(Context, GEK_PARAMATER(className), GEK_PARAMATER(interfaceType));
+            GEK_TRACE_FUNCTION(Context, GEK_PARAMETER(className), GEK_PARAMETER(interfaceType));
 
             GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
@@ -121,17 +121,17 @@ namespace Gek
                     resultValue = classInstance->QueryInterface(interfaceType, returnObject);
                     if (FAILED(resultValue))
                     {
-                        GEK_TRACE_ERROR(Context, "Unable to query class interface", GEK_PARAMATER(className), GEK_PARAMATER(interfaceType));
+                        GEK_TRACE_ERROR(Context, "Unable to query class interface", GEK_PARAMETER(className), GEK_PARAMETER(interfaceType));
                     }
                 }
                 else
                 {
-                    GEK_TRACE_ERROR(Context, "Unable to create class instance", GEK_PARAMATER(className));
+                    GEK_TRACE_ERROR(Context, "Unable to create class instance", GEK_PARAMETER(className));
                 }
             }
             else
             {
-                GEK_TRACE_ERROR(Context, "Class not located", GEK_PARAMATER(className));
+                GEK_TRACE_ERROR(Context, "Class not located", GEK_PARAMETER(className));
             }
 
             return resultValue;
@@ -139,7 +139,7 @@ namespace Gek
 
         STDMETHODIMP createEachType(REFCLSID typeName, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance)
         {
-            GEK_TRACE_FUNCTION(Context, GEK_PARAMATER(typeName));
+            GEK_TRACE_FUNCTION(Context, GEK_PARAMETER(typeName));
                 
             HRESULT resultValue = S_OK;
             auto typedClassIterator = typedClassList.find(typeName);
@@ -161,7 +161,7 @@ namespace Gek
             }
             else
             {
-                GEK_TRACE_ERROR(Context, "No classes located", GEK_PARAMATER(typeName));
+                GEK_TRACE_ERROR(Context, "No classes located", GEK_PARAMETER(typeName));
             }
 
             return resultValue;

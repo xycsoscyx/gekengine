@@ -1,12 +1,13 @@
 #include "GEK\Engine\Shader.h"
+#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\Evaluator.h"
+#include "GEK\Utility\FileSystem.h"
+#include "GEK\Utility\XML.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Render.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\System\VideoSystem.h"
-#include "GEK\Utility\FileSystem.h"
-#include "GEK\Utility\Evaluator.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\XML.h"
 #include <atlpath.h>
 #include <set>
 #include <ppl.h>
@@ -537,6 +538,8 @@ namespace Gek
         // Shader
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
+            GEK_TRACE_FUNCTION(Shader, GEK_PARAMETER(fileName));
+
             GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
             GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -1060,6 +1063,8 @@ namespace Gek
 
         STDMETHODIMP_(void) loadResourceList(LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &materialDataMap, std::list<ResourceHandle> &resourceList)
         {
+            GEK_TRACE_FUNCTION(Shader, GEK_PARAMETER(materialName));
+
             CPathW filePath(materialName);
             filePath.RemoveFileSpec();
 
@@ -1112,6 +1117,8 @@ namespace Gek
             std::function<void(void)> drawDeferred,
             std::function<void(UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> runCompute)
         {
+            GEK_TRACE_FUNCTION(Shader);
+
             currentBlock = nullptr;
             for (auto &block : blockList)
             {

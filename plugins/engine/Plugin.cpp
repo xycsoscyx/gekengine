@@ -1,9 +1,10 @@
 #include "GEK\Engine\Plugin.h"
-#include "GEK\Context\ContextUserMixin.h"
-#include "GEK\System\VideoSystem.h"
+#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\FileSystem.h"
+#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\System\VideoSystem.h"
 #include <atlbase.h>
 #include <atlpath.h>
 #include <set>
@@ -112,6 +113,8 @@ namespace Gek
         // Plugin
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
+            GEK_TRACE_FUNCTION(Plugin, GEK_PARAMETER(fileName));
+
             GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
             GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 

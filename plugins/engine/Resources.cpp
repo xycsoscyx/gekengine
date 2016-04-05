@@ -1,4 +1,9 @@
 ﻿#include "GEK\Engine\Render.h"
+#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\Evaluator.h"
+#include "GEK\Utility\FileSystem.h"
+#include "GEK\Utility\XML.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Plugin.h"
 #include "GEK\Engine\Shader.h"
@@ -13,10 +18,6 @@
 #include "GEK\Context\COM.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
-#include "GEK\Utility\FileSystem.h"
-#include "GEK\Utility\Evaluator.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\XML.h"
 #include "GEK\Shapes\Sphere.h"
 #include <concurrent_unordered_map.h>
 #include <concurrent_unordered_set.h>
@@ -25,6 +26,25 @@
 
 namespace Gek
 {
+    namespace String
+    {
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(Video::Format value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << static_cast<UINT8>(value);
+            return stream.str().c_str();
+        }
+
+        template <typename CHAR>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(Video::BufferType value)
+        {
+            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
+            stream << static_cast<UINT8>(value);
+            return stream.str().c_str();
+        }
+    }; // namespace String
+
     template <class HANDLE>
     class ObjectManager
     {
@@ -278,6 +298,8 @@ namespace Gek
 
         STDMETHODIMP_(PluginHandle) loadPlugin(LPCWSTR fileName)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(fileName));
+
             return pluginManager.getGlobalHandle([&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
@@ -299,6 +321,8 @@ namespace Gek
 
         STDMETHODIMP_(MaterialHandle) loadMaterial(LPCWSTR fileName)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(fileName));
+
             ShaderHandle shader;
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
             PropertiesHandle properties = materialManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
@@ -325,6 +349,8 @@ namespace Gek
 
         STDMETHODIMP_(ShaderHandle) loadShader(LPCWSTR fileName)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(fileName));
+
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
             return shaderManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
@@ -347,6 +373,8 @@ namespace Gek
 
         STDMETHODIMP_(void) loadResourceList(ShaderHandle shaderHandle, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(shaderHandle.identifier), GEK_PARAMETER(materialName));
+
             Shader *shader = shaderManager.getResource<Shader>(shaderHandle);
             if (shader)
             {
@@ -356,6 +384,8 @@ namespace Gek
 
         STDMETHODIMP_(RenderStatesHandle) createRenderStates(const Video::RenderStates &renderStates)
         {
+            GEK_TRACE_FUNCTION(Resources);
+
             std::size_t hash = std::hash_combine(static_cast<UINT8>(renderStates.fillMode),
                 static_cast<UINT8>(renderStates.cullMode),
                 renderStates.frontCounterClockwise,
@@ -375,6 +405,8 @@ namespace Gek
 
         STDMETHODIMP_(DepthStatesHandle) createDepthStates(const Video::DepthStates &depthStates)
         {
+            GEK_TRACE_FUNCTION(Resources);
+
             std::size_t hash = std::hash_combine(depthStates.enable,
                 static_cast<UINT8>(depthStates.writeMask),
                 static_cast<UINT8>(depthStates.comparisonFunction),
@@ -398,6 +430,8 @@ namespace Gek
 
         STDMETHODIMP_(BlendStatesHandle) createBlendStates(const Video::UnifiedBlendStates &blendStates)
         {
+            GEK_TRACE_FUNCTION(Resources);
+
             std::size_t hash = std::hash_combine(blendStates.enable,
                 static_cast<UINT8>(blendStates.colorSource),
                 static_cast<UINT8>(blendStates.colorDestination),
@@ -415,6 +449,8 @@ namespace Gek
 
         STDMETHODIMP_(BlendStatesHandle) createBlendStates(const Video::IndependentBlendStates &blendStates)
         {
+            GEK_TRACE_FUNCTION(Resources);
+
             std::size_t hash = 0;
             for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
             {
@@ -437,6 +473,8 @@ namespace Gek
 
         STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(name), GEK_PARAMETER(format), GEK_PARAMETER(width), GEK_PARAMETER(height), GEK_PARAMETER(depth), GEK_PARAMETER(flags), GEK_PARAMETER(mipmaps));
+
             auto createFunction = [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoTexture> texture;
@@ -462,6 +500,8 @@ namespace Gek
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(name), GEK_PARAMETER(stride), GEK_PARAMETER(count), GEK_PARAMETER(type), GEK_PARAMETER(flags), GEK_PARAMETER(staticData));
+
             auto createFunction = [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoBuffer> buffer;
@@ -487,6 +527,8 @@ namespace Gek
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(name), GEK_PARAMETER(format), GEK_PARAMETER(count), GEK_PARAMETER(type), GEK_PARAMETER(flags), GEK_PARAMETER(staticData));
+
             auto createFunction = [&](IUnknown **returnObject) -> HRESULT
             {
                 CComPtr<VideoBuffer> buffer;
@@ -517,6 +559,8 @@ namespace Gek
 
         HRESULT createTexture(VideoTexture **returnObject, CStringW parameters, UINT32 flags)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(parameters), GEK_PARAMETER(flags));
+
             GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
@@ -632,6 +676,8 @@ namespace Gek
 
         HRESULT loadTexture(VideoTexture **returnObject, LPCWSTR fileName, UINT32 flags)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(fileName), GEK_PARAMETER(flags));
+
             GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
             GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -672,6 +718,8 @@ namespace Gek
 
         STDMETHODIMP_(ResourceHandle) loadTexture(LPCWSTR fileName, LPCWSTR fallback, UINT32 flags)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(fileName), GEK_PARAMETER(fallback), GEK_PARAMETER(flags));
+
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
             return resourceManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
@@ -703,6 +751,8 @@ namespace Gek
 
         STDMETHODIMP_(ProgramHandle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
+
             return programManager.getUniqueHandle([&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
@@ -712,6 +762,8 @@ namespace Gek
 
         STDMETHODIMP_(ProgramHandle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
         {
+            GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
+
             return programManager.getUniqueHandle([&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;

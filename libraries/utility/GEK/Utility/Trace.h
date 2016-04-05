@@ -72,7 +72,7 @@ namespace Gek
     };
 }; // namespace Gek
 
-#define GEK_PARAMATER(NAME)                                 std::make_pair(#NAME, std::cref(NAME))
+#define GEK_PARAMETER(NAME)                                 std::make_pair(#NAME, std::cref(NAME))
 #define GEK_TRACE_FUNCTION(CATEGORY, ...)                   Gek::TraceScope trace( #CATEGORY, __FUNCTION__, __VA_ARGS__)
 #define GEK_TRACE_EVENT(CATEGORY, MESSAGE, ...)             Gek::trace("i", #CATEGORY, GetTickCount64(), __FUNCTION__, MESSAGE, std::make_pair("type", "event"), __VA_ARGS__)
 #define GEK_TRACE_ERROR(CATEGORY, MESSAGE, ...)             Gek::trace("i", #CATEGORY, GetTickCount64(), __FUNCTION__, MESSAGE, std::make_pair("type", "error"), __VA_ARGS__)

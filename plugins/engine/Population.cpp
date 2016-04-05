@@ -1,10 +1,11 @@
 ﻿#include "GEK\Engine\Population.h"
+#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\XML.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\Component.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\XML.h"
 #include <map>
 #include <ppl.h>
 
@@ -97,6 +98,8 @@ namespace Gek
         // Population
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
+            GEK_TRACE_FUNCTION(Population);
+
             GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
@@ -147,6 +150,8 @@ namespace Gek
 
         STDMETHODIMP_(void) update(float frameTime)
         {
+            GEK_TRACE_FUNCTION(Population);
+
             this->frameTime = frameTime;
             worldTime += frameTime;
             if (loadScene)
@@ -194,8 +199,12 @@ namespace Gek
         std::function<void(void)> loadScene;
         STDMETHODIMP load(LPCWSTR fileName)
         {
+            GEK_TRACE_FUNCTION(Population, GEK_PARAMETER(fileName));
+
             loadScene = std::bind([&](const CStringW &fileName) -> HRESULT
             {
+                GEK_TRACE_FUNCTION(Population, GEK_PARAMETER(fileName));
+
                 HRESULT resultValue = E_FAIL;
 
                 free();
@@ -265,6 +274,8 @@ namespace Gek
 
         STDMETHODIMP save(LPCWSTR fileName)
         {
+            GEK_TRACE_FUNCTION(Population, GEK_PARAMETER(fileName));
+
             Gek::XmlDocument xmlDocument;
             xmlDocument.create(L"world");
             Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
@@ -291,7 +302,6 @@ namespace Gek
             CComPtr<EntityImplementation> entity = new EntityImplementation();
             if (entity)
             {
-                entityList.push_back(CComPtr<Entity>(entity->getClass<Entity>()));
                 for (auto &componentParameterPair : entityParameterList)
                 {
                     auto &componentName = componentParameterPair.first;
@@ -299,6 +309,8 @@ namespace Gek
                     auto componentIdentifierPair = componentNameList.find(componentName);
                     if (componentIdentifierPair == componentNameList.end())
                     {
+                        entity = nullptr;
+                        break;
                     }
                     else
                     {
@@ -306,6 +318,8 @@ namespace Gek
                         auto componentPair = componentList.find(componentIdentifier);
                         if (componentPair == componentList.end())
                         {
+                            entity = nullptr;
+                            break;
                         }
                         else
                         {
@@ -319,15 +333,19 @@ namespace Gek
                     }
                 }
 
-                ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onEntityCreated, std::placeholders::_1, entity)));
+                if (entity)
+                {
+                    entityList.push_back(CComPtr<Entity>(entity->getClass<Entity>()));
+                    ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onEntityCreated, std::placeholders::_1, entity)));
+                }
             }
 
-            if (name)
+            if (name && entity)
             {
                 namedEntityList[name] = entity;
             }
 
-            return entity;
+            return entity.p;
         }
 
         STDMETHODIMP_(void) killEntity(Entity *entity)

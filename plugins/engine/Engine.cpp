@@ -1,4 +1,8 @@
 ﻿#include "GEK\Engine\Engine.h"
+#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\XML.h"
+#include "GEK\Utility\Timer.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Action.h"
 #include "GEK\Engine\Resources.h"
@@ -6,9 +10,6 @@
 #include "GEK\Engine\Processor.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\XML.h"
-#include "GEK\Utility\Timer.h"
 #include <set>
 #include <ppl.h>
 
@@ -105,6 +106,8 @@ namespace Gek
         // Engine
         STDMETHODIMP initialize(HWND window)
         {
+            GEK_TRACE_FUNCTION(Engine);
+
             GEK_REQUIRE_RETURN(window, E_INVALIDARG);
 
             HRESULT resultValue = CoInitialize(nullptr);
@@ -364,6 +367,8 @@ namespace Gek
 
         STDMETHODIMP_(bool) update(void)
         {
+            GEK_TRACE_FUNCTION(Engine);
+
             if (windowActive)
             {
                 timer.update();
@@ -400,6 +405,8 @@ namespace Gek
         // PopulationObserver
         void refresh(void)
         {
+            GEK_TRACE_FUNCTION(Engine);
+
             std::list<std::pair<CStringW, std::vector<CStringW>>> commandCopy;
             if (true)
             {
@@ -489,6 +496,8 @@ namespace Gek
         // RenderObserver
         STDMETHODIMP_(void) onRenderOverlay(void)
         {
+            GEK_TRACE_FUNCTION(Engine);
+
             if (consolePosition > 0.0f)
             {
                 OverlaySystem *overlay = video->getOverlay();

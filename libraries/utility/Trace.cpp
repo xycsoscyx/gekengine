@@ -3,42 +3,121 @@
 #include "GEK\Utility\String.h"
 #include <thread>
 #include <mutex>
-#include <concurrent_queue.h>
+#include <concurrent_vector.h>
 
 namespace Gek
 {
-    static std::atomic<bool> rootShutdownEvent(false);
-    static std::atomic<UINT32> rootClientCount(0);
+    class TraceMutex
+    {
+    private:
+        HANDLE mutex;
+
+    public:
+        TraceMutex(void)
+            : mutex(nullptr)
+        {
+        }
+
+        virtual ~TraceMutex(void)
+        {
+            if (mutex)
+            {
+                CloseHandle(mutex);
+                mutex = nullptr;
+            }
+        }
+
+        bool lock(void)
+        {
+            mutex = CreateMutex(nullptr, true, L"GEK_Trace_Mutex");
+            if (!mutex)
+            {
+                mutex = OpenMutex(SYNCHRONIZE, false, L"GEK_Trace_Mutex");
+                if (mutex)
+                {
+                    WaitForSingleObject(mutex, INFINITE);
+                    CloseHandle(mutex);
+                }
+            }
+
+            if (!mutex)
+            {
+                mutex = CreateMutex(nullptr, true, L"GEK_Trace_Mutex");
+            }
+
+            return (mutex ? true : false);
+        }
+    };
+
+    class TraceFile : public TraceMutex
+    {
+    private:
+        HANDLE file;
+
+    public:
+        TraceFile(void)
+            : file(nullptr)
+        {
+        }
+
+        virtual ~TraceFile(void)
+        {
+            if (file && file != INVALID_HANDLE_VALUE)
+            {
+                CloseHandle(file);
+                file = nullptr;
+            }
+        }
+
+        bool open(DWORD openFlags)
+        {
+            if (!lock())
+            {
+                return false;
+            }
+
+            file = CreateFile(FileSystem::expandPath(L"%root%/profile.json"), GENERIC_ALL, FILE_SHARE_WRITE, nullptr, openFlags, FILE_ATTRIBUTE_NORMAL, nullptr);
+            if (file && file != INVALID_HANDLE_VALUE)
+            {
+                SetFilePointer(file, 0, 0, FILE_END);
+                return true;
+            }
+
+            return false;
+        }
+
+        void write(const std::string &string)
+        {
+            if (file && file != INVALID_HANDLE_VALUE)
+            {
+                DWORD bytesWritten = 0;
+                WriteFile(file, string.c_str(), string.length(), &bytesWritten, nullptr);
+            }
+        }
+    };
+
+    static HANDLE shutdownEvent = nullptr;
     void traceInitialize(void)
     {
-        if (!rootShutdownEvent)
+        TraceFile file;
+        if (file.open(CREATE_ALWAYS))
         {
-            HANDLE file = CreateFile(FileSystem::expandPath(L"%root%\\profiled.json"), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-            if (file)
-            {
-                DWORD writeCount = 0;
-                const char entryString[] = "{\"traceEvents\":[\r\n";
-                WriteFile(file, entryString, (sizeof(entryString) - 1), &writeCount, nullptr);
-                CloseHandle(file);
-            }
+            file.write("{\"traceEvents\":[\r\n");
+            shutdownEvent = CreateEvent(nullptr, true, false, L"GEK_Trace_Shutdown");
         }
     }
 
     void traceShutDown(void)
     {
-        if (rootShutdownEvent)
+        if (shutdownEvent)
         {
-            rootShutdownEvent = true;
-            while (rootClientCount)
-            {
-                Sleep(100);
-            };
+            SetEvent(shutdownEvent);
+            CloseHandle(shutdownEvent);
+            shutdownEvent = nullptr;
 
-            HANDLE file = CreateFile(FileSystem::expandPath(L"%root%\\profiled.json"), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-            if (file)
+            TraceFile file;
+            if (file.open(OPEN_EXISTING))
             {
-                SetFilePointer(file, 0, 0, FILE_END);
-
                 nlohmann::json profileData = {
                     { "name", "traceShutDown" },
                     { "cat", "Trace" },
@@ -48,79 +127,56 @@ namespace Gek
                     { "tid", GetCurrentThreadId() },
                 };
 
-                DWORD writeCount = 0;
-                std::string endTrace(profileData.dump(4));
-                WriteFile(file, endTrace.c_str(), endTrace.length(), &writeCount, nullptr);
-
-                writeCount = 0;
-                const char exitString[] = "] }\r\n";
-                WriteFile(file, exitString, (sizeof(exitString) - 1), &writeCount, nullptr);
-                CloseHandle(file);
+                file.write(profileData.dump(4));
+                file.write("] }\r\n");
             }
         }
     }
 
-    static std::atomic<bool> initialized(false);
-    static concurrency::concurrent_queue<std::string> traceQueue;
     void trace(LPCSTR string)
     {
-        traceQueue.push(string);
+        static concurrency::concurrent_vector<std::string> queue;
+        queue.push_back(string);
+
+        static std::atomic<bool> initialized(false);
         if (!initialized)
         {
             initialized = true;
-            std::thread worker([](void) -> void
+            std::thread([](void) -> void
             {
-                rootClientCount++;
-                auto flushLogs = [](void) -> void
+                static auto flushLogs = [](void) -> void
                 {
-                    HANDLE mutex = CreateMutex(nullptr, true, L"GEK_Trace_Mutex");
-                    if (!mutex)
+                    concurrency::concurrent_vector<std::string> queueCopy(std::move(queue));
+
+                    TraceFile file;
+                    if (file.open(OPEN_EXISTING))
                     {
-                        mutex = OpenMutex(SYNCHRONIZE, false, L"GEK_Trace_Mutex");
-                        if (mutex)
+                        for (auto &string : queueCopy)
                         {
-                            WaitForSingleObject(mutex, INFINITE);
-                            CloseHandle(mutex);
-                            mutex = CreateMutex(nullptr, true, L"GEK_Trace_Mutex");
+                            file.write(string);
                         }
-                    }
-
-                    if (mutex)
-                    {
-                        HANDLE file = CreateFile(FileSystem::expandPath(L"%root%\\profiled.json"), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-                        if (file)
-                        {
-                            SetFilePointer(file, 0, 0, FILE_END);
-
-                            std::string trace;
-                            DWORD writeCount = 0;
-                            while (traceQueue.try_pop(trace))
-                            {
-                                WriteFile(file, trace.c_str(), trace.length(), &writeCount, nullptr);
-                            };
-
-                            CloseHandle(file);
-                        }
-
-                        CloseHandle(mutex);
                     }
                 };
 
-                while (!rootShutdownEvent)
+                HANDLE shutdownEvent = OpenEvent(SYNCHRONIZE, false, L"GEK_Trace_Shutdown");
+                if(shutdownEvent)
                 {
-                    if (traceQueue.unsafe_size() > 100)
+                    while (WaitForSingleObject(shutdownEvent, 0) != WAIT_OBJECT_0)
                     {
-                        flushLogs();
-                    }
+                        if (queue.size() > 100)
+                        {
+                            flushLogs();
+                        }
 
-                    Sleep(100);
-                };
+                        Sleep(100);
+                    };
 
-                flushLogs();
-                rootClientCount--;
-            });
+                    flushLogs();
+                    CloseHandle(shutdownEvent);
+                }
 
-            worker.detach();
+                initialized = false;
+            }).detach();
         }
     }
 };

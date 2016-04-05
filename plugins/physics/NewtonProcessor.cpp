@@ -247,22 +247,22 @@ namespace Gek
                 else if (shapeType.CompareNoCase(L"*capsule") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
-                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*cylinder") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
-                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*tapered_capsule") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
-                    //newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*tapered_cylinder") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
-                    //newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
                 }
                 else if (shapeType.CompareNoCase(L"*chamfer_cylinder") == 0)
                 {
@@ -486,7 +486,7 @@ namespace Gek
             NewtonWorldAddPostListener(newtonWorld, "__gek_post_listener__", this, newtonWorldPostUpdate, nullptr);
 
             int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
-            NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
+            NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, nullptr, newtonOnAABBOverlap, newtonOnContactFriction);
 
             newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
             if (newtonStaticScene)
