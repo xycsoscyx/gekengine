@@ -333,26 +333,6 @@ namespace Gek
             }
         }
 
-        // PopulationObserver
-        STDMETHODIMP_(void) onLoadBegin(void)
-        {
-        }
-
-        STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
-        {
-            if (FAILED(resultValue))
-            {
-                onFree();
-            }
-        }
-
-        STDMETHODIMP_(void) onFree(void)
-        {
-            GEK_REQUIRE_VOID_RETURN(resources);
-
-            resources->clearLocal();
-        }
-
         STDMETHODIMP_(void) render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix)
         {
             GEK_TRACE_FUNCTION(Render);
@@ -541,40 +521,30 @@ namespace Gek
             }
         }
 
-        void render(void)
+        // PopulationObserver
+        STDMETHODIMP_(void) onLoadBegin(void)
         {
-            GEK_TRACE_FUNCTION(Render);
+        }
 
-            GEK_REQUIRE_VOID_RETURN(population);
-            GEK_REQUIRE_VOID_RETURN(resources);
-            GEK_REQUIRE_VOID_RETURN(video);
-
-            population->listEntities<TransformComponent, FirstPersonCameraComponent>([&](Entity *cameraEntity) -> void
+        STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
+        {
+            if (FAILED(resultValue))
             {
-                auto &cameraData = cameraEntity->getComponent<FirstPersonCameraComponent>();
+                onFree();
+            }
+        }
 
-                float displayAspectRatio = (1280.0f / 800.0f);
-                float fieldOfView = Math::convertDegreesToRadians(cameraData.fieldOfView);
+        STDMETHODIMP_(void) onFree(void)
+        {
+            GEK_REQUIRE_VOID_RETURN(resources);
 
-                Math::Float4x4 projectionMatrix;
-                projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraData.minimumDistance, cameraData.maximumDistance);
+            resources->clearLocal();
+        }
 
-                render(cameraEntity, projectionMatrix);
-            });
-
+        STDMETHODIMP_(void) onUpdate(bool isIdle)
+        {
             ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderOverlay, std::placeholders::_1)));
-
             video->present(true);
-        }
-
-        STDMETHODIMP_(void) onUpdate(void)
-        {
-            render();
-        }
-
-        STDMETHODIMP_(void) onIdle(void)
-        {
-            render();
         }
     };
 

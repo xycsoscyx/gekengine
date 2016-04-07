@@ -140,20 +140,16 @@ namespace Gek
             return worldTime;
         }
 
-        STDMETHODIMP_(void) idle(void)
-        {
-            for (auto &priorityPair : updatePriorityMap)
-            {
-                priorityPair.second->onIdle();
-            }
-        }
-
-        STDMETHODIMP_(void) update(float frameTime)
+        STDMETHODIMP_(void) update(bool isIdle, float frameTime)
         {
             GEK_TRACE_FUNCTION(Population);
 
-            this->frameTime = frameTime;
-            worldTime += frameTime;
+            if (!isIdle)
+            {
+                this->frameTime = frameTime;
+                worldTime += frameTime;
+            }
+
             if (loadScene)
             {
                 loadScene();
@@ -162,7 +158,7 @@ namespace Gek
 
             for (auto &priorityPair : updatePriorityMap)
             {
-                priorityPair.second->onUpdate();
+                priorityPair.second->onUpdate(isIdle);
             }
 
             for (auto const &killEntity : killEntityList)

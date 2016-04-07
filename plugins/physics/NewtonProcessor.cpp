@@ -608,11 +608,11 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onUpdate(void)
+        STDMETHODIMP_(void) onUpdate(bool isIdle)
         {
             GEK_REQUIRE_VOID_RETURN(population);
 
-            if (newtonWorld)
+            if (!isIdle && newtonWorld)
             {
                 NewtonUpdateAsync(newtonWorld, population->getFrameTime());
             }

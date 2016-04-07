@@ -60,7 +60,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\components;$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(LibraryPath)</LibraryPath>
@@ -68,7 +68,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\components;$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(LibraryPath)</LibraryPath>
@@ -76,7 +76,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\components;$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\engine;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(LibraryPath)</LibraryPath>

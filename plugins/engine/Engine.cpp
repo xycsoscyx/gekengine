@@ -376,7 +376,7 @@ namespace Gek
                 if (consoleActive)
                 {
                     consolePosition = std::min(1.0f, (consolePosition + float(updateTime * 4.0)));
-                    population->idle();
+                    population->update(true);
                 }
                 else
                 {
@@ -386,7 +386,7 @@ namespace Gek
                     updateAccumulator += updateTime;
                     while (updateAccumulator > (1.0 / 30.0))
                     {
-                        population->update(1.0f / 30.0f);
+                        population->update(false, 1.0f / 30.0f);
                         if (--frameCount == 0)
                         {
                             updateAccumulator = 0.0;
@@ -483,12 +483,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onIdle(void)
-        {
-            refresh();
-        }
-
-        STDMETHODIMP_(void) onUpdate(void)
+        STDMETHODIMP_(void) onUpdate(bool isIdle)
         {
             refresh();
         }
