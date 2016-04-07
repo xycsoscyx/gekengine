@@ -14,13 +14,13 @@ namespace Gek
 
     HRESULT MassComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        getParameter(componentParameterList, L"", value);
+        saveParameter(componentParameterList, L"", value);
         return S_OK;
     }
 
     HRESULT MassComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"", value);
+        loadParameter(componentParameterList, L"", value);
         return S_OK;
     }
 

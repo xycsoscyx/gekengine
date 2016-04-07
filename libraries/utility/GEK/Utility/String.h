@@ -34,63 +34,78 @@ namespace Gek
         template <typename CHAR>
         bool to(const CHAR *expression, Gek::Math::Float2 &value)
         {
-            CHAR comma;
+            CHAR separator;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
-            stream >> value.x >> comma >> value.y;
+            stream >> separator >> value.x >> separator >> value.y >> separator; // ( X , Y )
             return !stream.fail();
         }
 
         template <typename CHAR>
         bool to(const CHAR *expression, Gek::Math::Float3 &value)
         {
-            CHAR comma;
+            CHAR separator;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
-            stream >> value.x >> comma >> value.y >> comma >> value.z >> comma;
+            stream >> separator >> value.x >> separator >> value.y >> separator >> value.z >> separator >> separator; // ( x , Y , Z )
             return !stream.fail();
         }
 
         template <typename CHAR>
         bool to(const CHAR *expression, Gek::Math::Float4 &value)
         {
-            CHAR comma;
+            CHAR separator;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
-            stream >> value.x >> comma >> value.y >> comma >> value.z >> comma >> value.w;
+            stream >> separator >> value.x >> separator >> value.y >> separator >> value.z >> separator >> value.w >> separator; // ( X , Y , Z , W )
             return !stream.fail();
         }
 
         template <typename CHAR>
         bool to(const CHAR *expression, Gek::Math::Color &value)
         {
-            CHAR comma;
+            CHAR separator;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
-            stream >> value.r >> comma >> value.g >> comma >> value.b;
+            stream >> separator >> value.r >> separator >> value.g >> separator >> value.b >> separator; // ( R , G , B ) or ( R , G , B ,
             bool failed = stream.fail();
             if (!failed)
             {
-                value.a = 1.0f;
-                stream >> comma >> value.a;
+                switch (separator)
+                {
+                case ')':
+                    value.a = 1.0f;
+                    break;
+
+                case ',':
+                    stream >> value.a >> separator;
+                    failed = stream.fail();
+                    break;
+                };
             }
 
-            return failed;
+            return !failed;
         }
 
         template <typename CHAR>
         bool to(const CHAR *expression, Gek::Math::Quaternion &value)
         {
-            CHAR comma;
+            CHAR separator;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
-            stream >> value.x >> comma >> value.y >> comma >> value.z;
+            stream >> separator >> value.x >> separator >> value.y >> separator >> value.z >> separator;
             bool failed = stream.fail();
             if (!failed)
             {
-                stream >> comma >> value.w;
-                if (stream.fail())
+                switch (separator)
                 {
+                case ')':
                     value.setEulerRotation(value.x, value.y, value.z);
-                }
+                    break;
+
+                case ',':
+                    stream >> value.w >> separator;
+                    failed = stream.fail();
+                    break;
+                };
             }
 
-            return failed;
+            return !failed;
         }
 
         template <typename CHAR>
@@ -150,7 +165,7 @@ namespace Gek
         template <typename TYPE, typename CHAR>
         TYPE to(const CHAR *expression)
         {
-            TYPE value = {};
+            TYPE value;
             to(expression, value);
             return value;
         }
@@ -158,7 +173,7 @@ namespace Gek
         template <typename TYPE, typename CHAR>
         TYPE to(const CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> &expression)
         {
-            TYPE value = {};
+            TYPE value;
             to(expression.GetString(), value);
             return value;
         }
@@ -166,7 +181,7 @@ namespace Gek
         template <typename TYPE, typename CHAR>
         TYPE to(const std::basic_string<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> &expression)
         {
-            TYPE value = {};
+            TYPE value;
             to(expression.data(), value);
             return value;
         }
@@ -191,7 +206,7 @@ namespace Gek
         CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const Gek::Math::Float2 &value)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
-            stream << value.x << ',' << value.y;
+            stream << '(' << value.x << ',' << value.y << ')';
             return stream.str().c_str();
         }
 
@@ -199,7 +214,7 @@ namespace Gek
         CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const Gek::Math::Float3 &value)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
-            stream << value.x << ',' << value.y << ',' << value.z;
+            stream << '(' << value.x << ',' << value.y << ',' << value.z << ')';
             return stream.str().c_str();
         }
 
@@ -207,7 +222,7 @@ namespace Gek
         CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const Gek::Math::Float4 &value)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
-            stream << value.x << ',' << value.y << ',' << value.z << ',' << value.w;
+            stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
             return stream.str().c_str();
         }
 
@@ -215,7 +230,7 @@ namespace Gek
         CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const Gek::Math::Color &value)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
-            stream << value.r << ',' << value.g << ',' << value.b << ',' << value.a;
+            stream << '(' << value.r << ',' << value.g << ',' << value.b << ',' << value.a << ')';
             return stream.str().c_str();
         }
 
@@ -223,7 +238,7 @@ namespace Gek
         CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(const Gek::Math::Quaternion &value)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
-            stream << value.x << ',' << value.y << ',' << value.z << ',' << value.w;
+            stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
             return stream.str().c_str();
         }
 
@@ -405,23 +420,4 @@ namespace Gek
             throw std::logic_error("extra arguments provided to format");
         }
     }; // namespace String
-
-    template<typename CHAR, typename... ARGS>
-    class Exception
-    {
-    public:
-        LPCSTR file;
-        UINT32 line;
-        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> message;
-
-    public:
-        Exception(LPCSTR file, UINT32 line, const CHAR *format, ARGS... args)
-            : file(file)
-            , line(line)
-        {
-            message = String::format(format, args...);
-        }
-    };
 }; // namespace Gek
-
-#define GEKEXCEPTION(FORMAT, ...)  throw Gek::Exception<std::remove_const<std::remove_reference<decltype(FORMAT[0])>::type>::type>(__FILE__, __LINE__, FORMAT, __VA_ARGS__)

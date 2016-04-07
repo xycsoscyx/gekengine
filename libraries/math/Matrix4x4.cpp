@@ -7,10 +7,6 @@ namespace Gek
 {
     namespace Math
     {
-        Float4x4::Float4x4(void)
-        {
-        }
-
         Float4x4::Float4x4(const __m128(&data)[4])
             : simd{ data[0], data[1], data[2], data[3] }
         {

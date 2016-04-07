@@ -1,6 +1,7 @@
 #include <initguid.h>
 #include <cguid.h>
 
+#include "GEK\Utility\Exception.h"
 #include "GEK\Utility\Trace.h"
 #include "GEK\Utility\Display.h"
 #include "GEK\Utility\FileSystem.h"
@@ -337,34 +338,30 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                         }
                         else
                         {
-                            //GEKEXCEPTION(L"Unable to create main application window");
+                            GEKEXCEPTION(Gek::Exception::Base, L"Unable to create main application window");
                         }
                     }
                     else
                     {
-                        //GEKEXCEPTION("Unable to register main application window class");
+                        GEKEXCEPTION(Gek::Exception::Base, "Unable to register main application window class");
                     }
                 }
                 else
                 {
-                    //GEKEXCEPTION("Unable to create instance of core engine class");
+                    GEKEXCEPTION(Gek::Exception::Base, "Unable to create instance of core engine class");
                 }
             }
             else
             {
-                //GEKEXCEPTION("Unable to create instance of engine context manager");
+                GEKEXCEPTION(Gek::Exception::Base, "Unable to create instance of engine context manager");
             }
 
             Gek::traceShutDown();
         }
-        catch (const Gek::Exception<char> &exception)
+        catch (const Gek::Exception::Base &exception)
         {
-            MessageBoxA(NULL, exception.message, "GEK Exception", MB_OK | MB_ICONWARNING);
+            MessageBox(NULL, exception.message, L"GEK Exception", MB_OK | MB_ICONWARNING);
         }
-        catch (const Gek::Exception<wchar_t> &exception)
-        {
-            MessageBoxW(NULL, exception.message, L"GEK Exception", MB_OK | MB_ICONWARNING);
-        };
 
         return 0;
     }

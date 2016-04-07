@@ -549,9 +549,9 @@ namespace Gek
             GEK_REQUIRE_VOID_RETURN(resources);
             GEK_REQUIRE_VOID_RETURN(video);
 
-            population->listEntities<TransformComponent, CameraComponent>([&](Entity *cameraEntity) -> void
+            population->listEntities<TransformComponent, FirstPersonCameraComponent>([&](Entity *cameraEntity) -> void
             {
-                auto &cameraData = cameraEntity->getComponent<CameraComponent>();
+                auto &cameraData = cameraEntity->getComponent<FirstPersonCameraComponent>();
 
                 float displayAspectRatio = (1280.0f / 800.0f);
                 float fieldOfView = Math::convertDegreesToRadians(cameraData.fieldOfView);

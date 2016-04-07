@@ -7,20 +7,18 @@
 namespace Gek
 {
     ColorComponent::ColorComponent(void)
-        : value(1.0f)
     {
     }
 
     HRESULT ColorComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        getParameter(componentParameterList, L"", value);
+        saveParameter(componentParameterList, L"", value);
         return S_OK;
     }
 
     HRESULT ColorComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"", value);
-        return S_OK;
+        return (loadParameter(componentParameterList, L"", value) ? S_OK : E_INVALIDARG);
     }
 
     class ColorImplementation : public ContextUserMixin

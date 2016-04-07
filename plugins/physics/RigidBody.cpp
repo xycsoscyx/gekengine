@@ -86,15 +86,15 @@ namespace Gek
 
     HRESULT RigidBodyComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        getParameter(componentParameterList, L"", shape);
-        getParameter(componentParameterList, L"surface", surface);
+        saveParameter(componentParameterList, L"", shape);
+        saveParameter(componentParameterList, L"surface", surface);
         return S_OK;
     }
 
     HRESULT RigidBodyComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"", shape);
-        setParameter(componentParameterList, L"surface", surface);
+        loadParameter(componentParameterList, L"", shape);
+        loadParameter(componentParameterList, L"surface", surface);
         return S_OK;
     }
 

@@ -268,6 +268,10 @@ namespace Gek
             {
                 NewtonBodyGetPointVelocity(contactInfo->m_hitBody, contactInfo->m_point, contactVelocity.data);
             }
+            else
+            {
+                contactVelocity.set(0.0f, 0.0f, 0.0f);
+            }
 
             const float restitution = 0.0f;
             Math::Float3 normal(contactInfo->m_normal);
@@ -277,8 +281,8 @@ namespace Gek
 
         void updateGroundPlane(Math::Float4x4& matrix, const Math::Float4x4& castMatrix, const Math::Float3& destination, int threadHandle)
         {
-            groundNormal = 0.0f;
-            groundVelocity = 0.0f;
+            groundNormal.set(0.0f, 0.0f, 0.0f);
+            groundVelocity.set(0.0f, 0.0f, 0.0f);
 
             float parameter = 10.0f;
             NewtonWorldConvexCastReturnInfo info;
@@ -336,11 +340,14 @@ namespace Gek
             , forwardSpeed(0.0f)
             , lateralSpeed(0.0f)
             , verticalSpeed(0.0f)
+            , groundNormal(0.0f)
+            , groundVelocity(0.0f)
             , isJumpingState(false)
         {
-            movementBasis.nx.set( 1.0f, 0.0f, 0.0f);
-            movementBasis.ny.set( 0.0f, 1.0f, 0.0f);
-            movementBasis.nz.set( 0.0f, 0.0f, 1.0f);
+            movementBasis.rx.set(1.0f, 0.0f, 0.0f, 0.0f);
+            movementBasis.ry.set(0.0f, 1.0f, 0.0f, 0.0f);
+            movementBasis.rz.set(0.0f, 0.0f, 1.0f, 0.0f);
+            movementBasis.rw.set(0.0f, 0.0f, 0.0f, 1.0f);
 
             setRestrainingDistance(0.01f);
 
@@ -466,9 +473,9 @@ namespace Gek
                 currentState = nextState;
             }
 
-            float rotation[4] = {};
+            float rotation[4];
             NewtonBodyGetRotation(newtonBody, rotation);
-            setDesiredOmega({ rotation[1], rotation[2], rotation[3], rotation[0] }, frameTime);
+            setDesiredOmega(Math::Quaternion(rotation[1], rotation[2], rotation[3], rotation[0]), frameTime);
 
             Math::Float4x4 matrix;
             NewtonBodyGetMatrix(newtonBody, matrix.data);
@@ -903,19 +910,19 @@ namespace Gek
 
     HRESULT PlayerBodyComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
-        getParameter(componentParameterList, L"outer_radius", outerRadius);
-        getParameter(componentParameterList, L"inner_radius", innerRadius);
-        getParameter(componentParameterList, L"half_height", halfHeight);
-        getParameter(componentParameterList, L"stair_step", stairStep);
+        saveParameter(componentParameterList, L"outer_radius", outerRadius);
+        saveParameter(componentParameterList, L"inner_radius", innerRadius);
+        saveParameter(componentParameterList, L"half_height", halfHeight);
+        saveParameter(componentParameterList, L"stair_step", stairStep);
         return S_OK;
     }
 
     HRESULT PlayerBodyComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
-        setParameter(componentParameterList, L"outer_radius", outerRadius);
-        setParameter(componentParameterList, L"inner_radius", innerRadius);
-        setParameter(componentParameterList, L"half_height", halfHeight);
-        setParameter(componentParameterList, L"stair_step", stairStep);
+        loadParameter(componentParameterList, L"outer_radius", outerRadius);
+        loadParameter(componentParameterList, L"inner_radius", innerRadius);
+        loadParameter(componentParameterList, L"half_height", halfHeight);
+        loadParameter(componentParameterList, L"stair_step", stairStep);
         return S_OK;
     }
 

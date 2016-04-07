@@ -62,7 +62,10 @@ namespace Gek
             };
 
         public:
-            Float4x4(void);
+            Float4x4(void)
+            {
+            }
+
             Float4x4(const __m128(&data)[4]);
             Float4x4(const float(&data)[16]);
             Float4x4(const float *data);

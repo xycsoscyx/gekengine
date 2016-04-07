@@ -32,7 +32,10 @@ namespace Gek
             };
 
         public:
-            Float3x2(void);
+            Float3x2(void)
+            {
+            }
+
             Float3x2(const float(&data)[6]);
             Float3x2(const float *data);
             Float3x2(const Float3x2 &matrix);

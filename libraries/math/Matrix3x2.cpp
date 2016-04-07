@@ -6,10 +6,6 @@ namespace Gek
 {
     namespace Math
     {
-        Float3x2::Float3x2(void)
-        {
-        }
-
         Float3x2::Float3x2(const float(&data)[6])
             : data{ data[0], data[1],
                     data[2], data[3],
