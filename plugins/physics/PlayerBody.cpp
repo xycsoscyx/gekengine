@@ -380,7 +380,9 @@ namespace Gek
             NewtonDestroyCollision(supportShape);
             NewtonDestroyCollision(playerShape);
 
-            NewtonBodySetMatrix(newtonBody, transformComponent.getMatrix().data);
+            Math::Float4x4 matrix(transformComponent.getMatrix());
+            matrix.translation -= (matrix.ny * playerBodyComponent.height);
+            NewtonBodySetMatrix(newtonBody, matrix.data);
             NewtonBodySetUserData(newtonBody, dynamic_cast<NewtonEntity *>(this));
         }
 
