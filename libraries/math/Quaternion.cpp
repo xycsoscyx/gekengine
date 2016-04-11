@@ -8,6 +8,8 @@ namespace Gek
 {
     namespace Math
     {
+        const Quaternion Quaternion::Identity(0.0f, 0.0f, 0.0f, 1.0f);
+
         void Quaternion::setEulerRotation(float pitch, float yaw, float roll)
         {
             float sinPitch(std::sin(pitch * 0.5f));

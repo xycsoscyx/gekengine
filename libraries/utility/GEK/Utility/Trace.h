@@ -21,6 +21,36 @@ namespace Gek
         getParameters(json, args...);
     }
 
+    void inline trace(LPCSTR type, LPCSTR category, ULONGLONG timeStamp, LPCSTR function)
+    {
+        nlohmann::json profileData = {
+            { "name", function },
+            { "cat", category },
+            { "ph", type },
+            { "ts", timeStamp },
+            { "pid", GetCurrentProcessId() },
+            { "tid", GetCurrentThreadId() },
+        };
+
+        trace((profileData.dump(4) + ",\r\n").c_str());
+    }
+
+    template<typename... ARGS>
+    void trace(LPCSTR type, LPCSTR category, ULONGLONG timeStamp, LPCSTR function, ARGS&... args)
+    {
+        nlohmann::json profileData = {
+            { "name", function },
+            { "cat", category },
+            { "ph", type },
+            { "ts", timeStamp },
+            { "pid", GetCurrentProcessId() },
+            { "tid", GetCurrentThreadId() },
+        };
+
+        getParameters(profileData, args...);
+        trace((profileData.dump(4) + ",\r\n").c_str());
+    }
+
     template<typename... ARGS>
     void trace(LPCSTR type, LPCSTR category, ULONGLONG timeStamp, LPCSTR function, LPCSTR message, ARGS&... args)
     {
@@ -54,7 +84,7 @@ namespace Gek
             : category(category)
             , function(function)
         {
-            trace("B", category, GetTickCount64(), function, nullptr);
+            trace("B", category, GetTickCount64(), function);
         }
 
         template<typename... ARGS>
@@ -62,17 +92,24 @@ namespace Gek
             : category(category)
             , function(function)
         {
-            trace("B", category, GetTickCount64(), function, nullptr, args...);
+            trace("B", category, GetTickCount64(), function, args...);
         }
 
         ~TraceScope(void)
         {
-            trace("E", category, GetTickCount64(), function, nullptr);
+            trace("E", category, GetTickCount64(), function);
         }
     };
 }; // namespace Gek
 
-#define GEK_PARAMETER(NAME)                                 std::make_pair(#NAME, std::cref(NAME))
-#define GEK_TRACE_FUNCTION(CATEGORY, ...)                   Gek::TraceScope trace( #CATEGORY, __FUNCTION__, __VA_ARGS__)
-#define GEK_TRACE_EVENT(CATEGORY, MESSAGE, ...)             Gek::trace("i", #CATEGORY, GetTickCount64(), __FUNCTION__, MESSAGE, std::make_pair("type", "event"), __VA_ARGS__)
-#define GEK_TRACE_ERROR(CATEGORY, MESSAGE, ...)             Gek::trace("i", #CATEGORY, GetTickCount64(), __FUNCTION__, MESSAGE, std::make_pair("type", "error"), __VA_ARGS__)
+#ifdef _ENABLE_TRACE
+    #define GEK_PARAMETER(NAME)                                 std::make_pair(#NAME, std::cref(NAME))
+    #define GEK_TRACE_FUNCTION(CATEGORY, ...)                   Gek::TraceScope trace( #CATEGORY, __FUNCTION__, __VA_ARGS__)
+    #define GEK_TRACE_EVENT(CATEGORY, MESSAGE, ...)             Gek::trace("i", #CATEGORY, GetTickCount64(), __FUNCTION__, MESSAGE, std::make_pair("type", "event"), __VA_ARGS__)
+    #define GEK_TRACE_ERROR(CATEGORY, MESSAGE, ...)             Gek::trace("i", #CATEGORY, GetTickCount64(), __FUNCTION__, MESSAGE, std::make_pair("type", "error"), __VA_ARGS__)
+#else
+    #define GEK_PARAMETER(NAME)
+    #define GEK_TRACE_FUNCTION(CATEGORY, ...)
+    #define GEK_TRACE_EVENT(CATEGORY, MESSAGE, ...)
+    #define GEK_TRACE_ERROR(CATEGORY, MESSAGE, ...)
+#endif

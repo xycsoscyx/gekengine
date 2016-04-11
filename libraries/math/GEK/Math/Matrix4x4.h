@@ -13,6 +13,9 @@ namespace Gek
         struct Float4x4
         {
         public:
+            static const Float4x4 Identity;
+
+        public:
             union
             {
                 struct { float data[16]; };

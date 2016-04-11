@@ -28,7 +28,7 @@ namespace Gek
     {
         STDMETHOD(initialize)                           (THIS_ IUnknown *initializerContext) PURE;
 
-        STDMETHOD_(void, render)                        (THIS_ Entity *cameraEntity, const Math::Float4x4 &projectionMatrix) PURE;
+        STDMETHOD_(void, render)                        (THIS_ Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance) PURE;
         STDMETHOD_(void, queueDrawCall)                 (THIS_ PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw) PURE;
     };
 

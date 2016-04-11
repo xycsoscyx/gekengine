@@ -333,7 +333,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix)
+        STDMETHODIMP_(void) render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance)
         {
             GEK_TRACE_FUNCTION(Render);
 
@@ -343,19 +343,15 @@ namespace Gek
             auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
             Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
 
-            auto &cameraData = cameraEntity->getComponent<CameraComponent>();
-
             EngineConstantData engineConstantData;
             engineConstantData.frameTime = population->getFrameTime();
             engineConstantData.worldTime = population->getWorldTime();
 
             CameraConstantData cameraConstantData;
-            float displayAspectRatio = (float(video->getWidth()) / float(video->getHeight()));
-            float fieldOfView = Math::convertDegreesToRadians(cameraData.fieldOfView);
-            cameraConstantData.fieldOfView.x = tan(fieldOfView * 0.5f);
-            cameraConstantData.fieldOfView.y = (cameraConstantData.fieldOfView.x / displayAspectRatio);
-            cameraConstantData.minimumDistance = cameraData.minimumDistance;
-            cameraConstantData.maximumDistance = cameraData.maximumDistance;
+            cameraConstantData.fieldOfView.x = (1.0f / projectionMatrix._11);
+            cameraConstantData.fieldOfView.y = (1.0f / projectionMatrix._22);
+            cameraConstantData.minimumDistance = minimumDistance;
+            cameraConstantData.maximumDistance = maximumDistance;
             cameraConstantData.viewMatrix = cameraMatrix.getInverse();
             cameraConstantData.projectionMatrix = projectionMatrix;
             cameraConstantData.inverseProjectionMatrix = projectionMatrix.getInverse();

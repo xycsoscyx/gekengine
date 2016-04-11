@@ -232,42 +232,42 @@ namespace Gek
                 if (shapeType.CompareNoCase(L"*cube") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
-                    newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4::Identity.data);
                 }
                 else if (shapeType.CompareNoCase(L"*sphere") == 0)
                 {
                     float size = Evaluator::get<float>(parameters);
-                    newtonCollision = NewtonCreateSphere(newtonWorld, size, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateSphere(newtonWorld, size, collisionHash, Math::Float4x4::Identity.data);
                 }
                 else if (shapeType.CompareNoCase(L"*cone") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
-                    newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
                 else if (shapeType.CompareNoCase(L"*capsule") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
-                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
                 else if (shapeType.CompareNoCase(L"*cylinder") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
-                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
                 else if (shapeType.CompareNoCase(L"*tapered_capsule") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
-                    newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4::Identity.data);
                 }
                 else if (shapeType.CompareNoCase(L"*tapered_cylinder") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
-                    newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4::Identity.data);
                 }
                 else if (shapeType.CompareNoCase(L"*chamfer_cylinder") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
-                    newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4().data);
+                    newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
 
                 if (newtonCollision)
@@ -503,7 +503,7 @@ namespace Gek
                 NewtonSceneCollisionEndAddRemove(newtonStaticScene);
                 if (SUCCEEDED(resultValue))
                 {
-                    NewtonBody *newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4().data);
+                    NewtonBody *newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
                     NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
                 }
             }

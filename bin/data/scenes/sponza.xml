@@ -11,7 +11,7 @@
         <entity name="player_body">
             <first_person_camera mode="perspective" field_of_view="90" minimum_distance="0.5" maximum_distance="200"/>
             <transform position="(0, 30, 0)" rotation="(0, 0, 0)" scale="(1.5,3,1.5)"/>
-            <player_body outer_radius="1.5" inner_radius=".5" half_height="3" stair_step="1.5" />
+            <player_body outer_radius="1.5" inner_radius=".5" height="6" stair_step="1.5" />
             <mass>250</mass>
         </entity>
 

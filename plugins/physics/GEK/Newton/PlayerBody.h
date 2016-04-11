@@ -9,9 +9,9 @@ namespace Gek
 {
     struct PlayerBodyComponent
     {
+        float height;
         float outerRadius;
         float innerRadius;
-        float halfHeight;
         float stairStep;
 
         PlayerBodyComponent(void);

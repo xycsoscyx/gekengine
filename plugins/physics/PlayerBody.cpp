@@ -54,43 +54,6 @@ namespace Gek
         }
     };
 
-    class ConvexRayFilter : public ConvexCastPreFilter
-    {
-    public:
-        Math::Float3 hitPoint;
-        Math::Float3 hitNormal;
-        const NewtonBody* hitBody;
-        const NewtonCollision* hitShape;
-        long long collisionIdentifier;
-        float intersectionDistance;
-
-    public:
-        ConvexRayFilter(const NewtonBody* const sourceBody)
-            : ConvexCastPreFilter(sourceBody)
-            , hitBody(NULL)
-            , hitShape(NULL)
-            , collisionIdentifier(0)
-            , intersectionDistance(1.2f)
-        {
-        }
-
-        static float filter(const NewtonBody* const hitBody, const NewtonCollision* const hitShape, const float* const hitContact, const float* const hitNormal, long long collisionIdentifier, void* const userData, float intersectParam)
-        {
-            ConvexRayFilter* const filterData = static_cast<ConvexRayFilter * const>(userData);
-            if (intersectParam < filterData->intersectionDistance)
-            {
-                filterData->hitBody = hitBody;
-                filterData->hitShape = hitShape;
-                filterData->collisionIdentifier = collisionIdentifier;
-                filterData->intersectionDistance = intersectParam;
-                filterData->hitPoint = *(Math::Float3 *)hitContact;
-                filterData->hitNormal = *(Math::Float3 *)hitNormal;
-            }
-
-            return intersectParam;
-        }
-    };
-
     DECLARE_INTERFACE(State)
     {
         STDMETHOD_(void, onEnter)       (THIS_ std::shared_ptr<State> previousState) { };
@@ -128,6 +91,7 @@ namespace Gek
         NewtonWorld *newtonWorld;
 
         Entity *entity;
+        float halfHeight;
         PlayerBodyComponent &playerBodyComponent;
         TransformComponent &transformComponent;
         MassComponent &massComponent;
@@ -286,12 +250,12 @@ namespace Gek
 
             float parameter = 10.0f;
             NewtonWorldConvexCastReturnInfo info;
-            ConvexRayFilter filterData(newtonBody);
-            if (NewtonWorldConvexCast(newtonWorld, castMatrix.data, destination.data, newtonCastingShape, &parameter, &filterData, ConvexCastPreFilter::preFilter, &info, 1, threadHandle) > 0 && parameter <= 1.0f)
+            ConvexCastPreFilter preFilterData(newtonBody);
+            if (NewtonWorldConvexCast(newtonWorld, castMatrix.data, destination.data, newtonCastingShape, &parameter, &preFilterData, ConvexCastPreFilter::preFilter, &info, 1, threadHandle) > 0 && parameter <= 1.0f)
             {
                 isJumpingState = false;
                 groundNormal.set(info.m_normal[0], info.m_normal[1], info.m_normal[2]);
-                Math::Float3 supportPoint(castMatrix.translation + ((destination - castMatrix.translation) * filterData.intersectionDistance));
+                Math::Float3 supportPoint(castMatrix.translation + ((destination - castMatrix.translation) * parameter));
                 NewtonBodyGetPointVelocity(info.m_hitBody, supportPoint.data, groundVelocity.data);
                 matrix.translation = supportPoint;
             }
@@ -332,6 +296,7 @@ namespace Gek
             , newtonWorld(newtonWorld)
             , newtonBody(nullptr)
             , entity(entity)
+            , halfHeight(playerBodyComponent.height * 0.5f)
             , playerBodyComponent(playerBodyComponent)
             , transformComponent(transformComponent)
             , massComponent(massComponent)
@@ -358,7 +323,7 @@ namespace Gek
 
             // create an inner thin cylinder
             Math::Float3 point0(0.0f, playerBodyComponent.innerRadius, 0.0f);
-            Math::Float3 point1(playerBodyComponent.halfHeight, playerBodyComponent.innerRadius, 0.0f);
+            Math::Float3 point1(halfHeight, playerBodyComponent.innerRadius, 0.0f);
             for (int currentPoint = 0; currentPoint < numberOfSteps; currentPoint++)
             {
                 Math::Float4x4 rotation;
@@ -371,7 +336,7 @@ namespace Gek
 
             // create the outer thick cylinder
             Math::Float4x4 outerShapeMatrix(movementBasis);
-            float capsuleHeight = (playerBodyComponent.halfHeight - playerBodyComponent.stairStep);
+            float capsuleHeight = (halfHeight - playerBodyComponent.stairStep);
             sphereCastOrigin = ((capsuleHeight * 0.5f) + playerBodyComponent.stairStep);
             outerShapeMatrix.translation = (outerShapeMatrix.ny * sphereCastOrigin);
             NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.5f, 0, outerShapeMatrix.data);
@@ -385,7 +350,7 @@ namespace Gek
             NewtonCompoundCollisionEndAddRemove(playerShape);
 
             // create the kinematic body
-            newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, Math::Float4x4().data);
+            newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, Math::Float4x4::Identity.data);
 
             // players must have weight, otherwise they are infinitely strong when they collide
             NewtonCollision* const bodyShape = NewtonBodyGetCollision(newtonBody);
@@ -511,7 +476,7 @@ namespace Gek
             
             //const float radius = (playerBodyComponent.outerRadius * 4.0f);
             const float radius = ((playerBodyComponent.outerRadius + restrainingDistance) * 4.0f);
-            NewtonCollisionSetScale(newtonUpperBodyShape, playerBodyComponent.halfHeight - playerBodyComponent.stairStep, radius, radius);
+            NewtonCollisionSetScale(newtonUpperBodyShape, (halfHeight - playerBodyComponent.stairStep), radius, radius);
 
             NewtonWorldConvexCastReturnInfo upConstraint;
             memset(&upConstraint, 0, sizeof(upConstraint));
@@ -651,7 +616,7 @@ namespace Gek
 
             NewtonBodySetVelocity(newtonBody, velocity.data);
             NewtonBodySetMatrix(newtonBody, matrix.data);
-            transformComponent.position = matrix.translation;
+            transformComponent.position = matrix.translation + matrix.ny * playerBodyComponent.height;
             transformComponent.rotation = matrix.getQuaternion();
         }
     };
@@ -901,27 +866,27 @@ namespace Gek
     }
 
     PlayerBodyComponent::PlayerBodyComponent(void)
-        : outerRadius(1.5f)
+        : height(6.0f)
+        , outerRadius(1.5f)
         , innerRadius(0.5f)
-        , halfHeight(3.0f)
         , stairStep(1.5f)
     {
     }
 
     HRESULT PlayerBodyComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
     {
+        saveParameter(componentParameterList, L"height", height);
         saveParameter(componentParameterList, L"outer_radius", outerRadius);
         saveParameter(componentParameterList, L"inner_radius", innerRadius);
-        saveParameter(componentParameterList, L"half_height", halfHeight);
         saveParameter(componentParameterList, L"stair_step", stairStep);
         return S_OK;
     }
 
     HRESULT PlayerBodyComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
     {
+        loadParameter(componentParameterList, L"height", height);
         loadParameter(componentParameterList, L"outer_radius", outerRadius);
         loadParameter(componentParameterList, L"inner_radius", innerRadius);
-        loadParameter(componentParameterList, L"half_height", halfHeight);
         loadParameter(componentParameterList, L"stair_step", stairStep);
         return S_OK;
     }

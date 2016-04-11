@@ -12,6 +12,9 @@ namespace Gek
         struct Quaternion
         {
         public:
+            static const Quaternion Identity;
+
+        public:
             union
             {
                 struct { float x, y, z, w; };

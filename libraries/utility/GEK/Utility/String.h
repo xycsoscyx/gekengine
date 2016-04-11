@@ -16,50 +16,75 @@ namespace Gek
     namespace String
     {
         template <typename CHAR>
-        bool to(const CHAR *expression, double &value)
+        bool to(const CHAR *expression, double &value, double defaultValue = 0.0)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
             stream >> value;
+            if (stream.fail())
+            {
+                value = defaultValue;
+            }
+
             return !stream.fail();
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, float &value)
+        bool to(const CHAR *expression, float &value, float defaultValue = 0.0f)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
             stream >> value;
+            if (stream.fail())
+            {
+                value = defaultValue;
+            }
+
             return !stream.fail();
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, Gek::Math::Float2 &value)
+        bool to(const CHAR *expression, Gek::Math::Float2 &value, const Gek::Math::Float2 &defaultValue = Gek::Math::Float2(0.0f, 0.0f))
         {
             CHAR separator;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
             stream >> separator >> value.x >> separator >> value.y >> separator; // ( X , Y )
+            if (stream.fail())
+            {
+                value = defaultValue;
+            }
+
             return !stream.fail();
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, Gek::Math::Float3 &value)
+        bool to(const CHAR *expression, Gek::Math::Float3 &value, const Gek::Math::Float3 &defaultValue = Gek::Math::Float3(0.0f, 0.0f, 0.0f))
         {
             CHAR separator;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
-            stream >> separator >> value.x >> separator >> value.y >> separator >> value.z >> separator >> separator; // ( x , Y , Z )
+            stream >> separator >> value.x >> separator >> value.y >> separator >> value.z >> separator; // ( x , Y , Z )
+            if (stream.fail())
+            {
+                value = defaultValue;
+            }
+
             return !stream.fail();
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, Gek::Math::Float4 &value)
+        bool to(const CHAR *expression, Gek::Math::Float4 &value, const Gek::Math::Float4 &defaultValue = Gek::Math::Float4(0.0f, 0.0f, 0.0f, 0.0f))
         {
             CHAR separator;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
             stream >> separator >> value.x >> separator >> value.y >> separator >> value.z >> separator >> value.w >> separator; // ( X , Y , Z , W )
+            if (stream.fail())
+            {
+                value = defaultValue;
+            }
+
             return !stream.fail();
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, Gek::Math::Color &value)
+        bool to(const CHAR *expression, Gek::Math::Color &value, const Gek::Math::Color &defaultValue = Gek::Math::Color(0.0f, 0.0f, 0.0f, 1.0f))
         {
             CHAR separator;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
@@ -80,11 +105,16 @@ namespace Gek
                 };
             }
 
+            if (failed)
+            {
+                value = defaultValue;
+            }
+
             return !failed;
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, Gek::Math::Quaternion &value)
+        bool to(const CHAR *expression, Gek::Math::Quaternion &value, const Gek::Math::Quaternion &defaultValue = Gek::Math::Quaternion::Identity)
         {
             CHAR separator;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
@@ -105,46 +135,76 @@ namespace Gek
                 };
             }
 
+            if (failed)
+            {
+                value = defaultValue;
+            }
+
             return !failed;
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, INT32 &value)
+        bool to(const CHAR *expression, INT32 &value, INT32 defaultValue = 0)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
             stream >> value;
+            if (stream.fail())
+            {
+                value = defaultValue;
+            }
+
             return !stream.fail();
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, UINT32 &value)
+        bool to(const CHAR *expression, UINT32 &value, UINT32 defaultValue = 0)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
             stream >> value;
+            if (stream.fail())
+            {
+                value = defaultValue;
+            }
+
             return !stream.fail();
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, INT64 &value)
+        bool to(const CHAR *expression, INT64 &value, INT64 defaultValue = 0)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
             stream >> value;
+            if (stream.fail())
+            {
+                value = defaultValue;
+            }
+
             return !stream.fail();
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, UINT64 &value)
+        bool to(const CHAR *expression, UINT64 &value, UINT64 defaultValue = 0)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
             stream >> value;
+            if (stream.fail())
+            {
+                value = defaultValue;
+            }
+
             return !stream.fail();
         }
 
         template <typename CHAR>
-        bool to(const CHAR *expression, bool &value)
+        bool to(const CHAR *expression, bool &value, bool defaultValue = false)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
             stream >> std::boolalpha >> value;
+            if (stream.fail())
+            {
+                value = defaultValue;
+            }
+
             return !stream.fail();
         }
 
@@ -165,7 +225,6 @@ namespace Gek
         template <typename TYPE, typename CHAR>
         TYPE to(const CHAR *expression)
         {
-            TYPE value;
             to(expression, value);
             return value;
         }
@@ -179,9 +238,16 @@ namespace Gek
         }
 
         template <typename TYPE, typename CHAR>
-        TYPE to(const std::basic_string<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> &expression)
+        TYPE to(const CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> &expression, TYPE defaultValue)
         {
             TYPE value;
+            to(expression.GetString(), value, defaultValue);
+            return value;
+        }
+
+        template <typename TYPE, typename CHAR>
+        TYPE to(const std::basic_string<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> &expression)
+        {
             to(expression.data(), value);
             return value;
         }

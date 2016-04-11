@@ -10,6 +10,9 @@ namespace Gek
         struct Float3x2
         {
         public:
+            static const Float3x2 Identity;
+
+        public:
             union
             {
                 struct { float data[6]; };

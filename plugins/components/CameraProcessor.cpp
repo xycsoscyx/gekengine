@@ -103,7 +103,7 @@ namespace Gek
                 Math::Float4x4 projectionMatrix;
                 projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, cameraData.minimumDistance, cameraData.maximumDistance);
 
-                render->render(cameraEntity, projectionMatrix);
+                render->render(cameraEntity, projectionMatrix, cameraData.minimumDistance, cameraData.maximumDistance);
             });
         }
     };
