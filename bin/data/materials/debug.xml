@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<material>
+    <shader>standard</shader>
+    <maps>
+        <albedo>debug_a</albedo>
+        <normal>debug_n</normal>
+        <roughness>debug_r</roughness>
+        <metalness>debug_m</metalness>
+    </maps>
+</material>
