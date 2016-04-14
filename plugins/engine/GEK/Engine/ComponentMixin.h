@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Component.h"
 
@@ -21,7 +22,8 @@ namespace Gek
         }
         else
         {
-            value = String::to<TYPE>((*iterator).second);
+            value = Evaluator::get<TYPE>((*iterator).second);
+            //value = String::to<TYPE>((*iterator).second);
             return true;
         }
     }

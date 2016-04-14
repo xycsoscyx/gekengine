@@ -30,7 +30,7 @@ namespace Gek
         STDMETHOD_(void, killEntity)                (THIS_ Entity *entity) PURE;
         STDMETHOD_(Entity *, getNamedEntity)        (THIS_ LPCWSTR name) PURE;
 
-        STDMETHOD_(void, listEntities)              (THIS_ std::function<void(Entity *)> onEntity, bool runInParallel = false) PURE;
+        STDMETHOD_(void, listEntities)              (THIS_ std::function<void(Entity *)> onEntity) PURE;
 
         template<typename... ARGS>
         void listEntities(std::function<void(Entity *)> onEntity)

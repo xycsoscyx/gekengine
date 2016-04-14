@@ -13,91 +13,92 @@ namespace Gek
     namespace Evaluator
     {
         static ShuntingYard shuntingYard;
-        bool get(LPCWSTR expression, INT32 &result)
+        bool get(LPCWSTR expression, INT32 &result, INT32 defaultValue)
         {
-            float value = 0.0f;
-            bool success = get(expression, value);
-            if(success)
-            {
-                result = INT32(value);
-            }
-
+            float value;
+            bool success = (shuntingYard.evaluate(expression, value) == ShuntingYard::Status::Success);
+            result = (success ? INT32(value) : defaultValue);
             return success;
         }
 
-        bool get(LPCWSTR expression, UINT32 &result)
+        bool get(LPCWSTR expression, UINT32 &result, UINT32 defaultValue)
         {
-            float value = 0.0f;
-            bool success = get(expression, value);
-            if (success)
-            {
-                result = UINT32(value);
-            }
-
+            float value;
+            bool success = (shuntingYard.evaluate(expression, value) == ShuntingYard::Status::Success);
+            result = (success ? UINT32(value) : defaultValue);
             return success;
         }
 
-        bool get(LPCWSTR expression, INT64 &result)
+        bool get(LPCWSTR expression, INT64 &result, INT64 defaultValue)
         {
-            float value = 0.0f;
-            bool success = get(expression, value);
-            if (success)
-            {
-                result = INT64(value);
-            }
-
+            float value;
+            bool success = (shuntingYard.evaluate(expression, value) == ShuntingYard::Status::Success);
+            result = (success ? INT64(value) : defaultValue);
             return success;
         }
 
-        bool get(LPCWSTR expression, UINT64 &result)
+        bool get(LPCWSTR expression, UINT64 &result, UINT64 defaultValue)
         {
-            float value = 0.0f;
-            bool success = get(expression, value);
-            if (success)
-            {
-                result = UINT64(value);
-            }
-
+            float value;
+            bool success = (shuntingYard.evaluate(expression, value) == ShuntingYard::Status::Success);
+            result = (success ? UINT64(value) : defaultValue);
             return success;
         }
 
-        bool get(LPCWSTR expression, float &result)
+        bool get(LPCWSTR expression, float &result, float defaultValue)
         {
-            return (shuntingYard.evaluate(expression, result) == ShuntingYard::Status::Success);
+            float value;
+            bool success = (shuntingYard.evaluate(expression, value) == ShuntingYard::Status::Success);
+            result = (success ? value : defaultValue);
+            return success;
         }
 
-        bool get(LPCWSTR expression, Gek::Math::Float2 &result)
+        bool get(LPCWSTR expression, Gek::Math::Float2 &result, const Gek::Math::Float2 &defaultValue)
         {
-            return (shuntingYard.evaluate(expression, result) == ShuntingYard::Status::Success);
+            Gek::Math::Float2 value;
+            bool success = (shuntingYard.evaluate(expression, value) == ShuntingYard::Status::Success);
+            result = (success ? value : defaultValue);
+            return success;
         }
 
-        bool get(LPCWSTR expression, Gek::Math::Float3 &result)
+        bool get(LPCWSTR expression, Gek::Math::Float3 &result, const Gek::Math::Float3 &defaultValue)
         {
-            return (shuntingYard.evaluate(expression, result) == ShuntingYard::Status::Success);
+            Gek::Math::Float3 value;
+            bool success = (shuntingYard.evaluate(expression, value) == ShuntingYard::Status::Success);
+            result = (success ? value : defaultValue);
+            return success;
         }
 
-        bool get(LPCWSTR expression, Gek::Math::Float4 &result)
+        bool get(LPCWSTR expression, Gek::Math::Float4 &result, const Gek::Math::Float4 &defaultValue)
         {
-            return (shuntingYard.evaluate(expression, result) == ShuntingYard::Status::Success);
+            Gek::Math::Float4 value;
+            bool success = (shuntingYard.evaluate(expression, value) == ShuntingYard::Status::Success);
+            result = (success ? value : defaultValue);
+            return success;
         }
 
-        bool get(LPCWSTR expression, Gek::Math::Color &result)
+        bool get(LPCWSTR expression, Gek::Math::Color &result, const Gek::Math::Color &defaultValue)
         {
             bool success = (shuntingYard.evaluate(expression, result) == ShuntingYard::Status::Success);
             if (!success)
             {
-                Math::Float3 rgb;
-                success = (shuntingYard.evaluate(expression, rgb) == ShuntingYard::Status::Success);
+                Math::Float3 rgbValue;
+                success = (shuntingYard.evaluate(expression, rgbValue) == ShuntingYard::Status::Success);
                 if (success)
                 {
-                    result.set(rgb);
+                    result.set(rgbValue);
                 }
+            }
+
+            if (!success)
+            {
+                result = defaultValue;
             }
 
             return success;
         }
 
-        bool get(LPCWSTR expression, Gek::Math::Quaternion &result)
+        bool get(LPCWSTR expression, Gek::Math::Quaternion &result, const Gek::Math::Quaternion &defaultValue)
         {
             bool success = (shuntingYard.evaluate(expression, result) == ShuntingYard::Status::Success);
             if (!success)
@@ -110,7 +111,18 @@ namespace Gek
                 }
             }
 
+            if (!success)
+            {
+                result = defaultValue;
+            }
+
             return success;
+        }
+
+        bool get(LPCWSTR expression, CStringW &result)
+        {
+            result = expression;
+            return true;
         }
     }; // namespace Evaluator
 }; // namespace Gek

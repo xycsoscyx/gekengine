@@ -49,19 +49,58 @@ namespace Gek
     class ObjectManager
     {
     public:
-        struct ReadWrite
+        struct AtomicResource
         {
-            CComPtr<IUnknown> read;
-            CComPtr<IUnknown> write;
+            enum class State : UINT8
+            {
+                Empty = 0,
+                Loading,
+                Loaded,
+            };
 
-            ReadWrite(void)
+            std::atomic<State> state;
+            CComPtr<IUnknown> data;
+
+            AtomicResource(void)
+                : state(State::Empty)
             {
             }
 
-            ReadWrite(CComPtr<IUnknown> read, CComPtr<IUnknown> write)
-                : read(read)
-                , write(write)
+            AtomicResource(const AtomicResource &resource)
+                : state(resource.state == State::Empty ? State::Empty : resource.state == State::Loading ? State::Loading : State::Loaded)
+                , data(resource.data)
             {
+            }
+
+            void set(IUnknown *data)
+            {
+                if (state == State::Empty)
+                {
+                    state = State::Loading;
+                    this->data = data;
+                    state = State::Loaded;
+                }
+            }
+
+            IUnknown *get(void)
+            {
+                return (state == State::Loaded ? data.p : nullptr);
+            }
+        };
+
+        struct ReadWriteResource
+        {
+            AtomicResource read;
+            AtomicResource write;
+
+            ReadWriteResource(void)
+            {
+            }
+
+            void set(IUnknown *read, IUnknown *write)
+            {
+                this->read.set(read);
+                this->write.set(write);
             }
         };
 
@@ -69,9 +108,9 @@ namespace Gek
         UINT64 nextIdentifier;
         concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
         concurrency::concurrent_unordered_map<std::size_t, HANDLE> resourceHandleMap;
-        concurrency::concurrent_unordered_map<HANDLE, CComPtr<IUnknown>> localResourceMap;
-        concurrency::concurrent_unordered_map<HANDLE, ReadWrite> readWriteResourceMap;
-        concurrency::concurrent_unordered_map<HANDLE, CComPtr<IUnknown>> globalResourceMap;
+        concurrency::concurrent_unordered_map<HANDLE, AtomicResource> localResourceMap;
+        concurrency::concurrent_unordered_map<HANDLE, ReadWriteResource> readWriteResourceMap;
+        concurrency::concurrent_unordered_map<HANDLE, AtomicResource> globalResourceMap;
 
     public:
         ObjectManager(void)
@@ -96,10 +135,10 @@ namespace Gek
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
 
-            CComPtr<IUnknown> resource;
-            if (SUCCEEDED(loadResource(&resource)) && resource)
+            CComPtr<IUnknown> data;
+            if (SUCCEEDED(loadResource(&data)) && data)
             {
-                globalResourceMap[handle] = resource;
+                globalResourceMap[handle].set(data);
             }
 
             return handle;
@@ -111,23 +150,23 @@ namespace Gek
             handle.assign(InterlockedIncrement(&nextIdentifier));
             if (readWrite)
             {
-                readWriteResourceMap[handle] = ReadWrite();
+                auto &resource = readWriteResourceMap[handle];
 
                 CComPtr<IUnknown> read, write;
                 if (SUCCEEDED(loadResource(&read)) && read &&
                     SUCCEEDED(loadResource(&write)) && write)
                 {
-                    readWriteResourceMap[handle] = ReadWrite(read, write);
+                    resource.set(read, write);
                 }
             }
             else
             {
-                localResourceMap[handle] = nullptr;
+                auto &resource = localResourceMap[handle];
 
-                CComPtr<IUnknown> resource;
-                if (SUCCEEDED(loadResource(&resource)) && resource)
+                CComPtr<IUnknown> data;
+                if (SUCCEEDED(loadResource(&data)) && data)
                 {
-                    localResourceMap[handle] = resource;
+                    resource.set(data);
                 }
             }
 
@@ -153,23 +192,23 @@ namespace Gek
 
                 if (readWrite)
                 {
-                    readWriteResourceMap[handle] = ReadWrite();
+                    auto &resource = readWriteResourceMap[handle];
 
                     CComPtr<IUnknown> read, write;
                     if (SUCCEEDED(loadResource(&read)) && read &&
                         SUCCEEDED(loadResource(&write)) && write)
                     {
-                        readWriteResourceMap[handle] = ReadWrite(read, write);
+                        resource.set(read, write);
                     }
                 }
                 else
                 {
-                    localResourceMap[handle] = nullptr;
+                    auto &resource = localResourceMap[handle];
 
-                    CComPtr<IUnknown> resource;
-                    if (SUCCEEDED(loadResource(&resource)) && resource)
+                    CComPtr<IUnknown> data;
+                    if (SUCCEEDED(loadResource(&data)) && data)
                     {
-                        localResourceMap[handle] = resource;
+                        resource.set(data);
                     }
                 }
             }
@@ -182,20 +221,20 @@ namespace Gek
             auto globalIterator = globalResourceMap.find(handle);
             if (globalIterator != globalResourceMap.end())
             {
-                return globalIterator->second.p;
+                return globalIterator->second.get();
             }
 
             auto localIterator = localResourceMap.find(handle);
             if (localIterator != localResourceMap.end())
             {
-                return localIterator->second.p;
+                return localIterator->second.get();
             }
 
             auto readWriteIterator = readWriteResourceMap.find(handle);
             if (readWriteIterator != readWriteResourceMap.end())
             {
                 auto &resource = readWriteIterator->second;
-                return (writable ? resource.write : resource.read);
+                return (writable ? resource.write.get() : resource.read.get());
             }
 
             return nullptr;
@@ -213,7 +252,11 @@ namespace Gek
             if (readWriteIterator != readWriteResourceMap.end())
             {
                 auto &resource = readWriteIterator->second;
-                std::swap(resource.read, resource.write);
+                if (resource.read.state == AtomicResource::State::Loaded &&
+                    resource.write.state == AtomicResource::State::Loaded)
+                {
+                    std::swap(resource.read.data, resource.write.data);
+                }
             }
         }
     };

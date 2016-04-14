@@ -37,7 +37,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
             break;
         }
 
-        float3 lightRay = light.position - surfacePosition;
+        float3 lightRay = light.transform._41_42_43 - surfacePosition;
         float3 centerToRay = dot(lightRay, reflectNormal) * reflectNormal - lightRay;
         float3 closestPoint = lightRay + centerToRay * clamp(light.radius / length(centerToRay), 0.0, 1.0);
         float3 lightDirection = normalize(closestPoint);

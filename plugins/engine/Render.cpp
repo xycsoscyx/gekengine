@@ -110,31 +110,29 @@ namespace Gek
             UINT32 padding[3];
         };
 
+        __declspec(align(16))
         struct LightData
         {
+            Math::Float4x4 transform;
             UINT32 type;
-            Math::Float3 position;
-            Math::Float3 direction;
             float range;
             float radius;
             float innerAngle;
             float outerAngle;
             Math::Float3 color;
 
-            LightData(const PointLightComponent &light, const ColorComponent &color, const Math::Float4x4 &matrix)
+            LightData(const PointLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
                 : type(0)
-                , position(matrix.translation)
-                , direction(matrix.rz)
+                , transform(transform)
                 , range(light.range)
                 , radius(light.radius)
                 , color(color.value)
             {
             }
 
-            LightData(const SpotLightComponent &light, const ColorComponent &color, const Math::Float4x4 &matrix)
+            LightData(const SpotLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
                 : type(1)
-                , position(matrix.translation)
-                , direction(matrix.rz)
+                , transform(transform)
                 , range(light.range)
                 , radius(light.radius)
                 , innerAngle(light.innerAngle)
@@ -143,9 +141,9 @@ namespace Gek
             {
             }
 
-            LightData(const DirectionalLightComponent &light, const ColorComponent &color, const Math::Float4x4 &matrix)
+            LightData(const DirectionalLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
                 : type(2)
-                , direction(matrix.rz)
+                , transform(transform)
                 , color(color.value)
             {
             }
@@ -313,7 +311,8 @@ namespace Gek
                     "{                                                                                  \r\n" \
                     "    Pixel pixel;                                                                   \r\n" \
                     "    pixel.texCoord = float2((vertexID << 1) & 2, vertexID & 2);                    \r\n" \
-                    "    pixel.position = float4(pixel.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f); \r\n" \
+                    "    pixel.position = float4(pixel.texCoord * float2(2.0f, -2.0f)                   \r\n" \
+                    "                                           + float2(-1.0f, 1.0f), 0.0f, 1.0f);     \r\n" \
                     "    return pixel;                                                                  \r\n" \
                     "}                                                                                  \r\n" \
                     "                                                                                   \r\n";
@@ -383,38 +382,52 @@ namespace Gek
                 });
 
                 lightList.clear();
-                population->listEntities<TransformComponent, PointLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
+                std::thread threads[3] = 
                 {
-                    auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
-                    auto &lightComponent = lightEntity->getComponent<PointLightComponent>();
-                    if (viewFrustum.isVisible(Shapes::Sphere(lightTransformComponent.position, lightComponent.range)))
+                    std::thread([&](void) -> void
                     {
-                        auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-                        Math::Float4x4 lightMatrix(cameraConstantData.viewMatrix * lightTransformComponent.getMatrix());
-                        lightList.emplace_back(lightComponent, lightColorComponent, lightMatrix);
-                    }
-                });
-
-                population->listEntities<TransformComponent, SpotLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
-                {
-                    auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
-                    auto &lightComponent = lightEntity->getComponent<SpotLightComponent>();
-                    if (viewFrustum.isVisible(Shapes::Sphere(lightTransformComponent.position, lightComponent.range)))
+                        population->listEntities<TransformComponent, PointLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
+                        {
+                            auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
+                            auto &lightComponent = lightEntity->getComponent<PointLightComponent>();
+                            if (viewFrustum.isVisible(Shapes::Sphere(lightTransformComponent.position, lightComponent.range)))
+                            {
+                                auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
+                                Math::Float4x4 lightTransform(cameraConstantData.viewMatrix * lightTransformComponent.getMatrix());
+                                lightList.emplace_back(lightComponent, lightColorComponent, lightTransform);
+                            }
+                        });
+                    }),
+                    std::thread([&](void) -> void
                     {
-                        auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-                        Math::Float4x4 lightMatrix(cameraConstantData.viewMatrix * lightTransformComponent.getMatrix());
-                        lightList.emplace_back(lightComponent, lightColorComponent, lightMatrix);
-                    }
-                });
+                        population->listEntities<TransformComponent, SpotLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
+                        {
+                            auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
+                            auto &lightComponent = lightEntity->getComponent<SpotLightComponent>();
+                            if (viewFrustum.isVisible(Shapes::Sphere(lightTransformComponent.position, lightComponent.range)))
+                            {
+                                auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
+                                Math::Float4x4 lightTransform(cameraConstantData.viewMatrix * lightTransformComponent.getMatrix());
+                                lightList.emplace_back(lightComponent, lightColorComponent, lightTransform);
+                            }
+                        });
+                    }),
+                    std::thread([&](void) -> void
+                    {
+                        population->listEntities<TransformComponent, DirectionalLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
+                        {
+                            auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
+                            auto &lightComponent = lightEntity->getComponent<DirectionalLightComponent>();
+                            auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
+                            Math::Float4x4 lightTransform(cameraConstantData.viewMatrix * lightTransformComponent.getMatrix());
+                            lightList.emplace_back(lightComponent, lightColorComponent, lightTransform);
+                        });
+                    }),
+                };
 
-                population->listEntities<TransformComponent, DirectionalLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
-                {
-                    auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
-                    auto &lightComponent = lightEntity->getComponent<DirectionalLightComponent>();
-                    auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-                    Math::Float4x4 lightMatrix(cameraConstantData.viewMatrix * lightTransformComponent.getMatrix());
-                    lightList.emplace_back(lightComponent, lightColorComponent, lightMatrix);
-                });
+                threads[0].join();
+                threads[1].join();
+                threads[2].join();
 
                 UINT32 lightListCount = lightList.size();
                 videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);

@@ -855,10 +855,13 @@ namespace Gek
                                             "{                                                          \r\n" \
                                             "    struct Data                                            \r\n" \
                                             "    {                                                      \r\n" \
-                                            "        float3  position;                                  \r\n" \
-                                            "        float   range;                                     \r\n" \
-                                            "        float   radius;                                    \r\n" \
-                                            "        float3  color;                                     \r\n" \
+                                            "        float4x4 transform;                                \r\n" \
+                                            "        uint     type;                                     \r\n" \
+                                            "        float    range;                                    \r\n" \
+                                            "        float    radius;                                   \r\n" \
+                                            "        float    innerAngle;                               \r\n" \
+                                            "        float    outerAngle;                               \r\n" \
+                                            "        float3   color;                                    \r\n" \
                                             "    };                                                     \r\n" \
                                             "                                                           \r\n" \
                                             "    cbuffer Parameters : register(b3)                      \r\n" \

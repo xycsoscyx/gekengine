@@ -364,22 +364,12 @@ namespace Gek
             return entity;
         }
 
-        STDMETHODIMP_(void) listEntities(std::function<void(Entity *)> onEntity, bool runInParallel)
+        STDMETHODIMP_(void) listEntities(std::function<void(Entity *)> onEntity)
         {
-            if (runInParallel)
+            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const CComPtr<Entity> &entity) -> void
             {
-                concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const CComPtr<Entity> &entity) -> void
-                {
-                    onEntity(entity);
-                });
-            }
-            else
-            {
-                std::for_each(entityList.begin(), entityList.end(), [&](const CComPtr<Entity> &entity) -> void
-                {
-                    onEntity(entity);
-                });
-            }
+                onEntity(entity);
+            });
         }
 
         STDMETHODIMP_(UINT32) setUpdatePriority(PopulationObserver *observer, UINT32 priority)
