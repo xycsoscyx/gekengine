@@ -1791,6 +1791,7 @@ namespace Gek
             }
             else if (d3dCompilerErrors)
             {
+                OutputDebugStringA(LPCSTR(d3dCompilerErrors->GetBufferPointer()));
             }
 
             return resultValue;
@@ -1893,6 +1894,7 @@ namespace Gek
             }
             else if (d3dCompilerErrors)
             {
+                OutputDebugStringA(LPCSTR(d3dCompilerErrors->GetBufferPointer()));
             }
 
             return resultValue;
@@ -1938,6 +1940,7 @@ namespace Gek
             }
             else if (d3dCompilerErrors)
             {
+                OutputDebugStringA(LPCSTR(d3dCompilerErrors->GetBufferPointer()));
             }
 
             return resultValue;
@@ -1983,6 +1986,7 @@ namespace Gek
             }
             else if (d3dCompilerErrors)
             {
+                OutputDebugStringA(LPCSTR(d3dCompilerErrors->GetBufferPointer()));
             }
 
             return resultValue;
