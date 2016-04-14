@@ -3,6 +3,7 @@
 #include "GEKGlobal.h"
 #include "GEKUtility.h"
 
+static const uint   tileVolume = (tileSize * tileSize);
 groupshared uint    tileMinimumDepth;
 groupshared uint    tileMaximumDepth;
 groupshared uint    tileLightCount;
@@ -54,8 +55,11 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
 
     GroupMemoryBarrierWithGroupSync();
 
+    uint start = (pixelIndex * tileVolume);
+    uint end = min(Lighting::count, (start + tileVolume));
+
     [loop]
-    for (uint lightIndex = pixelIndex; lightIndex < Lighting::count; lightIndex += (tileSize * tileSize))
+    for (uint lightIndex = start; lightIndex < end; ++lightIndex)
     {
         Lighting::Data light = Lighting::list[lightIndex];
         bool isLightVisible = true;
@@ -82,8 +86,13 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
     if (pixelIndex < Lighting::maximumListSize)
     {
         uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
-        uint bufferIndex = ((tileIndex * Lighting::maximumListSize) + pixelIndex);
-        uint lightIndex = (pixelIndex < tileLightCount ? tileLightList[pixelIndex] : Lighting::maximumListSize);
-        UnorderedAccess::tileIndexList[bufferIndex] = lightIndex;
+        uint bufferIndex = ((tileIndex * (Lighting::maximumListSize + 1)) + pixelIndex);
+        UnorderedAccess::tileIndexList[bufferIndex + 1] = tileLightList[pixelIndex];
+
+        [branch]
+        if (pixelIndex == 0)
+        {
+            UnorderedAccess::tileIndexList[bufferIndex] = tileLightCount;
+        }
     }
 }

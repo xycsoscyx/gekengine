@@ -34,7 +34,7 @@ namespace Gek
         // Component
         STDMETHODIMP_(LPCWSTR) getName(void) const
         {
-            return L"shape";
+            return L"particles";
         }
     };
 

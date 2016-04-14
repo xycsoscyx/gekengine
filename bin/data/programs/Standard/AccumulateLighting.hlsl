@@ -21,27 +21,24 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(tileSize).xx));
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
-    const uint bufferOffset = (tileIndex * Lighting::maximumListSize);
+    const uint bufferOffset = (tileIndex * (Lighting::maximumListSize + 1));
 
     float3 surfaceColor = 0.0;
 
+    uint lightCount = Resources::tileIndexList[bufferOffset];
+
     [loop]
-    for (uint lightTileIndex = 0; lightTileIndex < Lighting::count; lightTileIndex++)
+    for (uint lightTileIndex = 1; lightTileIndex <= lightCount; ++lightTileIndex)
     {
         uint lightIndex = Resources::tileIndexList[bufferOffset + lightTileIndex];
         Lighting::Data light = Lighting::list[lightIndex];
 
-        [branch]
-        if (lightIndex == Lighting::maximumListSize)
-        {
-            break;
-        }
-
-        float3 lightRay = light.transform._41_42_43 - surfacePosition;
-        float3 centerToRay = dot(lightRay, reflectNormal) * reflectNormal - lightRay;
-        float3 closestPoint = lightRay + centerToRay * clamp(light.radius / length(centerToRay), 0.0, 1.0);
+        float3 lightRay = (light.transform._m30_m31_m32 - surfacePosition);
+        float3 centerToRay = ((dot(lightRay, reflectNormal) * reflectNormal) - lightRay);
+        float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
         float3 lightDirection = normalize(closestPoint);
         float lightDistance = length(closestPoint);
+        //return light.transform._m30_m31_m32;
 
         float distanceOverRange = (lightDistance / light.range);
         float distanceOverRange2 = sqr(distanceOverRange);

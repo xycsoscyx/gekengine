@@ -144,8 +144,8 @@ namespace Gek
 
             rx.set(x, 0.0f, 0.0f, 0.0f);
             ry.set(0.0f, y, 0.0f, 0.0f);
-            rz.set(0.0f, 0.0f, ((farDepth + nearDepth) / distance), 1.0f);
-            rw.set(0.0f, 0.0f, -((2.0f * farDepth * nearDepth) / distance), 0.0f);
+            rz.set(0.0f, 0.0f, (farDepth / distance), 1.0f);
+            rw.set(0.0f, 0.0f, ((-nearDepth * farDepth) / distance), 0.0f);
         }
 
         void Float4x4::setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)
