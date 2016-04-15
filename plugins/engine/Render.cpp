@@ -417,7 +417,7 @@ namespace Gek
                 });
 
                 lightList.assign(lightData.begin(), lightData.end());
-                UINT32 lightListCount = lightList.size() ? 1 : 0;
+                UINT32 lightListCount = lightList.size();
 
                 videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
                 videoContext->pixelPipeline()->setSamplerStates(linearClampSamplerStates, 1);

@@ -38,7 +38,6 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
         float3 lightDirection = normalize(closestPoint);
         float lightDistance = length(closestPoint);
-        //return light.transform._m30_m31_m32;
 
         float distanceOverRange = (lightDistance / light.range);
         float distanceOverRange2 = sqr(distanceOverRange);
