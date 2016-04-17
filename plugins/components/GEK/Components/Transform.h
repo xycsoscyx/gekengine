@@ -3,9 +3,7 @@
 #include "GEK\Math\Vector3.h"
 #include "GEK\Math\Quaternion.h"
 #include "GEK\Math\Matrix4x4.h"
-#include <atlbase.h>
-#include <atlstr.h>
-#include <unordered_map>
+#include "GEK\Engine\Population.h"
 
 namespace Gek
 {
@@ -26,8 +24,8 @@ namespace Gek
         Gek::Math::Float3 scale;
 
         TransformComponent(void);
-        HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-        HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+        HRESULT save(Population::ComponentDefinition &componentData) const;
+        HRESULT load(const Population::ComponentDefinition &componentData);
 
         inline Math::Float4x4 getMatrix(void) const
         {

@@ -7,25 +7,37 @@
 namespace Gek
 {
     template <typename TYPE>
-    void saveParameter(std::unordered_map<CStringW, CStringW> &list, LPCWSTR name, const TYPE &value)
+    void saveParameter(Population::ComponentDefinition &componentData, LPCWSTR name, const TYPE &value)
     {
-        list[name] = String::from<wchar_t>(value);
-    }
-
-    template <typename TYPE>
-    bool loadParameter(const std::unordered_map<CStringW, CStringW> &list, LPCWSTR name, TYPE &value)
-    {
-        auto iterator = list.find(name);
-        if (iterator == list.end())
+        if (name)
         {
-            return false;
+            componentData[name] = String::from<wchar_t>(value);
         }
         else
         {
-            value = Evaluator::get<TYPE>((*iterator).second);
-            //value = String::to<TYPE>((*iterator).second);
-            return true;
+            componentData.SetString(String::from<wchar_t>(value));
         }
+    }
+
+    template <typename TYPE>
+    bool loadParameter(const Population::ComponentDefinition &componentData, LPCWSTR name, TYPE &value)
+    {
+        if (name)
+        {
+            auto iterator = componentData.find(name);
+            if (iterator != componentData.end())
+            {
+                value = Evaluator::get<TYPE>((*iterator).second);
+                //value = String::to<TYPE>((*iterator).second);
+                return true;
+            }
+        }
+        else if(!componentData.IsEmpty())
+        {
+            value = Evaluator::get<TYPE>(componentData.GetString());
+        }
+
+        return false;
     }
 
     template <class DATA>
@@ -46,12 +58,12 @@ namespace Gek
             return typeid(DATA);
         }
 
-        STDMETHODIMP_(LPVOID) create(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+        STDMETHODIMP_(LPVOID) create(const Population::ComponentDefinition &componentData)
         {
             DATA *data = new DATA();
             if (data)
             {
-                data->load(componentParameterList);
+                data->load(componentData);
             }
 
             return data;

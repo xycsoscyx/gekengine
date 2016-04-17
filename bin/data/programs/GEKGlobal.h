@@ -36,14 +36,3 @@ namespace Camera
         float4x4 inverseProjectionMatrix;
     };
 };
-
-namespace Shader
-{
-    cbuffer Constants : register(b2)
-    {
-        float defaultWidth;
-        float defaultHeight;
-        float width;
-        float height;
-    };
-};

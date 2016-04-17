@@ -13,19 +13,19 @@ namespace Gek
     {
     }
 
-    HRESULT CameraComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT CameraComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentParameterList, L"field_of_view", fieldOfView);
-        saveParameter(componentParameterList, L"minimum_distance", minimumDistance);
-        saveParameter(componentParameterList, L"maximum_distance", maximumDistance);
+        saveParameter(componentData, L"field_of_view", fieldOfView);
+        saveParameter(componentData, L"minimum_distance", minimumDistance);
+        saveParameter(componentData, L"maximum_distance", maximumDistance);
         return S_OK;
     }
 
-    HRESULT CameraComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT CameraComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentParameterList, L"field_of_view", fieldOfView);
-        loadParameter(componentParameterList, L"minimum_distance", minimumDistance);
-        loadParameter(componentParameterList, L"maximum_distance", maximumDistance);
+        loadParameter(componentData, L"field_of_view", fieldOfView);
+        loadParameter(componentData, L"minimum_distance", minimumDistance);
+        loadParameter(componentData, L"maximum_distance", maximumDistance);
         return S_OK;
     }
 
@@ -34,14 +34,14 @@ namespace Gek
     {
     }
 
-    HRESULT FirstPersonCameraComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT FirstPersonCameraComponent::save(Population::ComponentDefinition &componentData) const
     {
-        return CameraComponent::save(componentParameterList);
+        return CameraComponent::save(componentData);
     }
 
-    HRESULT FirstPersonCameraComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT FirstPersonCameraComponent::load(const Population::ComponentDefinition &componentData)
     {
-        return CameraComponent::load(componentParameterList);
+        return CameraComponent::load(componentData);
     }
 
     ThirdPersonCameraComponent::ThirdPersonCameraComponent(void)
@@ -51,24 +51,24 @@ namespace Gek
     {
     }
 
-    HRESULT ThirdPersonCameraComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT ThirdPersonCameraComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentParameterList, L"body", body);
-        saveParameter(componentParameterList, L"offset", offset);
-        saveParameter(componentParameterList, L"distance", distance);
-        return CameraComponent::save(componentParameterList);
+        saveParameter(componentData, L"body", body);
+        saveParameter(componentData, L"offset", offset);
+        saveParameter(componentData, L"distance", distance);
+        return CameraComponent::save(componentData);
     }
 
-    HRESULT ThirdPersonCameraComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT ThirdPersonCameraComponent::load(const Population::ComponentDefinition &componentData)
     {
-        if (!loadParameter(componentParameterList, L"body", body))
+        if (!loadParameter(componentData, L"body", body))
         {
             return E_INVALIDARG;
         }
 
-        loadParameter(componentParameterList, L"offset", offset);
-        loadParameter(componentParameterList, L"distance", distance);
-        return CameraComponent::load(componentParameterList);
+        loadParameter(componentData, L"offset", offset);
+        loadParameter(componentData, L"distance", distance);
+        return CameraComponent::load(componentData);
     }
 
     class FirstPersonCameraImplementation : public ContextUserMixin

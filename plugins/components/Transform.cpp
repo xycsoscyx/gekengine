@@ -13,19 +13,19 @@ namespace Gek
     {
     }
 
-    HRESULT TransformComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT TransformComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentParameterList, L"position", position);
-        saveParameter(componentParameterList, L"rotation", rotation);
-        saveParameter(componentParameterList, L"scale", scale);
+        saveParameter(componentData, L"position", position);
+        saveParameter(componentData, L"rotation", rotation);
+        saveParameter(componentData, L"scale", scale);
         return S_OK;
     }
 
-    HRESULT TransformComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT TransformComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentParameterList, L"position", position);
-        loadParameter(componentParameterList, L"rotation", rotation);
-        loadParameter(componentParameterList, L"scale", scale);
+        loadParameter(componentData, L"position", position);
+        loadParameter(componentData, L"rotation", rotation);
+        loadParameter(componentData, L"scale", scale);
         return S_OK;
     }
 

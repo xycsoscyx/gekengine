@@ -10,15 +10,15 @@ namespace Gek
     {
     }
 
-    HRESULT StaticBodyComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT StaticBodyComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentParameterList, L"", shape);
+        saveParameter(componentData, L"", shape);
         return S_OK;
     }
 
-    HRESULT StaticBodyComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT StaticBodyComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentParameterList, L"", shape);
+        loadParameter(componentData, nullptr, shape);
         return S_OK;
     }
 

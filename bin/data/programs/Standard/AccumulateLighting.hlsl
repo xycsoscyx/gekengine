@@ -21,7 +21,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(tileSize).xx));
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
-    const uint bufferOffset = (tileIndex * (Lighting::maximumListSize + 1));
+    const uint bufferOffset = (tileIndex * (Lighting::lightsPerPass + 1));
 
     float3 surfaceColor = 0.0;
 

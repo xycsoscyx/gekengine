@@ -7,7 +7,7 @@ static const uint   tileVolume = (tileSize * tileSize);
 groupshared uint    tileMinimumDepth;
 groupshared uint    tileMaximumDepth;
 groupshared uint    tileLightCount;
-groupshared uint    tileLightList[Lighting::maximumListSize];
+groupshared uint    tileLightList[Lighting::lightsPerPass];
 groupshared float4  tileFrustum[6];
 
 [numthreads(uint(tileSize), uint(tileSize), 1)]
@@ -83,10 +83,10 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
     GroupMemoryBarrierWithGroupSync();
 
     [branch]
-    if (pixelIndex < Lighting::maximumListSize)
+    if (pixelIndex < Lighting::lightsPerPass)
     {
         uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
-        uint bufferIndex = ((tileIndex * (Lighting::maximumListSize + 1)) + pixelIndex);
+        uint bufferIndex = ((tileIndex * (Lighting::lightsPerPass + 1)) + pixelIndex);
         UnorderedAccess::tileIndexList[bufferIndex + 1] = tileLightList[pixelIndex];
 
         [branch]

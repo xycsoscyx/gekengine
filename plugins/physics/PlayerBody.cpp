@@ -875,21 +875,21 @@ namespace Gek
     {
     }
 
-    HRESULT PlayerBodyComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT PlayerBodyComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentParameterList, L"height", height);
-        saveParameter(componentParameterList, L"outer_radius", outerRadius);
-        saveParameter(componentParameterList, L"inner_radius", innerRadius);
-        saveParameter(componentParameterList, L"stair_step", stairStep);
+        saveParameter(componentData, L"height", height);
+        saveParameter(componentData, L"outer_radius", outerRadius);
+        saveParameter(componentData, L"inner_radius", innerRadius);
+        saveParameter(componentData, L"stair_step", stairStep);
         return S_OK;
     }
 
-    HRESULT PlayerBodyComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT PlayerBodyComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentParameterList, L"height", height);
-        loadParameter(componentParameterList, L"outer_radius", outerRadius);
-        loadParameter(componentParameterList, L"inner_radius", innerRadius);
-        loadParameter(componentParameterList, L"stair_step", stairStep);
+        loadParameter(componentData, L"height", height);
+        loadParameter(componentData, L"outer_radius", outerRadius);
+        loadParameter(componentData, L"inner_radius", innerRadius);
+        loadParameter(componentData, L"stair_step", stairStep);
         return S_OK;
     }
 

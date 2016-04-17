@@ -13,8 +13,6 @@
 #include "GEK\Engine\Component.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Camera.h"
-#include "GEK\Components\Light.h"
-#include "GEK\Components\Color.h"
 #include "GEK\Context\COM.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
@@ -25,8 +23,6 @@
 
 namespace Gek
 {
-    static const UINT32 MaxLightCount = 255;
-
     class RenderPipelineImplementation : public UnknownMixin
         , public RenderPipeline
     {
@@ -104,55 +100,10 @@ namespace Gek
             Math::Float4x4 inverseProjectionMatrix;
         };
 
-        __declspec(align(16))
-        struct LightConstantData
-        {
-            UINT32 count;
-            UINT32 padding[3];
-        };
-
-        __declspec(align(16))
-        struct LightData
-        {
-            Math::Float4x4 transform;
-            Math::Float3 color;
-            UINT32 type;
-            float range;
-            float radius;
-            float innerAngle;
-            float outerAngle;
-
-            LightData(const PointLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
-                : type(0)
-                , transform(transform)
-                , range(light.range)
-                , radius(light.radius)
-                , color(color.value)
-            {
-            }
-
-            LightData(const SpotLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
-                : type(1)
-                , transform(transform)
-                , range(light.range)
-                , radius(light.radius)
-                , innerAngle(light.innerAngle)
-                , outerAngle(light.outerAngle)
-                , color(color.value)
-            {
-            }
-
-            LightData(const DirectionalLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
-                : type(2)
-                , transform(transform)
-                , color(color.value)
-            {
-            }
-        };
-
-        typedef std::function<void(RenderContext *renderContext)> DrawCall;
         struct DrawCallValue
         {
+            typedef std::function<void(RenderContext *renderContext)> DrawCall;
+
             union
             {
                 UINT32 value;
@@ -199,12 +150,9 @@ namespace Gek
         CComPtr<IUnknown> linearWrapSamplerStates;
         CComPtr<VideoBuffer> engineConstantBuffer;
         CComPtr<VideoBuffer> cameraConstantBuffer;
-        CComPtr<VideoBuffer> lightConstantBuffer;
-        CComPtr<VideoBuffer> lightDataBuffer;
 
         CComPtr<IUnknown> deferredVertexProgram;
 
-        std::vector<LightData> lightList;
         std::vector<DrawCallValue> drawCallList;
 
     public:
@@ -291,16 +239,6 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&lightConstantBuffer, sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = video->createBuffer(&lightDataBuffer, sizeof(LightData), MaxLightCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
                 static const char program[] =
                     "struct Pixel                                                                       \r\n" \
                     "{                                                                                  \r\n" \
@@ -382,43 +320,6 @@ namespace Gek
                     return (leftValue.value < rightValue.value);
                 });
 
-                concurrency::concurrent_vector<LightData> lightData;
-                population->listEntities<TransformComponent, PointLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
-                {
-                    auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
-                    auto &lightComponent = lightEntity->getComponent<PointLightComponent>();
-                    if (viewFrustum.isVisible(Shapes::Sphere(lightTransformComponent.position, lightComponent.range)))
-                    {
-                        auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-                        Math::Float4x4 lightTransform(cameraConstantData.viewMatrix * lightTransformComponent.getMatrix());
-                        lightData.push_back(LightData(lightComponent, lightColorComponent, lightTransform));
-                    }
-                });
-
-                population->listEntities<TransformComponent, SpotLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
-                {
-                    auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
-                    auto &lightComponent = lightEntity->getComponent<SpotLightComponent>();
-                    if (viewFrustum.isVisible(Shapes::Sphere(lightTransformComponent.position, lightComponent.range)))
-                    {
-                        auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-                        Math::Float4x4 lightTransform(cameraConstantData.viewMatrix * lightTransformComponent.getMatrix());
-                        lightData.push_back(LightData(lightComponent, lightColorComponent, lightTransform));
-                    }
-                });
-
-                population->listEntities<TransformComponent, DirectionalLightComponent, ColorComponent>([&](Entity *lightEntity) -> void
-                {
-                    auto &lightTransformComponent = lightEntity->getComponent<TransformComponent>();
-                    auto &lightComponent = lightEntity->getComponent<DirectionalLightComponent>();
-                    auto &lightColorComponent = lightEntity->getComponent<ColorComponent>();
-                    Math::Float4x4 lightTransform(cameraConstantData.viewMatrix * lightTransformComponent.getMatrix());
-                    lightData.push_back(LightData(lightComponent, lightColorComponent, lightTransform));
-                });
-
-                lightList.assign(lightData.begin(), lightData.end());
-                UINT32 lightListCount = lightList.size();
-
                 videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
                 videoContext->pixelPipeline()->setSamplerStates(linearClampSamplerStates, 1);
                 videoContext->pixelPipeline()->setSamplerStates(linearWrapSamplerStates, 2);
@@ -427,94 +328,67 @@ namespace Gek
                 ShaderHandle currentShader;
                 PluginHandle currentPlugin;
                 PropertiesHandle currentProperties;
-                UINT32 drawCallCount = drawCallList.size();
-                for (UINT32 drawCallIndex = 0; drawCallIndex < drawCallCount; )
+                for (auto &drawCall = drawCallList.begin(); drawCall != drawCallList.end(); )
                 {
-                    DrawCallValue &drawCall = drawCallList[drawCallIndex];
-
-                    currentShader = drawCall.shader;
+                    currentShader = (*drawCall).shader;
                     Shader *shader = resources->getResource<Shader, ShaderHandle>(currentShader);
                     if (!shader)
                     {
-                        drawCallIndex++;
-                        continue;
+                        ++drawCall;
                     }
 
-                    auto drawLights = [&](std::function<void(void)> drawPasses) -> void
+                    for (auto block = shader->begin(); block; block = block.next())
                     {
-                        for (UINT32 lightBase = 0; lightBase < lightListCount; lightBase += MaxLightCount)
+                        block.prepare(renderContext, viewFrustum);
+                        for (auto pass = block.begin(); pass; pass = pass.next())
                         {
-                            UINT32 lightCount = std::min((lightListCount - lightBase), MaxLightCount);
-
-                            LightConstantData *lightConstants = nullptr;
-                            if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (LPVOID *)&lightConstants)))
+                            switch (pass.prepare(renderContext))
                             {
-                                lightConstants->count = lightCount;
-                                video->unmapBuffer(lightConstantBuffer);
-                            }
+                            case Shader::PassMode::Forward:
+                                while(drawCall != drawCallList.end())
+                                {
+                                    if (currentPlugin != (*drawCall).plugin)
+                                    {
+                                        currentPlugin = (*drawCall).plugin;
+                                        Plugin *plugin = resources->getResource<Plugin, PluginHandle>(currentPlugin);
+                                        if (!plugin)
+                                        {
+                                            continue;
+                                        }
 
-                            LightData *lightingData = nullptr;
-                            if (SUCCEEDED(video->mapBuffer(lightDataBuffer, (LPVOID *)&lightingData)))
-                            {
-                                memcpy(lightingData, &lightList[lightBase], (sizeof(LightData) * lightCount));
-                                video->unmapBuffer(lightDataBuffer);
-                            }
+                                        plugin->enable(videoContext);
+                                    }
 
-                            drawPasses();
+                                    if (currentProperties != (*drawCall).properties)
+                                    {
+                                        currentProperties = (*drawCall).properties;
+                                        Material *material = resources->getResource<Material, PropertiesHandle>(currentProperties);
+                                        if (!material)
+                                        {
+                                            continue;
+                                        }
+
+                                        shader->setResourceList(renderContext, block, pass, material->getResourceList());
+                                    }
+
+                                    (*drawCall).onDraw(renderContext);
+                                    ++drawCall;
+                                };
+
+                                break;
+
+                            case Shader::PassMode::Deferred:
+                                videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+                                videoContext->drawPrimitive(3, 0);
+                                ++drawCall;
+                                break;
+
+                            case Shader::PassMode::Compute:
+                                ++drawCall;
+                                break;
+                            };
                         }
-                    };
-
-                    auto enableLights = [&](RenderPipeline *renderPipeline) -> void
-                    {
-                        renderPipeline->getPipeline()->setResource(lightDataBuffer, 0);
-                        renderPipeline->getPipeline()->setConstantBuffer(lightConstantBuffer, 3);
-                    };
-
-                    auto drawForward = [&](void) -> void
-                    {
-                        while (drawCallIndex < drawCallCount)
-                        {
-                            drawCall = drawCallList[drawCallIndex++];
-                            if (currentPlugin != drawCall.plugin)
-                            {
-                                currentPlugin = drawCall.plugin;
-                                Plugin *plugin = resources->getResource<Plugin, PluginHandle>(currentPlugin);
-                                if (!plugin)
-                                {
-                                    continue;
-                                }
-
-                                plugin->enable(videoContext);
-                            }
-
-                            if (currentProperties != drawCall.properties)
-                            {
-                                currentProperties = drawCall.properties;
-                                Material *material = resources->getResource<Material, PropertiesHandle>(currentProperties);
-                                if (!material)
-                                {
-                                    continue;
-                                }
-
-                                shader->setResourceList(renderContext, material->getResourceList());
-                            }
-
-                            drawCall.onDraw(renderContext);
-                        };
-                    };
-
-                    auto drawDeferred = [&](void) -> void
-                    {
-                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-                        videoContext->drawPrimitive(3, 0);
-                    };
-
-                    auto runCompute = [&](UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth) -> void
-                    {
-                        videoContext->dispatch(dispatchWidth, dispatchHeight, dispatchDepth);
-                    };
-
-                    shader->draw(renderContext, drawLights, enableLights, drawForward, drawDeferred, runCompute);
+                    }
                 }
             }
         }

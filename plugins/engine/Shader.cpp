@@ -8,6 +8,9 @@
 #include "GEK\Engine\Render.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\System\VideoSystem.h"
+#include "GEK\Components\Transform.h"
+#include "GEK\Components\Light.h"
+#include "GEK\Components\Color.h"
 #include <atlpath.h>
 #include <set>
 #include <ppl.h>
@@ -144,14 +147,7 @@ namespace Gek
             }
         };
 
-        enum class PassMode : UINT8
-        {
-            Forward = 0,
-            Deferred,
-            Compute,
-        };
-
-        struct Pass
+        struct PassData
         {
             PassMode mode;
             UINT32 depthClearFlags;
@@ -171,7 +167,7 @@ namespace Gek
             UINT32 dispatchHeight;
             UINT32 dispatchDepth;
 
-            Pass(void)
+            PassData(void)
                 : mode(PassMode::Forward)
                 , depthClearFlags(0)
                 , depthClearValue(1.0f)
@@ -184,13 +180,13 @@ namespace Gek
             }
         };
 
-        struct Block
+        struct BlockData
         {
             bool lighting;
             std::unordered_map<CStringW, Math::Color> renderTargetsClearList;
-            std::list<Pass> passList;
+            std::list<PassData> passList;
 
-            Block(void)
+            BlockData(void)
                 : lighting(false)
             {
             }
@@ -205,15 +201,63 @@ namespace Gek
             float height;
         };
 
+        __declspec(align(16))
+        struct LightConstantData
+        {
+            UINT32 count;
+            UINT32 padding[3];
+        };
+
+        __declspec(align(16))
+        struct LightData
+        {
+            Math::Float4x4 transform;
+            Math::Float3 color;
+            UINT32 type;
+            float range;
+            float radius;
+            float innerAngle;
+            float outerAngle;
+
+            LightData(const PointLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
+                : type(0)
+                , transform(transform)
+                , range(light.range)
+                , radius(light.radius)
+                , color(color.value)
+            {
+            }
+
+            LightData(const SpotLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
+                : type(1)
+                , transform(transform)
+                , range(light.range)
+                , radius(light.radius)
+                , innerAngle(light.innerAngle)
+                , outerAngle(light.outerAngle)
+                , color(color.value)
+            {
+            }
+
+            LightData(const DirectionalLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
+                : type(2)
+                , transform(transform)
+                , color(color.value)
+            {
+            }
+        };
+
     private:
         VideoSystem *video;
         Resources *resources;
-        CComPtr<VideoBuffer> shaderConstantBuffer;
-        std::list<Map> mapList;
+        bool requiresLighting;
+        CComPtr<VideoBuffer> lightConstantBuffer;
+        CComPtr<VideoBuffer> lightDataBuffer;
         std::unordered_map<CStringW, CStringW> globalDefinesList;
+        std::list<Map> mapList;
         ResourceHandle depthBuffer;
         std::unordered_map<CStringW, ResourceHandle> resourceMap;
-        std::list<Block> blockList;
+        std::list<BlockData> blockList;
 
     private:
         static MapType getMapType(LPCWSTR mapType)
@@ -333,7 +377,7 @@ namespace Gek
             stencilStates.comparisonFunction = getComparisonFunction(xmlStencilNode.firstChildElement(L"comparison").getText());
         }
 
-        void loadDepthStates(Pass &pass, Gek::XmlNode &xmlDepthStatesNode)
+        void loadDepthStates(PassData &pass, Gek::XmlNode &xmlDepthStatesNode)
         {
             Video::DepthStates depthStates;
             depthStates.enable = true;
@@ -372,7 +416,7 @@ namespace Gek
             pass.depthStates = resources->createDepthStates(depthStates);
         }
 
-        void loadRenderStates(Pass &pass, Gek::XmlNode &xmlRenderStatesNode)
+        void loadRenderStates(PassData &pass, Gek::XmlNode &xmlRenderStatesNode)
         {
             Video::RenderStates renderStates;
             renderStates.fillMode = getFillMode(xmlRenderStatesNode.firstChildElement(L"fillmode").getText());
@@ -424,7 +468,7 @@ namespace Gek
             }
         }
 
-        void loadBlendStates(Pass &pass, Gek::XmlNode &xmlBlendStatesNode)
+        void loadBlendStates(PassData &pass, Gek::XmlNode &xmlBlendStatesNode)
         {
             bool alphaToCoverage = String::to<bool>(xmlBlendStatesNode.firstChildElement(L"alphatocoverage").getText());
             if (xmlBlendStatesNode.hasChildElement(L"target"))
@@ -499,7 +543,6 @@ namespace Gek
             CStringW finalValue(value);
             finalValue.Replace(L"displayWidth", String::format(L"%d", video->getWidth()));
             finalValue.Replace(L"displayHeight", String::format(L"%d", video->getHeight()));
-            finalValue.Replace(L"maximumListSize", L"255");
             while (replaceDefines(finalValue));
 
             if (finalValue.Find(L"float2") == 0)
@@ -524,6 +567,7 @@ namespace Gek
         ShaderImplementation(void)
             : video(nullptr)
             , resources(nullptr)
+            , requiresLighting(false)
         {
         }
 
@@ -555,11 +599,6 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = video->createBuffer(&shaderConstantBuffer, sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
                 Gek::XmlDocument xmlDocument;
                 resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\shaders\\%s.xml", fileName));
                 if (SUCCEEDED(resultValue))
@@ -587,6 +626,52 @@ namespace Gek
 
                                     xmlMapNode = xmlMapNode.nextSiblingElement();
                                 };
+                            }
+                        }
+
+                        CStringA lightingData;
+                        UINT32 lightsPerPass = 0;
+                        Gek::XmlNode xmlLightingNode = xmlShaderNode.firstChildElement(L"lighting");
+                        if (xmlLightingNode)
+                        {
+                            Gek::XmlNode xmlLightsPerPass = xmlLightingNode.firstChildElement(L"lightsPerPass");
+                            if (xmlLightsPerPass && !xmlLightsPerPass.getText().IsEmpty())
+                            {
+                                lightsPerPass = String::to<UINT32>(xmlLightsPerPass.getText());
+                                if (lightsPerPass > 0)
+                                {
+                                    requiresLighting = true;
+                                    video->createBuffer(&lightConstantBuffer, sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+                                    video->createBuffer(&lightDataBuffer, sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+
+                                    globalDefinesList[L"lightsPerPass"] = String::from<wchar_t>(lightsPerPass);
+
+                                    lightingData =
+                                        "namespace Lighting                                         \r\n" \
+                                        "{                                                          \r\n" \
+                                        "    struct Data                                            \r\n" \
+                                        "    {                                                      \r\n" \
+                                        "        float4x4 transform;                                \r\n" \
+                                        "        uint     type;                                     \r\n" \
+                                        "        float3   color;                                    \r\n" \
+                                        "        float    range;                                    \r\n" \
+                                        "        float    radius;                                   \r\n" \
+                                        "        float    innerAngle;                               \r\n" \
+                                        "        float    outerAngle;                               \r\n" \
+                                        "    };                                                     \r\n" \
+                                        "                                                           \r\n" \
+                                        "    cbuffer Parameters : register(b3)                      \r\n" \
+                                        "    {                                                      \r\n" \
+                                        "        uint    count;                                     \r\n" \
+                                        "        uint3   padding;                                   \r\n" \
+                                        "    };                                                     \r\n" \
+                                        "                                                           \r\n" \
+                                        "    StructuredBuffer<Data> list : register(t0);            \r\n";
+                                    lightingData.AppendFormat("    static const uint lightsPerPass = %d                   \r\n", lightsPerPass);
+                                    lightingData +=
+                                        "};                                                         \r\n" \
+                                        "                                                           \r\n";
+                                }
                             }
                         }
 
@@ -711,7 +796,7 @@ namespace Gek
                         Gek::XmlNode xmlBlockNode = xmlShaderNode.firstChildElement(L"block");
                         while (xmlBlockNode && SUCCEEDED(resultValue))
                         {
-                            Block block;
+                            BlockData block;
                             block.lighting = String::to<bool>(xmlBlockNode.getAttribute(L"lighting"));
 
                             Gek::XmlNode xmlClearNode = xmlBlockNode.firstChildElement(L"clear");
@@ -734,7 +819,7 @@ namespace Gek
                                     break;
                                 }
 
-                                Pass pass;
+                                PassData pass;
                                 if (xmlPassNode.hasAttribute(L"mode"))
                                 {
                                     CStringW modeString = xmlPassNode.getAttribute(L"mode");
@@ -850,30 +935,7 @@ namespace Gek
 
                                     if (block.lighting)
                                     {
-                                        engineData +=
-                                            "namespace Lighting                                         \r\n" \
-                                            "{                                                          \r\n" \
-                                            "    struct Data                                            \r\n" \
-                                            "    {                                                      \r\n" \
-                                            "        float4x4 transform;                                \r\n" \
-                                            "        uint     type;                                     \r\n" \
-                                            "        float3   color;                                    \r\n" \
-                                            "        float    range;                                    \r\n" \
-                                            "        float    radius;                                   \r\n" \
-                                            "        float    innerAngle;                               \r\n" \
-                                            "        float    outerAngle;                               \r\n" \
-                                            "    };                                                     \r\n" \
-                                            "                                                           \r\n" \
-                                            "    cbuffer Parameters : register(b3)                      \r\n" \
-                                            "    {                                                      \r\n" \
-                                            "        uint    count;                                     \r\n" \
-                                            "        uint3   padding;                                   \r\n" \
-                                            "    };                                                     \r\n" \
-                                            "                                                           \r\n" \
-                                            "    StructuredBuffer<Data> list : register(t0);            \r\n" \
-                                            "    static const uint maximumListSize = 255;               \r\n" \
-                                            "};                                                         \r\n" \
-                                            "                                                           \r\n";
+                                        engineData += lightingData;
                                     }
 
                                     UINT32 stage = 0;
@@ -949,7 +1011,7 @@ namespace Gek
                                         {
                                             CStringW name = globalDefine.first;
                                             CStringW value = globalDefine.second;
-                                            engineData.AppendFormat("#define %S %S\r\n", name.GetString(), value.GetString());
+                                            engineData.AppendFormat("static const float %S = %S;\r\n", name.GetString(), value.GetString());
                                         }
 
                                         CStringW programFileName = xmlProgramNode.firstChildElement(L"source").getText();
@@ -1093,206 +1155,72 @@ namespace Gek
             }
         }
 
-        Block *currentBlock;
-        Pass *currentPass;
-        STDMETHODIMP_(void) setResourceList(RenderContext *renderContext, const std::list<ResourceHandle> &resourceList)
+        STDMETHODIMP_(void) setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &resourceList)
         {
-            GEK_REQUIRE_VOID_RETURN(currentBlock);
-            GEK_REQUIRE_VOID_RETURN(currentPass);
-
+            GEK_REQUIRE_VOID_RETURN(renderContext);
+            GEK_REQUIRE_VOID_RETURN(block);
+            GEK_REQUIRE_VOID_RETURN(pass);
+/*
             UINT32 firstStage = 0;
-            if (currentBlock->lighting)
+            if (static_cast<BlockData *>(block)->lighting)
             {
                 firstStage = 1;
             }
 
-            RenderPipeline *renderPipeline = (currentPass->mode == PassMode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
+            RenderPipeline *renderPipeline = (static_cast<PassData *>(pass)->mode == PassMode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
             for (auto &resource : resourceList)
             {
                 resources->setResource(renderPipeline, resource, firstStage++);
             }
+*/
         }
 
-        STDMETHODIMP_(void) draw(RenderContext *renderContext,
-            std::function<void(std::function<void(void)> drawPasses)> drawLights,
-            std::function<void(RenderPipeline *renderPipeline)> enableLights,
-            std::function<void(void)> drawForward,
-            std::function<void(void)> drawDeferred,
-            std::function<void(UINT32 dispatchWidth, UINT32 dispatchHeight, UINT32 dispatchDepth)> runCompute)
+        STDMETHODIMP_(Block) begin(void)
         {
-            GEK_TRACE_FUNCTION(Shader);
-
-            currentBlock = nullptr;
-            for (auto &block : blockList)
-            {
-                currentBlock = &block;
-                for (auto &clearTarget : block.renderTargetsClearList)
-                {
-                    auto resourceIterator = resourceMap.find(clearTarget.first);
-                    if (resourceIterator != resourceMap.end())
-                    {
-                        resources->clearRenderTarget(renderContext, resourceIterator->second, clearTarget.second);
-                    }
-                }
-
-                auto drawPasses = [&](void) -> void
-                {
-                    for (auto &pass : block.passList)
-                    {
-                        currentPass = &pass;
-
-                        UINT32 stage = 0;
-                        if (block.lighting)
-                        {
-                            stage = 1;
-                        }
-
-                        RenderPipeline *renderPipeline = (pass.mode == PassMode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
-                        if (block.lighting)
-                        {
-                            enableLights(renderPipeline);
-                        }
-
-                        for (auto &resourcePair : pass.resourceList)
-                        {
-                            ResourceHandle resource;
-                            auto resourceIterator = resourceMap.find(resourcePair.first);
-                            if (resourceIterator != resourceMap.end())
-                            {
-                                resource = resourceIterator->second;
-                            }
-
-                            if (resource)
-                            {
-                                auto actionIterator = pass.actionMap.find(resourcePair.first);
-                                if (actionIterator != pass.actionMap.end())
-                                {
-                                    auto &actionMap = actionIterator->second;
-                                    if (actionMap.count(L"generatemipmaps") > 0)
-                                    {
-                                        resources->generateMipMaps(renderContext, resource);
-                                    }
-
-                                    if (actionMap.count(L"flip") > 0)
-                                    {
-                                        resources->flip(resource);
-                                    }
-                                }
-
-                                auto copyResourceIterator = pass.copyResourceMap.find(resourcePair.first);
-                                if (copyResourceIterator != pass.copyResourceMap.end())
-                                {
-                                    CStringW &copyFrom = copyResourceIterator->second;
-                                    auto copyIterator = resourceMap.find(copyFrom);
-                                    if (copyIterator != resourceMap.end())
-                                    {
-                                        resources->copyResource(resource, copyIterator->second);
-                                    }
-                                }
-                            }
-
-                            resources->setResource(renderPipeline, resource, stage++);
-                        }
-
-                        stage = (pass.renderTargetList.empty() ? 0 : pass.renderTargetList.size());
-                        for (auto &resourcePair : pass.unorderedAccessList)
-                        {
-                            ResourceHandle resource;
-                            auto resourceIterator = resourceMap.find(resourcePair.first);
-                            if (resourceIterator != resourceMap.end())
-                            {
-                                resource = resourceIterator->second;
-                            }
-
-                            resources->setUnorderedAccess(renderPipeline, resource, stage++);
-                        }
-
-                        resources->setProgram(renderPipeline, pass.program);
-
-                        ShaderConstantData shaderConstantData;
-                        shaderConstantData.defaultWidth = float(video->getWidth());
-                        shaderConstantData.defaultHeight = float(video->getHeight());
-                        if (pass.mode != PassMode::Compute)
-                        {
-                            resources->setDepthStates(renderContext, pass.depthStates, 0x0);
-                            resources->setRenderStates(renderContext, pass.renderStates);
-                            resources->setBlendStates(renderContext, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
-
-                            if (pass.depthClearFlags > 0)
-                            {
-                                resources->clearDepthStencilTarget(renderContext, depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
-                            }
-
-                            if (pass.renderTargetList.empty())
-                            {
-                                resources->setDefaultTargets(renderContext, depthBuffer);
-                                shaderConstantData.width = float(video->getWidth());
-                                shaderConstantData.height = float(video->getHeight());
-                            }
-                            else
-                            {
-                                UINT32 stage = 0;
-                                static ResourceHandle renderTargetList[8];
-                                for (auto &resourcePair : pass.renderTargetList)
-                                {
-                                    ResourceHandle renderTargetHandle;
-                                    auto resourceIterator = resourceMap.find(resourcePair.first);
-                                    if (resourceIterator != resourceMap.end())
-                                    {
-                                        renderTargetHandle = (*resourceIterator).second;
-                                        VideoTarget *target = resources->getResource<VideoTarget>(renderTargetHandle);
-                                        if (target)
-                                        {
-                                            shaderConstantData.width = float(target->getWidth());
-                                            shaderConstantData.height = float(target->getHeight());
-                                        }
-                                    }
-
-                                    renderTargetList[stage++] = renderTargetHandle;
-                                }
-
-                                resources->setRenderTargets(renderContext, renderTargetList, stage, depthBuffer);
-                            }
-                        }
-
-                        video->updateBuffer(shaderConstantBuffer, &shaderConstantData);
-                        renderContext->getContext()->geometryPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
-                        renderContext->getContext()->vertexPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
-                        renderContext->getContext()->pixelPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
-                        renderContext->getContext()->computePipeline()->setConstantBuffer(shaderConstantBuffer, 2);
-                        switch (pass.mode)
-                        {
-                        case PassMode::Forward:
-                            drawForward();
-                            break;
-
-                        case PassMode::Deferred:
-                            drawDeferred();
-                            break;
-
-                        case PassMode::Compute:
-                            runCompute(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
-                            break;
-                        };
-
-                        renderContext->getContext()->clearResources();
-                        currentPass = nullptr;
-                    }
-                };
-
-                if (block.lighting)
-                {
-                    drawLights(drawPasses);
-                }
-                else
-                {
-                    drawPasses();
-                }
-
-                currentBlock = nullptr;
-            }
+            return Block(LPVOID(&blockList.begin()));
         }
     };
+
+    Shader::Pass::Pass(LPVOID data)
+        : data(data)
+    {
+    }
+
+    Shader::Pass Shader::Pass::next(void)
+    {
+        auto iterator = *reinterpret_cast<std::list<ShaderImplementation::PassData>::iterator *>(data);
+        ++iterator;
+        return Pass(LPVOID(&iterator));
+    }
+
+    Shader::PassMode Shader::Pass::prepare(RenderContext *renderContext)
+    {
+        auto iterator = *reinterpret_cast<std::list<ShaderImplementation::PassData>::iterator *>(data);
+        return iterator->mode;
+    }
+
+    Shader::Block::Block(LPVOID data)
+        : data(data)
+    {
+    }
+
+    Shader::Block Shader::Block::next(void)
+    {
+        auto iterator = *reinterpret_cast<std::list<ShaderImplementation::BlockData>::iterator *>(data);
+        ++iterator;
+        return Block(LPVOID(&iterator));
+    }
+
+    Shader::Pass Shader::Block::begin(void)
+    {
+        auto iterator = *reinterpret_cast<std::list<ShaderImplementation::BlockData>::iterator *>(data);
+        return Pass(LPVOID(&iterator->passList.begin()));
+    }
+
+    void Shader::Block::prepare(RenderContext *renderContext, const Shapes::Frustum &viewFrustum)
+    {
+        auto iterator = *reinterpret_cast<std::list<ShaderImplementation::BlockData>::iterator *>(data);
+    }
 
     REGISTER_CLASS(ShaderImplementation)
 }; // namespace Gek

@@ -9,19 +9,19 @@ namespace Gek
     {
     }
 
-    HRESULT ShapeComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT ShapeComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentParameterList, L"", value);
-        saveParameter(componentParameterList, L"parameters", parameters);
-        saveParameter(componentParameterList, L"skin", skin);
+        saveParameter(componentData, L"", value);
+        saveParameter(componentData, L"parameters", parameters);
+        saveParameter(componentData, L"skin", skin);
         return S_OK;
     }
 
-    HRESULT ShapeComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT ShapeComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentParameterList, L"", value);
-        loadParameter(componentParameterList, L"parameters", parameters);
-        loadParameter(componentParameterList, L"skin", skin);
+        loadParameter(componentData, nullptr, value);
+        loadParameter(componentData, L"parameters", parameters);
+        loadParameter(componentData, L"skin", skin);
         return S_OK;
     }
 

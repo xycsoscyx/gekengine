@@ -9,12 +9,12 @@ namespace Gek
     {
     }
 
-    HRESULT ParticlesComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT ParticlesComponent::save(Population::ComponentDefinition &componentData) const
     {
         return S_OK;
     }
 
-    HRESULT ParticlesComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT ParticlesComponent::load(const Population::ComponentDefinition &componentData)
     {
         return S_OK;
     }

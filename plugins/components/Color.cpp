@@ -10,15 +10,15 @@ namespace Gek
     {
     }
 
-    HRESULT ColorComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT ColorComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentParameterList, L"", value);
+        saveParameter(componentData, L"", value);
         return S_OK;
     }
 
-    HRESULT ColorComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT ColorComponent::load(const Population::ComponentDefinition &componentData)
     {
-        return (loadParameter(componentParameterList, L"", value) ? S_OK : E_INVALIDARG);
+        return (loadParameter(componentData, nullptr, value) ? S_OK : E_INVALIDARG);
     }
 
     class ColorImplementation : public ContextUserMixin

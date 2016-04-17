@@ -219,27 +219,31 @@ namespace Gek
                             Gek::XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
                             while (xmlEntityNode)
                             {
-                                std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> entityParameterList;
+                                EntityDefinition entityDefinition;
                                 Gek::XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
                                 while (xmlComponentNode)
                                 {
-                                    std::unordered_map<CStringW, CStringW> &componentParameterList = entityParameterList[xmlComponentNode.getType()];
-                                    xmlComponentNode.listAttributes([&componentParameterList](LPCWSTR name, LPCWSTR value) -> void
+                                    auto &componentData = entityDefinition[xmlComponentNode.getType()];
+                                    xmlComponentNode.listAttributes([&componentData](LPCWSTR name, LPCWSTR value) -> void
                                     {
-                                        componentParameterList.insert(std::make_pair(name, value));
+                                        componentData.insert(std::make_pair(name, value));
                                     });
 
-                                    componentParameterList[L""] = xmlComponentNode.getText();
+                                    if (!xmlComponentNode.getText().IsEmpty())
+                                    {
+                                        componentData.SetString(xmlComponentNode.getText());
+                                    }
+
                                     xmlComponentNode = xmlComponentNode.nextSiblingElement();
                                 };
 
                                 if (xmlEntityNode.hasAttribute(L"name"))
                                 {
-                                    createEntity(entityParameterList, xmlEntityNode.getAttribute(L"name"));
+                                    createEntity(entityDefinition, xmlEntityNode.getAttribute(L"name"));
                                 }
                                 else
                                 {
-                                    createEntity(entityParameterList, nullptr);
+                                    createEntity(entityDefinition, nullptr);
                                 }
 
                                 xmlEntityNode = xmlEntityNode.nextSiblingElement(L"entity");
@@ -293,37 +297,27 @@ namespace Gek
             entityList.clear();
         }
 
-        STDMETHODIMP_(Entity *) createEntity(const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name)
+        STDMETHODIMP_(Entity *) createEntity(const EntityDefinition &entityData, LPCWSTR name)
         {
             CComPtr<EntityImplementation> entity = new EntityImplementation();
             if (entity)
             {
-                for (auto &componentParameterPair : entityParameterList)
+                for (auto &componentDataPair : entityData)
                 {
-                    auto &componentName = componentParameterPair.first;
-                    auto &componentParameterList = componentParameterPair.second;
-                    auto componentIdentifierPair = componentNameList.find(componentName);
-                    if (componentIdentifierPair == componentNameList.end())
+                    auto &componentName = componentDataPair.first;
+                    auto &componentData = componentDataPair.second;
+                    auto componentIterator = componentNameList.find(componentName);
+                    if (componentIterator != componentNameList.end())
                     {
-                        entity = nullptr;
-                        break;
-                    }
-                    else
-                    {
-                        std::type_index componentIdentifier = componentIdentifierPair->second;
+                        std::type_index componentIdentifier = componentIterator->second;
                         auto componentPair = componentList.find(componentIdentifier);
-                        if (componentPair == componentList.end())
+                        if (componentPair != componentList.end())
                         {
-                            entity = nullptr;
-                            break;
-                        }
-                        else
-                        {
-                            Component *component = componentPair->second;
-                            LPVOID componentData = component->create(componentParameterList);
-                            if (componentData)
+                            Component *componentManager = componentPair->second;
+                            LPVOID component = componentManager->create(componentData);
+                            if (component)
                             {
-                                entity->addComponent(component, componentData);
+                                entity->addComponent(componentManager, component);
                             }
                         }
                     }

@@ -672,8 +672,9 @@ namespace Gek
                         color = entity->getComponent<ColorComponent>();
                     }
 
-                    const auto &shapeComponent = entity->getComponent<ShapeComponent>();
-                    visibleList[&shape][dataEntity.second.skin].push_back(InstanceData(matrix, color, transformComponent.scale));
+                    auto &materialList = visibleList[&shape];
+                    auto &instanceList = materialList[dataEntity.second.skin];
+                    instanceList.push_back(InstanceData(matrix, color, transformComponent.scale));
                 }
             });
 

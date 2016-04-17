@@ -1,10 +1,6 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
-#include <atlpath.h>
-#include <algorithm>
-#include <vector>
-#include <unordered_map>
-#include <map>
+#include "GEK\Engine\Population.h"
 
 class OptimizerException
 {
@@ -68,17 +64,20 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                         Gek::XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
                         while (xmlEntityNode)
                         {
-                            std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> entityParameterList;
+                            Gek::Population::EntityDefinition entityData;
                             Gek::XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
                             while (xmlComponentNode)
                             {
-                                std::unordered_map<CStringW, CStringW> &componentParameterList = entityParameterList[xmlComponentNode.getType()];
-                                xmlComponentNode.listAttributes([&componentParameterList](LPCWSTR name, LPCWSTR value) -> void
+                                Gek::Population::ComponentDefinition &componentData = entityData[xmlComponentNode.getType()];
+                                xmlComponentNode.listAttributes([&componentData](LPCWSTR name, LPCWSTR value) -> void
                                 {
-                                    componentParameterList.insert(std::make_pair(name, value));
+                                    componentData.insert(std::make_pair(name, value));
                                 });
 
-                                componentParameterList[L""] = xmlComponentNode.getText();
+                                if (!xmlComponentNode.getText().IsEmpty())
+                                {
+                                    componentData.SetString(xmlComponentNode.getText());
+                                }
                                 xmlComponentNode = xmlComponentNode.nextSiblingElement();
                             };
 

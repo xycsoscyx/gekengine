@@ -10,50 +10,50 @@ namespace Gek
     {
     }
 
-    HRESULT PointLightComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT PointLightComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentParameterList, L"range", range);
-        saveParameter(componentParameterList, L"radius", radius);
+        saveParameter(componentData, L"range", range);
+        saveParameter(componentData, L"radius", radius);
         return S_OK;
     }
 
-    HRESULT PointLightComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT PointLightComponent::load(const Population::ComponentDefinition &componentData)
     {
-        return (loadParameter(componentParameterList, L"range", range) &&
-            loadParameter(componentParameterList, L"radius", radius) ? S_OK : E_INVALIDARG);
+        return (loadParameter(componentData, L"range", range) &&
+            loadParameter(componentData, L"radius", radius) ? S_OK : E_INVALIDARG);
     }
 
     SpotLightComponent::SpotLightComponent(void)
     {
     }
 
-    HRESULT SpotLightComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT SpotLightComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentParameterList, L"range", range);
-        saveParameter(componentParameterList, L"radius", radius);
-        saveParameter(componentParameterList, L"inner_angle", innerAngle);
-        saveParameter(componentParameterList, L"outer_angle", outerAngle);
+        saveParameter(componentData, L"range", range);
+        saveParameter(componentData, L"radius", radius);
+        saveParameter(componentData, L"inner_angle", innerAngle);
+        saveParameter(componentData, L"outer_angle", outerAngle);
         return S_OK;
     }
 
-    HRESULT SpotLightComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT SpotLightComponent::load(const Population::ComponentDefinition &componentData)
     {
-        return (loadParameter(componentParameterList, L"range", range) &&
-            loadParameter(componentParameterList, L"radius", radius) &&
-            loadParameter(componentParameterList, L"inner_angle", innerAngle) &&
-            loadParameter(componentParameterList, L"outer_angle", outerAngle) ? S_OK : E_INVALIDARG);
+        return (loadParameter(componentData, L"range", range) &&
+            loadParameter(componentData, L"radius", radius) &&
+            loadParameter(componentData, L"inner_angle", innerAngle) &&
+            loadParameter(componentData, L"outer_angle", outerAngle) ? S_OK : E_INVALIDARG);
     }
 
     DirectionalLightComponent::DirectionalLightComponent(void)
     {
     }
 
-    HRESULT DirectionalLightComponent::save(std::unordered_map<CStringW, CStringW> &componentParameterList) const
+    HRESULT DirectionalLightComponent::save(Population::ComponentDefinition &componentData) const
     {
         return E_NOTIMPL;
     }
 
-    HRESULT DirectionalLightComponent::load(const std::unordered_map<CStringW, CStringW> &componentParameterList)
+    HRESULT DirectionalLightComponent::load(const Population::ComponentDefinition &componentData)
     {
         return S_OK;
     }

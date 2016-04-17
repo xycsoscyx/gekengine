@@ -26,15 +26,15 @@ namespace Gek
         };
 
         CameraComponent(void);
-        HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-        HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+        HRESULT save(Population::ComponentDefinition &componentData) const;
+        HRESULT load(const Population::ComponentDefinition &componentData);
     };
 
     struct FirstPersonCameraComponent : public CameraComponent
     {
         FirstPersonCameraComponent(void);
-        HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-        HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+        HRESULT save(Population::ComponentDefinition &componentData) const;
+        HRESULT load(const Population::ComponentDefinition &componentData);
     };
 
     struct ThirdPersonCameraComponent : public CameraComponent
@@ -44,7 +44,7 @@ namespace Gek
         Math::Float3 distance;
 
         ThirdPersonCameraComponent(void);
-        HRESULT save(std::unordered_map<CStringW, CStringW> &componentParameterList) const;
-        HRESULT load(const std::unordered_map<CStringW, CStringW> &componentParameterList);
+        HRESULT save(Population::ComponentDefinition &componentData) const;
+        HRESULT load(const Population::ComponentDefinition &componentData);
     };
 }; // namespace Gek

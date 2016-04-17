@@ -1,9 +1,6 @@
 #pragma once
 
-#include <Windows.h>
-#include <atlbase.h>
-#include <atlstr.h>
-#include <unordered_map>
+#include "GEK\Engine\Population.h"
 #include <typeindex>
 
 #pragma warning(disable:4503)
@@ -17,7 +14,7 @@ namespace Gek
         STDMETHOD_(LPCWSTR, getName)                (THIS) const PURE;
         STDMETHOD_(std::type_index, getIdentifier)  (THIS) const PURE;
 
-        STDMETHOD_(LPVOID, create)                  (const std::unordered_map<CStringW, CStringW> &componentParameterList) PURE;
+        STDMETHOD_(LPVOID, create)                  (const Population::ComponentDefinition &componentData) PURE;
         STDMETHOD_(void, destroy)                   (LPVOID voidData) PURE;
     };
 }; // namespace Gek

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GEK\Utility\Hash.h"
 #include "GEK\Context\Observer.h"
 #include <atlbase.h>
 #include <atlstr.h>
@@ -15,6 +16,14 @@ namespace Gek
 
     DECLARE_INTERFACE_IID(Population, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B") : virtual public IUnknown
     {
+        struct ComponentDefinition : public CStringW, public std::unordered_map<CStringW, CStringW>
+        {
+        };
+
+        struct EntityDefinition : public std::unordered_map<CStringW, ComponentDefinition>
+        {
+        };
+
         STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
 
         STDMETHOD_(float, getWorldTime)             (THIS) PURE;
@@ -26,7 +35,7 @@ namespace Gek
         STDMETHOD(save)                             (THIS_ LPCWSTR fileName) PURE;
         STDMETHOD_(void, free)                      (THIS) PURE;
 
-        STDMETHOD_(Entity *, createEntity)          (THIS_ const std::unordered_map<CStringW, std::unordered_map<CStringW, CStringW>> &entityParameterList, LPCWSTR name = nullptr) PURE;
+        STDMETHOD_(Entity *, createEntity)          (THIS_ const EntityDefinition &entityParameterList, LPCWSTR name = nullptr) PURE;
         STDMETHOD_(void, killEntity)                (THIS_ Entity *entity) PURE;
         STDMETHOD_(Entity *, getNamedEntity)        (THIS_ LPCWSTR name) PURE;
 

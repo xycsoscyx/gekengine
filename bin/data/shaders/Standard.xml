@@ -37,7 +37,7 @@
     </textures>
 
     <buffers>
-        <tileIndexList size="dispatchWidth * dispatchHeight * (maximumListSize + 1)" flags="unorderedAccess">byte</tileIndexList>
+        <tileIndexList size="dispatchWidth * dispatchHeight * (lightsPerPass + 1)" flags="unorderedAccess">byte</tileIndexList>
     </buffers>
 
     <block>
