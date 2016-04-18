@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <shader>
+    <lighting>
+        <lightsPerPass>255</lightsPerPass>
+    </lighting>
+
     <material>
         <maps>
             <albedo bind="float4" default="*color:(1,1,1,1)">Texture2D</albedo>
@@ -15,10 +19,10 @@
 		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
         <gaussianSigma>1.3</gaussianSigma>
-        <guassianRadius>7</guassianRadius>
-        <shadowRadius>1</shadowRadius>
+        <guassianRadius integer="true">7</guassianRadius>
+        <shadowRadius>1.0</shadowRadius>
         <shadowStrength>0.25</shadowStrength>
-        <shadowTapCount>12</shadowTapCount>
+        <shadowTapCount integer="true">12</shadowTapCount>
         <shadowSpiralCount>13</shadowSpiralCount>
         <toneMappingThreshold>1.0</toneMappingThreshold>
     </defines>

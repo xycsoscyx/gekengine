@@ -6,6 +6,7 @@
 #include "GEK\Engine\Resources.h"
 #include "GEK\Utility\XML.h"
 #include <functional>
+#include <memory>
 
 namespace Gek
 {
@@ -14,35 +15,30 @@ namespace Gek
 
     DECLARE_INTERFACE_IID(Shader, "E4410687-FA71-4177-922D-B8A4C30EDB1D") : virtual public IUnknown
     {
-        enum class PassMode : UINT8
+        DECLARE_INTERFACE(Block);
+
+        DECLARE_INTERFACE(Pass)
         {
-            Forward = 0,
-            Deferred,
-            Compute,
+            enum class Mode : UINT8
+            {
+                Forward = 0,
+                Deferred,
+                Compute,
+            };
+
+            typedef std::unique_ptr<Pass> Iterator;
+
+            STDMETHOD_(Iterator, next)              (THIS) PURE;
+            STDMETHOD_(Mode, prepare)           (THIS_ RenderContext *renderContext, Block *block) PURE;
         };
 
-        struct Pass
+        DECLARE_INTERFACE(Block)
         {
-            LPVOID data;
+            typedef std::unique_ptr<Block> Iterator;
 
-            Pass(LPVOID data);
-
-            Pass next(void);
-
-            PassMode prepare(RenderContext *renderContext);
-        };
-
-        struct Block
-        {
-            LPVOID data;
-
-            Block(LPVOID data);
-
-            Block next(void);
-
-            Pass begin(void);
-
-            void prepare(RenderContext *renderContext, const Shapes::Frustum &viewFrustum);
+            STDMETHOD_(Iterator, next)              (THIS) PURE;
+            STDMETHOD_(Pass::Iterator, begin)       (THIS) PURE;
+            STDMETHOD_(void, prepare)               (THIS_ RenderContext *renderContext, const Shapes::Frustum &viewFrustum) PURE;
         };
 
         STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
@@ -50,7 +46,7 @@ namespace Gek
         STDMETHOD_(void, loadResourceList)          (THIS_ LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) PURE;
         STDMETHOD_(void, setResourceList)           (THIS_ RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &materialMapList) PURE;
 
-        STDMETHOD_(Block, begin)                    (THIS) PURE;
+        STDMETHOD_(Block::Iterator, begin)          (THIS) PURE;
     };
 
     DECLARE_INTERFACE_IID(ShaderRegistration, "02B8870C-2AEC-48FD-8F47-34166C9F16C6");

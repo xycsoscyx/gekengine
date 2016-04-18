@@ -315,15 +315,15 @@ namespace Gek
                 videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
                 videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer, 1);
 
-                concurrency::parallel_sort(drawCallList.begin(), drawCallList.end(), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
-                {
-                    return (leftValue.value < rightValue.value);
-                });
-
                 videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
                 videoContext->pixelPipeline()->setSamplerStates(linearClampSamplerStates, 1);
                 videoContext->pixelPipeline()->setSamplerStates(linearWrapSamplerStates, 2);
                 videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+
+                concurrency::parallel_sort(drawCallList.begin(), drawCallList.end(), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
+                {
+                    return (leftValue.value < rightValue.value);
+                });
 
                 ShaderHandle currentShader;
                 PluginHandle currentPlugin;
@@ -331,22 +331,39 @@ namespace Gek
                 for (auto &drawCall = drawCallList.begin(); drawCall != drawCallList.end(); )
                 {
                     currentShader = (*drawCall).shader;
-                    Shader *shader = resources->getResource<Shader, ShaderHandle>(currentShader);
-                    if (!shader)
+                    auto &beginShaderList = drawCall;
+                    while (drawCall != drawCallList.end() && (*drawCall).shader == currentShader)
+                    {
+                        ++drawCall;
+                    };
+
+                    if (drawCall != drawCallList.end())
                     {
                         ++drawCall;
                     }
 
-                    for (auto block = shader->begin(); block; block = block.next())
+                    auto &endShaderList = drawCall;
+                    Shader *shader = resources->getResource<Shader, ShaderHandle>(currentShader);
+                    if (!shader)
                     {
-                        block.prepare(renderContext, viewFrustum);
-                        for (auto pass = block.begin(); pass; pass = pass.next())
+                        continue;
+                    }
+
+                    for (auto block = shader->begin(); block; block = block->next())
+                    {
+                        block->prepare(renderContext, viewFrustum);
+                        for (auto pass = block->begin(); pass; pass = pass->next())
                         {
-                            switch (pass.prepare(renderContext))
+                            switch (pass->prepare(renderContext, block.get()))
                             {
-                            case Shader::PassMode::Forward:
-                                while(drawCall != drawCallList.end())
+                            case Shader::Pass::Mode::Forward:
+                                for (auto &shaderDrawCall = beginShaderList; shaderDrawCall != endShaderList; ++shaderDrawCall)
                                 {
+                                    if (currentShader != (*drawCall).shader)
+                                    {
+                                        break;
+                                    }
+
                                     if (currentPlugin != (*drawCall).plugin)
                                     {
                                         currentPlugin = (*drawCall).plugin;
@@ -368,23 +385,20 @@ namespace Gek
                                             continue;
                                         }
 
-                                        shader->setResourceList(renderContext, block, pass, material->getResourceList());
+                                        shader->setResourceList(renderContext, block.get(), pass.get(), material->getResourceList());
                                     }
 
                                     (*drawCall).onDraw(renderContext);
-                                    ++drawCall;
                                 };
 
                                 break;
 
-                            case Shader::PassMode::Deferred:
+                            case Shader::Pass::Mode::Deferred:
                                 videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
                                 videoContext->drawPrimitive(3, 0);
-                                ++drawCall;
                                 break;
 
-                            case Shader::PassMode::Compute:
-                                ++drawCall;
+                            case Shader::Pass::Mode::Compute:
                                 break;
                             };
                         }

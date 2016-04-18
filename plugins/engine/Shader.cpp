@@ -149,7 +149,7 @@ namespace Gek
 
         struct PassData
         {
-            PassMode mode;
+            Pass::Mode mode;
             UINT32 depthClearFlags;
             float depthClearValue;
             UINT32 stencilClearValue;
@@ -168,7 +168,7 @@ namespace Gek
             UINT32 dispatchDepth;
 
             PassData(void)
-                : mode(PassMode::Forward)
+                : mode(Pass::Mode::Forward)
                 , depthClearFlags(0)
                 , depthClearValue(1.0f)
                 , stencilClearValue(0)
@@ -251,6 +251,7 @@ namespace Gek
         VideoSystem *video;
         Resources *resources;
         bool requiresLighting;
+        CComPtr<VideoBuffer> shaderConstantBuffer;
         CComPtr<VideoBuffer> lightConstantBuffer;
         CComPtr<VideoBuffer> lightDataBuffer;
         std::unordered_map<CStringW, CStringW> globalDefinesList;
@@ -538,7 +539,7 @@ namespace Gek
             return foundDefine;
         }
 
-        CStringW evaluate(LPCWSTR value)
+        CStringW evaluate(LPCWSTR value, bool integer = false)
         {
             CStringW finalValue(value);
             finalValue.Replace(L"displayWidth", String::format(L"%d", video->getWidth()));
@@ -547,15 +548,19 @@ namespace Gek
 
             if (finalValue.Find(L"float2") == 0)
             {
-                return String::format(L"float2(%s)", String::from<wchar_t>(Evaluator::get<Math::Float2>(finalValue.Mid(6))).GetString());
+                return String::format(L"float2%s", String::from<wchar_t>(Evaluator::get<Math::Float2>(finalValue.Mid(6))).GetString());
             }
             else if (finalValue.Find(L"float3") == 0)
             {
-                return String::format(L"float3(%s)", String::from<wchar_t>(Evaluator::get<Math::Float3>(finalValue.Mid(6))).GetString());
+                return String::format(L"float3%s", String::from<wchar_t>(Evaluator::get<Math::Float3>(finalValue.Mid(6))).GetString());
             }
             else if (finalValue.Find(L"float4") == 0)
             {
-                return String::format(L"float4(%s)", String::from<wchar_t>(Evaluator::get<Math::Float4>(finalValue.Mid(6))).GetString());
+                return String::format(L"float4%s", String::from<wchar_t>(Evaluator::get<Math::Float4>(finalValue.Mid(6))).GetString());
+            }
+            else if (integer)
+            {
+                return String::from<wchar_t>(Evaluator::get<UINT32>(finalValue));
             }
             else
             {
@@ -595,6 +600,11 @@ namespace Gek
                 this->video = video;
                 this->resources = resources;
                 resultValue = (this->video && this->resources ? S_OK : E_FAIL);
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
+                resultValue = video->createBuffer(&shaderConstantBuffer, sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
             }
 
             if (SUCCEEDED(resultValue))
@@ -667,7 +677,8 @@ namespace Gek
                                         "    };                                                     \r\n" \
                                         "                                                           \r\n" \
                                         "    StructuredBuffer<Data> list : register(t0);            \r\n";
-                                    lightingData.AppendFormat("    static const uint lightsPerPass = %d                   \r\n", lightsPerPass);
+                                    lightingData.AppendFormat(
+                                        "    static const uint lightsPerPass = %d;                  \r\n", lightsPerPass);
                                     lightingData +=
                                         "};                                                         \r\n" \
                                         "                                                           \r\n";
@@ -683,8 +694,7 @@ namespace Gek
                             {
                                 CStringW name(xmlDefineNode.getType());
                                 CStringW value(xmlDefineNode.getText());
-                                globalDefinesList[name] = evaluate(value);
-
+                                globalDefinesList[name] = evaluate(value, String::to<bool>(xmlDefineNode.getAttribute(L"integer")));
                                 xmlDefineNode = xmlDefineNode.nextSiblingElement();
                             };
                         }
@@ -825,15 +835,15 @@ namespace Gek
                                     CStringW modeString = xmlPassNode.getAttribute(L"mode");
                                     if (modeString.CompareNoCase(L"forward") == 0)
                                     {
-                                        pass.mode = PassMode::Forward;
+                                        pass.mode = Pass::Mode::Forward;
                                     }
                                     else if (modeString.CompareNoCase(L"deferred") == 0)
                                     {
-                                        pass.mode = PassMode::Deferred;
+                                        pass.mode = Pass::Mode::Deferred;
                                     }
                                     else if (modeString.CompareNoCase(L"compute") == 0)
                                     {
-                                        pass.mode = PassMode::Compute;
+                                        pass.mode = Pass::Mode::Compute;
                                     }
                                     else
                                     {
@@ -900,20 +910,20 @@ namespace Gek
                                     pass.unorderedAccessList = loadChildMap(xmlPassNode, L"unorderedaccess");
 
                                     CStringA engineData;
-                                    if (pass.mode != PassMode::Compute)
+                                    if (pass.mode != Pass::Mode::Compute)
                                     {
                                         engineData +=
                                             "struct InputPixel                                          \r\n" \
                                             "{                                                          \r\n";
                                         switch (pass.mode)
                                         {
-                                        case PassMode::Deferred:
+                                        case Pass::Mode::Deferred:
                                             engineData +=
                                                 "    float4 position     : SV_POSITION;                 \r\n" \
                                                 "    float2 texCoord     : TEXCOORD0;                   \r\n";
                                             break;
 
-                                        case PassMode::Forward:
+                                        case Pass::Mode::Forward:
                                             engineData +=
                                                 "    float4 position     : SV_POSITION;                 \r\n" \
                                                 "    float2 texCoord     : TEXCOORD0;                   \r\n" \
@@ -962,7 +972,7 @@ namespace Gek
 
                                     CStringA resourceData;
                                     UINT32 resourceStage(block.lighting ? 1 : 0);
-                                    if (pass.mode == PassMode::Forward)
+                                    if (pass.mode == Pass::Mode::Forward)
                                     {
                                         for (auto &map : mapList)
                                         {
@@ -994,6 +1004,30 @@ namespace Gek
                                     Gek::XmlNode xmlProgramNode = xmlPassNode.firstChildElement(L"program");
                                     if (xmlProgramNode.hasChildElement(L"source") && xmlProgramNode.hasChildElement(L"entry"))
                                     {
+                                        auto addDefine = [&engineData](const CStringW &name, const CStringW &value) -> void
+                                        {
+                                            if (value.Find(L"float2") == 0)
+                                            {
+                                                engineData.AppendFormat("static const float2 %S = %S;\r\n", name.GetString(), value.GetString());
+                                            }
+                                            else if (value.Find(L"float3") == 0)
+                                            {
+                                                engineData.AppendFormat("static const float3 %S = %S;\r\n", name.GetString(), value.GetString());
+                                            }
+                                            else if (value.Find(L"float4") == 0)
+                                            {
+                                                engineData.AppendFormat("static const float4 %S = %S;\r\n", name.GetString(), value.GetString());
+                                            }
+                                            else if (value.Find(L".") < 0)
+                                            {
+                                                engineData.AppendFormat("static const uint %S = %S;\r\n", name.GetString(), value.GetString());
+                                            }
+                                            else
+                                            {
+                                                engineData.AppendFormat("static const float %S = %S;\r\n", name.GetString(), value.GetString());
+                                            }
+                                        };
+
                                         Gek::XmlNode xmlDefinesNode = xmlPassNode.firstChildElement(L"defines");
                                         if (xmlDefinesNode)
                                         {
@@ -1002,7 +1036,8 @@ namespace Gek
                                             {
                                                 CStringW name = xmlDefineNode.getType();
                                                 CStringW value = evaluate(xmlDefineNode.getText());
-                                                engineData.AppendFormat("#define %S %S\r\n", name.GetString(), value.GetString());
+                                                addDefine(name, value);
+
                                                 xmlDefineNode = xmlDefineNode.nextSiblingElement();
                                             };
                                         }
@@ -1011,7 +1046,7 @@ namespace Gek
                                         {
                                             CStringW name = globalDefine.first;
                                             CStringW value = globalDefine.second;
-                                            engineData.AppendFormat("static const float %S = %S;\r\n", name.GetString(), value.GetString());
+                                            addDefine(name, value);
                                         }
 
                                         CStringW programFileName = xmlProgramNode.firstChildElement(L"source").getText();
@@ -1047,7 +1082,7 @@ namespace Gek
                                             pass.dispatchDepth = std::max(String::to<UINT32>(evaluate(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
                                         }
 
-                                        if (pass.mode == PassMode::Compute)
+                                        if (pass.mode == Pass::Mode::Compute)
                                         {
                                             UINT32 stage = 0;
                                             CStringA unorderedAccessData;
@@ -1155,72 +1190,228 @@ namespace Gek
             }
         }
 
+        Pass::Mode preparePass(RenderContext *renderContext, BlockData &block, PassData &pass)
+        {
+            renderContext->getContext()->clearResources();
+
+            UINT32 stage = 0;
+            if (block.lighting)
+            {
+                stage = 1;
+            }
+
+            RenderPipeline *renderPipeline = (pass.mode == Pass::Mode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
+            if (block.lighting)
+            {
+            }
+
+            for (auto &resourcePair : pass.resourceList)
+            {
+                ResourceHandle resource;
+                auto resourceIterator = resourceMap.find(resourcePair.first);
+                if (resourceIterator != resourceMap.end())
+                {
+                    resource = resourceIterator->second;
+                }
+
+                if (resource)
+                {
+                    auto actionIterator = pass.actionMap.find(resourcePair.first);
+                    if (actionIterator != pass.actionMap.end())
+                    {
+                        auto &actionMap = actionIterator->second;
+                        if (actionMap.count(L"generatemipmaps") > 0)
+                        {
+                            resources->generateMipMaps(renderContext, resource);
+                        }
+
+                        if (actionMap.count(L"flip") > 0)
+                        {
+                            resources->flip(resource);
+                        }
+                    }
+
+                    auto copyResourceIterator = pass.copyResourceMap.find(resourcePair.first);
+                    if (copyResourceIterator != pass.copyResourceMap.end())
+                    {
+                        CStringW &copyFrom = copyResourceIterator->second;
+                        auto copyIterator = resourceMap.find(copyFrom);
+                        if (copyIterator != resourceMap.end())
+                        {
+                            resources->copyResource(resource, copyIterator->second);
+                        }
+                    }
+                }
+
+                resources->setResource(renderPipeline, resource, stage++);
+            }
+
+            stage = (pass.renderTargetList.empty() ? 0 : pass.renderTargetList.size());
+            for (auto &resourcePair : pass.unorderedAccessList)
+            {
+                ResourceHandle resource;
+                auto resourceIterator = resourceMap.find(resourcePair.first);
+                if (resourceIterator != resourceMap.end())
+                {
+                    resource = resourceIterator->second;
+                }
+
+                resources->setUnorderedAccess(renderPipeline, resource, stage++);
+            }
+
+            resources->setProgram(renderPipeline, pass.program);
+
+            ShaderConstantData shaderConstantData;
+            shaderConstantData.defaultWidth = float(video->getWidth());
+            shaderConstantData.defaultHeight = float(video->getHeight());
+            if (pass.mode != Pass::Mode::Compute)
+            {
+                resources->setDepthStates(renderContext, pass.depthStates, 0x0);
+                resources->setRenderStates(renderContext, pass.renderStates);
+                resources->setBlendStates(renderContext, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
+
+                if (pass.depthClearFlags > 0)
+                {
+                    resources->clearDepthStencilTarget(renderContext, depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
+                }
+
+                if (pass.renderTargetList.empty())
+                {
+                    resources->setDefaultTargets(renderContext, depthBuffer);
+                    shaderConstantData.width = float(video->getWidth());
+                    shaderConstantData.height = float(video->getHeight());
+                }
+                else
+                {
+                    UINT32 stage = 0;
+                    static ResourceHandle renderTargetList[8];
+                    for (auto &resourcePair : pass.renderTargetList)
+                    {
+                        ResourceHandle renderTargetHandle;
+                        auto resourceIterator = resourceMap.find(resourcePair.first);
+                        if (resourceIterator != resourceMap.end())
+                        {
+                            renderTargetHandle = (*resourceIterator).second;
+                            VideoTarget *target = resources->getResource<VideoTarget>(renderTargetHandle);
+                            if (target)
+                            {
+                                shaderConstantData.width = float(target->getWidth());
+                                shaderConstantData.height = float(target->getHeight());
+                            }
+                        }
+
+                        renderTargetList[stage++] = renderTargetHandle;
+                    }
+
+                    resources->setRenderTargets(renderContext, renderTargetList, stage, depthBuffer);
+                }
+            }
+
+            video->updateBuffer(shaderConstantBuffer, &shaderConstantData);
+            renderContext->getContext()->geometryPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+            renderContext->getContext()->vertexPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+            renderContext->getContext()->pixelPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+            renderContext->getContext()->computePipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+            return pass.mode;
+        }
+
+        void prepareBlock(RenderContext *renderContext, BlockData &block)
+        {
+            if (block.lighting)
+            {
+            }
+
+            for (auto &clearTarget : block.renderTargetsClearList)
+            {
+                auto resourceIterator = resourceMap.find(clearTarget.first);
+                if (resourceIterator != resourceMap.end())
+                {
+                    resources->clearRenderTarget(renderContext, resourceIterator->second, clearTarget.second);
+                }
+            }
+        }
+
+        class PassImplementation : public Pass
+        {
+        public:
+            ShaderImplementation *shader;
+            std::list<ShaderImplementation::PassData>::iterator current, end;
+
+        public:
+            PassImplementation(ShaderImplementation *shader, std::list<ShaderImplementation::PassData>::iterator current, std::list<ShaderImplementation::PassData>::iterator end)
+                : shader(shader)
+                , current(current)
+                , end(end)
+            {
+            }
+
+            STDMETHODIMP_(Iterator) next(void)
+            {
+                auto next = current;
+                return Iterator(++next == end ? nullptr : new PassImplementation(shader, next, end));
+            }
+
+            STDMETHODIMP_(Mode) prepare(RenderContext *renderContext, Block *block)
+            {
+                return shader->preparePass(renderContext, (*static_cast<BlockImplementation *>(block)->current), (*current));
+            }
+        };
+
+        class BlockImplementation : public Block
+        {
+        public:
+            ShaderImplementation *shader;
+            std::list<ShaderImplementation::BlockData>::iterator current, end;
+
+        public:
+            BlockImplementation(ShaderImplementation *shader, std::list<ShaderImplementation::BlockData>::iterator current, std::list<ShaderImplementation::BlockData>::iterator end)
+                : shader(shader)
+                , current(current)
+                , end(end)
+            {
+            }
+
+            STDMETHODIMP_(Iterator) next(void)
+            {
+                auto next = current;
+                return Iterator(++next == end ? nullptr : new BlockImplementation(shader, next, end));
+            }
+
+            STDMETHODIMP_(Pass::Iterator) begin(void)
+            {
+                return Pass::Iterator(current->passList.empty() ? nullptr : new PassImplementation(shader, current->passList.begin(), current->passList.end()));
+            }
+
+            STDMETHODIMP_(void) prepare(RenderContext *renderContext, const Shapes::Frustum &viewFrustum)
+            {
+                shader->prepareBlock(renderContext, (*current));
+            }
+        };
+
         STDMETHODIMP_(void) setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &resourceList)
         {
             GEK_REQUIRE_VOID_RETURN(renderContext);
             GEK_REQUIRE_VOID_RETURN(block);
             GEK_REQUIRE_VOID_RETURN(pass);
-/*
+
             UINT32 firstStage = 0;
-            if (static_cast<BlockData *>(block)->lighting)
+            if (static_cast<BlockImplementation *>(block)->current->lighting)
             {
                 firstStage = 1;
             }
 
-            RenderPipeline *renderPipeline = (static_cast<PassData *>(pass)->mode == PassMode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
+            RenderPipeline *renderPipeline = (static_cast<PassImplementation *>(pass)->current->mode == Pass::Mode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
             for (auto &resource : resourceList)
             {
                 resources->setResource(renderPipeline, resource, firstStage++);
             }
-*/
         }
 
-        STDMETHODIMP_(Block) begin(void)
+        STDMETHODIMP_(Block::Iterator) begin(void)
         {
-            return Block(LPVOID(&blockList.begin()));
+            return Block::Iterator(blockList.empty() ? nullptr : new BlockImplementation(this, blockList.begin(), blockList.end()));
         }
     };
-
-    Shader::Pass::Pass(LPVOID data)
-        : data(data)
-    {
-    }
-
-    Shader::Pass Shader::Pass::next(void)
-    {
-        auto iterator = *reinterpret_cast<std::list<ShaderImplementation::PassData>::iterator *>(data);
-        ++iterator;
-        return Pass(LPVOID(&iterator));
-    }
-
-    Shader::PassMode Shader::Pass::prepare(RenderContext *renderContext)
-    {
-        auto iterator = *reinterpret_cast<std::list<ShaderImplementation::PassData>::iterator *>(data);
-        return iterator->mode;
-    }
-
-    Shader::Block::Block(LPVOID data)
-        : data(data)
-    {
-    }
-
-    Shader::Block Shader::Block::next(void)
-    {
-        auto iterator = *reinterpret_cast<std::list<ShaderImplementation::BlockData>::iterator *>(data);
-        ++iterator;
-        return Block(LPVOID(&iterator));
-    }
-
-    Shader::Pass Shader::Block::begin(void)
-    {
-        auto iterator = *reinterpret_cast<std::list<ShaderImplementation::BlockData>::iterator *>(data);
-        return Pass(LPVOID(&iterator->passList.begin()));
-    }
-
-    void Shader::Block::prepare(RenderContext *renderContext, const Shapes::Frustum &viewFrustum)
-    {
-        auto iterator = *reinterpret_cast<std::list<ShaderImplementation::BlockData>::iterator *>(data);
-    }
 
     REGISTER_CLASS(ShaderImplementation)
 }; // namespace Gek

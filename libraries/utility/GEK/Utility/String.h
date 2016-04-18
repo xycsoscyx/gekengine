@@ -256,7 +256,7 @@ namespace Gek
         CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(double value)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
-            stream << value;
+            stream << std::showpoint << value;
             return stream.str().c_str();
         }
 
@@ -264,7 +264,7 @@ namespace Gek
         CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(float value)
         {
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
-            stream << value;
+            stream << std::showpoint << value;
             return stream.str().c_str();
         }
 
