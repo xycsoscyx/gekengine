@@ -332,18 +332,13 @@ namespace Gek
                 {
                     currentShader = (*drawCall).shader;
 
-                    auto &beginShaderList = drawCall;
+                    auto beginShaderList = drawCall;
                     while (drawCall != drawCallList.end() && (*drawCall).shader == currentShader)
                     {
                         ++drawCall;
                     };
 
-                    if (drawCall != drawCallList.end())
-                    {
-                        ++drawCall;
-                    }
-
-                    auto &endShaderList = drawCall;
+                    auto endShaderList = drawCall;
                     Shader *shader = resources->getResource<Shader, ShaderHandle>(currentShader);
                     if (!shader)
                     {
