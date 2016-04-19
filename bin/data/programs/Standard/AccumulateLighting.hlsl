@@ -22,11 +22,11 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(tileSize).xx));
     const uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
     const uint bufferOffset = (tileIndex * (Lighting::lightsPerPass + 1));
+    uint lightTileCount = Resources::tileIndexList[bufferOffset];
+    uint lightTileStart = (bufferOffset + 1);
+    uint lightTileEnd = (lightTileStart + lightTileCount);
 
     float3 surfaceColor = 0.0;
-
-    uint lightTileStart = (bufferOffset + 1);
-    uint lightTileEnd = (lightTileStart + Resources::tileIndexList[bufferOffset]);
 
     [loop]
     for (uint lightTileIndex = lightTileStart; lightTileIndex < lightTileEnd; ++lightTileIndex)
@@ -34,7 +34,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         uint lightIndex = Resources::tileIndexList[lightTileIndex];
         Lighting::Data light = Lighting::list[lightIndex];
 
-        float3 lightRay = (light.transform._m30_m31_m32 - surfacePosition);
+        float3 lightRay = (light.position.xyz - surfacePosition);
         float3 centerToRay = ((dot(lightRay, reflectNormal) * reflectNormal) - lightRay);
         float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
         float3 lightDirection = normalize(closestPoint);

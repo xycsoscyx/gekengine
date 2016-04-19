@@ -667,7 +667,8 @@ namespace Gek
                                         "{                                                          \r\n" \
                                         "    struct Data                                            \r\n" \
                                         "    {                                                      \r\n" \
-                                        "        float4x4 transform;                                \r\n" \
+                                        "        float3x4 rotation;                                 \r\n" \
+                                        "        float4   position;                                 \r\n" \
                                         "        uint     type;                                     \r\n" \
                                         "        float3   color;                                    \r\n" \
                                         "        float    range;                                    \r\n" \
@@ -1473,14 +1474,12 @@ namespace Gek
             concurrency::concurrent_vector<LightData> lightData;
             population->listEntities<TransformComponent, PointLightComponent, ColorComponent>([&](Entity *entity) -> void
             {
-                GEK_REQUIRE_VOID_RETURN(entity);
-
                 auto &transform = entity->getComponent<TransformComponent>();
                 auto &light = entity->getComponent<PointLightComponent>();
                 if (viewFrustum.isVisible(Shapes::Sphere(transform.position, light.range)))
                 {
                     auto &color = entity->getComponent<ColorComponent>();
-                    Math::Float4x4 lightTransform(viewMatrix * transform.getMatrix());
+                    Math::Float4x4 lightTransform(transform.getMatrix() * viewMatrix);
                     lightData.push_back(LightData(light, color, lightTransform));
                 }
             });
@@ -1492,7 +1491,7 @@ namespace Gek
                 if (viewFrustum.isVisible(Shapes::Sphere(transform.position, light.range)))
                 {
                     auto &color = entity->getComponent<ColorComponent>();
-                    Math::Float4x4 lightTransform(viewMatrix * transform.getMatrix());
+                    Math::Float4x4 lightTransform(transform.getMatrix() * viewMatrix);
                     lightData.push_back(LightData(light, color, lightTransform));
                 }
             });
@@ -1502,7 +1501,7 @@ namespace Gek
                 auto &transform = entity->getComponent<TransformComponent>();
                 auto &light = entity->getComponent<DirectionalLightComponent>();
                 auto &color = entity->getComponent<ColorComponent>();
-                Math::Float4x4 lightTransform(viewMatrix * transform.getMatrix());
+                Math::Float4x4 lightTransform(transform.getMatrix() * viewMatrix);
                 lightData.push_back(LightData(light, color, lightTransform));
             });
 
