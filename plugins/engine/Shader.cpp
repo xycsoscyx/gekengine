@@ -4,16 +4,20 @@
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
-#include "GEK\Engine\Resources.h"
-#include "GEK\Engine\Render.h"
+#include "GEK\Shapes\Sphere.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\System\VideoSystem.h"
+#include "GEK\Engine\Resources.h"
+#include "GEK\Engine\Render.h"
+#include "GEK\Engine\Population.h"
+#include "GEK\Engine\Entity.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
 #include <atlpath.h>
 #include <set>
 #include <ppl.h>
+#include <concurrent_vector.h>
 
 namespace Gek
 {
@@ -195,10 +199,8 @@ namespace Gek
         __declspec(align(16))
         struct ShaderConstantData
         {
-            float defaultWidth;
-            float defaultHeight;
-            float width;
-            float height;
+            Math::Float2 targetSize;
+            float padding[2];
         };
 
         __declspec(align(16))
@@ -250,15 +252,18 @@ namespace Gek
     private:
         VideoSystem *video;
         Resources *resources;
-        bool requiresLighting;
+        Population *population;
         CComPtr<VideoBuffer> shaderConstantBuffer;
         CComPtr<VideoBuffer> lightConstantBuffer;
         CComPtr<VideoBuffer> lightDataBuffer;
+        UINT32 lightsPerPass;
         std::unordered_map<CStringW, CStringW> globalDefinesList;
         std::list<Map> mapList;
         ResourceHandle depthBuffer;
         std::unordered_map<CStringW, ResourceHandle> resourceMap;
         std::list<BlockData> blockList;
+
+        std::vector<LightData> lightList;
 
     private:
         static MapType getMapType(LPCWSTR mapType)
@@ -572,7 +577,8 @@ namespace Gek
         ShaderImplementation(void)
             : video(nullptr)
             , resources(nullptr)
-            , requiresLighting(false)
+            , population(nullptr)
+            , lightsPerPass(0)
         {
         }
 
@@ -595,11 +601,13 @@ namespace Gek
             HRESULT resultValue = E_FAIL;
             CComQIPtr<VideoSystem> video(initializerContext);
             CComQIPtr<Resources> resources(initializerContext);
-            if (video && resources)
+            CComQIPtr<Population> population(initializerContext);
+            if (video && resources && population)
             {
                 this->video = video;
                 this->resources = resources;
-                resultValue = (this->video && this->resources ? S_OK : E_FAIL);
+                this->population = population;
+                resultValue = (this->video && this->resources && this->population ? S_OK : E_FAIL);
             }
 
             if (SUCCEEDED(resultValue))
@@ -640,7 +648,6 @@ namespace Gek
                         }
 
                         CStringA lightingData;
-                        UINT32 lightsPerPass = 0;
                         Gek::XmlNode xmlLightingNode = xmlShaderNode.firstChildElement(L"lighting");
                         if (xmlLightingNode)
                         {
@@ -650,7 +657,6 @@ namespace Gek
                                 lightsPerPass = String::to<UINT32>(xmlLightsPerPass.getText());
                                 if (lightsPerPass > 0)
                                 {
-                                    requiresLighting = true;
                                     video->createBuffer(&lightConstantBuffer, sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
                                     video->createBuffer(&lightDataBuffer, sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
 
@@ -808,6 +814,11 @@ namespace Gek
                         {
                             BlockData block;
                             block.lighting = String::to<bool>(xmlBlockNode.getAttribute(L"lighting"));
+                            if (block.lighting && lightsPerPass <= 0)
+                            {
+                                resultValue = E_INVALIDARG;
+                                break;
+                            }
 
                             Gek::XmlNode xmlClearNode = xmlBlockNode.firstChildElement(L"clear");
                             if (xmlClearNode)
@@ -1195,14 +1206,12 @@ namespace Gek
             renderContext->getContext()->clearResources();
 
             UINT32 stage = 0;
-            if (block.lighting)
-            {
-                stage = 1;
-            }
-
             RenderPipeline *renderPipeline = (pass.mode == Pass::Mode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
             if (block.lighting)
             {
+                renderPipeline->getPipeline()->setResource(lightDataBuffer, 0);
+                renderPipeline->getPipeline()->setConstantBuffer(lightConstantBuffer, 3);
+                stage = 1;
             }
 
             for (auto &resourcePair : pass.resourceList)
@@ -1262,10 +1271,14 @@ namespace Gek
             resources->setProgram(renderPipeline, pass.program);
 
             ShaderConstantData shaderConstantData;
-            shaderConstantData.defaultWidth = float(video->getWidth());
-            shaderConstantData.defaultHeight = float(video->getHeight());
-            if (pass.mode != Pass::Mode::Compute)
+            switch (pass.mode)
             {
+            case Pass::Mode::Compute:
+                shaderConstantData.targetSize.x = float(video->getWidth());
+                shaderConstantData.targetSize.y = float(video->getHeight());
+                break;
+
+            default:
                 resources->setDepthStates(renderContext, pass.depthStates, 0x0);
                 resources->setRenderStates(renderContext, pass.renderStates);
                 resources->setBlendStates(renderContext, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
@@ -1278,8 +1291,8 @@ namespace Gek
                 if (pass.renderTargetList.empty())
                 {
                     resources->setDefaultTargets(renderContext, depthBuffer);
-                    shaderConstantData.width = float(video->getWidth());
-                    shaderConstantData.height = float(video->getHeight());
+                    shaderConstantData.targetSize.x = float(video->getWidth());
+                    shaderConstantData.targetSize.y = float(video->getHeight());
                 }
                 else
                 {
@@ -1295,8 +1308,8 @@ namespace Gek
                             VideoTarget *target = resources->getResource<VideoTarget>(renderTargetHandle);
                             if (target)
                             {
-                                shaderConstantData.width = float(target->getWidth());
-                                shaderConstantData.height = float(target->getHeight());
+                                shaderConstantData.targetSize.x = float(target->getWidth());
+                                shaderConstantData.targetSize.y = float(target->getHeight());
                             }
                         }
 
@@ -1305,7 +1318,9 @@ namespace Gek
 
                     resources->setRenderTargets(renderContext, renderTargetList, stage, depthBuffer);
                 }
-            }
+
+                break;
+            };
 
             video->updateBuffer(shaderConstantBuffer, &shaderConstantData);
             renderContext->getContext()->geometryPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
@@ -1315,12 +1330,8 @@ namespace Gek
             return pass.mode;
         }
 
-        void prepareBlock(RenderContext *renderContext, BlockData &block)
+        bool prepareBlock(UINT32 &base, RenderContext *renderContext, BlockData &block)
         {
-            if (block.lighting)
-            {
-            }
-
             for (auto &clearTarget : block.renderTargetsClearList)
             {
                 auto resourceIterator = resourceMap.find(clearTarget.first);
@@ -1329,17 +1340,55 @@ namespace Gek
                     resources->clearRenderTarget(renderContext, resourceIterator->second, clearTarget.second);
                 }
             }
+
+            if (block.lighting)
+            {
+                if (base < lightList.size())
+                {
+                    UINT32 lightListCount = lightList.size();
+                    UINT32 lightPassCount = std::min((lightListCount - base), lightsPerPass);
+
+                    LightConstantData *lightConstants = nullptr;
+                    if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (LPVOID *)&lightConstants)))
+                    {
+                        lightConstants->count = lightPassCount;
+                        video->unmapBuffer(lightConstantBuffer);
+                    }
+
+                    LightData *lightingData = nullptr;
+                    if (SUCCEEDED(video->mapBuffer(lightDataBuffer, (LPVOID *)&lightingData)))
+                    {
+                        memcpy(lightingData, &lightList[base], (sizeof(LightData) * lightPassCount));
+                        video->unmapBuffer(lightDataBuffer);
+                    }
+
+                    base += lightsPerPass;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return (base++ == 0);
+            }
         }
 
         class PassImplementation : public Pass
         {
         public:
+            RenderContext *renderContext;
             ShaderImplementation *shader;
+            Block *block;
             std::list<ShaderImplementation::PassData>::iterator current, end;
 
         public:
-            PassImplementation(ShaderImplementation *shader, std::list<ShaderImplementation::PassData>::iterator current, std::list<ShaderImplementation::PassData>::iterator end)
-                : shader(shader)
+            PassImplementation(RenderContext *renderContext, ShaderImplementation *shader, Block *block, std::list<ShaderImplementation::PassData>::iterator current, std::list<ShaderImplementation::PassData>::iterator end)
+                : renderContext(renderContext)
+                , shader(shader)
+                , block(block)
                 , current(current)
                 , end(end)
             {
@@ -1348,10 +1397,10 @@ namespace Gek
             STDMETHODIMP_(Iterator) next(void)
             {
                 auto next = current;
-                return Iterator(++next == end ? nullptr : new PassImplementation(shader, next, end));
+                return Iterator(++next == end ? nullptr : new PassImplementation(renderContext, shader, block, next, end));
             }
 
-            STDMETHODIMP_(Mode) prepare(RenderContext *renderContext, Block *block)
+            STDMETHODIMP_(Mode) prepare(void)
             {
                 return shader->preparePass(renderContext, (*static_cast<BlockImplementation *>(block)->current), (*current));
             }
@@ -1360,31 +1409,35 @@ namespace Gek
         class BlockImplementation : public Block
         {
         public:
+            RenderContext *renderContext;
             ShaderImplementation *shader;
             std::list<ShaderImplementation::BlockData>::iterator current, end;
+            UINT32 base;
 
         public:
-            BlockImplementation(ShaderImplementation *shader, std::list<ShaderImplementation::BlockData>::iterator current, std::list<ShaderImplementation::BlockData>::iterator end)
-                : shader(shader)
+            BlockImplementation(RenderContext *renderContext, ShaderImplementation *shader, std::list<ShaderImplementation::BlockData>::iterator current, std::list<ShaderImplementation::BlockData>::iterator end)
+                : renderContext(renderContext)
+                , shader(shader)
                 , current(current)
                 , end(end)
+                , base(0)
             {
             }
 
             STDMETHODIMP_(Iterator) next(void)
             {
                 auto next = current;
-                return Iterator(++next == end ? nullptr : new BlockImplementation(shader, next, end));
+                return Iterator(++next == end ? nullptr : new BlockImplementation(renderContext, shader, next, end));
             }
 
             STDMETHODIMP_(Pass::Iterator) begin(void)
             {
-                return Pass::Iterator(current->passList.empty() ? nullptr : new PassImplementation(shader, current->passList.begin(), current->passList.end()));
+                return Pass::Iterator(current->passList.empty() ? nullptr : new PassImplementation(renderContext, shader, this, current->passList.begin(), current->passList.end()));
             }
 
-            STDMETHODIMP_(void) prepare(RenderContext *renderContext, const Shapes::Frustum &viewFrustum)
+            STDMETHODIMP_(bool) prepare(void)
             {
-                shader->prepareBlock(renderContext, (*current));
+                return shader->prepareBlock(base, renderContext, (*current));
             }
         };
 
@@ -1407,9 +1460,49 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(Block::Iterator) begin(void)
+        STDMETHODIMP_(Block::Iterator) begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
-            return Block::Iterator(blockList.empty() ? nullptr : new BlockImplementation(this, blockList.begin(), blockList.end()));
+            GEK_REQUIRE_RETURN(population, Block::Iterator(nullptr));
+            GEK_REQUIRE_RETURN(renderContext, Block::Iterator(nullptr));
+
+            concurrency::concurrent_vector<LightData> lightData;
+            population->listEntities<TransformComponent, PointLightComponent, ColorComponent>([&](Entity *entity) -> void
+            {
+                GEK_REQUIRE_VOID_RETURN(entity);
+
+                auto &transform = entity->getComponent<TransformComponent>();
+                auto &light = entity->getComponent<PointLightComponent>();
+                if (viewFrustum.isVisible(Shapes::Sphere(transform.position, light.range)))
+                {
+                    auto &color = entity->getComponent<ColorComponent>();
+                    Math::Float4x4 lightTransform(viewMatrix * transform.getMatrix());
+                    lightData.push_back(LightData(light, color, lightTransform));
+                }
+            });
+
+            population->listEntities<TransformComponent, SpotLightComponent, ColorComponent>([&](Entity *entity) -> void
+            {
+                auto &transform = entity->getComponent<TransformComponent>();
+                auto &light = entity->getComponent<SpotLightComponent>();
+                if (viewFrustum.isVisible(Shapes::Sphere(transform.position, light.range)))
+                {
+                    auto &color = entity->getComponent<ColorComponent>();
+                    Math::Float4x4 lightTransform(viewMatrix * transform.getMatrix());
+                    lightData.push_back(LightData(light, color, lightTransform));
+                }
+            });
+
+            population->listEntities<TransformComponent, DirectionalLightComponent, ColorComponent>([&](Entity *entity) -> void
+            {
+                auto &transform = entity->getComponent<TransformComponent>();
+                auto &light = entity->getComponent<DirectionalLightComponent>();
+                auto &color = entity->getComponent<ColorComponent>();
+                Math::Float4x4 lightTransform(viewMatrix * transform.getMatrix());
+                lightData.push_back(LightData(light, color, lightTransform));
+            });
+
+            lightList.assign(lightData.begin(), lightData.end());
+            return Block::Iterator(blockList.empty() ? nullptr : new BlockImplementation(renderContext, this, blockList.begin(), blockList.end()));
         }
     };
 

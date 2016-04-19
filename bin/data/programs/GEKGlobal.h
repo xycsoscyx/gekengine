@@ -41,9 +41,7 @@ namespace Shader
 {
     cbuffer Constants : register(b2)
     {
-        float defaultWidth;
-        float defaultHeight;
-        float width;
-        float height;
+        float2 targetSize;
+        float buffer[2];
     };
 };

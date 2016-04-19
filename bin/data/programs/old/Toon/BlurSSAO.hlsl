@@ -15,7 +15,7 @@ static const float gs_aGuassian[][7] =
             
 float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 {
-    float2 nPixelSize = rcp(float2(Shader::width, Shader::height));
+    float2 nPixelSize = rcp(Shader::targetSize);
 
 	float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texCoord);
 	float4 nCenterColor = gs_pOutputBuffer.Sample(gs_pPointSampler, kInput.texCoord);

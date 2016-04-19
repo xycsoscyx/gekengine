@@ -37,8 +37,8 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
     [branch]
     if (pixelIndex == 0)
     {
-        float2 depthBufferSize = float2(Shader::defaultWidth, Shader::defaultHeight);
-        float2 tileScale = depthBufferSize * rcp(float(2 * tileSize));
+        float2 depthBufferSize = Shader::targetSize;
+        float2 tileScale = (depthBufferSize * rcp(float(2.0 * tileSize)));
         float2 tileBias = tileScale - float2(tilePosition.xy);
 
         float3 frustumXPlane = float3(Camera::projectionMatrix[0][0] * tileScale.x, 0.0, tileBias.x);

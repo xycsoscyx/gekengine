@@ -12,7 +12,7 @@ float calculateGaussianWeight(int offset)
 
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float2 pixelSize = rcp(float2(Shader::width, Shader::height));
+    float2 pixelSize = rcp(Shader::targetSize);
     float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
     float finalAmbientOcclusion = 0.0;
