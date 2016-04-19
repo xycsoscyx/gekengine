@@ -31,9 +31,6 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
 
     GroupMemoryBarrierWithGroupSync();
 
-    float minimumDepth = asfloat(tileMinimumDepth);
-    float maximumDepth = asfloat(tileMaximumDepth);
-
     [branch]
     if (pixelIndex == 0)
     {
@@ -49,17 +46,14 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         tileFrustum[1] = float4(normalize(frustumZPlane + frustumXPlane), 0.0),
         tileFrustum[2] = float4(normalize(frustumZPlane - frustumYPlane), 0.0),
         tileFrustum[3] = float4(normalize(frustumZPlane + frustumYPlane), 0.0),
-        tileFrustum[4] = float4(0.0, 0.0, 1.0, -minimumDepth);
-        tileFrustum[5] = float4(0.0, 0.0, -1.0, maximumDepth);
+        tileFrustum[4] = float4(0.0, 0.0, 1.0, -asfloat(tileMinimumDepth));
+        tileFrustum[5] = float4(0.0, 0.0, -1.0, asfloat(tileMaximumDepth));
     }
 
     GroupMemoryBarrierWithGroupSync();
 
-    uint start = (pixelIndex * tileVolume);
-    uint end = min(Lighting::count, (start + tileVolume));
-
     [loop]
-    for (uint lightIndex = start; lightIndex < end; ++lightIndex)
+    for (uint lightIndex = pixelIndex; lightIndex < Lighting::count; lightIndex += tileVolume)
     {
         Lighting::Data light = Lighting::list[lightIndex];
         bool isLightVisible = true;
@@ -87,12 +81,13 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
     {
         uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
         uint bufferIndex = ((tileIndex * (Lighting::lightsPerPass + 1)) + pixelIndex);
-        UnorderedAccess::tileIndexList[bufferIndex + 1] = tileLightList[pixelIndex];
 
         [branch]
         if (pixelIndex == 0)
         {
             UnorderedAccess::tileIndexList[bufferIndex] = tileLightCount;
         }
+
+        UnorderedAccess::tileIndexList[bufferIndex + 1] = tileLightList[pixelIndex];
     }
 }

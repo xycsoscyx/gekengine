@@ -757,7 +757,7 @@ namespace Gek
                             {
                                 CStringW name(xmlBufferNode.getType());
                                 Video::Format format = getFormat(xmlBufferNode.getText());
-                                UINT32 size = String::to<UINT32>(evaluate(xmlBufferNode.getAttribute(L"size")));
+                                UINT32 size = String::to<UINT32>(evaluate(xmlBufferNode.getAttribute(L"size"), true));
                                 resourceMap[name] = resources->createBuffer(String::format(L"%s:buffer:%s", fileName, name.GetString()), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                                 switch (format)
                                 {
@@ -1327,6 +1327,11 @@ namespace Gek
             renderContext->getContext()->vertexPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
             renderContext->getContext()->pixelPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
             renderContext->getContext()->computePipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+            if (pass.mode == Pass::Mode::Compute)
+            {
+                renderContext->getContext()->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
+            }
+
             return pass.mode;
         }
 

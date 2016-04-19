@@ -25,12 +25,13 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     float3 surfaceColor = 0.0;
 
-    uint lightCount = Resources::tileIndexList[bufferOffset];
+    uint lightTileStart = (bufferOffset + 1);
+    uint lightTileEnd = (lightTileStart + Resources::tileIndexList[bufferOffset]);
 
     [loop]
-    for (uint lightTileIndex = 1; lightTileIndex <= lightCount; ++lightTileIndex)
+    for (uint lightTileIndex = lightTileStart; lightTileIndex < lightTileEnd; ++lightTileIndex)
     {
-        uint lightIndex = Resources::tileIndexList[bufferOffset + lightTileIndex];
+        uint lightIndex = Resources::tileIndexList[lightTileIndex];
         Lighting::Data light = Lighting::list[lightIndex];
 
         float3 lightRay = (light.transform._m30_m31_m32 - surfacePosition);
