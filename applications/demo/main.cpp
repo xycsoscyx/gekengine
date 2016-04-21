@@ -140,11 +140,12 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT resultValue = 0;
-    Gek::Engine *engineCore = (Gek::Engine *)GetWindowLongPtr(window, GWLP_USERDATA);
+    Gek::Engine *engineCore = reinterpret_cast<Gek::Engine *>(GetWindowLongPtr(window, GWLP_USERDATA));
     switch (message)
     {
     case WM_CLOSE:
     case WM_DESTROY:
+        engineCore->windowEvent(message, wParam, lParam);
         PostQuitMessage(0);
         break;
 
@@ -331,9 +332,9 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                                     }
                                 };
 
+                                DestroyWindow(window);
                                 SetWindowLongPtr(window, GWLP_USERDATA, 0);
                                 engineCore.Release();
-                                DestroyWindow(window);
                             }
                         }
                         else

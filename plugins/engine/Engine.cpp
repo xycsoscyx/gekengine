@@ -12,6 +12,9 @@
 #include "GEK\Context\ObservableMixin.h"
 #include <set>
 #include <ppl.h>
+#include <sciter-x.h>
+
+#pragma comment(lib, "sciter32.lib")
 
 namespace Gek
 {
@@ -102,6 +105,27 @@ namespace Gek
             INTERFACE_LIST_ENTRY_MEMBER_COM(Render, render)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
         END_INTERFACE_LIST_USER
+
+        // Sciter
+        UINT sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification)
+        {
+            switch (notification->code)
+            {
+            case SC_LOAD_DATA:
+                return 0;//OnLoadData(LPSCN_LOAD_DATA(notification));
+
+            case SC_DATA_LOADED:
+                return 0;//OnDataLoaded(LPSCN_DATA_LOADED(notification));
+            };
+
+            return 0;
+        }
+
+        static UINT CALLBACK sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification, LPVOID callbackParam)
+        {
+            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(callbackParam);
+            return engine->sciterHostCallback(notification);
+        }
 
         // Engine
         STDMETHODIMP initialize(HWND window)
@@ -217,6 +241,33 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 windowActive = true;
+
+                RECT windowRect;
+                GetWindowRect(window, &windowRect);
+
+                CREATESTRUCT createData;
+                createData.lpCreateParams = nullptr;
+                createData.hInstance = GetModuleHandle(nullptr);
+                createData.hMenu = nullptr;
+                createData.hwndParent = GetParent(window);
+                createData.cx = (windowRect.right - windowRect.left);
+                createData.cy = (windowRect.bottom - windowRect.top);
+                createData.x = windowRect.left;
+                createData.y = windowRect.top;
+                createData.style = GetWindowLong(window, GWL_STYLE);
+                createData.lpszName = nullptr;
+                createData.lpszClass = nullptr;
+                createData.dwExStyle = GetWindowLong(window, GWL_EXSTYLE);
+
+                BOOL handled = false;
+                SciterProcND(window, WM_CREATE, 0, reinterpret_cast<LPARAM>(&createData), &handled);
+                CComQIPtr<IDXGISwapChain> dxSwapChain(video);
+                if (dxSwapChain)
+                {
+                    SciterCreateOnDirectXWindow(window, dxSwapChain);
+                }
+
+                SciterSetCallback(window, sciterHostCallback, this);
             }
 
             return resultValue;
@@ -224,6 +275,13 @@ namespace Gek
 
         STDMETHODIMP_(LRESULT) windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam)
         {
+            BOOL handled = false;
+            LRESULT lResult = SciterProcND(window, message, wParam, lParam, &handled);
+            if (handled)
+            {
+                return lResult;
+            }
+
             switch (message)
             {
             case WM_SETCURSOR:
@@ -403,7 +461,7 @@ namespace Gek
         }
 
         // PopulationObserver
-        void refresh(void)
+        STDMETHODIMP_(void) onUpdate(bool isIdle)
         {
             GEK_TRACE_FUNCTION(Engine);
 
@@ -481,11 +539,6 @@ namespace Gek
                     break;
                 };
             }
-        }
-
-        STDMETHODIMP_(void) onUpdate(bool isIdle)
-        {
-            refresh();
         }
 
         // RenderObserver

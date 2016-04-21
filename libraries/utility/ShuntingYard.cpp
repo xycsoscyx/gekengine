@@ -145,9 +145,6 @@ namespace Gek
 
         functionsMap.insert({ L"random",{ 2, [&](Stack<Token> &stack) -> float
         {
-            static std::random_device randomDevice;
-            static std::mt19937 mersineTwister(randomDevice());
-
             float value2 = stack.popTop().value;
             float value1 = stack.popTop().value;
             std::uniform_real_distribution<float> uniformRealDistribution(value1, value2);

@@ -1045,6 +1045,7 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(OverlaySystem)
             INTERFACE_LIST_ENTRY_COM(VideoSystem)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Device, d3dDevice)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_IDXGISwapChain, dxSwapChain)
         END_INTERFACE_LIST_USER
 
         HRESULT createDefaultTargets(void)
@@ -1833,7 +1834,7 @@ namespace Gek
                 if (SUCCEEDED(resultValue) && d3dShader)
                 {
                     CComPtr<ID3D11InputLayout> d3dInputLayout;
-                    if (elementLayout)
+                    if (elementLayout && !(*elementLayout).empty())
                     {
                         Video::ElementType lastElementType = Video::ElementType::Vertex;
                         std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList;

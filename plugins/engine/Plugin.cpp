@@ -190,6 +190,10 @@ namespace Gek
                                     {
                                         engineData.AppendFormat("    uint instanceIndex : SV_InstanceId;\r\n");
                                     }
+                                    else if (xmlElementNode.getType().CompareNoCase(L"vertexIndex") == 0)
+                                    {
+                                        engineData.AppendFormat("    bool vertexIndex : SV_VertexId;\r\n");
+                                    }
                                     else if (xmlElementNode.getType().CompareNoCase(L"isFrontFace") == 0)
                                     {
                                         engineData.AppendFormat("    bool isFrontFace : SV_IsFrontFace;\r\n");

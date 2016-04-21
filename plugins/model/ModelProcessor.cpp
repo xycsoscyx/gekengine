@@ -436,24 +436,24 @@ namespace Gek
                     {
                         for (auto &instance : material.second)
                         {
-                            static auto drawCall = [](RenderContext *renderContext, PluginResources *resources, SubModel *subModel, InstanceData *instance, ResourceHandle constantBuffer) -> void
+                            static auto drawCall = [](RenderContext *renderContext, PluginResources *resources, const SubModel &subModel, const InstanceData *instance, ResourceHandle constantBuffer) -> void
                             {
-                                LPVOID instanceData;
+                                LPVOID instanceData = nullptr;
                                 if (SUCCEEDED(resources->mapBuffer(constantBuffer, &instanceData)))
                                 {
                                     memcpy(instanceData, instance, sizeof(InstanceData));
                                     resources->unmapBuffer(constantBuffer);
 
                                     resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
-                                    resources->setVertexBuffer(renderContext, 0, subModel->vertexBuffer, 0);
-                                    resources->setIndexBuffer(renderContext, subModel->indexBuffer, 0);
-                                    renderContext->getContext()->drawIndexedPrimitive(subModel->indexCount, 0, 0);
+                                    resources->setVertexBuffer(renderContext, 0, subModel.vertexBuffer, 0);
+                                    resources->setIndexBuffer(renderContext, subModel.indexBuffer, 0);
+                                    renderContext->getContext()->drawIndexedPrimitive(subModel.indexCount, 0, 0);
                                 }
                             };
 
                             for (auto &subModel : data.subModelList)
                             {
-                                render->queueDrawCall(plugin, (subModel.skin ? material.first : subModel.material), std::bind(drawCall, std::placeholders::_1, resources, &subModel, &instance, constantBuffer));
+                                render->queueDrawCall(plugin, (subModel.skin ? material.first : subModel.material), std::bind(drawCall, std::placeholders::_1, resources, subModel, &instance, constantBuffer));
                             }
                         }
                     }

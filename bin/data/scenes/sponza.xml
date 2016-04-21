@@ -13,6 +13,7 @@
             <transform position="(0, 30, 0)" rotation="(0, 0, 0)" scale="(1.5,3,1.5)"/>
             <player_body outer_radius="1.5" inner_radius=".5" height="6" stair_step="1.5" />
             <mass>250</mass>
+            <particles></particles>
         </entity>
 
         <entity>

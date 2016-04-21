@@ -19,20 +19,21 @@ namespace Particles
     StructuredBuffer<Instance> list : register(t0);
 };
 
-WorldVertex getWorldVertex(uint vertexIndex : SV_VERTEXID)
+WorldVertex getWorldVertex(PluginVertex pluginVertex)
 {
-    uint particleIndex = vertexIndex / 4;
-    uint cornerIndex = vertexIndex % 4;
+    uint particleIndex = pluginVertex.vertexIndex / 4;
+    uint cornerIndex = pluginVertex.vertexIndex % 4;
 
-    Instance instance = Particles::list[particleIndex];
+    Particles::Instance instance = Particles::list[particleIndex];
 
     // calculate the position of the vertex
-    float3 position;
+    float4 position;
     position.x = (cornerIndex % 2) ? 1.0 : -1.0;
     position.y = (cornerIndex & 2) ? -1.0 : 1.0;
     position.z = 0.0;
+    position.w = 1.0;
     position.xy *= instance.size;
-    position = mul(Model::transform, position);
+    position = mul(Particles::transform, position);
 
     WorldVertex worldVertex;
     worldVertex.position = position;
