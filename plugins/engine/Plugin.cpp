@@ -192,7 +192,7 @@ namespace Gek
                                     }
                                     else if (xmlElementNode.getType().CompareNoCase(L"vertexIndex") == 0)
                                     {
-                                        engineData.AppendFormat("    bool vertexIndex : SV_VertexId;\r\n");
+                                        engineData.AppendFormat("    uint vertexIndex : SV_VertexId;\r\n");
                                     }
                                     else if (xmlElementNode.getType().CompareNoCase(L"isFrontFace") == 0)
                                     {

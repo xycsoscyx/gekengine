@@ -40,25 +40,6 @@ namespace Gek
     {
     public:
         __declspec(align(16))
-        struct InstanceData
-        {
-            Math::Float3 position;
-            float life;
-            float style;
-            float buffer[3];
-
-            InstanceData(void)
-            {
-            }
-
-            InstanceData(const Math::Float3 &position, float life, float style)
-                : position(position)
-                , life(life)
-                , style(style)
-            {
-            }
-        };
-
         struct ParticleData
         {
             Math::Float3 position;
@@ -89,7 +70,7 @@ namespace Gek
         UINT32 updateHandle;
 
         PluginHandle plugin;
-        ResourceHandle instanceBuffer;
+        ResourceHandle particleBuffer;
 
         ShuntingYard shuntingYard;
         typedef std::unordered_map<Entity *, EmitterData> DataEntityMap;
@@ -154,8 +135,8 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                instanceBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 100, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                if (!instanceBuffer)
+                particleBuffer = resources->createBuffer(nullptr, sizeof(ParticleData), 100, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                if (!particleBuffer)
                 {
                     resultValue = E_FAIL;
                 }
@@ -230,34 +211,23 @@ namespace Gek
                             particle.velocity.z = negativeOneToOne(mersineTwister);
                         }
 
-                        particle.position += particle.velocity;
+                        particle.velocity += (Math::Float3(0.0f, -32.174f, 0.0f) * frameTime);
+                        particle.position += (particle.velocity * frameTime);
                     });
                 });
             }
         }
 
         // RenderObserver
-        static void drawCall(RenderContext *renderContext, PluginResources *resources, Entity *entity, const EmitterData &emitter, ResourceHandle instanceBuffer)
+        static void drawCall(RenderContext *renderContext, PluginResources *resources, Entity *entity, const EmitterData &emitter, ResourceHandle particleBuffer)
         {
-            concurrency::combinable<std::vector<InstanceData>> instances;
-            concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
+            ParticleData *particleData = nullptr;
+            if (SUCCEEDED(resources->mapBuffer(particleBuffer, (LPVOID *)&particleData)))
             {
-                instances.local().emplace_back(particle.position, particle.life, particle.style);
-            });
+                memcpy(particleData, emitter.particles.data(), (sizeof(ParticleData) * emitter.particles.size()));
+                resources->unmapBuffer(particleBuffer);
 
-            std::vector<InstanceData> fullInstances;
-            instances.combine_each([&](std::vector<InstanceData> &subInstances) -> void
-            {
-                fullInstances.insert(fullInstances.end(), subInstances.begin(), subInstances.end());
-            });
-
-            InstanceData *instanceData = nullptr;
-            if (SUCCEEDED(resources->mapBuffer(instanceBuffer, (LPVOID *)&instanceData)))
-            {
-                memcpy(instanceData, fullInstances.data(), (sizeof(InstanceData) * fullInstances.size()));
-                resources->unmapBuffer(instanceBuffer);
-
-                resources->setResource(renderContext->vertexPipeline(), instanceBuffer, 0);
+                resources->setResource(renderContext->vertexPipeline(), particleBuffer, 0);
                 resources->setResource(renderContext->vertexPipeline(), emitter.colorMap, 1);
                 resources->setResource(renderContext->vertexPipeline(), emitter.sizeMap, 2);
                 renderContext->getContext()->drawPrimitive((emitter.particles.size() * 4), 0);
@@ -273,7 +243,7 @@ namespace Gek
             {
                 Entity *entity = dataEntity.first;
                 const EmitterData &emitter = dataEntity.second;
-                render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, instanceBuffer));
+                render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, particleBuffer));
             });
         }
     };

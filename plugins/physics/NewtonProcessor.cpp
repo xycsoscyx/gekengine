@@ -98,7 +98,7 @@ namespace Gek
             , actionProvider(nullptr)
             , newtonWorld(nullptr)
             , newtonStaticScene(nullptr)
-            , gravity(0.0f, -9.8331f, 0.0f)
+            , gravity(0.0f, -32.174f, 0.0f)
         {
         }
 

@@ -5,9 +5,9 @@ namespace Particles
     struct Instance
     {
         float3 position;
+        float3 velocity;
         float life;
         float style;
-        float buffer[3];
     };
 
     StructuredBuffer<Instance> list : register(t0);
@@ -23,15 +23,18 @@ WorldVertex getWorldVertex(PluginVertex pluginVertex)
     Particles::Instance instance = Particles::list[particleIndex];
 
     // calculate the position of the vertex
-    float3 position = instance.position;
-    position.x += (cornerIndex % 2) ? 1.0 : -1.0;
-    position.y += (cornerIndex & 2) ? -1.0 : 1.0;
-    position *= Particles::sizeMap.Sample(Global::linearWrapSampler, float2(instance.life, instance.style));
+    float3 position;
+    position.x = (cornerIndex % 2) ? 1.0 : -1.0;
+    position.y = (cornerIndex & 2) ? -1.0 : 1.0;
+    position.z = 0.0f;
+    position = mul(Camera::viewMatrix, position);
+    position *= Particles::sizeMap[float2(instance.life, instance.style)];
+    position += instance.position;
 
     WorldVertex worldVertex;
     worldVertex.position = float4(position, 1.0);
     worldVertex.normal = float3(0.0, 0.0, -1.0);
-    worldVertex.color = Particles::colorMap.Sample(Global::linearWrapSampler, float2(instance.life, instance.style));
+    worldVertex.color = Particles::colorMap[float2(instance.life, instance.style)];
 
     // texture coordinate
     worldVertex.texCoord.x = (cornerIndex % 2) ? 1.0 : 0.0;
