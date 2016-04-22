@@ -5,6 +5,7 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
+#include "GEK\Utility\ShuntingYard.h"
 #include "GEK\Context\COM.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
@@ -27,7 +28,8 @@
 
 static std::random_device randomDevice;
 static std::mt19937 mersineTwister(randomDevice());
-static std::uniform_real_distribution<float> uniformRealDistribution(-1.0f, 1.0f);
+static std::uniform_real_distribution<float> zeroToOne(0.0f, 1.0f);
+static std::uniform_real_distribution<float> negativeOneToOne(-1.0f, 1.0f);
 
 namespace Gek
 {
@@ -37,27 +39,35 @@ namespace Gek
         , public Processor
     {
     public:
-        struct ConstantData
-        {
-            Math::Float4x4 transform;
-        };
-
+        __declspec(align(16))
         struct InstanceData
         {
             Math::Float3 position;
-            float rotation;
-            Math::Color color;
-            Math::Float2 size;
-            float buffer[2];
+            float life;
+            float style;
+            float buffer[3];
         };
 
         struct ParticleData
         {
+            Math::Float3 position;
+            Math::Float3 velocity;
+            float life;
+            float style;
+
+            ParticleData(void)
+                : life(0.0f)
+                , style(0.0f)
+            {
+            }
         };
 
         struct EmitterData
         {
             MaterialHandle material;
+            ResourceHandle colorMap;
+            ResourceHandle sizeMap;
+            std::vector<ShuntingYard::Token> lifeExpectancy;
             std::vector<ParticleData> particles;
         };
 
@@ -68,9 +78,9 @@ namespace Gek
         UINT32 updateHandle;
 
         PluginHandle plugin;
-        ResourceHandle constantBuffer;
         ResourceHandle instanceBuffer;
 
+        ShuntingYard shuntingYard;
         std::unordered_map<Entity *, EmitterData> entityDataList;
 
     public:
@@ -132,15 +142,6 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                constantBuffer = resources->createBuffer(nullptr, sizeof(ConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-                if (!constantBuffer)
-                {
-                    resultValue = E_FAIL;
-                }
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
                 instanceBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 100, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
                 if (!instanceBuffer)
                 {
@@ -172,9 +173,14 @@ namespace Gek
 
             if (entity->hasComponents<ParticlesComponent, TransformComponent>())
             {
+                auto &particlesComponent = entity->getComponent<ParticlesComponent>();
+
                 auto &emitter = entityDataList[entity];
-                emitter.particles.resize(100);
-                emitter.material = resources->loadMaterial(L"silver");
+                emitter.particles.resize(particlesComponent.size);
+                emitter.material = resources->loadMaterial(particlesComponent.material);
+                emitter.colorMap = resources->loadTexture(particlesComponent.colorMap, nullptr, 0);
+                emitter.sizeMap = resources->loadTexture(particlesComponent.sizeMap, nullptr, 0);
+                shuntingYard.evaluteTokenList(particlesComponent.lifeExpectancy, emitter.lifeExpectancy);
             }
         }
 
@@ -193,12 +199,26 @@ namespace Gek
         {
             if (!isIdle)
             {
+                float frameTime = population->getFrameTime();
                 std::for_each(entityDataList.begin(), entityDataList.end(), [&](const std::pair<Entity *, EmitterData> &dataEntity) -> void
                 {
                     Entity *entity = dataEntity.first;
-                    const EmitterData &emitter = dataEntity.second;
+                    EmitterData &emitter = const_cast<EmitterData &>(dataEntity.second);
+                    auto &transformComponent = entity->getComponent<TransformComponent>();
                     for (auto &particle : emitter.particles)
                     {
+                        particle.life -= frameTime;
+                        if (particle.life <= 0.0f)
+                        {
+                            shuntingYard.evaluate(emitter.lifeExpectancy, particle.life);
+                            particle.style = zeroToOne(mersineTwister);
+                            particle.position = transformComponent.position;
+                            particle.velocity.x = negativeOneToOne(mersineTwister);
+                            particle.velocity.y = zeroToOne(mersineTwister);
+                            particle.velocity.z = negativeOneToOne(mersineTwister);
+                        }
+
+                        particle.position += particle.velocity;
                     }
                 });
             }
@@ -214,42 +234,29 @@ namespace Gek
             {
                 Entity *entity = dataEntity.first;
                 const EmitterData &emitter = dataEntity.second;
-                static auto drawCall = [](RenderContext *renderContext, PluginResources *resources, Entity *entity, const EmitterData &emitter, ResourceHandle constantBuffer, ResourceHandle instanceBuffer) -> void
+                static auto drawCall = [](RenderContext *renderContext, PluginResources *resources, Entity *entity, const EmitterData &emitter, ResourceHandle instanceBuffer) -> void
                 {
-                    LPVOID constantData = nullptr;
-                    if (SUCCEEDED(resources->mapBuffer(constantBuffer, &constantData)))
+                    InstanceData *instanceData = nullptr;
+                    if (SUCCEEDED(resources->mapBuffer(instanceBuffer, (LPVOID *)&instanceData)))
                     {
-                        const auto &transformComponent = entity->getComponent<TransformComponent>();
-                        (*(Math::Float4x4 *)constantData) = transformComponent.getMatrix();
-                        resources->unmapBuffer(constantBuffer);
-
-                        InstanceData *instanceData = nullptr;
-                        if (SUCCEEDED(resources->mapBuffer(instanceBuffer, (LPVOID *)&instanceData)))
+                        for (auto &particle : emitter.particles)
                         {
-                            for (auto &particle : emitter.particles)
-                            {
-                                auto &instance = (*instanceData++);
-                                instance.position.x = uniformRealDistribution(mersineTwister);
-                                instance.position.y = uniformRealDistribution(mersineTwister);
-                                instance.position.z = uniformRealDistribution(mersineTwister);
-                                instance.rotation = uniformRealDistribution(mersineTwister);
-                                instance.size = uniformRealDistribution(mersineTwister);
-                                instance.color.r = uniformRealDistribution(mersineTwister);
-                                instance.color.g = uniformRealDistribution(mersineTwister);
-                                instance.color.b = uniformRealDistribution(mersineTwister);
-                                instance.color.a = 1.0f;
-                            }
-
-                            resources->unmapBuffer(instanceBuffer);
-
-                            resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
-                            resources->setResource(renderContext->vertexPipeline(), instanceBuffer, 0);
-                            renderContext->getContext()->drawPrimitive((emitter.particles.size() * 4), 0);
+                            auto &instance = (*instanceData++);
+                            instance.position = particle.position;
+                            instance.life = particle.life;
+                            instance.style = particle.style;
                         }
+
+                        resources->unmapBuffer(instanceBuffer);
+
+                        resources->setResource(renderContext->vertexPipeline(), instanceBuffer, 0);
+                        resources->setResource(renderContext->vertexPipeline(), emitter.colorMap, 1);
+                        resources->setResource(renderContext->vertexPipeline(), emitter.sizeMap, 2);
+                        renderContext->getContext()->drawPrimitive((emitter.particles.size() * 4), 0);
                     }
                 };
 
-                render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, constantBuffer, instanceBuffer));
+                render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, instanceBuffer));
             });
         }
     };

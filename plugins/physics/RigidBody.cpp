@@ -86,7 +86,7 @@ namespace Gek
 
     HRESULT RigidBodyComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentData, L"", shape);
+        saveParameter(componentData, nullptr, shape);
         saveParameter(componentData, L"surface", surface);
         return S_OK;
     }

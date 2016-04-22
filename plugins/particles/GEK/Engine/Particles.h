@@ -7,6 +7,12 @@ namespace Gek
 {
     struct ParticlesComponent
     {
+        CStringW material;
+        CStringW colorMap;
+        CStringW sizeMap;
+        CStringW lifeExpectancy;
+        UINT32 size;
+
         ParticlesComponent(void);
         HRESULT save(Population::ComponentDefinition &componentData) const;
         HRESULT load(const Population::ComponentDefinition &componentData);

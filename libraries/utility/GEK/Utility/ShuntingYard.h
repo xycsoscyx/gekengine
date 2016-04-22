@@ -10,7 +10,7 @@ namespace Gek
 {
     class ShuntingYard
     {
-    private:
+    public:
         enum class Associations : UINT8
         {
             Left = 0,
@@ -42,6 +42,7 @@ namespace Gek
             Token(float value);
         };
 
+    private:
         template <typename DATA>
         struct Stack : public std::stack<DATA>
         {
@@ -92,21 +93,40 @@ namespace Gek
     public:
         ShuntingYard(void);
 
-        Status evaluate(const CStringW &expression, float &value);
+        Status evaluteTokenList(LPCWSTR expression, std::vector<Token> &rpnTokenList);
 
-        template <typename TYPE>
-        Status evaluate(const CStringW &expression, TYPE &value)
+        inline Status evaluate(std::vector<Token> &rpnTokenList, float &value)
         {
-            std::vector<Token> infixTokenList = convertExpressionToInfix(expression);
+            return evaluateValue(rpnTokenList, &value, 1);
+        }
 
-            std::vector<Token> rpnTokenList;
-            Status status = convertInfixToReversePolishNotation(infixTokenList, rpnTokenList);
-            if (status == Status::Success)
-            {
-                status = evaluateReversePolishNotation(rpnTokenList, value.data);
-            }
+        template <std::size_t SIZE>
+        Status evaluate(std::vector<Token> &rpnTokenList, float(&value)[SIZE])
+        {
+            return evaluateValue(rpnTokenList, value, SIZE);
+        }
 
-            return status;
+        template <class TYPE>
+        Status evaluate(std::vector<Token> &rpnTokenList, TYPE &value)
+        {
+            return evaluate(rpnTokenList, value.data);
+        }
+
+        inline Status evaluate(LPCWSTR expression, float &value)
+        {
+            return evaluateValue(expression, &value, 1);
+        }
+
+        template <std::size_t SIZE>
+        Status evaluate(LPCWSTR expression, float(&value)[SIZE])
+        {
+            return evaluateValue(expression, value, SIZE);
+        }
+
+        template <class TYPE>
+        Status evaluate(LPCWSTR expression, TYPE &value)
+        {
+            return evaluate(expression, value.data);
         }
 
     private:
@@ -128,126 +148,15 @@ namespace Gek
         Status parseSubTokens(std::vector<Token> &infixTokenList, CStringW token);
         std::vector<Token> convertExpressionToInfix(const CStringW &expression);
         Status convertInfixToReversePolishNotation(const std::vector<Token> &infixTokenList, std::vector<Token> &rpnTokenList);
-        Status evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float &value);
+        Status evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
 
         template <std::size_t SIZE>
         Status evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float(&value)[SIZE])
         {
-            Stack<Token> stack;
-            for (auto &token : rpnTokenList)
-            {
-                switch (token.type)
-                {
-                case TokenType::Number:
-                    stack.push(token);
-                    break;
-
-                case TokenType::UnaryOperation:
-                    if (true)
-                    {
-                        auto &operation = operationsMap.find(token.string)->second;
-                        if (operation.unaryFunction)
-                        {
-                            if (!stack.empty() && (stack.top().type == TokenType::Number))
-                            {
-                                float functionValue = stack.popTop().value;
-                                stack.push(Token(operation.unaryFunction(functionValue)));
-                            }
-                            else
-                            {
-                                return Status::InvalidOperand;
-                            }
-                        }
-                        else
-                        {
-                            return Status::InvalidOperator;
-                        }
-
-                        break;
-                    }
-
-                case TokenType::BinaryOperation:
-                    if (true)
-                    {
-                        auto &operation = operationsMap.find(token.string)->second;
-                        if (operation.binaryFunction)
-                        {
-                            if (!stack.empty() && (stack.top().type == TokenType::Number))
-                            {
-                                float functionValueRight = stack.popTop().value;
-                                if (!stack.empty() && (stack.top().type == TokenType::Number))
-                                {
-                                    float functionValueLeft = stack.popTop().value;
-                                    stack.push(Token(operation.binaryFunction(functionValueLeft, functionValueRight)));
-                                }
-                                else
-                                {
-                                    return Status::InvalidOperand;
-                                }
-                            }
-                            else
-                            {
-                                return Status::InvalidOperand;
-                            }
-                        }
-                        else
-                        {
-                            return Status::InvalidOperator;
-                        }
-
-                        break;
-                    }
-
-                case TokenType::Function:
-                    if (true)
-                    {
-                        auto &function = functionsMap.find(token.string)->second;
-                        if (function.parameterCount != token.parameterCount)
-                        {
-                            return Status::InvalidFunctionParameters;
-                        }
-
-                        if (stack.size() < function.parameterCount)
-                        {
-                            return Status::NotEnoughFunctionParameters;
-                        }
-
-                        stack.push(Token(function.function(stack)));
-                        break;
-                    }
-
-                case TokenType::Vector:
-                    if (token.parameterCount != SIZE)
-                    {
-                        return Status::InvalidVector;
-                    }
-
-                    if (stack.size() != SIZE)
-                    {
-                        return Status::InvalidVector;
-                    }
-
-                    for (UINT32 axis = SIZE; axis > 0; axis--)
-                    {
-                        value[axis - 1] = stack.popTop().value;
-                    }
-
-                    return Status::Success;
-
-                default:
-                    return Status::UnknownTokenType;
-                };
-            }
-
-            if (SIZE == 1 && stack.size() == 1)
-            {
-                value[0] = stack.top().value;
-                return Status::Success;
-            }
-            else
-            {
-                return Status::InvalidEquation;
-            }
+            return evaluateReversePolishNotation(rpnTokenList, value, SIZE);
         }
+
+        Status evaluateValue(std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
+        Status evaluateValue(LPCWSTR expression, float *value, UINT32 valueSize);
     };
 }; // namespace Gek

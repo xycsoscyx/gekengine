@@ -152,15 +152,24 @@ namespace Gek
         } } });
     }
 
-    ShuntingYard::Status ShuntingYard::evaluate(const CStringW &expression, float &value)
+    ShuntingYard::Status ShuntingYard::evaluteTokenList(LPCWSTR expression, std::vector<Token> &rpnTokenList)
     {
         std::vector<Token> infixTokenList = convertExpressionToInfix(expression);
+        return convertInfixToReversePolishNotation(infixTokenList, rpnTokenList);
+    }
 
+    ShuntingYard::Status ShuntingYard::evaluateValue(std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize)
+    {
+        return evaluateReversePolishNotation(rpnTokenList, value, valueSize);
+    }
+
+    ShuntingYard::Status ShuntingYard::evaluateValue(LPCWSTR expression, float *value, UINT32 valueSize)
+    {
         std::vector<Token> rpnTokenList;
-        Status status = convertInfixToReversePolishNotation(infixTokenList, rpnTokenList);
+        Status status = evaluteTokenList(expression, rpnTokenList);
         if (status == Status::Success)
         {
-            status = evaluateReversePolishNotation(rpnTokenList, value);
+            status = evaluateReversePolishNotation(rpnTokenList, value, valueSize);
         }
 
         return status;
@@ -561,7 +570,7 @@ namespace Gek
         return Status::Success;
     }
 
-    ShuntingYard::Status ShuntingYard::evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float &value)
+    ShuntingYard::Status ShuntingYard::evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize)
     {
         Stack<Token> stack;
         for (auto &token : rpnTokenList)
@@ -647,16 +656,31 @@ namespace Gek
                 }
 
             case TokenType::Vector:
-                return Status::InvalidEquation;
+                if (token.parameterCount != valueSize)
+                {
+                    return Status::InvalidVector;
+                }
+
+                if (stack.size() != valueSize)
+                {
+                    return Status::InvalidVector;
+                }
+
+                for (UINT32 axis = valueSize; axis > 0; axis--)
+                {
+                    value[axis - 1] = stack.popTop().value;
+                }
+
+                return Status::Success;
 
             default:
                 return Status::UnknownTokenType;
             };
         }
 
-        if (stack.size() == 1)
+        if (stack.size() == valueSize == 1)
         {
-            value = stack.top().value;
+            (*value) = stack.top().value;
             return Status::Success;
         }
         else

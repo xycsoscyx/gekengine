@@ -366,7 +366,6 @@ namespace Gek
         {
             GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(fileName));
 
-            ShaderHandle shader;
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
             PropertiesHandle properties = materialManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
@@ -379,7 +378,6 @@ namespace Gek
                     resultValue = material->initialize(initializerContext, fileName);
                     if (SUCCEEDED(resultValue))
                     {
-                        shader = material->getShader();
                         resultValue = material->QueryInterface(returnObject);
                     }
                 }
@@ -387,7 +385,13 @@ namespace Gek
                 return resultValue;
             });
 
-            return MaterialHandle(shader, properties);
+            if (properties)
+            {
+                return MaterialHandle(materialManager.getResource<Material>(properties)->getShader(), properties);
+            }
+
+            return MaterialHandle();
+
         }
 
         STDMETHODIMP_(ShaderHandle) loadShader(LPCWSTR fileName)

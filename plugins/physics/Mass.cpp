@@ -14,7 +14,7 @@ namespace Gek
 
     HRESULT MassComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentData, L"", value);
+        saveParameter(componentData, nullptr, value);
         return S_OK;
     }
 

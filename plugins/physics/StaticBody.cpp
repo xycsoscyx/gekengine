@@ -12,7 +12,7 @@ namespace Gek
 
     HRESULT StaticBodyComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentData, L"", shape);
+        saveParameter(componentData, nullptr, shape);
         return S_OK;
     }
 

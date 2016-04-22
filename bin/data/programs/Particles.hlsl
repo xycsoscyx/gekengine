@@ -2,21 +2,17 @@
 
 namespace Particles
 {
-    cbuffer Constants : register(b4)
-    {
-        float4x4 transform;
-    };
-
     struct Instance
     {
         float3 position;
-        float rotation;
-        float4 color;
-        float2 size;
-        float buffer[2];
+        float life;
+        float style;
+        float buffer[3];
     };
 
     StructuredBuffer<Instance> list : register(t0);
+    Texture2D<float4> colorMap : register(t1);
+    Texture2D<float> sizeMap : register(t2);
 };
 
 WorldVertex getWorldVertex(PluginVertex pluginVertex)
@@ -27,18 +23,15 @@ WorldVertex getWorldVertex(PluginVertex pluginVertex)
     Particles::Instance instance = Particles::list[particleIndex];
 
     // calculate the position of the vertex
-    float4 position;
-    position.x = (cornerIndex % 2) ? 1.0 : -1.0;
-    position.y = (cornerIndex & 2) ? -1.0 : 1.0;
-    position.z = 0.0;
-    position.w = 1.0;
-    position.xy *= instance.size;
-    position = mul(Particles::transform, position);
+    float3 position = instance.position;
+    position.x += (cornerIndex % 2) ? 1.0 : -1.0;
+    position.y += (cornerIndex & 2) ? -1.0 : 1.0;
+    position *= Particles::sizeMap.Sample(Global::linearWrapSampler, float2(instance.life, instance.style));
 
     WorldVertex worldVertex;
-    worldVertex.position = position;
+    worldVertex.position = float4(position, 1.0);
     worldVertex.normal = float3(0.0, 0.0, -1.0);
-    worldVertex.color = instance.color;
+    worldVertex.color = Particles::colorMap.Sample(Global::linearWrapSampler, float2(instance.life, instance.style));
 
     // texture coordinate
     worldVertex.texCoord.x = (cornerIndex % 2) ? 1.0 : 0.0;

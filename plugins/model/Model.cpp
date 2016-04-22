@@ -11,7 +11,7 @@ namespace Gek
 
     HRESULT ModelComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentData, L"", value);
+        saveParameter(componentData, nullptr, value);
         saveParameter(componentData, L"skin", skin);
         return S_OK;
     }
