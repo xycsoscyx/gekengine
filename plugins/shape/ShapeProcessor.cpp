@@ -416,6 +416,7 @@ namespace Gek
             }
         };
 
+        __declspec(align(16))
         struct InstanceData
         {
             Math::Float4x4 matrix;
@@ -444,11 +445,13 @@ namespace Gek
         concurrency::concurrent_unordered_map<std::size_t, bool> loadShapeSet;
 
         std::unordered_map<std::size_t, Shape> shapeMap;
-        std::unordered_map<Entity *, EntityData> entityDataList;
+        typedef std::unordered_map<Entity *, EntityData> EntityDataMap;
+        EntityDataMap entityDataList;
 
         typedef concurrency::concurrent_vector<InstanceData, AlignedAllocator<InstanceData, 16>> InstanceList;
         typedef concurrency::concurrent_unordered_map<MaterialHandle, InstanceList> MaterialList;
-        concurrency::concurrent_unordered_map<Shape *, MaterialList> visibleList;
+        typedef concurrency::concurrent_unordered_map<Shape *, MaterialList> VisibleList;
+        VisibleList visibleList;
 
     public:
         ShapeProcessorImplementation(void)
@@ -647,13 +650,28 @@ namespace Gek
         }
 
         // RenderObserver
+        static void drawCall(RenderContext *renderContext, PluginResources *resources, const Shape *shape, const InstanceData *instance, ResourceHandle constantBuffer)
+        {
+            InstanceData *instanceData = nullptr;
+            if (SUCCEEDED(resources->mapBuffer(constantBuffer, (LPVOID *)&instanceData)))
+            {
+                memcpy(instanceData, instance, sizeof(InstanceData));
+                resources->unmapBuffer(constantBuffer);
+
+                resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
+                resources->setVertexBuffer(renderContext, 0, shape->vertexBuffer, 0);
+                resources->setIndexBuffer(renderContext, shape->indexBuffer, 0);
+                renderContext->getContext()->drawIndexedPrimitive(shape->indexCount, 0, 0);
+            }
+        }
+
         STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Shapes::Frustum *viewFrustum)
         {
             GEK_REQUIRE_VOID_RETURN(cameraEntity);
             GEK_REQUIRE_VOID_RETURN(viewFrustum);
 
             visibleList.clear();
-            std::for_each(entityDataList.begin(), entityDataList.end(), [&](const std::pair<Entity *, EntityData> &dataEntity) -> void
+            concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](EntityDataMap::value_type &dataEntity) -> void
             {
                 Entity *entity = dataEntity.first;
                 Shape &shape = dataEntity.second.shape;
@@ -678,39 +696,23 @@ namespace Gek
                 }
             });
 
-            for (auto &visible : visibleList)
+            concurrency::parallel_for_each(visibleList.begin(), visibleList.end(), [&](VisibleList::value_type &visible) -> void
             {
-                Shape &shape = (*visible.first);
-                if (shape.loaded)
+                Shape *shape = visible.first;
+                if (!shape->loaded)
                 {
-                    for (auto &material : visible.second)
+                    loadShape(*shape);
+                    return;
+                }
+
+                concurrency::parallel_for_each(visible.second.begin(), visible.second.end(), [&](MaterialList::value_type &material) -> void
+                {
+                    concurrency::parallel_for_each(material.second.begin(), material.second.end(), [&](InstanceList::value_type &instance) -> void
                     {
-                        for (auto &instance : material.second)
-                        {
-                            static auto drawCall = [](RenderContext *renderContext, PluginResources *resources, Shape *shape, InstanceData *instance, ResourceHandle constantBuffer) -> void
-                            {
-                                LPVOID instanceData;
-                                if (SUCCEEDED(resources->mapBuffer(constantBuffer, &instanceData)))
-                                {
-                                    memcpy(instanceData, instance, sizeof(InstanceData));
-                                    resources->unmapBuffer(constantBuffer);
-
-                                    resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
-                                    resources->setVertexBuffer(renderContext, 0, shape->vertexBuffer, 0);
-                                    resources->setIndexBuffer(renderContext, shape->indexBuffer, 0);
-                                    renderContext->getContext()->drawIndexedPrimitive(shape->indexCount, 0, 0);
-                                }
-                            };
-
-                            render->queueDrawCall(plugin, material.first, std::bind(drawCall, std::placeholders::_1, resources, &shape, &instance, constantBuffer));
-                        }
-                    }
-                }
-                else
-                {
-                    loadShape(shape);
-                }
-            }
+                        render->queueDrawCall(plugin, material.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instance, constantBuffer));
+                    });
+                });
+            });
         }
     };
 

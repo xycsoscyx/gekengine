@@ -153,7 +153,7 @@ namespace Gek
 
         CComPtr<IUnknown> deferredVertexProgram;
 
-        std::vector<DrawCallValue> drawCallList;
+        concurrency::concurrent_vector<DrawCallValue> drawCallList;
 
     public:
         RenderImplementation(void)
@@ -267,7 +267,7 @@ namespace Gek
         {
             if (plugin && material && draw)
             {
-                drawCallList.emplace_back(plugin, material, draw);
+                drawCallList.push_back(DrawCallValue(plugin, material, draw));
             }
         }
 

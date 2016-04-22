@@ -128,11 +128,13 @@ namespace Gek
         concurrency::concurrent_unordered_map<std::size_t, bool> loadModelSet;
 
         std::unordered_map<std::size_t, Model> dataMap;
-        std::unordered_map<Entity *, EntityData> entityDataList;
+        typedef std::unordered_map<Entity *, EntityData> DataEntityMap;
+        DataEntityMap entityDataList;
 
         typedef concurrency::concurrent_vector<InstanceData, AlignedAllocator<InstanceData, 16>> InstanceList;
         typedef concurrency::concurrent_unordered_map<MaterialHandle, InstanceList> MaterialList;
-        concurrency::concurrent_unordered_map<Model *, MaterialList> visibleList;
+        typedef concurrency::concurrent_unordered_map<Model *, MaterialList> VisibleList;
+        VisibleList visibleList;
 
     public:
         ModelProcessorImplementation(void)
@@ -396,13 +398,28 @@ namespace Gek
         }
 
         // RenderObserver
+        static void drawCall(RenderContext *renderContext, PluginResources *resources, const SubModel &subModel, const InstanceData *instance, ResourceHandle constantBuffer)
+        {
+            InstanceData *instanceData = nullptr;
+            if (SUCCEEDED(resources->mapBuffer(constantBuffer, (LPVOID *)&instanceData)))
+            {
+                memcpy(instanceData, instance, sizeof(InstanceData));
+                resources->unmapBuffer(constantBuffer);
+
+                resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
+                resources->setVertexBuffer(renderContext, 0, subModel.vertexBuffer, 0);
+                resources->setIndexBuffer(renderContext, subModel.indexBuffer, 0);
+                renderContext->getContext()->drawIndexedPrimitive(subModel.indexCount, 0, 0);
+            }
+        }
+
         STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Shapes::Frustum *viewFrustum)
         {
             GEK_REQUIRE_VOID_RETURN(cameraEntity);
             GEK_REQUIRE_VOID_RETURN(viewFrustum);
 
             visibleList.clear();
-            std::for_each(entityDataList.begin(), entityDataList.end(), [&](const std::pair<Entity *, EntityData> &dataEntity) -> void
+            concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](DataEntityMap::value_type &dataEntity) -> void
             {
                 Entity *entity = dataEntity.first;
                 Model &data = dataEntity.second.model;
@@ -427,42 +444,26 @@ namespace Gek
                 }
             });
 
-            for (auto &visible : visibleList)
+            concurrency::parallel_for_each(visibleList.begin(), visibleList.end(), [&](auto &visible) -> void
             {
-                Model &data = (*visible.first);
-                if (data.loaded)
+                Model *data = visible.first;
+                if (!data->loaded)
                 {
-                    for (auto &material : visible.second)
+                    loadModel(*data);
+                    return;
+                }
+
+                concurrency::parallel_for_each(visible.second.begin(), visible.second.end(), [&](auto &material) -> void
+                {
+                    concurrency::parallel_for_each(material.second.begin(), material.second.end(), [&](auto &instance) -> void
                     {
-                        for (auto &instance : material.second)
+                        concurrency::parallel_for_each(data->subModelList.begin(), data->subModelList.end(), [&](const SubModel &subModel) -> void
                         {
-                            static auto drawCall = [](RenderContext *renderContext, PluginResources *resources, const SubModel &subModel, const InstanceData *instance, ResourceHandle constantBuffer) -> void
-                            {
-                                LPVOID instanceData = nullptr;
-                                if (SUCCEEDED(resources->mapBuffer(constantBuffer, &instanceData)))
-                                {
-                                    memcpy(instanceData, instance, sizeof(InstanceData));
-                                    resources->unmapBuffer(constantBuffer);
-
-                                    resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
-                                    resources->setVertexBuffer(renderContext, 0, subModel.vertexBuffer, 0);
-                                    resources->setIndexBuffer(renderContext, subModel.indexBuffer, 0);
-                                    renderContext->getContext()->drawIndexedPrimitive(subModel.indexCount, 0, 0);
-                                }
-                            };
-
-                            for (auto &subModel : data.subModelList)
-                            {
-                                render->queueDrawCall(plugin, (subModel.skin ? material.first : subModel.material), std::bind(drawCall, std::placeholders::_1, resources, subModel, &instance, constantBuffer));
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    loadModel(data);
-                }
-            }
+                            render->queueDrawCall(plugin, (subModel.skin ? material.first : subModel.material), std::bind(drawCall, std::placeholders::_1, resources, subModel, &instance, constantBuffer));
+                        });
+                    });
+                });
+            });
         }
     };
 

@@ -46,6 +46,17 @@ namespace Gek
             float life;
             float style;
             float buffer[3];
+
+            InstanceData(void)
+            {
+            }
+
+            InstanceData(const Math::Float3 &position, float life, float style)
+                : position(position)
+                , life(life)
+                , style(style)
+            {
+            }
         };
 
         struct ParticleData
@@ -81,7 +92,8 @@ namespace Gek
         ResourceHandle instanceBuffer;
 
         ShuntingYard shuntingYard;
-        std::unordered_map<Entity *, EmitterData> entityDataList;
+        typedef std::unordered_map<Entity *, EmitterData> DataEntityMap;
+        DataEntityMap entityDataList;
 
     public:
         ParticlesProcessorImplementation(void)
@@ -200,12 +212,12 @@ namespace Gek
             if (!isIdle)
             {
                 float frameTime = population->getFrameTime();
-                std::for_each(entityDataList.begin(), entityDataList.end(), [&](const std::pair<Entity *, EmitterData> &dataEntity) -> void
+                concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](DataEntityMap::value_type &dataEntity) -> void
                 {
                     Entity *entity = dataEntity.first;
                     EmitterData &emitter = const_cast<EmitterData &>(dataEntity.second);
                     auto &transformComponent = entity->getComponent<TransformComponent>();
-                    for (auto &particle : emitter.particles)
+                    concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
                     {
                         particle.life -= frameTime;
                         if (particle.life <= 0.0f)
@@ -219,43 +231,48 @@ namespace Gek
                         }
 
                         particle.position += particle.velocity;
-                    }
+                    });
                 });
             }
         }
 
         // RenderObserver
+        static void drawCall(RenderContext *renderContext, PluginResources *resources, Entity *entity, const EmitterData &emitter, ResourceHandle instanceBuffer)
+        {
+            concurrency::combinable<std::vector<InstanceData>> instances;
+            concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
+            {
+                instances.local().emplace_back(particle.position, particle.life, particle.style);
+            });
+
+            std::vector<InstanceData> fullInstances;
+            instances.combine_each([&](std::vector<InstanceData> &subInstances) -> void
+            {
+                fullInstances.insert(fullInstances.end(), subInstances.begin(), subInstances.end());
+            });
+
+            InstanceData *instanceData = nullptr;
+            if (SUCCEEDED(resources->mapBuffer(instanceBuffer, (LPVOID *)&instanceData)))
+            {
+                memcpy(instanceData, fullInstances.data(), (sizeof(InstanceData) * fullInstances.size()));
+                resources->unmapBuffer(instanceBuffer);
+
+                resources->setResource(renderContext->vertexPipeline(), instanceBuffer, 0);
+                resources->setResource(renderContext->vertexPipeline(), emitter.colorMap, 1);
+                resources->setResource(renderContext->vertexPipeline(), emitter.sizeMap, 2);
+                renderContext->getContext()->drawPrimitive((emitter.particles.size() * 4), 0);
+            }
+        }
+
         STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Shapes::Frustum *viewFrustum)
         {
             GEK_REQUIRE_VOID_RETURN(cameraEntity);
             GEK_REQUIRE_VOID_RETURN(viewFrustum);
 
-            std::for_each(entityDataList.begin(), entityDataList.end(), [&](const std::pair<Entity *, EmitterData> &dataEntity) -> void
+            concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](auto &dataEntity) -> void
             {
                 Entity *entity = dataEntity.first;
                 const EmitterData &emitter = dataEntity.second;
-                static auto drawCall = [](RenderContext *renderContext, PluginResources *resources, Entity *entity, const EmitterData &emitter, ResourceHandle instanceBuffer) -> void
-                {
-                    InstanceData *instanceData = nullptr;
-                    if (SUCCEEDED(resources->mapBuffer(instanceBuffer, (LPVOID *)&instanceData)))
-                    {
-                        for (auto &particle : emitter.particles)
-                        {
-                            auto &instance = (*instanceData++);
-                            instance.position = particle.position;
-                            instance.life = particle.life;
-                            instance.style = particle.style;
-                        }
-
-                        resources->unmapBuffer(instanceBuffer);
-
-                        resources->setResource(renderContext->vertexPipeline(), instanceBuffer, 0);
-                        resources->setResource(renderContext->vertexPipeline(), emitter.colorMap, 1);
-                        resources->setResource(renderContext->vertexPipeline(), emitter.sizeMap, 2);
-                        renderContext->getContext()->drawPrimitive((emitter.particles.size() * 4), 0);
-                    }
-                };
-
                 render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, instanceBuffer));
             });
         }
