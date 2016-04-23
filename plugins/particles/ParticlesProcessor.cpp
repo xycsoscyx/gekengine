@@ -170,9 +170,9 @@ namespace Gek
 
                 auto &emitter = entityDataList[entity];
                 emitter.particles.resize(particlesComponent.size);
-                emitter.material = resources->loadMaterial(particlesComponent.material);
-                emitter.colorMap = resources->loadTexture(particlesComponent.colorMap, nullptr, 0);
-                emitter.sizeMap = resources->loadTexture(particlesComponent.sizeMap, nullptr, 0);
+                emitter.material = resources->loadMaterial(L"Particles\\" + particlesComponent.material);
+                emitter.colorMap = resources->loadTexture(L"Particles\\" + particlesComponent.colorMap, nullptr, 0);
+                emitter.sizeMap = resources->loadTexture(L"Particles\\" + particlesComponent.sizeMap, nullptr, 0);
                 shuntingYard.evaluteTokenList(particlesComponent.lifeExpectancy, emitter.lifeExpectancy);
             }
         }
@@ -211,7 +211,7 @@ namespace Gek
                             particle.velocity.z = negativeOneToOne(mersineTwister);
                         }
 
-                        particle.velocity += (Math::Float3(0.0f, -32.174f, 0.0f) * frameTime);
+                        particle.velocity += (Math::Float3(0.0f, -32.174f, 0.0f) * frameTime * 0.01f);
                         particle.position += (particle.velocity * frameTime);
                     });
                 });
@@ -230,7 +230,7 @@ namespace Gek
                 resources->setResource(renderContext->vertexPipeline(), particleBuffer, 0);
                 resources->setResource(renderContext->vertexPipeline(), emitter.colorMap, 1);
                 resources->setResource(renderContext->vertexPipeline(), emitter.sizeMap, 2);
-                renderContext->getContext()->drawPrimitive((emitter.particles.size() * 4), 0);
+                renderContext->getContext()->drawPrimitive((emitter.particles.size() * 6), 0);
             }
         }
 

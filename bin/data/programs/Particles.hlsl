@@ -15,30 +15,36 @@ namespace Particles
     Texture2D<float> sizeMap : register(t2);
 };
 
+static const uint indexBuffer[6] = 
+{
+    0, 1, 2,
+    1, 3, 2,
+};
+
 WorldVertex getWorldVertex(PluginVertex pluginVertex)
 {
-    uint particleIndex = pluginVertex.vertexIndex / 4;
-    uint cornerIndex = pluginVertex.vertexIndex % 4;
+    uint particleIndex = pluginVertex.vertexIndex / 6;
+    uint cornerIndex = indexBuffer[pluginVertex.vertexIndex % 6];
 
     Particles::Instance instance = Particles::list[particleIndex];
 
     // calculate the position of the vertex
     float3 position;
-    position.x = (cornerIndex % 2) ? 1.0 : -1.0;
-    position.y = (cornerIndex & 2) ? -1.0 : 1.0;
+    position.x = ((cornerIndex % 2) ?  1.0 : -1.0);
+    position.y = ((cornerIndex & 2) ? -1.0 :  1.0);
     position.z = 0.0f;
-    position = mul(Camera::viewMatrix, position);
-    position *= Particles::sizeMap[float2(instance.life, instance.style)];
+    position = mul(position, Camera::viewMatrix).xyz;
+    position *= Particles::sizeMap.SampleLevel(Global::linearClampSampler, float2(1 - instance.life, instance.style), 0);
     position += instance.position;
 
     WorldVertex worldVertex;
     worldVertex.position = float4(position, 1.0);
     worldVertex.normal = float3(0.0, 0.0, -1.0);
-    worldVertex.color = Particles::colorMap[float2(instance.life, instance.style)];
+    worldVertex.color = Particles::colorMap.SampleLevel(Global::linearClampSampler, float2(1 - instance.life, instance.style), 0);
 
     // texture coordinate
-    worldVertex.texCoord.x = (cornerIndex % 2) ? 1.0 : 0.0;
-    worldVertex.texCoord.y = (cornerIndex & 2) ? 1.0 : 0.0;
+    worldVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
+    worldVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
 
     return worldVertex;
 }
