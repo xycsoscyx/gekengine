@@ -34,7 +34,7 @@ ViewVertex getViewVertex(PluginVertex pluginVertex)
     viewVertex.position.y = ((cornerIndex & 2) ? -1.0 : 1.0);
     viewVertex.position.z = 0.0f;
     viewVertex.position *= Particles::sizeMap.SampleLevel(Global::linearClampSampler, float2(1 - instanceData.life, instanceData.style), 0);
-    viewVertex.position += instanceData.position;
+    viewVertex.position += mul(Camera::viewMatrix, float4(instanceData.position, 1.0));
 
     viewVertex.normal = float3(0.0, 0.0, -1.0);
 

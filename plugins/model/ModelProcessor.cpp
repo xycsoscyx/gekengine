@@ -413,7 +413,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Shapes::Frustum *viewFrustum)
+        STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
             GEK_REQUIRE_VOID_RETURN(cameraEntity);
             GEK_REQUIRE_VOID_RETURN(viewFrustum);
@@ -440,7 +440,7 @@ namespace Gek
 
                     auto &materialList = visibleList[&data];
                     auto &instanceList = materialList[dataEntity.second.skin];
-                    instanceList.push_back(InstanceData(matrix, color, transformComponent.scale));
+                    instanceList.push_back(InstanceData((matrix * *viewMatrix), color, transformComponent.scale));
                 }
             });
 

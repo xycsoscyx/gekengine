@@ -34,7 +34,7 @@ namespace Gek
 
     DECLARE_INTERFACE_IID(RenderObserver, "16333226-FE0A-427D-A3EF-205486E1AD4D") : virtual public Observer
     {
-        STDMETHOD_(void, onRenderScene)                 (THIS_ Entity *cameraEntity, const Shapes::Frustum *viewFrustum) { };
+        STDMETHOD_(void, onRenderScene)                 (THIS_ Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum) { };
         STDMETHOD_(void, onRenderOverlay)               (THIS) { };
     };
 
