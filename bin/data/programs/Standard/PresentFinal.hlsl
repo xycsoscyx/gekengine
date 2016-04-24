@@ -15,7 +15,6 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float averageLuminance = Resources::averageLuminance.Load(uint3(0, 0, 0));
     float3 baseColor = Resources::luminatedBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
-    return baseColor;
     float ambientOcclusion = Resources::ambientOcclusionBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     //baseColor *= ambientOcclusion;
 

@@ -211,7 +211,7 @@
 
         <pass mode="deferred">
             <resources>
-                <albedoBuffer>luminatedBuffer</albedoBuffer>
+                <luminatedBuffer />
                 <averageLuminance actions="flip" />
                 <ambientOcclusionBuffer actions="flip" />
                 <depthBuffer />
