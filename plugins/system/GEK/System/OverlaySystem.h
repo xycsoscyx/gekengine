@@ -2,8 +2,8 @@
 
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Color.h"
-#include "GEK\Math\Vector4.h"
-#include "GEK\Math\Matrix3x2.h"
+#include "GEK\Math\Float4.h"
+#include "GEK\Math\Float3x2.h"
 #include "GEK\Shapes\Rectangle.h"
 #include <unordered_map>
 

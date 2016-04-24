@@ -939,7 +939,7 @@ namespace Gek
                                             engineData +=
                                                 "    float4 position     : SV_POSITION;                 \r\n" \
                                                 "    float2 texCoord     : TEXCOORD0;                   \r\n" \
-                                                "    float4 viewPosition : TEXCOORD1;                   \r\n" \
+                                                "    float3 viewPosition : TEXCOORD1;                   \r\n" \
                                                 "    float3 viewNormal   : NORMAL0;                     \r\n" \
                                                 "    float4 color        : COLOR0;                      \r\n" \
                                                 "    bool   frontFacing  : SV_ISFRONTFACE;              \r\n";

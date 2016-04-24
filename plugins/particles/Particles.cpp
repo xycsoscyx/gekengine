@@ -6,7 +6,7 @@
 namespace Gek
 {
     ParticlesComponent::ParticlesComponent(void)
-        : size(100)
+        : density(100)
     {
     }
 
@@ -16,7 +16,7 @@ namespace Gek
         saveParameter(componentData, L"color_map", colorMap);
         saveParameter(componentData, L"size_map", sizeMap);
         saveParameter(componentData, L"life_expectancy", lifeExpectancy);
-        saveParameter(componentData, L"size", size);
+        saveParameter(componentData, L"density", density);
         return S_OK;
     }
 
@@ -26,7 +26,7 @@ namespace Gek
         loadParameter(componentData, L"color_map", colorMap);
         loadParameter(componentData, L"size_map", sizeMap);
         loadParameter(componentData, L"life_expectancy", lifeExpectancy);
-        loadParameter(componentData, L"size", size);
+        loadParameter(componentData, L"density", density);
         return S_OK;
     }
 

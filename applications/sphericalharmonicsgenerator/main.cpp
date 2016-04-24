@@ -1,7 +1,7 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Math\Common.h"
-#include "GEK\Math\Matrix4x4.h"
+#include "GEK\Math\Float4x4.h"
 #include <DirectXTex.h>
 #include <atlbase.h>
 #include <atlpath.h>

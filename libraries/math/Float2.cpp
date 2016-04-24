@@ -1,4 +1,4 @@
-#include "GEK\Math\Vector2.h"
+#include "GEK\Math\Float2.h"
 #include "GEK\Math\Common.h"
 #include <algorithm>
 

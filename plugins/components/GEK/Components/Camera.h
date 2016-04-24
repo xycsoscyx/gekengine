@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Math\Vector3.h"
+#include "GEK\Math\Float3.h"
 #include "GEK\Engine\Component.h"
 #include <atlbase.h>
 #include <atlstr.h>

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GEK\Math\Vector2.h"
-#include "GEK\Math\Vector3.h"
-#include "GEK\Math\Vector4.h"
+#include "GEK\Math\Float2.h"
+#include "GEK\Math\Float3.h"
+#include "GEK\Math\Float4.h"
 #include "GEK\Math\Color.h"
 #include "GEK\Math\Quaternion.h"
 #include "GEK\Utility\Hash.h"

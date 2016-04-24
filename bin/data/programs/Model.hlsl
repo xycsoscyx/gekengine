@@ -1,4 +1,4 @@
-#include "GEKGlobal.h"
+#include "GEKGlobal.hlsl"
 
 namespace Model
 {
@@ -10,12 +10,14 @@ namespace Model
     };
 };
 
-WorldVertex getWorldVertex(PluginVertex pluginVertex)
+ViewVertex getViewVertex(PluginVertex pluginVertex)
 {
-    WorldVertex worldVertex;
-	worldVertex.position = mul(Model::transform, float4(pluginVertex.position * Model::scale.xyz, 1.0));
-	worldVertex.texCoord = pluginVertex.texCoord;
-    worldVertex.normal   = mul(Model::transform, float4(pluginVertex.normal, 0.0)).xyz;
-    worldVertex.color = 1;//Model::color;
-	return worldVertex;
+    float4x4 transform = mul(Model::transform, Camera::viewMatrix);
+
+    ViewVertex viewVertex;
+    viewVertex.position = mul(transform, float4(pluginVertex.position * Model::scale.xyz, 1.0)).xyz;
+    viewVertex.normal = mul(transform, pluginVertex.normal);
+    viewVertex.texCoord = pluginVertex.texCoord;
+    viewVertex.color = Model::color;
+    return viewVertex;
 }

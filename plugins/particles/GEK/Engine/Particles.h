@@ -1,6 +1,7 @@
 #pragma once
 
-#include "GEK\Math\Vector4.h"
+#include "GEK\Math\Float2.h"
+#include "GEK\Math\Float4.h"
 #include "GEK\Engine\Population.h"
 
 namespace Gek
@@ -10,8 +11,8 @@ namespace Gek
         CStringW material;
         CStringW colorMap;
         CStringW sizeMap;
-        CStringW lifeExpectancy;
-        UINT32 size;
+        Math::Float2 lifeExpectancy;
+        UINT32 density;
 
         ParticlesComponent(void);
         HRESULT save(Population::ComponentDefinition &componentData) const;

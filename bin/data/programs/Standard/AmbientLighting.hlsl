@@ -1,7 +1,7 @@
 #include "GEKEngine"
 
-#include "GEKGlobal.h"
-#include "GEKUtility.h"
+#include "GEKGlobal.hlsl"
+#include "GEKUtility.hlsl"
 
 static const float AmbientLevel = 0.00025;
 

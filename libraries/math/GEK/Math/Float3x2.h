@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Math\Vector2.h"
+#include "GEK\Math\Float2.h"
 
 
 namespace Gek

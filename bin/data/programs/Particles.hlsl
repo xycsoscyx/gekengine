@@ -1,4 +1,4 @@
-#include "GEKGlobal.h"
+#include "GEKGlobal.hlsl"
 
 namespace Particles
 {
@@ -21,30 +21,27 @@ static const uint indexBuffer[6] =
     1, 3, 2,
 };
 
-WorldVertex getWorldVertex(PluginVertex pluginVertex)
+ViewVertex getViewVertex(PluginVertex pluginVertex)
 {
     uint particleIndex = pluginVertex.vertexIndex / 6;
     uint cornerIndex = indexBuffer[pluginVertex.vertexIndex % 6];
 
-    Particles::Instance instance = Particles::list[particleIndex];
+    Particles::Instance instanceData = Particles::list[particleIndex];
 
-    // calculate the position of the vertex
-    float3 position;
-    position.x = ((cornerIndex % 2) ?  1.0 : -1.0);
-    position.y = ((cornerIndex & 2) ? -1.0 :  1.0);
-    position.z = 0.0f;
-    position = mul(position, Camera::viewMatrix).xyz;
-    position *= Particles::sizeMap.SampleLevel(Global::linearClampSampler, float2(1 - instance.life, instance.style), 0);
-    position += instance.position;
+    ViewVertex viewVertex;
 
-    WorldVertex worldVertex;
-    worldVertex.position = float4(position, 1.0);
-    worldVertex.normal = float3(0.0, 0.0, -1.0);
-    worldVertex.color = Particles::colorMap.SampleLevel(Global::linearClampSampler, float2(1 - instance.life, instance.style), 0);
+    viewVertex.position.x = ((cornerIndex % 2) ? 1.0 : -1.0);
+    viewVertex.position.y = ((cornerIndex & 2) ? -1.0 : 1.0);
+    viewVertex.position.z = 0.0f;
+    viewVertex.position *= Particles::sizeMap.SampleLevel(Global::linearClampSampler, float2(1 - instanceData.life, instanceData.style), 0);
+    viewVertex.position += instanceData.position;
 
-    // texture coordinate
-    worldVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
-    worldVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
+    viewVertex.normal = float3(0.0, 0.0, -1.0);
 
-    return worldVertex;
+    viewVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
+    viewVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
+
+    viewVertex.color = Particles::colorMap.SampleLevel(Global::linearClampSampler, float2(1 - instanceData.life, instanceData.style), 0);
+
+    return viewVertex;
 }

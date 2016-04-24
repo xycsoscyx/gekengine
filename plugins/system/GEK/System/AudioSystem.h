@@ -1,7 +1,7 @@
 #pragma once
 
-#include "GEK\Math\Vector4.h"
-#include "GEK\Math\Matrix4x4.h"
+#include "GEK\Math\Float4.h"
+#include "GEK\Math\Float4x4.h"
 #include <atlbase.h>
 #include <atlstr.h>
 

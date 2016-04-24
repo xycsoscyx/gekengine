@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Math\Vector4.h"
+#include "GEK\Math\Float4.h"
 #include "GEK\Engine\Population.h"
 
 namespace Gek

@@ -158,120 +158,6 @@ namespace Gek
 
                             if (SUCCEEDED(resultValue))
                             {
-                                CStringA engineData;
-
-                                engineData +=
-                                    "struct WorldVertex                                     \r\n" \
-                                    "{                                                      \r\n" \
-                                    "    float4 position;                                   \r\n" \
-                                    "    float2 texCoord;                                   \r\n" \
-                                    "    float3 normal;                                     \r\n" \
-                                    "    float4 color;                                      \r\n" \
-                                    "};                                                     \r\n" \
-                                    "                                                       \r\n" \
-                                    "struct ViewVertex                                      \r\n" \
-                                    "{                                                      \r\n" \
-                                    "    float4 position : SV_POSITION;                     \r\n" \
-                                    "    float2 texCoord : TEXCOORD0;                       \r\n" \
-                                    "    float4 viewPosition : TEXCOORD1;                   \r\n" \
-                                    "    float3 viewNormal : NORMAL0;                       \r\n" \
-                                    "    float4 color : COLOR0;                             \r\n" \
-                                    "};                                                     \r\n" \
-                                    "                                                       \r\n" \
-                                    "struct PluginVertex                                    \r\n" \
-                                    "{                                                      \r\n";
-
-                                std::vector<CStringA> elementNameList;
-                                std::vector<Video::InputElement> elementList;
-                                Gek::XmlNode xmlElementNode = xmlLayoutNode.firstChildElement();
-                                while (xmlElementNode)
-                                {
-                                    if (xmlElementNode.getType().CompareNoCase(L"instanceIndex") == 0)
-                                    {
-                                        engineData.AppendFormat("    uint instanceIndex : SV_InstanceId;\r\n");
-                                    }
-                                    else if (xmlElementNode.getType().CompareNoCase(L"vertexIndex") == 0)
-                                    {
-                                        engineData.AppendFormat("    uint vertexIndex : SV_VertexId;\r\n");
-                                    }
-                                    else if (xmlElementNode.getType().CompareNoCase(L"isFrontFace") == 0)
-                                    {
-                                        engineData.AppendFormat("    bool isFrontFace : SV_IsFrontFace;\r\n");
-                                    }
-                                    else if (xmlElementNode.hasAttribute(L"format") &&
-                                        xmlElementNode.hasAttribute(L"name") &&
-                                        xmlElementNode.hasAttribute(L"index"))
-                                    {
-                                        CW2A semanticName(xmlElementNode.getAttribute(L"name"));
-                                        elementNameList.push_back(LPCSTR(semanticName));
-                                        CStringW format(xmlElementNode.getAttribute(L"format"));
-
-                                        Video::InputElement element;
-                                        element.semanticName = elementNameList.back().GetString();
-                                        element.semanticIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"index"));
-                                        if (xmlElementNode.hasAttribute(L"slotclass") &&
-                                            xmlElementNode.hasAttribute(L"slotindex"))
-                                        {
-                                            element.slotClass = getElementType(xmlElementNode.getAttribute(L"slotclass"));
-                                            element.slotIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"slotindex"));
-                                        }
-
-                                        if (format.CompareNoCase(L"float4x4") == 0)
-                                        {
-                                            engineData.AppendFormat("    float4x4 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
-                                            element.format = Video::Format::Float4;
-                                            elementList.push_back(element);
-                                            element.semanticIndex++;
-                                            elementList.push_back(element);
-                                            element.semanticIndex++;
-                                            elementList.push_back(element);
-                                            element.semanticIndex++;
-                                            elementList.push_back(element);
-                                        }
-                                        else if (format.CompareNoCase(L"float4x3") == 0)
-                                        {
-                                            engineData.AppendFormat("    float4x3 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
-                                            element.format = Video::Format::Float4;
-                                            elementList.push_back(element);
-                                            element.semanticIndex++;
-                                            elementList.push_back(element);
-                                            element.semanticIndex++;
-                                            elementList.push_back(element);
-                                        }
-                                        else
-                                        {
-                                            element.format = getFormat(format);
-                                            engineData.AppendFormat("    %s %S : %s%d;\r\n", getFormatType(element.format), xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
-                                            elementList.push_back(element);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        break;
-                                    }
-
-                                    xmlElementNode = xmlElementNode.nextSiblingElement();
-                                };
-
-                                engineData +=
-                                    "};                                                                                                 \r\n" \
-                                    "                                                                                                   \r\n" \
-                                    "#include \"GEKPlugin\"                                                                             \r\n" \
-                                    "                                                                                                   \r\n" \
-                                    "ViewVertex mainVertexProgram(in PluginVertex pluginVertex)                                         \r\n" \
-                                    "{                                                                                                  \r\n" \
-                                    "    WorldVertex worldVertex = getWorldVertex(pluginVertex);                                        \r\n" \
-                                    "                                                                                                   \r\n" \
-                                    "    ViewVertex viewVertex;                                                                         \r\n" \
-                                    "    viewVertex.viewNormal = mul(Camera::viewMatrix, float4(worldVertex.normal, 0.0)).xyz;          \r\n" \
-                                    "    viewVertex.viewPosition = mul(Camera::viewMatrix, worldVertex.position);                       \r\n" \
-                                    "    viewVertex.position = mul(Camera::projectionMatrix, viewVertex.viewPosition);                  \r\n" \
-                                    "    viewVertex.texCoord = worldVertex.texCoord;                                                    \r\n" \
-                                    "    viewVertex.color = worldVertex.color;                                                          \r\n" \
-                                    "    return viewVertex;                                                                             \r\n" \
-                                    "}                                                                                                  \r\n" \
-                                    "                                                                                                   \r\n";
-
                                 resultValue = E_INVALIDARG;
                                 Gek::XmlNode xmlVertexNode = xmlPluginNode.firstChildElement(L"vertex");
                                 if (xmlVertexNode)
@@ -285,6 +171,118 @@ namespace Gek
                                         resultValue = Gek::FileSystem::load(programPath, progamScript);
                                         if (SUCCEEDED(resultValue))
                                         {
+                                            CStringA engineData =
+                                                "struct PluginVertex                                    \r\n" \
+                                                "{                                                      \r\n";
+
+                                            std::vector<CStringA> elementNameList;
+                                            std::vector<Video::InputElement> elementList;
+                                            Gek::XmlNode xmlElementNode = xmlLayoutNode.firstChildElement();
+                                            while (xmlElementNode)
+                                            {
+                                                if (xmlElementNode.getType().CompareNoCase(L"instanceIndex") == 0)
+                                                {
+                                                    engineData.AppendFormat("    uint instanceIndex : SV_InstanceId;\r\n");
+                                                }
+                                                else if (xmlElementNode.getType().CompareNoCase(L"vertexIndex") == 0)
+                                                {
+                                                    engineData.AppendFormat("    uint vertexIndex : SV_VertexId;\r\n");
+                                                }
+                                                else if (xmlElementNode.getType().CompareNoCase(L"isFrontFace") == 0)
+                                                {
+                                                    engineData.AppendFormat("    bool isFrontFace : SV_IsFrontFace;\r\n");
+                                                }
+                                                else if (xmlElementNode.hasAttribute(L"format") &&
+                                                    xmlElementNode.hasAttribute(L"name") &&
+                                                    xmlElementNode.hasAttribute(L"index"))
+                                                {
+                                                    CW2A semanticName(xmlElementNode.getAttribute(L"name"));
+                                                    elementNameList.push_back(LPCSTR(semanticName));
+                                                    CStringW format(xmlElementNode.getAttribute(L"format"));
+
+                                                    Video::InputElement element;
+                                                    element.semanticName = elementNameList.back().GetString();
+                                                    element.semanticIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"index"));
+                                                    if (xmlElementNode.hasAttribute(L"slotclass") &&
+                                                        xmlElementNode.hasAttribute(L"slotindex"))
+                                                    {
+                                                        element.slotClass = getElementType(xmlElementNode.getAttribute(L"slotclass"));
+                                                        element.slotIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"slotindex"));
+                                                    }
+
+                                                    if (format.CompareNoCase(L"float4x4") == 0)
+                                                    {
+                                                        engineData.AppendFormat("    float4x4 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
+                                                        element.format = Video::Format::Float4;
+                                                        elementList.push_back(element);
+                                                        element.semanticIndex++;
+                                                        elementList.push_back(element);
+                                                        element.semanticIndex++;
+                                                        elementList.push_back(element);
+                                                        element.semanticIndex++;
+                                                        elementList.push_back(element);
+                                                    }
+                                                    else if (format.CompareNoCase(L"float4x3") == 0)
+                                                    {
+                                                        engineData.AppendFormat("    float4x3 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
+                                                        element.format = Video::Format::Float4;
+                                                        elementList.push_back(element);
+                                                        element.semanticIndex++;
+                                                        elementList.push_back(element);
+                                                        element.semanticIndex++;
+                                                        elementList.push_back(element);
+                                                    }
+                                                    else
+                                                    {
+                                                        element.format = getFormat(format);
+                                                        engineData.AppendFormat("    %s %S : %s%d;\r\n", getFormatType(element.format), xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
+                                                        elementList.push_back(element);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    break;
+                                                }
+
+                                                xmlElementNode = xmlElementNode.nextSiblingElement();
+                                            };
+
+                                            engineData +=
+                                                "};                                                     \r\n" \
+                                                "                                                       \r\n" \
+                                                "struct ViewVertex                                      \r\n" \
+                                                "{                                                      \r\n" \
+                                                "    float3 position;                                   \r\n" \
+                                                "    float3 normal;                                     \r\n" \
+                                                "    float2 texCoord;                                   \r\n" \
+                                                "    float4 color;                                      \r\n" \
+                                                "};                                                     \r\n" \
+                                                "                                                       \r\n" \
+                                                "struct ProjectedVertex                                 \r\n" \
+                                                "{                                                      \r\n" \
+                                                "    float4 position : SV_POSITION;                     \r\n" \
+                                                "    float2 texCoord : TEXCOORD0;                       \r\n" \
+                                                "    float3 viewPosition : TEXCOORD1;                   \r\n" \
+                                                "    float3 viewNormal : NORMAL0;                       \r\n" \
+                                                "    float4 color : COLOR0;                             \r\n" \
+                                                "};                                                     \r\n" \
+                                                "                                                       \r\n" \
+                                                "#include \"GEKPlugin\"                                                                             \r\n" \
+                                                "                                                                                                   \r\n" \
+                                                "ProjectedVertex mainVertexProgram(in PluginVertex pluginVertex)                                    \r\n" \
+                                                "{                                                                                                  \r\n" \
+                                                "    ViewVertex viewVertex = getViewVertex(pluginVertex);                                           \r\n" \
+                                                "                                                                                                   \r\n" \
+                                                "    ProjectedVertex projectedVertex;                                                               \r\n" \
+                                                "    projectedVertex.viewPosition = viewVertex.position;                                            \r\n" \
+                                                "    projectedVertex.position = mul(Camera::projectionMatrix, float4(projectedVertex.viewPosition, 1.0));   \r\n" \
+                                                "    projectedVertex.viewNormal = viewVertex.normal;                                                \r\n" \
+                                                "    projectedVertex.texCoord = viewVertex.texCoord;                                                \r\n" \
+                                                "    projectedVertex.color = viewVertex.color;                                                      \r\n" \
+                                                "    return projectedVertex;                                                                        \r\n" \
+                                                "}                                                                                                  \r\n" \
+                                                "                                                                                                   \r\n";
+
                                             auto getIncludeData = [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
                                             {
                                                 HRESULT resultValue = E_FAIL;

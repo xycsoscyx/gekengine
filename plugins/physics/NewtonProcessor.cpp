@@ -17,7 +17,7 @@
 #include "GEK\Newton\NewtonEntity.h"
 #include "GEK\Newton\NewtonProcessor.h"
 #include "GEK\Math\Common.h"
-#include "GEK\Math\Matrix4x4.h"
+#include "GEK\Math\Float4x4.h"
 #include "GEK\Shapes\AlignedBox.h"
 #include <Newton.h>
 #include <memory>

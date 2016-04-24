@@ -1,4 +1,4 @@
-﻿#include "GEK\Math\Matrix4x4.h"
+﻿#include "GEK\Math\Float4x4.h"
 #include "GEK\Shapes\AlignedBox.h"
 #include "GEK\Shapes\OrientedBox.h"
 #include "GEK\Utility\FileSystem.h"
@@ -54,12 +54,12 @@ namespace Gek
             }
         };
 
-        struct EmitterData
+        struct EmitterData : public Shapes::AlignedBox
         {
             MaterialHandle material;
             ResourceHandle colorMap;
             ResourceHandle sizeMap;
-            std::vector<ShuntingYard::Token> lifeExpectancy;
+            std::uniform_real_distribution<float> lifeExpectancy;
             std::vector<ParticleData> particles;
         };
 
@@ -169,11 +169,11 @@ namespace Gek
                 auto &particlesComponent = entity->getComponent<ParticlesComponent>();
 
                 auto &emitter = entityDataList[entity];
-                emitter.particles.resize(particlesComponent.size);
+                emitter.particles.resize(particlesComponent.density);
                 emitter.material = resources->loadMaterial(L"Particles\\" + particlesComponent.material);
                 emitter.colorMap = resources->loadTexture(L"Particles\\" + particlesComponent.colorMap, nullptr, 0);
                 emitter.sizeMap = resources->loadTexture(L"Particles\\" + particlesComponent.sizeMap, nullptr, 0);
-                shuntingYard.evaluteTokenList(particlesComponent.lifeExpectancy, emitter.lifeExpectancy);
+                emitter.lifeExpectancy = std::uniform_real_distribution<float>(particlesComponent.lifeExpectancy.x, particlesComponent.lifeExpectancy.y);
             }
         }
 
@@ -188,6 +188,44 @@ namespace Gek
             }
         }
 
+        struct minimum : public concurrency::combinable<float>
+        {
+            minimum(float defaultValue)
+                : concurrency::combinable<float>([&] {return defaultValue; })
+            {
+            }
+
+            void set(float value)
+            {
+                auto &localValue = local();
+                localValue = std::min(value, localValue);
+            }
+
+            float get(void)
+            {
+                return combine([](float left, float right) { return std::min(left, right); });
+            }
+        };
+
+        struct maximum : public concurrency::combinable<float>
+        {
+            maximum(float defaultValue)
+                : concurrency::combinable<float>([&] {return defaultValue; })
+            {
+            }
+
+            void set(float value)
+            {
+                auto &localValue = local();
+                localValue = std::max(value, localValue);
+            }
+
+            float get(void)
+            {
+                return combine([](float left, float right) { return std::max(left, right); });
+            }
+        };
+
         STDMETHODIMP_(void) onUpdate(bool isIdle)
         {
             if (!isIdle)
@@ -198,22 +236,38 @@ namespace Gek
                     Entity *entity = dataEntity.first;
                     EmitterData &emitter = const_cast<EmitterData &>(dataEntity.second);
                     auto &transformComponent = entity->getComponent<TransformComponent>();
+
+                    minimum minimum[3] = { (Math::Infinity), (Math::Infinity), (Math::Infinity) };
+                    maximum maximum[3] = { (-Math::Infinity), (-Math::Infinity), (-Math::Infinity) };
                     concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
                     {
-                        particle.life -= frameTime;
+                        particle.life -= frameTime / emitter.lifeExpectancy.max();
                         if (particle.life <= 0.0f)
                         {
-                            shuntingYard.evaluate(emitter.lifeExpectancy, particle.life);
+                            particle.life = emitter.lifeExpectancy(mersineTwister) / emitter.lifeExpectancy.max();
                             particle.style = zeroToOne(mersineTwister);
                             particle.position = transformComponent.position;
                             particle.velocity.x = negativeOneToOne(mersineTwister);
                             particle.velocity.y = zeroToOne(mersineTwister);
                             particle.velocity.z = negativeOneToOne(mersineTwister);
+                            particle.velocity.normalize();
                         }
 
-                        particle.velocity += (Math::Float3(0.0f, -32.174f, 0.0f) * frameTime * 0.01f);
+                        particle.velocity += (Math::Float3(0.0f, -32.174f, 0.0f) * frameTime * 0.05f);
                         particle.position += (particle.velocity * frameTime);
+                        
+                        for (auto index : { 0, 1, 2 })
+                        {
+                            minimum[index].set(particle.position[index]);
+                            maximum[index].set(particle.position[index]);
+                        }
                     });
+
+                    for (auto index : { 0, 1, 2 })
+                    {
+                        emitter.minimum[index] = minimum[index].get();
+                        emitter.maximum[index] = maximum[index].get();
+                    }
                 });
             }
         }
@@ -243,7 +297,10 @@ namespace Gek
             {
                 Entity *entity = dataEntity.first;
                 const EmitterData &emitter = dataEntity.second;
-                render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, particleBuffer));
+                if (viewFrustum->isVisible(emitter))
+                {
+                    render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, particleBuffer));
+                }
             });
         }
     };

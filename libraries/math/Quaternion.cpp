@@ -1,6 +1,6 @@
 #include "GEK\Math\Quaternion.h"
-#include "GEK\Math\Matrix4x4.h"
-#include "GEK\Math\Vector3.h"
+#include "GEK\Math\Float4x4.h"
+#include "GEK\Math\Float3.h"
 #include "GEK\Math\Common.h"
 #include <algorithm>
 

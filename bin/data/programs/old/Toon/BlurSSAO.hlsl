@@ -1,4 +1,4 @@
-#include "GEKGlobal.h"
+#include "GEKGlobal.hlsl"
 #include "GEKtypes.h"
 
 Texture2D           gs_pAlbedoBuffer        : register(t1);

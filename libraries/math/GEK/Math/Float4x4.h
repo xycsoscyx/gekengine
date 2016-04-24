@@ -1,8 +1,8 @@
 #pragma once
 
 #include <xmmintrin.h>
-#include "GEK\Math\Vector3.h"
-#include "GEK\Math\Vector4.h"
+#include "GEK\Math\Float3.h"
+#include "GEK\Math\Float4.h"
 
 namespace Gek
 {

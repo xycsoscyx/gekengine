@@ -1,7 +1,7 @@
 #include "GEKEngine"
 
-#include "GEKGlobal.h"
-#include "GEKUtility.h"
+#include "GEKGlobal.hlsl"
+#include "GEKUtility.hlsl"
 
 float3 getToneMapFilmicALU(float3 color)
 {

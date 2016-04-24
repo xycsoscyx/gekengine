@@ -1,6 +1,6 @@
 #include "GEKEngine"
 
-#include "GEKGlobal.h"
+#include "GEKGlobal.hlsl"
 
 float mainPixelProgram(void) : SV_TARGET0
 {
