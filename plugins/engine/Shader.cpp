@@ -253,17 +253,24 @@ namespace Gek
         VideoSystem *video;
         Resources *resources;
         Population *population;
+
+        UINT32 priority;
+
         CComPtr<VideoBuffer> shaderConstantBuffer;
+
+        UINT32 lightsPerPass;
         CComPtr<VideoBuffer> lightConstantBuffer;
         CComPtr<VideoBuffer> lightDataBuffer;
-        UINT32 lightsPerPass;
+        std::vector<LightData> lightList;
+
         std::unordered_map<CStringW, CStringW> globalDefinesList;
+
         std::list<Map> mapList;
+
         ResourceHandle depthBuffer;
         std::unordered_map<CStringW, ResourceHandle> resourceMap;
-        std::list<BlockData> blockList;
 
-        std::vector<LightData> lightList;
+        std::list<BlockData> blockList;
 
     private:
         static MapType getMapType(LPCWSTR mapType)
@@ -578,6 +585,7 @@ namespace Gek
             : video(nullptr)
             , resources(nullptr)
             , population(nullptr)
+            , priority(0)
             , lightsPerPass(0)
         {
         }
@@ -625,6 +633,8 @@ namespace Gek
                     Gek::XmlNode xmlShaderNode = xmlDocument.getRoot();
                     if (xmlShaderNode && xmlShaderNode.getType().CompareNoCase(L"shader") == 0)
                     {
+                        priority = String::to<UINT32>(xmlShaderNode.getAttribute(L"priority"));
+
                         std::unordered_map<CStringW, std::pair<MapType, BindType>> resourceList;
                         Gek::XmlNode xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
                         if (xmlMaterialNode)
@@ -709,8 +719,15 @@ namespace Gek
                         Gek::XmlNode xmlDepthNode = xmlShaderNode.firstChildElement(L"depth");
                         if (xmlDepthNode)
                         {
-                            Video::Format format = getFormat(xmlDepthNode.getText());
-                            depthBuffer = resources->createTexture(String::format(L"%s:depth", fileName), format, video->getWidth(), video->getHeight(), 1, Video::TextureFlags::DepthTarget);
+                            if (xmlDepthNode.hasAttribute(L"source"))
+                            {
+                                depthBuffer = resources->getResourceHandle<ResourceHandle>(xmlDepthNode.getAttribute(L"source"));
+                            }
+                            else
+                            {
+                                Video::Format format = getFormat(xmlDepthNode.getText());
+                                depthBuffer = resources->createTexture(String::format(L"%s:depth", fileName), format, video->getWidth(), video->getHeight(), 1, Video::TextureFlags::DepthTarget);
+                            }
                         }
 
                         Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"textures");
@@ -1171,6 +1188,11 @@ namespace Gek
             }
 
             return resultValue;
+        }
+
+        STDMETHODIMP_(UINT32) getPriority(void)
+        {
+            return priority;
         }
 
         STDMETHODIMP_(void) loadResourceList(LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &materialDataMap, std::list<ResourceHandle> &resourceList)

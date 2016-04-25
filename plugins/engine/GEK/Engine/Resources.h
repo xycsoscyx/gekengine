@@ -111,6 +111,15 @@ namespace Gek
         STDMETHOD(initialize)                               (THIS_ IUnknown *initializerContext) PURE;
         STDMETHOD_(void, clearLocal)                        (THIS) PURE;
         
+        STDMETHOD_(LPVOID, getResourceHandle)               (THIS_ const std::type_index &type, LPCWSTR name) PURE;
+
+        template <typename HANDLE>
+        HANDLE getResourceHandle(LPCWSTR name)
+        {
+            LPVOID handle = getResourceHandle(typeid(HANDLE), name);
+            return (handle ? *reinterpret_cast<HANDLE *>(handle) : ResourceHandle());
+        }
+
         STDMETHOD_(IUnknown *, getResource)                 (THIS_ const std::type_index &type, LPCVOID handle) PURE;
 
         template <typename RESOURCE, typename HANDLE>

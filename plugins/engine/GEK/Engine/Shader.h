@@ -43,6 +43,8 @@ namespace Gek
 
         STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext, LPCWSTR fileName) PURE;
 
+        STDMETHOD_(UINT32, getPriority)             (THIS) PURE;
+
         STDMETHOD_(void, loadResourceList)          (THIS_ LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) PURE;
         STDMETHOD_(void, setResourceList)           (THIS_ RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &materialMapList) PURE;
 

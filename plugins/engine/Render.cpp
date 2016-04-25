@@ -109,15 +109,21 @@ namespace Gek
                 UINT32 value;
                 struct
                 {
-                    ShaderHandle shader;
-                    PluginHandle plugin;
                     PropertiesHandle properties;
+                    PluginHandle plugin;
+                    ShaderHandle shader;
                 };
             };
 
             DrawCall onDraw;
 
             DrawCallValue(const DrawCallValue &drawCallValue)
+                : value(drawCallValue.value)
+                , onDraw(drawCallValue.onDraw)
+            {
+            }
+
+            DrawCallValue(DrawCallValue &&drawCallValue)
                 : value(drawCallValue.value)
                 , onDraw(drawCallValue.onDraw)
             {
@@ -153,7 +159,8 @@ namespace Gek
 
         CComPtr<IUnknown> deferredVertexProgram;
 
-        concurrency::concurrent_vector<DrawCallValue> drawCallList;
+        typedef concurrency::concurrent_vector<DrawCallValue> DrawCallList;
+        DrawCallList drawCallList;
 
     public:
         RenderImplementation(void)
@@ -325,9 +332,36 @@ namespace Gek
                     return (leftValue.value < rightValue.value);
                 });
 
+                struct DrawCallSet
+                {
+                    Shader *shader;
+                    DrawCallList::iterator begin;
+                    DrawCallList::iterator end;
+
+                    DrawCallSet(Shader *shader, DrawCallList::iterator begin, DrawCallList::iterator end)
+                        : shader(shader)
+                        , begin(begin)
+                        , end(end)
+                    {
+                    }
+
+                    DrawCallSet(const DrawCallSet &drawCallSet)
+                        : shader(drawCallSet.shader)
+                        , begin(drawCallSet.begin)
+                        , end(drawCallSet.end)
+                    {
+                    }
+
+                    DrawCallSet(DrawCallSet &&drawCallSet)
+                        : shader(drawCallSet.shader)
+                        , begin(drawCallSet.begin)
+                        , end(drawCallSet.end)
+                    {
+                    }
+                };
+
                 ShaderHandle currentShader;
-                PluginHandle currentPlugin;
-                PropertiesHandle currentProperties;
+                std::list<DrawCallSet> drawCallSetList;
                 for (auto &drawCall = drawCallList.begin(); drawCall != drawCallList.end(); )
                 {
                     currentShader = (*drawCall).shader;
@@ -345,6 +379,17 @@ namespace Gek
                         continue;
                     }
 
+                    drawCallSetList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
+                }
+
+                drawCallSetList.sort([](const DrawCallSet &leftValue, const DrawCallSet &rightValue) -> bool
+                {
+                    return (leftValue.shader->getPriority() < rightValue.shader->getPriority());
+                });
+
+                for(auto &drawCallSet : drawCallSetList)
+                {
+                    auto &shader = drawCallSet.shader;
                     for (auto block = shader->begin(renderContext, cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
                     {
                         while (block->prepare())
@@ -354,34 +399,39 @@ namespace Gek
                                 switch (pass->prepare())
                                 {
                                 case Shader::Pass::Mode::Forward:
-                                    for (auto &shaderDrawCall = beginShaderList; shaderDrawCall != endShaderList; ++shaderDrawCall)
+                                    if (true)
                                     {
-                                        if (currentPlugin != (*shaderDrawCall).plugin)
+                                        PluginHandle currentPlugin;
+                                        PropertiesHandle currentProperties;
+                                        for (auto &shaderDrawCall = drawCallSet.begin; shaderDrawCall != drawCallSet.end; ++shaderDrawCall)
                                         {
-                                            currentPlugin = (*shaderDrawCall).plugin;
-                                            Plugin *plugin = resources->getResource<Plugin, PluginHandle>(currentPlugin);
-                                            if (!plugin)
+                                            if (currentPlugin != (*shaderDrawCall).plugin)
                                             {
-                                                continue;
+                                                currentPlugin = (*shaderDrawCall).plugin;
+                                                Plugin *plugin = resources->getResource<Plugin, PluginHandle>(currentPlugin);
+                                                if (!plugin)
+                                                {
+                                                    continue;
+                                                }
+
+                                                plugin->enable(videoContext);
                                             }
 
-                                            plugin->enable(videoContext);
-                                        }
-
-                                        if (currentProperties != (*shaderDrawCall).properties)
-                                        {
-                                            currentProperties = (*shaderDrawCall).properties;
-                                            Material *material = resources->getResource<Material, PropertiesHandle>(currentProperties);
-                                            if (!material)
+                                            if (currentProperties != (*shaderDrawCall).properties)
                                             {
-                                                continue;
+                                                currentProperties = (*shaderDrawCall).properties;
+                                                Material *material = resources->getResource<Material, PropertiesHandle>(currentProperties);
+                                                if (!material)
+                                                {
+                                                    continue;
+                                                }
+
+                                                shader->setResourceList(renderContext, block.get(), pass.get(), material->getResourceList());
                                             }
 
-                                            shader->setResourceList(renderContext, block.get(), pass.get(), material->getResourceList());
+                                            (*shaderDrawCall).onDraw(renderContext);
                                         }
-
-                                        (*shaderDrawCall).onDraw(renderContext);
-                                    };
+                                    }
 
                                     break;
 

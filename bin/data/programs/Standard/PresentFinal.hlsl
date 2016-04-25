@@ -3,6 +3,18 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
+float3 getExposedColor(float3 color, float averageLuminance, out float exposure)
+{
+    static const float KeyValue = 0.2f;
+
+    // Use geometric mean
+    averageLuminance = max(averageLuminance, Math::Epsilon);
+    float linearExposure = (KeyValue / averageLuminance);
+    exposure = log2(max(linearExposure, Math::Epsilon));
+    exposure -= toneMappingThreshold;
+    return (exp2(exposure) * color);
+}
+
 float3 getToneMapFilmicALU(float3 color)
 {
     color = max(0, color - 0.004f);

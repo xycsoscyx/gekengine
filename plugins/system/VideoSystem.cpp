@@ -2507,14 +2507,15 @@ namespace Gek
             viewPortList.MaxDepth = 1.0f;
 
             CComQIPtr<ID3D11DeviceContext> d3dDeferredContext(context);
+            CComQIPtr<ID3D11DepthStencilView> d3dDepthStencilView(depthBuffer ? depthBuffer : d3dDefaultDepthStencilView.p);
             if (d3dDeferredContext)
             {
-                d3dDeferredContext->OMSetRenderTargets(1, &d3dDefaultRenderTargetView.p, d3dDefaultDepthStencilView);
+                d3dDeferredContext->OMSetRenderTargets(1, &d3dDefaultRenderTargetView.p, d3dDepthStencilView.p);
                 d3dDeferredContext->RSSetViewports(1, &viewPortList);
             }
             else
             {
-                d3dDeviceContext->OMSetRenderTargets(1, &d3dDefaultRenderTargetView.p, d3dDefaultDepthStencilView);
+                d3dDeviceContext->OMSetRenderTargets(1, &d3dDefaultRenderTargetView.p, d3dDepthStencilView.p);
                 d3dDeviceContext->RSSetViewports(1, &viewPortList);
             }
         }

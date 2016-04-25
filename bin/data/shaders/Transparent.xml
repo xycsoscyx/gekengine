@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<shader priority="10">
+    <material>
+        <maps>
+            <albedo bind="float4" default="*color:(1,1,1,1)">Texture2D</albedo>
+        </maps>
+    </material>
+
+    <depth source="standard:depth" />
+
+    <block>
+        <pass mode="forward">
+            <depthstates>
+                <comparison>less</comparison>
+                <writemask>zero</writemask>
+            </depthstates>
+
+            <blendstates>
+                <color source="one" destination="one" operation="add" />
+                <writemask>rgb</writemask>
+            </blendstates>
+
+            <renderstates>
+                <cullmode>back</cullmode>
+            </renderstates>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Transparent\Render</source>
+            </program>
+        </pass>
+    </block>
+</shader>

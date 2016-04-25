@@ -216,6 +216,21 @@ namespace Gek
             return handle;
         }
 
+        bool getHandle(std::size_t hash, HANDLE **handle)
+        {
+            if (requestedLoadSet.count(hash) > 0)
+            {
+                auto resourceIterator = resourceHandleMap.find(hash);
+                if (resourceIterator != resourceHandleMap.end())
+                {
+                    (*handle) = &resourceIterator->second;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         IUnknown *getResource(HANDLE handle, bool writable = false)
         {
             auto globalIterator = globalResourceMap.find(handle);
@@ -319,6 +334,22 @@ namespace Gek
             renderStateManager.clearResources();
             depthStateManager.clearResources();
             blendStateManager.clearResources();
+        }
+
+        STDMETHODIMP_(LPVOID) getResourceHandle(const std::type_index &type, LPCWSTR name)
+        {
+            if (type == typeid(ResourceHandle))
+            {
+                std::size_t hash = std::hash<LPCWSTR>()(name);
+
+                ResourceHandle *handle = nullptr;
+                if (resourceManager.getHandle(hash, &handle))
+                {
+                    return static_cast<LPVOID>(handle);
+                }
+            }
+
+            return nullptr;
         }
 
         STDMETHODIMP_(IUnknown *) getResource(const std::type_index &type, LPCVOID handle)

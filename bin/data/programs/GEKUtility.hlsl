@@ -13,18 +13,6 @@ float getLuminance(float3 color)
     return max(dot(color, float3(0.299, 0.587, 0.114)), Math::Epsilon);
 }
 
-float3 getExposedColor(float3 color, float averageLuminance, out float exposure)
-{
-    static const float KeyValue = 0.2f;
-
-    // Use geometric mean
-    averageLuminance = max(averageLuminance, Math::Epsilon);
-    float linearExposure = (KeyValue / averageLuminance);
-    exposure = log2(max(linearExposure, Math::Epsilon));
-    exposure -= toneMappingThreshold;
-    return (exp2(exposure) * color);
-}
-
 // using stereograpgic projection
 // http://aras-p.info/texts/CompactNormalStorage.html
 half2 encodeNormal(float3 n)

@@ -1,10 +1,7 @@
 <?xml version="1.0"?>
 <material>
-    <shader>standard</shader>
+    <shader>transparent</shader>
     <maps>
         <albedo>%material%.Albedo</albedo>
-        <normal>%material%.Normal</normal>
-        <roughness>*color:1</roughness>
-        <metalness>*color:0</metalness>
     </maps>
 </material>
