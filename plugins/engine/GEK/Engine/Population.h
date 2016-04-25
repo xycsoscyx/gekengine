@@ -25,6 +25,7 @@ namespace Gek
         };
 
         STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
+        STDMETHOD_(void, destroy)                   (THIS) PURE;
 
         STDMETHOD_(float, getWorldTime)             (THIS) PURE;
         STDMETHOD_(float, getFrameTime)             (THIS) PURE;

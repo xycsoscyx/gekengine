@@ -87,8 +87,12 @@ namespace Gek
 
         ~ParticlesProcessorImplementation(void)
         {
-            population->removeUpdatePriority(updateHandle);
             ObservableMixin::removeObserver(render, getClass<RenderObserver>());
+            if (population)
+            {
+                population->removeUpdatePriority(updateHandle);
+            }
+
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
         }
 

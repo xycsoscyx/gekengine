@@ -1,4 +1,5 @@
 ﻿#include "GEK\Engine\Population.h"
+#include "GEK\Engine\Processor.h"
 #include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
@@ -73,6 +74,7 @@ namespace Gek
 
         std::unordered_map<CStringW, std::type_index> componentNameList;
         std::unordered_map<std::type_index, CComPtr<Component>> componentList;
+        std::list<CComPtr<Processor>> processorList;
 
         std::vector<CAdapt<CComPtr<Entity>>> entityList;
         std::unordered_map<CStringW, Entity *> namedEntityList;
@@ -96,6 +98,13 @@ namespace Gek
         END_INTERFACE_LIST_USER
 
         // Population
+        STDMETHODIMP_(void) destroy(void)
+        {
+            processorList.clear();
+            componentNameList.clear();
+            componentList.clear();
+        }
+
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
             GEK_TRACE_FUNCTION(Population);
@@ -126,6 +135,25 @@ namespace Gek
 
                 return S_OK;
             });
+
+            if (SUCCEEDED(resultValue))
+            {
+                resultValue = getContext()->createEachType(__uuidof(ProcessorType), [&](REFCLSID className, IUnknown *object) -> HRESULT
+                {
+                    HRESULT resultValue = E_FAIL;
+                    CComQIPtr<Processor> system(object);
+                    if (system)
+                    {
+                        resultValue = system->initialize(initializerContext);
+                        if (SUCCEEDED(resultValue))
+                        {
+                            processorList.push_back(system);
+                        }
+                    }
+
+                    return S_OK;
+                });
+            }
 
             return resultValue;
         }

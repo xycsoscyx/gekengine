@@ -7,7 +7,6 @@
 #include "GEK\Engine\Action.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Render.h"
-#include "GEK\Engine\Processor.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include <set>
@@ -36,7 +35,6 @@ namespace Gek
         CComPtr<Render> render;
 
         CComPtr<Population> population;
-        std::list<CComPtr<Processor>> processorList;
 
         UINT32 updateHandle;
         std::mutex actionMutex;
@@ -69,18 +67,21 @@ namespace Gek
 
         ~EngineImplementation(void)
         {
-            population->free();
-
-            processorList.clear();
+            if (population)
+            {
+                population->free();
+                population->destroy();
+            }
 
             ObservableMixin::removeObserver(render, getClass<RenderObserver>());
             render.Release();
-
             resources.Release();
+            if (population)
+            {
+                population->removeUpdatePriority(updateHandle);
+            }
 
-            population->removeUpdatePriority(updateHandle);
             population.Release();
-
             backgroundBrush.Release();
             textBrush.Release();
             font.Release();
@@ -137,66 +138,51 @@ namespace Gek
             HRESULT resultValue = CoInitialize(nullptr);
             if (SUCCEEDED(resultValue))
             {
-                this->window = window;
                 resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(VideoSystemRegistration, &video));
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = video->initialize(window, false);
-                }
             }
 
             if (SUCCEEDED(resultValue))
             {
                 resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(ResourcesRegistration, &resources));
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = resources->initialize(this);
-                }
             }
 
             if (SUCCEEDED(resultValue))
             {
                 resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(PopulationRegistration, &population));
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = population->initialize(this);
-                    if (SUCCEEDED(resultValue))
-                    {
-                        updateHandle = population->setUpdatePriority(this, 0);
-                    }
-                }
             }
 
             if (SUCCEEDED(resultValue))
             {
                 resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(RenderRegistration, &render));
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
+                this->window = window;
+                resultValue = video->initialize(window, false);
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
+                resultValue = resources->initialize(this);
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
+                resultValue = population->initialize(this);
                 if (SUCCEEDED(resultValue))
                 {
-                    resultValue = render->initialize(this);
-                    if (SUCCEEDED(resultValue))
-                    {
-                        resultValue = ObservableMixin::addObserver(render, getClass<RenderObserver>());
-                    }
+                    updateHandle = population->setUpdatePriority(this, 0);
                 }
             }
 
             if (SUCCEEDED(resultValue))
             {
-                resultValue = getContext()->createEachType(__uuidof(ProcessorType), [&](REFCLSID className, IUnknown *object) -> HRESULT
+                resultValue = render->initialize(this);
+                if (SUCCEEDED(resultValue))
                 {
-                    HRESULT resultValue = E_FAIL;
-                    CComQIPtr<Processor> system(object);
-                    if (system)
-                    {
-                        resultValue = system->initialize(this);
-                        if (SUCCEEDED(resultValue))
-                        {
-                            processorList.push_back(system);
-                        }
-                    }
-
-                    return S_OK;
-                });
+                    resultValue = ObservableMixin::addObserver(render, getClass<RenderObserver>());
+                }
             }
 
             if (SUCCEEDED(resultValue))

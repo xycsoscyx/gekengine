@@ -105,7 +105,11 @@ namespace Gek
         ~NewtonProcessorImplementation(void)
         {
             onFree();
-            population->removeUpdatePriority(updateHandle);
+            if (population)
+            {
+                population->removeUpdatePriority(updateHandle);
+            }
+
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
         }
 
