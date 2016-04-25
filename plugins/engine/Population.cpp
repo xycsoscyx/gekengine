@@ -74,7 +74,7 @@ namespace Gek
 
         std::unordered_map<CStringW, std::type_index> componentNameList;
         std::unordered_map<std::type_index, CComPtr<Component>> componentList;
-        std::list<CComPtr<Processor>> processorList;
+        std::list<CAdapt<CComPtr<Processor>>> processorList;
 
         std::vector<CAdapt<CComPtr<Entity>>> entityList;
         std::unordered_map<CStringW, Entity *> namedEntityList;
@@ -391,6 +391,14 @@ namespace Gek
             concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const CComPtr<Entity> &entity) -> void
             {
                 onEntity(entity);
+            });
+        }
+
+        STDMETHODIMP_(void) listProcessors(std::function<void(Processor *)> onProcessor)
+        {
+            concurrency::parallel_for_each(processorList.begin(), processorList.end(), [&](const CComPtr<Processor> &processor) -> void
+            {
+                onProcessor(processor.p);
             });
         }
 

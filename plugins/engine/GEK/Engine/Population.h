@@ -2,6 +2,7 @@
 
 #include "GEK\Utility\Hash.h"
 #include "GEK\Context\Observer.h"
+#include "GEK\Engine\Processor.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <functional>
@@ -53,6 +54,8 @@ namespace Gek
                 }
             });
         }
+
+        STDMETHOD_(void, listProcessors)            (THIS_ std::function<void(Processor *)> onProcessor) PURE;
 
         STDMETHOD_(UINT32, setUpdatePriority)       (THIS_ PopulationObserver *observer, UINT32 priority) PURE;
         STDMETHOD_(void, removeUpdatePriority)      (THIS_ UINT32 updateHandle) PURE;
