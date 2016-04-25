@@ -125,7 +125,7 @@ namespace Gek
 
             DrawCallValue(DrawCallValue &&drawCallValue)
                 : value(drawCallValue.value)
-                , onDraw(drawCallValue.onDraw)
+                , onDraw(std::move(drawCallValue.onDraw))
             {
             }
 
@@ -144,6 +144,36 @@ namespace Gek
             }
         };
 
+        typedef concurrency::concurrent_vector<DrawCallValue> DrawCallList;
+
+        struct DrawCallSet
+        {
+            Shader *shader;
+            DrawCallList::iterator begin;
+            DrawCallList::iterator end;
+
+            DrawCallSet(Shader *shader, DrawCallList::iterator begin, DrawCallList::iterator end)
+                : shader(shader)
+                , begin(begin)
+                , end(end)
+            {
+            }
+
+            DrawCallSet(const DrawCallSet &drawCallSet)
+                : shader(drawCallSet.shader)
+                , begin(drawCallSet.begin)
+                , end(drawCallSet.end)
+            {
+            }
+
+            DrawCallSet(DrawCallSet &&drawCallSet)
+                : shader(std::move(drawCallSet.shader))
+                , begin(std::move(drawCallSet.begin))
+                , end(std::move(drawCallSet.end))
+            {
+            }
+        };
+
     private:
         IUnknown *initializerContext;
         VideoSystem *video;
@@ -159,7 +189,6 @@ namespace Gek
 
         CComPtr<IUnknown> deferredVertexProgram;
 
-        typedef concurrency::concurrent_vector<DrawCallValue> DrawCallList;
         DrawCallList drawCallList;
 
     public:
@@ -331,34 +360,6 @@ namespace Gek
                 {
                     return (leftValue.value < rightValue.value);
                 });
-
-                struct DrawCallSet
-                {
-                    Shader *shader;
-                    DrawCallList::iterator begin;
-                    DrawCallList::iterator end;
-
-                    DrawCallSet(Shader *shader, DrawCallList::iterator begin, DrawCallList::iterator end)
-                        : shader(shader)
-                        , begin(begin)
-                        , end(end)
-                    {
-                    }
-
-                    DrawCallSet(const DrawCallSet &drawCallSet)
-                        : shader(drawCallSet.shader)
-                        , begin(drawCallSet.begin)
-                        , end(drawCallSet.end)
-                    {
-                    }
-
-                    DrawCallSet(DrawCallSet &&drawCallSet)
-                        : shader(drawCallSet.shader)
-                        , begin(drawCallSet.begin)
-                        , end(drawCallSet.end)
-                    {
-                    }
-                };
 
                 ShaderHandle currentShader;
                 std::list<DrawCallSet> drawCallSetList;

@@ -165,6 +165,7 @@ namespace std
             return value.identifier;
         }
     };
+
     template <>
     struct hash<Gek::MaterialHandle>
     {
