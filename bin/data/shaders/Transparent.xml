@@ -6,9 +6,19 @@
         </maps>
     </material>
 
+    <textures>
+        <blendBuffer bind="float4" flags="target">half4</blendBuffer>
+        <weightBuffer bind="float" flags="target">byte</weightBuffer>
+    </textures>
+    
     <depth source="standard:depth" />
 
     <block>
+        <clear>
+            <blendBuffer>(0,0,0,0)</blendBuffer>
+            <weightBuffer>1</weightBuffer>
+        </clear>
+
         <pass mode="forward">
             <depthstates>
                 <comparison>less</comparison>
@@ -16,17 +26,45 @@
             </depthstates>
 
             <blendstates>
-                <color source="one" destination="one" operation="add" />
-                <writemask>rgb</writemask>
+                <target>
+                    <color source="one" destination="one" operation="add" />
+                    <writemask>rgba</writemask>
+                </target>
+                <target>
+                    <color source="zero" destination="inverse_source_color" operation="add" />
+                    <writemask>r</writemask>
+                </target>
             </blendstates>
 
             <renderstates>
                 <cullmode>back</cullmode>
             </renderstates>
 
+            <targets>
+                <blendBuffer />
+                <weightBuffer />
+            </targets>
+            
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Transparent\Render</source>
+                <source>Transparent\Prepare</source>
+            </program>
+        </pass>
+
+        <pass mode="deferred">
+            <blendstates>
+                <color source="inverse_source_alpha" destination="source_alpha" operation="add" />
+                <writemask>rgb</writemask>
+            </blendstates>
+
+            <resources>
+                <blendBuffer />
+                <weightBuffer />
+            </resources>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Transparent\Present</source>
             </program>
         </pass>
     </block>

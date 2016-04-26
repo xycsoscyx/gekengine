@@ -486,14 +486,16 @@ namespace Gek
             bool alphaToCoverage = String::to<bool>(xmlBlendStatesNode.firstChildElement(L"alphatocoverage").getText());
             if (xmlBlendStatesNode.hasChildElement(L"target"))
             {
-                UINT32 targetIndex = 0;
                 Video::IndependentBlendStates blendStates;
+                Video::TargetBlendStates *targetStateList = blendStates.targetStates;
                 blendStates.alphaToCoverage = alphaToCoverage;
                 Gek::XmlNode xmlTargetNode = xmlBlendStatesNode.firstChildElement(L"target");
                 while (xmlTargetNode)
                 {
-                    blendStates.targetStates[targetIndex++].enable = true;
-                    loadBlendTargetStates(blendStates.targetStates[targetIndex++], xmlTargetNode);
+                    Video::TargetBlendStates &targetStates = *targetStateList++;
+
+                    targetStates.enable = true;
+                    loadBlendTargetStates(targetStates, xmlTargetNode);
                     xmlTargetNode = xmlTargetNode.nextSiblingElement(L"target");
                 };
 

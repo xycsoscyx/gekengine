@@ -86,28 +86,36 @@ namespace Gek
         template <typename CHAR>
         bool to(const CHAR *expression, Gek::Math::Color &value, const Gek::Math::Color &defaultValue = Gek::Math::Color(0.0f, 0.0f, 0.0f, 1.0f))
         {
-            CHAR separator;
+            bool failed = false;
             std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream(expression);
-            stream >> separator >> value.r >> separator >> value.g >> separator >> value.b >> separator; // ( R , G , B ) or ( R , G , B ,
-            bool failed = stream.fail();
-            if (!failed)
+            stream >> value.r;
+            if (stream.fail())
             {
-                switch (separator)
+                CHAR separator;
+                stream >> separator >> value.r >> separator >> value.g >> separator >> value.b >> separator; // ( R , G , B ) or ( R , G , B ,
+                if (!(failed = stream.fail()))
                 {
-                case ')':
-                    value.a = 1.0f;
-                    break;
+                    switch (separator)
+                    {
+                    case ')':
+                        value.a = 1.0f;
+                        break;
 
-                case ',':
-                    stream >> value.a >> separator;
-                    failed = stream.fail();
-                    break;
-                };
+                    case ',':
+                        stream >> value.a >> separator;
+                        failed = stream.fail();
+                        break;
+                    };
+                }
+
+                if (failed)
+                {
+                    value = defaultValue;
+                }
             }
-
-            if (failed)
+            else
             {
-                value = defaultValue;
+                value.set(value.r);
             }
 
             return !failed;

@@ -42,14 +42,15 @@ namespace Gek
         __declspec(align(16))
         struct ParticleData
         {
-            Math::Float3 position;
-            Math::Float3 velocity;
-            float life;
-            float style;
+            Math::Float3 origin;
+            Math::Float2 offset;
+            float age, death;
+            float angle;
 
             ParticleData(void)
-                : life(0.0f)
-                , style(0.0f)
+                : age(0.0f)
+                , death(0.0f)
+                , angle(0.0f)
             {
             }
         };
@@ -58,7 +59,6 @@ namespace Gek
         {
             MaterialHandle material;
             ResourceHandle colorMap;
-            ResourceHandle sizeMap;
             std::uniform_real_distribution<float> lifeExpectancy;
             std::vector<ParticleData> particles;
         };
@@ -176,7 +176,6 @@ namespace Gek
                 emitter.particles.resize(particlesComponent.density);
                 emitter.material = resources->loadMaterial(L"Particles\\" + particlesComponent.material);
                 emitter.colorMap = resources->loadTexture(L"Particles\\" + particlesComponent.colorMap, nullptr, 0);
-                emitter.sizeMap = resources->loadTexture(L"Particles\\" + particlesComponent.sizeMap, nullptr, 0);
                 emitter.lifeExpectancy = std::uniform_real_distribution<float>(particlesComponent.lifeExpectancy.x, particlesComponent.lifeExpectancy.y);
             }
         }
@@ -245,25 +244,21 @@ namespace Gek
                     maximum maximum[3] = { (-Math::Infinity), (-Math::Infinity), (-Math::Infinity) };
                     concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
                     {
-                        particle.life -= frameTime / emitter.lifeExpectancy.max();
-                        if (particle.life <= 0.0f)
+                        particle.age += frameTime;
+                        if (particle.age >= particle.death)
                         {
-                            particle.life = emitter.lifeExpectancy(mersineTwister) / emitter.lifeExpectancy.max();
-                            particle.style = zeroToOne(mersineTwister);
-                            particle.position = transformComponent.position;
-                            particle.velocity.x = negativeOneToOne(mersineTwister);
-                            particle.velocity.y = zeroToOne(mersineTwister);
-                            particle.velocity.z = negativeOneToOne(mersineTwister);
-                            particle.velocity.normalize();
+                            particle.age = 0.0f;
+                            particle.death = emitter.lifeExpectancy(mersineTwister);
+                            particle.angle = (zeroToOne(mersineTwister) * Math::Pi);
+                            particle.origin = transformComponent.position;
+                            particle.offset.x = std::cos(particle.angle);
+                            particle.offset.y = -std::sin(particle.angle);
                         }
-
-                        particle.velocity += (Math::Float3(0.0f, -32.174f, 0.0f) * frameTime * 0.05f);
-                        particle.position += (particle.velocity * frameTime);
                         
                         for (auto index : { 0, 1, 2 })
                         {
-                            minimum[index].set(particle.position[index]);
-                            maximum[index].set(particle.position[index]);
+                            minimum[index].set(particle.origin[index] - emitter.lifeExpectancy.max());
+                            maximum[index].set(particle.origin[index] + emitter.lifeExpectancy.max());
                         }
                     });
 
@@ -287,7 +282,6 @@ namespace Gek
 
                 resources->setResource(renderContext->vertexPipeline(), particleBuffer, 0);
                 resources->setResource(renderContext->vertexPipeline(), emitter.colorMap, 1);
-                resources->setResource(renderContext->vertexPipeline(), emitter.sizeMap, 2);
                 renderContext->getContext()->drawPrimitive((emitter.particles.size() * 6), 0);
             }
         }

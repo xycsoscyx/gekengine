@@ -532,14 +532,17 @@ namespace Gek
             std::size_t hash = 0;
             for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
             {
-                std::hash_combine(hash, std::hash_combine(blendStates.targetStates[renderTarget].enable,
-                    static_cast<UINT8>(blendStates.targetStates[renderTarget].colorSource),
-                    static_cast<UINT8>(blendStates.targetStates[renderTarget].colorDestination),
-                    static_cast<UINT8>(blendStates.targetStates[renderTarget].colorOperation),
-                    static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaSource),
-                    static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaDestination),
-                    static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaOperation),
-                    blendStates.targetStates[renderTarget].writeMask));
+                if (blendStates.targetStates[renderTarget].enable)
+                {
+                    std::hash_combine(hash, std::hash_combine(renderTarget,
+                        static_cast<UINT8>(blendStates.targetStates[renderTarget].colorSource),
+                        static_cast<UINT8>(blendStates.targetStates[renderTarget].colorDestination),
+                        static_cast<UINT8>(blendStates.targetStates[renderTarget].colorOperation),
+                        static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaSource),
+                        static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaDestination),
+                        static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaOperation),
+                        blendStates.targetStates[renderTarget].writeMask));
+                }
             }
 
             return blendStateManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT

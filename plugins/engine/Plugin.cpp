@@ -248,40 +248,40 @@ namespace Gek
                                             };
 
                                             engineData +=
-                                                "};                                                     \r\n" \
-                                                "                                                       \r\n" \
-                                                "struct ViewVertex                                      \r\n" \
-                                                "{                                                      \r\n" \
-                                                "    float3 position;                                   \r\n" \
-                                                "    float3 normal;                                     \r\n" \
-                                                "    float2 texCoord;                                   \r\n" \
-                                                "    float4 color;                                      \r\n" \
-                                                "};                                                     \r\n" \
-                                                "                                                       \r\n" \
-                                                "struct ProjectedVertex                                 \r\n" \
-                                                "{                                                      \r\n" \
-                                                "    float4 position : SV_POSITION;                     \r\n" \
-                                                "    float2 texCoord : TEXCOORD0;                       \r\n" \
-                                                "    float3 viewPosition : TEXCOORD1;                   \r\n" \
-                                                "    float3 viewNormal : NORMAL0;                       \r\n" \
-                                                "    float4 color : COLOR0;                             \r\n" \
-                                                "};                                                     \r\n" \
-                                                "                                                       \r\n" \
-                                                "#include \"GEKPlugin\"                                                                             \r\n" \
-                                                "                                                                                                   \r\n" \
-                                                "ProjectedVertex mainVertexProgram(in PluginVertex pluginVertex)                                    \r\n" \
-                                                "{                                                                                                  \r\n" \
-                                                "    ViewVertex viewVertex = getViewVertex(pluginVertex);                                           \r\n" \
-                                                "                                                                                                   \r\n" \
-                                                "    ProjectedVertex projectedVertex;                                                               \r\n" \
-                                                "    projectedVertex.viewPosition = viewVertex.position;                                            \r\n" \
+                                                "};                                                                                                         \r\n" \
+                                                "                                                                                                           \r\n" \
+                                                "struct ViewVertex                                                                                          \r\n" \
+                                                "{                                                                                                          \r\n" \
+                                                "    float3 position;                                                                                       \r\n" \
+                                                "    float3 normal;                                                                                         \r\n" \
+                                                "    float2 texCoord;                                                                                       \r\n" \
+                                                "    float4 color;                                                                                          \r\n" \
+                                                "};                                                                                                         \r\n" \
+                                                "                                                                                                           \r\n" \
+                                                "struct ProjectedVertex                                                                                     \r\n" \
+                                                "{                                                                                                          \r\n" \
+                                                "    float4 position : SV_POSITION;                                                                         \r\n" \
+                                                "    float2 texCoord : TEXCOORD0;                                                                           \r\n" \
+                                                "    float3 viewPosition : TEXCOORD1;                                                                       \r\n" \
+                                                "    float3 viewNormal : NORMAL0;                                                                           \r\n" \
+                                                "    float4 color : COLOR0;                                                                                 \r\n" \
+                                                "};                                                                                                         \r\n" \
+                                                "                                                                                                           \r\n" \
+                                                "#include \"GEKPlugin\"                                                                                     \r\n" \
+                                                "                                                                                                           \r\n" \
+                                                "ProjectedVertex mainVertexProgram(in PluginVertex pluginVertex)                                            \r\n" \
+                                                "{                                                                                                          \r\n" \
+                                                "    ViewVertex viewVertex = getViewVertex(pluginVertex);                                                   \r\n" \
+                                                "                                                                                                           \r\n" \
+                                                "    ProjectedVertex projectedVertex;                                                                       \r\n" \
+                                                "    projectedVertex.viewPosition = viewVertex.position;                                                    \r\n" \
                                                 "    projectedVertex.position = mul(Camera::projectionMatrix, float4(projectedVertex.viewPosition, 1.0));   \r\n" \
-                                                "    projectedVertex.viewNormal = viewVertex.normal;                                                \r\n" \
-                                                "    projectedVertex.texCoord = viewVertex.texCoord;                                                \r\n" \
-                                                "    projectedVertex.color = viewVertex.color;                                                      \r\n" \
-                                                "    return projectedVertex;                                                                        \r\n" \
-                                                "}                                                                                                  \r\n" \
-                                                "                                                                                                   \r\n";
+                                                "    projectedVertex.viewNormal = viewVertex.normal;                                                        \r\n" \
+                                                "    projectedVertex.texCoord = viewVertex.texCoord;                                                        \r\n" \
+                                                "    projectedVertex.color = viewVertex.color;                                                              \r\n" \
+                                                "    return projectedVertex;                                                                                \r\n" \
+                                                "}                                                                                                          \r\n" \
+                                                "                                                                                                           \r\n";
 
                                             auto getIncludeData = [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
                                             {
