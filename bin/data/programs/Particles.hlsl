@@ -33,6 +33,7 @@ ViewVertex getViewVertex(PluginVertex pluginVertex)
     viewVertex.position.x = ((cornerIndex % 2) ? 1.0 : -1.0);
     viewVertex.position.y = ((cornerIndex & 2) ? -1.0 : 1.0);
     viewVertex.position.z = 0.0f;
+    viewVertex.position *= 0.75;
 
     float3 position;
     float offset = sin(age * Math::Pi);

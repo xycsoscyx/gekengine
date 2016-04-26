@@ -29,6 +29,7 @@
 static std::random_device randomDevice;
 static std::mt19937 mersineTwister(randomDevice());
 static std::uniform_real_distribution<float> zeroToOne(0.0f, 1.0f);
+static std::uniform_real_distribution<float> halfToOne(0.5f, 1.0f);
 static std::uniform_real_distribution<float> negativeOneToOne(-1.0f, 1.0f);
 
 namespace Gek
@@ -249,17 +250,19 @@ namespace Gek
                         {
                             particle.age = 0.0f;
                             particle.death = emitter.lifeExpectancy(mersineTwister);
-                            particle.angle = (zeroToOne(mersineTwister) * Math::Pi);
+                            particle.angle = (zeroToOne(mersineTwister) * Math::Pi * 2.0f);
                             particle.origin = transformComponent.position;
                             particle.offset.x = std::cos(particle.angle);
                             particle.offset.y = -std::sin(particle.angle);
+                            particle.offset *= halfToOne(mersineTwister);
                         }
-                        
-                        for (auto index : { 0, 1, 2 })
-                        {
-                            minimum[index].set(particle.origin[index] - emitter.lifeExpectancy.max());
-                            maximum[index].set(particle.origin[index] + emitter.lifeExpectancy.max());
-                        }
+
+                        minimum[0].set(particle.origin.x - 1.0f);
+                        minimum[1].set(particle.origin.y);
+                        minimum[2].set(particle.origin.z - 1.0f);
+                        maximum[0].set(particle.origin.x + 1.0f);
+                        maximum[1].set(particle.origin.y + emitter.lifeExpectancy.max());
+                        maximum[2].set(particle.origin.z + 1.0f);
                     });
 
                     for (auto index : { 0, 1, 2 })
