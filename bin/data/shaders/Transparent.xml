@@ -9,6 +9,7 @@
     <textures>
         <blendBuffer bind="float4" flags="target">half4</blendBuffer>
         <weightBuffer bind="float" flags="target">byte</weightBuffer>
+        <depthBuffer bind="float" source="standard:depthBuffer" />
     </textures>
     
     <depth source="standard:depth" />
@@ -44,7 +45,11 @@
                 <blendBuffer />
                 <weightBuffer />
             </targets>
-            
+
+            <resources>
+                <depthBuffer />
+            </resources>
+
             <program>
                 <entry>mainPixelProgram</entry>
                 <source>Transparent\Prepare</source>

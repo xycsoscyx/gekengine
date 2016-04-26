@@ -739,29 +739,39 @@ namespace Gek
                             while (xmlTargetNode)
                             {
                                 CStringW name(xmlTargetNode.getType());
-                                Video::Format format = getFormat(xmlTargetNode.getText());
                                 BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
-                                UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
-
-                                int textureWidth = video->getWidth();
-                                if (xmlTargetNode.hasAttribute(L"width"))
+                                if (xmlTargetNode.hasAttribute(L"source"))
                                 {
-                                    textureWidth = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"width")));
+                                    CStringW source(xmlTargetNode.getAttribute(L"source"));
+                                    if (!resourceMap.count(source))
+                                    {
+                                        resourceMap[name] = resources->getResourceHandle<ResourceHandle>(source);
+                                    }
                                 }
-
-                                int textureHeight = video->getHeight();
-                                if (xmlTargetNode.hasAttribute(L"height"))
+                                else
                                 {
-                                    textureHeight = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"height")));
-                                }
+                                    int textureWidth = video->getWidth();
+                                    if (xmlTargetNode.hasAttribute(L"width"))
+                                    {
+                                        textureWidth = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"width")));
+                                    }
 
-                                int textureMipMaps = 1;
-                                if (xmlTargetNode.hasAttribute(L"mipmaps"))
-                                {
-                                    textureMipMaps = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"mipmaps")));
-                                }
+                                    int textureHeight = video->getHeight();
+                                    if (xmlTargetNode.hasAttribute(L"height"))
+                                    {
+                                        textureHeight = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"height")));
+                                    }
 
-                                resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
+                                    int textureMipMaps = 1;
+                                    if (xmlTargetNode.hasAttribute(L"mipmaps"))
+                                    {
+                                        textureMipMaps = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"mipmaps")));
+                                    }
+
+                                    Video::Format format = getFormat(xmlTargetNode.getText());
+                                    UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
+                                    resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
+                                }
 
                                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
 
@@ -1237,6 +1247,11 @@ namespace Gek
                 renderPipeline->getPipeline()->setResource(lightDataBuffer, 0);
                 renderPipeline->getPipeline()->setConstantBuffer(lightConstantBuffer, 3);
                 stage = 1;
+            }
+
+            if (pass.mode == Pass::Mode::Forward)
+            {
+                stage += mapList.size();
             }
 
             for (auto &resourcePair : pass.resourceList)
