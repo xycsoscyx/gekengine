@@ -27,7 +27,7 @@ ViewVertex getViewVertex(PluginVertex pluginVertex)
 
     Particles::Instance instanceData = Particles::list[particleIndex];
 
-    float age = (instanceData.age / instanceData.death);
+    float age = (instanceData.age > 0.0 ? (instanceData.age / instanceData.death) : 0.0);
 
     ViewVertex viewVertex;
     viewVertex.position.x = ((cornerIndex % 2) ? 1.0 : -1.0);
@@ -47,7 +47,7 @@ ViewVertex getViewVertex(PluginVertex pluginVertex)
     viewVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
     viewVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
 
-    viewVertex.color = Particles::colorMap.SampleLevel(Global::linearClampSampler, age, 0);
+    viewVertex.color = (instanceData.age > 0.0 ? Particles::colorMap.SampleLevel(Global::linearClampSampler, age, 0) : 0.0);
 
     return viewVertex;
 }

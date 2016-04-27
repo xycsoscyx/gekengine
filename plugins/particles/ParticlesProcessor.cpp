@@ -164,6 +164,26 @@ namespace Gek
             entityDataList.clear();
         }
 
+        template <float const &(*OPERATION)(float const &, float const &)>
+        struct combinable : public concurrency::combinable<float>
+        {
+            combinable(float defaultValue)
+                : concurrency::combinable<float>([&] {return defaultValue; })
+            {
+            }
+
+            void set(float value)
+            {
+                auto &localValue = local();
+                localValue = OPERATION(value, localValue);
+            }
+
+            float get(void)
+            {
+                return combine([](float left, float right) { return OPERATION(left, right); });
+            }
+        };
+
         STDMETHODIMP_(void) onEntityCreated(Entity *entity)
         {
             GEK_REQUIRE_VOID_RETURN(resources);
@@ -172,12 +192,23 @@ namespace Gek
             if (entity->hasComponents<ParticlesComponent, TransformComponent>())
             {
                 auto &particlesComponent = entity->getComponent<ParticlesComponent>();
+                auto &transformComponent = entity->getComponent<TransformComponent>();
 
                 auto &emitter = entityDataList[entity];
                 emitter.particles.resize(particlesComponent.density);
                 emitter.material = resources->loadMaterial(L"Particles\\" + particlesComponent.material);
                 emitter.colorMap = resources->loadTexture(L"Particles\\" + particlesComponent.colorMap, nullptr, 0);
                 emitter.lifeExpectancy = std::uniform_real_distribution<float>(particlesComponent.lifeExpectancy.x, particlesComponent.lifeExpectancy.y);
+                concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
+                {
+                    particle.age = emitter.lifeExpectancy(mersineTwister);
+                    particle.death = emitter.lifeExpectancy(mersineTwister);
+                    particle.angle = (zeroToOne(mersineTwister) * Math::Pi * 2.0f);
+                    particle.origin = transformComponent.position;
+                    particle.offset.x = std::cos(particle.angle);
+                    particle.offset.y = -std::sin(particle.angle);
+                    particle.offset *= halfToOne(mersineTwister);
+                });
             }
         }
 
@@ -192,44 +223,6 @@ namespace Gek
             }
         }
 
-        struct minimum : public concurrency::combinable<float>
-        {
-            minimum(float defaultValue)
-                : concurrency::combinable<float>([&] {return defaultValue; })
-            {
-            }
-
-            void set(float value)
-            {
-                auto &localValue = local();
-                localValue = std::min(value, localValue);
-            }
-
-            float get(void)
-            {
-                return combine([](float left, float right) { return std::min(left, right); });
-            }
-        };
-
-        struct maximum : public concurrency::combinable<float>
-        {
-            maximum(float defaultValue)
-                : concurrency::combinable<float>([&] {return defaultValue; })
-            {
-            }
-
-            void set(float value)
-            {
-                auto &localValue = local();
-                localValue = std::max(value, localValue);
-            }
-
-            float get(void)
-            {
-                return combine([](float left, float right) { return std::max(left, right); });
-            }
-        };
-
         STDMETHODIMP_(void) onUpdate(bool isIdle)
         {
             if (!isIdle)
@@ -241,8 +234,8 @@ namespace Gek
                     EmitterData &emitter = const_cast<EmitterData &>(dataEntity.second);
                     auto &transformComponent = entity->getComponent<TransformComponent>();
 
-                    minimum minimum[3] = { (Math::Infinity), (Math::Infinity), (Math::Infinity) };
-                    maximum maximum[3] = { (-Math::Infinity), (-Math::Infinity), (-Math::Infinity) };
+                    combinable<std::min<float>> minimum[3] = { (Math::Infinity), (Math::Infinity), (Math::Infinity) };
+                    combinable<std::max<float>> maximum[3] = { (-Math::Infinity), (-Math::Infinity), (-Math::Infinity) };
                     concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
                     {
                         particle.age += frameTime;
