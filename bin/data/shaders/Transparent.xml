@@ -7,8 +7,8 @@
     </material>
 
     <textures>
-        <blendBuffer bind="float4" flags="target">half4</blendBuffer>
-        <weightBuffer bind="float" flags="target">byte</weightBuffer>
+        <accumulationBuffer bind="float4" flags="target">half4</accumulationBuffer>
+        <revealBuffer bind="float" flags="target">byte</revealBuffer>
         <depthBuffer bind="float" source="standard:depthBuffer" />
     </textures>
     
@@ -16,8 +16,8 @@
 
     <block>
         <clear>
-            <blendBuffer>(0,0,0,0)</blendBuffer>
-            <weightBuffer>1</weightBuffer>
+            <accumulationBuffer>(0,0,0,0)</accumulationBuffer>
+            <revealBuffer>1</revealBuffer>
         </clear>
 
         <pass mode="forward">
@@ -42,8 +42,8 @@
             </renderstates>
 
             <targets>
-                <blendBuffer />
-                <weightBuffer />
+                <accumulationBuffer />
+                <revealBuffer />
             </targets>
 
             <resources>
@@ -63,8 +63,8 @@
             </blendstates>
 
             <resources>
-                <blendBuffer />
-                <weightBuffer />
+                <accumulationBuffer />
+                <revealBuffer />
             </resources>
 
             <program>
