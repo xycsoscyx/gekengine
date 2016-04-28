@@ -458,6 +458,8 @@ namespace Gek
             const NewtonBody* const body1 = NewtonJointGetBody1(contactJoint);
             NewtonEntity *newtonEntity0 = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body0));
             NewtonEntity *newtonEntity1 = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body1));
+            Entity *entity0 = (newtonEntity0 ? newtonEntity0->getEntity() : nullptr);
+            Entity *entity1 = (newtonEntity1 ? newtonEntity1->getEntity() : nullptr);
 
             NewtonWorldCriticalSectionLock(newtonWorld, threadHandle);
             for (void* newtonContact = NewtonContactJointGetFirstContact(contactJoint); newtonContact; newtonContact = NewtonContactJointGetNextContact(contactJoint, newtonContact))
@@ -466,16 +468,23 @@ namespace Gek
 
                 Math::Float3 position, normal;
                 NewtonMaterialGetContactPositionAndNormal(newtonMaterial, body0, position.data, normal.data);
-
-                UINT32 surfaceIndex0 = getContactSurface((newtonEntity0 ? newtonEntity0->getEntity() : nullptr), body0, newtonMaterial, position, normal);
-                UINT32 surfaceIndex1 = getContactSurface((newtonEntity1 ? newtonEntity1->getEntity() : nullptr), body1, newtonMaterial, position, normal);
+                UINT32 surfaceIndex0 = getContactSurface(entity0, body0, newtonMaterial, position, normal);
+                UINT32 surfaceIndex1 = getContactSurface(entity1, body1, newtonMaterial, position, normal);
                 const Surface &surface0 = getSurface(surfaceIndex0);
                 const Surface &surface1 = getSurface(surfaceIndex1);
 
-                NewtonMaterialSetContactSoftness(newtonMaterial, ((surface0.softness + surface1.softness) * 0.5f));
-                NewtonMaterialSetContactElasticity(newtonMaterial, ((surface0.elasticity + surface1.elasticity) * 0.5f));
-                NewtonMaterialSetContactFrictionCoef(newtonMaterial, surface0.staticFriction, surface0.kineticFriction, 0);
-                NewtonMaterialSetContactFrictionCoef(newtonMaterial, surface1.staticFriction, surface1.kineticFriction, 1);
+                ObservableMixin::sendEvent(Event<NewtonObserver>(std::bind(&NewtonObserver::onCollision, std::placeholders::_1, entity0, entity1, position, normal)));
+                if (surface0.ghost || surface1.ghost)
+                {
+                    NewtonContactJointRemoveContact(contactJoint, newtonContact);
+                }
+                else
+                {
+                    NewtonMaterialSetContactSoftness(newtonMaterial, ((surface0.softness + surface1.softness) * 0.5f));
+                    NewtonMaterialSetContactElasticity(newtonMaterial, ((surface0.elasticity + surface1.elasticity) * 0.5f));
+                    NewtonMaterialSetContactFrictionCoef(newtonMaterial, surface0.staticFriction, surface0.kineticFriction, 0);
+                    NewtonMaterialSetContactFrictionCoef(newtonMaterial, surface1.staticFriction, surface1.kineticFriction, 1);
+                }
             }
 
             NewtonWorldCriticalSectionUnlock(newtonWorld);
