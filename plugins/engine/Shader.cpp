@@ -1394,14 +1394,14 @@ namespace Gek
                     UINT32 lightPassCount = std::min((lightListCount - base), lightsPerPass);
 
                     LightConstantData *lightConstants = nullptr;
-                    if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (LPVOID *)&lightConstants)))
+                    if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (void **)&lightConstants)))
                     {
                         lightConstants->count = lightPassCount;
                         video->unmapBuffer(lightConstantBuffer);
                     }
 
                     LightData *lightingData = nullptr;
-                    if (SUCCEEDED(video->mapBuffer(lightDataBuffer, (LPVOID *)&lightingData)))
+                    if (SUCCEEDED(video->mapBuffer(lightDataBuffer, (void **)&lightingData)))
                     {
                         memcpy(lightingData, &lightList[base], (sizeof(LightData) * lightPassCount));
                         video->unmapBuffer(lightDataBuffer);

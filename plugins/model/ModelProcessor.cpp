@@ -401,7 +401,7 @@ namespace Gek
         static void drawCall(RenderContext *renderContext, PluginResources *resources, const SubModel &subModel, const InstanceData *instance, ResourceHandle constantBuffer)
         {
             InstanceData *instanceData = nullptr;
-            if (SUCCEEDED(resources->mapBuffer(constantBuffer, (LPVOID *)&instanceData)))
+            if (SUCCEEDED(resources->mapBuffer(constantBuffer, (void **)&instanceData)))
             {
                 memcpy(instanceData, instance, sizeof(InstanceData));
                 resources->unmapBuffer(constantBuffer);

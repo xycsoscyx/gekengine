@@ -7,7 +7,8 @@ namespace Particles
         float3 origin;
         float2 offset;
         float age, death;
-        float angle;
+        float angle, spin;
+        float size;
     };
 
     StructuredBuffer<Instance> list : register(t0);
@@ -22,25 +23,33 @@ static const uint indexBuffer[6] =
 
 ViewVertex getViewVertex(PluginVertex pluginVertex)
 {
-    uint particleIndex = pluginVertex.vertexIndex / 6;
+    uint particleIndex = (pluginVertex.vertexIndex / 6);
     uint cornerIndex = indexBuffer[pluginVertex.vertexIndex % 6];
 
     Particles::Instance instanceData = Particles::list[particleIndex];
 
-    float age = (instanceData.age > 0.0 ? (instanceData.age / instanceData.death) : 0.0);
+    float sinAngle, cosAngle;
+    sincos(instanceData.angle, sinAngle, cosAngle);
+    float3x3 angle = float3x3(cosAngle, sinAngle, 0.0,
+                             -sinAngle, cosAngle, 0.0,
+                              0.0, 0.0, 1.0);
 
-    ViewVertex viewVertex;
-    viewVertex.position.x = ((cornerIndex % 2) ? 1.0 : -1.0);
-    viewVertex.position.y = ((cornerIndex & 2) ? -1.0 : 1.0);
-    viewVertex.position.z = 0.0f;
-    viewVertex.position *= 0.75;
+    float3 edge;
+    edge.x = ((cornerIndex % 2) ? 1.0 : -1.0);
+    edge.y = ((cornerIndex & 2) ? -1.0 : 1.0);
+    edge.z = 0.0f;
+    edge = (mul(angle, edge) * instanceData.size);
+
+    float age = (instanceData.age > 0.0 ? (instanceData.age / instanceData.death) : 0.0);
+    float wave = sin(age * Math::Pi);
 
     float3 position;
-    float offset = sin(age * Math::Pi);
-    position.x = instanceData.origin.x + instanceData.offset.x * offset;
-    position.y = instanceData.origin.y + instanceData.age;
-    position.z = instanceData.origin.z + instanceData.offset.y * offset;
-    viewVertex.position += mul(Camera::viewMatrix, float4(position, 1.0)).xyz;
+    position.x = (instanceData.origin.x + (instanceData.offset.x * wave));
+    position.y = (instanceData.origin.y + instanceData.age);
+    position.z = (instanceData.origin.z + (instanceData.offset.y * wave));
+
+    ViewVertex viewVertex;
+    viewVertex.position = (edge + mul(Camera::viewMatrix, float4(position, 1.0)).xyz);
 
     viewVertex.normal = float3(0.0, 0.0, -1.0);
 

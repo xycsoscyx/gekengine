@@ -853,7 +853,7 @@ namespace Gek
             });
         }
 
-        STDMETHODIMP mapBuffer(ResourceHandle buffer, LPVOID *data)
+        STDMETHODIMP mapBuffer(ResourceHandle buffer, void **data)
         {
             return video->mapBuffer(resourceManager.getResource<VideoBuffer>(buffer), data);
         }

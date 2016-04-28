@@ -510,7 +510,7 @@ namespace Gek
         STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) PURE;
         STDMETHOD(createBuffer)                             (THIS_ VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) PURE;
         STDMETHOD_(void, updateBuffer)                      (THIS_ VideoBuffer *buffer, LPCVOID data) PURE;
-        STDMETHOD(mapBuffer)                                (THIS_ VideoBuffer *buffer, LPVOID *data, Video::Map mapping = Video::Map::WriteDiscard) PURE;
+        STDMETHOD(mapBuffer)                                (THIS_ VideoBuffer *buffer, void **data, Video::Map mapping = Video::Map::WriteDiscard) PURE;
         STDMETHOD_(void, unmapBuffer)                       (THIS_ VideoBuffer *buffer) PURE;
 
         STDMETHOD_(void, copyResource)                      (THIS_ IUnknown *destination, IUnknown *source) PURE;

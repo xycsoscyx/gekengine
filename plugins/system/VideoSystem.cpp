@@ -1707,7 +1707,7 @@ namespace Gek
             d3dDeviceContext->UpdateSubresource(d3dBuffer, 0, nullptr, data, 0, 0);
         }
 
-        STDMETHODIMP mapBuffer(VideoBuffer *buffer, LPVOID *data, Video::Map mapping)
+        STDMETHODIMP mapBuffer(VideoBuffer *buffer, void **data, Video::Map mapping)
         {
             GEK_REQUIRE_RETURN(d3dDeviceContext, E_FAIL);
             GEK_REQUIRE_RETURN(data, E_INVALIDARG);

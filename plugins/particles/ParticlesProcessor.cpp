@@ -34,24 +34,28 @@ static std::uniform_real_distribution<float> negativeOneToOne(-1.0f, 1.0f);
 
 namespace Gek
 {
+    static const UINT32 ParticleBufferCount = 1000;
+
     class ParticlesProcessorImplementation : public ContextUserMixin
         , public PopulationObserver
         , public RenderObserver
         , public Processor
     {
     public:
-        __declspec(align(16))
         struct ParticleData
         {
             Math::Float3 origin;
             Math::Float2 offset;
             float age, death;
-            float angle;
+            float angle, spin;
+            float size;
 
             ParticleData(void)
                 : age(0.0f)
                 , death(0.0f)
                 , angle(0.0f)
+                , spin(0.0f)
+                , size(1.0f)
             {
             }
         };
@@ -61,7 +65,44 @@ namespace Gek
             MaterialHandle material;
             ResourceHandle colorMap;
             std::uniform_real_distribution<float> lifeExpectancy;
+            std::uniform_real_distribution<float> size;
             std::vector<ParticleData> particles;
+        };
+
+        struct Properties
+        {
+            union
+            {
+                UINT64 value;
+                struct
+                {
+                    UINT8 buffer;
+                    ResourceHandle colorMap;
+                    MaterialHandle material;
+                };
+            };
+
+            Properties(void)
+                : value(0)
+            {
+            }
+
+            Properties(MaterialHandle material, ResourceHandle colorMap)
+                : material(material)
+                , colorMap(colorMap)
+                , buffer(0)
+            {
+            }
+
+            std::size_t operator()(const Properties &properties) const
+            {
+                return std::hash<UINT64>()(properties.value);
+            }
+
+            bool operator == (const Properties &properties) const
+            {
+                return (value == properties.value);
+            }
         };
 
     private:
@@ -76,6 +117,9 @@ namespace Gek
         ShuntingYard shuntingYard;
         typedef std::unordered_map<Entity *, EmitterData> DataEntityMap;
         DataEntityMap entityDataList;
+
+        typedef concurrency::concurrent_unordered_multimap<Properties, const DataEntityMap::value_type *, Properties> VisibleList;
+        VisibleList visibleList;
 
     public:
         ParticlesProcessorImplementation(void)
@@ -140,7 +184,7 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                particleBuffer = resources->createBuffer(nullptr, sizeof(ParticleData), 100, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                particleBuffer = resources->createBuffer(nullptr, sizeof(ParticleData), ParticleBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
                 if (!particleBuffer)
                 {
                     resultValue = E_FAIL;
@@ -199,6 +243,7 @@ namespace Gek
                 emitter.material = resources->loadMaterial(L"Particles\\" + particlesComponent.material);
                 emitter.colorMap = resources->loadTexture(L"Particles\\" + particlesComponent.colorMap, nullptr, 0);
                 emitter.lifeExpectancy = std::uniform_real_distribution<float>(particlesComponent.lifeExpectancy.x, particlesComponent.lifeExpectancy.y);
+                emitter.size = std::uniform_real_distribution<float>(particlesComponent.size.x, particlesComponent.size.y);
                 concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
                 {
                     particle.age = emitter.lifeExpectancy(mersineTwister);
@@ -208,6 +253,7 @@ namespace Gek
                     particle.offset.x = std::cos(particle.angle);
                     particle.offset.y = -std::sin(particle.angle);
                     particle.offset *= halfToOne(mersineTwister);
+                    particle.size = emitter.size(mersineTwister);
                 });
             }
         }
@@ -243,13 +289,16 @@ namespace Gek
                         {
                             particle.age = 0.0f;
                             particle.death = emitter.lifeExpectancy(mersineTwister);
-                            particle.angle = (zeroToOne(mersineTwister) * Math::Pi * 2.0f);
+                            particle.spin = (negativeOneToOne(mersineTwister) * Math::Pi);
+                            particle.angle = (zeroToOne(mersineTwister) * Math::Pi * 2);
                             particle.origin = transformComponent.position;
                             particle.offset.x = std::cos(particle.angle);
                             particle.offset.y = -std::sin(particle.angle);
                             particle.offset *= halfToOne(mersineTwister);
+                            particle.size = emitter.size(mersineTwister);
                         }
 
+                        particle.angle += (particle.spin * frameTime);
                         minimum[0].set(particle.origin.x - 1.0f);
                         minimum[1].set(particle.origin.y);
                         minimum[2].set(particle.origin.z - 1.0f);
@@ -268,17 +317,47 @@ namespace Gek
         }
 
         // RenderObserver
-        static void drawCall(RenderContext *renderContext, PluginResources *resources, Entity *entity, const EmitterData &emitter, ResourceHandle particleBuffer)
+        static void drawCall(RenderContext *renderContext, PluginResources *resources, ResourceHandle colorMap, VisibleList::iterator begin, VisibleList::iterator end, ResourceHandle particleBuffer)
         {
-            ParticleData *particleData = nullptr;
-            if (SUCCEEDED(resources->mapBuffer(particleBuffer, (LPVOID *)&particleData)))
-            {
-                memcpy(particleData, emitter.particles.data(), (sizeof(ParticleData) * emitter.particles.size()));
-                resources->unmapBuffer(particleBuffer);
+            GEK_REQUIRE_VOID_RETURN(renderContext);
+            GEK_REQUIRE_VOID_RETURN(resources);
 
-                resources->setResource(renderContext->vertexPipeline(), particleBuffer, 0);
-                resources->setResource(renderContext->vertexPipeline(), emitter.colorMap, 1);
-                renderContext->getContext()->drawPrimitive((emitter.particles.size() * 6), 0);
+            resources->setResource(renderContext->vertexPipeline(), particleBuffer, 0);
+            resources->setResource(renderContext->vertexPipeline(), colorMap, 1);
+
+            UINT32 bufferCopied = 0;
+            ParticleData *bufferData = nullptr;
+            resources->mapBuffer(particleBuffer, (void **)&bufferData);
+            for (auto emitterIterator = begin; emitterIterator != end; ++emitterIterator)
+            {
+                const auto &emitter = emitterIterator->second->second;
+
+                UINT32 particlesCopied = 0;
+                UINT32 particlesCount = emitter.particles.size();
+                const ParticleData *particleData = emitter.particles.data();
+                while (particlesCopied < particlesCount)
+                {
+                    UINT32 bufferRemaining = (ParticleBufferCount - bufferCopied);
+                    UINT32 particlesRemaining = (particlesCount - particlesCopied);
+                    UINT32 copyCount = std::min(bufferRemaining, particlesRemaining);
+                    memcpy(&bufferData[bufferCopied], &particleData[particlesCopied], (sizeof(ParticleData) * copyCount));
+
+                    bufferCopied += copyCount;
+                    particlesCopied += copyCount;
+                    if (bufferCopied >= ParticleBufferCount)
+                    {
+                        resources->unmapBuffer(particleBuffer);
+                        renderContext->getContext()->drawPrimitive((ParticleBufferCount * 6), 0);
+                        resources->mapBuffer(particleBuffer, (void **)&bufferData);
+                        bufferCopied = 0;
+                    }
+                };
+            }
+
+            resources->unmapBuffer(particleBuffer);
+            if (bufferCopied > 0)
+            {
+                renderContext->getContext()->drawPrimitive((bufferCopied * 6), 0);
             }
         }
 
@@ -287,15 +366,24 @@ namespace Gek
             GEK_REQUIRE_VOID_RETURN(cameraEntity);
             GEK_REQUIRE_VOID_RETURN(viewFrustum);
 
+            visibleList.clear();
             concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](auto &dataEntity) -> void
             {
                 Entity *entity = dataEntity.first;
                 const EmitterData &emitter = dataEntity.second;
                 if (viewFrustum->isVisible(emitter))
                 {
-                    render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, particleBuffer));
+                    visibleList.insert(std::make_pair(Properties(emitter.material, emitter.colorMap), &dataEntity));
+                    //render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, particleBuffer));
                 }
             });
+
+            for (auto propertiesIterator = visibleList.begin(); propertiesIterator != visibleList.end(); )
+            {
+                auto emittersIterator = visibleList.equal_range(propertiesIterator->first);
+                render->queueDrawCall(plugin, propertiesIterator->first.material, std::bind(drawCall, std::placeholders::_1, resources, propertiesIterator->first.colorMap, emittersIterator.first, emittersIterator.second, particleBuffer));
+                propertiesIterator = emittersIterator.second;
+            }
         }
     };
 

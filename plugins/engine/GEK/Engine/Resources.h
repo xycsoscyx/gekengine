@@ -96,7 +96,7 @@ namespace Gek
         STDMETHOD_(ResourceHandle, createBuffer)            (THIS_ LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
         STDMETHOD_(ResourceHandle, createBuffer)            (THIS_ LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
 
-        STDMETHOD(mapBuffer)                                (THIS_ ResourceHandle buffer, LPVOID *data) PURE;
+        STDMETHOD(mapBuffer)                                (THIS_ ResourceHandle buffer, void **data) PURE;
         STDMETHOD_(void, unmapBuffer)                       (THIS_ ResourceHandle buffer) PURE;
 
         STDMETHOD_(void, setResource)                       (THIS_ RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage) PURE;
