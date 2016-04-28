@@ -117,6 +117,7 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Observable)
             INTERFACE_LIST_ENTRY_COM(PopulationObserver)
             INTERFACE_LIST_ENTRY_COM(Processor)
+            INTERFACE_LIST_ENTRY_COM(NewtonProcessor)
         END_INTERFACE_LIST_USER
 
         const Surface &getSurface(UINT32 surfaceIndex) const
