@@ -1061,7 +1061,7 @@ namespace Gek
                                             }
                                             else if (value.Find(L".") < 0)
                                             {
-                                                engineData.AppendFormat("static const uint %S = %S;\r\n", name.GetString(), value.GetString());
+                                                engineData.AppendFormat("static const int %S = %S;\r\n", name.GetString(), value.GetString());
                                             }
                                             else
                                             {
@@ -1236,6 +1236,7 @@ namespace Gek
             }
         }
 
+        ResourceHandle renderTargetList[8];
         Pass::Mode preparePass(RenderContext *renderContext, BlockData &block, PassData &pass)
         {
             renderContext->getContext()->clearResources();
@@ -1337,7 +1338,6 @@ namespace Gek
                 else
                 {
                     UINT32 stage = 0;
-                    static ResourceHandle renderTargetList[8];
                     for (auto &resourcePair : pass.renderTargetList)
                     {
                         ResourceHandle renderTargetHandle;

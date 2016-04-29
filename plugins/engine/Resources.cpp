@@ -366,6 +366,10 @@ namespace Gek
             {
                 return materialManager.getResource(*static_cast<const PropertiesHandle *>(handle));
             }
+            else if (type == typeid(ResourceHandle))
+            {
+                return resourceManager.getResource(*static_cast<const ResourceHandle *>(handle));
+            }
 
             return nullptr;
         };
@@ -933,14 +937,17 @@ namespace Gek
             renderContext->getContext()->clearDepthStencilTarget(resourceManager.getResource<IUnknown>(depthBuffer), flags, depthClear, stencilClear);
         }
 
+        Video::ViewPort viewPortList[8];
+        VideoTarget *renderTargetList[8];
         STDMETHODIMP_(void) setRenderTargets(RenderContext *renderContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle depthBuffer)
         {
-            static Video::ViewPort viewPortList[8];
-            static VideoTarget *renderTargetList[8];
             for (UINT32 renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
             {
                 renderTargetList[renderTarget] = resourceManager.getResource<VideoTarget>(renderTargetHandleList[renderTarget], true);
-                viewPortList[renderTarget] = renderTargetList[renderTarget]->getViewPort();
+                if (renderTargetList[renderTarget])
+                {
+                    viewPortList[renderTarget] = renderTargetList[renderTarget]->getViewPort();
+                }
             }
 
             renderContext->getContext()->setRenderTargets(renderTargetList, renderTargetHandleCount, resourceManager.getResource<IUnknown>(depthBuffer));

@@ -46,7 +46,7 @@ float getShadowFactor(InputPixel inputPixel)
 
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
-    float3 pixelColor = Resources::luminatedBuffer.Sample(Global::linearClampSampler, inputPixel.texCoord);
+    float3 pixelColor = Resources::lightAccumulationBuffer.Sample(Global::linearClampSampler, inputPixel.texCoord);
 
     OutputPixel output;
     output.ambientOcclusionBuffer = getShadowFactor(inputPixel);

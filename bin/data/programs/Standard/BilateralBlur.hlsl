@@ -3,11 +3,11 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-float calculateGaussianWeight(int offset)
+float calculateGaussianWeight(float offset)
 {
     static const float g = (1.0f / (sqrt(Math::Tau) * gaussianSigma));
-    static const float d = (2.0 * sqr(gaussianSigma));
-    return (g * exp(-sqr(offset) / d));
+    static const float d = rcp(2.0 * sqr(gaussianSigma));
+    return (g * exp(-sqr(offset) * d)) / 2;
 }
 
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
@@ -19,20 +19,19 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float totalWeight = 0.0;
 
     [unroll]
-    for (int offset = -guassianRadius; offset < guassianRadius; offset++)
+    for (int offset = -guassianRadius; offset <= guassianRadius; offset++)
     {
         float2 sampleTexCoord = (inputPixel.texCoord + (offset * pixelSize * blurAxis));
         float sampleDepth = Resources::depthBuffer.Sample(Global::pointSampler, sampleTexCoord);
-        float4 sampleAmbientOcclusion = Resources::ambientOcclusionBuffer.Sample(Global::linearClampSampler, sampleTexCoord);
+        float sampleAmbientOcclusion = Resources::ambientOcclusionBuffer.Sample(Global::pointSampler, sampleTexCoord);
+        float depthDelta = abs(surfaceDepth - sampleDepth);
 
-        float sampleWeight = calculateGaussianWeight(offset);
-        // range doma(the "bilateral" weight). As depth difference increases, decrease weight.
-        sampleWeight *= rcp(Math::Epsilon + bilateralEdgeSharpness * abs(surfaceDepth - sampleDepth));
+        float sampleWeight = calculateGaussianWeight(offset)
+            * rcp(Math::Epsilon + bilateralEdgeSharpness * depthDelta);
 
         finalAmbientOcclusion += (sampleAmbientOcclusion * sampleWeight);
         totalWeight += sampleWeight;
     }
 
-    finalAmbientOcclusion *= rcp(totalWeight + Math::Epsilon);
-    return finalAmbientOcclusion;
+    return (finalAmbientOcclusion * rcp(totalWeight + Math::Epsilon));
 }
