@@ -109,7 +109,7 @@ namespace Gek
                 UINT32 value;
                 struct
                 {
-                    PropertiesHandle properties;
+                    MaterialPropertiesHandle properties;
                     PluginHandle plugin;
                     ShaderHandle shader;
                 };
@@ -407,7 +407,7 @@ namespace Gek
                                     if (true)
                                     {
                                         PluginHandle currentPlugin;
-                                        PropertiesHandle currentProperties;
+                                        MaterialPropertiesHandle currentProperties;
                                         for (auto &shaderDrawCall = drawCallSet.begin; shaderDrawCall != drawCallSet.end; ++shaderDrawCall)
                                         {
                                             if (currentPlugin != (*shaderDrawCall).plugin)
@@ -425,7 +425,7 @@ namespace Gek
                                             if (currentProperties != (*shaderDrawCall).properties)
                                             {
                                                 currentProperties = (*shaderDrawCall).properties;
-                                                Material *material = resources->getResource<Material, PropertiesHandle>(currentProperties);
+                                                Material *material = resources->getResource<Material, MaterialPropertiesHandle>(currentProperties);
                                                 if (!material)
                                                 {
                                                     continue;

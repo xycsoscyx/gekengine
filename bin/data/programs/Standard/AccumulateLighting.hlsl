@@ -34,25 +34,36 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         uint lightIndex = Resources::tileIndexList[lightTileIndex];
         Lighting::Data light = Lighting::list[lightIndex];
 
-        float3 lightRay = (light.position.xyz - surfacePosition);
-        float3 centerToRay = ((dot(lightRay, reflectNormal) * reflectNormal) - lightRay);
-        float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
-        float3 lightDirection = normalize(closestPoint);
-        float lightDistance = length(closestPoint);
+        float lightFalloff = 0.0;
+        float3 lightDirection = 0.0;
+        if (light.type == Lighting::Type::Point)
+        {
+            float3 lightRay = (light.position.xyz - surfacePosition);
+            float3 centerToRay = ((dot(lightRay, reflectNormal) * reflectNormal) - lightRay);
+            float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
+            lightDirection = normalize(closestPoint);
+            float lightDistance = length(closestPoint);
 
-        float distanceOverRange = (lightDistance / light.range);
-        float distanceOverRange2 = sqr(distanceOverRange);
-        float distanceOverRange4 = sqr(distanceOverRange2);
-        float falloff = sqr(saturate(1.0 - distanceOverRange4));
-        falloff /= (sqr(lightDistance) + 1.0);
+            float distanceOverRange = (lightDistance / light.range);
+            float distanceOverRange2 = sqr(distanceOverRange);
+            float distanceOverRange4 = sqr(distanceOverRange2);
+            lightFalloff = sqr(saturate(1.0 - distanceOverRange4));
+            lightFalloff /= (sqr(lightDistance) + 1.0);
+        }
+        else if (light.type == Lighting::Type::Spot)
+        {
+        }
+        else if (light.type == Lighting::Type::Directional)
+        {
+            lightDirection = light.direction;
+            lightFalloff = 1.0;
+        }
 
         float NdotL = dot(surfaceNormal, lightDirection);
-
         float3 diffuseAlbedo = lerp(materialAlbedo, 0.0, materialMetalness);
-        float3 diffuseLighting = (diffuseAlbedo * Math::ReciprocalPi);
-
+        float3 diffuseLighting = diffuseAlbedo;//(diffuseAlbedo * Math::ReciprocalPi);
         float3 specularLighting = getSpecularBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightDirection, viewDirection, NdotL);
-        surfaceColor += (saturate(NdotL) * (diffuseLighting + specularLighting) * falloff * light.color);
+        surfaceColor += (saturate(NdotL) * (diffuseLighting + specularLighting) * lightFalloff * light.color);
     }
 
     return surfaceColor;

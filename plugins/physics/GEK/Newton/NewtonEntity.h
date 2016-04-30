@@ -9,7 +9,10 @@ namespace Gek
     DECLARE_INTERFACE(NewtonEntity) : virtual public IUnknown
     {
         STDMETHOD_(Entity *, getEntity)                 (THIS) const PURE;
+
         STDMETHOD_(NewtonBody *, getNewtonBody)         (THIS) const PURE;
+
+        STDMETHOD_(UINT32, getSurface)                  (THIS_ const Math::Float3 &position, const Math::Float3 &normal) PURE;
 
         // Called before the update phase to set the frame data for the body
         // Applies to rigid and player bodies

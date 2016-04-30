@@ -285,7 +285,7 @@ namespace Gek
 
         ObjectManager<ProgramHandle> programManager;
         ObjectManager<PluginHandle> pluginManager;
-        ObjectManager<PropertiesHandle> materialManager;
+        ObjectManager<MaterialPropertiesHandle> materialPropertiesManager;
         ObjectManager<ShaderHandle> shaderManager;
         ObjectManager<ResourceHandle> resourceManager;
         ObjectManager<RenderStatesHandle> renderStateManager;
@@ -328,7 +328,7 @@ namespace Gek
         STDMETHODIMP_(void) clearLocal(void)
         {
             programManager.clearResources();
-            materialManager.clearResources();
+            materialPropertiesManager.clearResources();
             shaderManager.clearResources();
             resourceManager.clearResources();
             renderStateManager.clearResources();
@@ -362,9 +362,9 @@ namespace Gek
             {
                 return shaderManager.getResource(*static_cast<const ShaderHandle *>(handle));
             }
-            else if (type == typeid(PropertiesHandle))
+            else if (type == typeid(MaterialPropertiesHandle))
             {
-                return materialManager.getResource(*static_cast<const PropertiesHandle *>(handle));
+                return materialPropertiesManager.getResource(*static_cast<const MaterialPropertiesHandle *>(handle));
             }
             else if (type == typeid(ResourceHandle))
             {
@@ -402,7 +402,7 @@ namespace Gek
             GEK_TRACE_FUNCTION(Resources, GEK_PARAMETER(fileName));
 
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
-            PropertiesHandle properties = materialManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
+            MaterialPropertiesHandle properties = materialPropertiesManager.getHandle(hash, [&](IUnknown **returnObject) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
@@ -422,7 +422,7 @@ namespace Gek
 
             if (properties)
             {
-                return MaterialHandle(materialManager.getResource<Material>(properties)->getShader(), properties);
+                return MaterialHandle(materialPropertiesManager.getResource<Material>(properties)->getShader(), properties);
             }
 
             return MaterialHandle();

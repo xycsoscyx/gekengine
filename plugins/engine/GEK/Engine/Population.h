@@ -46,7 +46,7 @@ namespace Gek
         template<typename... ARGS>
         void listEntities(std::function<void(Entity *)> onEntity)
         {
-            listEntities([&](Entity *entity) -> void
+            listEntities([onEntity](Entity *entity) -> void
             {
                 if (entity->hasComponents<ARGS...>())
                 {

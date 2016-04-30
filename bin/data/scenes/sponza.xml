@@ -45,7 +45,7 @@
         </entity>
         <entity>
             <transform position="(0,5,2)" scale="(.5,.5,.5)" />
-            <model skin="gold">hourglass</model>
+            <shape skin="debug//r0_m7" parameters="1">sphere</shape>
         </entity>
         <entity>
             <transform position="(0,5,3)" scale="(.5,.5,.5)" />
@@ -503,350 +503,350 @@
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>
         <entity>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
             <point_light range="random(10, 20)" radius="random(0.1, 0.5)"/>
-            <color>(random(0,1), random(0,1), random(0,1))</color>
+            <color>(random(0,2), random(0,2), random(0,2))</color>
             <!--shape skin="debug//r0_m0" parameters="1">sphere</shape-->
             <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)">Flames</particles>
         </entity>

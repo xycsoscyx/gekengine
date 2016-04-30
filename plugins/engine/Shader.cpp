@@ -210,29 +210,40 @@ namespace Gek
             UINT32 padding[3];
         };
 
-        __declspec(align(16))
+        struct LightType
+        {
+            enum
+            {
+                Point = 0,
+                Spot = 1,
+                Directional = 2,
+            };
+        };
+
         struct LightData
         {
-            Math::Float4x4 transform;
-            Math::Float3 color;
             UINT32 type;
+            Math::Float3 position;
+            Math::Float3 direction;
+            Math::Float3 color;
             float range;
             float radius;
             float innerAngle;
             float outerAngle;
 
-            LightData(const PointLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
-                : type(0)
-                , transform(transform)
+            LightData(const PointLightComponent &light, const ColorComponent &color, const Math::Float3 &position)
+                : type(LightType::Point)
+                , position(position)
                 , range(light.range)
                 , radius(light.radius)
                 , color(color.value)
             {
             }
 
-            LightData(const SpotLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
-                : type(1)
-                , transform(transform)
+            LightData(const SpotLightComponent &light, const ColorComponent &color, const Math::Float3 &position, const Math::Float3 &direction)
+                : type(LightType::Spot)
+                , position(position)
+                , direction(direction)
                 , range(light.range)
                 , radius(light.radius)
                 , innerAngle(light.innerAngle)
@@ -241,9 +252,9 @@ namespace Gek
             {
             }
 
-            LightData(const DirectionalLightComponent &light, const ColorComponent &color, const Math::Float4x4 &transform)
-                : type(2)
-                , transform(transform)
+            LightData(const DirectionalLightComponent &light, const ColorComponent &color, const Math::Float3 &direction)
+                : type(LightType::Directional)
+                , direction(direction)
                 , color(color.value)
             {
             }
@@ -677,16 +688,23 @@ namespace Gek
                                     lightingData =
                                         "namespace Lighting                                         \r\n" \
                                         "{                                                          \r\n" \
+                                        "    namespace Type                                         \r\n" \
+                                        "    {                                                      \r\n" \
+                                        "        static const uint Point = 0;                       \r\n" \
+                                        "        static const uint Spot = 1;                        \r\n" \
+                                        "        static const uint Directional = 2;                 \r\n" \
+                                        "    };                                                     \r\n" \
+                                        "                                                           \r\n" \
                                         "    struct Data                                            \r\n" \
                                         "    {                                                      \r\n" \
-                                        "        float3x4 rotation;                                 \r\n" \
-                                        "        float4   position;                                 \r\n" \
-                                        "        uint     type;                                     \r\n" \
-                                        "        float3   color;                                    \r\n" \
-                                        "        float    range;                                    \r\n" \
-                                        "        float    radius;                                   \r\n" \
-                                        "        float    innerAngle;                               \r\n" \
-                                        "        float    outerAngle;                               \r\n" \
+                                        "        uint   type;                                       \r\n" \
+                                        "        float3 position;                                   \r\n" \
+                                        "        float3 direction;                                  \r\n" \
+                                        "        float3 color;                                      \r\n" \
+                                        "        float  range;                                      \r\n" \
+                                        "        float  radius;                                     \r\n" \
+                                        "        float  innerAngle;                                 \r\n" \
+                                        "        float  outerAngle;                                 \r\n" \
                                         "    };                                                     \r\n" \
                                         "                                                           \r\n" \
                                         "    cbuffer Parameters : register(b3)                      \r\n" \
@@ -1377,15 +1395,19 @@ namespace Gek
 
         bool prepareBlock(UINT32 &base, RenderContext *renderContext, BlockData &block)
         {
-            for (auto &clearTarget : block.renderTargetsClearList)
+            if (base == 0)
             {
-                auto resourceIterator = resourceMap.find(clearTarget.first);
-                if (resourceIterator != resourceMap.end())
+                for (auto &clearTarget : block.renderTargetsClearList)
                 {
-                    resources->clearRenderTarget(renderContext, resourceIterator->second, clearTarget.second);
+                    auto resourceIterator = resourceMap.find(clearTarget.first);
+                    if (resourceIterator != resourceMap.end())
+                    {
+                        resources->clearRenderTarget(renderContext, resourceIterator->second, clearTarget.second);
+                    }
                 }
             }
 
+            bool enableBlock = false;
             if (block.lighting)
             {
                 if (base < lightList.size())
@@ -1408,17 +1430,16 @@ namespace Gek
                     }
 
                     base += lightsPerPass;
-                    return true;
-                }
-                else
-                {
-                    return false;
+                    enableBlock = true;
                 }
             }
             else
             {
-                return (base++ == 0);
+                enableBlock = (base == 0);
+                base++;
             }
+
+            return enableBlock;
         }
 
         class PassImplementation : public Pass
@@ -1518,8 +1539,7 @@ namespace Gek
                 if (viewFrustum.isVisible(Shapes::Sphere(transform.position, light.range)))
                 {
                     auto &color = entity->getComponent<ColorComponent>();
-                    Math::Float4x4 lightTransform(transform.getMatrix() * viewMatrix);
-                    lightData.push_back(LightData(light, color, lightTransform));
+                    lightData.push_back(LightData(light, color, (viewMatrix * transform.position.w(1.0f)).xyz));
                 }
             });
 
@@ -1530,8 +1550,7 @@ namespace Gek
                 if (viewFrustum.isVisible(Shapes::Sphere(transform.position, light.range)))
                 {
                     auto &color = entity->getComponent<ColorComponent>();
-                    Math::Float4x4 lightTransform(transform.getMatrix() * viewMatrix);
-                    lightData.push_back(LightData(light, color, lightTransform));
+                    lightData.push_back(LightData(light, color, (viewMatrix * transform.position.w(1.0f)).xyz, (viewMatrix * transform.rotation.getMatrix().nz)));
                 }
             });
 
@@ -1540,8 +1559,7 @@ namespace Gek
                 auto &transform = entity->getComponent<TransformComponent>();
                 auto &light = entity->getComponent<DirectionalLightComponent>();
                 auto &color = entity->getComponent<ColorComponent>();
-                Math::Float4x4 lightTransform(transform.getMatrix() * viewMatrix);
-                lightData.push_back(LightData(light, color, lightTransform));
+                lightData.push_back(LightData(light, color, (viewMatrix * transform.rotation.getMatrix().nz)));
             });
 
             lightList.assign(lightData.begin(), lightData.end());

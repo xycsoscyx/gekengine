@@ -59,6 +59,11 @@ namespace Gek
             return newtonBody;
         }
 
+        STDMETHODIMP_(UINT32) getSurface(const Math::Float3 &position, const Math::Float3 &normal)
+        {
+            return 0;
+        }
+
         STDMETHODIMP_(void) onPreUpdate(dFloat frameTime, int threadHandle)
         {
             NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);

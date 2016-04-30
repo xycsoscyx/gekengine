@@ -116,176 +116,6 @@ namespace Gek
 
         bool isJumpingState;
 
-    private:
-        void setRestrainingDistance(float distance)
-        {
-            restrainingDistance = std::max(std::abs(distance), PLAYER_MIN_RESTRAINING_DISTANCE);
-        }
-
-        void setClimbSlope(float slopeInRadians)
-        {
-            maximumSlope = std::cos(std::abs(slopeInRadians));
-        }
-
-        Math::Quaternion integrateOmega(const Math::Quaternion &rotation, const Math::Float3& omega, float frameTime) const
-        {
-            Math::Float3 theta(omega * frameTime * 0.5f);
-            float thetaMagnitideSquared = theta.getLengthSquared();
-
-            float angle;
-            Math::Quaternion deltaRotation;
-            if (thetaMagnitideSquared * thetaMagnitideSquared / 24.0f < Math::Epsilon)
-            {
-                deltaRotation.w = 1.0f - thetaMagnitideSquared / 2.0f;
-                angle = 1.0f - thetaMagnitideSquared / 6.0f;
-            }
-            else
-            {
-                float thetaMag = sqrt(thetaMagnitideSquared);
-                deltaRotation.w = cos(thetaMag);
-                angle = sin(thetaMag) / thetaMag;
-            }
-
-            deltaRotation.x = theta.x * angle;
-            deltaRotation.y = theta.y * angle;
-            deltaRotation.z = theta.z * angle;
-            return (deltaRotation * rotation);
-        }
-
-        void setDesiredOmega(const Math::Quaternion &rotation, float frameTime) const
-        {
-            Math::Quaternion quaternion0(rotation);
-            Math::Quaternion quaternion1(movementBasis.ny, headingAngle);
-            if (quaternion0.dot(quaternion1) < 0.0f)
-            {
-                quaternion0 *= -1.0f;
-            }
-
-            Math::Quaternion deltaQuaternion(quaternion0.getInverse() * quaternion1);
-            Math::Float3 omegaDirection(deltaQuaternion.x, deltaQuaternion.y, deltaQuaternion.z);
-            float directionMagnitudeSquared = omegaDirection.getLengthSquared();
-            if (directionMagnitudeSquared >= PLAYER_EPSILON_SQUARED)
-            {
-                float inverseDirectionMagnitude = (1.0f / std::sqrt(directionMagnitudeSquared));
-                float directionMagnitude = (directionMagnitudeSquared * inverseDirectionMagnitude);
-                float omegaMagnitude = (2.0f * std::atan2(directionMagnitude, deltaQuaternion.w) * (0.5f / frameTime));
-                Math::Float3 desiredOmega(omegaDirection * (inverseDirectionMagnitude * omegaMagnitude));
-                NewtonBodySetOmega(newtonBody, desiredOmega.data);
-            }
-        }
-
-        void setDesiredVelocity(const Math::Float4x4 &matrix, float frameTime) const
-        {
-            Math::Float3 gravity(newtonProcessor->getGravity(matrix.translation));
-            Math::Float4x4 localBasis(matrix * movementBasis);
-
-            Math::Float3 desiredVelocity;
-            NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
-            if ((verticalSpeed <= 0.0f) && (groundNormal.getLengthSquared() > 0.0f))
-            {
-                // plane is supported by a ground plane, apply the player input desiredVelocity
-                if (groundNormal.dot(localBasis.ny) >= maximumSlope)
-                {
-                    // player is in a legal slope, he is in full control of his movement
-                    desiredVelocity = ((localBasis.ny * desiredVelocity.dot(localBasis.ny)) + (gravity * frameTime) + (localBasis.nz * forwardSpeed) + (localBasis.nx * lateralSpeed) + (localBasis.ny * verticalSpeed));
-                    desiredVelocity += (groundVelocity - (localBasis.ny * localBasis.ny.dot(groundVelocity)));
-
-                    float speedLimitMagnitudeSquared = ((forwardSpeed * forwardSpeed) + (lateralSpeed * lateralSpeed) + (verticalSpeed * verticalSpeed) + groundVelocity.getLengthSquared() + 0.1f);
-                    float speedMagnitudeSquared = desiredVelocity.getLengthSquared();
-                    if (speedMagnitudeSquared > speedLimitMagnitudeSquared)
-                    {
-                        desiredVelocity *= std::sqrt(speedLimitMagnitudeSquared / speedMagnitudeSquared);
-                    }
-
-                    float groundNormalVelocity = groundNormal.dot(desiredVelocity - groundVelocity);
-                    if (groundNormalVelocity < 0.0f)
-                    {
-                        desiredVelocity -= (groundNormal * groundNormalVelocity);
-                    }
-                }
-                else
-                {
-                    // player is in an illegal ramp, he slides down hill an loses control of his movement 
-                    desiredVelocity += (localBasis.ny * verticalSpeed);
-                    desiredVelocity += (gravity * frameTime);
-                    float groundNormalVelocity = groundNormal.dot(desiredVelocity - groundVelocity);
-                    if (groundNormalVelocity < 0.0f)
-                    {
-                        desiredVelocity -= (groundNormal * groundNormalVelocity);
-                    }
-                }
-            }
-            else
-            {
-                // player is on free fall, only apply the gravity
-                desiredVelocity += (localBasis.ny * verticalSpeed);
-                desiredVelocity += (gravity * frameTime);
-            }
-
-            NewtonBodySetVelocity(newtonBody, desiredVelocity.data);
-        }
-
-        float calculateContactKinematics(const Math::Float3& velocity, const NewtonWorldConvexCastReturnInfo* const contactInfo) const
-        {
-            Math::Float3 contactVelocity;
-            if (contactInfo->m_hitBody)
-            {
-                NewtonBodyGetPointVelocity(contactInfo->m_hitBody, contactInfo->m_point, contactVelocity.data);
-            }
-            else
-            {
-                contactVelocity.set(0.0f, 0.0f, 0.0f);
-            }
-
-            const float restitution = 0.0f;
-            Math::Float3 normal(contactInfo->m_normal);
-            float reboundVelocityMagnitude = -((velocity - contactVelocity).dot(normal) * (1.0f + restitution));
-            return std::max(0.0f, reboundVelocityMagnitude);
-        }
-
-        void updateGroundPlane(Math::Float4x4& matrix, const Math::Float4x4& castMatrix, const Math::Float3& destination, int threadHandle)
-        {
-            groundNormal.set(0.0f, 0.0f, 0.0f);
-            groundVelocity.set(0.0f, 0.0f, 0.0f);
-
-            float parameter = 10.0f;
-            NewtonWorldConvexCastReturnInfo info;
-            ConvexCastPreFilter preFilterData(newtonBody);
-            if (NewtonWorldConvexCast(newtonWorld, castMatrix.data, destination.data, newtonCastingShape, &parameter, &preFilterData, ConvexCastPreFilter::preFilter, &info, 1, threadHandle) > 0 && parameter <= 1.0f)
-            {
-                isJumpingState = false;
-                groundNormal.set(info.m_normal[0], info.m_normal[1], info.m_normal[2]);
-                Math::Float3 supportPoint(castMatrix.translation + ((destination - castMatrix.translation) * parameter));
-                NewtonBodyGetPointVelocity(info.m_hitBody, supportPoint.data, groundVelocity.data);
-                matrix.translation = supportPoint;
-            }
-        }
-
-    public:
-        void addPlayerVelocity(float forwardSpeed, float lateralSpeed, float verticalSpeed)
-        {
-            this->forwardSpeed += forwardSpeed;
-            this->lateralSpeed += lateralSpeed;
-            this->verticalSpeed += verticalSpeed;
-        }
-        
-        void setJumping(void)
-        {
-            isJumpingState = true;
-        }
-
-        bool isJumping(void)
-        {
-            return isJumpingState;
-        }
-
-        bool isFalling(void)
-        {
-            Math::Float3 velocity;
-            NewtonBodyGetVelocity(newtonBody, velocity.data);
-            return (velocity.y < 0.0f);
-        }
-
     public:
         PlayerNewtonBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity,
             PlayerBodyComponent &playerBodyComponent,
@@ -399,6 +229,30 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(ActionObserver);
         END_INTERFACE_LIST_UNKNOWN
 
+        void addPlayerVelocity(float forwardSpeed, float lateralSpeed, float verticalSpeed)
+        {
+            this->forwardSpeed += forwardSpeed;
+            this->lateralSpeed += lateralSpeed;
+            this->verticalSpeed += verticalSpeed;
+        }
+
+        void setJumping(void)
+        {
+            isJumpingState = true;
+        }
+
+        bool isJumping(void)
+        {
+            return isJumpingState;
+        }
+
+        bool isFalling(void)
+        {
+            Math::Float3 velocity;
+            NewtonBodyGetVelocity(newtonBody, velocity.data);
+            return (velocity.y < 0.0f);
+        }
+
         // ActionObserver
         STDMETHODIMP_(void) onAction(LPCWSTR name, const ActionParam &param)
         {
@@ -425,6 +279,11 @@ namespace Gek
         STDMETHODIMP_(NewtonBody *) getNewtonBody(void) const
         {
             return newtonBody;
+        }
+
+        STDMETHODIMP_(UINT32) getSurface(const Math::Float3 &position, const Math::Float3 &normal)
+        {
+            return 0;
         }
 
         STDMETHODIMP_(void) onPreUpdate(float frameTime, int threadHandle)
@@ -620,6 +479,151 @@ namespace Gek
             NewtonBodySetMatrix(newtonBody, matrix.data);
             transformComponent.position = matrix.translation + matrix.ny * playerBodyComponent.height;
             transformComponent.rotation = matrix.getQuaternion();
+        }
+
+    private:
+        void setRestrainingDistance(float distance)
+        {
+            restrainingDistance = std::max(std::abs(distance), PLAYER_MIN_RESTRAINING_DISTANCE);
+        }
+
+        void setClimbSlope(float slopeInRadians)
+        {
+            maximumSlope = std::cos(std::abs(slopeInRadians));
+        }
+
+        Math::Quaternion integrateOmega(const Math::Quaternion &rotation, const Math::Float3& omega, float frameTime) const
+        {
+            Math::Float3 theta(omega * frameTime * 0.5f);
+            float thetaMagnitideSquared = theta.getLengthSquared();
+
+            float angle;
+            Math::Quaternion deltaRotation;
+            if (thetaMagnitideSquared * thetaMagnitideSquared / 24.0f < Math::Epsilon)
+            {
+                deltaRotation.w = 1.0f - thetaMagnitideSquared / 2.0f;
+                angle = 1.0f - thetaMagnitideSquared / 6.0f;
+            }
+            else
+            {
+                float thetaMag = sqrt(thetaMagnitideSquared);
+                deltaRotation.w = cos(thetaMag);
+                angle = sin(thetaMag) / thetaMag;
+            }
+
+            deltaRotation.x = theta.x * angle;
+            deltaRotation.y = theta.y * angle;
+            deltaRotation.z = theta.z * angle;
+            return (deltaRotation * rotation);
+        }
+
+        void setDesiredOmega(const Math::Quaternion &rotation, float frameTime) const
+        {
+            Math::Quaternion quaternion0(rotation);
+            Math::Quaternion quaternion1(movementBasis.ny, headingAngle);
+            if (quaternion0.dot(quaternion1) < 0.0f)
+            {
+                quaternion0 *= -1.0f;
+            }
+
+            Math::Quaternion deltaQuaternion(quaternion0.getInverse() * quaternion1);
+            Math::Float3 omegaDirection(deltaQuaternion.x, deltaQuaternion.y, deltaQuaternion.z);
+            float directionMagnitudeSquared = omegaDirection.getLengthSquared();
+            if (directionMagnitudeSquared >= PLAYER_EPSILON_SQUARED)
+            {
+                float inverseDirectionMagnitude = (1.0f / std::sqrt(directionMagnitudeSquared));
+                float directionMagnitude = (directionMagnitudeSquared * inverseDirectionMagnitude);
+                float omegaMagnitude = (2.0f * std::atan2(directionMagnitude, deltaQuaternion.w) * (0.5f / frameTime));
+                Math::Float3 desiredOmega(omegaDirection * (inverseDirectionMagnitude * omegaMagnitude));
+                NewtonBodySetOmega(newtonBody, desiredOmega.data);
+            }
+        }
+
+        void setDesiredVelocity(const Math::Float4x4 &matrix, float frameTime) const
+        {
+            Math::Float3 gravity(newtonProcessor->getGravity(matrix.translation));
+            Math::Float4x4 localBasis(matrix * movementBasis);
+
+            Math::Float3 desiredVelocity;
+            NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
+            if ((verticalSpeed <= 0.0f) && (groundNormal.getLengthSquared() > 0.0f))
+            {
+                // plane is supported by a ground plane, apply the player input desiredVelocity
+                if (groundNormal.dot(localBasis.ny) >= maximumSlope)
+                {
+                    // player is in a legal slope, he is in full control of his movement
+                    desiredVelocity = ((localBasis.ny * desiredVelocity.dot(localBasis.ny)) + (gravity * frameTime) + (localBasis.nz * forwardSpeed) + (localBasis.nx * lateralSpeed) + (localBasis.ny * verticalSpeed));
+                    desiredVelocity += (groundVelocity - (localBasis.ny * localBasis.ny.dot(groundVelocity)));
+
+                    float speedLimitMagnitudeSquared = ((forwardSpeed * forwardSpeed) + (lateralSpeed * lateralSpeed) + (verticalSpeed * verticalSpeed) + groundVelocity.getLengthSquared() + 0.1f);
+                    float speedMagnitudeSquared = desiredVelocity.getLengthSquared();
+                    if (speedMagnitudeSquared > speedLimitMagnitudeSquared)
+                    {
+                        desiredVelocity *= std::sqrt(speedLimitMagnitudeSquared / speedMagnitudeSquared);
+                    }
+
+                    float groundNormalVelocity = groundNormal.dot(desiredVelocity - groundVelocity);
+                    if (groundNormalVelocity < 0.0f)
+                    {
+                        desiredVelocity -= (groundNormal * groundNormalVelocity);
+                    }
+                }
+                else
+                {
+                    // player is in an illegal ramp, he slides down hill an loses control of his movement 
+                    desiredVelocity += (localBasis.ny * verticalSpeed);
+                    desiredVelocity += (gravity * frameTime);
+                    float groundNormalVelocity = groundNormal.dot(desiredVelocity - groundVelocity);
+                    if (groundNormalVelocity < 0.0f)
+                    {
+                        desiredVelocity -= (groundNormal * groundNormalVelocity);
+                    }
+                }
+            }
+            else
+            {
+                // player is on free fall, only apply the gravity
+                desiredVelocity += (localBasis.ny * verticalSpeed);
+                desiredVelocity += (gravity * frameTime);
+            }
+
+            NewtonBodySetVelocity(newtonBody, desiredVelocity.data);
+        }
+
+        float calculateContactKinematics(const Math::Float3& velocity, const NewtonWorldConvexCastReturnInfo* const contactInfo) const
+        {
+            Math::Float3 contactVelocity;
+            if (contactInfo->m_hitBody)
+            {
+                NewtonBodyGetPointVelocity(contactInfo->m_hitBody, contactInfo->m_point, contactVelocity.data);
+            }
+            else
+            {
+                contactVelocity.set(0.0f, 0.0f, 0.0f);
+            }
+
+            const float restitution = 0.0f;
+            Math::Float3 normal(contactInfo->m_normal);
+            float reboundVelocityMagnitude = -((velocity - contactVelocity).dot(normal) * (1.0f + restitution));
+            return std::max(0.0f, reboundVelocityMagnitude);
+        }
+
+        void updateGroundPlane(Math::Float4x4& matrix, const Math::Float4x4& castMatrix, const Math::Float3& destination, int threadHandle)
+        {
+            groundNormal.set(0.0f, 0.0f, 0.0f);
+            groundVelocity.set(0.0f, 0.0f, 0.0f);
+
+            float parameter = 10.0f;
+            NewtonWorldConvexCastReturnInfo info;
+            ConvexCastPreFilter preFilterData(newtonBody);
+            if (NewtonWorldConvexCast(newtonWorld, castMatrix.data, destination.data, newtonCastingShape, &parameter, &preFilterData, ConvexCastPreFilter::preFilter, &info, 1, threadHandle) > 0 && parameter <= 1.0f)
+            {
+                isJumpingState = false;
+                groundNormal.set(info.m_normal[0], info.m_normal[1], info.m_normal[2]);
+                Math::Float3 supportPoint(castMatrix.translation + ((destination - castMatrix.translation) * parameter));
+                NewtonBodyGetPointVelocity(info.m_hitBody, supportPoint.data, groundVelocity.data);
+                matrix.translation = supportPoint;
+            }
         }
     };
 

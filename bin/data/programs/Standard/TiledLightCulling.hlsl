@@ -58,12 +58,24 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         Lighting::Data light = Lighting::list[lightIndex];
         bool isLightVisible = true;
 
-        [unroll]
-        for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
+        switch (light.type)
         {
-            float lightDistance = dot(tileFrustum[planeIndex], light.position);
-            isLightVisible = (isLightVisible && (lightDistance >= -light.range));
-        }
+        case Lighting::Type::Point:
+            for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
+            {
+                float lightDistance = dot(tileFrustum[planeIndex], float4(light.position, 1.0));
+                isLightVisible = (isLightVisible && (lightDistance >= -light.range));
+            }
+
+            break;
+
+        case Lighting::Type::Spot:
+            isLightVisible = false;
+            break;
+
+        case Lighting::Type::Directional:
+            break;
+        };
 
         [branch]
         if (isLightVisible)

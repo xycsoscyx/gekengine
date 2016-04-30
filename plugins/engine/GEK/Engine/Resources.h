@@ -51,19 +51,19 @@ namespace Gek
     using ProgramHandle = Handle<UINT16, __LINE__>;
     using PluginHandle = Handle<UINT8, __LINE__>;
     using ShaderHandle = Handle<UINT8, __LINE__>;
-    using PropertiesHandle = Handle<UINT16, __LINE__>;
+    using MaterialPropertiesHandle = Handle<UINT16, __LINE__>;
     using ResourceHandle = Handle<UINT32, __LINE__>;
 
     struct MaterialHandle
     {
         ShaderHandle shader;
-        PropertiesHandle properties;
+        MaterialPropertiesHandle properties;
 
         MaterialHandle(void)
         {
         }
 
-        MaterialHandle(const ShaderHandle &shader, const PropertiesHandle &properties)
+        MaterialHandle(const ShaderHandle &shader, const MaterialPropertiesHandle &properties)
             : shader(shader)
             , properties(properties)
         {

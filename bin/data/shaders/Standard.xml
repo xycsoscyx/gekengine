@@ -68,27 +68,13 @@
                 <source>Standard\StoreDeferred</source>
             </program>
         </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <albedoBuffer />
-                <materialBuffer />
-                <normalBuffer />
-                <depthBuffer />
-            </resources>
-
-            <targets>
-                <lightAccumulationBuffer />
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\AmbientLighting</source>
-            </program>
-        </pass>
     </block>
 
     <block lighting="true">
+        <clear>
+            <lightAccumulationBuffer>(0,0,0,0)</lightAccumulationBuffer>
+        </clear>
+
         <pass mode="compute">
             <resources>
                 <depthBuffer />
