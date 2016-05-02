@@ -116,7 +116,7 @@ namespace Gek
             INTERFACE_LIST_ENTRY_MEMBER_COM(Resources, resources)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Render, render)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
-        END_INTERFACE_LIST_USER
+            END_INTERFACE_LIST_USER
 
         // Sciter
         UINT on_load_data(LPSCN_LOAD_DATA notification)
@@ -181,110 +181,145 @@ namespace Gek
             return engine->sciterHostCallback(notification);
         }
 
+        BOOL sciterSUBSCRIPTIONS_REQUEST(UINT *p)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_INITIALIZATION(INITIALIZATION_PARAMS *parameters)
+        {
+            if (parameters->cmd == BEHAVIOR_DETACH)
+            {
+                //pThis->detached(he);
+            }
+            else if (parameters->cmd == BEHAVIOR_ATTACH)
+            {
+                //pThis->attached(he);
+            }
+
+            return true;
+        }
+
+        BOOL sciterHANDLE_MOUSE(MOUSE_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_KEY(KEY_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_FOCUS(FOCUS_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_DRAW(DRAW_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_TIMER(TIMER_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_BEHAVIOR_EVENT(BEHAVIOR_EVENT_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_METHOD_CALL(METHOD_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_DATA_ARRIVED(DATA_ARRIVED_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_SCROLL(SCROLL_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_SIZE()
+        {
+            return false;
+        }
+
+        // call using sciter::value's (from CSSS!)
+        BOOL sciterHANDLE_SCRIPTING_METHOD_CALL(SCRIPTING_METHOD_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        // call using tiscript::value's (from the script)
+        BOOL sciterHANDLE_TISCRIPT_METHOD_CALL(TISCRIPT_METHOD_PARAMS *parameters)
+        {
+            tiscript::args arguments(parameters->vm);
+            CStringW function(tiscript::c_string(arguments.get(0)).c_str());
+            CStringW value(tiscript::c_string(arguments.get(1)).c_str());           
+            return false;
+        }
+
+        BOOL sciterHANDLE_GESTURE(GESTURE_PARAMS *parameters)
+        {
+            return false;
+        }
+
         BOOL sciterElementEventProc(HELEMENT element, UINT eventIdentifier, LPVOID parameters)
         {
             switch (eventIdentifier)
             {
             case SUBSCRIPTIONS_REQUEST:
-            {
-                UINT *p = (UINT *)parameters;
-                //return pThis->subscription(he, *p);
-            }
+                return sciterSUBSCRIPTIONS_REQUEST((UINT *)parameters);
 
             case HANDLE_INITIALIZATION:
-            {
-                INITIALIZATION_PARAMS *p = (INITIALIZATION_PARAMS *)parameters;
-                if (p->cmd == BEHAVIOR_DETACH)
-                {
-                    //pThis->detached(he);
-                }
-                else if (p->cmd == BEHAVIOR_ATTACH)
-                {
-                    //pThis->attached(he);
-                }
-
-                return true;
-            }
+                return sciterHANDLE_INITIALIZATION((INITIALIZATION_PARAMS *)parameters);
 
             case HANDLE_MOUSE:
-            {
-                MOUSE_PARAMS *p = (MOUSE_PARAMS *)parameters;
-                //return pThis->handle_mouse(he, *p);
-            }
+                return sciterHANDLE_MOUSE((MOUSE_PARAMS *)parameters);
 
             case HANDLE_KEY:
-            {
-                KEY_PARAMS *p = (KEY_PARAMS *)parameters;
-                //return pThis->handle_key(he, *p);
-            }
+                return sciterHANDLE_KEY((KEY_PARAMS *)parameters);
 
             case HANDLE_FOCUS:
-            {
-                FOCUS_PARAMS *p = (FOCUS_PARAMS *)parameters;
-                //return pThis->handle_focus(he, *p);
-            }
+                return sciterHANDLE_FOCUS((FOCUS_PARAMS *)parameters);
 
             case HANDLE_DRAW:
-            {
-                DRAW_PARAMS *p = (DRAW_PARAMS *)parameters;
-                //return pThis->handle_draw(he, *p);
-            }
+                return sciterHANDLE_DRAW((DRAW_PARAMS *)parameters);
 
             case HANDLE_TIMER:
-            {
-                TIMER_PARAMS *p = (TIMER_PARAMS *)parameters;
-                //return pThis->handle_timer(he, *p);
-            }
+                return sciterHANDLE_TIMER((TIMER_PARAMS *)parameters);
 
             case HANDLE_BEHAVIOR_EVENT:
-            {
-                BEHAVIOR_EVENT_PARAMS *p = (BEHAVIOR_EVENT_PARAMS *)parameters;
-                //return pThis->handle_event(he, *p);
-            }
+                return sciterHANDLE_BEHAVIOR_EVENT((BEHAVIOR_EVENT_PARAMS *)parameters);
 
             case HANDLE_METHOD_CALL:
-            {
-                METHOD_PARAMS *p = (METHOD_PARAMS *)parameters;
-                //return pThis->handle_method_call(he, *p);
-            }
+                return sciterHANDLE_METHOD_CALL((METHOD_PARAMS *)parameters);
 
             case HANDLE_DATA_ARRIVED:
-            {
-                DATA_ARRIVED_PARAMS *p = (DATA_ARRIVED_PARAMS *)parameters;
-                //return pThis->handle_data_arrived(he, *p);
-            }
+                return sciterHANDLE_DATA_ARRIVED((DATA_ARRIVED_PARAMS *)parameters);
 
             case HANDLE_SCROLL:
-            {
-                SCROLL_PARAMS *p = (SCROLL_PARAMS *)parameters;
-                //return pThis->handle_scroll(he, *p);
-            }
+                return sciterHANDLE_SCROLL((SCROLL_PARAMS *)parameters);
 
             case HANDLE_SIZE:
-            {
-                //pThis->handle_size(he);
-                return false;
-            }
+                return sciterHANDLE_SIZE();
 
             // call using sciter::value's (from CSSS!)
             case HANDLE_SCRIPTING_METHOD_CALL:
-            {
-                SCRIPTING_METHOD_PARAMS* p = (SCRIPTING_METHOD_PARAMS *)parameters;
-                //return pThis->handle_scripting_call(he, *p);
-            }
+                return sciterHANDLE_SCRIPTING_METHOD_CALL((SCRIPTING_METHOD_PARAMS *)parameters);
 
             // call using tiscript::value's (from the script)
             case HANDLE_TISCRIPT_METHOD_CALL:
-            {
-                TISCRIPT_METHOD_PARAMS* p = (TISCRIPT_METHOD_PARAMS *)parameters;
-                //return pThis->handle_scripting_call(he, *p);
-            }
+                return sciterHANDLE_TISCRIPT_METHOD_CALL((TISCRIPT_METHOD_PARAMS *)parameters);
 
             case HANDLE_GESTURE:
-            {
-                GESTURE_PARAMS *p = (GESTURE_PARAMS *)parameters;
-                //return pThis->handle_gesture(he, *p);
-            }
+                return sciterHANDLE_GESTURE((GESTURE_PARAMS *)parameters);
 
             default:
                 assert(false);
