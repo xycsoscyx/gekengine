@@ -119,24 +119,184 @@ namespace Gek
         END_INTERFACE_LIST_USER
 
         // Sciter
+        UINT on_load_data(LPSCN_LOAD_DATA notification)
+        {
+            return 0;
+        }
+
+        UINT on_data_loaded(LPSCN_DATA_LOADED notification)
+        {
+            return 0;
+        }
+
+        UINT on_attach_behavior(LPSCN_ATTACH_BEHAVIOR notification)
+        {
+            return 0;
+        }
+
+        UINT on_engine_destroyed(void)
+        {
+            return 0;
+        }
+
+        UINT on_posted_notification(LPSCN_POSTED_NOTIFICATION notification)
+        {
+            return 0;
+        }
+
+        UINT on_graphics_critical_failure(void)
+        {
+            return 0;
+        }
+
         UINT sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification)
         {
             switch (notification->code)
             {
             case SC_LOAD_DATA:
-                return 0;//OnLoadData(LPSCN_LOAD_DATA(notification));
+                return on_load_data((LPSCN_LOAD_DATA)notification);
 
             case SC_DATA_LOADED:
-                return 0;//OnDataLoaded(LPSCN_DATA_LOADED(notification));
+                return on_data_loaded((LPSCN_DATA_LOADED)notification);
+
+            case SC_ATTACH_BEHAVIOR:
+                return on_attach_behavior((LPSCN_ATTACH_BEHAVIOR)notification);
+
+            case SC_ENGINE_DESTROYED:
+                return on_engine_destroyed();
+
+            case SC_POSTED_NOTIFICATION:
+                return on_posted_notification((LPSCN_POSTED_NOTIFICATION)notification);
+
+            case SC_GRAPHICS_CRITICAL_FAILURE:
+                return on_graphics_critical_failure();
             };
 
             return 0;
         }
 
-        static UINT CALLBACK sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification, LPVOID callbackParam)
+        static UINT CALLBACK sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification, LPVOID userData)
         {
-            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(callbackParam);
+            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
             return engine->sciterHostCallback(notification);
+        }
+
+        BOOL sciterElementEventProc(HELEMENT element, UINT eventIdentifier, LPVOID parameters)
+        {
+            switch (eventIdentifier)
+            {
+            case SUBSCRIPTIONS_REQUEST:
+            {
+                UINT *p = (UINT *)parameters;
+                //return pThis->subscription(he, *p);
+            }
+
+            case HANDLE_INITIALIZATION:
+            {
+                INITIALIZATION_PARAMS *p = (INITIALIZATION_PARAMS *)parameters;
+                if (p->cmd == BEHAVIOR_DETACH)
+                {
+                    //pThis->detached(he);
+                }
+                else if (p->cmd == BEHAVIOR_ATTACH)
+                {
+                    //pThis->attached(he);
+                }
+
+                return true;
+            }
+
+            case HANDLE_MOUSE:
+            {
+                MOUSE_PARAMS *p = (MOUSE_PARAMS *)parameters;
+                //return pThis->handle_mouse(he, *p);
+            }
+
+            case HANDLE_KEY:
+            {
+                KEY_PARAMS *p = (KEY_PARAMS *)parameters;
+                //return pThis->handle_key(he, *p);
+            }
+
+            case HANDLE_FOCUS:
+            {
+                FOCUS_PARAMS *p = (FOCUS_PARAMS *)parameters;
+                //return pThis->handle_focus(he, *p);
+            }
+
+            case HANDLE_DRAW:
+            {
+                DRAW_PARAMS *p = (DRAW_PARAMS *)parameters;
+                //return pThis->handle_draw(he, *p);
+            }
+
+            case HANDLE_TIMER:
+            {
+                TIMER_PARAMS *p = (TIMER_PARAMS *)parameters;
+                //return pThis->handle_timer(he, *p);
+            }
+
+            case HANDLE_BEHAVIOR_EVENT:
+            {
+                BEHAVIOR_EVENT_PARAMS *p = (BEHAVIOR_EVENT_PARAMS *)parameters;
+                //return pThis->handle_event(he, *p);
+            }
+
+            case HANDLE_METHOD_CALL:
+            {
+                METHOD_PARAMS *p = (METHOD_PARAMS *)parameters;
+                //return pThis->handle_method_call(he, *p);
+            }
+
+            case HANDLE_DATA_ARRIVED:
+            {
+                DATA_ARRIVED_PARAMS *p = (DATA_ARRIVED_PARAMS *)parameters;
+                //return pThis->handle_data_arrived(he, *p);
+            }
+
+            case HANDLE_SCROLL:
+            {
+                SCROLL_PARAMS *p = (SCROLL_PARAMS *)parameters;
+                //return pThis->handle_scroll(he, *p);
+            }
+
+            case HANDLE_SIZE:
+            {
+                //pThis->handle_size(he);
+                return false;
+            }
+
+            // call using sciter::value's (from CSSS!)
+            case HANDLE_SCRIPTING_METHOD_CALL:
+            {
+                SCRIPTING_METHOD_PARAMS* p = (SCRIPTING_METHOD_PARAMS *)parameters;
+                //return pThis->handle_scripting_call(he, *p);
+            }
+
+            // call using tiscript::value's (from the script)
+            case HANDLE_TISCRIPT_METHOD_CALL:
+            {
+                TISCRIPT_METHOD_PARAMS* p = (TISCRIPT_METHOD_PARAMS *)parameters;
+                //return pThis->handle_scripting_call(he, *p);
+            }
+
+            case HANDLE_GESTURE:
+            {
+                GESTURE_PARAMS *p = (GESTURE_PARAMS *)parameters;
+                //return pThis->handle_gesture(he, *p);
+            }
+
+            default:
+                assert(false);
+            };
+
+            return FALSE;
+        }
+
+        static BOOL CALLBACK sciterElementEventProc(LPVOID userData, HELEMENT element, UINT eventIdentifier, LPVOID parameters)
+        {
+            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
+            return engine->sciterElementEventProc(element, eventIdentifier, parameters);
         }
 
         // Engine
@@ -244,9 +404,10 @@ namespace Gek
                     if (SciterCreateOnDirectXWindow(window, dxSwapChain))
                     {
                         SciterSetCallback(window, sciterHostCallback, this);
+                        SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
                         resultValue = S_OK;
-                        SciterLoadFile(window, FileSystem::expandPath(L"%root%\\data\\facade.htm"));
 
+                        SciterLoadFile(window, FileSystem::expandPath(L"%root%\\data\\facade.htm"));
                         root = sciter::dom::element::root_element(window);
                         background = root.find_first("section#back-layer");
                         foreground = root.find_first("section#fore-layer");
