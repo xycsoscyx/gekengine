@@ -57,20 +57,13 @@
 
     $(#machine).text = Sciter.machineName();
 
-    $("#console_input").keyup(function(event)
+    $(input#console_input).on("keyup", function(event)
     {
         if(event.keyCode == 13)
         {
-            alert('enter');
-            $("#console_submit").click();
+            view.console_command($(input#console_input).text);
+            $(input#console_input).text = "";
         }
-    });
-
-    $("#console_submit").click(function(event)
-    {
-        alert('submit');
-        view.console_command($("#console_input").text);
-        $("#console_input").text = "";
     });
 
     </script>
@@ -86,8 +79,7 @@
         <p>Console</p>
         <hr />
         <hr />
-        <input|text id="console_input" value="" />
-        <input|button id="console_submit" value="OK">
+        <input|text #console_input />
     </section>
 
 </body>
