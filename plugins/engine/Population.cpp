@@ -80,8 +80,10 @@ namespace Gek
         std::unordered_map<CStringW, Entity *> namedEntityList;
         std::vector<Entity *> killEntityList;
 
-        std::multimap<UINT32, PopulationObserver *> updatePriorityMap;
-        std::map<UINT32, std::pair<UINT32, PopulationObserver *>> updateHandleMap;
+        typedef std::multimap<UINT32, std::pair<UINT32, PopulationObserver *>> UpdatePriorityMap;
+        UpdatePriorityMap updatePriorityMap;
+
+        std::map<UINT32, UpdatePriorityMap::value_type *> updateHandleMap;
 
     public:
         PopulationImplementation(void)
@@ -186,7 +188,7 @@ namespace Gek
 
             for (auto &priorityPair : updatePriorityMap)
             {
-                priorityPair.second->onUpdate(isIdle);
+                priorityPair.second.second->onUpdate(priorityPair.second.first, isIdle);
             }
 
             for (auto const &killEntity : killEntityList)
@@ -404,14 +406,12 @@ namespace Gek
 
         STDMETHODIMP_(UINT32) setUpdatePriority(PopulationObserver *observer, UINT32 priority)
         {
-            auto pair = std::make_pair(priority, observer);
+            static UINT32 nextHandle = 0;
+            UINT32 updateHandle = InterlockedIncrement(&nextHandle);
+            auto pair = std::make_pair(priority, std::make_pair(updateHandle, observer));
             auto updateIterator = updatePriorityMap.insert(pair);
-
-            static UINT32 nextValue = 0;
-            UINT32 returnValue = InterlockedIncrement(&nextValue);
-            updateHandleMap[returnValue] = pair;
-
-            return returnValue;
+            updateHandleMap[updateHandle] = &(*updateIterator);
+            return updateHandle;
         }
 
         STDMETHODIMP_(void) removeUpdatePriority(UINT32 updateHandle)
@@ -419,19 +419,19 @@ namespace Gek
             auto handleIterator = updateHandleMap.find(updateHandle);
             if (handleIterator != updateHandleMap.end())
             {
-                UINT32 priority = handleIterator->second.first;
-                PopulationObserver *observer = handleIterator->second.second;
-                auto priorityIterator = updatePriorityMap.equal_range(priority);
-                auto updateIterator = priorityIterator.first;
-                while (updateIterator != priorityIterator.second)
+                UINT32 priority = handleIterator->second->first;
+                auto priorityRange = updatePriorityMap.equal_range(priority);
+                auto priorityIterator = std::find_if(priorityRange.first, priorityRange.second, [&](auto &priorityPair) -> bool
                 {
-                    auto currentIterator = updateIterator++;
-                    PopulationObserver *currentObserver = currentIterator->second;
-                    if (currentObserver == observer)
-                    {
-                        updatePriorityMap.erase(currentIterator);
-                    }
-                };
+                    return (handleIterator->second == &priorityPair);
+                });
+
+                if (priorityIterator != updatePriorityMap.end())
+                {
+                    updatePriorityMap.erase(priorityIterator);
+                }
+
+                updateHandleMap.erase(handleIterator);
             }
         }
     };

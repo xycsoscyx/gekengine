@@ -209,9 +209,9 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     static const LPCWSTR entityFormat = \
         L"        <entity>\r\n" \
-        L"            <transform position=\"0,%d,%d\" scale=\".5,.5,.5\" />\r\n" \
+        L"            <transform position=\"(%f,2.0,%f)\" scale=\"(0.5,0.5,0.5)\" />\r\n" \
         L"            <!--color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color-->\r\n" \
-        L"            <model>*sphere|debug//r%d_m%d|1</model>\r\n" \
+        L"            <shape skin=\"debug//r%d_m%d\" parameters=\"1\">sphere</shape>\r\n" \
         L"        </entity>\r\n";
 
     static const LPCWSTR materialLibraryFormat = \
@@ -295,7 +295,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             CStringW fileName(Gek::String::format(L"r%d_m%d", roughness, metalness));
             Gek::FileSystem::save((L"%root%\\data\\materials\\debug\\" + fileName + L".xml"), material);
 
-            entities += Gek::String::format(entityFormat, (roughness - 5) + 10, (metalness - 5), roughness, metalness);
+            entities += Gek::String::format(entityFormat, (float(roughness) - 4.5f), (float(metalness) - 4.5f), roughness, metalness);
             //CopyFile(Gek::FileSystem::expandPath(L"%root%\\data\\textures\\debug\\r0_m0.png"), Gek::FileSystem::expandPath(L"%root%\\data\\textures\\debug\\") + fileName + L".png", false);
 
             materialLibrary += [&](void) -> CStringW { CStringW data(materialLibraryFormat); data.Replace(L"%name%", fileName); return data; }();

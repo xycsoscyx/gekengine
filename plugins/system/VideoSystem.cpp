@@ -14,9 +14,10 @@
 #include <dwrite.h>
 #include <d3dcompiler.h>
 #include <DirectXTex.h>
+#include <wincodec.h>
 #include <algorithm>
 #include <memory>
-#include <wincodec.h>
+#include <ppl.h>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -1704,6 +1705,7 @@ namespace Gek
             GEK_REQUIRE_VOID_RETURN(data);
 
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
+            concurrency::critical_section::scoped_lock lock(updateLock);
             d3dDeviceContext->UpdateSubresource(d3dBuffer, 0, nullptr, data, 0, 0);
         }
 
@@ -2443,6 +2445,7 @@ namespace Gek
             return resultValue;
         }
 
+        concurrency::critical_section updateLock;
         STDMETHODIMP_(void) updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *destinationRectangle)
         {
             GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
@@ -2456,6 +2459,7 @@ namespace Gek
                 {
                     if (destinationRectangle == nullptr)
                     {
+                        concurrency::critical_section::scoped_lock lock(updateLock);
                         d3dDeviceContext->UpdateSubresource(d3dResource, 0, nullptr, data, pitch, pitch);
                     }
                     else
@@ -2470,6 +2474,7 @@ namespace Gek
                             1,
                         };
 
+                        concurrency::critical_section::scoped_lock lock(updateLock);
                         d3dDeviceContext->UpdateSubresource(d3dResource, 0, &destinationBox, data, pitch, pitch);
                     }
                 }

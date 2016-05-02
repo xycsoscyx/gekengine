@@ -1,6 +1,7 @@
 ﻿#include "GEK\Engine\Engine.h"
 #include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
+#include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Timer.h"
 #include "GEK\Engine\Population.h"
@@ -27,6 +28,8 @@ namespace Gek
         HWND window;
         bool windowActive;
         bool engineRunning;
+        POINT lastCursorPosition;
+        float mouseSensitivity;
 
         Gek::Timer timer;
         double updateAccumulator;
@@ -37,7 +40,7 @@ namespace Gek
         CComPtr<Population> population;
 
         UINT32 updateHandle;
-        std::mutex actionMutex;
+        concurrency::critical_section actionLock;
         std::list<std::pair<wchar_t, bool>> actionQueue;
 
         bool consoleActive;
@@ -45,13 +48,17 @@ namespace Gek
         CStringW currentCommand;
         std::list<CStringW> commandLog;
 
-        std::mutex commandMutex;
+        concurrency::critical_section commandLock;
         std::list<std::pair<CStringW, std::vector<CStringW>>> commandQueue;
 
         CComPtr<IUnknown> backgroundBrush;
         CComPtr<IUnknown> font;
         CComPtr<IUnknown> textBrush;
         CComPtr<IUnknown> logTypeBrushList[4];
+
+        sciter::dom::element root;
+        sciter::dom::element background;
+        sciter::dom::element foreground;
 
     public:
         EngineImplementation(void)
@@ -62,6 +69,10 @@ namespace Gek
             , updateHandle(0)
             , consoleActive(false)
             , consolePosition(0.0f)
+            , mouseSensitivity(0.5f)
+            , root(nullptr)
+            , background(nullptr)
+            , foreground(nullptr)
         {
         }
 
@@ -226,34 +237,26 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                windowActive = true;
-
-                RECT windowRect;
-                GetWindowRect(window, &windowRect);
-
-                CREATESTRUCT createData;
-                createData.lpCreateParams = nullptr;
-                createData.hInstance = GetModuleHandle(nullptr);
-                createData.hMenu = nullptr;
-                createData.hwndParent = GetParent(window);
-                createData.cx = (windowRect.right - windowRect.left);
-                createData.cy = (windowRect.bottom - windowRect.top);
-                createData.x = windowRect.left;
-                createData.y = windowRect.top;
-                createData.style = GetWindowLong(window, GWL_STYLE);
-                createData.lpszName = nullptr;
-                createData.lpszClass = nullptr;
-                createData.dwExStyle = GetWindowLong(window, GWL_EXSTYLE);
-
-                BOOL handled = false;
-                SciterProcND(window, WM_CREATE, 0, reinterpret_cast<LPARAM>(&createData), &handled);
+                resultValue = E_FAIL;
                 CComQIPtr<IDXGISwapChain> dxSwapChain(video);
                 if (dxSwapChain)
                 {
-                    SciterCreateOnDirectXWindow(window, dxSwapChain);
-                }
+                    if (SciterCreateOnDirectXWindow(window, dxSwapChain))
+                    {
+                        SciterSetCallback(window, sciterHostCallback, this);
+                        resultValue = S_OK;
+                        SciterLoadFile(window, FileSystem::expandPath(L"%root%\\data\\facade.htm"));
 
-                SciterSetCallback(window, sciterHostCallback, this);
+                        root = sciter::dom::element::root_element(window);
+                        background = root.find_first("section#back-layer");
+                        foreground = root.find_first("section#fore-layer");
+                    }
+                }
+            }
+
+            if (SUCCEEDED(resultValue))
+            {
+                windowActive = true;
             }
 
             return resultValue;
@@ -329,7 +332,7 @@ namespace Gek
                             }
                             else if (command.CompareNoCase(L"load") == 0 && parameterList.size() == 1)
                             {
-                                std::lock_guard<std::mutex> lock(commandMutex);
+                                concurrency::critical_section::scoped_lock lock(commandLock);
                                 commandQueue.push_back(std::make_pair(command, parameterList));
                             }
                         }
@@ -359,7 +362,7 @@ namespace Gek
             case WM_KEYDOWN:
                 if (!consoleActive)
                 {
-                    std::lock_guard<std::mutex> lock(actionMutex);
+                    concurrency::critical_section::scoped_lock lock(actionLock);
                     actionQueue.push_back(std::make_pair(wParam, true));
                 }
 
@@ -372,7 +375,7 @@ namespace Gek
                 }
                 else if (!consoleActive)
                 {
-                    std::lock_guard<std::mutex> lock(actionMutex);
+                    concurrency::critical_section::scoped_lock lock(actionLock);
                     actionQueue.push_back(std::make_pair(wParam, false));
                 }
 
@@ -447,14 +450,14 @@ namespace Gek
         }
 
         // PopulationObserver
-        STDMETHODIMP_(void) onUpdate(bool isIdle)
+        STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
         {
             GEK_TRACE_FUNCTION(Engine);
 
             std::list<std::pair<CStringW, std::vector<CStringW>>> commandCopy;
             if (true)
             {
-                std::lock_guard<std::mutex> lock(commandMutex);
+                concurrency::critical_section::scoped_lock lock(commandLock);
                 commandCopy = commandQueue;
                 commandQueue.clear();
             }
@@ -470,27 +473,22 @@ namespace Gek
             std::list<std::pair<wchar_t, bool>> actionCopy;
             if (true)
             {
-                std::lock_guard<std::mutex> lock(actionMutex);
+                concurrency::critical_section::scoped_lock lock(actionLock);
                 actionCopy = actionQueue;
                 actionQueue.clear();
             }
 
-            POINT cursorPosition;
-            GetCursorPos(&cursorPosition);
-
-            RECT clientRectangle;
-            GetWindowRect(window, &clientRectangle);
-            INT32 clientCenterX = (clientRectangle.left + ((clientRectangle.right - clientRectangle.left) / 2));
-            INT32 clientCenterY = (clientRectangle.top + ((clientRectangle.bottom - clientRectangle.top) / 2));
-            SetCursorPos(clientCenterX, clientCenterY);
-
-            INT32 cursorMovementX = ((cursorPosition.x - clientCenterX) / 2);
-            INT32 cursorMovementY = ((cursorPosition.y - clientCenterY) / 2);
+            POINT currentCursorPosition;
+            GetCursorPos(&currentCursorPosition);
+            INT32 cursorMovementX = INT32(float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
+            INT32 cursorMovementY = INT32(float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
             if (cursorMovementX != 0 || cursorMovementY != 0)
             {
                 ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
                 ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
             }
+
+            lastCursorPosition = currentCursorPosition;
 
             for (auto &action : actionCopy)
             {
@@ -528,40 +526,19 @@ namespace Gek
         }
 
         // RenderObserver
-        STDMETHODIMP_(void) onRenderOverlay(void)
+        STDMETHODIMP_(void) onRenderBackground(void)
         {
-            GEK_TRACE_FUNCTION(Engine);
-
-            if (consolePosition > 0.0f)
+            if (background)
             {
-                OverlaySystem *overlay = video->getOverlay();
+                SciterRenderOnDirectXWindow(window, background, FALSE);
+            }
+        }
 
-                overlay->beginDraw();
-
-                float width = float(video->getWidth());
-                float height = float(video->getHeight());
-                float consoleHeight = (height * 0.5f);
-
-                overlay->setTransform(Math::Float3x2());
-
-                float consoleTop = -((1.0f - consolePosition) * consoleHeight);
-
-                Math::Float3x2 transformMatrix;
-                transformMatrix.setRotationIdentity();
-                transformMatrix.translation = Math::Float2(0.0f, consoleTop);
-                overlay->setTransform(transformMatrix);
-
-                overlay->drawRectangle(Shapes::Rectangle<float>(0.0f, 0.0f, width, consoleHeight), backgroundBrush, true);
-                overlay->drawText(Shapes::Rectangle<float>(15.0f, (consoleHeight - 30.0f), (width - 15.0f), (consoleHeight - 10.0f)), font, textBrush, currentCommand + ((GetTickCount() / 500 % 2) ? L"_" : L""));
-
-                float textPosition = (consoleHeight - 40.0f);
-                for (auto &command : commandLog)
-                {
-                    overlay->drawText(Shapes::Rectangle<float>(15.0f, (textPosition - 20.0f), (width - 15.0f), textPosition), font, logTypeBrushList[0], command);
-                    textPosition -= 20.0f;
-                }
-
-                overlay->endDraw();
+        STDMETHODIMP_(void) onRenderForeground(void)
+        {
+            if (foreground)
+            {
+                SciterRenderOnDirectXWindow(window, foreground, TRUE);
             }
         }
     };

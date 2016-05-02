@@ -422,7 +422,11 @@ namespace Gek
 
             if (properties)
             {
-                return MaterialHandle(materialPropertiesManager.getResource<Material>(properties)->getShader(), properties);
+                auto material = materialPropertiesManager.getResource<Material>(properties);
+                if (material)
+                {
+                    return MaterialHandle(material->getShader(), properties);
+                }
             }
 
             return MaterialHandle();

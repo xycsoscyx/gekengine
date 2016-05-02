@@ -92,7 +92,7 @@ namespace Gek
         {
         }
 
-        STDMETHODIMP_(void) onUpdate(bool isIdle)
+        STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
         {
             GEK_REQUIRE_VOID_RETURN(population);
             GEK_REQUIRE_VOID_RETURN(render);

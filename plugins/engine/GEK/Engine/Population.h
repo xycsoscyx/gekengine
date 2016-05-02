@@ -70,7 +70,7 @@ namespace Gek
         STDMETHOD_(void, onEntityCreated)           (THIS_ Entity *entity) { };
         STDMETHOD_(void, onEntityDestroyed)         (THIS_ Entity *entity) { };
 
-        STDMETHOD_(void, onUpdate)                  (THIS_ bool isIdle) { };
+        STDMETHOD_(void, onUpdate)                  (THIS_ UINT32 handle, bool isIdle) { };
     };
 
     DECLARE_INTERFACE_IID(PopulationRegistration, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5");

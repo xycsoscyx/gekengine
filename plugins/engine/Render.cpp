@@ -179,7 +179,8 @@ namespace Gek
         VideoSystem *video;
         Resources *resources;
         Population *population;
-        UINT32 updateHandle;
+        UINT32 backgroundUpdateHandle;
+        UINT32 foregroundUpdateHandle;
 
         CComPtr<IUnknown> pointSamplerStates;
         CComPtr<IUnknown> linearClampSamplerStates;
@@ -197,7 +198,8 @@ namespace Gek
             , video(nullptr)
             , resources(nullptr)
             , population(nullptr)
-            , updateHandle(0)
+            , backgroundUpdateHandle(0)
+            , foregroundUpdateHandle(0)
         {
         }
 
@@ -205,7 +207,8 @@ namespace Gek
         {
             if (population)
             {
-                population->removeUpdatePriority(updateHandle);
+                population->removeUpdatePriority(foregroundUpdateHandle);
+                population->removeUpdatePriority(backgroundUpdateHandle);
             }
 
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
@@ -235,7 +238,8 @@ namespace Gek
                 this->population = population;
                 this->initializerContext = initializerContext;
                 resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
-                updateHandle = population->setUpdatePriority(this, 100);
+                backgroundUpdateHandle = population->setUpdatePriority(this, 10);
+                foregroundUpdateHandle = population->setUpdatePriority(this, 100);
             }
 
             if (SUCCEEDED(resultValue))
@@ -475,10 +479,17 @@ namespace Gek
             resources->clearLocal();
         }
 
-        STDMETHODIMP_(void) onUpdate(bool isIdle)
+        STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
         {
-            ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderOverlay, std::placeholders::_1)));
-            video->present(true);
+            if (handle == backgroundUpdateHandle)
+            {
+                ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderBackground, std::placeholders::_1)));
+            }
+            else if (handle == foregroundUpdateHandle)
+            {
+                ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderForeground, std::placeholders::_1)));
+                video->present(true);
+            }
         }
     };
 

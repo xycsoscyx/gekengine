@@ -269,7 +269,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onUpdate(bool isIdle)
+        STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
         {
             if (!isIdle)
             {
