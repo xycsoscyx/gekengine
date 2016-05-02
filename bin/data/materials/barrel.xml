@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<material>
+    <shader>standard</shader>
+    <maps>
+        <albedo>%material%\%material%.Albedo</albedo>
+        <normal>%material%\%material%.Normal</normal>
+        <roughness>%material%\%material%.Roughness</roughness>
+        <metalness>%material%\%material%.Metalness</metalness>
+    </maps>
+</material>

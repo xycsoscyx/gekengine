@@ -210,20 +210,96 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     static const LPCWSTR entityFormat = \
         L"        <entity>\r\n" \
         L"            <transform position=\"0,%d,%d\" scale=\".5,.5,.5\" />\r\n" \
-        /*L"            <color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color>\r\n" \*/
+        L"            <!--color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color-->\r\n" \
         L"            <model>*sphere|debug//r%d_m%d|1</model>\r\n" \
         L"        </entity>\r\n";
 
+    static const LPCWSTR materialLibraryFormat = \
+        L"    <effect id=\"debug_%name%\">\r\n" \
+        L"      <profile_COMMON>\r\n" \
+        L"        <newparam sid=\"%name%_png-surface\">\r\n" \
+        L"          <surface type=\"2D\">\r\n" \
+        L"            <init_from>%name%_png</init_from>\r\n" \
+        L"          </surface>\r\n" \
+        L"        </newparam>\r\n" \
+        L"        <newparam sid=\"%name%_png-sampler\">\r\n" \
+        L"          <sampler2D>\r\n" \
+        L"            <source>%name%_png-surface</source>\r\n" \
+        L"          </sampler2D>\r\n" \
+        L"        </newparam>\r\n" \
+        L"        <technique sid=\"common\">\r\n" \
+        L"          <blinn>\r\n" \
+        L"            <emission>\r\n" \
+        L"              <color>0 0 0 1</color>\r\n" \
+        L"            </emission>\r\n" \
+        L"            <ambient>\r\n" \
+        L"              <color>0.5882353 0.5882353 0.5882353 1</color>\r\n" \
+        L"            </ambient>\r\n" \
+        L"            <diffuse>\r\n" \
+        L"              <texture texture=\"%name%_png-sampler\" texcoord=\"CHANNEL1\"/>\r\n" \
+        L"            </diffuse>\r\n" \
+        L"            <specular>\r\n" \
+        L"              <color>0.9 0.9 0.9 1</color>\r\n" \
+        L"            </specular>\r\n" \
+        L"            <shininess>\r\n" \
+        L"              <float>0</float>\r\n" \
+        L"            </shininess>\r\n" \
+        L"            <reflective>\r\n" \
+        L"              <color>0 0 0 1</color>\r\n" \
+        L"            </reflective>\r\n" \
+        L"            <transparent opaque=\"A_ONE\">\r\n" \
+        L"              <color>1 1 1 1</color>\r\n" \
+        L"            </transparent>\r\n" \
+        L"            <transparency>\r\n" \
+        L"              <float>1</float>\r\n" \
+        L"            </transparency>\r\n" \
+        L"          </blinn>\r\n" \
+        L"        </technique>\r\n" \
+        L"      </profile_COMMON>\r\n" \
+        L"      <extra>\r\n" \
+        L"        <technique profile=\"OpenCOLLADA3dsMax\">\r\n" \
+        L"          <extended_shader>\r\n" \
+        L"            <apply_reflection_dimming>0</apply_reflection_dimming>\r\n" \
+        L"            <dim_level>0</dim_level>\r\n" \
+        L"            <falloff_type>0</falloff_type>\r\n" \
+        L"            <index_of_refraction>1.5</index_of_refraction>\r\n" \
+        L"            <opacity_type>0</opacity_type>\r\n" \
+        L"            <reflection_level>3</reflection_level>\r\n" \
+        L"            <wire_size>1</wire_size>\r\n" \
+        L"            <wire_units>0</wire_units>\r\n" \
+        L"          </extended_shader>\r\n" \
+        L"          <shader>\r\n" \
+        L"            <ambient_diffuse_lock>1</ambient_diffuse_lock>\r\n" \
+        L"            <ambient_diffuse_texture_lock>1</ambient_diffuse_texture_lock>\r\n" \
+        L"            <diffuse_specular_lock>0</diffuse_specular_lock>\r\n" \
+        L"            <soften>0.1</soften>\r\n" \
+        L"            <use_self_illum_color>0</use_self_illum_color>\r\n" \
+        L"          </shader>\r\n" \
+        L"        </technique>\r\n" \
+        L"      </extra>\r\n" \
+        L"    </effect>\r\n";
+
+    static const LPCWSTR fileLibraryFormat = \
+        L"    <image id=\"%name%_png\">\r\n" \
+        L"      <init_from>../textures/debug/%name%.png</init_from>\r\n" \
+        L"    </image>\r\n";
+
     CStringW entities;
-    for (UINT32 roughness = 0; roughness < 11; roughness++)
+    CStringW materialLibrary;
+    CStringW fileLibrary;
+    for (UINT32 roughness = 0; roughness < 10; roughness++)
     {
-        for (UINT32 metalness = 0; metalness < 11; metalness++)
+        for (UINT32 metalness = 0; metalness < 10; metalness++)
         {
-            CStringW material(Gek::String::format(materialFormat, (float(roughness) / 10.0f), (float(metalness) / 10.0f)));
-            CStringW fileName(Gek::String::format(L"r%d_m%d.xml", roughness, metalness));
-            Gek::FileSystem::save((L"%root%\\data\\materials\\debug\\" + fileName), material);
+            CStringW material(Gek::String::format(materialFormat, (float(roughness) / 9.0f), (float(metalness) / 9.0f)));
+            CStringW fileName(Gek::String::format(L"r%d_m%d", roughness, metalness));
+            Gek::FileSystem::save((L"%root%\\data\\materials\\debug\\" + fileName + L".xml"), material);
 
             entities += Gek::String::format(entityFormat, (roughness - 5) + 10, (metalness - 5), roughness, metalness);
+            //CopyFile(Gek::FileSystem::expandPath(L"%root%\\data\\textures\\debug\\r0_m0.png"), Gek::FileSystem::expandPath(L"%root%\\data\\textures\\debug\\") + fileName + L".png", false);
+
+            materialLibrary += [&](void) -> CStringW { CStringW data(materialLibraryFormat); data.Replace(L"%name%", fileName); return data; }();
+            fileLibrary += [&](void) -> CStringW { CStringW data(fileLibraryFormat); data.Replace(L"%name%", fileName); return data; }();
         }
     }
 
