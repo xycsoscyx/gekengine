@@ -23,49 +23,53 @@
                     /*padding:10dip;*/
                 }
 
-                    body > section#back-layer > h1:hover {
-                        color: red;
-                    }
-
                 body > section#fore-layer {
-                    font: system;
-                    background-color: rgba(140,140,140,0.7);
                     width: *;
-                    height: 30%;
-                    margin-top: 0; /*attached to the left side*/
-                    padding: 5dip;
-                    border-right: rgba(240,240,240,0.5) solid 1dip;
-                    transform: translate(0,-90%);
+                    height: *;
+                    font: system;
                 }
 
-                    body > section#fore-layer:hover {
-                        transform: translate(0, 0%);
-                        transition: transform(quad-out, 300ms, 200ms); /*300ms transition, 200ms delay to start */
-                    }
-
-                    body > section#fore-layer > p {
-                        background: rgba(255,255,255,0.8);
-                        padding: 0.5em 1em;
-                        border-radius: 4dip;
-                    }
-
-        form {
-            flow: row(label,input); /*organized in table having one <label> and one <input> per row */
+        #console {
+            background:#000;
+            height:300px;
+            width:100%;
+            top:0px;
+            left:0px;
+            position:fixed;
+            z-index:999;
+            display:none;
+            color:#fff;
+            text-align:left;
         }
+
+        #window {
+            width:95%;
+            margin:5px auto 5px auto;
+            background:#999;
+            height:240px;
+            padding:8px;
+            color:#000;
+            font-size:9pt;
+            font-family:courier;
+            overflow:scroll;
+        }
+
     </style>
     <script type="text/tiscript">
-
-    $(#machine).text = Sciter.machineName();
-
-    $(input#console_input).on("keyup", function(event)
-    {
-        if(event.keyCode == 13)
+        function initialize()
         {
-            view.console_command($(input#console_input).text);
-            $(input#console_input).text = "";
-        }
-    });
+            $(#machine).text = Sciter.machineName();
 
+            view.root.subscribe(function(event)
+            {
+                if (event.keyCode == 0xC0)
+                {
+                    $(#machine).text = "foobar";
+                }
+            }, Event.KEY, Event.KEY_UP);
+        }
+
+        initialize();
     </script>
 </head>
 <body>
@@ -76,10 +80,13 @@
     </section>
 
     <section id="fore-layer">
-        <p>Console</p>
-        <hr />
-        <hr />
-        <input|text #console_input />
+        <div id="console">
+            <div id="window">
+            </div>
+            <input type="text" size="60" style="margin:5px;" />
+            <button>Send</button>
+        </div>
+
     </section>
 
 </body>

@@ -253,6 +253,29 @@ namespace Gek
         // call using sciter::value's (from CSSS!)
         BOOL sciterHANDLE_SCRIPTING_METHOD_CALL(SCRIPTING_METHOD_PARAMS *parameters)
         {
+            if (stricmp("console_command", parameters->name) == 0)
+            {
+                if (parameters->argc > 0)
+                {
+                    CStringW text(parameters->argv[0].get_chars().start);
+
+                    int position = 0;
+                    CStringW command(text.Tokenize(L" ", position));
+
+                    std::vector<CStringW> parameterList;
+                    CStringW parameter(text.Tokenize(L" ", position));
+                    while (!parameter.IsEmpty())
+                    {
+                        parameterList.push_back(parameter);
+                        parameter = text.Tokenize(L" ", position);
+                    };
+
+                    concurrency::critical_section::scoped_lock lock(commandLock);
+                    commandQueue.push_back(std::make_pair(command, parameterList));
+                    return true;
+                }
+            }
+
             return false;
         }
 
@@ -260,8 +283,6 @@ namespace Gek
         BOOL sciterHANDLE_TISCRIPT_METHOD_CALL(TISCRIPT_METHOD_PARAMS *parameters)
         {
             tiscript::args arguments(parameters->vm);
-            CStringW function(tiscript::c_string(arguments.get(0)).c_str());
-            CStringW value(tiscript::c_string(arguments.get(1)).c_str());           
             return false;
         }
 
@@ -495,66 +516,6 @@ namespace Gek
                 timer.pause(!windowActive);
                 return 1;
 
-            case WM_CHAR:
-                if (windowActive && consoleActive)
-                {
-                    switch (wParam)
-                    {
-                    case 0x08: // backspace
-                        if (currentCommand.GetLength() > 0)
-                        {
-                            currentCommand = currentCommand.Mid(0, currentCommand.GetLength() - 1);
-                        }
-
-                        break;
-
-                    case 0x0A: // linefeed
-                    case 0x0D: // carriage return
-                        if (true)
-                        {
-                            int position = 0;
-                            commandLog.push_front(currentCommand);
-                            CStringW command = currentCommand.Tokenize(L" ", position);
-
-                            std::vector<CStringW> parameterList;
-                            while (position >= 0 && position < currentCommand.GetLength())
-                            {
-                                parameterList.push_back(currentCommand.Tokenize(L" ", position));
-                            };
-
-                            if (command.CompareNoCase(L"quit") == 0)
-                            {
-                                engineRunning = false;
-                            }
-                            else if (command.CompareNoCase(L"load") == 0 && parameterList.size() == 1)
-                            {
-                                concurrency::critical_section::scoped_lock lock(commandLock);
-                                commandQueue.push_back(std::make_pair(command, parameterList));
-                            }
-                        }
-
-                        currentCommand.Empty();
-                        break;
-
-                    case 0x1B: // escape
-                        currentCommand.Empty();
-                        break;
-
-                    case 0x09: // tab
-                        break;
-
-                    default:
-                        if (wParam != '`')
-                        {
-                            currentCommand += (WCHAR)wParam;
-                        }
-
-                        break;
-                    };
-                }
-
-                break;
-
             case WM_KEYDOWN:
                 if (!consoleActive)
                 {
@@ -660,7 +621,12 @@ namespace Gek
 
             for (auto &command : commandCopy)
             {
-                if (command.first.CompareNoCase(L"load") == 0 && command.second.size() == 1)
+                if (command.first.CompareNoCase(L"quit") == 0)
+                {
+                    engineRunning = false;
+                    return;
+                }
+                else if (command.first.CompareNoCase(L"load") == 0 && command.second.size() == 1)
                 {
                     population->load(command.second[0]);
                 }
