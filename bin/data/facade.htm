@@ -27,10 +27,20 @@
                     font: system;
                 }
 
+        .console_hidden {
+            margin-top: -300px;
+            transition: margin-top(linear, 500ms);
+        }
+
+        .console_shown {
+            margin-top: 0px;
+            transition: margin-top(linear, 500ms);
+        }
+
         #console {
             background-color: rgba(0,0,0,.7);
             height: 300px;
-            width: 100%;
+            width: *;
             top: 0px;
             left: 0px;
             z-index: 999;
@@ -50,7 +60,7 @@
             }
 
         #window {
-            width: *;
+            width: 100%;
             background: transparent;
             border: 1px solid gray;
             height: 240px;
@@ -62,10 +72,6 @@
             overflow-y: scroll;
             text-align: left;
         }
-
-        .hidden {
-            display: none;
-        }
     </style>
     <script type="text/tiscript">
     $(#machine).text = Sciter.machineName();
@@ -74,7 +80,8 @@
     {
         if (event.keyCode == 0xC0)
         {
-            $(div#console).attributes.toggleClass("hidden");
+            $(div#console).attributes.toggleClass("console_hidden");
+            $(div#console).attributes.toggleClass("console_shown");
         }
     }, Event.KEY, Event.KEY_UP);
 
@@ -108,8 +115,6 @@
             view.console_command(command, parameters);
         }
     });
-
-    $(div#console).attributes.addClass("hidden");
     </script>
 </head>
 <body>
@@ -120,7 +125,7 @@
     </section>
 
     <section id="fore-layer">
-        <div #console>
+        <div #console class="console_hidden">
             <div #window>
                 stuff<br />
                 stuff<br />
