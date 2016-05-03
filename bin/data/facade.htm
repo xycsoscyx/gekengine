@@ -28,72 +28,88 @@
                 }
 
         #console {
-            background-color:rgba(0,0,0,.7);
-            height:300px;
-            width:100%;
-            top:0px;
-            left:0px;
-            z-index:999;
-            text-align:left;
+            background-color: rgba(0,0,0,.7);
+            height: 300px;
+            width: 100%;
+            top: 0px;
+            left: 0px;
+            z-index: 999;
+            text-align: left;
         }
 
             #console > input {
-                width:100%;
-                background:transparent;
+                width: 100%;
+                background: transparent;
                 border: 1px solid gray;
-                font-family:monospace;
-                color:darkslategray;
-                font-weight:bold;
-                font-size:16px;
+                font-family: monospace;
+                color: darkslategray;
+                font-weight: bold;
+                font-size: 16px;
                 padding: 0px 8px 0px 8px;
-                text-align:left;
+                text-align: left;
             }
 
         #window {
-            width:*;
-            background:transparent;
-            border:1px solid gray;
-            height:240px;
-            padding:8px;
-            color:dimgray;
-            font-size:12pt;
-            font-family:monospace;
-            overflow-x:hidden;
-            overflow-y:scroll;
-            text-align:left;
+            width: *;
+            background: transparent;
+            border: 1px solid gray;
+            height: 240px;
+            padding: 8px;
+            color: dimgray;
+            font-size: 12pt;
+            font-family: monospace;
+            overflow-x: hidden;
+            overflow-y: scroll;
+            text-align: left;
         }
 
         .hidden {
-             display: none
+            display: none;
         }
     </style>
     <script type="text/tiscript">
-        $(#machine).text = Sciter.machineName();
+    $(#machine).text = Sciter.machineName();
 
-        view.root.subscribe(function(event)
+    view.root.subscribe(function(event)
+    {
+        if (event.keyCode == 0xC0)
         {
-            if (event.keyCode == 0xC0)
-            {
-                $(div#console).attributes.toggleClass("hidden");
-            }
-        }, Event.KEY, Event.KEY_UP);
+            $(div#console).attributes.toggleClass("hidden");
+        }
+    }, Event.KEY, Event.KEY_UP);
 
-        $(input#console_input).on("keyup", function(event)
+    $(input#console_input).on("keypress", function(event)
+    {
+        if ($(div#console).attributes.hasClass("hidden"))
         {
-            if (event.keyCode == Event.VK_RETURN ||
-                event.keyCode == Event.VK_ENTER)
+            event.preventDefault();
+        }
+        else
+        {
+            var character = String.fromCharCode(event.keyCode);
+            if (character.search("^[a-zA-Z0-9\s\_\.\,\(\)\=\*\/\+\-\?]*$") < 0)
             {
-                var text = $(input#console_input).text;
-                $(input#console_input).text = "";
-
-                text = text.substr(0, text.length - 1);
-                var parameters = text.split(" ");
-                var command = parameters.shift();
-                view.console_command(command, parameters);
+                event.preventDefault();
             }
-        });
+        }
+    });
 
-        $(div#console).attributes.addClass("hidden");
+    $(input#console_input).on("keyup", function(event)
+    {
+        if (event.keyCode == Event.VK_RETURN ||
+            event.keyCode == Event.VK_ENTER)
+        {
+            var text = $(input#console_input).text;
+            $(input#console_input).text = "";
+
+            text = text.substr(0, text.length - 1);
+            var parameters = text.split(" ");
+            var command = parameters.shift();
+            view.console_command(command, parameters);
+        }
+    });
+
+    $(div#console).attributes.addClass("hidden");
     </script>
 </head>
 <body>
