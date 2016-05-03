@@ -255,20 +255,32 @@ namespace Gek
         {
             if (stricmp("console_command", parameters->name) == 0)
             {
-                if (parameters->argc > 0)
+                if (parameters->argc > 0 && parameters->argv[0].is_string())
                 {
-                    CStringW text(parameters->argv[0].get_chars().start);
-
-                    int position = 0;
-                    CStringW command(text.Tokenize(L" ", position));
+                    CStringW command(parameters->argv[0].get_chars().start);
 
                     std::vector<CStringW> parameterList;
-                    CStringW parameter(text.Tokenize(L" ", position));
-                    while (!parameter.IsEmpty())
+                    if (parameters->argc == 2)
                     {
-                        parameterList.push_back(parameter);
-                        parameter = text.Tokenize(L" ", position);
-                    };
+                        sciter::value commandParameters = parameters->argv[1];
+                        if (commandParameters.is_array() || commandParameters.is_object_array())
+                        {
+                            UINT32 parameterCount = parameters->argv[1].length();
+                            for (UINT32 parameter = 0; parameter < parameterCount; parameter++)
+                            {
+                                sciter::value value = parameters->argv[1].get_item(parameter);
+                                parameterList.push_back(value.to_string().c_str());
+                            }
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
 
                     concurrency::critical_section::scoped_lock lock(commandLock);
                     commandQueue.push_back(std::make_pair(command, parameterList));
@@ -353,6 +365,16 @@ namespace Gek
         {
             EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
             return engine->sciterElementEventProc(element, eventIdentifier, parameters);
+        }
+
+        void sciterDebugOutput(UINT subsystem, UINT severity, LPCWSTR text, UINT textSize)
+        {
+        }
+
+        static void CALLBACK sciterDebugOutput(LPVOID userData, UINT subsystem, UINT severity, LPCWSTR text, UINT textSize)
+        {
+            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
+            engine->sciterDebugOutput(subsystem, severity, text, textSize);
         }
 
         // Engine
@@ -459,6 +481,8 @@ namespace Gek
                 {
                     if (SciterCreateOnDirectXWindow(window, dxSwapChain))
                     {
+                        SciterSetupDebugOutput(window, this, sciterDebugOutput);
+                        SciterSetOption(window, SCITER_SET_DEBUG_MODE, TRUE);
                         SciterSetCallback(window, sciterHostCallback, this);
                         SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
                         resultValue = S_OK;

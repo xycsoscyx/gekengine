@@ -24,52 +24,76 @@
                 }
 
                 body > section#fore-layer {
-                    width: *;
-                    height: *;
                     font: system;
                 }
 
         #console {
-            background:#000;
+            background-color:rgba(0,0,0,.7);
             height:300px;
             width:100%;
             top:0px;
             left:0px;
-            position:fixed;
             z-index:999;
-            display:none;
-            color:#fff;
             text-align:left;
         }
 
+            #console > input {
+                width:100%;
+                background:transparent;
+                border: 1px solid gray;
+                font-family:monospace;
+                color:darkslategray;
+                font-weight:bold;
+                font-size:16px;
+                padding: 0px 8px 0px 8px;
+                text-align:left;
+            }
+
         #window {
-            width:95%;
-            margin:5px auto 5px auto;
-            background:#999;
+            width:*;
+            background:transparent;
+            border:1px solid gray;
             height:240px;
             padding:8px;
-            color:#000;
-            font-size:9pt;
-            font-family:courier;
-            overflow:scroll;
+            color:dimgray;
+            font-size:12pt;
+            font-family:monospace;
+            overflow-x:hidden;
+            overflow-y:scroll;
+            text-align:left;
         }
 
+        .hidden {
+             display: none
+        }
     </style>
     <script type="text/tiscript">
-        function initialize()
+        $(#machine).text = Sciter.machineName();
+
+        view.root.subscribe(function(event)
         {
-            $(#machine).text = Sciter.machineName();
-
-            view.root.subscribe(function(event)
+            if (event.keyCode == 0xC0)
             {
-                if (event.keyCode == 0xC0)
-                {
-                    $(#machine).text = "foobar";
-                }
-            }, Event.KEY, Event.KEY_UP);
-        }
+                $(div#console).attributes.toggleClass("hidden");
+            }
+        }, Event.KEY, Event.KEY_UP);
 
-        initialize();
+        $(input#console_input).on("keyup", function(event)
+        {
+            if (event.keyCode == Event.VK_RETURN ||
+                event.keyCode == Event.VK_ENTER)
+            {
+                var text = $(input#console_input).text;
+                $(input#console_input).text = "";
+
+                text = text.substr(0, text.length - 1);
+                var parameters = text.split(" ");
+                var command = parameters.shift();
+                view.console_command(command, parameters);
+            }
+        });
+
+        $(div#console).attributes.addClass("hidden");
     </script>
 </head>
 <body>
@@ -80,13 +104,57 @@
     </section>
 
     <section id="fore-layer">
-        <div id="console">
-            <div id="window">
+        <div #console>
+            <div #window>
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
+                stuff<br />
             </div>
-            <input type="text" size="60" style="margin:5px;" />
-            <button>Send</button>
+            <input #console_input type="text" />
         </div>
-
     </section>
 
 </body>
