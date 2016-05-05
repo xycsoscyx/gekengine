@@ -20,96 +20,91 @@
                     background: radial-gradient(50% 50%, ellipse center, blue, black);
                     color: #fff;
                     overflow: hidden;
-                    /*padding:10dip;*/
+                    margin: 0;
                 }
 
                 body > section#fore-layer {
-                    font: system;
+                    background: radial-gradient(50% 50%, ellipse center, black, blue);
+                    overflow: hidden;
+                    margin: 0;
                 }
 
         .console_hidden {
-            margin-top: -300px;
-            transition: margin-top(linear, 500ms);
-        }
-
-        .console_shown {
-            margin-top: 0px;
+            margin-top: -100%;
             transition: margin-top(linear, 500ms);
         }
 
         #console {
             background-color: rgba(0,0,0,.7);
-            height: 300px;
             width: *;
-            top: 0px;
-            left: 0px;
             z-index: 999;
             text-align: left;
+            height: 40%;
         }
 
-            #console > input {
-                width: 100%;
-                background: transparent;
-                border: 1px solid gray;
-                font-family: monospace;
-                color: darkslategray;
-                font-weight: bold;
-                font-size: 16px;
-                padding: 0px 8px 0px 8px;
-                text-align: left;
-            }
-
-        #window {
+        #console_buffer {
             width: 100%;
             background: transparent;
             border: 1px solid gray;
-            height: 240px;
-            padding: 8px;
             color: dimgray;
             font-size: 12pt;
             font-family: monospace;
             overflow-x: hidden;
             overflow-y: scroll;
             text-align: left;
+            height: 90%;
+        }
+
+        #console_input {
+            height: 10%;
+        }
+
+        #console_input > input {
+            width: 100%;
+            background: transparent;
+            border: 1px solid gray;
+            font-family: monospace;
+            color: darkslategray;
+            font-weight: bold;
+            font-size: 16px;
         }
     </style>
     <script type="text/tiscript">
     $(#machine).text = Sciter.machineName();
-
+    
     view.root.subscribe(function(event)
     {
         if (event.keyCode == 0xC0)
         {
             $(div#console).attributes.toggleClass("console_hidden");
-            $(div#console).attributes.toggleClass("console_shown");
         }
     }, Event.KEY, Event.KEY_UP);
 
-    $(input#console_input).on("keypress", function(event)
+    $(input#console_command).on("keypress", function(event)
     {
-        if ($(div#console).attributes.hasClass("hidden"))
+        if ($(div#console).attributes.hasClass("console_hidden"))
         {
             event.preventDefault();
         }
         else
         {
             var character = String.fromCharCode(event.keyCode);
-            if (character.search("^[a-zA-Z0-9\s\_\.\,\(\)\=\*\/\+\-\?]*$") < 0)
+            if (character.search("^[a-zA-Z0-9? _.,()=*/+-]*$") < 0)
             {
                 event.preventDefault();
             }
         }
     });
 
-    $(input#console_input).on("keyup", function(event)
+    $(input#console_command).on("keyup", function(event)
     {
         if (event.keyCode == Event.VK_RETURN ||
             event.keyCode == Event.VK_ENTER)
         {
-            var text = $(input#console_input).text;
-            $(input#console_input).text = "";
+            var text = $(input#console_command).text;
+            $(input#console_command).text = "";
 
-            text = text.substr(0, text.length - 1);
+            text = text.substr(0, (text.length - 1));
             var parameters = text.split(" ");
             var command = parameters.shift();
             view.console_command(command, parameters);
@@ -126,55 +121,12 @@
 
     <section id="fore-layer">
         <div #console class="console_hidden">
-            <div #window>
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
-                stuff<br />
+            <div #console_buffer>
+                stuff
             </div>
-            <input #console_input type="text" />
+            <div #console_input>
+                <input #console_command type="text" />
+            </div>
         </div>
     </section>
 
