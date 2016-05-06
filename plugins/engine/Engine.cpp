@@ -1,4 +1,5 @@
 ﻿#include "GEK\Engine\Engine.h"
+#include "GEK\Engine\Configuration.h"
 #include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
@@ -18,6 +19,47 @@
 
 namespace Gek
 {
+    class ConfigurationImplementation : public UnknownMixin
+        , public Configuration
+    {
+    public:
+        class ValueImplementation : public UnknownMixin
+            , public ObservableMixin
+            , public Value
+        {
+        private:
+
+        public:
+            BEGIN_INTERFACE_LIST(ValueImplementation)
+                INTERFACE_LIST_ENTRY_COM(Observable)
+            END_INTERFACE_LIST_UNKNOWN
+
+            STDMETHODIMP_(LPCWSTR) getName(void)
+            {
+                return nullptr;
+            }
+        };
+
+    private:
+        std::unordered_map<CStringW, ConfigurationImplementation> groupMap;
+        std::unordered_map<CStringW, ValueImplementation> valueMap;
+
+    public:
+        BEGIN_INTERFACE_LIST(ConfigurationImplementation)
+            INTERFACE_LIST_ENTRY_COM(Configuration)
+        END_INTERFACE_LIST_UNKNOWN
+
+        STDMETHODIMP_(Configuration &) getGroup(LPCWSTR name)
+        {
+            return groupMap[name];
+        }
+
+        STDMETHODIMP_(Value &) getValue(LPCWSTR name)
+        {
+            return valueMap[name];
+        }
+    };
+
     class EngineImplementation : public ContextUserMixin
         , public ObservableMixin
         , public Engine
@@ -25,14 +67,17 @@ namespace Gek
         , public PopulationObserver
     {
     private:
+        CComPtr<Configuration> configuration;
+
         HWND window;
         bool windowActive;
         bool engineRunning;
-        POINT lastCursorPosition;
-        float mouseSensitivity;
 
         Gek::Timer timer;
         double updateAccumulator;
+        POINT lastCursorPosition;
+        float mouseSensitivity;
+
         CComPtr<VideoSystem> video;
         CComPtr<Resources> resources;
         CComPtr<Render> render;
@@ -43,10 +88,9 @@ namespace Gek
         concurrency::critical_section actionLock;
         std::list<std::pair<wchar_t, bool>> actionQueue;
 
-        bool consoleActive;
-        float consolePosition;
         CStringW currentCommand;
         std::list<CStringW> commandLog;
+        std::unordered_map<CStringW, std::function<void(const std::vector<CStringW> &)>> consoleCommands;
 
         concurrency::critical_section commandLock;
         std::list<std::pair<CStringW, std::vector<CStringW>>> commandQueue;
@@ -60,6 +104,25 @@ namespace Gek
         sciter::dom::element background;
         sciter::dom::element foreground;
 
+    private:
+        static UINT CALLBACK sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification, LPVOID userData)
+        {
+            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
+            return engine->sciterHostCallback(notification);
+        }
+
+        static BOOL CALLBACK sciterElementEventProc(LPVOID userData, HELEMENT element, UINT eventIdentifier, LPVOID parameters)
+        {
+            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
+            return engine->sciterElementEventProc(element, eventIdentifier, parameters);
+        }
+
+        static void CALLBACK sciterDebugOutput(LPVOID userData, UINT subsystem, UINT severity, LPCWSTR text, UINT textSize)
+        {
+            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
+            engine->sciterDebugOutput(subsystem, severity, text, textSize);
+        }
+
     public:
         EngineImplementation(void)
             : window(nullptr)
@@ -67,13 +130,31 @@ namespace Gek
             , engineRunning(true)
             , updateAccumulator(0.0)
             , updateHandle(0)
-            , consoleActive(false)
-            , consolePosition(0.0f)
             , mouseSensitivity(0.5f)
             , root(nullptr)
             , background(nullptr)
             , foreground(nullptr)
         {
+            consoleCommands[L"quit"] = [this](const std::vector<CStringW> &parameters) -> void
+            {
+                engineRunning = false;
+            };
+
+            consoleCommands[L"load"] = [this](const std::vector<CStringW> &parameters) -> void
+            {
+                if (parameters.size() == 1)
+                {
+                    population->load(parameters[0]);
+                }
+            };
+
+            consoleCommands[L"reload"] = [this](const std::vector<CStringW> &parameters) -> void
+            {
+                SciterLoadFile(window, FileSystem::expandPath(L"%root%\\data\\pages\\system.html"));
+                root = sciter::dom::element::root_element(window);
+                background = root.find_first("section#back-layer");
+                foreground = root.find_first("section#fore-layer");
+            };
         }
 
         ~EngineImplementation(void)
@@ -110,272 +191,14 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Engine)
             INTERFACE_LIST_ENTRY_COM(RenderObserver)
             INTERFACE_LIST_ENTRY_COM(PopulationObserver)
+            INTERFACE_LIST_ENTRY_MEMBER_COM(Configuration, configuration)
             INTERFACE_LIST_ENTRY_MEMBER_COM(VideoSystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(OverlaySystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(PluginResources, resources)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Resources, resources)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Render, render)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
-            END_INTERFACE_LIST_USER
-
-        // Sciter
-        UINT on_load_data(LPSCN_LOAD_DATA notification)
-        {
-            return 0;
-        }
-
-        UINT on_data_loaded(LPSCN_DATA_LOADED notification)
-        {
-            return 0;
-        }
-
-        UINT on_attach_behavior(LPSCN_ATTACH_BEHAVIOR notification)
-        {
-            return 0;
-        }
-
-        UINT on_engine_destroyed(void)
-        {
-            return 0;
-        }
-
-        UINT on_posted_notification(LPSCN_POSTED_NOTIFICATION notification)
-        {
-            return 0;
-        }
-
-        UINT on_graphics_critical_failure(void)
-        {
-            return 0;
-        }
-
-        UINT sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification)
-        {
-            switch (notification->code)
-            {
-            case SC_LOAD_DATA:
-                return on_load_data((LPSCN_LOAD_DATA)notification);
-
-            case SC_DATA_LOADED:
-                return on_data_loaded((LPSCN_DATA_LOADED)notification);
-
-            case SC_ATTACH_BEHAVIOR:
-                return on_attach_behavior((LPSCN_ATTACH_BEHAVIOR)notification);
-
-            case SC_ENGINE_DESTROYED:
-                return on_engine_destroyed();
-
-            case SC_POSTED_NOTIFICATION:
-                return on_posted_notification((LPSCN_POSTED_NOTIFICATION)notification);
-
-            case SC_GRAPHICS_CRITICAL_FAILURE:
-                return on_graphics_critical_failure();
-            };
-
-            return 0;
-        }
-
-        static UINT CALLBACK sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification, LPVOID userData)
-        {
-            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
-            return engine->sciterHostCallback(notification);
-        }
-
-        BOOL sciterSUBSCRIPTIONS_REQUEST(UINT *p)
-        {
-            return false;
-        }
-
-        BOOL sciterHANDLE_INITIALIZATION(INITIALIZATION_PARAMS *parameters)
-        {
-            if (parameters->cmd == BEHAVIOR_DETACH)
-            {
-                //pThis->detached(he);
-            }
-            else if (parameters->cmd == BEHAVIOR_ATTACH)
-            {
-                //pThis->attached(he);
-            }
-
-            return true;
-        }
-
-        BOOL sciterHANDLE_MOUSE(MOUSE_PARAMS *parameters)
-        {
-            return false;
-        }
-
-        BOOL sciterHANDLE_KEY(KEY_PARAMS *parameters)
-        {
-            return false;
-        }
-
-        BOOL sciterHANDLE_FOCUS(FOCUS_PARAMS *parameters)
-        {
-            return false;
-        }
-
-        BOOL sciterHANDLE_DRAW(DRAW_PARAMS *parameters)
-        {
-            return false;
-        }
-
-        BOOL sciterHANDLE_TIMER(TIMER_PARAMS *parameters)
-        {
-            return false;
-        }
-
-        BOOL sciterHANDLE_BEHAVIOR_EVENT(BEHAVIOR_EVENT_PARAMS *parameters)
-        {
-            return false;
-        }
-
-        BOOL sciterHANDLE_METHOD_CALL(METHOD_PARAMS *parameters)
-        {
-            return false;
-        }
-
-        BOOL sciterHANDLE_DATA_ARRIVED(DATA_ARRIVED_PARAMS *parameters)
-        {
-            return false;
-        }
-
-        BOOL sciterHANDLE_SCROLL(SCROLL_PARAMS *parameters)
-        {
-            return false;
-        }
-
-        BOOL sciterHANDLE_SIZE()
-        {
-            return false;
-        }
-
-        // call using sciter::value's (from CSSS!)
-        BOOL sciterHANDLE_SCRIPTING_METHOD_CALL(SCRIPTING_METHOD_PARAMS *parameters)
-        {
-            if (stricmp("console_command", parameters->name) == 0)
-            {
-                if (parameters->argc > 0 && parameters->argv[0].is_string())
-                {
-                    CStringW command(parameters->argv[0].get_chars().start);
-
-                    std::vector<CStringW> parameterList;
-                    if (parameters->argc == 2)
-                    {
-                        sciter::value commandParameters = parameters->argv[1];
-                        if (commandParameters.is_array() || commandParameters.is_object_array())
-                        {
-                            UINT32 parameterCount = parameters->argv[1].length();
-                            for (UINT32 parameter = 0; parameter < parameterCount; parameter++)
-                            {
-                                sciter::value value = parameters->argv[1].get_item(parameter);
-                                parameterList.push_back(value.to_string().c_str());
-                            }
-                        }
-                        else
-                        {
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        return false;
-                    }
-
-                    concurrency::critical_section::scoped_lock lock(commandLock);
-                    commandQueue.push_back(std::make_pair(command, parameterList));
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        // call using tiscript::value's (from the script)
-        BOOL sciterHANDLE_TISCRIPT_METHOD_CALL(TISCRIPT_METHOD_PARAMS *parameters)
-        {
-            tiscript::args arguments(parameters->vm);
-            return false;
-        }
-
-        BOOL sciterHANDLE_GESTURE(GESTURE_PARAMS *parameters)
-        {
-            return false;
-        }
-
-        BOOL sciterElementEventProc(HELEMENT element, UINT eventIdentifier, LPVOID parameters)
-        {
-            switch (eventIdentifier)
-            {
-            case SUBSCRIPTIONS_REQUEST:
-                return sciterSUBSCRIPTIONS_REQUEST((UINT *)parameters);
-
-            case HANDLE_INITIALIZATION:
-                return sciterHANDLE_INITIALIZATION((INITIALIZATION_PARAMS *)parameters);
-
-            case HANDLE_MOUSE:
-                return sciterHANDLE_MOUSE((MOUSE_PARAMS *)parameters);
-
-            case HANDLE_KEY:
-                return sciterHANDLE_KEY((KEY_PARAMS *)parameters);
-
-            case HANDLE_FOCUS:
-                return sciterHANDLE_FOCUS((FOCUS_PARAMS *)parameters);
-
-            case HANDLE_DRAW:
-                return sciterHANDLE_DRAW((DRAW_PARAMS *)parameters);
-
-            case HANDLE_TIMER:
-                return sciterHANDLE_TIMER((TIMER_PARAMS *)parameters);
-
-            case HANDLE_BEHAVIOR_EVENT:
-                return sciterHANDLE_BEHAVIOR_EVENT((BEHAVIOR_EVENT_PARAMS *)parameters);
-
-            case HANDLE_METHOD_CALL:
-                return sciterHANDLE_METHOD_CALL((METHOD_PARAMS *)parameters);
-
-            case HANDLE_DATA_ARRIVED:
-                return sciterHANDLE_DATA_ARRIVED((DATA_ARRIVED_PARAMS *)parameters);
-
-            case HANDLE_SCROLL:
-                return sciterHANDLE_SCROLL((SCROLL_PARAMS *)parameters);
-
-            case HANDLE_SIZE:
-                return sciterHANDLE_SIZE();
-
-            // call using sciter::value's (from CSSS!)
-            case HANDLE_SCRIPTING_METHOD_CALL:
-                return sciterHANDLE_SCRIPTING_METHOD_CALL((SCRIPTING_METHOD_PARAMS *)parameters);
-
-            // call using tiscript::value's (from the script)
-            case HANDLE_TISCRIPT_METHOD_CALL:
-                return sciterHANDLE_TISCRIPT_METHOD_CALL((TISCRIPT_METHOD_PARAMS *)parameters);
-
-            case HANDLE_GESTURE:
-                return sciterHANDLE_GESTURE((GESTURE_PARAMS *)parameters);
-
-            default:
-                assert(false);
-            };
-
-            return FALSE;
-        }
-
-        static BOOL CALLBACK sciterElementEventProc(LPVOID userData, HELEMENT element, UINT eventIdentifier, LPVOID parameters)
-        {
-            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
-            return engine->sciterElementEventProc(element, eventIdentifier, parameters);
-        }
-
-        void sciterDebugOutput(UINT subsystem, UINT severity, LPCWSTR text, UINT textSize)
-        {
-        }
-
-        static void CALLBACK sciterDebugOutput(LPVOID userData, UINT subsystem, UINT severity, LPCWSTR text, UINT textSize)
-        {
-            EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
-            engine->sciterDebugOutput(subsystem, severity, text, textSize);
-        }
+        END_INTERFACE_LIST_USER
 
         // Engine
         STDMETHODIMP initialize(HWND window)
@@ -383,6 +206,8 @@ namespace Gek
             GEK_TRACE_FUNCTION(Engine);
 
             GEK_REQUIRE_RETURN(window, E_INVALIDARG);
+
+            configuration = new ConfigurationImplementation();
 
             HRESULT resultValue = CoInitialize(nullptr);
             if (SUCCEEDED(resultValue))
@@ -541,26 +366,20 @@ namespace Gek
                 return 1;
 
             case WM_KEYDOWN:
-                if (!consoleActive)
+                if (true)
                 {
                     concurrency::critical_section::scoped_lock lock(actionLock);
                     actionQueue.push_back(std::make_pair(wParam, true));
+                    return 1;
                 }
-
-                return 1;
 
             case WM_KEYUP:
-                if (wParam == 0xC0)
-                {
-                    consoleActive = !consoleActive;
-                }
-                else if (!consoleActive)
+                if (true)
                 {
                     concurrency::critical_section::scoped_lock lock(actionLock);
                     actionQueue.push_back(std::make_pair(wParam, false));
+                    return 1;
                 }
-
-                return 1;
 
             case WM_LBUTTONDOWN:
             case WM_RBUTTONDOWN:
@@ -600,31 +419,21 @@ namespace Gek
             if (windowActive)
             {
                 timer.update();
-                double updateTime = timer.getUpdateTime();
-                if (consoleActive)
-                {
-                    consolePosition = std::min(1.0f, (consolePosition + float(updateTime * 4.0)));
-                    population->update(true);
-                }
-                else
-                {
-                    consolePosition = std::max(0.0f, (consolePosition - float(updateTime * 4.0)));
+                updateAccumulator += timer.getUpdateTime();
 
-                    UINT32 frameCount = 3;
-                    updateAccumulator += updateTime;
-                    while (updateAccumulator > (1.0 / 30.0))
+                UINT32 frameCount = 3;
+                while (updateAccumulator > (1.0 / 30.0))
+                {
+                    population->update(false, 1.0f / 30.0f);
+                    if (--frameCount == 0)
                     {
-                        population->update(false, 1.0f / 30.0f);
-                        if (--frameCount == 0)
-                        {
-                            updateAccumulator = 0.0;
-                        }
-                        else
-                        {
-                            updateAccumulator -= (1.0 / 30.0);
-                        }
-                    };
-                }
+                        updateAccumulator = 0.0;
+                    }
+                    else
+                    {
+                        updateAccumulator -= (1.0 / 30.0);
+                    }
+                };
             }
 
             return engineRunning;
@@ -645,21 +454,10 @@ namespace Gek
 
             for (auto &command : commandCopy)
             {
-                if (command.first.CompareNoCase(L"quit") == 0)
+                auto commandIterator = consoleCommands.find(command.first);
+                if (commandIterator != consoleCommands.end())
                 {
-                    engineRunning = false;
-                    return;
-                }
-                else if (command.first.CompareNoCase(L"load") == 0 && command.second.size() == 1)
-                {
-                    population->load(command.second[0]);
-                }
-                else if (command.first.CompareNoCase(L"reload") == 0)
-                {
-                    SciterLoadFile(window, FileSystem::expandPath(L"%root%\\data\\pages\\system.html"));
-                    root = sciter::dom::element::root_element(window);
-                    background = root.find_first("section#back-layer");
-                    foreground = root.find_first("section#fore-layer");
+                    (*commandIterator).second(command.second);
                 }
             }
 
@@ -716,6 +514,245 @@ namespace Gek
                     break;
                 };
             }
+        }
+
+        // SciterObserver
+        UINT onSciterLoadData(LPSCN_LOAD_DATA notification)
+        {
+            return 0;
+        }
+
+        UINT onSciterDataLoaded(LPSCN_DATA_LOADED notification)
+        {
+            return 0;
+        }
+
+        UINT onSciterAttachBehavior(LPSCN_ATTACH_BEHAVIOR notification)
+        {
+            return 0;
+        }
+
+        UINT onSciterEngineDestroyed(void)
+        {
+            return 0;
+        }
+
+        UINT onSciterPostedNotification(LPSCN_POSTED_NOTIFICATION notification)
+        {
+            return 0;
+        }
+
+        UINT onSciterGraphicsCriticalFailure(void)
+        {
+            return 0;
+        }
+
+        UINT sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification)
+        {
+            switch (notification->code)
+            {
+            case SC_LOAD_DATA:
+                return onSciterLoadData((LPSCN_LOAD_DATA)notification);
+
+            case SC_DATA_LOADED:
+                return onSciterDataLoaded((LPSCN_DATA_LOADED)notification);
+
+            case SC_ATTACH_BEHAVIOR:
+                return onSciterAttachBehavior((LPSCN_ATTACH_BEHAVIOR)notification);
+
+            case SC_ENGINE_DESTROYED:
+                return onSciterEngineDestroyed();
+
+            case SC_POSTED_NOTIFICATION:
+                return onSciterPostedNotification((LPSCN_POSTED_NOTIFICATION)notification);
+
+            case SC_GRAPHICS_CRITICAL_FAILURE:
+                return onSciterGraphicsCriticalFailure();
+            };
+
+            return 0;
+        }
+
+        BOOL sciterSUBSCRIPTIONS_REQUEST(UINT *p)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_INITIALIZATION(INITIALIZATION_PARAMS *parameters)
+        {
+            if (parameters->cmd == BEHAVIOR_DETACH)
+            {
+                //pThis->detached(he);
+            }
+            else if (parameters->cmd == BEHAVIOR_ATTACH)
+            {
+                //pThis->attached(he);
+            }
+
+            return true;
+        }
+
+        BOOL sciterHANDLE_MOUSE(MOUSE_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_KEY(KEY_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_FOCUS(FOCUS_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_DRAW(DRAW_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_TIMER(TIMER_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_BEHAVIOR_EVENT(BEHAVIOR_EVENT_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_METHOD_CALL(METHOD_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_DATA_ARRIVED(DATA_ARRIVED_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_SCROLL(SCROLL_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_SIZE()
+        {
+            return false;
+        }
+
+        BOOL sciterHANDLE_SCRIPTING_METHOD_CALL(SCRIPTING_METHOD_PARAMS *parameters)
+        {
+            if (stricmp("console_command", parameters->name) == 0)
+            {
+                if (parameters->argc > 0 && parameters->argv[0].is_string())
+                {
+                    CStringW command(parameters->argv[0].get_chars().start);
+
+                    std::vector<CStringW> parameterList;
+                    if (parameters->argc == 2)
+                    {
+                        sciter::value commandParameters = parameters->argv[1];
+                        if (commandParameters.is_array() || commandParameters.is_object_array())
+                        {
+                            UINT32 parameterCount = parameters->argv[1].length();
+                            for (UINT32 parameter = 0; parameter < parameterCount; parameter++)
+                            {
+                                sciter::value value = parameters->argv[1].get_item(parameter);
+                                parameterList.push_back(value.to_string().c_str());
+                            }
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
+
+                    concurrency::critical_section::scoped_lock lock(commandLock);
+                    commandQueue.push_back(std::make_pair(command, parameterList));
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        BOOL sciterHANDLE_TISCRIPT_METHOD_CALL(TISCRIPT_METHOD_PARAMS *parameters)
+        {
+            tiscript::args arguments(parameters->vm);
+            return false;
+        }
+
+        BOOL sciterHANDLE_GESTURE(GESTURE_PARAMS *parameters)
+        {
+            return false;
+        }
+
+        BOOL sciterElementEventProc(HELEMENT element, UINT eventIdentifier, LPVOID parameters)
+        {
+            switch (eventIdentifier)
+            {
+            case SUBSCRIPTIONS_REQUEST:
+                return sciterSUBSCRIPTIONS_REQUEST((UINT *)parameters);
+
+            case HANDLE_INITIALIZATION:
+                return sciterHANDLE_INITIALIZATION((INITIALIZATION_PARAMS *)parameters);
+
+            case HANDLE_MOUSE:
+                return sciterHANDLE_MOUSE((MOUSE_PARAMS *)parameters);
+
+            case HANDLE_KEY:
+                return sciterHANDLE_KEY((KEY_PARAMS *)parameters);
+
+            case HANDLE_FOCUS:
+                return sciterHANDLE_FOCUS((FOCUS_PARAMS *)parameters);
+
+            case HANDLE_DRAW:
+                return sciterHANDLE_DRAW((DRAW_PARAMS *)parameters);
+
+            case HANDLE_TIMER:
+                return sciterHANDLE_TIMER((TIMER_PARAMS *)parameters);
+
+            case HANDLE_BEHAVIOR_EVENT:
+                return sciterHANDLE_BEHAVIOR_EVENT((BEHAVIOR_EVENT_PARAMS *)parameters);
+
+            case HANDLE_METHOD_CALL:
+                return sciterHANDLE_METHOD_CALL((METHOD_PARAMS *)parameters);
+
+            case HANDLE_DATA_ARRIVED:
+                return sciterHANDLE_DATA_ARRIVED((DATA_ARRIVED_PARAMS *)parameters);
+
+            case HANDLE_SCROLL:
+                return sciterHANDLE_SCROLL((SCROLL_PARAMS *)parameters);
+
+            case HANDLE_SIZE:
+                return sciterHANDLE_SIZE();
+
+                // call using sciter::value's (from CSSS!)
+            case HANDLE_SCRIPTING_METHOD_CALL:
+                return sciterHANDLE_SCRIPTING_METHOD_CALL((SCRIPTING_METHOD_PARAMS *)parameters);
+
+                // call using tiscript::value's (from the script)
+            case HANDLE_TISCRIPT_METHOD_CALL:
+                return sciterHANDLE_TISCRIPT_METHOD_CALL((TISCRIPT_METHOD_PARAMS *)parameters);
+
+            case HANDLE_GESTURE:
+                return sciterHANDLE_GESTURE((GESTURE_PARAMS *)parameters);
+
+            default:
+                assert(false);
+            };
+
+            return FALSE;
+        }
+
+        void sciterDebugOutput(UINT subsystem, UINT severity, LPCWSTR text, UINT textSize)
+        {
         }
 
         // RenderObserver
