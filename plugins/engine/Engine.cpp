@@ -487,7 +487,7 @@ namespace Gek
                         SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
                         resultValue = S_OK;
 
-                        SciterLoadFile(window, FileSystem::expandPath(L"%root%\\data\\facade.htm"));
+                        SciterLoadFile(window, FileSystem::expandPath(L"%root%\\data\\pages\\system.html"));
                         root = sciter::dom::element::root_element(window);
                         background = root.find_first("section#back-layer");
                         foreground = root.find_first("section#fore-layer");
@@ -653,6 +653,13 @@ namespace Gek
                 else if (command.first.CompareNoCase(L"load") == 0 && command.second.size() == 1)
                 {
                     population->load(command.second[0]);
+                }
+                else if (command.first.CompareNoCase(L"reload") == 0)
+                {
+                    SciterLoadFile(window, FileSystem::expandPath(L"%root%\\data\\pages\\system.html"));
+                    root = sciter::dom::element::root_element(window);
+                    background = root.find_first("section#back-layer");
+                    foreground = root.find_first("section#fore-layer");
                 }
             }
 

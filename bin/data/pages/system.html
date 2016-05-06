@@ -6,110 +6,134 @@
         }
 
         body {
-            size: *;
-            overflow: auto;
-            flow: stack;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             margin: 0;
         }
 
             body > section {
-                size: *; /* sections spans whole window surface */
+                width: 100%;
+                height: 100%;
+                margin: 0;
             }
 
                 body > section#back-layer {
-                    background: radial-gradient(50% 50%, ellipse center, blue, black);
-                    color: #fff;
+                    position: absolute;
+                    background: radial-gradient(50% 50%, ellipse center, black, blue);
                     overflow: hidden;
-                    margin: 0;
                 }
 
                 body > section#fore-layer {
-                    background: radial-gradient(50% 50%, ellipse center, black, blue);
+                    position: absolute;
                     overflow: hidden;
-                    margin: 0;
                 }
 
         .console_hidden {
-            margin-top: -100%;
+            margin-top: -330px;
             transition: margin-top(linear, 500ms);
         }
 
-        #console {
-            background-color: rgba(0,0,0,.7);
-            width: *;
+        #console_window {
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.75);
             z-index: 999;
-            text-align: left;
-            height: 40%;
         }
 
         #console_buffer {
-            width: 100%;
-            background: transparent;
-            border: 1px solid gray;
+            height: 300px;
             color: dimgray;
             font-size: 12pt;
             font-family: monospace;
             overflow-x: hidden;
             overflow-y: scroll;
             text-align: left;
-            height: 90%;
         }
 
-        #console_input {
-            height: 10%;
-        }
-
-        #console_input > input {
-            width: 100%;
-            background: transparent;
-            border: 1px solid gray;
+        #console_command {
+            height: 20px;
             font-family: monospace;
             color: darkslategray;
             font-weight: bold;
             font-size: 16px;
+            vertical-align: middle;
+            text-overflow: ellipsis;
         }
     </style>
     <script type="text/tiscript">
-    $(#machine).text = Sciter.machineName();
-    
-    view.root.subscribe(function(event)
-    {
-        if (event.keyCode == 0xC0)
-        {
-            $(div#console).attributes.toggleClass("console_hidden");
-        }
-    }, Event.KEY, Event.KEY_UP);
+    var (width, height) = view.box(#dimension, #client);
+    $(#machine).text = Sciter.machineName() + ", " + width + ", " + height;
 
-    $(input#console_command).on("keypress", function(event)
+    function getCharacter(event)
     {
-        if ($(div#console).attributes.hasClass("console_hidden"))
+        if(event.keyCode != 16)
         {
-            event.preventDefault();
-        }
-        else
-        {
-            var character = String.fromCharCode(event.keyCode);
-            if (character.search("^[a-zA-Z0-9? _.,()=*/+-]*$") < 0)
+            if(event.keyCode >= 65 && event.keyCode <= 90)
             {
-                event.preventDefault();
+                if(event.shiftKey)
+                {
+                    return String.fromCharCode(event.keyCode);
+                }
+                else
+                {
+                    return String.fromCharCode(event.keyCode + 32);
+                }
+            }
+            else
+            {
+                return String.fromCharCode(event.keyCode);
             }
         }
-    });
+    }
 
-    $(input#console_command).on("keyup", function(event)
+    function addConsoleCommand(command)
     {
-        if (event.keyCode == Event.VK_RETURN ||
-            event.keyCode == Event.VK_ENTER)
-        {
-            var text = $(input#console_command).text;
-            $(input#console_command).text = "";
+        $(#console_buffer).append(command + "<br />");
+        $(#console_buffer).scrollTo(0, $(#console_buffer).box(#height, #content));
+    }
 
-            text = text.substr(0, (text.length - 1));
+    view.root.subscribe(function(event)
+    {
+        addConsoleCommand("KEY_DOWN: " + getCharacter(event) + "(" + event.keyCode + ")");
+        if (event.keyCode == 0xC0)
+        {
+            $(div#console_window).attributes.toggleClass("console_hidden");
+        }
+        else if ($(div#console_window).attributes.hasClass("console_hidden"))
+        {
+            addConsoleCommand("hidden");
+            return false;
+        }
+        else if (event.keyCode == Event.VK_RETURN || event.keyCode == Event.VK_ENTER)
+        {
+            var text = $(#console_command).text;
+            $(#console_command).text = "";
+
             var parameters = text.split(" ");
             var command = parameters.shift();
             view.console_command(command, parameters);
+            return false;
         }
-    });
+        else if (event.keyCode == Event.VK_BACK)
+        {
+            var text = $(#console_command).text;
+            $(#console_command).text = text.substr(0, text.length ? text.length - 1 : 0);
+        }
+        else if (event.keyCode == Event.VK_ESCAPE)
+        {
+            $(#console_command).text = "";
+        }
+        else
+        {
+            var character = getCharacter(event);
+            if (character && character.search("^[a-zA-Z0-9? _.,()=*/+-]$") >= 0)
+            {
+                $(#console_command).text = $(#console_command).text.concat(character);
+            }
+        }
+
+        return true;
+    }, Event.KEY, Event.KEY_DOWN);
     </script>
 </head>
 <body>
@@ -120,13 +144,9 @@
     </section>
 
     <section id="fore-layer">
-        <div #console class="console_hidden">
-            <div #console_buffer>
-                stuff
-            </div>
-            <div #console_input>
-                <input #console_command type="text" />
-            </div>
+        <div #console_window class="console_hidden">
+            <div #console_buffer />
+            <div #console_command />
         </div>
     </section>
 
