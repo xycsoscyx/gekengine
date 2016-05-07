@@ -62,7 +62,7 @@
     <ClInclude Include="GEK\Engine\Resources.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Configuration.h">
+    <ClInclude Include="GEK\Engine\Options.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

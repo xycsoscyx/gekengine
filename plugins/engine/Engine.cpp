@@ -1,5 +1,5 @@
 ﻿#include "GEK\Engine\Engine.h"
-#include "GEK\Engine\Configuration.h"
+#include "GEK\Engine\Options.h"
 #include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
@@ -13,65 +13,27 @@
 #include "GEK\Context\ObservableMixin.h"
 #include <set>
 #include <ppl.h>
+#include <concurrent_unordered_map.h>
+
 #include <sciter-x.h>
 
 #pragma comment(lib, "sciter32.lib")
 
 namespace Gek
 {
-    class ConfigurationImplementation : public UnknownMixin
-        , public Configuration
-    {
-    public:
-        class ValueImplementation : public UnknownMixin
-            , public ObservableMixin
-            , public Value
-        {
-        private:
-
-        public:
-            BEGIN_INTERFACE_LIST(ValueImplementation)
-                INTERFACE_LIST_ENTRY_COM(Observable)
-            END_INTERFACE_LIST_UNKNOWN
-
-            STDMETHODIMP_(LPCWSTR) getName(void)
-            {
-                return nullptr;
-            }
-        };
-
-    private:
-        std::unordered_map<CStringW, ConfigurationImplementation> groupMap;
-        std::unordered_map<CStringW, ValueImplementation> valueMap;
-
-    public:
-        BEGIN_INTERFACE_LIST(ConfigurationImplementation)
-            INTERFACE_LIST_ENTRY_COM(Configuration)
-        END_INTERFACE_LIST_UNKNOWN
-
-        STDMETHODIMP_(Configuration &) getGroup(LPCWSTR name)
-        {
-            return groupMap[name];
-        }
-
-        STDMETHODIMP_(Value &) getValue(LPCWSTR name)
-        {
-            return valueMap[name];
-        }
-    };
-
     class EngineImplementation : public ContextUserMixin
         , public ObservableMixin
         , public Engine
         , public RenderObserver
         , public PopulationObserver
+        , public Options
     {
     private:
-        CComPtr<Configuration> configuration;
-
         HWND window;
         bool windowActive;
         bool engineRunning;
+        concurrency::concurrent_unordered_map<CStringW, CStringW> options;
+        concurrency::concurrent_unordered_map<CStringW, CStringW> tempOptions;
 
         Gek::Timer timer;
         double updateAccumulator;
@@ -189,16 +151,51 @@ namespace Gek
 
         BEGIN_INTERFACE_LIST(EngineImplementation)
             INTERFACE_LIST_ENTRY_COM(Engine)
+            INTERFACE_LIST_ENTRY_COM(Options)
             INTERFACE_LIST_ENTRY_COM(RenderObserver)
             INTERFACE_LIST_ENTRY_COM(PopulationObserver)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(Configuration, configuration)
             INTERFACE_LIST_ENTRY_MEMBER_COM(VideoSystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(OverlaySystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(PluginResources, resources)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Resources, resources)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Render, render)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
-        END_INTERFACE_LIST_USER
+            END_INTERFACE_LIST_USER
+
+        // Options
+        STDMETHODIMP_(const CStringW &) getValue(LPCWSTR name, const CStringW &defaultValue = L"") CONST
+        {
+            auto &option = options.find(name);
+            if(option != options.end())
+            {
+                return (*option).second;
+            }
+
+            return defaultValue;
+        }
+
+        STDMETHODIMP_(void) setValue(LPCWSTR name, LPCWSTR value)
+        {
+            tempOptions[name] = value;
+        }
+
+        STDMETHODIMP_(void) beginChanges(void)
+        {
+            tempOptions.clear();
+        }
+
+        STDMETHODIMP_(void) finishChanges(bool commit)
+        {
+            if (commit)
+            {
+                for (auto &option : tempOptions)
+                {
+                    options[option.first] = option.second;
+                }
+
+                ObservableMixin::sendEvent(Event<OptionsObserver>(std::bind(&OptionsObserver::onChanged, std::placeholders::_1)));
+            }
+        }
 
         // Engine
         STDMETHODIMP initialize(HWND window)
@@ -206,8 +203,6 @@ namespace Gek
             GEK_TRACE_FUNCTION(Engine);
 
             GEK_REQUIRE_RETURN(window, E_INVALIDARG);
-
-            configuration = new ConfigurationImplementation();
 
             HRESULT resultValue = CoInitialize(nullptr);
             if (SUCCEEDED(resultValue))
@@ -516,6 +511,23 @@ namespace Gek
             }
         }
 
+        // RenderObserver
+        STDMETHODIMP_(void) onRenderBackground(void)
+        {
+            if (background)
+            {
+                SciterRenderOnDirectXWindow(window, background, FALSE);
+            }
+        }
+
+        STDMETHODIMP_(void) onRenderForeground(void)
+        {
+            if (foreground)
+            {
+                SciterRenderOnDirectXWindow(window, foreground, TRUE);
+            }
+        }
+
         // SciterObserver
         UINT onSciterLoadData(LPSCN_LOAD_DATA notification)
         {
@@ -753,23 +765,6 @@ namespace Gek
 
         void sciterDebugOutput(UINT subsystem, UINT severity, LPCWSTR text, UINT textSize)
         {
-        }
-
-        // RenderObserver
-        STDMETHODIMP_(void) onRenderBackground(void)
-        {
-            if (background)
-            {
-                SciterRenderOnDirectXWindow(window, background, FALSE);
-            }
-        }
-
-        STDMETHODIMP_(void) onRenderForeground(void)
-        {
-            if (foreground)
-            {
-                SciterRenderOnDirectXWindow(window, foreground, TRUE);
-            }
         }
     };
 
