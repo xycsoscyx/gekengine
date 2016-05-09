@@ -26,7 +26,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
     {
         UINT32 width = 800;
         UINT32 height = 600;
-        bool windowed = true;
+        bool fullscreen = false;
 
         Gek::XmlDocument xmlDocument;
         if (SUCCEEDED(xmlDocument.load(L"%root%\\config.xml")))
@@ -47,9 +47,9 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                         height = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
                     }
 
-                    if (xmlDisplayNode.hasAttribute(L"windowed"))
+                    if (xmlDisplayNode.hasAttribute(L"fullscreen"))
                     {
-                        windowed = Gek::String::to<bool>(xmlDisplayNode.getAttribute(L"windowed"));
+                        fullscreen = Gek::String::to<bool>(xmlDisplayNode.getAttribute(L"fullscreen"));
                     }
                 }
             }
@@ -85,7 +85,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             }
         }
 
-        SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_SETCHECK, windowed ? BST_UNCHECKED : BST_CHECKED, 0);
+        SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_SETCHECK, fullscreen ? BST_CHECKED : BST_UNCHECKED, 0);
 
         SendDlgItemMessage(dialog, IDC_MODES, CB_SETMINVISIBLE, 5, 0);
         SendDlgItemMessage(dialog, IDC_MODES, CB_SETEXTENDEDUI, TRUE, 0);
@@ -119,7 +119,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 
             xmlDisplayNode.setAttribute(L"width", L"%d", mode.width);
             xmlDisplayNode.setAttribute(L"height", L"%d", mode.height);
-            xmlDisplayNode.setAttribute(L"windowed", L"%s", (SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_UNCHECKED ? L"true" : L"false"));
+            xmlDisplayNode.setAttribute(L"fullscreen", L"%s", (SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false"));
             xmlDocument.save(L"%root%\\config.xml");
 
             EndDialog(dialog, IDOK);
@@ -345,7 +345,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                     {
                         UINT32 width = 800;
                         UINT32 height = 600;
-                        bool windowed = true;
+                        bool fullscreen = false;
 
                         Gek::XmlDocument xmlDocument;
                         if (SUCCEEDED(xmlDocument.load(L"%root%\\config.xml")))
@@ -366,9 +366,9 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                                         height = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
                                     }
 
-                                    if (xmlDisplayNode.hasAttribute(L"windowed"))
+                                    if (xmlDisplayNode.hasAttribute(L"fullscreen"))
                                     {
-                                        windowed = Gek::String::to<bool>(xmlDisplayNode.getAttribute(L"windowed"));
+                                        fullscreen = Gek::String::to<bool>(xmlDisplayNode.getAttribute(L"fullscreen"));
                                     }
                                 }
                             }
@@ -382,8 +382,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                         AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, false);
                         int windowWidth = (clientRect.right - clientRect.left);
                         int windowHeight = (clientRect.bottom - clientRect.top);
-                        int centerPositionX = (windowed ? (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2) : 0);
-                        int centerPositionY = (windowed ? (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2) : 0);
+                        int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2);
+                        int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2);
                         HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Engine - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
                         if (window)
                         {

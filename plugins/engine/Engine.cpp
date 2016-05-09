@@ -32,8 +32,9 @@ namespace Gek
         HWND window;
         bool windowActive;
         bool engineRunning;
-        concurrency::concurrent_unordered_map<CStringW, CStringW> options;
-        concurrency::concurrent_unordered_map<CStringW, CStringW> tempOptions;
+        typedef concurrency::concurrent_unordered_map<CStringW, CStringW> OptionGroup;
+        concurrency::concurrent_unordered_map<CStringW, OptionGroup> options;
+        concurrency::concurrent_unordered_map<CStringW, OptionGroup> newOptions;
 
         Gek::Timer timer;
         double updateAccumulator;
@@ -52,10 +53,7 @@ namespace Gek
 
         CStringW currentCommand;
         std::list<CStringW> commandLog;
-        std::unordered_map<CStringW, std::function<void(const std::vector<CStringW> &)>> consoleCommands;
-
-        concurrency::critical_section commandLock;
-        std::list<std::pair<CStringW, std::vector<CStringW>>> commandQueue;
+        std::unordered_map<CStringW, std::function<void(const std::vector<CStringW> &, SCITER_VALUE &result)>> consoleCommands;
 
         CComPtr<IUnknown> backgroundBrush;
         CComPtr<IUnknown> font;
@@ -97,25 +95,64 @@ namespace Gek
             , background(nullptr)
             , foreground(nullptr)
         {
-            consoleCommands[L"quit"] = [this](const std::vector<CStringW> &parameters) -> void
+            consoleCommands[L"quit"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
             {
                 engineRunning = false;
+                result = sciter::value(true);
             };
 
-            consoleCommands[L"load"] = [this](const std::vector<CStringW> &parameters) -> void
+            consoleCommands[L"begin_options"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
+            {
+                this->beginChanges();
+                result = sciter::value(true);
+            };
+
+            consoleCommands[L"finish_options"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
+            {
+                bool commit = false;
+                if (parameters.size() == 1)
+                {
+                    commit = String::to<bool>(parameters[0]);
+                }
+
+                this->finishChanges(commit);
+                result = sciter::value(true);
+            };
+
+            consoleCommands[L"set_option"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
+            {
+                if (parameters.size() == 3)
+                {
+                    this->setValue(parameters[0], parameters[1], parameters[2]);
+                    result = sciter::value(true);
+                }
+                else
+                {
+                    result = sciter::value(false);
+                }
+            };
+
+            consoleCommands[L"get_option"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
+            {
+                if (parameters.size() == 2)
+                {
+                    result = sciter::value(this->getValue(parameters[0], parameters[1]));
+                    result = sciter::value(true);
+                }
+                else
+                {
+                    result = sciter::value(false);
+                }
+            };
+
+            consoleCommands[L"load_level"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
             {
                 if (parameters.size() == 1)
                 {
                     population->load(parameters[0]);
                 }
-            };
 
-            consoleCommands[L"reload"] = [this](const std::vector<CStringW> &parameters) -> void
-            {
-                SciterLoadFile(window, FileSystem::expandPath(L"%root%\\data\\pages\\system.html"));
-                root = sciter::dom::element::root_element(window);
-                background = root.find_first("section#back-layer");
-                foreground = root.find_first("section#fore-layer");
+                result = sciter::value(true);
             };
         }
 
@@ -160,40 +197,67 @@ namespace Gek
             INTERFACE_LIST_ENTRY_MEMBER_COM(Resources, resources)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Render, render)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
-            END_INTERFACE_LIST_USER
+        END_INTERFACE_LIST_USER
 
         // Options
-        STDMETHODIMP_(const CStringW &) getValue(LPCWSTR name, const CStringW &defaultValue = L"") CONST
+        STDMETHODIMP_(const CStringW &) getValue(LPCWSTR name, LPCWSTR attribute, const CStringW &defaultValue = L"") CONST
         {
-            auto &option = options.find(name);
-            if(option != options.end())
+            auto &group = options.find(name);
+            if(group != options.end())
             {
-                return (*option).second;
+                auto &value = (*group).second.find(attribute);
+                if (value != (*group).second.end())
+                {
+                    return (*value).second;
+                }
             }
 
             return defaultValue;
         }
 
-        STDMETHODIMP_(void) setValue(LPCWSTR name, LPCWSTR value)
+        STDMETHODIMP_(void) setValue(LPCWSTR name, LPCWSTR attribute, LPCWSTR value)
         {
-            tempOptions[name] = value;
+            auto &group = newOptions[name];
+            group[attribute] = value;
         }
 
         STDMETHODIMP_(void) beginChanges(void)
         {
-            tempOptions.clear();
+            newOptions = options;
         }
 
         STDMETHODIMP_(void) finishChanges(bool commit)
         {
             if (commit)
             {
-                for (auto &option : tempOptions)
-                {
-                    options[option.first] = option.second;
-                }
-
+                options = std::move(newOptions);
                 ObservableMixin::sendEvent(Event<OptionsObserver>(std::bind(&OptionsObserver::onChanged, std::placeholders::_1)));
+
+                auto &display = options.find(L"display");
+                if (display != options.end())
+                {
+                    auto &width = (*display).second.find(L"width");
+                    auto &height = (*display).second.find(L"height");
+                    if (width != (*display).second.end() && height != (*display).second.end())
+                    {
+                        RECT clientRect;
+                        clientRect.left = 0;
+                        clientRect.top = 0;
+                        clientRect.right = String::to<UINT32>((*width).second);
+                        clientRect.bottom = String::to<UINT32>((*height).second);
+                        AdjustWindowRect(&clientRect, GetWindowLong(window, GWL_STYLE), false);
+                        int windowWidth = (clientRect.right - clientRect.left);
+                        int windowHeight = (clientRect.bottom - clientRect.top);
+                        SetWindowPos(window, nullptr, 0, 0, windowWidth, windowHeight, SWP_NOMOVE);
+                        video->resize();
+                    }
+
+                    auto &fullscreen = (*display).second.find(L"fullscreen");
+                    if (fullscreen != (*display).second.end())
+                    {
+                        video->setFullScreen(String::to<bool>((*fullscreen).second));
+                    }
+                }
             }
         }
 
@@ -203,6 +267,26 @@ namespace Gek
             GEK_TRACE_FUNCTION(Engine);
 
             GEK_REQUIRE_RETURN(window, E_INVALIDARG);
+
+            Gek::XmlDocument xmlDocument;
+            if (SUCCEEDED(xmlDocument.load(L"%root%\\config.xml")))
+            {
+                Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
+                if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0)
+                {
+                    Gek::XmlNode xmlConfigValue = xmlConfigNode.firstChildElement();
+                    while (xmlConfigValue)
+                    {
+                        auto &group = options[xmlConfigValue.getType()];
+                        xmlConfigValue.listAttributes([&](LPCWSTR name, LPCWSTR value) -> void
+                        {
+                            group[name] = value;
+                        });
+
+                        xmlConfigValue = xmlConfigValue.nextSiblingElement();
+                    };
+                }
+            }
 
             HRESULT resultValue = CoInitialize(nullptr);
             if (SUCCEEDED(resultValue))
@@ -439,23 +523,6 @@ namespace Gek
         {
             GEK_TRACE_FUNCTION(Engine);
 
-            std::list<std::pair<CStringW, std::vector<CStringW>>> commandCopy;
-            if (true)
-            {
-                concurrency::critical_section::scoped_lock lock(commandLock);
-                commandCopy = commandQueue;
-                commandQueue.clear();
-            }
-
-            for (auto &command : commandCopy)
-            {
-                auto commandIterator = consoleCommands.find(command.first);
-                if (commandIterator != consoleCommands.end())
-                {
-                    (*commandIterator).second(command.second);
-                }
-            }
-
             std::list<std::pair<wchar_t, bool>> actionCopy;
             if (true)
             {
@@ -585,12 +652,12 @@ namespace Gek
             return 0;
         }
 
-        BOOL sciterSUBSCRIPTIONS_REQUEST(UINT *p)
+        BOOL sciterSubscriptionsRequest(UINT *p)
         {
             return false;
         }
 
-        BOOL sciterHANDLE_INITIALIZATION(INITIALIZATION_PARAMS *parameters)
+        BOOL sciterOnInitialization(INITIALIZATION_PARAMS *parameters)
         {
             if (parameters->cmd == BEHAVIOR_DETACH)
             {
@@ -604,103 +671,83 @@ namespace Gek
             return true;
         }
 
-        BOOL sciterHANDLE_MOUSE(MOUSE_PARAMS *parameters)
+        BOOL sciterOnMouse(MOUSE_PARAMS *parameters)
         {
             return false;
         }
 
-        BOOL sciterHANDLE_KEY(KEY_PARAMS *parameters)
+        BOOL sciterOnKey(KEY_PARAMS *parameters)
         {
             return false;
         }
 
-        BOOL sciterHANDLE_FOCUS(FOCUS_PARAMS *parameters)
+        BOOL scoterOnFocus(FOCUS_PARAMS *parameters)
         {
             return false;
         }
 
-        BOOL sciterHANDLE_DRAW(DRAW_PARAMS *parameters)
+        BOOL sciterOnDraw(DRAW_PARAMS *parameters)
         {
             return false;
         }
 
-        BOOL sciterHANDLE_TIMER(TIMER_PARAMS *parameters)
+        BOOL sciterOnTimer(TIMER_PARAMS *parameters)
         {
             return false;
         }
 
-        BOOL sciterHANDLE_BEHAVIOR_EVENT(BEHAVIOR_EVENT_PARAMS *parameters)
+        BOOL sciterOnBehaviorEvent(BEHAVIOR_EVENT_PARAMS *parameters)
         {
             return false;
         }
 
-        BOOL sciterHANDLE_METHOD_CALL(METHOD_PARAMS *parameters)
+        BOOL sciterOnMethodCall(METHOD_PARAMS *parameters)
         {
             return false;
         }
 
-        BOOL sciterHANDLE_DATA_ARRIVED(DATA_ARRIVED_PARAMS *parameters)
+        BOOL sciterOnDataArrived(DATA_ARRIVED_PARAMS *parameters)
         {
             return false;
         }
 
-        BOOL sciterHANDLE_SCROLL(SCROLL_PARAMS *parameters)
+        BOOL sciterOnScroll(SCROLL_PARAMS *parameters)
         {
             return false;
         }
 
-        BOOL sciterHANDLE_SIZE()
+        BOOL sciterOnSize()
         {
             return false;
         }
 
-        BOOL sciterHANDLE_SCRIPTING_METHOD_CALL(SCRIPTING_METHOD_PARAMS *parameters)
+        BOOL sciterOnScriptingMethodCall(SCRIPTING_METHOD_PARAMS *parameters)
         {
-            if (stricmp("console_command", parameters->name) == 0)
+            CStringW command(parameters->name);
+
+            std::vector<CStringW> parameterList;
+            for (UINT32 parameter = 0; parameter < parameters->argc; parameter++)
             {
-                if (parameters->argc > 0 && parameters->argv[0].is_string())
-                {
-                    CStringW command(parameters->argv[0].get_chars().start);
+                parameterList.push_back(parameters->argv[parameter].to_string().c_str());
+            }
 
-                    std::vector<CStringW> parameterList;
-                    if (parameters->argc == 2)
-                    {
-                        sciter::value commandParameters = parameters->argv[1];
-                        if (commandParameters.is_array() || commandParameters.is_object_array())
-                        {
-                            UINT32 parameterCount = parameters->argv[1].length();
-                            for (UINT32 parameter = 0; parameter < parameterCount; parameter++)
-                            {
-                                sciter::value value = parameters->argv[1].get_item(parameter);
-                                parameterList.push_back(value.to_string().c_str());
-                            }
-                        }
-                        else
-                        {
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        return false;
-                    }
-
-                    concurrency::critical_section::scoped_lock lock(commandLock);
-                    commandQueue.push_back(std::make_pair(command, parameterList));
-                    return true;
-                }
+            auto commandIterator = consoleCommands.find(command);
+            if (commandIterator != consoleCommands.end())
+            {
+                (*commandIterator).second(parameterList, parameters->result);
+                return true;
             }
 
             return false;
         }
 
-        BOOL sciterHANDLE_TISCRIPT_METHOD_CALL(TISCRIPT_METHOD_PARAMS *parameters)
+        BOOL sciterOnTiScriptMethodCall(TISCRIPT_METHOD_PARAMS *parameters)
         {
             tiscript::args arguments(parameters->vm);
             return false;
         }
 
-        BOOL sciterHANDLE_GESTURE(GESTURE_PARAMS *parameters)
+        BOOL sciterOnGesture(GESTURE_PARAMS *parameters)
         {
             return false;
         }
@@ -710,51 +757,51 @@ namespace Gek
             switch (eventIdentifier)
             {
             case SUBSCRIPTIONS_REQUEST:
-                return sciterSUBSCRIPTIONS_REQUEST((UINT *)parameters);
+                return sciterSubscriptionsRequest((UINT *)parameters);
 
             case HANDLE_INITIALIZATION:
-                return sciterHANDLE_INITIALIZATION((INITIALIZATION_PARAMS *)parameters);
+                return sciterOnInitialization((INITIALIZATION_PARAMS *)parameters);
 
             case HANDLE_MOUSE:
-                return sciterHANDLE_MOUSE((MOUSE_PARAMS *)parameters);
+                return sciterOnMouse((MOUSE_PARAMS *)parameters);
 
             case HANDLE_KEY:
-                return sciterHANDLE_KEY((KEY_PARAMS *)parameters);
+                return sciterOnKey((KEY_PARAMS *)parameters);
 
             case HANDLE_FOCUS:
-                return sciterHANDLE_FOCUS((FOCUS_PARAMS *)parameters);
+                return scoterOnFocus((FOCUS_PARAMS *)parameters);
 
             case HANDLE_DRAW:
-                return sciterHANDLE_DRAW((DRAW_PARAMS *)parameters);
+                return sciterOnDraw((DRAW_PARAMS *)parameters);
 
             case HANDLE_TIMER:
-                return sciterHANDLE_TIMER((TIMER_PARAMS *)parameters);
+                return sciterOnTimer((TIMER_PARAMS *)parameters);
 
             case HANDLE_BEHAVIOR_EVENT:
-                return sciterHANDLE_BEHAVIOR_EVENT((BEHAVIOR_EVENT_PARAMS *)parameters);
+                return sciterOnBehaviorEvent((BEHAVIOR_EVENT_PARAMS *)parameters);
 
             case HANDLE_METHOD_CALL:
-                return sciterHANDLE_METHOD_CALL((METHOD_PARAMS *)parameters);
+                return sciterOnMethodCall((METHOD_PARAMS *)parameters);
 
             case HANDLE_DATA_ARRIVED:
-                return sciterHANDLE_DATA_ARRIVED((DATA_ARRIVED_PARAMS *)parameters);
+                return sciterOnDataArrived((DATA_ARRIVED_PARAMS *)parameters);
 
             case HANDLE_SCROLL:
-                return sciterHANDLE_SCROLL((SCROLL_PARAMS *)parameters);
+                return sciterOnScroll((SCROLL_PARAMS *)parameters);
 
             case HANDLE_SIZE:
-                return sciterHANDLE_SIZE();
+                return sciterOnSize();
 
                 // call using sciter::value's (from CSSS!)
             case HANDLE_SCRIPTING_METHOD_CALL:
-                return sciterHANDLE_SCRIPTING_METHOD_CALL((SCRIPTING_METHOD_PARAMS *)parameters);
+                return sciterOnScriptingMethodCall((SCRIPTING_METHOD_PARAMS *)parameters);
 
                 // call using tiscript::value's (from the script)
             case HANDLE_TISCRIPT_METHOD_CALL:
-                return sciterHANDLE_TISCRIPT_METHOD_CALL((TISCRIPT_METHOD_PARAMS *)parameters);
+                return sciterOnTiScriptMethodCall((TISCRIPT_METHOD_PARAMS *)parameters);
 
             case HANDLE_GESTURE:
-                return sciterHANDLE_GESTURE((GESTURE_PARAMS *)parameters);
+                return sciterOnGesture((GESTURE_PARAMS *)parameters);
 
             default:
                 assert(false);

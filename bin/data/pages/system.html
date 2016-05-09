@@ -94,14 +94,12 @@
 
     view.root.subscribe(function(event)
     {
-        addConsoleCommand("KEY_DOWN: " + getCharacter(event) + "(" + event.keyCode + ")");
         if (event.keyCode == 0xC0)
         {
             $(div#console_window).attributes.toggleClass("console_hidden");
         }
         else if ($(div#console_window).attributes.hasClass("console_hidden"))
         {
-            addConsoleCommand("hidden");
         }
         else if (event.keyCode == Event.VK_RETURN || event.keyCode == Event.VK_ENTER)
         {
@@ -110,7 +108,14 @@
 
             var parameters = text.split(" ");
             var command = parameters.shift();
-            view.console_command(command, parameters);
+            if(eval("view." + text))
+            {
+                addConsoleCommand(text);
+            }
+            else
+            {
+                addConsoleCommand("unknown command: " + text);
+            }
         }
         else if (event.keyCode == Event.VK_BACK)
         {
@@ -121,15 +126,16 @@
         {
             $(#console_command).text = "";
         }
-        else
-        {
-            var character = getCharacter(event);
-            if (character && character.search("^[a-zA-Z0-9? _.,()=*/+-]$") >= 0)
-            {
-                $(#console_command).text = $(#console_command).text.concat(character);
-            }
-        }
     }, Event.KEY, Event.KEY_DOWN);
+
+    view.root.subscribe(function(event)
+    {
+        var character = String.fromCharCode(event.keyCode);
+        if (character && character.search("^[a-zA-Z0-9\"\'\?\ \_\.\,\(\)\=\*\/\+\-]$") >= 0)
+        {
+            $(#console_command).text = $(#console_command).text.concat(character);
+        }
+    }, Event.KEY, Event.KEY_CHAR);
     </script>
 </head>
 <body>
