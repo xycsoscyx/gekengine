@@ -15,7 +15,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     color.a *= depthDelta;
 
     float reveal = max(min(1.0, max(max(color.r, color.g), color.b) * color.a), color.a)
-        * clamp(0.03 / (1e-5 + pow(-depth, 4.0)), 1e-2, 3e3); // Eq 9
+        * clamp(0.03 / (1e-5 + pow(depth, 3.0)), 1e-2, 3e3); // Eq 9
 
     OutputPixel outputPixel;
     outputPixel.accumulationBuffer = (float4((color.rgb * color.a), color.a) * reveal);

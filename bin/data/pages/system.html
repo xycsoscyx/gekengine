@@ -131,7 +131,7 @@
     view.root.subscribe(function(event)
     {
         var character = String.fromCharCode(event.keyCode);
-        if (character && character.search("^[a-zA-Z0-9\"\'\?\ \_\.\,\(\)\=\*\/\+\-]$") >= 0)
+        if (character && character.search("^[a-zA-Z0-9\"\ \_\.\,\(\)]$") >= 0)
         {
             $(#console_command).text = $(#console_command).text.concat(character);
         }
