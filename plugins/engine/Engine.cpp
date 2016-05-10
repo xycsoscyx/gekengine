@@ -458,8 +458,8 @@ namespace Gek
             {
                 timer.update();
                 updateAccumulator += timer.getUpdateTime();
-                population->update(false, float(updateAccumulator));
-                return engineRunning;
+                //population->update(false, float(updateAccumulator));
+                //return engineRunning;
 
                 UINT32 frameCount = 3;
                 while (updateAccumulator > (1.0 / 30.0))

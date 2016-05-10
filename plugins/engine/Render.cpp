@@ -362,6 +362,9 @@ namespace Gek
                 videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
                 videoContext->pixelPipeline()->setSamplerStates(linearClampSamplerStates, 1);
                 videoContext->pixelPipeline()->setSamplerStates(linearWrapSamplerStates, 2);
+                videoContext->vertexPipeline()->setSamplerStates(pointSamplerStates, 0);
+                videoContext->vertexPipeline()->setSamplerStates(linearClampSamplerStates, 1);
+                videoContext->vertexPipeline()->setSamplerStates(linearWrapSamplerStates, 2);
                 videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
                 concurrency::parallel_sort(drawCallList.begin(), drawCallList.end(), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool

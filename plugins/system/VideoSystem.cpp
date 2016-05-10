@@ -300,16 +300,18 @@ namespace Gek
     };
 
     class TextureImplementation : public UnknownMixin
-        , public VideoTexture
+        , public VideoTarget
     {
     protected:
         CComPtr<ID3D11Resource> d3dResource;
+        CComPtr<ID3D11View> d3dResourceView;
         CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
         CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
         Video::Format format;
         UINT32 width;
         UINT32 height;
         UINT32 depth;
+        Video::ViewPort viewPort;
 
     public:
         TextureImplementation(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
@@ -323,9 +325,25 @@ namespace Gek
         {
         }
 
+        TextureImplementation(ID3D11Resource *d3dResource, ID3D11View *d3dResourceView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height)
+            : d3dResource(d3dResource)
+            , d3dResourceView(d3dResourceView)
+            , d3dShaderResourceView(d3dShaderResourceView)
+            , d3dUnorderedAccessView(d3dUnorderedAccessView)
+            , format(format)
+            , width(width)
+            , height(height)
+            , depth(1)
+            , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
+        {
+        }
+
         BEGIN_INTERFACE_LIST(TextureImplementation)
+            INTERFACE_LIST_ENTRY_COM(VideoTarget)
             INTERFACE_LIST_ENTRY_COM(VideoTexture)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Resource, d3dResource)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11RenderTargetView, d3dResourceView)
+            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DepthStencilView, d3dResourceView)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
             INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
         END_INTERFACE_LIST_UNKNOWN
@@ -349,111 +367,6 @@ namespace Gek
         STDMETHODIMP_(UINT32) getDepth(void)
         {
             return depth;
-        }
-    };
-
-    class DepthImplementation : public UnknownMixin
-        , public VideoTexture
-    {
-    protected:
-        CComPtr<ID3D11DepthStencilView> d3dDepthStencilView;
-        CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-        CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-        Video::Format format;
-        UINT32 width;
-        UINT32 height;
-
-    public:
-        DepthImplementation(ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height)
-            : d3dDepthStencilView(d3dDepthStencilView)
-            , d3dShaderResourceView(d3dShaderResourceView)
-            , d3dUnorderedAccessView(d3dUnorderedAccessView)
-            , format(format)
-            , width(width)
-            , height(height)
-        {
-        }
-
-        BEGIN_INTERFACE_LIST(DepthImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoTexture)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DepthStencilView, d3dDepthStencilView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
-        END_INTERFACE_LIST_UNKNOWN
-
-        // VideoTexture
-        STDMETHODIMP_(Video::Format) getFormat(void)
-        {
-            return format;
-        }
-
-        STDMETHODIMP_(UINT32) getWidth(void)
-        {
-            return width;
-        }
-
-        STDMETHODIMP_(UINT32) getHeight(void)
-        {
-            return height;
-        }
-
-        STDMETHODIMP_(UINT32) getDepth(void)
-        {
-            return 1;
-        }
-    };
-
-    class TargetImplementation : public UnknownMixin
-        , public VideoTarget
-    {
-    protected:
-        CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-        CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-        CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-        Video::ViewPort viewPort;
-        Video::Format format;
-        UINT32 width;
-        UINT32 height;
-
-    public:
-        TargetImplementation(ID3D11RenderTargetView *d3dRenderTargetView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height)
-            : d3dRenderTargetView(d3dRenderTargetView)
-            , d3dShaderResourceView(d3dShaderResourceView)
-            , d3dUnorderedAccessView(d3dUnorderedAccessView)
-            , format(format)
-            , width(width)
-            , height(height)
-            , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
-        {
-        }
-
-        BEGIN_INTERFACE_LIST(TargetImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoTexture)
-            INTERFACE_LIST_ENTRY_COM(VideoTarget)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11RenderTargetView, d3dRenderTargetView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
-        END_INTERFACE_LIST_UNKNOWN
-
-        // VideoTexture
-        STDMETHODIMP_(Video::Format) getFormat(void)
-        {
-            return format;
-        }
-
-        STDMETHODIMP_(UINT32) getWidth(void)
-        {
-            return width;
-        }
-
-        STDMETHODIMP_(UINT32) getHeight(void)
-        {
-            return height;
-        }
-
-        STDMETHODIMP_(UINT32) getDepth(void)
-        {
-            return 1;
         }
 
         // VideoTarget
@@ -783,7 +696,20 @@ namespace Gek
         STDMETHODIMP_(void) clearResources(void)
         {
             GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
-            d3dDeviceContext->ClearState();
+            
+            // ClearState clears too much, we only want to clear resource between calls, but leave constants/states/modes alone
+            //d3dDeviceContext->ClearState();
+
+            static ID3D11ShaderResourceView *const d3dShaderResourceViewList[10] = { nullptr };
+            static ID3D11UnorderedAccessView *const d3dUnorderedAccessViewList[7] = { nullptr };
+            static ID3D11RenderTargetView  *const d3dRenderTargetViewList[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = { nullptr };
+
+            d3dDeviceContext->CSSetShaderResources(0, 10, d3dShaderResourceViewList);
+            d3dDeviceContext->CSSetUnorderedAccessViews(0, 7, d3dUnorderedAccessViewList, nullptr);
+            d3dDeviceContext->VSSetShaderResources(0, 10, d3dShaderResourceViewList);
+            d3dDeviceContext->GSSetShaderResources(0, 10, d3dShaderResourceViewList);
+            d3dDeviceContext->PSSetShaderResources(0, 10, d3dShaderResourceViewList);
+            d3dDeviceContext->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, d3dRenderTargetViewList, nullptr);
         }
 
         STDMETHODIMP_(void) setViewports(Video::ViewPort *viewPortList, UINT32 viewPortCount)
@@ -1016,7 +942,7 @@ namespace Gek
 
             UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
-            //flags |= D3D11_CREATE_DEVICE_DEBUG;
+            flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
             D3D_FEATURE_LEVEL featureLevelList[] =
@@ -1078,10 +1004,6 @@ namespace Gek
                 description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
                 description.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
                 resultValue = dxSwapChain->ResizeTarget(&description);
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = resize();
-                }
             }
 
             return resultValue;
@@ -1104,13 +1026,13 @@ namespace Gek
                 HRESULT resultValue = dxSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
                 if (SUCCEEDED(resultValue) && d3dRenderTarget)
                 {
-                    CComPtr<ID3D11RenderTargetView> d3dBackBuffer;
-                    resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dBackBuffer);
-                    if (SUCCEEDED(resultValue) && d3dBackBuffer)
+                    CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+                    resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dRenderTargetView);
+                    if (SUCCEEDED(resultValue) && d3dRenderTargetView)
                     {
                         D3D11_TEXTURE2D_DESC description;
                         d3dRenderTarget->GetDesc(&description);
-                        backBuffer = new TargetImplementation(d3dBackBuffer, nullptr, nullptr, format, description.Width, description.Height);
+                        backBuffer = new TextureImplementation(d3dRenderTarget, d3dRenderTargetView, nullptr, nullptr, format, description.Width, description.Height);
                     }
                 }
             }
@@ -1527,6 +1449,7 @@ namespace Gek
             GEK_REQUIRE_VOID_RETURN(data);
 
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
+
             d3dDeviceContext->UpdateSubresource(d3dBuffer, 0, nullptr, data, 0, 0);
         }
 
@@ -1545,6 +1468,7 @@ namespace Gek
                 mappedSubResource.pData = nullptr;
                 mappedSubResource.RowPitch = 0;
                 mappedSubResource.DepthPitch = 0;
+                
                 resultValue = d3dDeviceContext->Map(d3dBuffer, 0, d3dMapping, 0, &mappedSubResource);
                 if (SUCCEEDED(resultValue))
                 {
@@ -2062,11 +1986,11 @@ namespace Gek
                     CComPtr<IUnknown> texture;
                     if (flags & Video::TextureFlags::RenderTarget)
                     {
-                        texture = new TargetImplementation(d3dRenderTargetView, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height);
+                        texture = new TextureImplementation(d3dResource, d3dRenderTargetView, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height);
                     }
                     else if (flags & Video::TextureFlags::DepthTarget)
                     {
-                        texture = new DepthImplementation(depthStencilView, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height);
+                        texture = new TextureImplementation(d3dResource, depthStencilView, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height);
                     }
                     else
                     {
@@ -2150,7 +2074,11 @@ namespace Gek
                     }
 
                     CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                    resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), &d3dShaderResourceView);
+                    if (true)
+                    {
+                        resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), &d3dShaderResourceView);
+                    }
+
                     if (SUCCEEDED(resultValue) && d3dShaderResourceView)
                     {
                         resultValue = E_UNEXPECTED;
