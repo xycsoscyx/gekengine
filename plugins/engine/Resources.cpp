@@ -958,11 +958,11 @@ namespace Gek
             renderContext->getContext()->setViewports(viewPortList, renderTargetHandleCount);
         }
 
-        STDMETHODIMP_(void) setDefaultTargets(RenderContext *renderContext, ResourceHandle depthBuffer)
+        STDMETHODIMP_(void) setBackBuffer(RenderContext *renderContext, ResourceHandle depthBuffer)
         {
-            video->setDefaultTargets(renderContext->getContext(), resourceManager.getResource<IUnknown>(depthBuffer));
+            auto backBuffer = video->getBackBuffer();
+            renderContext->getContext()->setRenderTargets(&backBuffer, 1, resourceManager.getResource<IUnknown>(depthBuffer));
         }
-
     };
 
     REGISTER_CLASS(ResourcesImplementation)

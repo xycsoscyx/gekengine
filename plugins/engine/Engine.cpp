@@ -28,6 +28,27 @@ namespace Gek
         , public PopulationObserver
         , public Options
     {
+    public:
+        class ActionQueue
+        {
+        private:
+            concurrency::critical_section lock;
+            std::list<std::pair<wchar_t, bool>> queue;
+
+        public:
+            void addAction(wchar_t character, bool state)
+            {
+                concurrency::critical_section::scoped_lock scope(lock);
+                queue.emplace_back(character, state);
+            }
+
+            std::list<std::pair<wchar_t, bool>> getQueue(void)
+            {
+                concurrency::critical_section::scoped_lock scope(lock);
+                return std::move(queue);
+            }
+        };
+
     private:
         HWND window;
         bool windowActive;
@@ -48,17 +69,11 @@ namespace Gek
         CComPtr<Population> population;
 
         UINT32 updateHandle;
-        concurrency::critical_section actionLock;
-        std::list<std::pair<wchar_t, bool>> actionQueue;
+        ActionQueue actionQueue;
 
         CStringW currentCommand;
         std::list<CStringW> commandLog;
         std::unordered_map<CStringW, std::function<void(const std::vector<CStringW> &, SCITER_VALUE &result)>> consoleCommands;
-
-        CComPtr<IUnknown> backgroundBrush;
-        CComPtr<IUnknown> font;
-        CComPtr<IUnknown> textBrush;
-        CComPtr<IUnknown> logTypeBrushList[4];
 
         sciter::dom::element root;
         sciter::dom::element background;
@@ -173,16 +188,7 @@ namespace Gek
             }
 
             population.Release();
-            backgroundBrush.Release();
-            textBrush.Release();
-            font.Release();
-            logTypeBrushList[0].Release();
-            logTypeBrushList[1].Release();
-            logTypeBrushList[2].Release();
-            logTypeBrushList[3].Release();
-
             video.Release();
-
             CoUninitialize();
         }
 
@@ -192,7 +198,6 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(RenderObserver)
             INTERFACE_LIST_ENTRY_COM(PopulationObserver)
             INTERFACE_LIST_ENTRY_MEMBER_COM(VideoSystem, video)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(OverlaySystem, video)
             INTERFACE_LIST_ENTRY_MEMBER_COM(PluginResources, resources)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Resources, resources)
             INTERFACE_LIST_ENTRY_MEMBER_COM(Render, render)
@@ -240,16 +245,7 @@ namespace Gek
                     auto &height = (*display).second.find(L"height");
                     if (width != (*display).second.end() && height != (*display).second.end())
                     {
-                        RECT clientRect;
-                        clientRect.left = 0;
-                        clientRect.top = 0;
-                        clientRect.right = String::to<UINT32>((*width).second);
-                        clientRect.bottom = String::to<UINT32>((*height).second);
-                        AdjustWindowRect(&clientRect, GetWindowLong(window, GWL_STYLE), false);
-                        int windowWidth = (clientRect.right - clientRect.left);
-                        int windowHeight = (clientRect.bottom - clientRect.top);
-                        SetWindowPos(window, nullptr, 0, 0, windowWidth, windowHeight, SWP_NOMOVE);
-                        video->resize();
+                        video->setSize(String::to<UINT32>((*width).second), String::to<UINT32>((*height).second), Video::Format::sRGBA);
                     }
 
                     auto &fullscreen = (*display).second.find(L"fullscreen");
@@ -312,7 +308,7 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 this->window = window;
-                resultValue = video->initialize(window, false);
+                resultValue = video->initialize(window, false, Video::Format::sRGBA);
             }
 
             if (SUCCEEDED(resultValue))
@@ -335,45 +331,6 @@ namespace Gek
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = ObservableMixin::addObserver(render, getClass<RenderObserver>());
-                }
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                float width = float(video->getWidth());
-                float height = float(video->getHeight());
-                float consoleHeight = (height * 0.5f);
-
-                OverlaySystem *overlay = video->getOverlay();
-                resultValue = overlay->createBrush(&backgroundBrush, { Video::GradientPoint(0.0f, Math::Color(0.5f, 0.0f, 0.0f, 1.0f)), Video::GradientPoint(1.0f, Math::Color(0.25f, 0.0f, 0.0f, 1.0f)) }, Shapes::Rectangle<float>(0.0f, 0.0f, 0.0f, consoleHeight));
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = overlay->createBrush(&textBrush, Math::Color(1.0f, 1.0f, 1.0f, 1.0f));
-                }
-
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = overlay->createFont(&font, L"Tahoma", 400, Video::FontStyle::Normal, 15.0f);
-                }
-
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = overlay->createBrush(&logTypeBrushList[0], Math::Color(1.0f, 1.0f, 1.0f, 1.0f));
-                }
-
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = overlay->createBrush(&logTypeBrushList[1], Math::Color(1.0f, 1.0f, 0.0f, 1.0f));
-                }
-
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = overlay->createBrush(&logTypeBrushList[2], Math::Color(1.0f, 0.0f, 0.0f, 1.0f));
-                }
-
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = overlay->createBrush(&logTypeBrushList[3], Math::Color(1.0f, 0.0f, 0.0f, 1.0f));
                 }
             }
 
@@ -447,16 +404,14 @@ namespace Gek
             case WM_KEYDOWN:
                 if (true)
                 {
-                    concurrency::critical_section::scoped_lock lock(actionLock);
-                    actionQueue.push_back(std::make_pair(wParam, true));
+                    actionQueue.addAction(wParam, true);
                     return 1;
                 }
 
             case WM_KEYUP:
                 if (true)
                 {
-                    concurrency::critical_section::scoped_lock lock(actionLock);
-                    actionQueue.push_back(std::make_pair(wParam, false));
+                    actionQueue.addAction(wParam, false);
                     return 1;
                 }
 
@@ -481,11 +436,15 @@ namespace Gek
             case WM_SYSCOMMAND:
                 if (SC_KEYMENU == (wParam & 0xFFF0))
                 {
-                    //m_spVideoSystem->Resize(m_spVideoSystem->Getwidth(), m_spVideoSystem->Getheight(), !m_spVideoSystem->IsWindowed());
+                    video->setFullScreen(!video->isFullScreen());
                     return 1;
                 }
 
                 break;
+
+            case WM_SIZE:
+                video->resize();
+                return 1;
             };
 
             return 0;
@@ -499,6 +458,8 @@ namespace Gek
             {
                 timer.update();
                 updateAccumulator += timer.getUpdateTime();
+                population->update(false, float(updateAccumulator));
+                return engineRunning;
 
                 UINT32 frameCount = 3;
                 while (updateAccumulator > (1.0 / 30.0))
@@ -523,14 +484,6 @@ namespace Gek
         {
             GEK_TRACE_FUNCTION(Engine);
 
-            std::list<std::pair<wchar_t, bool>> actionCopy;
-            if (true)
-            {
-                concurrency::critical_section::scoped_lock lock(actionLock);
-                actionCopy = actionQueue;
-                actionQueue.clear();
-            }
-
             POINT currentCursorPosition;
             GetCursorPos(&currentCursorPosition);
             INT32 cursorMovementX = INT32(float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
@@ -543,6 +496,7 @@ namespace Gek
 
             lastCursorPosition = currentCursorPosition;
 
+            std::list<std::pair<wchar_t, bool>> actionCopy(actionQueue.getQueue());
             for (auto &action : actionCopy)
             {
                 switch (action.first)

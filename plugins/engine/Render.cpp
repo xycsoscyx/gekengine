@@ -488,7 +488,7 @@ namespace Gek
             else if (handle == foregroundUpdateHandle)
             {
                 ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderForeground, std::placeholders::_1)));
-                video->present(true);
+                video->present(false);
             }
         }
     };

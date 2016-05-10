@@ -2,8 +2,9 @@
 
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Color.h"
+#include "GEK\Math\Float2.h"
 #include "GEK\Math\Float4.h"
-#include "GEK\System\OverlaySystem.h"
+#include "GEK\Shapes\Rectangle.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <functional>
@@ -479,15 +480,14 @@ namespace Gek
 
     DECLARE_INTERFACE_IID(VideoSystem, "CA9BBC81-83E9-4C26-9BED-5BF3B2D189D6") : virtual public IUnknown
     {
-        STDMETHOD(initialize)                               (THIS_ HWND window, bool fullScreen, Video::Format depthBufferFormat = Video::Format::Unknown) PURE;
+        STDMETHOD(initialize)                               (THIS_ HWND window, bool fullScreen, Video::Format format) PURE;
         STDMETHOD(setFullScreen)                            (THIS_ bool fullScreen) PURE;
+        STDMETHOD(setSize)                                  (THIS_ UINT32 width, UINT32 height, Video::Format format) PURE;
         STDMETHOD(resize)                                   (THIS) PURE;
 
+        STDMETHOD_(VideoTarget *, getBackBuffer)            (THIS) PURE;
         STDMETHOD_(VideoContext *, getDefaultContext)       (THIS) PURE;
-        STDMETHOD_(OverlaySystem *, getOverlay)             (THIS) PURE;
 
-        STDMETHOD_(UINT32, getWidth)                        (THIS) PURE;
-        STDMETHOD_(UINT32, getHeight)                       (THIS) PURE;
         STDMETHOD_(bool, isFullScreen)                      (THIS) PURE;
 
         STDMETHOD(createDeferredContext)                    (THIS_ VideoContext **returnObject) PURE;
@@ -524,10 +524,6 @@ namespace Gek
         STDMETHOD(loadVertexProgram)                        (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> *elementLayout = nullptr, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
         STDMETHOD(loadGeometryProgram)                      (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
         STDMETHOD(loadPixelProgram)                         (THIS_ IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, std::unordered_map<CStringA, CStringA> *defineList = nullptr) PURE;
-
-        STDMETHOD_(void, clearDefaultRenderTarget)          (THIS_ const Math::Color &colorClear) PURE;
-        STDMETHOD_(void, clearDefaultDepthStencilTarget)    (THIS_ UINT32 flags, float depthClear, UINT32 stencilClear) PURE;
-        STDMETHOD_(void, setDefaultTargets)                 (THIS_ VideoContext *context = nullptr, IUnknown *depthBuffer = nullptr) PURE;
 
         STDMETHOD_(void, executeCommandList)                (THIS_ IUnknown *commandList) PURE;
 

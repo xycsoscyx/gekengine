@@ -177,7 +177,7 @@ namespace Gek
             if (!isIdle)
             {
                 this->frameTime = frameTime;
-                worldTime += frameTime;
+                this->worldTime += frameTime;
             }
 
             if (loadScene)

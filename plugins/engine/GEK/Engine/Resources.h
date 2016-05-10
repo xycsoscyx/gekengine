@@ -149,7 +149,7 @@ namespace Gek
         STDMETHOD_(void, setRenderTargets)                  (THIS_ RenderContext *renderContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle depthBuffer) PURE;
         STDMETHOD_(void, clearRenderTarget)                 (THIS_ RenderContext *renderContext, ResourceHandle resourceHandle  , const Math::Color &color) PURE;
         STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ RenderContext *renderContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
-        STDMETHOD_(void, setDefaultTargets)                 (THIS_ RenderContext *renderContext, ResourceHandle depthBuffer) PURE;
+        STDMETHOD_(void, setBackBuffer)                     (THIS_ RenderContext *renderContext, ResourceHandle depthBuffer) PURE;
     };
 
     DECLARE_INTERFACE_IID(ResourcesRegistration, "1EF802ED-5694-479F-AE59-FA3F6F30808A");

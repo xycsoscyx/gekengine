@@ -567,8 +567,8 @@ namespace Gek
         CStringW evaluate(LPCWSTR value, bool integer = false)
         {
             CStringW finalValue(value);
-            finalValue.Replace(L"displayWidth", String::format(L"%d", video->getWidth()));
-            finalValue.Replace(L"displayHeight", String::format(L"%d", video->getHeight()));
+            finalValue.Replace(L"displayWidth", String::format(L"%d", video->getBackBuffer()->getWidth()));
+            finalValue.Replace(L"displayHeight", String::format(L"%d", video->getBackBuffer()->getHeight()));
             while (replaceDefines(finalValue));
 
             if (finalValue.Find(L"float2") == 0)
@@ -746,7 +746,7 @@ namespace Gek
                             else
                             {
                                 Video::Format format = getFormat(xmlDepthNode.getText());
-                                depthBuffer = resources->createTexture(String::format(L"%s:depth", fileName), format, video->getWidth(), video->getHeight(), 1, Video::TextureFlags::DepthTarget);
+                                depthBuffer = resources->createTexture(String::format(L"%s:depth", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget);
                             }
                         }
 
@@ -768,13 +768,13 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    int textureWidth = video->getWidth();
+                                    int textureWidth = video->getBackBuffer()->getWidth();
                                     if (xmlTargetNode.hasAttribute(L"width"))
                                     {
                                         textureWidth = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"width")));
                                     }
 
-                                    int textureHeight = video->getHeight();
+                                    int textureHeight = video->getBackBuffer()->getHeight();
                                     if (xmlTargetNode.hasAttribute(L"height"))
                                     {
                                         textureHeight = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"height")));
@@ -1333,8 +1333,8 @@ namespace Gek
             switch (pass.mode)
             {
             case Pass::Mode::Compute:
-                shaderConstantData.targetSize.x = float(video->getWidth());
-                shaderConstantData.targetSize.y = float(video->getHeight());
+                shaderConstantData.targetSize.x = float(video->getBackBuffer()->getWidth());
+                shaderConstantData.targetSize.y = float(video->getBackBuffer()->getHeight());
                 break;
 
             default:
@@ -1349,9 +1349,9 @@ namespace Gek
 
                 if (pass.renderTargetList.empty())
                 {
-                    resources->setDefaultTargets(renderContext, depthBuffer);
-                    shaderConstantData.targetSize.x = float(video->getWidth());
-                    shaderConstantData.targetSize.y = float(video->getHeight());
+                    resources->setBackBuffer(renderContext, depthBuffer);
+                    shaderConstantData.targetSize.x = float(video->getBackBuffer()->getWidth());
+                    shaderConstantData.targetSize.y = float(video->getBackBuffer()->getHeight());
                 }
                 else
                 {
