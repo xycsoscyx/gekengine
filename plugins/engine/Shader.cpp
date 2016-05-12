@@ -154,6 +154,7 @@ namespace Gek
         struct PassData
         {
             Pass::Mode mode;
+            bool enableDepth;
             UINT32 depthClearFlags;
             float depthClearValue;
             UINT32 stencilClearValue;
@@ -173,6 +174,7 @@ namespace Gek
 
             PassData(void)
                 : mode(Pass::Mode::Forward)
+                , enableDepth(false)
                 , depthClearFlags(0)
                 , depthClearValue(1.0f)
                 , stencilClearValue(0)
@@ -404,36 +406,40 @@ namespace Gek
         void loadDepthStates(PassData &pass, Gek::XmlNode &xmlDepthStatesNode)
         {
             Video::DepthStates depthStates;
-            depthStates.enable = true;
-
-            if (xmlDepthStatesNode.hasChildElement(L"clear"))
+            if (xmlDepthStatesNode)
             {
-                pass.depthClearFlags |= Video::ClearMask::Depth;
-                pass.depthClearValue = String::to<float>(xmlDepthStatesNode.firstChildElement(L"clear").getText());
-            }
-
-            depthStates.comparisonFunction = getComparisonFunction(xmlDepthStatesNode.firstChildElement(L"comparison").getText());
-            depthStates.writeMask = getDepthWriteMask(xmlDepthStatesNode.firstChildElement(L"writemask").getText());
-
-            if (xmlDepthStatesNode.hasChildElement(L"stencil"))
-            {
-                Gek::XmlNode xmlStencilNode = xmlDepthStatesNode.firstChildElement(L"stencil");
-                depthStates.stencilEnable = true;
-
-                if (xmlStencilNode.hasChildElement(L"clear"))
+                pass.enableDepth = true;
+                if (xmlDepthStatesNode.hasChildElement(L"clear"))
                 {
-                    pass.depthClearFlags |= Video::ClearMask::Stencil;
-                    pass.stencilClearValue = String::to<UINT32>(xmlStencilNode.firstChildElement(L"clear").getText());
+                    pass.depthClearFlags |= Video::ClearMask::Depth;
+                    pass.depthClearValue = String::to<float>(xmlDepthStatesNode.firstChildElement(L"clear").getText());
                 }
 
-                if (xmlStencilNode.hasChildElement(L"front"))
-                {
-                    loadStencilStates(depthStates.stencilFrontStates, xmlStencilNode.firstChildElement(L"front"));
-                }
+                depthStates.enable = true;
 
-                if (xmlStencilNode.hasChildElement(L"back"))
+                depthStates.comparisonFunction = getComparisonFunction(xmlDepthStatesNode.firstChildElement(L"comparison").getText());
+                depthStates.writeMask = getDepthWriteMask(xmlDepthStatesNode.firstChildElement(L"writemask").getText());
+
+                if (xmlDepthStatesNode.hasChildElement(L"stencil"))
                 {
-                    loadStencilStates(depthStates.stencilBackStates, xmlStencilNode.firstChildElement(L"back"));
+                    Gek::XmlNode xmlStencilNode = xmlDepthStatesNode.firstChildElement(L"stencil");
+                    depthStates.stencilEnable = true;
+
+                    if (xmlStencilNode.hasChildElement(L"clear"))
+                    {
+                        pass.depthClearFlags |= Video::ClearMask::Stencil;
+                        pass.stencilClearValue = String::to<UINT32>(xmlStencilNode.firstChildElement(L"clear").getText());
+                    }
+
+                    if (xmlStencilNode.hasChildElement(L"front"))
+                    {
+                        loadStencilStates(depthStates.stencilFrontStates, xmlStencilNode.firstChildElement(L"front"));
+                    }
+
+                    if (xmlStencilNode.hasChildElement(L"back"))
+                    {
+                        loadStencilStates(depthStates.stencilBackStates, xmlStencilNode.firstChildElement(L"back"));
+                    }
                 }
             }
 
@@ -1349,7 +1355,7 @@ namespace Gek
 
                 if (pass.renderTargetList.empty())
                 {
-                    resources->setBackBuffer(renderContext, depthBuffer);
+                    resources->setBackBuffer(renderContext, (pass.enableDepth ? &depthBuffer : nullptr));
                     shaderConstantData.targetSize.x = float(video->getBackBuffer()->getWidth());
                     shaderConstantData.targetSize.y = float(video->getBackBuffer()->getHeight());
                 }
@@ -1374,7 +1380,7 @@ namespace Gek
                         renderTargetList[stage++] = renderTargetHandle;
                     }
 
-                    resources->setRenderTargets(renderContext, renderTargetList, stage, depthBuffer);
+                    resources->setRenderTargets(renderContext, renderTargetList, stage, (pass.enableDepth ? &depthBuffer : nullptr));
                 }
 
                 break;

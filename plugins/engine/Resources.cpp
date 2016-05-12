@@ -943,7 +943,7 @@ namespace Gek
 
         Video::ViewPort viewPortList[8];
         VideoTarget *renderTargetList[8];
-        STDMETHODIMP_(void) setRenderTargets(RenderContext *renderContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle depthBuffer)
+        STDMETHODIMP_(void) setRenderTargets(RenderContext *renderContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle *depthBuffer)
         {
             for (UINT32 renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
             {
@@ -954,14 +954,21 @@ namespace Gek
                 }
             }
 
-            renderContext->getContext()->setRenderTargets(renderTargetList, renderTargetHandleCount, resourceManager.getResource<IUnknown>(depthBuffer));
+            renderContext->getContext()->setRenderTargets(renderTargetList, renderTargetHandleCount, (depthBuffer ? resourceManager.getResource<IUnknown>(*depthBuffer) : nullptr));
             renderContext->getContext()->setViewports(viewPortList, renderTargetHandleCount);
         }
 
-        STDMETHODIMP_(void) setBackBuffer(RenderContext *renderContext, ResourceHandle depthBuffer)
+        STDMETHODIMP_(void) setBackBuffer(RenderContext *renderContext, ResourceHandle *depthBuffer)
         {
             auto backBuffer = video->getBackBuffer();
-            renderContext->getContext()->setRenderTargets(&backBuffer, 1, resourceManager.getResource<IUnknown>(depthBuffer));
+            renderTargetList[0] = backBuffer;
+            if (renderTargetList[0])
+            {
+                viewPortList[0] = renderTargetList[0]->getViewPort();
+            }
+
+            renderContext->getContext()->setRenderTargets(renderTargetList, 1, (depthBuffer ? resourceManager.getResource<IUnknown>(*depthBuffer) : nullptr));
+            renderContext->getContext()->setViewports(viewPortList, 1);
         }
     };
 

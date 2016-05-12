@@ -255,9 +255,6 @@ namespace Gek
                         rawFileData += (sizeof(UINT16) * indexCount);
                     }
                 }
-                else
-                {
-                }
             }
 
             if (SUCCEEDED(resultValue))

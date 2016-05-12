@@ -102,6 +102,7 @@ namespace Gek
     };
 }; // namespace Gek
 
+#define _ENABLE_TRACE
 #ifdef _ENABLE_TRACE
     #define GEK_PARAMETER(NAME)                                 std::make_pair(#NAME, std::cref(NAME))
     #define GEK_TRACE_FUNCTION(CATEGORY, ...)                   Gek::TraceScope trace( #CATEGORY, __FUNCTION__, __VA_ARGS__)
